@@ -905,10 +905,11 @@ ${this.getErrorInfo()}`;
     const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
     const period = getters.periodStampGivenDate(meta.createdDate);
     const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
-    if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+    const { distributionDate } = getters.groupSettings;
+    if (comparePeriodStamps(period, distributionDate) > 0) {
       updateGroupStreaks({ state, getters });
-      state.paymentsByPeriod[getters.groupSettings.distributionDate].nextPaymentPeriodID = period;
-      curPeriodPayments.previousPaymentPeriodID = getters.groupSettings.distributionDate;
+      state.paymentsByPeriod[distributionDate].nextPaymentPeriodID = period;
+      curPeriodPayments.previousPaymentPeriodID = distributionDate;
       getters.groupSettings.distributionDate = period;
     }
     if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
@@ -1046,15 +1047,15 @@ ${this.getErrorInfo()}`;
           });
         };
       },
-      previousPaymentPeriodID(state, getters) {
+      periodBeforePeriod(state, getters) {
         return (periodStamp) => getters.groupPeriodPayments[periodStamp]?.previousPeriodID;
       },
-      nextPaymentPeriodID(state, getters) {
+      periodAfterPeriod(state, getters) {
         return (periodStamp) => getters.groupPeriodPayments[periodStamp]?.nextPeriodID;
       },
       dueDateForPeriod(state, getters) {
         return (periodStamp) => {
-          return getters.nextPaymentPeriodID(periodStamp);
+          return getters.periodAfterPeriod(periodStamp);
         };
       },
       paymentTotalFromUserToUser(state, getters) {
@@ -1070,7 +1071,7 @@ ${this.getErrorInfo()}`;
             }
             const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate);
             if (periodStamp !== paymentCreatedPeriodStamp) {
-              if (paymentCreatedPeriodStamp !== getters.previousPaymentPeriodID(periodStamp)) {
+              if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
                 console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment));
                 return a;
               }
@@ -1210,7 +1211,7 @@ ${this.getErrorInfo()}`;
             })
           })
         }),
-        process({ contractID, data, meta }, { state, getters }) {
+        process({ data, meta, contractID }, { state, getters }) {
           const initialState = merge({
             chatRooms: {},
             invites: {},

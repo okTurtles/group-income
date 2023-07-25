@@ -42,7 +42,7 @@ export default ({
     ...mapGetters([
       'currentPaymentPeriod',
       'periodStampGivenDate',
-      'previousPaymentPeriodID',
+      'periodBeforePeriod',
       'withGroupCurrency',
       'groupTotalPledgeAmount',
       'groupCreatedDate'
@@ -54,7 +54,7 @@ export default ({
     periods () {
       const periods = [this.currentPaymentPeriod]
       for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
-        const period = this.previousPaymentPeriodID(periods[0])
+        const period = this.periodBeforePeriod(periods[0])
         if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
         else periods.unshift(period)
       }

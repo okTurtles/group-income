@@ -46,6 +46,8 @@ function initGroupProfile (contractID: string, joinedDate: string) {
 // Creates a PaymentPeriod object.
 function initPaymentPeriod ({ getters, period }) {
   const len = getters.groupSettings.distributionPeriodLength
+  // For now we just add the current period length to the action timestamp,
+  // but this field must to be updated whenever the period length is changed while this period is active.
   const nextPeriodID = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(period), len))
   return {
     nextPeriodID,
@@ -113,13 +115,12 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters })
   const period = getters.periodStampGivenDate(meta.createdDate)
   const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
-  // update distributionDate if we've passed into the next period
-  if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+  const { distributionDate } = getters.groupSettings
+  // Update the distribution date, streaks, and previous/next pointers if we've passed into the next period.
+  if (comparePeriodStamps(period, distributionDate) > 0) {
     updateGroupStreaks({ state, getters })
-    // New code
-    state.paymentsByPeriod[getters.groupSettings.distributionDate].nextPaymentPeriodID = period
-    curPeriodPayments.previousPaymentPeriodID = getters.groupSettings.distributionDate
-    // End new code
+    state.paymentsByPeriod[distributionDate].nextPaymentPeriodID = period
+    curPeriodPayments.previousPaymentPeriodID = distributionDate
     getters.groupSettings.distributionDate = period
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
@@ -338,18 +339,18 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    previousPaymentPeriodID (state, getters): string | void {
+    periodBeforePeriod (state, getters): string | void {
       return (periodStamp: string) => getters.groupPeriodPayments[periodStamp]?.previousPeriodID
     },
-    nextPaymentPeriodID (state, getters): string | void {
+    periodAfterPeriod (state, getters): string | void {
       return (periodStamp: string) => getters.groupPeriodPayments[periodStamp]?.nextPeriodID
     },
     dueDateForPeriod (state, getters) {
       return (periodStamp: string) => {
-        // NOTE: logically it's should be 1 milisecond before the nextPaymentPeriodID
+        // NOTE: logically it's should be 1 milisecond before the next period timestamp
         //       1 mili-second doesn't make any difference to the users
-        //       so nextPaymentPeriodID is used to make it simple
-        return getters.nextPaymentPeriodID(periodStamp)
+        //       so the timestamp is used to make it simple
+        return getters.periodAfterPeriod(periodStamp)
       }
     },
     paymentTotalFromUserToUser (state, getters) {
@@ -372,7 +373,7 @@ sbp('chelonia/defineContract', {
           // completion that modified the group currency by multiplying both period's
           // exchange rates
           if (periodStamp !== paymentCreatedPeriodStamp) {
-            if (paymentCreatedPeriodStamp !== getters.previousPaymentPeriodID(periodStamp)) {
+            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
               console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
               return a
             }
@@ -540,7 +541,7 @@ sbp('chelonia/defineContract', {
           })
         })
       }),
-      process ({ contractID, data, meta }, { state, getters }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           chatRooms: {},

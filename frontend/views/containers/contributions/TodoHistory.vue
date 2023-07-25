@@ -38,7 +38,7 @@ export default ({
     ...mapGetters([
       'currentPaymentPeriod',
       'periodStampGivenDate',
-      'previousPaymentPeriodID',
+      'periodBeforePeriod',
       'groupCreatedDate',
       'dueDateForPeriod'
     ]),
@@ -58,8 +58,8 @@ export default ({
       const getLen = obj => Object.keys(obj).length
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
-        period = period === null ? this.currentPaymentPeriod : this.previousPaymentPeriodID(period)
-        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
+        period = period === null ? this.currentPaymentPeriod : this.periodBeforePeriod(period)
+        if (!period || comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPeriodPayment(period)

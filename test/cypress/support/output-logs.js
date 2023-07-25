@@ -70,7 +70,7 @@ Cypress.mocha.getRunner().on('test', () => {
 // current fail, to the end of the error.stack property.
 Cypress.on('fail', (error) => {
   error.stack += '\nConsole Logs:\n========================\n'
-  error.stack += '[' + logs.slice(0, 999) + (logs.length > 999 ? ' ...]' : ' null]')
+  error.stack += '[' + logs + ' null]'
   // clear logs after fail so we dont see duplicate logs
   logs = ''
   // still need to throw the error so tests wont be marked as a pass

@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
-import { addTimeToDate, compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import { STATUS_OPEN, PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 
 // util functions
@@ -73,21 +73,21 @@ const periodicNotificationEntries = [
     type: PERIODIC_NOTIFICATION_TYPE.MIN1,
     notificationData: {
       stateKey: 'nearDistributionEnd',
-      emitCondition ({ rootGetters, rootState }) {
-        const currentPeriod = rootGetters.groupSettings?.distributionDate
-        if (!currentPeriod) { return false }
-        console.log('cp:', new Date(currentPeriod))
-        console.log(rootGetters)
-        console.log('rs:', rootState)
-        const nextPeriod = dateToPeriodStamp(addTimeToDate(currentPeriod, rootGetters.groupSettings.distributionPeriodLength))
-        console.log('np:', nextPeriod)
+      emitCondition ({ rootGetters }) {
+        const distributionDate = rootGetters.groupSettings?.distributionDate
+        // Not sure this can ever happen. Maybe just check whether we're in a group.
+        if (!distributionDate) { return false }
         const now = dateToPeriodStamp(new Date())
-        const comparison = comparePeriodStamps(nextPeriod, now)
+        // Return false if we're still in waiting period.
+        if (comparePeriodStamps(now, distributionDate) <= 0) return false
+        // Otherwise, a matching period object should exist.
+        const { nextPeriodID } = rootGetters.groupPeriodPayments[distributionDate]
+        const comparison = comparePeriodStamps(nextPeriodID, now)
 
         return rootGetters.ourGroupProfile?.incomeDetailsType === 'pledgeAmount' &&
           (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
           (rootGetters.ourPayments && rootGetters.ourPayments.todo.length > 0) &&
-          !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
+          !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === distributionDate)
       },
       emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
