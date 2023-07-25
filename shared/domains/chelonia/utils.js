@@ -272,7 +272,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   // are used for signatures and for encryption.
   // When recreateEvent is called we may already be in a queued event, so we
   // call syncContract directly instead of sync
-  await sbp('chelonia/private/in/syncContract', contractID)
+  await sbp('chelonia/contract/sync', contractID)
   const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
   const head = entry.head()
 

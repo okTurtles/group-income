@@ -85,6 +85,7 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
+  'chelonia/private/queueInvocation': sbp('sbp/selectors/fn', 'okTurtles.eventQueue/queueEvent'),
   'chelonia/private/state': function () {
     return this.state
   },
@@ -656,7 +657,7 @@ export default (sbp('sbp/selectors/register', {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
-    const result = await sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
+    const result = await sbp('chelonia/private/queueInvocation', event.contractID(), [
       'chelonia/private/in/handleEvent', event
     ])
     return result
@@ -743,9 +744,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    await sbp('chelonia/queueInvocation', contractID, [
-      'chelonia/private/in/syncContract', contractID
-    ])
+    await sbp('chelonia/contract/sync', contractID)
 
     const contractState = state[contractID]
 
