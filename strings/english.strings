@@ -588,9 +588,6 @@
 /* views/containers/user-settings/UserProfile.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "Deleting your account will erase all your data, and remove you from the groups you belong to.";
 
-/* views/pages/Home.vue */
-"Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. {a_}Read more.{_a}" = "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. {a_}Read more.{_a}";
-
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";
 
@@ -1988,6 +1985,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "This invite link is only available during the onboarding period." = "This invite link is only available during the onboarding period.";
+
+/* views/pages/Home.vue */
+"This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}" = "This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}";
 
 /* views/containers/user-settings/UserProfile.vue */
 "This is how others will see your name accross the platform." = "This is how others will see your name accross the platform.";
