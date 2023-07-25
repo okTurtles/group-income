@@ -9,6 +9,8 @@ import 'cypress-file-upload'
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
+const API_URL = Cypress.config('baseUrl')
+
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 
@@ -99,7 +101,7 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
     cy.getByDT('link-logout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
-  cy.url().should('eq', 'http://localhost:8000/app/')
+  cy.url().should('eq', `${API_URL}/app/`)
   cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
@@ -143,7 +145,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       })
       await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
-    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('groupName').should('contain', name)
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
@@ -203,7 +205,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+  cy.url().should('eq', `${API_URL}/app/dashboard`)
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
@@ -220,9 +222,9 @@ function inviteUser (invitee, index) {
 Cypress.Commands.add('giGetInvitationAnyone', () => {
   cy.getByDT('inviteButton').click()
   cy.getByDT('invitationLink').invoke('text').then(text => {
-    const urlAt = text.indexOf('http://')
-    const url = text.substr(urlAt)
-    assert.isOk(url, 'invitation link is found')
+    const urlIndex = text.includes('https://') ? text.indexOf('https://') : text.indexOf('http://')
+    assert.isOk(urlIndex >= 0, 'invitation link is found')
+    const url = text.slice(urlIndex)
     cy.closeModal()
     return cy.wrap(url)
   })
@@ -287,7 +289,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     }
 
     cy.getByDT('toDashboardBtn').click()
-    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
         cy.get(el).should('have.attr', 'data-logged-in', 'yes')

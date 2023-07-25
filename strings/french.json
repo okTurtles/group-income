@@ -219,7 +219,7 @@
   "Open Prompt": "Open Prompt",
   "Leave {channelName}": "Leave {channelName}",
   "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.": "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.",
-  "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. {a_}Read more.{_a}": "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. {a_}Read more.{_a}",
+  "This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}": "This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}",
   "ALL": "ALL",
   "Accepted methods": "Accepted methods",
   "Completed": "Completed",

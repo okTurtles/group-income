@@ -66,7 +66,6 @@ async function startApp () {
     // Selectors for which debug logging won't be enabled.
     const selectorBlacklist = [
       'chelonia/db/get',
-      'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
