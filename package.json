@@ -1,14 +1,14 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.1.4",
+  "contractsVersion": "0.1.5",
   "private": true,
   "description": "",
   "scripts": {
     "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
-    "cy:open": "cypress open",
+    "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
     "test": "grunt test",
     "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
     "i18n": "node scripts/i18n.js",

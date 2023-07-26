@@ -1,7 +1,7 @@
 <template lang='pug'>
   button.c-modal-close(
     :class='{ backOnMobile, fullscreen }'
-    @click.self='$emit("close")'
+    @click.self.stop='$emit("close")'
     :aria-label='L("close modal")'
     data-test='closeModal'
   )
