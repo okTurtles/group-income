@@ -421,7 +421,7 @@
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Changed votes to {options}" = "Changed votes to {options}";
+"Changed vote to {options}" = "Changed vote to {options}";
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
@@ -1045,9 +1045,6 @@
 "Jump to latest message" = "Jump to latest message";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Jump to poll" = "Jump to poll";
-
-/* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
 /* views/containers/user-settings/NotificationSettings.vue */
@@ -1381,10 +1378,10 @@
 "Open SubModal" = "Open SubModal";
 
 /* views/containers/chatroom/CreatePoll.vue */
-"Option" = "Option";
+"Option value" = "Option value";
 
 /* views/containers/chatroom/CreatePoll.vue */
-"Option value" = "Option value";
+"Option {index}" = "Option {index}";
 
 /* model/contracts/chatroom.js */
 "Original message was removed by {username}" = "Original message was removed by {username}";

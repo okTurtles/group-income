@@ -10,7 +10,7 @@
         i.icon-ellipsis-v
       menu-content.c-poll-menu-content
         ul
-          menu-item(tag='button' icon='edit' @click='() => pollUtils.switchOnChangeMode()')
+          menu-item(tag='button' icon='edit' @click='pollUtils.switchOnChangeMode')
             i18n Change vote
   .c-options-and-voters
     ul.c-options-list

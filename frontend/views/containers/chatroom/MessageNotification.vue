@@ -4,7 +4,7 @@ message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
     .c-notification
       p.c-text(v-if='message')
         | {{message.text}}
-        i18n.c-link(v-if='isPollNotification' @click='jumpToPoll') Jump to poll
+        // i18n.c-link(v-if='isPollNotification' @click='jumpToPoll') Jump to poll
 </template>
 
 <script>
@@ -64,7 +64,7 @@ export default ({
             L('Updated the channel description to: {description}', { description: channelDescription }),
           [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
           [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on {options}', { options: votedOptions }),
-          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed votes to {options}', { options: votedOptions })
+          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed vote to {options}', { options: votedOptions })
         }
       }
 
@@ -84,6 +84,7 @@ export default ({
       this.$emit('add-emoticon', emoticon)
     },
     jumpToPoll () {
+      // link to the GH issue: https://github.com/okTurtles/group-income/issues/1674
       alert('TODO: implement "jumping to a particular message."')
     }
   }

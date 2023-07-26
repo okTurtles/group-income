@@ -112,9 +112,9 @@ export default ({
       this.ephemeral.isChangeMode = false
     },
     checkAndSetupPollExpirationTimer () {
-      const markPollClosed = () => {
+      const markPollClosed = async () => {
         try {
-          sbp('gi.actions/chatroom/closePoll', {
+          await sbp('gi.actions/chatroom/closePoll', {
             contractID: this.currentChatRoomId,
             data: { hash: this.messageHash }
           })

@@ -256,7 +256,7 @@
 "Option value" = "Option value";
 
 /* MISSING TRANSLATION - views/containers/chatroom/CreatePoll.vue */
-"Option" = "Option";
+"Option {index}" = "Option {index}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/CreatePoll.vue */
 "Remove option" = "Remove option";
@@ -274,10 +274,7 @@
 "{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
-"Changed votes to {options}" = "Changed votes to {options}";
-
-/* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
-"Jump to poll" = "Jump to poll";
+"Changed vote to {options}" = "Changed vote to {options}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Voted on {options}" = "Voted on {options}";

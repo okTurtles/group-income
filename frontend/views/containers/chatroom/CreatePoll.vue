@@ -168,7 +168,7 @@ export default {
       }
     },
     optionPlaceholder (index) {
-      return `${L('Option')} ${index}`
+      return L('Option {index}', { index })
     },
     addOption (e) {
       e.stopPropagation()
