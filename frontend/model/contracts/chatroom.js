@@ -188,6 +188,7 @@ sbp('chelonia/defineContract', {
         username: string // username of joining member
       }),
       process ({ data, meta, hash, id }, { state }) {
+        const rootGetters = sbp('state/vuex/getters')
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
@@ -195,7 +196,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        Vue.set(state.users, username, { contractID: meta.identityContractID, joinedDate: meta.createdDate })
+        Vue.set(state.users, username, { contractID: rootGetters.ourContactProfiles[username], joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
         const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
