@@ -533,7 +533,7 @@ export default (sbp('sbp/selectors/register', {
     // and then pushes the operation requested into the public queue
     // This ensures that all internal operations have finished before these
     // other selectors are called
-    return sbp('chelonia/private/queueInvocation', contractID, ['chelonia/private/noop']).then(() => sbp('chelonia/private/queueInvocation', 'public:' + contractID, sbpInvocation))
+    return sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('okTurtles.eventQueue/queueEvent', 'public:' + contractID, sbpInvocation))
   },
   // call this manually to resubscribe/unsubscribe from contracts as needed
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
@@ -578,7 +578,7 @@ export default (sbp('sbp/selectors/register', {
       // but after it's finished. This is used in tandem with
       // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('chelonia/private/queueInvocation', contractID, [
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/private/in/syncContract', contractID
       ]).catch((err) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
@@ -597,7 +597,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
-      return sbp('chelonia/private/queueInvocation', contractID, [
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/contract/removeImmediately', contractID
       ])
     }))
