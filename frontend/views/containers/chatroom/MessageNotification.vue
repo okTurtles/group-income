@@ -21,6 +21,7 @@ export default ({
   inject: ['chatMessageUtils'],
   props: {
     id: String,
+    messageHash: String,
     type: String,
     text: String,
     notification: Object, // { type, params }

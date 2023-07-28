@@ -84,7 +84,7 @@ menu-parent(ref='menu')
 
       menu-item.is-icon-small(
         tag='button'
-        @click='action("copyToClipBoard")'
+        @click='action("copyMessageLink")'
       )
         i.icon-link
         i18n Copy message Link
