@@ -1,12 +1,13 @@
 'use strict'
 
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { GIErrorUIRuntimeError, LError } from '@common/common.js'
-import { EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
@@ -20,37 +21,39 @@ import type { GIActionParams } from './types.js'
 export function encryptedAction (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessage = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
       encryptionKeyId,
-      action: action.replace('gi.actions', 'gi.contracts')
+      action: action.replace('gi.actions', 'gi.contracts'),
+      originatingContractID
     })
   }
   return {
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
+        const signingState = !params.signingContractID || params.signingContractID === params.contractID ? state : await sbp('chelonia/latestContractState', params.signingContractID)
 
-        const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
+        const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || !state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
+        if (!signingKeyId || !encryptionKeyId || (!signingState._volatile.keys?.[signingKeyId] && !sbp('chelonia/hasTransientSecretKey', signingKeyId))) {
           console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
           // TODO: Change to Promise.reject()
           return Promise.resolve()
         }
 
-        const sm = sendMessage(params, signingKeyId, encryptionKeyId)
+        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId, params.originatingContractID)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sm, params, signingKeyId, encryptionKeyId)
+          return await handler(sm, params, signingKeyId, encryptionKeyId, params.originatingContractID)
         } else {
           return await sm()
         }
@@ -99,7 +102,7 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
   const inviteKey = keygen(EDWARDS25519SHA512BATCH)
   const inviteKeyId = keyId(inviteKey)
   const inviteKeyP = serializeKey(inviteKey, false)
-  const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+  const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
 
   await sbp('chelonia/out/keyAdd', {
     contractID,
@@ -114,7 +117,6 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
         quantity,
         expires: Date.now() + DAYS_MILLIS * expires,
         private: {
-          keyId: CEKid,
           content: inviteKeyS
         }
       },

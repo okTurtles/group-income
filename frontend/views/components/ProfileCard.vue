@@ -91,7 +91,7 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import DMMixin from '@containers/chatroom/DMMixin.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
 export default ({
   name: 'ProfileCard',
@@ -125,6 +125,7 @@ export default ({
       'groupShouldPropose',
       'ourContributionSummary',
       'ourPrivateDirectMessages',
+      'ourIdentityContractId',
       'directMessageIDFromUsername'
     ]),
     isSelf () {
@@ -162,11 +163,23 @@ export default ({
     },
     sendMessage () {
       if (!this.ourPrivateDirectMessages[this.username]) {
-        this.createPrivateDM(this.username)
+        sbp('gi.actions/identity/createDirectMessage', {
+          contractID: this.ourIdentityContractId,
+          data: {
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            usernames: [this.username]
+          }
+        })
       } else {
         const chatRoomId = this.directMessageIDFromUsername(this.username)
         if (this.ourPrivateDirectMessages[this.username].hidden) {
-          this.setDMVisibility(chatRoomId, false)
+          sbp('gi.actions/identity/setDirectMessageVisibility', {
+            contractID: this.ourIdentityContractId,
+            data: {
+              contractID: chatRoomId,
+              hidden: false
+            }
+          })
         } else {
           this.redirect(chatRoomId)
         }

@@ -6,7 +6,6 @@ import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 const DMMixin: Object = {
   computed: {
     ...mapGetters([
-      'currentIdentityState',
       'currentChatRoomId',
       'ourUsername',
       'ourContacts',
@@ -18,7 +17,8 @@ const DMMixin: Object = {
       'ourGroupDirectMessages',
       'groupDirectMessageInfo',
       'directMessageIDFromUsername',
-      'usernameFromDirectMessageID'
+      'usernameFromDirectMessageID',
+      'ourIdentityContractId'
     ])
   },
   methods: {
@@ -36,8 +36,8 @@ const DMMixin: Object = {
     },
     createPrivateDM (username: string) {
       // NOTE: username should be valid
-      sbp('gi.actions/mailbox/createDirectMessage', {
-        contractID: this.currentIdentityState.attributes.mailbox,
+      sbp('gi.actions/identity/createDirectMessage', {
+        contractID: this.ourIdentityContractId,
         data: {
           privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
           usernames: [username]
@@ -46,8 +46,8 @@ const DMMixin: Object = {
     },
     createGroupDM (usernames: string[]) {
       // NOTE: usernames.length should be gte 2
-      sbp('gi.actions/mailbox/createDirectMessage', {
-        contractID: this.currentIdentityState.attributes.mailbox,
+      sbp('gi.actions/identity/createDirectMessage', {
+        contractID: this.ourIdentityContractId,
         data: {
           privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
           usernames
@@ -61,8 +61,8 @@ const DMMixin: Object = {
         contractID: chatRoomId,
         data: { username }
       })
-      await sbp('gi.actions/mailbox/joinDirectMessage', {
-        contractID: profile.mailbox,
+      await sbp('gi.actions/identity/joinDirectMessage', {
+        contractID: profile.contractID,
         data: {
           privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
           contractID: chatRoomId
@@ -71,8 +71,8 @@ const DMMixin: Object = {
     },
     setDMVisibility (chatRoomId: string, hidden: boolean) {
       // NOTE: chatRoomId should be of valid direct message
-      sbp('gi.actions/mailbox/setDirectMessageVisibility', {
-        contractID: this.currentIdentityState.attributes.mailbox,
+      sbp('gi.actions/identity/setDirectMessageVisibility', {
+        contractID: this.ourIdentityContractId,
         data: { contractID: chatRoomId, hidden }
       })
     },

@@ -207,6 +207,11 @@ export const deserializeKey = (data: string): Key => {
 
   throw new Error('Unsupported key type')
 }
+export const keygenOfSameType = (inKey: Key | string): Key => {
+  const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
+
+  return keygen(key.type)
+}
 export const keyId = (inKey: Key | string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
@@ -281,6 +286,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     const messageUint8 = strToBuf(data)
     const ephemeralKey = nacl.box.keyPair()
     const box = nacl.box(messageUint8, nonce, key.publicKey, ephemeralKey.secretKey)
+    // Attempt to discard the data in memory for ephemeralKey.secretKey
     ephemeralKey.secretKey.fill(0)
 
     const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)
@@ -342,21 +348,4 @@ export const decrypt = (inKey: Key | string, data: string): string => {
   }
 
   throw new Error('Unsupported algorithm')
-}
-
-// Calls decrypt() and verifies that the result matches a given key ID
-// Used to ensure that, when decrypting a secret key, the correct (expected)
-// key is being decrypted.
-// This check is to catch potential mistakes or, more cucially, to avoid
-// overwriting existing good keys with wrong keys received e.g., from an
-// OP_KEY_SHARE
-export const decryptKey = (givenKeyId: string, inKey: Key | string, data: string): string => {
-  const value = decrypt(inKey, data)
-  const computedKeyId = keyId(value)
-
-  if (computedKeyId !== givenKeyId) {
-    throw new Error('Key ID of decrypted key doesn\'t match given key ID')
-  }
-
-  return value
 }

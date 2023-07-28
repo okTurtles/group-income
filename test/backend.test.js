@@ -182,23 +182,6 @@ describe('Full walkthrough', function () {
     })
   }
 
-  async function createMailboxFor (user) {
-    const { username } = users.bob.decryptedValue().data.attributes
-    const mailbox = await sbp('chelonia/out/registerContract', {
-      contractName: 'gi.contracts/mailbox',
-      keys: [],
-      data: { username }
-    })
-    await sbp('chelonia/out/actionEncrypted', {
-      action: 'gi.contracts/identity/setAttributes',
-      data: { mailbox: mailbox.contractID() },
-      contractID: user.contractID()
-    })
-    user.mailbox = mailbox
-    await sbp('chelonia/contract/sync', mailbox.contractID())
-    return mailbox
-  }
-
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
       users.bob = await createIdentity('bob', 'bob@okturtles.com')
@@ -230,13 +213,6 @@ describe('Full walkthrough', function () {
 
     it('Should open socket for Alice', async function () {
       users.alice.socket = await sbp('chelonia/connect')
-    })
-
-    it('Should create mailboxes for Alice and Bob and subscribe', async function () {
-      this.timeout(5000)
-      // Object.values(users).forEach(async user => await createMailboxFor(user))
-      await createMailboxFor(users.alice)
-      await createMailboxFor(users.bob)
     })
   })
 

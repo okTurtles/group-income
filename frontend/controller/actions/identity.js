@@ -1,17 +1,23 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import {
+  CHATROOM_TYPES
+} from '@model/contracts/shared/constants.js'
+import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
+import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
-import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import { encryptedAction } from './utils.js'
-import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import type { Key } from '../../../shared/domains/chelonia/crypto.js'
+import { handleFetchResult } from '../utils/misc.js'
+import { encryptedAction } from './utils.js'
 
 function generatedLoginState () {
   const { contracts } = sbp('state/vuex/state')
@@ -76,14 +82,6 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     // proceed with creation
-    // first create the mailbox for the user and subscribe to it
-    // and do this outside of a try block so that if it throws the error just gets passed up
-    const mailbox = await sbp('gi.actions/mailbox/create', {
-      data: { username },
-      options: { sync: true }
-    })
-    const mailboxID = mailbox.contractID()
-
     const keyPair = boxKeyPair()
     const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
     const b = hash(r)
@@ -140,12 +138,12 @@ export default (sbp('sbp/selectors/register', {
     const PEKp = serializeKey(PEK, false)
 
     // Secret keys to be stored encrypted in the contract
-    const CSKs = encrypt(IEK, serializeKey(CSK, true))
-    const CEKs = encrypt(IEK, serializeKey(CEK, true))
-    const PEKs = encrypt(IEK, serializeKey(PEK, true))
+    const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
+    const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
+    const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
 
     let userID
-    // next create the identity contract itself and associate it with the mailbox
+    // next create the identity contract itself
     try {
       await sbp('chelonia/configure', {
         transientSecretKeys: {
@@ -170,6 +168,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 0,
             permissions: '*',
+            allowedActions: '*',
             data: IPKp
           },
           {
@@ -188,10 +187,10 @@ export default (sbp('sbp/selectors/register', {
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE],
+            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
+            allowedActions: '*',
             meta: {
               private: {
-                keyId: IEKid,
                 content: CSKs
               }
             },
@@ -203,9 +202,9 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            allowedActions: '*',
             meta: {
               private: {
-                keyId: IEKid,
                 content: CEKs
               }
             },
@@ -217,9 +216,9 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 2,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: ['gi.actions/identity/setAttributes'],
             meta: {
               private: {
-                keyId: IEKid,
                 content: PEKs
               }
             },
@@ -227,7 +226,7 @@ export default (sbp('sbp/selectors/register', {
           }
         ],
         data: {
-          attributes: { username, email, picture: finalPicture, mailbox: mailboxID }
+          attributes: { username, email, picture: finalPicture }
         }
       })
 
@@ -238,12 +237,12 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
     }
-    return [userID, mailboxID]
+    return userID
   },
   'gi.actions/identity/signup': async function ({ username, email, password }, publishOptions) {
     try {
       const randomAvatar = sbp('gi.utils/avatar/create')
-      const [userID, mailboxID] = await sbp('gi.actions/identity/create', {
+      const userID = await sbp('gi.actions/identity/create', {
         data: {
           username,
           email,
@@ -253,7 +252,7 @@ export default (sbp('sbp/selectors/register', {
         publishOptions
       })
       await sbp('namespace/register', username, userID)
-      return [userID, mailboxID]
+      return userID
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?
       console.error('gi.actions/identity/signup failed!', e)
@@ -281,10 +280,6 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('state/vuex/state')
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
-    const { mailbox } = getters.currentIdentityState.attributes
-    if (mailbox && !Object.keys(state.contracts).includes(mailbox)) {
-      await sbp('chelonia/contract/sync', mailbox)
-    }
     try {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')
@@ -440,7 +435,122 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
+  'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+    const signingKeyId = findKeyIdByName(state, 'csk')
+
+    return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+      const CEKid = findKeyIdByName(rootState[groupID], 'cek')
+      if (!CEKid) {
+        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK`)
+        // We intentionally don't throw here to be able to share keys with the
+        // remaining groups
+        return Promise.resolve()
+      }
+      return sbp('chelonia/out/keyShare', {
+        contractID: groupID,
+        contractName: rootState.contracts[groupID].type,
+        originatingContractID: contractID,
+        originatingContractName: 'gi.contracts/identity',
+        data: {
+          contractID: groupID,
+          // $FlowFixMe
+          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+            id: newId,
+            meta: {
+              private: {
+                content: encryptedOutgoingData(rootState[groupID], CEKid, serializeKey(newKey, true))
+              }
+            }
+          }))
+        },
+        signingKeyId
+      })
+    })).then(() => undefined)
+  },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.'))
+  ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.')),
+  ...encryptedAction('gi.actions/identity/createDirectMessage', L('Failed to create a new direct message channel.'), async function (sendMessage, params) {
+    const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
+    const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+
+    const message = await sbp('gi.actions/chatroom/create', {
+      data: {
+        attributes: {
+          name: '',
+          description: '',
+          privacyLevel: params.data.privacyLevel, // CHATROOM_PRIVACY_LEVEL.PRIVATE | CHATROOM_PRIVACY_LEVEL.GROUP
+          type: CHATROOM_TYPES.INDIVIDUAL
+        }
+      },
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
+
+    // Share the keys to the newly created chatroom with ourselves
+    await sbp('gi.actions/out/shareVolatileKeys', {
+      contractID: rootState.loggedIn.identityContractID,
+      contractName: 'gi.contracts/identity',
+      subjectContractID: message.contractID(),
+      keyIds: '*'
+    })
+
+    await sbp('gi.actions/chatroom/join', {
+      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+      contractID: message.contractID(),
+      data: { username: rootState.loggedIn.username }
+    })
+
+    for (const profile of partnerProfiles) {
+      await sbp('gi.actions/chatroom/join', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: message.contractID(),
+        data: { username: profile.username }
+      })
+    }
+
+    await sendMessage({
+      ...omit(params, ['options', 'data', 'action', 'hooks']),
+      data: {
+        privacyLevel: params.data.privacyLevel,
+        contractID: message.contractID()
+      }
+    })
+
+    for (const [index, profile] of partnerProfiles.entries()) {
+      const hooks = index < partnerProfiles.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+
+      // Share the keys to the newly created chatroom with partners
+      // TODO: We need to handle multiple groups and the possibility of not
+      // having any groups in common
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        contractID: profile.contractID,
+        contractName: 'gi.contracts/identity',
+        originatingContractID: rootState.currentGroupId,
+        originatingContractName: 'gi.contracts/group',
+        subjectContractID: message.contractID(),
+        keyIds: '*'
+      })
+
+      await sbp('gi.actions/identity/joinDirectMessage', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: profile.contractID,
+        data: {
+          privacyLevel: params.data.privacyLevel,
+          // TODO: We need to handle multiple groups and the possibility of not
+          // having any groups in common
+          contractID: message.contractID()
+        },
+        signingContractID: rootState.currentGroupId,
+        hooks
+      })
+    }
+  }),
+  ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
+  ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.'))
 }): string[])

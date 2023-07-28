@@ -20,6 +20,7 @@ import { unadjustedDistribution, adjustedDistribution } from './shared/distribut
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -902,7 +903,7 @@ sbp('chelonia/defineContract', {
         if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
-          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
             return
           }
 
@@ -929,8 +930,13 @@ sbp('chelonia/defineContract', {
               if (switchFrom !== '/join' && switchFrom !== switchTo) {
                 router.push({ path: switchTo }).catch(console.warn)
               }
-            }).catch(e => {
+            })
+            .catch(e => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
+            })
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID))
+            .catch(e => {
+              console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {
@@ -946,6 +952,10 @@ sbp('chelonia/defineContract', {
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               })
+
+            // gi.contracts/group/removeOurselves will eventually trigger this
+            // as well
+            sbp('gi.contracts/group/rotateKeys', contractID, state)
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
@@ -1217,9 +1227,9 @@ sbp('chelonia/defineContract', {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
           state.chatRooms[data.chatRoomID].users.filter(u => u !== data.member))
       },
-      async sideEffect ({ meta, data }, { state }) {
+      async sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
           const sendingData = data.leavingGroup
             ? { member: data.member }
             : { member: data.member, username: meta.username }
@@ -1236,11 +1246,11 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         state.chatRooms[data.chatRoomID].users.push(username)
       },
-      async sideEffect ({ meta, data }, { state }) {
+      async sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
+          if (!sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID) || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
             await sbp('chelonia/contract/sync', data.chatRoomID)
@@ -1450,6 +1460,49 @@ sbp('chelonia/defineContract', {
           increased: mincomeIncreased
         })
       }
+    },
+    'gi.contracts/group/rotateKeys': (contractID, state) => {
+      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+
+      Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
+      Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
+
+      sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
+        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      })
+    },
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
+      const rootState = sbp('state/vuex/state')
+      const { identityContractID } = rootState.loggedIn
+      const state = rootState[identityContractID]
+
+      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const PEKid = findKeyIdByName(state, 'pek')
+
+      const groupCSKids = findForeignKeysByContractID(state, groupContractID)
+
+      Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
+
+      if (groupCSKids.length) {
+        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          data: groupCSKids,
+          signingKeyId: CSKid
+        }])
+          .catch(e => {
+            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
+          })
+      }
+
+      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
     }
   }
 })

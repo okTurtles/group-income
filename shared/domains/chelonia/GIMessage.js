@@ -2,10 +2,11 @@
 
 // TODO: rename GIMessage to ChelMessage
 
-import { EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305 } from './crypto.js'
 import { v4 as uuidv4 } from 'uuid'
 import { blake32Hash } from '~/shared/functions.js'
-import type { JSONType, JSONObject } from '~/shared/types.js'
+import type { JSONObject, JSONType } from '~/shared/types.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
+import { encryptedIncomingForeignData, encryptedIncomingData } from './encryptedData.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -17,6 +18,7 @@ export type GIKey = {
   purpose: GIKeyPurpose[],
   ringLevel: number;
   permissions: '*' | string[];
+  allowedActions?: '*' | string[];
   meta: Object;
   data: string;
   foreignKey?: string;
@@ -24,12 +26,12 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionEncrypted = { keyId: string; content: string } // encrypted version of GIOpActionUnencrypted
+export type GIOpActionEncrypted = { content: string } // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type GIOpKeyShare = { contractID: string; keys: GIKey[] }
+export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; }
 export type GIOpKeyRequest = {
   keyId: string;
   outerKeyId: string;
@@ -37,12 +39,59 @@ export type GIOpKeyRequest = {
   data: string;
 }
 export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type GIOpKeyUpdate = {
+  name: string;
+  id?: string;
+  oldKeyId: string;
+  data?: string;
+  purpose?: string[];
+  permissions?: string[];
+  allowedActions?: '*' | string[];
+  meta?: Object;
+}[]
 
-export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
-export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen
+export type GIOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+type ProtoGIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
+export type GIOpAtomic = [GIOpType, ProtoGIOpValue][]
+export type GIOpValue = ProtoGIOpValue | GIOpAtomic
 export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
+
+const decryptedDeserializedMessage = (op: string, parsedMessage: Object, contractID: string, state: Object, additionalKeys: Object) => {
+  const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, additionalKeys) : parsedMessage
+  if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
+    ((message: any): any[]).forEach((key) => {
+      // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
+      if (key.meta?.private?.content) {
+        key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, additionalKeys, (value) => {
+          const computedKeyId = keyId(value)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+        })
+      }
+    })
+  }
+  if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(op)) {
+    (message: any).keys?.forEach((key) => {
+      if (key.meta?.private?.content) {
+        key.meta.private.content = (message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData)(message.foreignContractID ? message.foreignContractID : contractID, state, key.meta.private.content, additionalKeys, (value) => {
+          const computedKeyId = keyId(value)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+        })
+      }
+    })
+  }
+
+  if (op === GIMessage.OP_ATOMIC) {
+    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, opV, contractID, state, additionalKeys)])
+  }
+
+  return message
+}
 
 export class GIMessage {
   // flow type annotations to make flow happy
@@ -58,12 +107,13 @@ export class GIMessage {
   static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
   static OP_KEY_ADD: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract, or update an existing key
   static OP_KEY_DEL: 'kd' = 'kd' // remove this key from authorized keys
+  static OP_KEY_UPDATE: 'ku' = 'ku' // update key in authorized keys
   static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
   static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
   static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
   static OP_CONTRACT_AUTH: 'ca' = 'ca' // authorize a contract
   static OP_CONTRACT_DEAUTH: 'cd' = 'cd' // deauthorize a contract
-  static OP_ATOMIC: 'at' = 'at' // atomic op
+  static OP_ATOMIC: 'a' = 'a' // atomic op
   static OP_KEY_SHARE: 'ks' = 'ks' // key share
   static OP_KEY_REQUEST: 'kr' = 'kr' // key request
   static OP_KEY_REQUEST_SEEN: 'krs' = 'krs' // key request response
@@ -102,28 +152,32 @@ export class GIMessage {
       nonce: uuidv4()
     }
     console.log('createV1_0', { op, head, signatureFn })
-    return new this(messageToParams(head, op, signatureFn))
+    return new this(messageToParams(head, op[1], op.length === 3 ? op[2] : op[1], signatureFn))
   }
 
   // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
-    target: GIMessage,
+    targetHead: Object,
+    targetOp: GIOp,
     sources: Object,
     signatureFn?: Function = defaultSignatureFn
   ): this {
-    const head = Object.assign({}, target.head(), sources)
-    return new this(messageToParams(head, target.op(), signatureFn))
+    const head = Object.assign({}, targetHead, sources)
+    return new this(messageToParams(head, targetOp[1], targetOp.length === 3 ? targetOp[2] : targetOp[1], signatureFn))
   }
 
-  // TODO: we need signature verification upon decryption somewhere...
-  static deserialize (value: string): this {
+  static deserialize (value: string, state?: Object, additionalKeys?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const parsedValue = JSON.parse(value)
+    const head = JSON.parse(parsedValue.head)
+    const parsedMessage = JSON.parse(parsedValue.message)
+    const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
+    const message = decryptedDeserializedMessage(head.op, parsedMessage, contractID, state, additionalKeys)
     return new this({
       mapping: { key: blake32Hash(value), value },
-      head: JSON.parse(parsedValue.head),
-      message: JSON.parse(parsedValue.message),
+      head,
+      message: (message: any),
       signature: parsedValue.sig,
       signedPayload: blake32Hash(`${blake32Hash(parsedValue.head)}${blake32Hash(parsedValue.message)}`)
     })
@@ -140,35 +194,41 @@ export class GIMessage {
     }
     // perform basic sanity check
     const type = this.opType()
-    switch (type) {
-      case GIMessage.OP_CONTRACT:
-        if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
-        break
-      case GIMessage.OP_KEY_SHARE:
-      case GIMessage.OP_KEY_REQUEST:
-      case GIMessage.OP_KEY_REQUEST_SEEN:
-      case GIMessage.OP_ACTION_ENCRYPTED:
-      case GIMessage.OP_KEY_ADD:
-      case GIMessage.OP_KEY_DEL:
+    let atomicTopLevel = true
+    const validate = (type) => {
+      switch (type) {
+        case GIMessage.OP_CONTRACT:
+          if (!this.isFirstMessage() || !atomicTopLevel) throw new Error('OP_CONTRACT: must be first message')
+          break
+        case GIMessage.OP_ATOMIC:
+          if (!atomicTopLevel) {
+            throw new Error('OP_ATOMIC not allowed inside of OP_ATOMIC')
+          }
+          if (!Array.isArray(message)) {
+            throw new TypeError('OP_ATOMIC must be of an array type')
+          }
+          atomicTopLevel = false
+          console.log({ message })
+          message.forEach(([t]) => validate(t))
+          break
+        case GIMessage.OP_KEY_SHARE:
+        case GIMessage.OP_KEY_REQUEST:
+        case GIMessage.OP_KEY_REQUEST_SEEN:
+        case GIMessage.OP_ACTION_ENCRYPTED:
+        case GIMessage.OP_KEY_ADD:
+        case GIMessage.OP_KEY_DEL:
+        case GIMessage.OP_KEY_UPDATE:
         // nothing for now
-        break
-      default:
-        throw new Error(`unsupported op: ${type}`)
+          break
+        default:
+          throw new Error(`unsupported op: ${type}`)
+      }
     }
+    validate(type)
   }
 
   decryptedValue (fn?: Function): any {
-    if (!this._decrypted) {
-      if (this.opType() === GIMessage.OP_ACTION_ENCRYPTED && typeof fn !== 'function') {
-        throw new Error('Decryption function must be given')
-      }
-      this._decrypted = (
-        this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn
-          ? fn(this.opValue())
-          : this.opValue()
-      )
-    }
-    return this._decrypted
+    return Object(this.opValue()).valueOf()
   }
 
   head (): Object { return this._head }
@@ -233,7 +293,7 @@ function defaultSignatureFn (data: string) {
   throw new Error('Attempted to call defaultSignatureFn. Specify a signature function')
 }
 
-function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgParams {
+function messageToParams (head: Object, message: GIOpValue, decryptedValue: GIOpValue, signatureFn: Function): GIMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using deserialize().
@@ -243,7 +303,6 @@ function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgP
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-  const message = op[1]
   const headJSON = JSON.stringify(head)
   const messageJSON = JSON.stringify(message)
   const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
@@ -258,7 +317,7 @@ function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgP
     head,
     message,
     // provide the decrypted value so that pre/postpublish hooks have access to it if needed
-    decryptedValue: op.length === 3 ? op[2] : op[1],
+    decryptedValue,
     signature,
     signedPayload
   }

@@ -1,38 +1,40 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
-  INVITE_INITIAL_CREATOR,
-  INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME,
-  CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
-  PROPOSAL_INVITE_MEMBER,
-  PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_GROUP_SETTING_CHANGE,
-  PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC,
-  STATUS_OPEN,
+  CHATROOM_TYPES,
+  INVITE_EXPIRES_IN_DAYS,
+  INVITE_INITIAL_CREATOR,
+  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
+  PROPOSAL_GENERIC,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_VARIANTS,
-  MAX_GROUP_MEMBER_COUNT
+  STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { findKeyIdByName, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
-import { encryptedAction } from './utils.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
+import type { Key } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
+import { encryptedAction } from './utils.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -131,9 +133,9 @@ export default (sbp('sbp/selectors/register', {
     const inviteKeyP = serializeKey(inviteKey, false)
 
     // Secret keys to be stored encrypted in the contract
-    const CSKs = encrypt(CEK, serializeKey(CSK, true))
-    const CEKs = encrypt(CEK, serializeKey(CEK, true))
-    const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+    const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
+    const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
+    const inviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(inviteKey, true))
 
     const rootState = sbp('state/vuex/state')
 
@@ -175,9 +177,9 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 1,
             permissions: '*',
+            allowedActions: '*',
             meta: {
               private: {
-                keyId: CEKid,
                 content: CSKs,
                 shareable: true
               }
@@ -190,9 +192,9 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            allowedActions: '*',
             meta: {
               private: {
-                keyId: CEKid,
                 content: CEKs,
                 shareable: true
               }
@@ -209,7 +211,6 @@ export default (sbp('sbp/selectors/register', {
               quantity: 60,
               expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               private: {
-                keyId: CEKid,
                 content: inviteKeyS
               }
             },
@@ -289,21 +290,42 @@ export default (sbp('sbp/selectors/register', {
       // This is a special case, as normally these keys would be shared using
       // invites
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: userID,
-        destinationContractName: 'gi.contracts/identity',
-        contractID,
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        subjectContractID: contractID,
         keyIds: '*'
+      })
+
+      // Add the group's CSK to our identity contract so that we can receive
+      // key rotation updates and DMs.
+      await sbp('chelonia/out/keyAdd', {
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        data: [{
+          foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent('csk')}`,
+          id: CSKid,
+          data: CSKp,
+          // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+          // that a chatroom has just been created
+          permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
+          allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+          purpose: ['sig'],
+          ringLevel: Number.MAX_SAFE_INTEGER,
+          name: `${contractID}/${CSKid}`
+        }],
+        signingKeyId: findKeyIdByName(rootState[userID], 'csk')
       })
 
       // Share our PEK with the group so that group members can see
       // our name and profile information
       const PEKid = findKeyIdByName(rootState[userID], 'pek')
+      const revokedPEKids = findRevokedKeyIdsByName(rootState[userID], 'pek')
 
       PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: contractID,
-        destinationContractName: 'gi.contracts/group',
-        contractID: userID,
-        keyIds: [PEKid]
+        contractID: contractID,
+        contractName: 'gi.contracts/group',
+        subjectContractID: userID,
+        keyIds: [PEKid, ...revokedPEKids]
       })
 
       return message
@@ -335,7 +357,7 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
-    sbp('okTurtles.data/set', 'JOINING_GROUP', true)
+    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -418,7 +440,7 @@ export default (sbp('sbp/selectors/register', {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (!state.profiles?.[username]) {
+        if (!state.profiles?.[username] || state.profiles?.[username].departedDate) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           // Share our PEK with the group so that group members can see
@@ -426,9 +448,9 @@ export default (sbp('sbp/selectors/register', {
           const PEKid = findKeyIdByName(rootState[userID], 'pek')
 
           PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-            destinationContractID: params.contractID,
-            destinationContractName: 'gi.contracts/group',
-            contractID: userID,
+            contractID: params.contractID,
+            contractName: 'gi.contracts/group',
+            subjectContractID: userID,
             keyIds: [PEKid]
           })
 
@@ -440,6 +462,24 @@ export default (sbp('sbp/selectors/register', {
               prepublish: params.hooks?.prepublish,
               postpublish: null
             }
+          })
+
+          const CSKid = findKeyIdByName(rootState[params.contractID], 'csk')
+
+          // Add the group's CSK to our identity contract so that we can receive
+          // key rotation updates and DMs.
+          await sbp('chelonia/out/keyUpdate', {
+            contractID: userID,
+            contractName: 'gi.contracts/identity',
+            data: [{
+              name: rootState[userID]._vm.authorizedKeys[CSKid].name,
+              oldKeyId: CSKid,
+              // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+              // that a chatroom has just been created
+              permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
+              allowedActions: ['gi.contracts/identity/joinDirectMessage']
+            }],
+            signingKeyId: findKeyIdByName(rootState[userID], 'csk')
           })
 
           if (generalChatRoomId) {
@@ -483,19 +523,20 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
+
+        sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
       // This could happen, for example, after logging in if we still haven't
       // received a response to the key request.
       } else {
-        console.info('Requested to join group but waiting for OP_KEY_SHARE. contractID=' + params.contractID)
+        console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     } finally {
       saveLoginState('joining', params.contractID)
-      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
@@ -507,6 +548,32 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
+  'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+
+    // $FlowFixMe
+    return Promise.all(Object.values(state.profiles).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
+      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+      if (!CEKid) {
+        console.warn(`Unable to share rotated keys for ${contractID} with ${p.contractID}: Missing CEK`)
+        return Promise.resolve()
+      }
+      return {
+        contractID,
+        foreignContractID: p.contractID,
+        // $FlowFixMe
+        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+          id: newId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
+            }
+          }
+        }))
+      }
+    }))
+  },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
     const contractState = rootState[params.contractID]
@@ -517,23 +584,39 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let joinKey
+    let csk
+    let cek
 
-    // For 'public' and 'group' chatrooms, use the CSK as the join key
+    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const joinKeyId = findKeyIdByName(contractState, 'csk')
-      joinKey = {
-        id: contractState._vm.authorizedKeys[joinKeyId],
+      const cskId = findKeyIdByName(contractState, 'csk')
+      const cekId = findKeyIdByName(contractState, 'cek')
+
+      csk = {
+        id: cskId,
         foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
-        data: contractState._vm.authorizedKeys[joinKeyId].data
+        data: contractState._vm.authorizedKeys[cskId].data
+      }
+
+      cek = {
+        id: cekId,
+        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+        data: contractState._vm.authorizedKeys[cekId].data
       }
     }
 
     const message = await sbp('gi.actions/chatroom/create', {
-      data: params.data,
+      data: {
+        ...params.data,
+        attributes: {
+          ...params.data?.attributes,
+          groupContractID: params.contractID
+        }
+      },
       options: {
         ...params.options,
-        joinKey
+        csk,
+        cek
       },
       hooks: {
         prepublish: params.hooks?.prepublish,
@@ -542,21 +625,14 @@ export default (sbp('sbp/selectors/register', {
     })
 
     // When creating a public chatroom, that chatroom's secret keys are shared
-    // with the group. This allows all group members to be able to join the
-    // chatroom without any extra steps, and, in particular, it enables joining
-    // the #General chatroom upon joining a group, in a single step.
-    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
+    // with the group (i.e., they are literally the same keys, using the
+    // foreignKey functionality). However, private chatrooms keep separate keys
+    // which must be shared using OP_KEY_SHARE
+    if (![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: params.contractID,
-        destinationContractName: 'gi.contracts/group',
-        contractID: message.contractID(),
-        keyIds: '*'
-      })
-    } else {
-      await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: userID,
-        destinationContractName: 'gi.contracts/identity',
-        contractID: message.contractID(),
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        subjectContractID: message.contractID(),
         keyIds: '*'
       })
     }
@@ -587,13 +663,13 @@ export default (sbp('sbp/selectors/register', {
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
-    if (username !== me) {
+    if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: rootGetters.groupProfile(username).contractID,
-        destinationContractName: 'gi.contracts/identity',
+        contractID: rootGetters.groupProfile(username).contractID,
+        contractName: 'gi.contracts/identity',
         originatingContractID: params.contractID,
         originatingContractName: 'gi.contracts/group',
-        contractID: params.data.chatRoomID,
+        subjectContractID: params.data.chatRoomID,
         keyIds: '*'
       })
     }
@@ -677,9 +753,9 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/group/removeMember',
     (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
-    async function (sendMessage, params) {
+    async function (sendMessage, params, signingKeyId) {
       await leaveAllChatRooms(params.contractID, params.data.member)
-      return sendMessage({
+      await sendMessage({
         ...omit(params, ['options', 'action'])
       })
     }),
