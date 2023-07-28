@@ -725,6 +725,13 @@ export default ({
       this.setMessageEventListener({ to, from })
     }, 250)
   },
+  provide () {
+    return {
+      chatMessageUtils: {
+        scrollToMessage: this.scrollToMessage
+      }
+    }
+  },
   watch: {
     'summary' (to, from) {
       const toChatRoomId = to.chatRoomId
