@@ -649,7 +649,7 @@ export default (sbp('sbp/selectors/register', {
     if (processOp) {
       opFns[opT](opV)
       config.postOp?.(message, state)
-      config[`postOp_${opT}`]?.(message, state)
+      config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
   },
   'chelonia/private/in/enqueueHandleEvent': async function (event: GIMessage) {

@@ -611,17 +611,10 @@ export default (sbp('sbp/selectors/register', {
     })
 
     // When creating a public chatroom, that chatroom's secret keys are shared
-    // with the group. This allows all group members to be able to join the
-    // chatroom without any extra steps, and, in particular, it enables joining
-    // the #General chatroom upon joining a group, in a single step.
-    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      /* await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: params.contractID,
-        contractName: 'gi.contracts/group',
-        subjectCntractID: message.contractID(),
-        keyIds: '*'
-      }) */
-    } else {
+    // with the group (i.e., they are literally the same keys, using the
+    // foreignKey functionality). However, private chatrooms keep separate keys
+    // which must be shared using OP_KEY_SHARE
+    if (![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: userID,
         contractName: 'gi.contracts/identity',
