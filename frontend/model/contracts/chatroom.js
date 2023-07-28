@@ -196,7 +196,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        Vue.set(state.users, username, { contractID: rootGetters.ourContactProfiles[username], joinedDate: meta.createdDate })
+        Vue.set(state.users, username, { contractID: rootGetters.ourContactProfiles[username].contractID, joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
         const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
