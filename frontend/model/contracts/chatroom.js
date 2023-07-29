@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, string } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -16,7 +16,8 @@ import {
   MESSAGE_NOTIFICATIONS,
   MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
-  MESSAGE_TYPES
+  MESSAGE_TYPES,
+  POLL_STATUS
 } from './shared/constants.js'
 import { createMessage, findMessageIdx, leaveChatRoom, makeMentionFromUsername } from './shared/functions.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
@@ -522,6 +523,121 @@ sbp('chelonia/defineContract', {
           } else {
             Vue.delete(state.messages[msgIndex], 'emoticons')
           }
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
+      }
+    },
+    'gi.contracts/chatroom/voteOnPoll': {
+      validate: objectOf({
+        hash: string,
+        votes: arrayOf(string),
+        votesAsString: string
+      }),
+      process ({ data, meta, hash, id }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const myVotes = data.votes
+          const pollData = state.messages[msgIndex].pollData
+          const optsCopy = cloneDeep(pollData.options)
+          const votedOptNames = []
+
+          myVotes.forEach(optId => {
+            const foundOpt = optsCopy.find(x => x.id === optId)
+
+            if (foundOpt) {
+              foundOpt.voted.push(meta.username)
+              votedOptNames.push(`"${foundOpt.value}"`)
+            }
+          })
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+        }
+
+        // create & add a notification-message for user having voted.
+        const notificationData = createNotificationData(
+          MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
+          { votedOptions: data.votesAsString }
+        )
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        state.messages.push(newMessage)
+      },
+      sideEffect ({ contractID, hash, meta }) {
+        emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      }
+    },
+    'gi.contracts/chatroom/changeVoteOnPoll': {
+      validate: objectOf({
+        hash: string,
+        votes: arrayOf(string),
+        votesAsString: string
+      }),
+      process ({ data, meta, hash, id }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const me = meta.username
+          const myUpdatedVotes = data.votes
+          const pollData = state.messages[msgIndex].pollData
+          const optsCopy = cloneDeep(pollData.options)
+          const votedOptNames = []
+
+          // remove all the previous votes of the user before update.
+          optsCopy.forEach(opt => {
+            opt.voted = opt.voted.filter(votername => votername !== me)
+          })
+
+          myUpdatedVotes.forEach(optId => {
+            const foundOpt = optsCopy.find(x => x.id === optId)
+
+            if (foundOpt) {
+              foundOpt.voted.push(me)
+              votedOptNames.push(`"${foundOpt.value}"`)
+            }
+          })
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+        }
+
+        // create & add a notification-message for user having update his/her votes.
+        const notificationData = createNotificationData(
+          MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
+          { votedOptions: data.votesAsString }
+        )
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        state.messages.push(newMessage)
+      },
+      sideEffect ({ contractID, hash, meta }) {
+        emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      }
+    },
+    'gi.contracts/chatroom/closePoll': {
+      validate: objectOf({
+        hash: string
+      }),
+      process ({ data }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const pollData = state.messages[msgIndex].pollData
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, status: POLL_STATUS.CLOSED })
         }
       },
       sideEffect ({ contractID, hash }) {
