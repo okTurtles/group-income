@@ -273,7 +273,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   // When recreateEvent is called we may already be in a queued event, so we
   // call syncContract directly instead of sync
   await sbp('chelonia/contract/sync', contractID)
-  const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
+  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID)
   const head = entry.head()
 
   const [opT, opV] = entry.op()
@@ -315,7 +315,9 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
     newOpV = recreateOperation(opT, opV)
   }
 
-  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD }, signatureFn)
+  if (!newOpV) return
+
+  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD, height: previousHeight + 1 }, signatureFn)
 
   return entry
 }

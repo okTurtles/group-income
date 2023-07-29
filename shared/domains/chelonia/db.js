@@ -14,6 +14,8 @@ const getContractIdFromLogHead = (key: string): ?string => {
 }
 const getLogHead = (contractID: string): string => `${headPrefix}${contractID}`
 
+type HEADInfo = { HEAD: string; height: number }
+
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
   if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
@@ -54,19 +56,26 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
-      'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
+      'chelonia/db/get': function (key: string): Promise<HEADInfo | Buffer | string | void> {
         const id = getContractIdFromLogHead(key)
-        const value = id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined
+        if (!id) return Promise.resolve()
+        const state = sbp(this.config.stateSelector).contracts[id]
+        const value = (state
+          ? {
+              HEAD: state.HEAD,
+              height: state.height
+            }
+          : undefined)
         return Promise.resolve(value)
       },
-      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
+      'chelonia/db/set': function (key: string, value: HEADInfo | Buffer | string): Promise<Error | void> {
         return Promise.resolve()
       },
       'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
       // eslint-disable-next-line require-await
-      'chelonia/db/get': async function (prefixableKey: string): Promise<Buffer | Error | string | void> {
+      'chelonia/db/get': async function (prefixableKey: string): Promise<HEADInfo | Buffer | Error | string | void> {
         const [prefix, key] = parsePrefixableKey(prefixableKey)
         const value = sbp('okTurtles.data/get', key)
         if (value === undefined) {
@@ -87,7 +96,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
-  'chelonia/db/latestHash': function (contractID: string): Promise<string | void> {
+  'chelonia/db/latestHEADinfo': function (contractID: string): Promise<HEADInfo | void> {
     return sbp('chelonia/db/get', getLogHead(contractID))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
@@ -109,19 +118,33 @@ export default (sbp('sbp/selectors/register', {
   // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
   'chelonia/private/db/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
-      const { previousHEAD } = entry.head()
+      const { previousHEAD: entryPreviousHEAD, height: entryHeight } = entry.head()
       const contractID: string = entry.contractID()
       if (await sbp('chelonia/db/get', entry.hash())) {
         console.warn(`[chelonia.db] entry exists: ${entry.hash()}`)
         return entry.hash()
       }
-      const HEAD = await sbp('chelonia/db/latestHash', contractID)
-      if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
-        console.error(`[chelonia.db] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
-        throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}. Expected ${HEAD} for contractID: ${contractID}`)
+      const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+      if (!entry.isFirstMessage()) {
+        const { HEAD: contractHEAD, height: contractHeight } = HEADinfo
+        if (entryPreviousHEAD !== contractHEAD) {
+          console.error(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)
+          throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${entryPreviousHEAD}. Expected ${contractHEAD} for contractID: ${contractID}`)
+        } else if (!Number.isSafeInteger(entryHeight) || entryHeight !== (contractHeight + 1)) {
+          console.error(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)
+          throw new ChelErrorDBBadPreviousHEAD(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)
+        }
+      } else {
+        if (HEADinfo) {
+          console.error(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: <null> for contractID: ${contractID}`)
+          throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${entryPreviousHEAD}. Expected <null> for contractID: ${contractID}`)
+        } else if (entryHeight !== 0) {
+          console.error(`[chelonia.db] bad height: ${entryHeight}! Expected: 0 for contractID: ${contractID}`)
+          throw new ChelErrorDBBadPreviousHEAD(`[chelonia.db] bad height: ${entryHeight}! Expected: 0 for contractID: ${contractID}`)
+        }
       }
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
-      await sbp('chelonia/db/set', getLogHead(contractID), entry.hash())
+      await sbp('chelonia/db/set', getLogHead(contractID), { HEAD: entry.hash(), height: entry.height() })
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       return entry.hash()
     } catch (e) {
@@ -133,7 +156,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/db/lastEntry': async function (contractID: string): Promise<GIMessage> {
     try {
-      const hash = await sbp('chelonia/db/latestHash', contractID)
+      const { HEAD: hash } = await sbp('chelonia/db/latestHEADinfo', contractID)
       if (!hash) throw new Error(`contract ${contractID} has no latest hash!`)
       return sbp('chelonia/db/getEntry', hash)
     } catch (e) {

@@ -448,7 +448,7 @@ export default ({
         }
       }
       const messageHashToScroll = this.currentChatRoomScrollPosition || unreadPosition
-      const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', this.currentChatRoomId)
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()

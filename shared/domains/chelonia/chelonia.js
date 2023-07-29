@@ -622,10 +622,10 @@ export default (sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+  'chelonia/out/latestHEADInfo': function (contractID: string) {
+    return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store'
-    }).then(handleFetchResult('text'))
+    }).then(handleFetchResult('json'))
   },
   'chelonia/out/eventsBefore': async function (before: string, limit: number) {
     if (limit <= 0) {
@@ -708,6 +708,7 @@ export default (sbp('sbp/selectors/register', {
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
       previousHEAD: null,
+      height: 0,
       op: [
         GIMessage.OP_CONTRACT,
         payload
@@ -761,7 +762,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
 
-    const previousHEAD = atomic ? contractID : await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
 
     const payload = (data: GIOpKeyShare)
 
@@ -770,6 +771,7 @@ export default (sbp('sbp/selectors/register', {
       contractID: contractID,
       originatingContractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_SHARE,
         payload
@@ -794,13 +796,14 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
-    const previousHEAD = atomic ? contractID : await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyAdd)
     validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_ADD,
         payload
@@ -823,13 +826,14 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
-    const previousHEAD = atomic ? contractID : await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyDel)
     validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_DEL,
         payload
@@ -852,13 +856,14 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
-    const previousHEAD = atomic ? contractID : await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyUpdate)
     validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_UPDATE,
         payload
@@ -888,7 +893,7 @@ export default (sbp('sbp/selectors/register', {
     ])
     if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
-    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const outerKeyId = keyId(signingKey)
     const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys?.[innerSigningKeyId]
     const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
@@ -906,6 +911,7 @@ export default (sbp('sbp/selectors/register', {
       originatingContractID,
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_REQUEST,
         payload
@@ -959,12 +965,13 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
-    const previousHEAD = atomic ? contractID : await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyRequestSeen)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
     let message = GIMessage.createV1_0({
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_REQUEST_SEEN,
         payload
@@ -986,7 +993,7 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
-    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (await Promise.all(data.map(([selector, opParams]) => {
       if (!['chelonia/out/actionEncrypted', 'chelonia/out/actionUnencrypted', 'chelonia/out/keyAdd', 'chelonia/out/keyDel', 'chelonia/out/keyUpdate', 'chelonia/out/keyRequestResponse', 'chelonia/out/keyShare'].includes(selector)) {
         throw new Error('Selector not allowed in OP_ATOMIC: ' + selector)
@@ -999,6 +1006,7 @@ export default (sbp('sbp/selectors/register', {
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
+      height: previousHeight + 1,
       op: [
         GIMessage.OP_ATOMIC,
         (payload: any)
@@ -1038,7 +1046,7 @@ async function outEncryptedOrUnencryptedAction (
   const manifestHash = this.config.contracts.manifests[contractName]
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
-  const previousHEAD = atomic ? contractID : await sbp('chelonia/out/latestHash', contractID)
+  const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
   const meta = await contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
@@ -1054,6 +1062,7 @@ async function outEncryptedOrUnencryptedAction (
   let message = GIMessage.createV1_0({
     contractID,
     previousHEAD,
+    height: previousHeight + 1,
     op: [
       opType,
       payload

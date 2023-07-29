@@ -126,6 +126,7 @@ export class GIMessage {
       // originatingContractID is the one sending the message to contractID.
       originatingContractID,
       previousHEAD = null,
+      height = 0,
       op,
       manifest,
       signatureFn = defaultSignatureFn
@@ -133,6 +134,7 @@ export class GIMessage {
       contractID: string | null,
       originatingContractID?: string,
       previousHEAD?: string | null,
+      height: number,
       op: GIOp,
       manifest: string,
       signatureFn?: Function
@@ -141,6 +143,7 @@ export class GIMessage {
     const head = {
       version: '1.0.0',
       previousHEAD,
+      height,
       contractID,
       originatingContractID,
       op: op[0],
@@ -273,6 +276,8 @@ export class GIMessage {
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }
+
+  height (): number { return this._head.height }
 
   id (): string {
     // NOTE: nonce can be used as GIMessage identifier

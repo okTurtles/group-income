@@ -252,10 +252,10 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+  'chelonia/private/out/latestHEADinfo': function (contractID: string) {
+    return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store'
-    }).then(handleFetchResult('text'))
+    }).then(handleFetchResult('json'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
@@ -663,7 +663,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
-    const latest = await sbp('chelonia/out/latestHash', contractID)
+    const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
@@ -867,6 +867,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractID = message.contractID()
     const hash = message.hash()
+    const height = message.height()
     const { preHandleEvent, postHandleEvent, handleEventError } = this.config.hooks
     let processingErrored = false
     // Errors in mutations result in ignored messages
@@ -910,6 +911,7 @@ export default (sbp('sbp/selectors/register', {
       } */
       if (state.contracts[contractID]) {
         state.contracts[contractID].HEAD = hash
+        state.contracts[contractID].height = height
       }
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
@@ -990,7 +992,7 @@ const handleEvent = {
       }
       console.debug(`contract ${type} registered for ${contractID}`)
       if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
-      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
+      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
       // we've successfully received it back, so remove it from expectation pending
       const index = state.pending.indexOf(contractID)
       index !== -1 && state.pending.splice(index, 1)
