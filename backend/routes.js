@@ -52,7 +52,7 @@ route.POST('/event', {
         const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
-          'shelter-headinfo-head': HEADinfo.head,
+          'shelter-headinfo-head': HEADinfo.HEAD,
           'shelter-headinfo-height': HEADinfo.height
         })
         return r
