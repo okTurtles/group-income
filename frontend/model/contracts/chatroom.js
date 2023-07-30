@@ -611,7 +611,7 @@ sbp('chelonia/defineContract', {
           MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
           {
             votedOptions: data.votesAsString,
-            pollMessageHash: data.dash
+            pollMessageHash: data.hash
           }
         )
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
