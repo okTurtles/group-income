@@ -49,6 +49,7 @@
           :ref='message.hash'
           :key='message.id'
           :messageId='message.id'
+          :messageHash='message.hash'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'

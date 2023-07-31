@@ -76,7 +76,8 @@
     UPDATE_DESCRIPTION: "update-description",
     UPDATE_NAME: "update-name",
     DELETE_CHANNEL: "delete-channel",
-    VOTE: "vote"
+    VOTE_ON_POLL: "vote-on-poll",
+    CHANGE_VOTE_ON_POLL: "change-vote-on-poll"
   };
   var PROPOSAL_VARIANTS = {
     CREATED: "created",
@@ -92,8 +93,7 @@
   };
   var POLL_STATUS = {
     ACTIVE: "active",
-    CLOSED: "closed",
-    EXPIRED: "expired"
+    CLOSED: "closed"
   };
 
   // frontend/model/contracts/misc/flowTyper.js
@@ -854,6 +854,96 @@ ${this.getErrorInfo()}`;
             } else {
               import_common2.Vue.delete(state.messages[msgIndex], "emoticons");
             }
+          }
+        },
+        sideEffect({ contractID, hash }) {
+          emitMessageEvent({ contractID, hash });
+        }
+      },
+      "gi.contracts/chatroom/voteOnPoll": {
+        validate: objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        }),
+        process({ data, meta, hash, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const myVotes = data.votes;
+            const pollData = state.messages[msgIndex].pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            const votedOptNames = [];
+            myVotes.forEach((optId) => {
+              const foundOpt = optsCopy.find((x) => x.id === optId);
+              if (foundOpt) {
+                foundOpt.voted.push(meta.username);
+                votedOptNames.push(`"${foundOpt.value}"`);
+              }
+            });
+            import_common2.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash, meta }) {
+          emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
+        }
+      },
+      "gi.contracts/chatroom/changeVoteOnPoll": {
+        validate: objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        }),
+        process({ data, meta, hash, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const me = meta.username;
+            const myUpdatedVotes = data.votes;
+            const pollData = state.messages[msgIndex].pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            const votedOptNames = [];
+            optsCopy.forEach((opt) => {
+              opt.voted = opt.voted.filter((votername) => votername !== me);
+            });
+            myUpdatedVotes.forEach((optId) => {
+              const foundOpt = optsCopy.find((x) => x.id === optId);
+              if (foundOpt) {
+                foundOpt.voted.push(me);
+                votedOptNames.push(`"${foundOpt.value}"`);
+              }
+            });
+            import_common2.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash, meta }) {
+          emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
+        }
+      },
+      "gi.contracts/chatroom/closePoll": {
+        validate: objectOf({
+          hash: string
+        }),
+        process({ data }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const pollData = state.messages[msgIndex].pollData;
+            import_common2.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, status: POLL_STATUS.CLOSED });
           }
         },
         sideEffect({ contractID, hash }) {
