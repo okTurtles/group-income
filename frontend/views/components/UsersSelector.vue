@@ -32,7 +32,7 @@ form.c-search-form(@submit.prevent='')
         )
 
   .buttons.is-end.c-button-container(v-if='usernames.length')
-    i18n.is-success(
+    i18n.is-success.c-create-btn(
       tag='button'
       type='button'
       @click='$emit("submit")'
@@ -129,6 +129,29 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-search-form {
+  display: block;
+
+  @include tablet {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.c-button-container {
+  margin-top: 1rem;
+
+  @include tablet {
+    margin-top: 0;
+
+    .c-create-btn {
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      height: 100%;
+    }
+  }
+}
+
 .c-search {
   .addons {
     display: flex;
@@ -199,9 +222,5 @@ export default ({
       outline: none;
     }
   }
-}
-
-.c-button-container {
-  margin-top: 1rem;
 }
 </style>
