@@ -238,7 +238,6 @@ sbp('chelonia/defineContract', {
           }))
         } else {
           if (!rootGetters.ourContactProfiles[username]) {
-            // TODO
             await sbp('namespace/lookup', username).then(
               (contractID) => contractID && sbp('chelonia/contract/sync', contractID)
             )
