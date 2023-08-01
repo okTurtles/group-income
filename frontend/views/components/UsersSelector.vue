@@ -32,7 +32,7 @@ form.c-search-form(@submit.prevent='')
         )
 
   .buttons.is-end.c-button-container(v-if='usernames.length')
-    i18n.is-primary(
+    i18n.is-success(
       tag='button'
       type='button'
       @click='$emit("submit")'
@@ -137,6 +137,7 @@ export default ({
   }
 
   .input {
+    position: relative;
     padding: 0 0 5px 2.5rem;
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -161,7 +162,7 @@ export default ({
     .profile {
       cursor: default;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       border-radius: 3px;
       background-color: $general_1;
       line-height: 1;
@@ -173,8 +174,12 @@ export default ({
       }
 
       .c-name {
+        display: inline-flex;
+        align-items: center;
         margin-left: 0.5rem;
+        min-height: 1.5rem;
         color: $text_0;
+        word-break: break-word;
       }
 
       .button {
