@@ -170,9 +170,14 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-message-poll:hover {
-  ::v-deep .c-option-bar {
-    background-color: $general_1;
+.c-message-poll {
+  max-height: unset;
+  height: max-content;
+
+  &:hover {
+    ::v-deep .c-option-bar {
+      background-color: $general_1;
+    }
   }
 }
 
