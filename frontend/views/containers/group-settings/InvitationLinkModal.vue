@@ -32,10 +32,13 @@ export default ({
     ...mapGetters([
       'currentGroupState'
     ]),
-    welcomeInviteSecret () {
+    welcomeInviteId () {
       const invites = this.currentGroupState.invites
       const initialInvite = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
-      const key = this.currentGroupState._volatile.keys[initialInvite]
+      return initialInvite
+    },
+    welcomeInviteSecret () {
+      const key = this.currentGroupState._volatile.keys[this.welcomeInviteId]
       if (typeof key !== 'string') {
         return serializeKey(key, true)
       } else {
@@ -46,7 +49,12 @@ export default ({
       return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, this.welcomeInviteSecret)
     },
     expireDate () {
-      const expireDate = this.currentGroupState.invites[this.welcomeInviteSecret].expires
+      let expireDate;
+      try {
+        expireDate = this.currentGroupState._vm.authorizedKeys[this.welcomeInviteId].meta.expires
+      } catch (e) {
+        console.warning('An error occurred trying to get the invite expiration date', e)
+      }
       return humanDate(expireDate, { month: 'long', day: 'numeric' })
     }
   },
