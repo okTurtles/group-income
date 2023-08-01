@@ -30,6 +30,13 @@ form.c-search-form(@submit.prevent='')
           @keydown='onHandleKeyDown'
           @keyup='onHandleKeyUp'
         )
+
+  .buttons.is-end.c-button-container(v-if='usernames.length')
+    i18n.is-primary(
+      tag='button'
+      type='button'
+      @click='$emit("submit")'
+    ) Create
 </template>
 
 <script>
@@ -63,7 +70,8 @@ export default ({
     return {
       // NOTE: v-model can't be used here since it's only for limited elements; input, select, textarea
       //       https://vuejs.org/api/built-in-directives.html#v-model
-      value: ''
+      value: '',
+      submitting: false
     }
   },
   computed: {
@@ -186,5 +194,9 @@ export default ({
       outline: none;
     }
   }
+}
+
+.c-button-container {
+  margin-top: 1rem;
 }
 </style>
