@@ -31,10 +31,9 @@ function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   return value
 }
 
-function initGroupProfile (contractID: string, joinedDate: string) {
+function initGroupProfile (joinedDate: string) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
-    contractID,
     joinedDate,
     lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
@@ -554,7 +553,7 @@ sbp('chelonia/defineContract', {
           },
           streaks: initGroupStreaks(),
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
+            [meta.username]: initGroupProfile(meta.createdDate)
           },
           chatRooms: {},
           totalPledgeAmount: 0
@@ -997,7 +996,7 @@ sbp('chelonia/defineContract', {
         //       since we are making it possible for the same username to leave and
         //       rejoin the group. All of their past posts will be re-associated with
         //       them upon re-joining.
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -1018,7 +1017,10 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in profiles) {
             if (name !== loggedIn.username) {
-              await sbp('chelonia/contract/sync', profiles[name].contractID)
+              const contractID = await sbp('namespace/lookup', name)
+              if (contractID) {
+                await sbp('chelonia/contract/sync', contractID)
+              }
             }
           }
         } else {

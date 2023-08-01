@@ -553,26 +553,30 @@ export default (sbp('sbp/selectors/register', {
     const state = rootState[contractID]
 
     // $FlowFixMe
-    return Promise.all(Object.values(state.profiles).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
-      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
-      if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${p.contractID}: Missing CEK`)
-        return Promise.resolve()
-      }
-      return {
-        contractID,
-        foreignContractID: p.contractID,
-        // $FlowFixMe
-        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-          id: newId,
-          meta: {
-            private: {
-              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
-            }
+    return Promise.all(
+      Object.entries(state.profiles)
+        .filter(([_, p]) => (p: any).departedDate == null)
+        .map(async ([username]) => {
+          const pContractID = await sbp('namespace/lookup', username)
+          const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
+          if (!CEKid) {
+            console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
+            return Promise.resolve()
+          }
+          return {
+            contractID,
+            foreignContractID: pContractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
           }
         }))
-      }
-    }))
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')

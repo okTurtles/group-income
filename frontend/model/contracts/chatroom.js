@@ -189,7 +189,6 @@ sbp('chelonia/defineContract', {
         username: string // username of joining member
       }),
       process ({ data, meta, hash, id }, { state }) {
-        const rootGetters = sbp('state/vuex/getters')
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
@@ -197,7 +196,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        Vue.set(state.users, username, { contractID: rootGetters.ourContactProfiles[username].contractID, joinedDate: meta.createdDate })
+        Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
         const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -213,10 +212,13 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, contractID, hash, meta }, { state }) {
+      async sideEffect ({ data, contractID, hash, meta }, { state }) {
+        const rootGetters = sbp('state/vuex/getters')
+        const { username } = data
+
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-        if (data.username === sbp('state/vuex/state').loggedIn.username) {
+        if (username === sbp('state/vuex/state').loggedIn.username) {
           const { type, privacyLevel } = state.attributes
           const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
           if (isPrivateDM) {
@@ -226,6 +228,20 @@ sbp('chelonia/defineContract', {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
             })
+          }
+          await Promise.all(Object.keys(state.users).filter((username) => {
+            return !rootGetters.ourContactProfiles[username]
+          }).map((username) => {
+            return sbp('namespace/lookup', username).then(
+              (contractID) => contractID && sbp('chelonia/contract/sync', contractID)
+            )
+          }))
+        } else {
+          if (!rootGetters.ourContactProfiles[username]) {
+            // TODO
+            await sbp('namespace/lookup', username).then(
+              (contractID) => contractID && sbp('chelonia/contract/sync', contractID)
+            )
           }
         }
       }

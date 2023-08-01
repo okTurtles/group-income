@@ -145,21 +145,22 @@ export default (sbp('sbp/selectors/register', {
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
     // $FlowFixMe
-    return Promise.all(Object.values(state.users).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
-      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+    return Promise.all(Object.keys(state.users).map(async (username) => {
+      const pContractID = await sbp('namespace/lookup', username)
+      const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
       if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${originatingContractID} with ${p.contractID}: Missing CEK`)
+        console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
         return Promise.resolve()
       }
       return {
         contractID,
-        foreignContractID: p.contractID,
+        foreignContractID: pContractID,
         // $FlowFixMe
         keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
           id: newId,
           meta: {
             private: {
-              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
+              content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
             }
           }
         }))
