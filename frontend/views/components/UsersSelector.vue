@@ -30,6 +30,13 @@ form.c-search-form(@submit.prevent='')
           @keydown='onHandleKeyDown'
           @keyup='onHandleKeyUp'
         )
+
+  .buttons.is-end.c-button-container(v-if='usernames.length')
+    i18n.is-success.c-create-btn(
+      tag='button'
+      type='button'
+      @click='$emit("submit")'
+    ) Create
 </template>
 
 <script>
@@ -63,7 +70,8 @@ export default ({
     return {
       // NOTE: v-model can't be used here since it's only for limited elements; input, select, textarea
       //       https://vuejs.org/api/built-in-directives.html#v-model
-      value: ''
+      value: '',
+      submitting: false
     }
   },
   computed: {
@@ -121,6 +129,29 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-search-form {
+  display: block;
+
+  @include tablet {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.c-button-container {
+  margin-top: 1rem;
+
+  @include tablet {
+    margin-top: 0;
+
+    .c-create-btn {
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      height: 100%;
+    }
+  }
+}
+
 .c-search {
   .addons {
     display: flex;
@@ -129,6 +160,7 @@ export default ({
   }
 
   .input {
+    position: relative;
     padding: 0 0 5px 2.5rem;
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -153,7 +185,7 @@ export default ({
     .profile {
       cursor: default;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       border-radius: 3px;
       background-color: $general_1;
       line-height: 1;
@@ -165,8 +197,12 @@ export default ({
       }
 
       .c-name {
+        display: inline-flex;
+        align-items: center;
         margin-left: 0.5rem;
+        min-height: 1.5rem;
         color: $text_0;
+        word-break: break-word;
       }
 
       .button {

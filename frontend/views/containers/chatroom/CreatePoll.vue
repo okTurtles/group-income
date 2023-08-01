@@ -1,5 +1,8 @@
 <template lang="pug">
-.c-create-poll(:class='{ "is-active": ephemeral.isActive }' @click='onBackDropClick')
+.c-create-poll(:class='{ "is-active": ephemeral.isActive }'
+  @click='onBackDropClick'
+  @keyup.esc='close'
+)
   .c-create-poll-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
     header.c-header
       i18n.is-title-2.c-popup-title(tag='h2') New poll
@@ -63,7 +66,7 @@
               ) {{ n }}
 
         label.checkbox
-          input.input(type='checkbox' v-model='form.allowMultipleChoice')
+          input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
 
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
@@ -160,10 +163,7 @@ export default {
       }
     },
     onBackDropClick (e) {
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-create-poll-wrapper')
-      const blurredByDurationSelect = document.activeElement && document.activeElement.matches('.c-duration-select')
-
-      if (!element && !blurredByDurationSelect) {
+      if (e.target.matches('.c-create-poll')) {
         this.close()
       }
     },
