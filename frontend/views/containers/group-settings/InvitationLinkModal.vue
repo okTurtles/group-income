@@ -49,7 +49,7 @@ export default ({
       return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, this.welcomeInviteSecret)
     },
     expireDate () {
-      let expireDate;
+      let expireDate
       try {
         expireDate = this.currentGroupState._vm.authorizedKeys[this.welcomeInviteId].meta.expires
       } catch (e) {
