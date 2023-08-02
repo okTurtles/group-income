@@ -556,7 +556,10 @@ sbp('chelonia/defineContract', {
         // create & add a notification-message for user having voted.
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-          { votedOptions: data.votesAsString }
+          {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          }
         )
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
@@ -606,7 +609,10 @@ sbp('chelonia/defineContract', {
         // create & add a notification-message for user having update his/her votes.
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
-          { votedOptions: data.votesAsString }
+          {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          }
         )
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
