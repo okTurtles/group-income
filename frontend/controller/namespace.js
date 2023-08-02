@@ -22,7 +22,10 @@ sbp('sbp/selectors/register', {
     // TODO: should `name` be encodeURI'd?
     const cache = sbp('state/vuex/state').namespaceLookups
     if (name in cache) {
-      return cache[name]
+      // Wrapping in a Promise to return a consistent type across all execution
+      // paths (next return is a Promise)
+      // This way we can call .then() on the result
+      return Promise.resolve(cache[name])
     }
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
       if (!r.ok) {

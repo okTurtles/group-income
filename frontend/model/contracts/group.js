@@ -1007,6 +1007,7 @@ sbp('chelonia/defineContract', {
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       async sideEffect ({ meta, contractID }, { state }) {
+        const rootGetters = sbp('state/vuex/getters')
         const { loggedIn } = sbp('state/vuex/state')
         const { profiles = {} } = state
 
@@ -1015,13 +1016,27 @@ sbp('chelonia/defineContract', {
         if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name in profiles) {
-            if (name !== loggedIn.username) {
-              const contractID = await sbp('namespace/lookup', name)
-              if (contractID) {
-                await sbp('chelonia/contract/sync', contractID)
-              }
-            }
+          const lookupResult = await Promise.allSettled(
+            Object.keys(profiles)
+              .filter((name) =>
+                !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
+              .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
+                if (!r) throw new Error('Cannot lookup username: ' + name)
+                return r
+              }))
+          )
+          const errors = lookupResult
+            .filter(({ status }) => status === 'rejected')
+            .map((r) => (r: any).reason)
+          await sbp('chelonia/contract/sync',
+            lookupResult
+              .filter(({ status }) => status === 'fulfilled')
+              .map((r) => (r: any).value)
+          ).catch(e => errors.push(e))
+          if (errors.length) {
+            const msg = `Encountered ${errors.length} errors while accepting invites`
+            console.error(msg, errors)
+            throw new Error(msg)
           }
         } else {
           const myProfile = profiles[loggedIn.username]

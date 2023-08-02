@@ -215,10 +215,11 @@ sbp('chelonia/defineContract', {
       async sideEffect ({ data, contractID, hash, meta }, { state }) {
         const rootGetters = sbp('state/vuex/getters')
         const { username } = data
+        const loggedIn = sbp('state/vuex/state').loggedIn
 
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-        if (username === sbp('state/vuex/state').loggedIn.username) {
+        if (username === loggedIn.username) {
           const { type, privacyLevel } = state.attributes
           const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
           if (isPrivateDM) {
@@ -229,18 +230,35 @@ sbp('chelonia/defineContract', {
               deletedDate: meta.createdDate
             })
           }
-          await Promise.all(Object.keys(state.users).filter((username) => {
-            return !rootGetters.ourContactProfiles[username]
-          }).map((username) => {
-            return sbp('namespace/lookup', username).then(
-              (contractID) => contractID && sbp('chelonia/contract/sync', contractID)
-            )
-          }))
+          const lookupResult = await Promise.allSettled(
+            Object.keys(state.users)
+              .filter((name) =>
+                !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
+              .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
+                if (!r) throw new Error('Cannot lookup username: ' + name)
+                return r
+              }))
+          )
+          const errors = lookupResult
+            .filter(({ status }) => status === 'rejected')
+            .map((r) => (r: any).reason)
+          await sbp('chelonia/contract/sync',
+            lookupResult
+              .filter(({ status }) => status === 'fulfilled')
+              .map((r) => (r: any).value)
+          ).catch(e => errors.push(e))
+          if (errors.length) {
+            const msg = `Encountered ${errors.length} errors while joining a chatroom`
+            console.error(msg, errors)
+            throw new Error(msg)
+          }
         } else {
           if (!rootGetters.ourContactProfiles[username]) {
-            await sbp('namespace/lookup', username).then(
-              (contractID) => contractID && sbp('chelonia/contract/sync', contractID)
-            )
+            const contractID = await sbp('namespace/lookup', username)
+            if (!contractID) {
+              throw new Error('Cannot lookup username: ' + username)
+            }
+            await sbp('chelonia/contract/sync', contractID)
           }
         }
       }
