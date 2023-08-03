@@ -8,11 +8,15 @@ import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './erro
 const encryptData = function (eKeyId: string, data: any) {
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
-  if ((this._vm?.revokedKeys?.[eKeyId]?.purpose.includes(
+  const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
+  if (!designatedKey?.purpose.includes(
     'enc'
-  ))) {
-    const name = (this._vm: any).revokedKeys[eKeyId].name
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v.name === name && v.purpose.includes('sig')): any)?.id
+  )) {
+    throw new Error(`Encryption key ID ${eKeyId} is missing or is missing encryption purpose`)
+  }
+  if (designatedKey._notAfterHeight !== undefined) {
+    const name = (this._vm: any).authorizedKeys[eKeyId].name
+    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('enc')): any)?.id
 
     if (!newKeyId) {
       throw new Error(`Encryption key ID ${eKeyId} has been revoked and no new key exists by the same name (${name})`)
@@ -21,11 +25,7 @@ const encryptData = function (eKeyId: string, data: any) {
     eKeyId = newKeyId
   }
 
-  const key = (this._vm?.authorizedKeys?.[eKeyId]?.purpose.includes(
-    'enc'
-  ))
-    ? this._vm?.authorizedKeys?.[eKeyId].data
-    : undefined
+  const key = this._vm?.authorizedKeys?.[eKeyId].data
 
   if (!key) {
     throw new Error(`Missing encryption key ${eKeyId}`)
@@ -41,7 +41,7 @@ const encryptData = function (eKeyId: string, data: any) {
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (allowRevokedKeys: boolean, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
+const decryptData = function (height: number, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -53,7 +53,7 @@ const decryptData = function (allowRevokedKeys: boolean, data: string, additiona
   }
 
   const [eKeyId, message] = deserializedData
-  // allowRevokedKeys is used to allow checking for revokedKeys as well as
+  // height as NaN is used to allow checking for revokedKeys as well as
   // authorizedKeys when decrypting data. This is normally inappropriate because
   // revoked keys should be considered compromised and not used for encrypting
   // new data
@@ -77,9 +77,10 @@ const decryptData = function (allowRevokedKeys: boolean, data: string, additiona
   // that OP_KEY_SHARE is meant to protect. Hence, this attack does not open up
   // any new attack vectors or venues that were not already available using
   // different means.
-  const key = ((this._vm?.authorizedKeys?.[eKeyId] ?? (allowRevokedKeys ? this._vm?.revokedKeys?.[eKeyId] : null))?.purpose.includes(
+  const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
+  const key = designatedKey && !(height > designatedKey._notAfterHeight) && !(height < designatedKey._notBeforeHeight) && designatedKey.purpose.includes(
     'enc'
-  ))
+  )
     ? this._volatile?.keys?.[eKeyId] || additionalKeys?.[eKeyId]
     : undefined
 
@@ -120,7 +121,9 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
       authorizedKeys: {
         [eKeyId]: {
           purpose: ['enc'],
-          data: serializeKey(key, false)
+          data: serializeKey(key, false),
+          _notBeforeHeight: 0,
+          _notAfterHeight: undefined
         }
       }
     }
@@ -138,7 +141,7 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
     : Object.assign(Object(data), returnProps)
 }
 
-export const encryptedIncomingData = (contractID: string, state: Object, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+export const encryptedIncomingData = (contractID: string, state: Object, data: string, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   const stringValueFn = () => data
   let decryptedValue
   const decryptedValueFn = () => {
@@ -146,7 +149,7 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(state || rootState?.[contractID], false, data, additionalKeys, validatorFn)
+    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys, validatorFn)
     return decryptedValue
   }
 
@@ -157,7 +160,7 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
   }
 }
 
-export const encryptedIncomingForeignData = (contractID: string, _: any, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+export const encryptedIncomingForeignData = (contractID: string, _0: any, data: string, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   const stringValueFn = () => data
   let decryptedValue
   const decryptedValueFn = () => {
@@ -165,7 +168,7 @@ export const encryptedIncomingForeignData = (contractID: string, _: any, data: s
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(rootState?.[contractID], true, data, additionalKeys, validatorFn)
+    decryptedValue = decryptData.call(rootState?.[contractID], NaN, data, additionalKeys, validatorFn)
     return decryptedValue
   }
 

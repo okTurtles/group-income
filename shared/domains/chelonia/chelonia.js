@@ -177,38 +177,6 @@ const rawSignatureFnBuilder = (key) => {
   }
 }
 
-/*
-TODO:
-  - Re-signing messages needs to use something other than cloneWith, since keys
-    that have been rotated / removed should not be included in the payload of
-    re-signed messages. The payload should filter out those keys that are no longer
-    authorized. If there are no keys left, it makes sense to omit the message
-    entirely
-    This concerns: OP_KEY_UPDATE, OP_KEY_DEL and OP_KEY_SHARE
-    For OP_KEY_SHARE, we need special steps since usually OP_KEY_SHARE is issued
-    before doing a key rotation; hence, we might need to reconsider the order of
-    operations, try a different approach or accept that some keys might be
-    unnecessarily shared
-  - When messages are 'cloned', it could also happen that the encryption key has
-    been rotated. Therefore, we need similar logic to that implemented for
-    signatures to re-encrypt messages when the key we're using has been rotated
-  - An alternate approach to what is being done is to refactor the existing logic
-    to use objects and rely on the '.toJSON()' or '.toString()' methods to insert
-    the correct signature or encrypt with the correct key
-
-    if (msg.op() === OP_KEY_UPDATE) {
-      newMsg.payload = msg.payload.filter((k) => {
-        return !!state._vm.authorizedKeys[k.oldKeyId]
-      })
-      // ...
-    } else if (msg.op() === OP_KEY_DEL) {
-      // ...
-    } else if (msg.op() === OP_KEY_SHARE) {
-      // ...
-    } else {
-      newMsg = cloneWith(...)
-    }
- */
 const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
   const rootState = sbp(config.stateSelector)
 
@@ -218,11 +186,13 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
 
   return (data) => {
     // Has the key been revoked? If so, attempt to find an authorized key by the same name
-    if ((rootState[signingContractID]._vm?.revokedKeys?.[signingKeyId]?.purpose.includes(
-      'sig'
-    ))) {
-      const name = rootState[signingContractID]._vm.revokedKeys[signingKeyId].name
-      const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v: any) => v.name === name && v.purpose.includes('sig')): any)?.id
+    const designatedKey = rootState[signingContractID]._vm?.authorizedKeys?.[signingKeyId]
+    if (!designatedKey?.purpose.includes('sig')) {
+      throw new Error(`Signing key ID ${signingContractID} is missing or is missing signing purpose`)
+    }
+    if (designatedKey._notAfterHeight !== undefined) {
+      const name = designatedKey.name
+      const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
 
       if (!newKeyId) {
         throw new Error(`Signing key ID ${signingContractID} has been revoked and no new key exists by the same name (${name})`)
@@ -231,11 +201,7 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
       signingKeyId = newKeyId
     }
 
-    const key = (rootState[signingContractID]._vm?.authorizedKeys?.[signingKeyId]?.purpose.includes(
-      'sig'
-    ))
-      ? (config.transientSecretKeys?.[signingKeyId]) || (rootState[signingContractID]._volatile?.keys?.[signingKeyId])
-      : undefined
+    const key = (config.transientSecretKeys?.[signingKeyId]) || (rootState[signingContractID]._volatile?.keys?.[signingKeyId])
 
     if (!key) {
       throw new Error(`Missing secret signing key. Signing contract ID: ${signingContractID}, signing key ID: ${signingKeyId}`)
@@ -250,60 +216,6 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
     }
   }
 }
-
-/*
-const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
-  const key = this.config.transientSecretKeys?.[eKeyId] || state?._vm?.authorizedKeys?.[eKeyId]?.data
-
-  if (!key) {
-    if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-      console.error('Encryption key not found. Sending plaintext message', { message, eKeyId })
-      return {
-        keyId: 'NULL',
-        content: JSON.stringify(message)
-      }
-    } else {
-      console.error('Encryption key not found', { message, eKeyId })
-      throw new ChelErrorUnexpected('Encryption key not found')
-    }
-  }
-
-  return {
-    keyId: keyId(key),
-    content: encrypt(key, JSON.stringify(message))
-  }
-}
-
-const decryptFn = function (message: Object, state: ?Object) {
-  if (typeof message !== 'object' || typeof message.keyId !== 'string' || typeof message.content !== 'string') {
-    throw new TypeError('Malformed message')
-  }
-
-  if (message.keyId === 'NULL') {
-    if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-      console.error('Processing unsafe unencrypted message', { message: message.content })
-      return JSON.parse(message.content)
-    } else {
-      console.error('Refused to process unsafe unencrypted message', { message: message.content })
-      throw new ChelErrorDecryptionError('Received unexpected unencrypted message')
-    }
-  }
-
-  const keyId = message.keyId
-  const key = this.config.transientSecretKeys?.[keyId] || state?._volatile?.keys?.[keyId]
-
-  if (!key) {
-    console.log({ message, state, keyId, env: this.env })
-    throw new ChelErrorDecryptionKeyNotFound(`Key ${keyId} not found`)
-  }
-
-  try {
-    return JSON.parse(decrypt(key, message.content))
-  } catch (e) {
-    throw new ChelErrorDecryptionError(e?.message || e)
-  }
-}
-*/
 
 export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia

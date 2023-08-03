@@ -156,9 +156,9 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/db/lastEntry': async function (contractID: string): Promise<GIMessage> {
     try {
-      const { HEAD: hash } = await sbp('chelonia/db/latestHEADinfo', contractID)
-      if (!hash) throw new Error(`contract ${contractID} has no latest hash!`)
-      return sbp('chelonia/db/getEntry', hash)
+      const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+      if (!latestHEADinfo) throw new Error(`contract ${contractID} has no latest hash!`)
+      return sbp('chelonia/db/getEntry', latestHEADinfo.HEAD)
     } catch (e) {
       throw new ChelErrorDBConnection(`${e.name} during lastEntry: ${e.message}`)
     }

@@ -669,7 +669,7 @@ export default (sbp('sbp/selectors/register', {
     // with them so that they are able to read messages and participate
     if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: rootGetters.groupProfile(username).contractID,
+        contractID: rootGetters.ourContactProfiles[username].contractID,
         contractName: 'gi.contracts/identity',
         originatingContractID: params.contractID,
         originatingContractName: 'gi.contracts/group',

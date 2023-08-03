@@ -5,16 +5,17 @@ import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 
-export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
+export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
 
-export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k.foreignKey?.includes(contractID)).map(k => k.id)
+export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight === undefined && k.foreignKey?.includes(contractID)).map(k => k.id)
 
-export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.revokedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name).map(k => k.id)
+export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight !== undefined).map(k => k.id)
 
 export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, additionalKeyIds: ?string[]): ?string => {
   return state._vm?.authorizedKeys &&
     (state._volatile?.keys || additionalKeyIds?.length) &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) =>
+      (k._notAfterHeight === undefined) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
       (state._volatile?.keys?.[k.id] || additionalKeyIds?.includes(k.id)) &&
       (Array.isArray(permissions)
@@ -30,6 +31,7 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) =>
+      (k._notAfterHeight === undefined) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
       (Array.isArray(permissions)
         ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission)), true)

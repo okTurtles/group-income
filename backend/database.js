@@ -38,10 +38,11 @@ if (!fs.existsSync(dataFolder)) {
 
 sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
-    let { HEAD: currentHEAD } = await sbp('chelonia/db/latestHEADinfo', contractID)
-    if (!currentHEAD) {
+    const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
+    let { HEAD: currentHEAD } = latestHEADinfo
     let prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options

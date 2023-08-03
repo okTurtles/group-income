@@ -83,7 +83,7 @@ sbp('sbp/selectors/register', {
 
     // $FlowFixMe
     const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
-      return !!data.meta?.private && (
+      return !!data.meta?.private && data._notAfterHeight === undefined && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
           : keysToRotate === '*'

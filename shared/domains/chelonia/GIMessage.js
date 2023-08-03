@@ -22,6 +22,8 @@ export type GIKey = {
   meta: Object;
   data: string;
   foreignKey?: string;
+  _notBeforeHeight: number;
+  _notAfterHeight?: number;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
@@ -58,7 +60,7 @@ export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
 
-const decryptedDeserializedMessage = (op: string, parsedMessage: Object, contractID: string, state: Object, additionalKeys: Object) => {
+const decryptedDeserializedMessage = (op: string, height: number, parsedMessage: Object, contractID: string, state: Object, additionalKeys: Object) => {
   const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, additionalKeys) : parsedMessage
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     ((message: any): any[]).forEach((key) => {
@@ -76,7 +78,9 @@ const decryptedDeserializedMessage = (op: string, parsedMessage: Object, contrac
   if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(op)) {
     (message: any).keys?.forEach((key) => {
       if (key.meta?.private?.content) {
-        key.meta.private.content = (message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData)(message.foreignContractID ? message.foreignContractID : contractID, state, key.meta.private.content, additionalKeys, (value) => {
+        const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
+        const decryptionContract = message.foreignContractID ? message.foreignContractID : contractID
+        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
@@ -87,7 +91,7 @@ const decryptedDeserializedMessage = (op: string, parsedMessage: Object, contrac
   }
 
   if (op === GIMessage.OP_ATOMIC) {
-    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, opV, contractID, state, additionalKeys)])
+    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, height, opV, contractID, state, additionalKeys)])
   }
 
   return message
@@ -176,7 +180,7 @@ export class GIMessage {
     const head = JSON.parse(parsedValue.head)
     const parsedMessage = JSON.parse(parsedValue.message)
     const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
-    const message = decryptedDeserializedMessage(head.op, parsedMessage, contractID, state, additionalKeys)
+    const message = decryptedDeserializedMessage(head.op, head.height, parsedMessage, contractID, state, additionalKeys)
     return new this({
       mapping: { key: blake32Hash(value), value },
       head,
