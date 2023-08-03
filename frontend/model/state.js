@@ -498,17 +498,7 @@ const getters = {
   globalProfile (state, getters) {
     // get profile from username who is part of current group
     return username => {
-      const groupProfile = getters.groupProfile(username)
-      const identityState = groupProfile && state[groupProfile.contractID]
-      return identityState && identityState.attributes
-    }
-  },
-  globalProfile2 (state, getters) {
-    // get profile from username who is part of the group identified by it's group ID
-    return (groupID, username) => {
-      const groupProfile = state[groupID]?.profiles[username]
-      const identityState = groupProfile && state[groupProfile.contractID]
-      return identityState && identityState.attributes
+      return getters.ourContactProfiles[username]
     }
   },
   ourContactProfiles (state, getters) {
