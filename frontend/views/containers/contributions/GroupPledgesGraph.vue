@@ -46,7 +46,7 @@
 
 <script>
 import currencies from '@model/contracts/shared/currencies.js'
-import mincomeProportional from '@model/contracts/shared/distribution/mincome-proportional.js'
+import { unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
@@ -72,8 +72,8 @@ export default ({
     ...mapGetters([
       'groupSettings',
       'groupProfiles',
-      'groupMembersCount',
-      'ourIdentityContractId',
+      'currentPaymentPeriod',
+      'haveNeedsForThisPeriod',
       'ourUsername'
     ]),
     graphData () {
@@ -83,39 +83,25 @@ export default ({
       // NOTE: validate this.amount to avoid negative values in the graph
       const ourPledgeAmount = doWePledge && this.amount >= 0 && this.amount
       const ourIncomeAmount = doWeNeedIncome && this.amount < mincome && this.amount
-      const haveNeeds = []
-      let othersIncomeNeeded = 0
-      let othersPledgesAmount = 0
-
-      for (const username in this.groupProfiles) {
-        const { incomeDetailsType, contractID, ...profile } = this.groupProfiles[username]
-        if (contractID === this.ourIdentityContractId) { continue }
-
-        const amount = profile[incomeDetailsType]
-        const doesNeedPledge = incomeDetailsType === 'incomeAmount'
-        const adjustment = doesNeedPledge ? mincome : 0
-        const haveNeed = amount - adjustment
-
-        haveNeeds.push({ name: username, haveNeed })
-
-        if (doesNeedPledge) {
-          othersIncomeNeeded += mincome - amount
-        } else if (incomeDetailsType === 'pledgeAmount') {
-          othersPledgesAmount += amount
-        }
-      }
+      const haveNeeds = this.haveNeedsForThisPeriod(this.currentPaymentPeriod)
+        .filter(entry => entry.name !== this.ourUsername)
+      let othersIncomeNeeded = haveNeeds.reduce(
+        (accu, entry) => entry.haveNeed < 0 ? accu + (-1 * entry.haveNeed) : accu, 0
+      )
+      let othersPledgesAmount = haveNeeds.reduce(
+        (accu, entry) => entry.haveNeed > 0 ? accu + entry.haveNeed : accu, 0
+      )
 
       const ourIncomeNeeded = doWeNeedIncome && ourIncomeAmount !== null ? mincome - ourIncomeAmount : null
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
       const groupGoal = othersIncomeNeeded + ourIncomeNeeded
       const neededPledges = Math.max(0, groupGoal - pledgeTotal)
-      const surplus = Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
       let ourIncomeToReceive = ourIncomeNeeded
 
       if (!doWePledge && neededPledges > 0) {
         haveNeeds.push({ name: this.ourUsername, haveNeed: ourIncomeAmount - mincome })
 
-        ourIncomeToReceive = mincomeProportional(haveNeeds)
+        ourIncomeToReceive = unadjustedDistribution({ haveNeeds, minimize: false })
           .filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
@@ -128,7 +114,7 @@ export default ({
         pledgeTotal,
         groupGoal,
         neededPledges,
-        surplus
+        surplus: Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
       }
     },
     mainSlices () {
