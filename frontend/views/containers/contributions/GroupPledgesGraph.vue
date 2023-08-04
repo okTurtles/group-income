@@ -85,10 +85,10 @@ export default ({
       const ourIncomeAmount = doWeNeedIncome && this.amount < mincome && this.amount
       const haveNeeds = this.haveNeedsForThisPeriod(this.currentPaymentPeriod)
         .filter(entry => entry.name !== this.ourUsername)
-      let othersIncomeNeeded = haveNeeds.reduce(
+      const othersIncomeNeeded = haveNeeds.reduce(
         (accu, entry) => entry.haveNeed < 0 ? accu + (-1 * entry.haveNeed) : accu, 0
       )
-      let othersPledgesAmount = haveNeeds.reduce(
+      const othersPledgesAmount = haveNeeds.reduce(
         (accu, entry) => entry.haveNeed > 0 ? accu + entry.haveNeed : accu, 0
       )
 
