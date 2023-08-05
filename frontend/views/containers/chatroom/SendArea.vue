@@ -104,6 +104,22 @@
               @click='openEmoticon'
             )
               i.icon-smile-beam
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Attach file")'
+          )
+            button.is-icon.c-file-attachment-btn(
+              :aria-label='L("Attach file")'
+              @click='openFileAttach'
+            )
+              i.icon-paper-clip
+              input(
+                ref='fileAttachmentInputEl'
+                type='file'
+                accept='image/*,.pdf'
+                @change='fileAttachmentHandler($event.target.files)'
+              )
 
         .c-send-button(
           id='mobileSendButton'
@@ -390,6 +406,13 @@ export default ({
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
     },
+    openFileAttach (e) {
+      e.target.blur()
+      this.$refs.fileAttachmentInputEl.click()
+    },
+    fileAttachmentHandler (filesList) {
+      console.log('attached file list: ', filesList)
+    },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
       this.closeEmoticon()
@@ -551,6 +574,19 @@ export default ({
 
   button.is-icon:first-child:last-child {
     width: 2rem;
+  }
+}
+
+.c-file-attachment-btn {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 
