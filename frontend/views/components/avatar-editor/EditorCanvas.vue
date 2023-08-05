@@ -64,6 +64,10 @@ export default {
       type: Number,
       required: false,
       default: 1
+    },
+    imageUrl: {
+      type: String,
+      required: false
     }
   },
   watch: {
@@ -279,7 +283,7 @@ export default {
     }
   },
   created () {
-    this.ephemeral.image.src = this.$route.query.imageUrl || ''
+    this.ephemeral.image.src = this.imageUrl || this.$route.query.imageUrl || ''
   },
   mounted () {
     this.onWindowResize()

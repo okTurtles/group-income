@@ -52,7 +52,6 @@ export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MAX_ARCHIVE_ACTION_PAGES = 2 // 2 pages of actions
-
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const MESSAGE_RECEIVE = 'message-receive'
@@ -89,7 +88,8 @@ export const MESSAGE_NOTIFICATIONS = {
   UPDATE_DESCRIPTION: 'update-description',
   UPDATE_NAME: 'update-name',
   DELETE_CHANNEL: 'delete-channel',
-  VOTE: 'vote'
+  VOTE_ON_POLL: 'vote-on-poll',
+  CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
 }
 
 export const MESSAGE_VARIANTS = {
@@ -119,7 +119,6 @@ export const POLL_TYPES = {
 }
 
 export const POLL_STATUS = {
-  ACTIVE: 'active', // the poll is open
-  CLOSED: 'closed', // everyone has voted on the poll
-  EXPIRED: 'expired' // not everyone has voted on the poll but it has expired
+  ACTIVE: 'active',
+  CLOSED: 'closed'
 }
