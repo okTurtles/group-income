@@ -9983,12 +9983,8 @@ ${this.getErrorInfo()}`;
       incomeDetailsLastUpdatedDate: null
     };
   }
-  function initPaymentPeriod({ getters, period }) {
-    const len2 = getters.groupSettings.distributionPeriodLength;
-    const nextPeriodID = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(period), len2));
+  function initPaymentPeriod({ getters }) {
     return {
-      nextPeriodID,
-      previousPeriodID: void 0,
       initialCurrency: getters.groupMincomeCurrency,
       mincomeExchangeRate: 1,
       paymentsFrom: {},
@@ -10012,7 +10008,7 @@ ${this.getErrorInfo()}`;
   }
   function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
-    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters, period }));
+    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }));
     clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
@@ -10030,11 +10026,8 @@ ${this.getErrorInfo()}`;
     const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
     const period = getters.periodStampGivenDate(meta.createdDate);
     const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
-    const { distributionDate } = getters.groupSettings;
-    if (comparePeriodStamps(period, distributionDate) > 0) {
+    if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
       updateGroupStreaks({ state, getters });
-      state.paymentsByPeriod[distributionDate].nextPaymentPeriodID = period;
-      curPeriodPayments.previousPaymentPeriodID = distributionDate;
       getters.groupSettings.distributionDate = period;
     }
     if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
@@ -10173,10 +10166,16 @@ ${this.getErrorInfo()}`;
         };
       },
       periodBeforePeriod(state, getters) {
-        return (periodStamp) => getters.groupPeriodPayments[periodStamp]?.previousPeriodID;
+        return (periodStamp) => {
+          const len2 = getters.groupSettings.distributionPeriodLength;
+          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len2));
+        };
       },
       periodAfterPeriod(state, getters) {
-        return (periodStamp) => getters.groupPeriodPayments[periodStamp]?.nextPeriodID;
+        return (periodStamp) => {
+          const len2 = getters.groupSettings.distributionPeriodLength;
+          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len2));
+        };
       },
       dueDateForPeriod(state, getters) {
         return (periodStamp) => {
@@ -10338,13 +10337,10 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, contractID }, { state, getters }) {
           const initialState = merge({
-            chatRooms: {},
-            invites: {},
             payments: {},
             paymentsByPeriod: {},
-            profiles: {
-              [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
-            },
+            thankYousFrom: {},
+            invites: {},
             proposals: {},
             settings: {
               groupCreator: meta.username,
@@ -10354,7 +10350,10 @@ ${this.getErrorInfo()}`;
               allowPublicChannels: false
             },
             streaks: initGroupStreaks(),
-            thankYousFrom: {},
+            profiles: {
+              [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
+            },
+            chatRooms: {},
             totalPledgeAmount: 0
           }, data);
           for (const key in initialState) {
@@ -10928,11 +10927,12 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/updateDistributionDate": {
         validate: optional,
-        process({ meta, contractID }, { state, getters }) {
+        process({ meta }, { state, getters }) {
           const period = getters.periodStampGivenDate(meta.createdDate);
           const current = getters.groupSettings?.distributionDate;
           if (current !== period) {
-            updateCurrentDistribution({ contractID, meta, state, getters });
+            updateGroupStreaks({ state, getters });
+            getters.groupSettings.distributionDate = period;
           }
         }
       },

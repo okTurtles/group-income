@@ -3,6 +3,7 @@ form(@submit.prevent='')
   i18n.c-poll-label(tag='label') poll
   h3.is-title-4.c-poll-title {{ pollData.question }}
 
+  i18n.pill.is-primary.c-poll-expiry-badge(:args='{ expiry: pollExpiryDate }') Expires on: {expiry}
   fieldset.is-column
     label.c-poll-option(
       v-for='option in pollData.options'
@@ -29,6 +30,7 @@ import { mapGetters } from 'vuex'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PollToVote',
@@ -73,6 +75,9 @@ export default ({
       return this.allowMultipleChoices
         ? this.form.selectedOptions.map(id => this.getOptValue(id)).join(', ')
         : this.getOptValue(this.form.selectedOptions)
+    },
+    pollExpiryDate () {
+      return humanDate(new Date(this.pollData.expires_date_ms))
     }
   },
   methods: {
@@ -169,5 +174,12 @@ export default ({
   &:empty {
     margin-top: 0;
   }
+}
+
+.c-poll-expiry-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
 }
 </style>

@@ -9981,7 +9981,10 @@ ${this.getErrorInfo()}`;
             });
             vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
           }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          });
           const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
           state.messages.push(newMessage);
         },
@@ -10019,7 +10022,10 @@ ${this.getErrorInfo()}`;
             });
             vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
           }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          });
           const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
           state.messages.push(newMessage);
         },

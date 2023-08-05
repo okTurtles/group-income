@@ -4,7 +4,7 @@ message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
     .c-notification
       p.c-text(v-if='message')
         | {{message.text}}
-        // i18n.c-link(v-if='isPollNotification' @click='jumpToPoll') Jump to poll
+        i18n.c-link(v-if='isPollNotification' @click='jumpToPoll') Jump to poll
 </template>
 
 <script>
@@ -18,8 +18,10 @@ export default ({
   components: {
     MessageBase
   },
+  inject: ['chatMessageUtils'],
   props: {
     id: String,
+    messageHash: String,
     type: String,
     text: String,
     notification: Object, // { type, params }
@@ -46,7 +48,12 @@ export default ({
   computed: {
     ...mapGetters(['userDisplayName', 'isGroupDirectMessage', 'currentChatRoomId']),
     message () {
-      const { username, channelName, channelDescription, votedOptions } = this.notification.params
+      const {
+        username,
+        channelName,
+        channelDescription,
+        votedOptions
+      } = this.notification.params
       const displayName = this.userDisplayName(username)
 
       const notificationTemplates = {
@@ -84,8 +91,7 @@ export default ({
       this.$emit('add-emoticon', emoticon)
     },
     jumpToPoll () {
-      // link to the GH issue: https://github.com/okTurtles/group-income/issues/1674
-      alert('TODO: implement "jumping to a particular message."')
+      this.chatMessageUtils.scrollToMessage(this.notification.params.pollMessageHash)
     }
   }
 }: Object)
