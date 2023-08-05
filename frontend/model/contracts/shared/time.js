@@ -26,34 +26,6 @@ export function dateFromPeriodStamp (daystamp: string): Date {
   return new Date(daystamp)
 }
 
-export function periodStampGivenDate ({ recentDate, periodStart, periodLength }: {
-  recentDate: string, periodStart: string, periodLength: number
-}): string {
-  const periodStartDate = dateFromPeriodStamp(periodStart)
-  let nextPeriod = addTimeToDate(periodStartDate, periodLength)
-  const curDate = new Date(recentDate)
-  let curPeriod
-  if (curDate < nextPeriod) {
-    if (curDate >= periodStartDate) {
-      return periodStart // we're still in the same period
-    } else {
-      // we're in a period before the current one
-      curPeriod = periodStartDate
-      do {
-        curPeriod = addTimeToDate(curPeriod, -periodLength)
-      } while (curDate < curPeriod)
-    }
-  } else {
-    // we're at least a period ahead of periodStart
-    do {
-      curPeriod = nextPeriod
-      nextPeriod = addTimeToDate(nextPeriod, periodLength)
-    } while (curDate >= nextPeriod)
-  }
-
-  return dateToPeriodStamp(curPeriod)
-}
-
 export function dateIsWithinPeriod ({ date, periodStart, periodLength }: {
   date: string, periodStart: string, periodLength: number
 }): boolean {

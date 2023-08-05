@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -50,6 +50,7 @@ function initPaymentPeriod ({ getters, period }) {
   // but this field must to be updated whenever the period length is changed while this period is active.
   const nextPeriodID = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(period), len))
   return {
+    // TODO: leave this undefined until the next PaymentPeriod object has been created.
     nextPeriodID,
     previousPeriodID: undefined,
     // this saved so that it can be used when creating a new payment
@@ -324,19 +325,30 @@ sbp('chelonia/defineContract', {
       return getters.groupSettings.mincomeCurrency
     },
     periodStampGivenDate (state, getters) {
-      return (recentDate: string | Date) => {
-        if (typeof recentDate !== 'string') {
-          recentDate = recentDate.toISOString()
+      return (date: Date | string): string | null => {
+        const givenStamp = typeof date === 'string' ? date : date.toISOString()
+        // Should we throw instead?
+        if (!isPeriodStamp(givenStamp)) return null
+        let currentPeriodStamp = getters.groupSettings.distributionDate
+        // Not sure whether this can happen. Keeping it anyway.
+        if (!currentPeriodStamp) return null
+        let nextPeriodStamp = getters.periodAfterPeriod(currentPeriodStamp)
+        let previousPeriodStamp = getters.periodBeforePeriod(currentPeriodStamp)
+        if (compareISOTimestamps(givenStamp, currentPeriodStamp) >= 0) {
+          // Find the first period stamp that's later than the given date.
+          while (nextPeriodStamp && compareISOTimestamps(givenStamp, nextPeriodStamp) >= 0) {
+            currentPeriodStamp = nextPeriodStamp
+            nextPeriodStamp = getters.periodAfterPeriod(nextPeriodStamp)
+          }
+          return currentPeriodStamp
+        } else {
+          // Iterate backwards to find a first previous period stamp that's lower than the given date.
+          while (previousPeriodStamp && compareISOTimestamps(givenStamp, previousPeriodStamp) < 0) {
+            previousPeriodStamp = getters.periodBeforePeriod(previousPeriodStamp)
+          }
+          // Now either 'previousPeriodStamp' is undefined or 'givenString' >= 'previousPeriodStamp'.
+          return previousPeriodStamp ?? null
         }
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-
-        if (!distributionDate) return null
-
-        return periodStampGivenDate({
-          recentDate,
-          periodStart: distributionDate,
-          periodLength: distributionPeriodLength
-        })
       }
     },
     periodBeforePeriod (state, getters): string | void {
