@@ -1,5 +1,9 @@
 <template lang='pug'>
-.c-chat-main(v-if='summary.title')
+.c-chat-main(
+  v-if='summary.title'
+  @drag.prevent.stop=''
+  @dragstart.prevent.stop=''
+)
   emoticons
 
   .c-body
