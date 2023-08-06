@@ -2,7 +2,7 @@
 
 const DragAndDropMixin: Object = {
   methods: {
-    
+
   }
 }
 
