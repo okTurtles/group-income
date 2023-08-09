@@ -143,6 +143,7 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
@@ -151,6 +152,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -422,6 +424,11 @@ export default ({
     fileAttachmentHandler (filesList) {
       const targetFile = filesList[0]
       const fileUrl = URL.createObjectURL(targetFile)
+      const fileSize = targetFile.size
+
+      if (fileSize > Math.pow(10, 9)) {
+        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileTooLargeModal') 
+      }
 
       this.ephemeral.attachment = {
         url: fileUrl,
