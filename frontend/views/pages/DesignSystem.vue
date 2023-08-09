@@ -227,6 +227,7 @@ page(
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
               i.icon-paper-clip icon-paper-clip
+              i.icon-file icon-file
         tr
           td
             pre

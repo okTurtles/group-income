@@ -57,6 +57,12 @@
       v-bind='$attrs'
     )
 
+    chat-attachment-preview(
+      v-if='ephemeral.attachment'
+      v-bind='ephemeral.attachment'
+      @remove='ephemeral.attachment = null'
+    )
+
     .c-send-actions(ref='actions')
       div(v-if='isEditing')
         .addons.addons-editing
@@ -142,6 +148,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import ChatAttachmentPreview from './ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
@@ -170,7 +177,8 @@ export default ({
   components: {
     Avatar,
     Tooltip,
-    CreatePoll
+    CreatePoll,
+    ChatAttachmentPreview
   },
   props: {
     defaultText: String,
@@ -198,7 +206,8 @@ export default ({
           position: -1,
           options: [],
           index: -1
-        }
+        },
+        attachment: null // { url: instace of URL.createObjectURL , name: string }
       }
     }
   },
@@ -411,7 +420,28 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList) {
-      console.log('attached file list: ', filesList)
+      const targetFile = filesList[0]
+      const revokePrevUrl = () => {
+        // when a URL is no longer needed, it needs to be released from the memory.
+        // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
+        if (this.ephemeral.attachment?.url) {
+          URL.revokeObjectURL(this.ephemeral.attachment.url)
+        }
+      }
+
+      console.log('@@@ attached file: ', targetFile)
+      if (targetFile.type.match('image/')) {
+        revokePrevUrl()
+        const fileUrl = URL.createObjectURL(targetFile)
+
+        this.ephemeral.attachment = {
+          url: fileUrl,
+          name: targetFile.name,
+          attachType: 'image'
+        }
+      } else {
+        alert('TODO: Implement non-image attachment.')
+      }
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
