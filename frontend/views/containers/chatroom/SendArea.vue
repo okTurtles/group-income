@@ -60,7 +60,7 @@
     chat-attachment-preview(
       v-if='ephemeral.attachment'
       v-bind='ephemeral.attachment'
-      @remove='ephemeral.attachment = null'
+      @remove='removeAttachment'
     )
 
     .c-send-actions(ref='actions')
@@ -421,27 +421,19 @@ export default ({
     },
     fileAttachmentHandler (filesList) {
       const targetFile = filesList[0]
-      const revokePrevUrl = () => {
-        // when a URL is no longer needed, it needs to be released from the memory.
-        // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
-        if (this.ephemeral.attachment?.url) {
-          URL.revokeObjectURL(this.ephemeral.attachment.url)
-        }
-      }
+      const fileUrl = URL.createObjectURL(targetFile)
 
-      console.log('@@@ attached file: ', targetFile)
-      if (targetFile.type.match('image/')) {
-        revokePrevUrl()
-        const fileUrl = URL.createObjectURL(targetFile)
-
-        this.ephemeral.attachment = {
-          url: fileUrl,
-          name: targetFile.name,
-          attachType: 'image'
-        }
-      } else {
-        alert('TODO: Implement non-image attachment.')
+      this.ephemeral.attachment = {
+        url: fileUrl,
+        name: targetFile.name,
+        attachType: targetFile.type.match('image/') ? 'image' : 'non-image'
       }
+    },
+    removeAttachment () {
+      // when a URL is no longer needed, it needs to be released from the memory.
+      // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
+      URL.revokeObjectURL(this.ephemeral.attachment.url)
+      this.ephemeral.attachment = null
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native

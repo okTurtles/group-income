@@ -13,7 +13,7 @@
         i.icon-file
 
       .c-non-image-file-info
-        .c-file-name {{ name }}
+        .c-file-name.has-ellipsis {{ name }}
         .c-file-ext {{ fileExt }}
 
     button.c-attachment-remove-btn(
@@ -67,19 +67,65 @@ export default {
     height: 4.5rem;
   }
 
-  .c-preview-img {
+  &.is-non-image {
+    max-width: 17.25rem;
+    min-width: 14rem;
+    min-height: 3.5rem;
+  }
+
+  .c-preview-img,
+  .c-preview-non-image {
     position: relative;
-    display: inline-block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 0.25rem;
+    border-radius: inherit;
     background-color: $general_2;
+  }
+
+  .c-preview-img {
+    display: inline-block;
+    object-fit: cover;
+  }
+
+  .c-preview-non-image {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: "preview-icon preview-info";
+    align-items: center;
+    padding: 0.5rem;
+    gap: 0.5rem;
+
+    .c-non-image-icon {
+      grid-area: preview-icon;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: inherit;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.25rem;
+      color: $primary_0;
+      background-color: $primary_2;
+    }
+
+    .c-non-image-file-info {
+      grid-area: preview-info;
+      position: relative;
+      display: block;
+      line-height: 1.2;
+      width: 100%;
+
+      .c-file-name {
+        position: relative;
+        font-weight: bold;
+        max-width: 13.25rem;
+      }
+    }
   }
 
   button.c-attachment-remove-btn {
     @extend %reset-button;
-  
     position: absolute;
     display: inline-flex;
     align-items: center;
