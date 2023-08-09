@@ -427,7 +427,7 @@ export default ({
       const fileSize = targetFile.size
 
       if (fileSize > Math.pow(10, 9)) {
-        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileTooLargeModal') 
+        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileTooLargeModal')
       }
 
       this.ephemeral.attachment = {

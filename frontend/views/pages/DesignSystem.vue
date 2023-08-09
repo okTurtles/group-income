@@ -1416,6 +1416,7 @@ import SvgJoinGroup from '@svgs/join-group.svg'
 import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
+import SvgAttachment from '@svgs/attachment.svg'
 import { mapGetters, mapMutations } from 'vuex'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
@@ -1512,6 +1513,11 @@ export default ({
             component: SvgVote,
             name: 'SvgVote',
             sprite: 'Dashboard'
+          },
+          {
+            component: SvgAttachment,
+            name: 'SvgAttachment',
+            sprite: 'Chat'
           }
         ],
         buttonDropdownMenuOpts: [
@@ -1834,5 +1840,9 @@ table {
     text-decoration: underline;
     color: $primary_0;
   }
+}
+
+.svg-attachment {
+  fill: $text_0;
 }
 </style>
