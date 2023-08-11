@@ -563,7 +563,8 @@ export default (sbp('sbp/selectors/register', {
           config.reactiveSet(state._vm.authorizedKeys[keyId], '_notAfterHeight', height)
         }
         for (const key of updatedKeys) {
-          if (!state._vm.authorizedKeys[key.id]) {
+          // $FlowFixMe
+          if (!Object.prototype.hasOwnProperty.call(state._vm.authorizedKeys, key.id)) {
             key._notBeforeHeight = height
           }
           config.reactiveSet(state._vm.authorizedKeys, key.id, key)
