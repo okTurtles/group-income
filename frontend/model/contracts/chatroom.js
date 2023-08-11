@@ -680,6 +680,7 @@ sbp('chelonia/defineContract', {
   },
   methods: {
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')

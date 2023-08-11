@@ -1187,40 +1187,7 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
-      }/*,
-      TODO REMOVE
-      async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
-        const rootState = sbp('state/vuex/state')
-        const contracts = rootState.contracts || {}
-        const { identityContractID } = rootState.loggedIn
-        const userState = rootState[identityContractID]
-        const state = rootState[contractID]
-
-        if (rootState[data.chatRoomID]?._volatile) {
-          return
-        }
-        // the specific scenario here is joining chatrooms (should be the general channel in this
-        // case) . This is required because joining a chatroom is a two-step process (i.e., first
-        // a group is joined, we get the list of chatrooms and then request to join) due to them
-        // being encrypted.
-        // TODO: This entire sideEffect needs to be deleted, because instead of using OP_KEY_REQUEST
-        //       we're going to use OP_KEYSHARE in advance so that the chatrooms are instantly
-        //       joinable.
-        await sbp('chelonia/out/keyRequest', {
-          originatingContractID: identityContractID,
-          originatingContractName: contracts[identityContractID].type,
-          contractID: data.chatRoomID,
-          contractName: 'gi.contracts/chatroom',
-          // This is finding the CSK by name under the assumption that there is only one CSK (which holds for group contracts)
-          signingKey: state._volatile?.keys?.[(((Object.values(Object(state._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)],
-          innerSigningKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'csk')?.id,
-          encryptionKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'cek')?.id,
-          hooks: {
-            prepublish: null,
-            postpublish: null
-          }
-        })
-      } */
+      }
     },
     'gi.contracts/group/deleteChatRoom': {
       validate: (data, { getters, meta }) => {
@@ -1479,6 +1446,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/rotateKeys': (contractID, state) => {
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')

@@ -18,11 +18,6 @@ describe('Encrypted data API', () => {
             data: serializeKey(key, false)
           }
         }
-      },
-      _volatile: {
-        keys: {
-          [id]: serializeKey(key, true)
-        }
       }
     }
 

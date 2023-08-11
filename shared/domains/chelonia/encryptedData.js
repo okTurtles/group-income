@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
-import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './errors.js'
+import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
 
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
@@ -41,7 +41,7 @@ const encryptData = function (eKeyId: string, data: any) {
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (height: number, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
+const decryptData = function (height: number, data: string, additionalKeys: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -78,11 +78,16 @@ const decryptData = function (height: number, data: string, additionalKeys?: Obj
   // any new attack vectors or venues that were not already available using
   // different means.
   const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
-  const key = designatedKey && !(height > designatedKey._notAfterHeight) && !(height < designatedKey._notBeforeHeight) && designatedKey.purpose.includes(
+
+  if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'enc'
-  )
-    ? this._volatile?.keys?.[eKeyId] || additionalKeys?.[eKeyId]
-    : undefined
+  )) {
+    throw new ChelErrorUnexpected(
+      `Key ${eKeyId} is unauthorized or expired for the current contract`
+    )
+  }
+
+  const key = additionalKeys[eKeyId]
 
   if (!key) {
     throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
@@ -149,7 +154,7 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys, validatorFn)
+    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys ?? rootState.secretKeys, validatorFn)
     return decryptedValue
   }
 
@@ -168,7 +173,7 @@ export const encryptedIncomingForeignData = (contractID: string, _0: any, data: 
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(rootState?.[contractID], NaN, data, additionalKeys, validatorFn)
+    decryptedValue = decryptData.call(rootState?.[contractID], NaN, data, additionalKeys ?? rootState.secretKeys, validatorFn)
     return decryptedValue
   }
 

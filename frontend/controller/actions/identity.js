@@ -142,19 +142,14 @@ export default (sbp('sbp/selectors/register', {
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
 
+    // Before creating the contract, put all keys into transient store
+    sbp('chelonia/storeSecretKeys',
+      [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+    )
+
     let userID
     // next create the identity contract itself
     try {
-      await sbp('chelonia/configure', {
-        transientSecretKeys: {
-          [IPKid]: IPK,
-          [IEKid]: IEK,
-          [CSKid]: CSK,
-          [CEKid]: CEK,
-          [PEKid]: PEK
-        }
-      })
-
       const user = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
@@ -231,6 +226,13 @@ export default (sbp('sbp/selectors/register', {
       })
 
       userID = user.contractID()
+
+      // After the contract has been created, store pesistent keys
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK, PEK].map(key => ({ key }))
+      )
+      // And remove transient keys, which require a user password
+      sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
 
       await sbp('chelonia/contract/sync', userID)
     } catch (e) {
@@ -351,11 +353,10 @@ export default (sbp('sbp/selectors/register', {
       ? await (async () => {
         const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        const IEKid = keyId(IEK)
 
-        return { [IEKid]: IEK }
+        return [{ key: IEK, transient: true }]
       })()
-      : {}
+      : []
 
     try {
       sbp('appLogs/startCapture', username)
@@ -375,7 +376,7 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
-      await sbp('chelonia/configure', { transientSecretKeys })
+      await sbp('chelonia/storeSecretKeys', transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
@@ -426,7 +427,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
       await sbp('gi.db/settings/delete', username)
-      await sbp('chelonia/configure', { transientSecretKeys: null })
+      sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

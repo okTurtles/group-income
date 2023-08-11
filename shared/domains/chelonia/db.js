@@ -103,7 +103,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       const value: string = await sbp('chelonia/db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
-      return GIMessage.deserialize(value, undefined, this.config?.transientSecretKeys)
+      return GIMessage.deserialize(value, this.transientSecretKeys)
     } catch (e) {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }

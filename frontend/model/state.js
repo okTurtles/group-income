@@ -597,9 +597,6 @@ const getters = {
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
   },
-  currentChatVolatile (state, getters) {
-    return state?.[getters.currentChatRoomId]?._volatile || null
-  },
   currentChatVm (state, getters) {
     return state?.[getters.currentChatRoomId]?._vm || null
   },

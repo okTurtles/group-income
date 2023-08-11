@@ -418,7 +418,6 @@ export default ({
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
-        _volatile: cloneDeep(this.currentChatVolatile),
         _vm: cloneDeep(this.currentChatVm),
         messages: [],
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
@@ -465,7 +464,7 @@ export default ({
           for (const event of newEvents) {
             // TODO: REMOVEME
             console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (renderMoreMessages)')
-            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
+            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
           this.$forceUpdate()
@@ -509,7 +508,7 @@ export default ({
       for (const event of this.latestEvents) {
         // TODO: REMOVEME
         console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (rerenderEvents)')
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
     },

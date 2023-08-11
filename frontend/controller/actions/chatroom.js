@@ -89,12 +89,10 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/chatroom'
       })
 
-      await sbp('chelonia/configure', {
-        transientSecretKeys: {
-          ...(cskOpts._rawKey && { [cskOpts.id]: cskOpts._rawKey }),
-          ...(cekOpts._rawKey && { [cekOpts.id]: cekOpts._rawKey })
-        }
-      })
+      // Before creating the contract, put all keys into transient store
+      sbp('chelonia/storeSecretKeys',
+        [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
+      )
 
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
@@ -129,6 +127,11 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const contractID = chatroom.contractID()
+
+      // After the contract has been created, store pesistent keys
+      sbp('chelonia/storeSecretKeys',
+        [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
+      )
 
       await sbp('chelonia/contract/sync', contractID)
 

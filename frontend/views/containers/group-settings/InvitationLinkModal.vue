@@ -38,7 +38,7 @@ export default ({
       return initialInvite
     },
     welcomeInviteSecret () {
-      const key = this.currentGroupState._volatile.keys[this.welcomeInviteId]
+      const key = this.$store.state.secretKeys[this.welcomeInviteId]
       if (typeof key !== 'string') {
         return serializeKey(key, true)
       } else {

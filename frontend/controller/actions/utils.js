@@ -4,7 +4,7 @@ import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -43,7 +43,7 @@ export function encryptedAction (
         const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || (!signingState._volatile.keys?.[signingKeyId] && !sbp('chelonia/hasTransientSecretKey', signingKeyId))) {
+        if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
           console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
           // TODO: Change to Promise.reject()
           return Promise.resolve()
@@ -79,7 +79,12 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
 
   const contractID = rootState.currentGroupId
 
-  if (!rootState[contractID] || !rootState[contractID]._vm || !rootState[contractID]._volatile?.keys || rootState[contractID]._volatile.pendingKeyRequests?.length) {
+  if (
+    !rootState[contractID] ||
+    !rootState[contractID]._vm ||
+    !findSuitableSecretKeyId(rootState[contractID], '*', ['sig']) ||
+    rootState[contractID]._volatile?.pendingKeyRequests?.length
+  ) {
     throw new Error('Invalid or missing current group state')
   }
 
@@ -90,13 +95,6 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
 
   if (!CEKid || !CSKid) {
     throw new Error('Contract is missing a CEK or CSK')
-  }
-
-  const CEK = state._volatile.keys[CEKid]
-  const CSK = state._volatile.keys[CSKid]
-
-  if (!CEK || !CSK) {
-    throw new Error('Contract is missing a secret CEK or CSK')
   }
 
   const inviteKey = keygen(EDWARDS25519SHA512BATCH)

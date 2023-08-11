@@ -27,7 +27,7 @@ import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import { findKeyIdByName, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
+import { findKeyIdByName, findSuitableSecretKeyId, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
@@ -156,13 +156,10 @@ export default (sbp('sbp/selectors/register', {
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
 
-      await sbp('chelonia/configure', {
-        transientSecretKeys: {
-          [CSKid]: CSK,
-          [CEKid]: CEK,
-          [inviteKeyId]: inviteKey
-        }
-      })
+      // Before creating the contract, put all keys into transient store
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK].map(key => ({ key, transient: true }))
+      )
 
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
@@ -254,6 +251,11 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const contractID = message.contractID()
+
+      // After the contract has been created, store pesistent keys
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK, inviteKey].map(key => ({ key }))
+      )
 
       await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
@@ -370,7 +372,9 @@ export default (sbp('sbp/selectors/register', {
       // params.originatingContractID is set, it means that we're joining
       // through an invite link, and we must send a key request to complete
       // the joining process.
-      const hasVolatileKeys = rootState[params.contractID]?._volatile?.keys && Object.keys(rootState[params.contractID]._volatile.keys).length
+      const hasVolatileKeys =
+        params.contractID in rootState &&
+        !!findSuitableSecretKeyId(rootState[params.contractID], '*', ['sig'])
       const sendKeyRequest = (!hasVolatileKeys && params.originatingContractID)
 
       await sbp(

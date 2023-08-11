@@ -2,12 +2,12 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, debounce, delay, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, delay, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { verifySignature } from './crypto.js'
+import { deserializeKey, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
@@ -37,7 +37,7 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
         return
       }
       if (!watchMap[cID]) {
-        if (!rootState.contracts[cID]?.type || !findSuitableSecretKeyId(rootState[cID], [GIMessage.OP_KEY_UPDATE], ['sig'], Number.MAX_SAFE_INTEGER, Object.keys(config.transientSecretKeys))) {
+        if (!rootState.contracts[cID]?.type || !findSuitableSecretKeyId(rootState[cID], [GIMessage.OP_KEY_UPDATE], ['sig'])) {
           watchMap[cID] = null
           return
         }
@@ -56,7 +56,7 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
         if (!foreignContractKey) return undefined
 
-        const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
+        const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel)
 
         if (signingKeyId) {
           return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
@@ -346,16 +346,21 @@ export default (sbp('sbp/selectors/register', {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         let targetState = cheloniaState[v.contractID]
-        const sharedKeys = Object.create(null)
+        const newKeysReceived = []
         for (const key of v.keys) {
           if (key.meta?.private) {
-            if (key.id && key.meta.private.content) {
+            if (
+              key.id &&
+              key.meta.private.content &&
+              !sbp('chelonia/haveSecretKey', key.id)
+            ) {
               try {
                 const decrypted = key.meta.private.content.valueOf()
-                sharedKeys[key.id] = decrypted
-                if (config.transientSecretKeys) {
-                  config.transientSecretKeys[key.id] = decrypted
-                }
+                sbp('chelonia/storeSecretKeys', [{
+                  key: deserializeKey(decrypted),
+                  transient: !!key.meta.private.transient
+                }])
+                newKeysReceived.push(key.id)
               } catch (e) {
                 console.error(`OP_KEY_SHARE decryption error '${e.message || e}':`, e)
               }
@@ -364,17 +369,18 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // If we already have the keys, we can return as the contract state will not be affected
-        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc || !targetState._volatile.keys[keyId], false)
-
-        if (!receivedNewKeys) {
-          console.log({ receivedNewKeys, sharedKeys, existingKeys: targetState._volatile?.keys })
+        if (newKeysReceived.length === 0) {
           return
         }
 
-        const existingKeys = targetState._volatile?.keys
-
         Promise.resolve().then(async () => {
           console.log('Processing OP_KEY_SHARE (inside promise)')
+          // TODO: Change or replace if condition to consider height. If an
+          // encryption key has been shared with _validFrom lower than the
+          // current height, then the contract must be resynced.
+          // The consequence of this is that pendingKeyRequests might no longer
+          // be needed, or it may have a more limited scope (i.e., keeping track of
+          // key requests only, not deciding when a sync needs to happen)
           if (targetState._volatile?.pendingKeyRequests?.length) {
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
@@ -384,34 +390,19 @@ export default (sbp('sbp/selectors/register', {
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
             await sbp('chelonia/contract/remove', v.contractID)
             // Sync...
-            await sbp('chelonia/configure', {
-              transientSecretKeys: sharedKeys
-            }).then(async () => {
-              self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
+            self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
 
-              // WARNING! THIS MIGHT DEADLOCK!!!
-              await sbp('chelonia/withEnv', env, [
-                'chelonia/private/in/syncContract', v.contractID
-              ])
+            // WARNING! THIS MIGHT DEADLOCK!!!
+            await sbp('chelonia/withEnv', env, [
+              'chelonia/private/in/syncContract', v.contractID
+            ])
 
-              targetState = cheloniaState[v.contractID]
-            })
+            targetState = cheloniaState[v.contractID]
           } else {
             console.log('No pendingKeyRequests')
           }
         }).then(() => {
           if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
-          if (!targetState._volatile.keys) config.reactiveSet(targetState._volatile, 'keys', Object.create(null))
-
-          for (const [id, value] of Object.entries((sharedKeys: any))) {
-            if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
-          }
-
-          if (existingKeys) {
-            for (const [id, value] of Object.entries(existingKeys)) {
-              if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
-            }
-          }
 
           // TODO Instead of deleting all key requests, remove the current one only
           targetState._volatile.pendingKeyRequests = []
@@ -495,6 +486,7 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
+        if (!state._volatile) config.reactiveSet(state._volatile, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         if (!signingKey) {
           throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
@@ -703,7 +695,7 @@ export default (sbp('sbp/selectors/register', {
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
         for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserialize(events[i], undefined, this.config.transientSecretKeys).hash() === latest) {
+          if (GIMessage.deserialize(events[i], this.transientSecretKeys).hash() === latest) {
             latestHashFound = true
             break
           }
@@ -715,7 +707,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], undefined, this.config.transientSecretKeys))
+          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], this.transientSecretKeys))
         }
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
@@ -743,7 +735,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const externalContractState = state[externalContractID]
 
-    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
+    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel)
     const canMirrorOperations = !!signingKey
 
     // Only sync contract if we are actually able to mirror key operations
@@ -765,7 +757,7 @@ export default (sbp('sbp/selectors/register', {
     // Does the key exist? If not, it has probably been removed and instead
     // of waiting, we need to remove it ourselves
     if (contractState._vm?.authorizedKeys && !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName)) {
-      const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
+      const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel)
       const externalContractName = state.contracts[externalContractID]?.type
 
       if (externalContractName && signingKeyId) {
@@ -781,13 +773,6 @@ export default (sbp('sbp/selectors/register', {
       if (!contractState._volatile.watch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
       if (Array.isArray(contractState._volatile.watch) && !contractState._volatile.watch.find((v) => v[0] === keyName && v[1] === externalContractID)) contractState._volatile.watch.push([keyName, externalContractID])
     }
-
-    // Do we have the corresponding private key? If so, add it to this contract
-    if (contractState._volatile.keys?.[keyId]) {
-      if (!externalContractState._volatile) this.config.reactiveSet(externalContractState, '_volatile', Object.create(null))
-      if (!externalContractState._volatile.keys) this.config.reactiveSet(externalContractState._volatile, 'keys', Object.create(null))
-      externalContractState._volatile.keys[keyId] = contractState._volatile.keys?.[keyId]
-    }
   },
   'chelonia/private/respondToKeyRequests': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -801,7 +786,7 @@ export default (sbp('sbp/selectors/register', {
 
     delete contractState._vm.pendingKeyshares
 
-    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'], undefined, Object.keys(this.config.transientSecretKeys || {}))
+    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])
 
     if (!signingKeyId) {
       console.log('Unable to respond to key request because there is no suitable secret key with OP_KEY_REQUEST_SEEN permission')
@@ -840,13 +825,12 @@ export default (sbp('sbp/selectors/register', {
 
         verifySignature(signingKey.data, signedInnerData.join('|'), data)
 
-        const keys = contractState._volatile?.keys &&
-          Object.fromEntries(
-            Object.entries(contractState._volatile?.keys)
-              .filter(([kId]) =>
-                contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable
-              )
-          )
+        const keys = pick(
+          state['secretKeys'],
+          Object.entries(contractState._vm.authorizedKeys)
+            .filter(([, key]) => !!(key: any).meta?.private?.shareable)
+            .map(([kId]) => kId)
+        )
 
         if (!keys || Object.keys(keys).length === 0) {
           console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })
