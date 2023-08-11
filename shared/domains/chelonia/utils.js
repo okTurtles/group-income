@@ -42,7 +42,7 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
 export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
   const signingKeyPermissions = Array.isArray(signingKey.permissions) ? new Set(signingKey.permissions) : signingKey.permissions
   const signingKeyAllowedActions = Array.isArray(signingKey.allowedActions) ? new Set(signingKey.allowedActions) : signingKey.allowedActions
-  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
+  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.forEach(k => {
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
@@ -50,19 +50,19 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
     }
     if (signingKeyPermissions !== '*') {
       if (!Array.isArray(k.permissions) || !k.permissions.reduce((acc, cv) => acc && signingKeyPermissions.has(cv), true)) {
-        throw new Error('Unable to add or update a key with more permissions than the signing key. singingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
+        throw new Error('Unable to add or update a key with more permissions than the signing key. signingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
       }
     }
     if (signingKeyAllowedActions !== '*' && k.allowedActions) {
       if (!signingKeyAllowedActions || !Array.isArray(k.allowedActions) || !k.allowedActions.reduce((acc, cv) => acc && signingKeyAllowedActions.has(cv), true)) {
-        throw new Error('Unable to add or update a key with more allowed actions than the signing key. singingKey allowed actions: ' + String(signingKey?.allowedActions) + '; key add allowed actions: ' + String(k.allowedActions))
+        throw new Error('Unable to add or update a key with more allowed actions than the signing key. signingKey allowed actions: ' + String(signingKey?.allowedActions) + '; key add allowed actions: ' + String(k.allowedActions))
       }
     }
   })
 }
 
 export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: string[]) => {
-  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
+  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.map(id => state._vm.authorizedKeys[id]).forEach((k, i) => {
     if (!k) throw new Error('Nonexisting key ID ' + v[i])
@@ -88,7 +88,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
     if (uk.data && existingKey.meta?.private && !(uk.meta?.private)) {
       throw new Error('Missing private key. Old key ID: ' + uk.oldKeyId)
     }
-    if (uk.id) {
+    if (uk.id && uk.id !== uk.oldKeyId) {
       keysToDelete.push(uk.oldKeyId)
     }
     const updatedKey = { ...existingKey }

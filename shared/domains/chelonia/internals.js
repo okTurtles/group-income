@@ -554,18 +554,20 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
         }
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
-        const updatedKeysMap = keysToMap(updatedKeys, height)
-        const newAuthorizedKeys = { ...updatedKeysMap, ...state._vm.authorizedKeys }
         for (const keyId of keysToDelete) {
-          newAuthorizedKeys[keyId]._notAfterHeight = height
-        }
-        for (const keyId of updatedKeys) {
           // $FlowFixMe
           if (Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
           }
+
+          config.reactiveSet(state._vm.authorizedKeys[keyId], '_notAfterHeight', height)
         }
-        config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
+        for (const key of updatedKeys) {
+          if (!state._vm.authorizedKeys[key.id]) {
+            key._notBeforeHeight = height
+          }
+          config.reactiveSet(state._vm.authorizedKeys, key.id, key)
+        }
         keyAdditionProcessor.call(self, (v: any), state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
