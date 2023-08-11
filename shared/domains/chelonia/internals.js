@@ -2,7 +2,7 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, debounce, delay, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
@@ -475,8 +475,7 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Signing key not found but is mandatory for OP_KEY_ADD')
         }
         v.forEach((k) => {
-          // $FlowFixMe
-          if (Object.prototype.hasOwnProperty.call(state._vm.authorizedKeys, k.id)) {
+          if (has(state._vm.authorizedKeys, k.id)) {
             throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
           }
         })
@@ -500,8 +499,7 @@ export default (sbp('sbp/selectors/register', {
           }
           state._vm.authorizedKeys[keyId]._notAfterHeight = height
 
-          // $FlowFixMe
-          if (Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, keyId)) {
+          if (has(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
           }
 
@@ -555,16 +553,14 @@ export default (sbp('sbp/selectors/register', {
         }
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         for (const keyId of keysToDelete) {
-          // $FlowFixMe
-          if (Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, keyId)) {
+          if (has(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
           }
 
           config.reactiveSet(state._vm.authorizedKeys[keyId], '_notAfterHeight', height)
         }
         for (const key of updatedKeys) {
-          // $FlowFixMe
-          if (!Object.prototype.hasOwnProperty.call(state._vm.authorizedKeys, key.id)) {
+          if (!has(state._vm.authorizedKeys, key.id)) {
             key._notBeforeHeight = height
           }
           config.reactiveSet(state._vm.authorizedKeys, key.id, key)

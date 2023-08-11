@@ -1,4 +1,4 @@
-import { pick } from '@model/contracts/shared/giLodash.js'
+import { has, pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -89,7 +89,7 @@ sbp('sbp/selectors/register', {
           : keysToRotate === '*'
             ? true
             // $FlowFixMe
-            : state._volatile?.pendingKeyRevocations && Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, id))
+            : state._volatile?.pendingKeyRevocations && has(state._volatile.pendingKeyRevocations, id))
     }).map(([id, data]: [string, GIKey]) => {
       const newKey = keygenOfSameType(data.data)
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
@@ -98,8 +98,7 @@ sbp('sbp/selectors/register', {
     // $FlowFixMe
     const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
-      // $FlowFixMe
-      const isRotatedEncryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName)
+      const isRotatedEncryptionKey = has(newKeys, encryptionKeyName)
       const encryptionKey = isRotatedEncryptionKey ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
 
       if (state._vm.authorizedKeys[id].ringLevel < ringLevel) {
