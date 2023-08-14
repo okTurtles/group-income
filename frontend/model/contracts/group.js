@@ -16,7 +16,7 @@ import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/func
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
-import currencies, { saferFloat } from './shared/currencies.js'
+import currencies from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 
@@ -346,37 +346,6 @@ sbp('chelonia/defineContract', {
         //       1 mili-second doesn't make any difference to the users
         //       so periodAfterPeriod is used to make it simple
         return getters.periodAfterPeriod(periodStamp)
-      }
-    },
-    paymentTotalFromUserToUser (state, getters) {
-      return (fromUser, toUser, periodStamp) => {
-        const payments = getters.currentGroupState.payments
-        const periodPayments = getters.groupPeriodPayments
-        const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {}
-        // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
-        //       here, but I couldn't get it to work with our linter. :(
-        //       https://github.com/babel/babel-eslint/issues/511
-        const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-          const payment = payments[hash]
-          let { amount, exchangeRate, status } = payment.data
-          if (status !== PAYMENT_COMPLETED) {
-            return a
-          }
-          const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
-          // if this payment is from a previous period, then make sure to take into account
-          // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both period's
-          // exchange rates
-          if (periodStamp !== paymentCreatedPeriodStamp) {
-            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
-              console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
-              return a
-            }
-            exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate
-          }
-          return a + (amount * exchangeRate * mincomeExchangeRate)
-        }, 0)
-        return saferFloat(total)
       }
     },
     paymentHashesForPeriod (state, getters) {
