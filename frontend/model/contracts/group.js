@@ -415,7 +415,7 @@ sbp('chelonia/defineContract', {
     },
     groupProposalSettings (state, getters) {
       return (proposalType = PROPOSAL_GENERIC) => {
-        return getters.groupSettings.proposals[proposalType]
+        return getters.groupSettings.proposals?.[proposalType]
       }
     },
     groupCurrency (state, getters) {
