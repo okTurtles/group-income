@@ -33,7 +33,7 @@ export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSON
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; }
+export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
 export type GIOpKeyRequest = {
   keyId: string;
   outerKeyId: string;

@@ -434,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasVolatileKeys && !state._volatile.pendingKeyRequests?.length) {
+      } else if (hasVolatileKeys && !state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
         if (!state._vm) {
           console.warn('Invalid group state: missing _vm key. contractID=' + params.contractID, { ...state })

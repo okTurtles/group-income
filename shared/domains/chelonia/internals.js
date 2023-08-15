@@ -180,6 +180,7 @@ export default (sbp('sbp/selectors/register', {
       parseFloat,
       parseInt,
       Promise,
+      Function,
       ...this.config.contracts.defaults.exposedGlobals,
       require: (dep) => {
         return dep === '@sbp/sbp'
@@ -347,6 +348,7 @@ export default (sbp('sbp/selectors/register', {
         }
         let targetState = cheloniaState[v.contractID]
         const newKeysReceived = []
+        let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (
@@ -361,6 +363,13 @@ export default (sbp('sbp/selectors/register', {
                   transient: !!key.meta.private.transient
                 }])
                 newKeysReceived.push(key.id)
+                if (
+                  targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
+                    Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
+                    targetState._vm.authorizedKeys[key.id].purpose.includes('enc')
+                ) {
+                  newestEncryptionKeyHeight = Math.min(newestEncryptionKeyHeight, targetState._vm.authorizedKeys[key.id]._notBeforeHeight)
+                }
               } catch (e) {
                 console.error(`OP_KEY_SHARE decryption error '${e.message || e}':`, e)
               }
@@ -375,17 +384,15 @@ export default (sbp('sbp/selectors/register', {
 
         Promise.resolve().then(async () => {
           console.log('Processing OP_KEY_SHARE (inside promise)')
-          // TODO: Change or replace if condition to consider height. If an
-          // encryption key has been shared with _validFrom lower than the
+          // If an encryption key has been shared with _notBefore lower than the
           // current height, then the contract must be resynced.
-          // The consequence of this is that pendingKeyRequests might no longer
-          // be needed, or it may have a more limited scope (i.e., keeping track of
-          // key requests only, not deciding when a sync needs to happen)
-          if (targetState._volatile?.pendingKeyRequests?.length) {
+          if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
               return
             }
+            const previousVolatileState = targetState._volatile
+
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
             await sbp('chelonia/contract/remove', v.contractID)
@@ -398,14 +405,23 @@ export default (sbp('sbp/selectors/register', {
             ])
 
             targetState = cheloniaState[v.contractID]
+
+            return previousVolatileState
           } else {
             console.log('No pendingKeyRequests')
           }
-        }).then(() => {
-          if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
+        }).then((previousVolatileState) => {
+          if (previousVolatileState && has(previousVolatileState, 'watch')) {
+            if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
+            if (!targetState._volatile.watch) {
+              config.reactiveSet(targetState._volatile.watch, 'watch', previousVolatileState.watch)
+            } else {
+              targetState._volatile.watch.push(...previousVolatileState.watch)
+            }
+          }
+          if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
 
-          // TODO Instead of deleting all key requests, remove the current one only
-          targetState._volatile.pendingKeyRequests = []
+          config.reactiveSet(targetState._volatile, 'pendingKeyRequests', targetState._volatile.pendingKeyRequests.filter((pkr) => { return v.keyRequestId && pkr?.id === v.keyRequestId }))
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
@@ -439,6 +455,7 @@ export default (sbp('sbp/selectors/register', {
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
           message.originatingContractID(),
           message.head().previousHEAD,
+          message.id(),
           v
         ])
 
@@ -793,11 +810,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
-      if (!Array.isArray(entry) || entry.length !== 3) {
+      if (!Array.isArray(entry) || entry.length !== 4) {
         return
       }
 
-      const [originatingContractID, previousHEAD, v] = ((entry: any): [string, string, GIOpKeyRequest])
+      const [originatingContractID, previousHEAD, id, v] = ((entry: any): [string, string, string, GIOpKeyRequest])
 
       // 1. Sync (originating) identity contract
 
@@ -852,7 +869,8 @@ export default (sbp('sbp/selectors/register', {
                   shareable: true
                 }
               }
-            }))
+            })),
+            keyRequestId: id
           },
           signingKeyId
         })
