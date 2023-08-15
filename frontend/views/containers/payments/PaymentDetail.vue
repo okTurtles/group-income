@@ -34,6 +34,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
     ) Cancel payment
 
     i18n.button(
+      v-if='fromUser !== ourUsername'
       tag='button'
       @click='sendThankYou'
     ) Send Thanks!
@@ -81,11 +82,13 @@ export default ({
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
     },
+    fromUser () {
+      return this.payment?.meta.username || ''
+    },
     subtitleCopy () {
       const toUser = this.payment.data.toUser
-      const fromUser = this.payment.meta.username
       const arg = (username) => ({ name: this.userDisplayName(username) })
-      return toUser === this.ourUsername ? L('Sent by {name}', arg(fromUser)) : L('Sent to {name}', arg(toUser))
+      return toUser === this.ourUsername ? L('Sent by {name}', arg(this.fromUser)) : L('Sent to {name}', arg(toUser))
     }
   },
   methods: {
