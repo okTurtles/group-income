@@ -312,6 +312,12 @@ sbp('chelonia/defineContract', {
     groupMincomeCurrency (state, getters) {
       return getters.groupSettings.mincomeCurrency
     },
+    // Oldest period key first.
+    groupSortedPeriodKeys (state, getters) {
+      // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
+      // A comparator function isn't required for now since our keys are ISO strings.
+      return Object.keys(getters.currentGroupState.paymentsByPeriod ?? {}).sort()
+    },
     periodStampGivenDate (state, getters) {
       return (recentDate: string | Date) => {
         if (typeof recentDate !== 'string') {
