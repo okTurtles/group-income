@@ -1,6 +1,10 @@
 
 // Similar to time.js but without the import.
-export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
+function addTimeToDate (dateOrIsoString, milliseconds) {
+  return new Date(new Date(dateOrIsoString).getTime() + milliseconds).toISOString()
+}
+
+function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   const locale = navigator.languages ? navigator.languages[0] : navigator.language
   return new Date(datems).toLocaleDateString(locale, opts)
 }
@@ -87,6 +91,38 @@ describe('Group Payments', () => {
     cy.giLogout()
   })
 
+  // TODO: move these assertions to unit tests.
+  it('period-related getters should work in the waiting period', () => {
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+
+    cy.window().its('sbp').then(sbp => {
+      // The getters we're going to test.
+      const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod } = sbp('state/vuex/getters')
+      const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
+      const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const oneSecondAhead = addTimeToDate(distributionDate, 1000)
+      const oneSecondBefore = addTimeToDate(distributionDate, -1000)
+      /* eslint-disable no-unused-expressions */
+      expect(periodStampGivenDate(new Date()) === onePeriodLengthBefore).to.be.true
+      expect(periodStampGivenDate(distributionDate) === distributionDate).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthBefore) === onePeriodLengthBefore).to.be.true
+      expect(periodStampGivenDate(oneSecondAhead) === distributionDate).to.be.true
+      expect(periodStampGivenDate(oneSecondBefore) === onePeriodLengthBefore).to.be.true
+
+      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === undefined).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthBefore) === distributionDate).to.be.true
+
+      expect(periodBeforePeriod(distributionDate) === onePeriodLengthBefore).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined).to.be.true
+      /* eslint-enable no-unused-expressions */
+    })
+    cy.giLogout()
+  })
+
   it('Three users join the group and add their income details', () => {
     const options = { groupName, bypassUI: true, shouldLogoutAfter: false }
     cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, ...options })
@@ -110,6 +146,36 @@ describe('Group Payments', () => {
     //       for some reason return a promise that wouldn't resolve.
     cy.giForceDistributionDateToNow()
 
+    // Period-related getters should also work in a normal period.
+    cy.window().its('sbp').then(sbp => {
+      const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod, groupSortedPeriodKeys } = sbp('state/vuex/getters')
+      const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
+      const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const oneSecondAhead = addTimeToDate(distributionDate, 1000)
+      const oneSecondBefore = addTimeToDate(distributionDate, -1000)
+      const waitingPeriod = groupSortedPeriodKeys[0]
+      /* eslint-disable no-unused-expressions */
+      // The provided integers are there to help identify a failed assertion.
+      expect(periodStampGivenDate(new Date()) === distributionDate, 1).to.be.true
+      expect(periodStampGivenDate(distributionDate) === distributionDate, 2).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead, 3).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthBefore) === undefined, 4).to.be.true
+      expect(periodStampGivenDate(oneSecondAhead) === distributionDate, 5).to.be.true
+      expect(periodStampGivenDate(oneSecondBefore) === waitingPeriod, 6).to.be.true
+      expect(periodStampGivenDate(waitingPeriod) === waitingPeriod, 7).to.be.true
+
+      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead, 8).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === undefined, 9).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthBefore) === undefined, 10).to.be.true
+      expect(periodAfterPeriod(waitingPeriod) === distributionDate, 11).to.be.true
+
+      expect(periodBeforePeriod(distributionDate) === waitingPeriod, 12).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 13).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 14).to.be.true
+      expect(periodBeforePeriod(waitingPeriod) === undefined, 15).to.be.true
+      /* eslint-enable no-unused-expressions */
+    })
     cy.getByDT('paymentsLink').click()
     // Moving it here seems to have fixed things.
     // cy.giForceDistributionDateToNow()

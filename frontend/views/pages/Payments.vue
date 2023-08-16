@@ -240,7 +240,6 @@ export default ({
   computed: {
     ...mapGetters([
       'groupIncomeDistribution',
-      'periodStampGivenDate',
       'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
@@ -315,7 +314,7 @@ export default ({
     },
     // paymentsCount () {
     //   if (Object.keys(this.groupSettings).length) {
-    //     return this.paymentHashesForPeriod(this.periodStampGivenDate(this.groupSettings.distributionDate))?.length
+    //     return this.paymentHashesForPeriod(await this.getPeriodStampGivenDate(this.groupSettings.distributionDate))?.length
     //   }
     // },
     paymentsTodo () {

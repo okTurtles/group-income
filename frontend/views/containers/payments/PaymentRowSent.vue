@@ -21,7 +21,7 @@
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
 
     template(slot='cellRelativeTo')
-      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
+      .c-relative-to.has-text-1 {{ humanDate(payment.relativeTo) }}
 
     template(slot='cellActions')
       payment-actions-menu
@@ -53,6 +53,7 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 
 export default ({
   name: 'PaymentRowSent',
@@ -63,6 +64,7 @@ export default ({
     PaymentNotReceivedTooltip,
     PaymentRow
   },
+  mixins: [PaymentsMixin],
   props: {
     payment: {
       type: Object,
@@ -72,12 +74,14 @@ export default ({
   computed: {
     ...mapGetters([
       'ourGroupProfile',
-      'withGroupCurrency',
-      'periodStampGivenDate'
+      'withGroupCurrency'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     }
+  },
+  created () {
+    this.updatePayment()
   },
   methods: {
     humanDate,
@@ -100,6 +104,9 @@ export default ({
         console.error(e)
         alert(e.message)
       }
+    },
+    async updatePayment () {
+      this.payment.relativeTo = await this.getPeriodStampGivenDate(this.payment.date)
     }
   }
 }: Object)

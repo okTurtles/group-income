@@ -20,8 +20,6 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { comparePeriodStamps } from '@model/contracts/shared/time.js'
-import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
@@ -41,32 +39,18 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
-      'periodStampGivenDate',
-      'periodBeforePeriod',
       'withGroupCurrency',
       'groupTotalPledgeAmount',
       'groupCreatedDate'
-    ]),
-    firstDistributionPeriod () {
-      // group's first distribution period
-      return this.periodStampGivenDate(this.groupCreatedDate)
-    },
-    periods () {
-      const periods = [this.currentPaymentPeriod]
-      for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
-        const period = this.periodBeforePeriod(periods[0])
-        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
-        else periods.unshift(period)
-      }
-      return periods
-    }
+    ])
   },
   mounted () {
     this.updateHistory()
   },
   methods: {
     async updateHistory () {
-      this.history = await Promise.all(this.periods.map(async (period, i) => {
+      const periods = await this.getSortedPeriodKeys()
+      this.history = await Promise.all(periods.map(async (period, i) => {
         const totalTodo = await this.getTotalTodoAmountForPeriod(period)
         const totalDone = await this.getTotalPledgesDoneForPeriod(period)
 
@@ -82,7 +66,7 @@ export default ({
     }
   },
   watch: {
-    periods () {
+    currentPaymentPeriod () {
       this.updateHistory()
     }
   }
