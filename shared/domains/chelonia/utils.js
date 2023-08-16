@@ -128,7 +128,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
       if (
         key.id &&
         key.meta.private.content &&
-        !sbp('chelonia/haveSecretKey', key.id)
+        !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
       ) {
         try {
           decryptedKey = key.meta.private.content.valueOf()

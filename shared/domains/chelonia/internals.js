@@ -354,7 +354,7 @@ export default (sbp('sbp/selectors/register', {
             if (
               key.id &&
               key.meta.private.content &&
-              !sbp('chelonia/haveSecretKey', key.id)
+              !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
             ) {
               try {
                 const decrypted = key.meta.private.content.valueOf()

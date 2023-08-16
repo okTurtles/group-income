@@ -164,6 +164,11 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: 0,
             permissions: '*',
             allowedActions: '*',
+            meta: {
+              private: {
+                transient: true
+              }
+            },
             data: IPKp
           },
           {
@@ -175,6 +180,11 @@ export default (sbp('sbp/selectors/register', {
             // make sense here? It is not being used and these types of permissions
             // can be problematic because selectors can be updated
             permissions: ['gi.contracts/identity/keymeta'],
+            meta: {
+              private: {
+                transient: true
+              }
+            },
             data: IEKp
           },
           {

@@ -360,8 +360,8 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
-  'chelonia/haveSecretKey': function (keyId: string) {
-    if (keyId in this.transientSecretKeys) return true
+  'chelonia/haveSecretKey': function (keyId: string, persistent?: boolean) {
+    if (!persistent && keyId in this.transientSecretKeys) return true
     const rootState = sbp(this.config.stateSelector)
     return !!rootState?.secretKeys?.[keyId]
   },
