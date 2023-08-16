@@ -371,7 +371,13 @@ export default (sbp('sbp/selectors/register', {
                   newestEncryptionKeyHeight = Math.min(newestEncryptionKeyHeight, targetState._vm.authorizedKeys[key.id]._notBeforeHeight)
                 }
               } catch (e) {
-                console.error(`OP_KEY_SHARE decryption error '${e.message || e}':`, e)
+                if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
+                  console.warn(`OP_KEY_SHARE missing secret key: ${e.message}`,
+                    e)
+                } else {
+                  console.error(`OP_KEY_SHARE error '${e.message || e}':`,
+                    e)
+                }
               }
             }
           }
@@ -414,7 +420,7 @@ export default (sbp('sbp/selectors/register', {
           if (previousVolatileState && has(previousVolatileState, 'watch')) {
             if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
             if (!targetState._volatile.watch) {
-              config.reactiveSet(targetState._volatile.watch, 'watch', previousVolatileState.watch)
+              config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
             } else {
               targetState._volatile.watch.push(...previousVolatileState.watch)
             }
