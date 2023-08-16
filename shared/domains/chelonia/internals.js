@@ -924,7 +924,11 @@ export default (sbp('sbp/selectors/register', {
       try {
         await handleEvent.processMutation.call(this, message, state)
       } catch (e) {
-        console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
+        if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
+          console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+        } else {
+          console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
+        }
         // we revert any changes to the contract state that occurred, ignoring this mutation
         handleEvent.revertProcess.call(this, { message, state, contractID, contractStateCopy })
         processingErrored = true
