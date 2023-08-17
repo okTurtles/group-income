@@ -41,7 +41,7 @@ const PaymentsMixin: Object = {
               for (const hash of paymentsFrom[fromUser][toUser]) {
                 if (hash in payments) {
                   const { data, meta } = payments[hash]
-                  paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
+                  paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser, period })
                 } else {
                   console.error(`getHistoricalPaymentsInTypes: couldn't find payment ${hash} for period ${period}!`)
                 }
@@ -89,6 +89,8 @@ const PaymentsMixin: Object = {
     async getHistoricalPaymentByHashAndPeriod (hash: string, period: string) {
       const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+
+      console.log(`@@ payments for the period [${period}]: `, payments)
       return payments[hash]
     },
     async getHaveNeedsSnapshotByPeriod (period: string) {

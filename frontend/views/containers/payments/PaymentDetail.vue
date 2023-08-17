@@ -27,14 +27,17 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       i18n.has-text-1 Notes
       p.has-text-bold {{ payment.data.memo }}
 
-  .buttons.c-buttons-container(v-if='!lightningPayment')
+  .buttons.c-buttons-container(
+    v-if='!lightningPayment'
+    :class='{ "is-centered": isPaidByMyself }'
+  )
     i18n.button.is-outlined(
       tag='button'
       @click='cancelPayment'
     ) Cancel payment
 
     i18n.button(
-      v-if='fromUser !== ourUsername'
+      v-if='!isPaidByMyself'
       tag='button'
       @click='sendThankYou'
     ) Send Thanks!
@@ -84,6 +87,9 @@ export default ({
     },
     fromUser () {
       return this.payment?.meta.username || ''
+    },
+    isPaidByMyself () {
+      return this.fromUser === this.ourUsername
     },
     subtitleCopy () {
       const toUser = this.payment.data.toUser
@@ -180,6 +186,10 @@ export default ({
   max-width: 25rem;
   margin: 1.625rem auto 0;
   width: 100%;
+
+  &.is-centered {
+    justify-content: center;
+  }
 
   .button:not(:last-child) {
     margin-right: 0;
