@@ -226,15 +226,15 @@ export default ({
         if (section && this.tabSections.includes(section)) {
           this.ephemeral.activeTab = section
         } else {
-          const fromQuery = from.query || {}
+          const fromQuery = from?.query || {}
           const isFromPaymentDetailModal = fromQuery.modal === 'PaymentDetail'
-          const defaultTab = this.tabSections[0]
-
-          if (isFromPaymentDetailModal && fromQuery.section) {
+          const defaultTab = isFromPaymentDetailModal
             // When payment detail modal is closed, the payment table has to remain in the previously active tab.
             // (context: https://github.com/okTurtles/group-income/issues/1686)
-            this.handleTabClick(fromQuery.section)
-          } else if (defaultTab) {
+            ? fromQuery.section || this.tabSections[0]
+            : this.tabSections[0]
+
+          if (defaultTab) {
             this.handleTabClick(defaultTab)
           } else if (section) {
             const query = omit(this.$route.query, ['section'])
