@@ -91,6 +91,7 @@
 
   .c-footer
     send-area(
+      ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
@@ -134,11 +135,9 @@ import { createMessage, findMessageIdx } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
-import DragAndDropMixin from './dragndrop/DragAndDropMixin.js'
 
 export default ({
   name: 'ChatMain',
-  mixins: [DragAndDropMixin],
   components: {
     Avatar,
     ConversationGreetings,
@@ -180,6 +179,10 @@ export default ({
         contract: {},
         prevFrom: null,
         prevTo: null
+      },
+      dndState: {
+        // drag & drop releated state
+        isActive: false
       }
     }
   },
@@ -740,7 +743,31 @@ export default ({
       this.archiveMessageState(from)
       this.setInitMessages()
       this.setMessageEventListener({ to, from })
-    }, 250)
+    }, 250),
+    // Handlers for file-upload via drag & drop action
+    dragStartHandler (e) {
+      // handler function for 'dragstart', 'dragover' events
+      if (!this.dndState.isActive) {
+        this.dndState.isActive = true
+      }
+
+      if (e?.dataTransfer) {
+        // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+        e.dataTransfer.dropEffect = 'copy'
+      }
+    },
+    dragEndHandler (e) {
+      e.preventDefault()
+      // handler function for 'dragleave', 'dragend', 'drop' events
+      console.log('@@ dragEndHandler !! : ', e.type, e.target)
+
+      if (this.dndState.isActive) {
+        this.dndState.isActive = false
+
+        e?.dataTransfer.files &&
+          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files)
+      }
+    }
   },
   provide () {
     return {

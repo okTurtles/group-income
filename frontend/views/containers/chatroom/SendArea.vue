@@ -401,11 +401,20 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      if (!this.$refs.textarea.value) {
+      if (!this.$refs.textarea.value && !this.ephemeral.attachment) {
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
+      let msgToSend = this.$refs.textarea.value || ''
+      if (this.ephemeral.attachment) {
+        // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
+        msgToSend = msgToSend +
+          (msgToSend ? '\r\n' : '') +
+          `{ File Attached: ${this.ephemeral.attachment.name} } - Feature coming soon!`
+        this.removeAttachment()
+      }
+
+      this.$emit('send', msgToSend) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
@@ -428,6 +437,11 @@ export default ({
 
       if (fileSize > Math.pow(10, 9)) {
         return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileTooLargeModal')
+      }
+
+      if (this.ephemeral.attachment) {
+        // make sure to clear the state if there is already another attached file.
+        this.removeAttachment()
       }
 
       this.ephemeral.attachment = {
