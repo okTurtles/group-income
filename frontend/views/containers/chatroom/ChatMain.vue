@@ -1,9 +1,15 @@
 <template lang='pug'>
 .c-chat-main(
   v-if='summary.title'
-  @drag.prevent.stop=''
-  @dragstart.prevent.stop=''
+  :class='{ "is-dnd-active": dndState && dndState.isActive }'
+  @dragstart='dragStartHandler'
+  @dragover='dragStartHandler'
 )
+  drag-active-overlay(
+    v-if='dndState && dndState.isActive'
+    @drag-ended='dragEndHandler'
+  )
+
   emoticons
 
   .c-body
@@ -116,6 +122,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import DragActiveOverlay from './dragndrop/DragActiveOverlay.vue'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -127,9 +134,11 @@ import { createMessage, findMessageIdx } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import DragAndDropMixin from './dragndrop/DragAndDropMixin.js'
 
 export default ({
   name: 'ChatMain',
+  mixins: [DragAndDropMixin],
   components: {
     Avatar,
     ConversationGreetings,
@@ -141,7 +150,8 @@ export default ({
     MessageNotification,
     MessagePoll,
     SendArea,
-    ViewArea
+    ViewArea,
+    DragActiveOverlay
   },
   props: {
     summary: {
@@ -789,6 +799,12 @@ export default ({
   flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
+  position: relative;
+
+  &.is-dnd-active {
+    position: relative;
+    z-index: 0;
+  }
 }
 
 .c-body {
