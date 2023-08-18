@@ -34,6 +34,7 @@
           i18n Payment details
 
         menu-item(
+          v-if='!isOldPayment'
           tag='button'
           item-id='message'
           icon='times'
@@ -49,7 +50,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
@@ -73,10 +74,15 @@ export default ({
     ...mapGetters([
       'ourGroupProfile',
       'withGroupCurrency',
-      'periodStampGivenDate'
+      'periodStampGivenDate',
+      'currentPaymentPeriod'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
+    },
+    isOldPayment () {
+      // check if it's a past transaction item.
+      return comparePeriodStamps(this.payment.period, this.currentPaymentPeriod) < 0
     }
   },
   methods: {
