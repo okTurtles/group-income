@@ -28,11 +28,12 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       p.has-text-bold {{ payment.data.memo }}
 
   .buttons.c-buttons-container(
-    v-if='!lightningPayment'
-    :class='{ "is-centered": isPaidByMyself }'
+    v-if='!lightningPayment && buttonCount > 0'
+    :class='{ "is-centered": buttonCount === 1 }'
   )
     i18n.button.is-outlined(
       tag='button'
+      v-if='isPaidByMyself && !payment.isOldPayment'
       @click='cancelPayment'
     ) Cancel payment
 
@@ -52,7 +53,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import currencies from '@model/contracts/shared/currencies.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 export default ({
@@ -80,7 +81,8 @@ export default ({
     ...mapGetters([
       'ourUsername',
       'userDisplayName',
-      'periodStampGivenDate'
+      'periodStampGivenDate',
+      'currentPaymentPeriod'
     ]),
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
@@ -90,6 +92,9 @@ export default ({
     },
     isPaidByMyself () {
       return this.fromUser === this.ourUsername
+    },
+    buttonCount () {
+      return Number(!this.isPaidByMyself) + Number(this.isPaidByMyself && !this.payment.isOldPayment)
     },
     subtitleCopy () {
       const toUser = this.payment.data.toUser
@@ -112,6 +117,7 @@ export default ({
         this.payment = cloneDeep(payment)
         // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
         this.payment.periodstamp = this.periodStampGivenDate(this.payment.meta.createdDate)
+        this.payment.isOldPayment = comparePeriodStamps(this.payment.periodstamp, this.currentPaymentPeriod) < 0
       } else {
         console.warn('PaymentDetail: Missing valid query "id"')
         sbp('okTurtles.events/emit', CLOSE_MODAL)

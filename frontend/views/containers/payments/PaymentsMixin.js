@@ -90,7 +90,6 @@ const PaymentsMixin: Object = {
       const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
 
-      console.log(`@@ payments for the period [${period}]: `, payments)
       return payments[hash]
     },
     async getHaveNeedsSnapshotByPeriod (period: string) {
