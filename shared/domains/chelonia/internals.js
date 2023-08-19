@@ -27,7 +27,7 @@ const keysToMap = (keys: GIKey[], height: number): Object => {
   }))
 }
 
-const keyRotationHelper = (contractID: string, state: Object, config: Object, updatedKeysMap: Object, requiredPermissions: string[], outputSelector: string, outputMapper: (name: [string, string]) => any) => {
+const keyRotationHelper = (contractID: string, state: Object, config: Object, updatedKeysMap: Object, requiredPermissions: string[], outputSelector: string, outputMapper: (name: [string, string]) => any, internalSideEffectStack?: any[]) => {
   if (Array.isArray(state._volatile?.watch)) {
     const rootState = sbp(config.stateSelector)
     const watchMap = Object.create(null)
@@ -74,13 +74,17 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
       // Send output based on keyNamesToUpdate, signingKeyId
       const contractName = rootState.contracts[cID]?.type
 
-      Promise.resolve(sbp(outputSelector, {
-        contractID: cID,
-        contractName,
-        data: keyNamesToUpdate.map(outputMapper),
-        signingKeyId
-      })).catch((e) => {
-        console.warn(`Error mirroring key operation (${outputSelector}) from ${contractID} to ${cID}: ${e?.message || e}`)
+      internalSideEffectStack?.push(async () => {
+        try {
+          await sbp(outputSelector, {
+            contractID: cID,
+            contractName,
+            data: keyNamesToUpdate.map(outputMapper),
+            signingKeyId
+          })
+        } catch (e) {
+          console.warn(`Error mirroring key operation (${outputSelector}) from ${contractID} to ${cID}: ${e?.message || e}`)
+        }
       })
     })
   }
@@ -273,7 +277,7 @@ export default (sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const id = message.id()
@@ -388,7 +392,7 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
-        Promise.resolve().then(async () => {
+        internalSideEffectStack?.push(async () => {
           console.log('Processing OP_KEY_SHARE (inside promise)')
           // If an encryption key has been shared with _notBefore lower than the
           // current height, then the contract must be resynced.
@@ -412,22 +416,20 @@ export default (sbp('sbp/selectors/register', {
 
             targetState = cheloniaState[v.contractID]
 
-            return previousVolatileState
+            if (previousVolatileState && has(previousVolatileState, 'watch')) {
+              if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
+              if (!targetState._volatile.watch) {
+                config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
+              } else {
+                targetState._volatile.watch.push(...previousVolatileState.watch)
+              }
+            }
+            if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
+
+            config.reactiveSet(targetState._volatile, 'pendingKeyRequests', targetState._volatile.pendingKeyRequests.filter((pkr) => { return v.keyRequestId && pkr?.id === v.keyRequestId }))
           } else {
             console.log('No pendingKeyRequests')
           }
-        }).then((previousVolatileState) => {
-          if (previousVolatileState && has(previousVolatileState, 'watch')) {
-            if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
-            if (!targetState._volatile.watch) {
-              config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
-            } else {
-              targetState._volatile.watch.push(...previousVolatileState.watch)
-            }
-          }
-          if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
-
-          config.reactiveSet(targetState._volatile, 'pendingKeyRequests', targetState._volatile.pendingKeyRequests.filter((pkr) => { return v.keyRequestId && pkr?.id === v.keyRequestId }))
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
@@ -564,7 +566,7 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId)
+          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId, internalSideEffectStack)
         }
       },
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
@@ -586,7 +588,7 @@ export default (sbp('sbp/selectors/register', {
           if (!has(state._vm.authorizedKeys, key.id)) {
             key._notBeforeHeight = height
           }
-          config.reactiveSet(state._vm.authorizedKeys, key.id, key)
+          config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
         }
         keyAdditionProcessor.call(self, (v: any), state, contractID, signingKey)
 
@@ -604,7 +606,7 @@ export default (sbp('sbp/selectors/register', {
             oldKeyId: updatedKeysMap[name[0]].oldKeyId,
             id: updatedKeysMap[name[0]].id,
             data: updatedKeysMap[name[0]].data
-          }))
+          }), internalSideEffectStack)
         }
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
@@ -915,6 +917,8 @@ export default (sbp('sbp/selectors/register', {
       const proceed = await handleEvent.addMessageToDB(message)
       if (proceed === false) return
 
+      const internalSideEffectStack = !this.config.skipSideEffects && !this.env.skipSideEffects ? [] : undefined
+
       const contractStateCopy = cloneDeep(state[contractID] || null)
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
@@ -922,7 +926,7 @@ export default (sbp('sbp/selectors/register', {
       //            reason we 'await' here is to dynamically load any new contract
       //            source / definitions specified by the GIMessage
       try {
-        await handleEvent.processMutation.call(this, message, state)
+        await handleEvent.processMutation.call(this, message, state, internalSideEffectStack)
       } catch (e) {
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
@@ -947,6 +951,13 @@ export default (sbp('sbp/selectors/register', {
       }
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
+        try {
+          if (internalSideEffectStack) {
+            await Promise.all(internalSideEffectStack.map(fn => fn()))
+          }
+        } catch (e) {
+          console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
+        }
         try {
           if (!this.config.skipActionProcessing && !this.config.skipSideEffects && !this.env.skipActionProcessing && !this.env.skipSideEffects) {
             await handleEvent.processSideEffects.call(this, message, state[contractID])
@@ -1012,7 +1023,7 @@ const handleEvent = {
       throw e
     }
   },
-  async processMutation (message: GIMessage, state: Object) {
+  async processMutation (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
     const contractID = message.contractID()
     if (message.isFirstMessage()) {
       // Flow doesn't understand that a first message must be a contract,
@@ -1030,7 +1041,7 @@ const handleEvent = {
       index !== -1 && state.pending.splice(index, 1)
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
-    await sbp('chelonia/private/in/processMessage', message, state[contractID])
+    await sbp('chelonia/private/in/processMessage', message, state[contractID], internalSideEffectStack)
 
     // call contract sync again if we get a key request, so that we can respond to any unhandled key requests.
     if (!sbp('chelonia/contract/isSyncing', contractID) && [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_REQUEST].includes(message.opType())) {

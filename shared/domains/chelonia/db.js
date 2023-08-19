@@ -126,6 +126,9 @@ export default (sbp('sbp/selectors/register', {
       }
       const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
       if (!entry.isFirstMessage()) {
+        if (!HEADinfo) {
+          throw new Error(`No latest HEAD for ${contractID} when attempting to process entry with previous HEAD ${entryPreviousHEAD} at height ${entryHeight}`)
+        }
         const { HEAD: contractHEAD, height: contractHeight } = HEADinfo
         if (entryPreviousHEAD !== contractHEAD) {
           console.error(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)

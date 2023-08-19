@@ -195,7 +195,7 @@ const signatureFnBuilder = function (this: any, signingContractID, signingKeyId)
       const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
 
       if (!newKeyId) {
-        throw new Error(`Signing key ID ${signingContractID} has been revoked and no new key exists by the same name (${name})`)
+        throw new Error(`Signing key ID ${signingKeyId} has been revoked and no new key exists by the same name (${name})`)
       }
 
       signingKeyId = newKeyId
@@ -718,7 +718,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = (data: GIOpKeyShare)
 
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, originatingContractID || contractID, params.signingKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       contractID: contractID,
       originatingContractID,
       previousHEAD,
@@ -731,9 +731,9 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     if (!atomic) {
-      hooks && hooks.prepublish && hooks.prepublish(msg)
-      await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-      hooks && hooks.postpublish && hooks.postpublish(msg)
+      hooks?.prepublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      hooks?.postpublish?.(msg)
     }
     return msg
   },
@@ -751,7 +751,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = (data: GIOpKeyAdd)
     validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
@@ -763,9 +763,9 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     if (!atomic) {
-      hooks && hooks.prepublish && hooks.prepublish(msg)
-      await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-      hooks && hooks.postpublish && hooks.postpublish(msg)
+      hooks?.prepublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      hooks?.postpublish?.(msg)
     }
     return msg
   },
@@ -781,7 +781,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = (data: GIOpKeyDel)
     validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
@@ -793,9 +793,9 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     if (!atomic) {
-      hooks && hooks.prepublish && hooks.prepublish(msg)
-      await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-      hooks && hooks.postpublish && hooks.postpublish(msg)
+      hooks?.prepublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      hooks?.postpublish?.(msg)
     }
     return msg
   },
@@ -811,7 +811,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = (data: GIOpKeyUpdate)
     validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
@@ -823,9 +823,9 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     if (!atomic) {
-      hooks && hooks.prepublish && hooks.prepublish(msg)
-      await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-      hooks && hooks.postpublish && hooks.postpublish(msg)
+      hooks?.prepublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      hooks?.postpublish?.(msg)
     }
     return msg
   },
@@ -855,7 +855,7 @@ export default (sbp('sbp/selectors/register', {
       data: sign(innerSigningKey, signedInnerData.join('|'))
     }: GIOpKeyRequest)
     const signatureFn = outerKeyId ? signatureFnBuilder.call(this, contractID, outerKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       originatingContractID,
       contractID,
       previousHEAD,
@@ -867,7 +867,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash,
       signatureFn
     })
-    hooks && hooks.prepublish && hooks.prepublish(msg)
+    hooks?.prepublish?.(msg)
     // TODO: When processing OP_KEY_SHARE:
     //      (1) include the hash if relevant
     //      (2) for foreign keys with OP_KEY_SHARE permission, allow only
@@ -902,8 +902,8 @@ export default (sbp('sbp/selectors/register', {
       data: keyShareKeys,
       signingKeyId
     })
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-    hooks && hooks.postpublish && hooks.postpublish(msg)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+    hooks?.postpublish?.(msg)
     return msg
   },
   'chelonia/out/keyRequestResponse': async function (params: ChelKeyRequestResponseParams): Promise<GIMessage> {
@@ -951,7 +951,7 @@ export default (sbp('sbp/selectors/register', {
       return [msg.opType(), msg.opValue()]
     })
     const signatureFn = params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
-    const msg = GIMessage.createV1_0({
+    let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
@@ -962,9 +962,9 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash,
       signatureFn
     })
-    hooks && hooks.prepublish && hooks.prepublish(msg)
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-    hooks && hooks.postpublish && hooks.postpublish(msg)
+    hooks?.prepublish?.(msg)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+    hooks?.postpublish?.(msg)
     return msg
   },
   'chelonia/out/protocolUpgrade': async function () {
