@@ -462,8 +462,6 @@ export default ({
         }
         if (newEvents.length) {
           for (const event of newEvents) {
-            // TODO: REMOVEME
-            console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (renderMoreMessages)')
             await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
@@ -506,8 +504,6 @@ export default ({
 
       this.initializeState()
       for (const event of this.latestEvents) {
-        // TODO: REMOVEME
-        console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (rerenderEvents)')
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
@@ -549,9 +545,7 @@ export default ({
       }
     },
     async listenChatRoomActions (contractID: string, message: GIMessage) {
-      if (contractID !== this.currentChatRoomId) {
-        // TODO: REMOVEME
-        console.log('contractID !== this.currentChatRoomId', { contractID, currentChatRoomId: this.currentChatRoomId })
+      if (contractID !== this.summary.chatRoomId) {
         return
       }
 
@@ -587,8 +581,10 @@ export default ({
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // TODO: REMOVEME
-      console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (listenChatRoomActions)')
+      if (contractID !== this.summary.chatRoomId) {
+        console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomId}; avoiding any further processing`)
+        return
+      }
       await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
 
       this.latestEvents.push(message.serialize())
@@ -734,6 +730,10 @@ export default ({
       const fromChatRoomId = from.chatRoomId
       const toIsJoined = to.isJoined
       const fromIsJoined = from.isJoined
+
+      if (toChatRoomId !== fromChatRoomId) {
+        this.initializeState()
+      }
 
       const initAfterSynced = (toChatRoomId, fromChatRoomId) => {
         const initMessagesAfterSynced = (contractID, isSyncing) => {

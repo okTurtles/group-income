@@ -25,7 +25,6 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
 </template>
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
