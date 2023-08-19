@@ -545,6 +545,14 @@ export default ({
       }
     },
     async listenChatRoomActions (contractID: string, message: GIMessage) {
+      // We must check this.summary.chatRoomId and not this.currentChatRoomId
+      // because they might be different, as this.summary is computed from
+      // this.currentChatRoomId.
+      // The watch below will ensure that this.messageState.contract is correct
+      // for the current contract, which is needed for signature verification
+      // when calling processMessage.
+      // The watch is setup for this.summary and not for this.currentChatRoomId,
+      // which is why this check must also check for this.summary.chatRoomId
       if (contractID !== this.summary.chatRoomId) {
         return
       }
