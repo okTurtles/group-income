@@ -905,10 +905,9 @@ export default (sbp('sbp/selectors/register', {
     try {
       await preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
-      // TODO: Remove isNaN() or remove if
-      if (isNaN(1) && !state.pending.includes(contractID) && !state.contracts[contractID]) {
+      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
-        throw new ChelErrorUnexpected()
+        return
       }
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db
