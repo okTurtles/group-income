@@ -951,7 +951,12 @@ export default (sbp('sbp/selectors/register', {
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
         try {
+          // Gets run get when skipSideEffects is false
           if (internalSideEffectStack) {
+            // The 'await' here might cause deadlocks, since these internal side
+            // effects mostly interact with other contracts, which may cause
+            // dependency loops. It seems to be fine now, but if it causes
+            // issues, it should be removed or addressed some other way
             await Promise.all(internalSideEffectStack.map(fn => fn()))
           }
         } catch (e) {
