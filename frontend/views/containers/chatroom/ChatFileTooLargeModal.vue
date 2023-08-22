@@ -7,23 +7,31 @@ modal-template(
     i18n File too large
 
   .c-content
-    i18n That file is too large and cannot be uploaded. The limit is 1 GB.
+    i18n(:args='{ sizeLimit: config.sizeLimit }') That file is too large and cannot be uploaded. The limit is {sizeLimit}.
 
   .buttons.is-centered
     button.is-primary.c-dismiss-btn(
       type='button'
       @click='$refs.modal.close()'
     )
-      i18n Ok
+      i18n OK
 </template>
 
 <script>
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import { L } from '@common/common.js'
 
 export default {
   name: 'ChatFileTooLargeModal',
   components: {
     ModalTemplate
+  },
+  data () {
+    return {
+      config: {
+        sizeLimit: L('1 GB') // TODO: fetch this value from the server once it's implemented there.
+      }
+    }
   }
 }
 </script>

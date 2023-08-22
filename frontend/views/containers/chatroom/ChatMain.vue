@@ -757,14 +757,13 @@ export default ({
       }
     },
     dragEndHandler (e) {
-      e.preventDefault()
       // handler function for 'dragleave', 'dragend', 'drop' events
-      console.log('@@ dragEndHandler !! : ', e.type, e.target)
+      e.preventDefault()
 
       if (this.dndState.isActive) {
         this.dndState.isActive = false
 
-        e?.dataTransfer.files &&
+        e?.dataTransfer.files?.length &&
           this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files)
       }
     }
