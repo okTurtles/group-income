@@ -58,7 +58,17 @@ function captureLogEntry (type, ...args) {
     type,
     // Detect when arg is an Error and capture it properly.
     // ex: uncaught Vue errors or custom try/catch errors.
-    msg: args.map((arg) => arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+    msg: args.map((arg) => {
+      let m
+      try {
+        m = typeof arg === 'string'
+          ? arg
+          : JSON.stringify(arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+      } catch (e) {
+        m = `[captureLogs failed to stringify argument of type '${typeof arg}'. Err: ${e.message}]`
+      }
+      return m
+    })
   }
   getLogger().entries.add(entry)
   // To avoid infinite loop because we log all selector calls, we run sbp calls
