@@ -123,7 +123,7 @@
               input(
                 ref='fileAttachmentInputEl'
                 type='file'
-                accept='image/*,.pdf'
+                :accept='supportedFileExtensions'
                 @change='fileAttachmentHandler($event.target.files)'
               )
 
@@ -149,9 +149,9 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
-import ChatAttachmentPreview from './ChatAttachmentPreview.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 const caretKeyCodes = {
@@ -273,6 +273,9 @@ export default ({
     },
     isPublicChannel () {
       return this.chatRoomAttributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PUBLIC
+    },
+    supportedFileExtensions () {
+      return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
     }
   },
   methods: {
@@ -431,14 +434,21 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList) {
-      console.log('@@ filesList in fileAttachmentHandler(): ', filesList)
+      const getFileExtension = name => {
+        const lastDotIndex = name.lastIndexOf('.')
+        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex)
+      }
       const targetFile = filesList[0]
+      const fileExt = getFileExtension(targetFile.name)
       const fileUrl = URL.createObjectURL(targetFile)
       const fileSize = targetFile.size
 
-      // TODO: update Math.pow(10, 9) below with the value delivered from the server once it's implemented.
       if (fileSize > Math.pow(10, 9)) {
-        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileTooLargeModal')
+        // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
+      } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
+        // Give users a warning about unsupported file types
+        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
       }
 
       if (this.ephemeral.attachment) {
@@ -449,6 +459,7 @@ export default ({
       this.ephemeral.attachment = {
         url: fileUrl,
         name: targetFile.name,
+        extension: fileExt,
         attachType: targetFile.type.match('image/') ? 'image' : 'non-image'
       }
     },
