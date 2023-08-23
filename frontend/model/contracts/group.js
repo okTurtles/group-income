@@ -1456,7 +1456,7 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
-        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+        console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {

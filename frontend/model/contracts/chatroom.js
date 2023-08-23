@@ -690,7 +690,7 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys']).catch(e => {
-        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+        console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }
