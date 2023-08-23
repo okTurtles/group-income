@@ -44,8 +44,8 @@ export function encryptedAction (
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
         if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
-          console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`, { contractID: params.contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
-          return Promise.reject(new Error(`No key found to emit ${action} for contract ${params.contractID}`))
+          console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID: params.contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
+          return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
         }
 
         const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId, params.originatingContractID)
