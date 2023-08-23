@@ -5,6 +5,7 @@ export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
+const API_URL = Cypress.config('baseUrl')
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const mincome = 1000
@@ -24,7 +25,7 @@ function setIncomeDetails (doesPledge, incomeAmount) {
 
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist')
-  cy.url().should('eq', 'http://localhost:8000/app/contributions')
+  cy.url().should('eq', `${API_URL}/app/contributions`)
 }
 
 function assertNavTabs (tabs) {
@@ -107,11 +108,11 @@ describe('Group Payments', () => {
     //       REFERENCE IN CASE WE RUN INTO MORE!
     // NOTE: when we had this command here, Cypress would sometimes fail because cy.window() would
     //       for some reason return a promise that wouldn't resolve.
-    // cy.giForceDistributionDateToNow()
+    cy.giForceDistributionDateToNow()
 
     cy.getByDT('paymentsLink').click()
     // Moving it here seems to have fixed things.
-    cy.giForceDistributionDateToNow()
+    // cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertNavTabs(['Todo1', 'Completed'])

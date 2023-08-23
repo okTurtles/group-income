@@ -9173,7 +9173,8 @@
     UPDATE_DESCRIPTION: "update-description",
     UPDATE_NAME: "update-name",
     DELETE_CHANNEL: "delete-channel",
-    VOTE: "vote"
+    VOTE_ON_POLL: "vote-on-poll",
+    CHANGE_VOTE_ON_POLL: "change-vote-on-poll"
   };
   var PROPOSAL_VARIANTS = {
     CREATED: "created",
@@ -9189,8 +9190,7 @@
   };
   var POLL_STATUS = {
     ACTIVE: "active",
-    CLOSED: "closed",
-    EXPIRED: "expired"
+    CLOSED: "closed"
   };
 
   // frontend/model/contracts/misc/flowTyper.js
@@ -9642,7 +9642,8 @@ ${this.getErrorInfo()}`;
             },
             attributes: {
               creator: meta.username,
-              deletedDate: null
+              deletedDate: null,
+              archivedDate: null
             },
             users: {},
             messages: []
@@ -9665,7 +9666,8 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash: hash2, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
-            throw new Error(`Can not join the chatroom which ${username} is already part of`);
+            console.warn("Can not join the chatroom which you are already part of");
+            return;
           }
           vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
           const { type, privacyLevel } = state.attributes;
@@ -9738,7 +9740,7 @@ ${this.getErrorInfo()}`;
           const { member } = data;
           const isKicked = data.username && member !== data.username;
           if (!state.onlyRenderMessage && !state.users[member]) {
-            throw new Error(`Can not leave the chatroom which ${member} is not part of`);
+            throw new Error(`Can not leave the chatroom which ${member} are not part of`);
           }
           vue_esm_default.delete(state.users, member);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
@@ -9948,6 +9950,102 @@ ${this.getErrorInfo()}`;
             } else {
               vue_esm_default.delete(state.messages[msgIndex], "emoticons");
             }
+          }
+        },
+        sideEffect({ contractID, hash: hash2 }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+        }
+      },
+      "gi.contracts/chatroom/voteOnPoll": {
+        validate: objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        }),
+        process({ data, meta, hash: hash2, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const myVotes = data.votes;
+            const pollData = state.messages[msgIndex].pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            const votedOptNames = [];
+            myVotes.forEach((optId) => {
+              const foundOpt = optsCopy.find((x) => x.id === optId);
+              if (foundOpt) {
+                foundOpt.voted.push(meta.username);
+                votedOptNames.push(`"${foundOpt.value}"`);
+              }
+            });
+            vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          });
+          const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
+        }
+      },
+      "gi.contracts/chatroom/changeVoteOnPoll": {
+        validate: objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        }),
+        process({ data, meta, hash: hash2, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const me = meta.username;
+            const myUpdatedVotes = data.votes;
+            const pollData = state.messages[msgIndex].pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            const votedOptNames = [];
+            optsCopy.forEach((opt) => {
+              opt.voted = opt.voted.filter((votername) => votername !== me);
+            });
+            myUpdatedVotes.forEach((optId) => {
+              const foundOpt = optsCopy.find((x) => x.id === optId);
+              if (foundOpt) {
+                foundOpt.voted.push(me);
+                votedOptNames.push(`"${foundOpt.value}"`);
+              }
+            });
+            vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, {
+            votedOptions: data.votesAsString,
+            pollMessageHash: data.hash
+          });
+          const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
+        }
+      },
+      "gi.contracts/chatroom/closePoll": {
+        validate: objectOf({
+          hash: string
+        }),
+        process({ data }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            const pollData = state.messages[msgIndex].pollData;
+            vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, status: POLL_STATUS.CLOSED });
           }
         },
         sideEffect({ contractID, hash: hash2 }) {

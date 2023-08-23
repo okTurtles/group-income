@@ -1,5 +1,6 @@
 import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared/constants.js'
 
+const API_URL = Cypress.config('baseUrl')
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const anotherGroupName = 'Donuts'
@@ -222,12 +223,12 @@ describe('Proposals - Add members', () => {
         cy.getByDT('title', 'p').should('contain', 'You proposed')
         cy.getByDT('sendLink').should('contain', `Please send the following link to ${username}-${userId} so they can join the group:`)
         cy.getByDT('sendLink').within(() => {
-          cy.getByDT('invitationLink').get('.link').should('contain', 'http://localhost')
+          cy.getByDT('invitationLink').get('.link').should('contain', API_URL)
           cy.getByDT('invitationLink').get('.c-invisible-input')
             .invoke('prop', 'value')
             .then(inviteLink => {
               invitationLinks[username] = inviteLink
-              expect(inviteLink).to.contain('http://localhost')
+              expect(inviteLink).to.contain(API_URL)
             })
         })
       })
@@ -351,18 +352,18 @@ describe('Proposals - Add members', () => {
       .should('contain', 'Oh no! This invite is not valid')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
     cy.get('button').click()
-    cy.url().should('eq', 'http://localhost:8000/app/')
+    cy.url().should('eq', `${API_URL}/app/`)
     cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it('an invalid invitation link cannot be used', () => {
-    cy.visit('http://localhost:8000/app/join?groupId=321&secret=123')
+    cy.visit('/app/join?groupId=321&secret=123')
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is not valid')
     cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again. 404: Not Found')
     cy.get('button').click()
-    cy.url().should('eq', 'http://localhost:8000/app/')
+    cy.url().should('eq', `${API_URL}/app/`)
     cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 

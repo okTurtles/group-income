@@ -31,29 +31,6 @@ const packageJSON = require('./package.json')
 // See https://esbuild.github.io/api/#define
 // =======================
 
-/**
- * Creates a modified copy of the given `process.env` object, according to its `PORT_SHIFT` variable.
- *
- * The `API_PORT` and `API_URL` variables will be updated.
- * TODO: make the protocol (http vs https) variable based on environment var.
- * @param {Object} env
- * @returns {Object}
- */
-const applyPortShift = (env) => {
-  // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.
-  const API_PORT = 8000 + Number.parseInt(env.PORT_SHIFT || '0')
-  const API_URL = 'http://127.0.0.1:' + API_PORT
-
-  if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
-    throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
-  }
-  return { ...env, API_PORT, API_URL }
-}
-
-Object.assign(process.env, applyPortShift(process.env))
-
-process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
-
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
@@ -61,10 +38,21 @@ process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
-  GI_VERSION,
   NODE_ENV = 'development',
   EXPOSE_SBP = ''
 } = process.env
+
+if (!['development', 'production'].includes(NODE_ENV)) {
+  throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
+}
+const CONTRACTS_VERSION = packageJSON.contractsVersion
+// In production, append a timestamp so that browsers will detect a new version
+// and reload whenever the live server is restarted.
+// TODO: get rid of this timestamp and just bump the package version when necessary.
+const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Date().toISOString()}` : '')
+
+// Make version info available to subprocesses.
+Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
 const backendIndex = './backend/index.js'
 const distAssets = 'dist/assets'
@@ -83,6 +71,17 @@ const production = !development
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
+
+  // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
+  ;(function defineApiEnvars () {
+    const API_PORT = Number.parseInt(grunt.option('port') ?? process.env.API_PORT ?? '8000', 10)
+
+    if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
+      throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
+    }
+    process.env.API_PORT = String(API_PORT)
+    process.env.API_URL = 'http://127.0.0.1:' + API_PORT
+  })()
 
   // Helper functions
 
@@ -193,6 +192,7 @@ module.exports = (grunt) => {
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
+        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
@@ -452,7 +452,8 @@ module.exports = (grunt) => {
       }
     }[command]
     grunt.log.writeln(`cypress: running in "${command}" mode...`)
-    cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
+    cypress[command]({ config: { baseUrl: process.env.API_URL }, ...options })
+      .then(r => done(r.totalFailed === 0)).catch(done)
   })
 
   grunt.registerTask('_pin', async function (version) {
