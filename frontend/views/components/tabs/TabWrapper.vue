@@ -76,12 +76,12 @@ export default ({
   },
   watch: {
     '$route' (to, from) {
-      const section = to.query.section
-      if (!section) return
+      const tab = to.query.tab
+      if (!tab) return
 
       for (const tabItem of this.tabNav) {
         for (const link of tabItem.links) {
-          if (this.activeTab !== link.index && link.url === section) {
+          if (this.activeTab !== link.index && link.url === tab) {
             this.activeComponent = link.component
             return this.changeTab(link.index)
           }
@@ -113,7 +113,7 @@ export default ({
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
-          section: tabItem.url
+          tab: tabItem.url
         }
         this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
@@ -124,7 +124,7 @@ export default ({
     }
   },
   mounted () {
-    const defaultTab = this.$route.query.section || this.defaultTab
+    const defaultTab = this.$route.query.tab || this.defaultTab
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
         if (defaultTab === link.url) {
@@ -134,7 +134,7 @@ export default ({
         }
       }
       const allTabNavLinks = this.tabNav.reduce(
-        (allLinks, item) => [ ...allLinks, ...item.links ], []
+        (allLinks, item) => [...allLinks, ...item.links], []
       )
       const fallbackLink = allTabNavLinks.find(item => item.url === 'my-account')
 

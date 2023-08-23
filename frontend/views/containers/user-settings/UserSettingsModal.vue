@@ -25,7 +25,7 @@ export default ({
     return settings
   },
   created () {
-    sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { section: true })
+    sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { tab: true })
   }
 }: Object)
 </script>

@@ -47,7 +47,7 @@ export default ({
   },
   methods: {
     openModalUserSettings () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', { section: null })
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal')
     }
   }
 }: Object)
