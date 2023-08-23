@@ -159,7 +159,6 @@ export default ({
 
 .c-poll-option {
   &-value {
-    text-transform: capitalize;
     white-space: normal;
   }
 

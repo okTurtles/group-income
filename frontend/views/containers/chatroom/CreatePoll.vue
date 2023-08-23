@@ -45,6 +45,7 @@
                 i.icon-times
 
           button.link.has-icon(
+            v-if='enableMoreButton'
             type='button'
             @click='addOption'
           )
@@ -93,7 +94,7 @@ import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
@@ -139,6 +140,9 @@ export default {
     ]),
     optionCount () {
       return this.form.options.length
+    },
+    enableMoreButton () {
+      return this.optionCount < POLL_MAX_OPTIONS
     },
     disableSubmit () {
       return this.$v.invalid ||
