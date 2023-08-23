@@ -226,7 +226,14 @@ export default ({
         if (section && this.tabSections.includes(section)) {
           this.ephemeral.activeTab = section
         } else {
-          const defaultTab = this.tabSections[0]
+          const fromQuery = from?.query || {}
+          const isFromPaymentDetailModal = fromQuery.modal === 'PaymentDetail'
+          const defaultTab = isFromPaymentDetailModal
+            // When payment detail modal is closed, the payment table has to remain in the previously active tab.
+            // (context: https://github.com/okTurtles/group-income/issues/1686)
+            ? fromQuery.section || this.tabSections[0]
+            : this.tabSections[0]
+
           if (defaultTab) {
             this.handleTabClick(defaultTab)
           } else if (section) {
@@ -289,16 +296,17 @@ export default ({
       return items
     },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
-      return this.ephemeral.activeTab === 'PaymentRowTodo'
+      const { activeTab } = this.ephemeral
+
+      return activeTab === 'PaymentRowTodo'
         ? {
-            one: firstTab,
+            one: L('Sent to'),
             two: L('Amount'),
             three: L('Accepted methods'),
             four: L('Due on')
           }
         : {
-            one: firstTab,
+            one: activeTab === 'PaymentRowSent' ? L('Sent to') : L('Sent by'),
             two: L('Amount'),
             three: L('Payment method'),
             four: L('Payment date')

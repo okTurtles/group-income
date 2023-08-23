@@ -27,13 +27,18 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       i18n.has-text-1 Notes
       p.has-text-bold {{ payment.data.memo }}
 
-  .buttons.c-buttons-container(v-if='!lightningPayment')
+  .buttons.c-buttons-container(
+    v-if='!lightningPayment && buttonCount > 0'
+    :class='{ "is-centered": buttonCount === 1 }'
+  )
     i18n.button.is-outlined(
       tag='button'
+      v-if='isPaidByMyself && !payment.isOldPayment'
       @click='cancelPayment'
     ) Cancel payment
 
     i18n.button(
+      v-if='!isPaidByMyself'
       tag='button'
       @click='sendThankYou'
     ) Send Thanks!
@@ -48,7 +53,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import currencies from '@model/contracts/shared/currencies.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 export default ({
@@ -80,11 +85,19 @@ export default ({
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
     },
+    fromUser () {
+      return this.payment?.meta.username || ''
+    },
+    isPaidByMyself () {
+      return this.fromUser === this.ourUsername
+    },
+    buttonCount () {
+      return Number(!this.isPaidByMyself) + Number(this.isPaidByMyself && !this.payment.isOldPayment)
+    },
     subtitleCopy () {
       const toUser = this.payment.data.toUser
-      const fromUser = this.payment.meta.username
       const arg = (username) => ({ name: this.userDisplayName(username) })
-      return toUser === this.ourUsername ? L('Sent by {name}', arg(fromUser)) : L('Sent to {name}', arg(toUser))
+      return toUser === this.ourUsername ? L('Sent by {name}', arg(this.fromUser)) : L('Sent to {name}', arg(toUser))
     }
   },
   methods: {
@@ -104,6 +117,7 @@ export default ({
           ...cloneDeep(payment),
           periodstamp: await this.getPeriodStampGivenDate(payment.meta.createdDate)
         }
+        this.payment.isOldPayment = comparePeriodStamps(this.payment.periodstamp, this.currentPaymentPeriod) < 0
       } else {
         console.warn('PaymentDetail: Missing valid query "id"')
         sbp('okTurtles.events/emit', CLOSE_MODAL)
@@ -178,6 +192,10 @@ export default ({
   max-width: 25rem;
   margin: 1.625rem auto 0;
   width: 100%;
+
+  &.is-centered {
+    justify-content: center;
+  }
 
   .button:not(:last-child) {
     margin-right: 0;
