@@ -16,7 +16,7 @@ import TabWrapper from '@components/tabs/TabWrapper.vue'
 import settings from './settings.js'
 
 export default ({
-  name: 'SettingsWrapper',
+  name: 'UserSettingsModal',
   components: {
     ModalBaseTemplate,
     TabWrapper

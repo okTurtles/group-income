@@ -18,7 +18,7 @@
 
   button.is-icon-small(
     data-test='settingsBtn'
-    @click='openModal("UserSettingsModal")'
+    @click='openModalUserSettings'
   )
     i.icon-cog
 </template>
@@ -46,8 +46,8 @@ export default ({
     }
   },
   methods: {
-    openModal (mode) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    openModalUserSettings () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', { section: null })
     }
   }
 }: Object)

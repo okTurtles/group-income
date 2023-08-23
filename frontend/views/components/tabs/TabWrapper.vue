@@ -133,14 +133,22 @@ export default ({
           this.activeComponent = link.component
         }
       }
-      this.tabNav.forEach(item => {
-        item.links.forEach(link => {
-          switchTabIfMatch(link)
-        })
+      const allTabNavLinks = this.tabNav.reduce(
+        (allLinks, item) => [ ...allLinks, ...item.links ], []
+      )
+      const fallbackLink = allTabNavLinks.find(item => item.url === 'my-account')
+
+      allTabNavLinks.forEach(item => {
+        switchTabIfMatch(item)
       })
       this.subNav.forEach(navItem => {
         switchTabIfMatch(navItem)
       })
+
+      if (!this.activeComponent) {
+        // if still no matching link is found, fallback to 'my-account' tab.
+        this.tabClick(fallbackLink)
+      }
     }
   },
   beforeDestroy () {
