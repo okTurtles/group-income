@@ -136,20 +136,27 @@ export default ({
     }
   },
   methods: {
-    async updateArchivedProposals (hashWithProp) {
-      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
-      const archivedProposals = await sbp('gi.db/archive/load', key) || []
-      this.ephemeral.archivedProposals = archivedProposals
-        .filter(([hash, obj]) => Date.now() - new Date(obj.dateClosed).getTime() < DAYS_MILLIS)
-        .sort(([hash1, obj1], [hash2, obj2]) => new Date(obj2.dateClosed).getTime() - new Date(obj1.dateClosed).getTime())
+    async updateArchivedProposals (archPropData) { // archPropData = [groupId, hash, proposal]
+      if (!archPropData) {
+        const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+        const archivedProposals = await sbp('gi.db/archive/load', key) || []
+        // proposals which are archived in the last 24 hours
+        this.ephemeral.archivedProposals = archivedProposals
+          .filter(([hash, obj]) => Date.now() - new Date(obj.dateClosed).getTime() < DAYS_MILLIS)
+          .sort(([hash1, obj1], [hash2, obj2]) => new Date(obj2.dateClosed).getTime() - new Date(obj1.dateClosed).getTime())
 
-      // after a day, remove it from the list
-      this.clearTimeouts()
-      for (const [hash, obj] of this.ephemeral.archivedProposals) {
-        const dateClosed = new Date(obj.dateClosed).getTime()
+        // after a day, remove it from the list
+        this.clearTimeouts()
+        for (const [hash, obj] of this.ephemeral.archivedProposals) {
+          this.ephemeral.timeouts.push(setTimeout(() => {
+            this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
+          }, new Date(obj.dateClosed).getTime() - Date.now() + DAYS_MILLIS))
+        }
+      } else if (archPropData?.[0] === this.currentGroupId) {
+        this.ephemeral.archivedProposals.unshift([archPropData[1], archPropData[2]])
         this.ephemeral.timeouts.push(setTimeout(() => {
-          this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
-        }, dateClosed - Date.now() + DAYS_MILLIS))
+          this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== archPropData[1])
+        }, new Date(archPropData[2].dateClosed).getTime() - Date.now() + DAYS_MILLIS))
       }
     },
     clearTimeouts () {
