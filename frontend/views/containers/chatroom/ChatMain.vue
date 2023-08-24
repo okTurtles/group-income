@@ -190,7 +190,7 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
-    this.archiveMessageState(this.currentChatRoomId)
+    this.archiveMessageState()
   },
   computed: {
     ...mapGetters([
@@ -462,7 +462,7 @@ export default ({
         }
         if (newEvents.length) {
           for (const event of newEvents) {
-            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
+            this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
           this.$forceUpdate()
@@ -504,7 +504,7 @@ export default ({
 
       this.initializeState()
       for (const event of this.latestEvents) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
+        this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
     },
@@ -593,7 +593,7 @@ export default ({
         console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomId}; avoiding any further processing`)
         return
       }
-      await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
+      this.messageState.contract = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
 
       this.latestEvents.push(message.serialize())
 
@@ -703,32 +703,41 @@ export default ({
         })
       }
     }, 500),
-    archiveMessageState (chatRoomId) {
-      if (!this.isJoinedChatRoom(chatRoomId)) {
+    archiveMessageState () {
+      // Copy of a reference to this.latestEvents to ensure it doesn't change
+      const latestEvents = this.latestEvents
+      if (latestEvents.length === 0) {
         return
       }
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
-      const to = this.latestEvents.length
-        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1], chatRoomId).hash()
-        : null
+      const fromEvent = GIMessage.deserialize(latestEvents[0])
+      const toEvent = GIMessage.deserialize(latestEvents[latestEvents.length - 1])
+
+      // Get the chatroom ID from the event to ensure that it's consistent with
+      // what will be stored
+      const chatRoomId = fromEvent.contractID()
+
+      if (!this.isJoinedChatRoom(chatRoomId)) return
+
+      const from = fromEvent.hash()
+      const to = toEvent.hash()
 
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
-      if (this.latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
+      if (latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
         sbp('gi.db/archive/delete', this.archiveKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast
         // so it's good to initiate using input parameter chatRoomId
-        sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
+        sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(latestEvents))
       }
     },
     archiveKeyFromChatRoomId (chatRoomId) {
       const curChatRoomId = chatRoomId || this.currentChatRoomId
       return `messages/${this.ourUsername}/${curChatRoomId}`
     },
-    refreshContent: debounce(function (to, from) {
+    refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      this.archiveMessageState(from)
+      this.archiveMessageState()
       this.setInitMessages()
     }, 250)
   },
@@ -758,7 +767,7 @@ export default ({
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          this.archiveMessageState(fromChatRoomId)
+          this.archiveMessageState()
           toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
         } else {
           this.refreshContent(toChatRoomId, fromChatRoomId)

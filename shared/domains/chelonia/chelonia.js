@@ -567,6 +567,13 @@ export default (sbp('sbp/selectors/register', {
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
+  'chelonia/in/processMessage': (message: GIMessage, state: Object) => {
+    const stateCopy = cloneDeep(state)
+    return sbp('chelonia/private/in/processMessage', message, stateCopy).then(() => stateCopy).catch((e) => {
+      console.warn(`chelonia/in/processMessage: reverting mutation ${message.description()}: ${message.serialize()}`, e)
+      return state
+    })
+  },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
