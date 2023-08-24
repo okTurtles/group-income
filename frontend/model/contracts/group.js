@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isIsoString, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -324,7 +324,7 @@ sbp('chelonia/defineContract', {
     periodStampGivenDate (state, getters) {
       return (recentDate: string | Date) => {
         if (typeof recentDate !== 'string') recentDate = recentDate.toISOString()
-        if (!isPeriodStamp(recentDate)) throw new TypeError('must be date or isostring')
+        if (!isIsoString(recentDate)) throw new TypeError('must be date or isostring')
         const { distributionDate, distributionPeriodLength } = getters.groupSettings
         if (!distributionDate) return
         const sortedPeriodKeys = getters.groupSortedPeriodKeys
@@ -349,7 +349,7 @@ sbp('chelonia/defineContract', {
           const waitingPeriodStamp = dateToPeriodStamp(
             addTimeToDate(distributionDate, -distributionPeriodLength)
           )
-          return recentDate >= waitingPeriodStamp ? waitingPeriodStamp : undefined
+          return recentDate >= dateFromPeriodStamp(waitingPeriodStamp).toISOString() ? waitingPeriodStamp : undefined
         }
         const oldestKnownStamp = sortedPeriodKeys[0]
         const latestKnownStamp = sortedPeriodKeys[sortedPeriodKeys.length - 1]

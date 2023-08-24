@@ -132,11 +132,15 @@ export function humanDate (
 }
 
 export function isPeriodStamp (arg: string): boolean {
-  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
+  return isIsoString(arg)
 }
 
 export function isFullMonthstamp (arg: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isIsoString (arg: string): boolean {
+  return typeof arg === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
 }
 
 export function isMonthstamp (arg: string): boolean {
