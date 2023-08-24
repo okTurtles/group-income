@@ -1329,7 +1329,7 @@ sbp('chelonia/defineContract', {
         proposals.pop()
       }
       await sbp('gi.db/archive/save', key, proposals)
-      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
+      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [contractID, proposalHash, proposal])
     },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments

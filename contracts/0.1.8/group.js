@@ -10985,7 +10985,7 @@ ${this.getErrorInfo()}`;
           proposals2.pop();
         }
         await (0, import_sbp4.default)("gi.db/archive/save", key, proposals2);
-        (0, import_sbp4.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
+        (0, import_sbp4.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [contractID, proposalHash, proposal]);
       },
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;

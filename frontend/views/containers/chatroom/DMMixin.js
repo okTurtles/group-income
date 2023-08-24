@@ -1,7 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { L } from '@common/common.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const DMMixin: Object = {
@@ -35,10 +34,10 @@ const DMMixin: Object = {
     getPrivateDMByUser (username: string) {
       return this.directMessageIDFromUsername(username)
     },
-    createPrivateDM (username: string) {
+    async createPrivateDM (username: string) {
       // NOTE: username should be valid
       try {
-        sbp('gi.actions/mailbox/createDirectMessage', {
+        await sbp('gi.actions/mailbox/createDirectMessage', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: {
             privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
@@ -46,15 +45,13 @@ const DMMixin: Object = {
           }
         })
       } catch (err) {
-        const errMsg = L('Error during create direct message: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        alert(err.message)
       }
     },
-    createGroupDM (usernames: string[]) {
+    async createGroupDM (usernames: string[]) {
       // NOTE: usernames.length should be gte 2
       try {
-        sbp('gi.actions/mailbox/createDirectMessage', {
+        await sbp('gi.actions/mailbox/createDirectMessage', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: {
             privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
@@ -62,9 +59,7 @@ const DMMixin: Object = {
           }
         })
       } catch (err) {
-        const errMsg = L('Error during create direct message: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        alert(err.message)
       }
     },
     async addMemberToGroupDM (chatRoomId: string, username: string) {
@@ -83,22 +78,18 @@ const DMMixin: Object = {
           }
         })
       } catch (err) {
-        const errMsg = L('Error during adding member to direct message: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        alert(err.message)
       }
     },
-    setDMVisibility (chatRoomId: string, hidden: boolean) {
+    async setDMVisibility (chatRoomId: string, hidden: boolean) {
       // NOTE: chatRoomId should be of valid direct message
       try {
-        sbp('gi.actions/mailbox/setDirectMessageVisibility', {
+        await sbp('gi.actions/mailbox/setDirectMessageVisibility', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: { contractID: chatRoomId, hidden }
         })
       } catch (err) {
-        const errMsg = L('Error during setting visibility of direct message: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        alert(err.message)
       }
     },
     redirect (chatRoomId: string) {

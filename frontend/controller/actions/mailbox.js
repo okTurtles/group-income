@@ -85,7 +85,10 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error('gi.actions/mailbox/createDirectMessage failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create a new direct message channel.'))
+      const errMsg = e.name === 'GIErrorUIRuntimeError'
+        ? e.message
+        : L('Failed to create a new direct message channel: {codeError}', { codeError: e.message })
+      throw new GIErrorUIRuntimeError(errMsg)
     }
   },
   ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a direct message.')),
