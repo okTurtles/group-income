@@ -159,13 +159,14 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString, deepEqualJSONType } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType, omit } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,
   dummyLightningTodoItems,
   dummyLightningPaymentDetails
 } from '@view-utils/lightning-dummy-data.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'Payments',
@@ -210,16 +211,36 @@ export default ({
     }
   },
   created () {
-    this.setInitialActiveTab()
     this.updatePayments()
   },
   watch: {
-    needsIncome () {
-      this.setInitialActiveTab()
-    },
     ourPayments (to, from) {
       if (!deepEqualJSONType(to, from)) {
         this.updatePayments()
+      }
+    },
+    '$route': {
+      immediate: true,
+      handler (to, from) {
+        const section = to.query.section
+        if (section && this.tabSections.includes(section)) {
+          this.ephemeral.activeTab = section
+        } else {
+          const fromQuery = from?.query || {}
+          const isFromPaymentDetailModal = fromQuery.modal === 'PaymentDetail'
+          const defaultTab = isFromPaymentDetailModal
+            // When payment detail modal is closed, the payment table has to remain in the previously active tab.
+            // (context: https://github.com/okTurtles/group-income/issues/1686)
+            ? fromQuery.section || this.tabSections[0]
+            : this.tabSections[0]
+
+          if (defaultTab) {
+            this.handleTabClick(defaultTab)
+          } else if (section) {
+            const query = omit(this.$route.query, ['section'])
+            this.$router.push({ query }).catch(logExceptNavigationDuplicated)
+          }
+        }
       }
     }
   },
@@ -244,6 +265,10 @@ export default ({
     },
     tabItems () {
       const items = []
+
+      if (!this.distributionStarted) {
+        return items
+      }
 
       if (!this.needsIncome) {
         items.push({
@@ -272,20 +297,24 @@ export default ({
       return items
     },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
-      return this.ephemeral.activeTab === 'PaymentRowTodo'
+      const { activeTab } = this.ephemeral
+
+      return activeTab === 'PaymentRowTodo'
         ? {
-            one: firstTab,
+            one: L('Sent to'),
             two: L('Amount'),
             three: L('Accepted methods'),
             four: L('Due on')
           }
         : {
-            one: firstTab,
+            one: activeTab === 'PaymentRowSent' ? L('Sent to') : L('Sent by'),
             two: L('Amount'),
             three: L('Payment method'),
             four: L('Payment date')
           }
+    },
+    tabSections () {
+      return this.tabItems.map(tabItem => tabItem.url)
     },
     introTitle () {
       return this.needsIncome
@@ -339,7 +368,7 @@ export default ({
         PaymentRowTodo: () => this.paymentsTodo,
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
-      }[this.ephemeral.activeTab]()
+      }[this.ephemeral.activeTab]?.() || []
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
@@ -366,9 +395,6 @@ export default ({
     prettyDate (date) {
       return humanDate(date, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })
     },
-    setInitialActiveTab () {
-      this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
-    },
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, null, props)
     },
@@ -394,7 +420,11 @@ export default ({
       return list.slice(start, start + this.ephemeral.rowsPerPage)
     },
     handleTabClick (url) {
-      this.ephemeral.activeTab = url
+      const query = {
+        ...this.$route.query,
+        section: url
+      }
+      this.$router.push({ query }).catch(logExceptNavigationDuplicated)
     },
     handleAnchorClick ({ target }) {
       const contains = className => target.classList.contains(className)

@@ -48,6 +48,14 @@ page-section.c-section(:title='L("Invite links")')
             menu-content.c-dropdown-invite-link
               ul
                 menu-item(
+                  v-if='!item.isAnyoneLink'
+                  tag='button'
+                  item-id='original'
+                  @click='handleSeeOriginal(item)'
+                  icon='check-to-slot'
+                )
+                  i18n See original proposal
+                menu-item(
                   tag='button'
                   icon='link'
                   @click='copyInviteLink(item.inviteLink)'
@@ -108,7 +116,6 @@ page-section.c-section(:title='L("Invite links")')
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
@@ -116,7 +123,8 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 
@@ -148,6 +156,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
+      'groupShouldPropose',
       'groupSettings',
       'ourUsername'
     ]),
@@ -272,15 +281,35 @@ export default ({
       }
     },
     showRevokeLinkMenu (inviteItem) {
-      return inviteItem.isAnyoneLink ? this.isUserGroupCreator : inviteItem.status.isActive
+      return inviteItem.isAnyoneLink
+        ? this.isUserGroupCreator &&
+          this.groupShouldPropose // 'Anyone' link must only be revokable when the group size is >= 3 (context: https://github.com/okTurtles/group-income/issues/1670)
+        : inviteItem.status.isActive
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        } else {
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
+        }
       }
     },
-    handleSeeOriginal (inviteItem) {
-      console.log(inviteItem, 'TODO - See Original Proposal')
+    async handleSeeOriginal ({ inviteSecret }) {
+      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const archivedProposals = await sbp('gi.db/archive/load', key) || []
+      const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
+        const { data, payload } = entry[1]
+
+        return data.proposalType === PROPOSAL_INVITE_MEMBER &&
+          payload.inviteSecret === inviteSecret
+      })
+
+      if (proposalItemExists) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+      } else {
+        alert(L('Unable to find the original proposal.'))
+      }
     },
     async handleRevokeClick (inviteSecret) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {

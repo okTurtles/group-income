@@ -39,9 +39,9 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
 
   const groupSettingType = proposalData.setting
   let proposalSettingType
-  if (!!proposalData.ruleName && proposalData.ruleName !== proposalData.current.ruleName) {
+  if (proposalData.ruleName !== proposalData.current.ruleName) {
     proposalSettingType = 'votingSystem'
-  } else if (!!proposalData.ruleThreshold && proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
+  } else if (proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
     proposalSettingType = 'votingRule'
   }
 

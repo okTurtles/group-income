@@ -1,5 +1,4 @@
 <template lang='pug'>
-  // TODO #658
   form.c-avatar-form(@submit.prevent='')
     .c-avatar-wrapper
       label.c-avatar-label
@@ -114,6 +113,7 @@ export default ({
       right: 0;
       align-items: flex-end;
       margin-bottom: -0.5rem;
+      z-index: 3;
     }
   }
 

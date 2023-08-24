@@ -172,7 +172,7 @@ export default ({
     },
     onDropdownItemSelect (itemId) {
       const modalNameMap = {
-        'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
+        'add-new-member': 'InvitationLinkModal',
         'remove-member': 'GroupMembersAllModal',
         'change-mincome': 'MincomeProposal',
         'change-distribution-date': 'DistributionDateProposal',
@@ -184,6 +184,10 @@ export default ({
         'change-disagreeing-number': { rule: 'disagreement' },
         'change-to-percentage-base': { rule: 'percentage' },
         'remove-member': { toRemove: true }
+      }
+
+      if (itemId === 'add-new-member' && this.groupShouldPropose) {
+        return sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)

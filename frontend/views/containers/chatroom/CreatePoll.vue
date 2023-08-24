@@ -1,34 +1,39 @@
 <template lang="pug">
-.c-create-poll(:class='{ "is-active": ephemeral.isActive }' @click='onBackDropClick')
+.c-create-poll(:class='{ "is-active": ephemeral.isActive }'
+  @click='onBackDropClick'
+  @keyup.esc='close'
+)
   .c-create-poll-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
     header.c-header
       i18n.is-title-2.c-popup-title(tag='h2') New poll
       modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
     section.c-body
-      form.c-form(@submit.prevent='submit')
+      form.c-form(@submit.prevent='')
         .field
-          input.input(
+          input.input.c-input(
             name='question'
             ref='question'
             :placeholder='L("Ask a question!")'
             @input='e => debounceField("question", e.target.value)'
             @blur='e => updateField("question", e.target.value)'
             :class='{ error: $v.form.question.$error }'
+            v-model='form.question'
             v-error:question=''
           )
 
         .field.c-add-options
           i18n.label Add options
 
-          .c-option-list
+          .c-option-list(ref='optList')
             fieldset.inputgroup.c-option-item(
               v-for='(option, index) in form.options'
               :key='option.id'
             )
-              input.input(
+              input.input.c-input(
                 type='text'
                 :aria-label='L("Option value")'
+                :ref='"input" + option.id'
                 :placeholder='optionPlaceholder(index + 1)'
                 v-model.trim='option.value'
               )
@@ -46,8 +51,22 @@
             i.icon-plus
             i18n Add more
 
+        label.field
+          i18n.label Expires after (days)
+          .selectbox
+            select.select.c-duration-select(
+              name='pollDuration'
+              required=''
+              v-model='form.duration'
+            )
+              option(
+                v-for='n in 30'
+                :key='"duration-" + n'
+                :value='n'
+              ) {{ n }}
+
         label.checkbox
-          input.input(type='checkbox' v-model='form.allowMultipleChoice')
+          input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
 
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
@@ -62,7 +81,8 @@
             :disabled='disableSubmit'
             :class='{ "is-small": ephemeral.isDesktopScreen }'
             tag='button'
-            type='submit'
+            type='button'
+            @click='submit'
           ) Create poll
 </template>
 
@@ -74,7 +94,9 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import trapFocus from '@utils/trapFocus.js'
 
 const createRandomId = () => {
   const randomStr = () => Math.random().toString(20).slice(2)
@@ -85,7 +107,8 @@ export default {
   name: 'CreatePoll',
   mixins: [
     validationMixin,
-    validationsDebouncedMixins
+    validationsDebouncedMixins,
+    trapFocus
   ],
   components: {
     ModalClose
@@ -103,6 +126,7 @@ export default {
       form: {
         question: '',
         allowMultipleChoice: false,
+        duration: 7,
         options: [
           { id: createRandomId(), value: '' }
         ]
@@ -118,6 +142,7 @@ export default {
     },
     disableSubmit () {
       return this.$v.invalid ||
+        this.form.options.length < 2 ||
         this.form.options.some(opt => !opt.value)
     }
   },
@@ -138,19 +163,26 @@ export default {
       }
     },
     onBackDropClick (e) {
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-create-poll-wrapper')
-
-      if (!element) {
+      if (e.target.matches('.c-create-poll')) {
         this.close()
       }
     },
     optionPlaceholder (index) {
-      return `${L('Option')} ${index}`
+      return L('Option {index}', { index })
     },
-    addOption () {
+    addOption (e) {
+      e.stopPropagation()
+
+      const newOptionId = createRandomId()
       Vue.set(this.form.options, this.optionCount, {
-        id: createRandomId(),
+        id: newOptionId,
         value: ''
+      })
+
+      this.$nextTick(() => {
+        const newInputEl = this.$refs.optList?.querySelector('.c-option-item:last-of-type > .input')
+
+        newInputEl && newInputEl.focus()
       })
     },
     removeOption (id) {
@@ -172,6 +204,7 @@ export default {
           pollData: {
             question: this.form.question,
             options: this.form.options,
+            expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
             pollType: this.form.allowMultipleChoice
               ? POLL_TYPES.MULTIPLE_CHOICES
               : POLL_TYPES.SINGLE_CHOICE
@@ -186,6 +219,7 @@ export default {
           { id: createRandomId(), value: '' }
         ]
       }
+      this.$v.form.$reset()
       this.close()
     }
   },
@@ -197,9 +231,11 @@ export default {
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
 
     window.addEventListener('resize', this.close)
+    document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.close)
+    document.removeEventListener('keydown', this.trapFocus)
 
     this.matchMediaDesktop.onchange = null
   },
@@ -285,6 +321,10 @@ export default {
   @include tablet {
     height: 3.25rem;
   }
+}
+
+.c-input {
+  padding-right: 0.625rem;
 }
 
 .c-body {

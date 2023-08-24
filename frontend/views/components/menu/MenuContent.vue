@@ -2,7 +2,6 @@
 .c-content(
   :class='{ "is-active": isActive }'
   data-test='menuContent'
-  :style='posStyle'
 )
   .c-content-wrapper(
     v-if='isActive'
@@ -19,16 +18,10 @@ export default ({
   mixins: [
     clickaway
   ],
-  props: {
-    position: String
-  },
   inject: ['Menu'],
   computed: {
     isActive () {
       return this.Menu.isActive
-    },
-    posStyle () {
-      return this.position || ''
     }
   },
   methods: {

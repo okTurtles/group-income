@@ -12,6 +12,8 @@ import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
 
+const { CONTRACTS_VERSION, GI_VERSION } = process.env
+
 // NOTE: migration guides for Hapi v16 -> v17:
 //       https://github.com/hapijs/hapi/issues/3658
 //       https://medium.com/yld-engineering-blog/so-youre-thinking-about-updating-your-hapi-js-server-to-v17-b5732ab5bdb8
@@ -86,9 +88,8 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
 sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   serverHandlers: {
     connection (socket: Object, request: Object) {
-      if (process.env.NODE_ENV === 'production') {
-        socket.send(createNotification(NOTIFICATION_TYPE.APP_VERSION, process.env.GI_VERSION))
-      }
+      const versionInfo = { GI_VERSION, CONTRACTS_VERSION }
+      socket.send(createNotification(NOTIFICATION_TYPE.VERSION_INFO, versionInfo))
     }
   }
 }))

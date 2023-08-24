@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message(
-  :class='[variant, isSameSender && "same-sender"]'
+  :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='openMenu'
   v-touch:swipe.left='reply'
@@ -69,7 +69,7 @@
     @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
-    @copyToClipBoard='copyToClipBoard'
+    @copyMessageLink='copyMessageLink'
   )
 </template>
 
@@ -101,6 +101,7 @@ export default ({
   },
   props: {
     text: String,
+    messageHash: String,
     replyingMessage: String,
     who: String,
     currentUsername: String,
@@ -156,8 +157,13 @@ export default ({
     reply () {
       this.$emit('reply')
     },
-    copyToClipBoard () {
-      navigator.clipboard.writeText(this.text)
+    copyMessageLink () {
+      if (!this.messageHash) { return }
+
+      const url = new URL(location.href)
+      url.search = `mhash=${this.messageHash}`
+
+      navigator.clipboard.writeText(url.href)
     },
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
