@@ -134,3 +134,4 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
   '.eot', '.otf', '.rtf', '.ttf', '.woff', '.woff2', // font
   '.abw', '.azw', '.bin', '.csh', '.db', '.mpkg', '.vsd', '.xul' // miscellaneous
 ]
+export const POLL_MAX_OPTIONS = 20
