@@ -136,6 +136,8 @@ export default ({
       const allTabNavLinks = this.tabNav.reduce(
         (allLinks, item) => [...allLinks, ...item.links], []
       )
+      // 'fallbackLink' below is for the case where the specified tab route query doesn't match any available tab items in the list. (e.g. ?modal=UserSettings&tab=asdfsadf)
+      // we need to manually direct it to the 'my-account' tab in this case.
       const fallbackLink = allTabNavLinks.find(item => item.url === 'my-account')
 
       allTabNavLinks.forEach(item => {
