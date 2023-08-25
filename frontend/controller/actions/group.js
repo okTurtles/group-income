@@ -444,7 +444,7 @@ export default (sbp('sbp/selectors/register', {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (!state.profiles?.[username] || state.profiles?.[username].departedDate) {
+        if (!state.profiles?.[username] || state.profiles[username].departedDate) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           // Share our PEK with the group so that group members can see
@@ -988,16 +988,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.'), (sendMessage, params, signingKeyId) => {
-    // This action gets called when we might not have received appropriate
-    // signing keys yet (e.g., after accepting an invite but before receiving
-    // OP_KEY_SHARE). The following check avoids this being logged as an error
-    if (!sbp('chelonia/haveSecretKey', signingKeyId)) {
-      console.info('Skipping updateLastLoggedIn due to missing CSK')
-      return
-    }
-    return sendMessage(params)
-  }),
+  ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

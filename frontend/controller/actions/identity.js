@@ -403,7 +403,11 @@ export default (sbp('sbp/selectors/register', {
         sbp('state/vuex/getters').groupsByName
           .map(entry => entry.contractID)
           .forEach(cId => {
-            sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId })
+            // We send this action only for groups we have fully joined (i.e.,
+            // accepted an invite add added our profile)
+            if (state[cId]?.profiles?.[username]) {
+              sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
+            }
           })
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
