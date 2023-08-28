@@ -58,8 +58,8 @@
     )
 
     chat-attachment-preview(
-      v-if='ephemeral.attachment'
-      v-bind='ephemeral.attachment'
+      v-if='ephemeral.attachment.length'
+      :attachmentList='ephemeral.attachment'
       @remove='removeAttachment'
     )
 
@@ -123,6 +123,7 @@
               input(
                 ref='fileAttachmentInputEl'
                 type='file'
+                multiple
                 :accept='supportedFileExtensions'
                 @change='fileAttachmentHandler($event.target.files)'
               )
@@ -151,7 +152,8 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL, CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 const caretKeyCodes = {
@@ -209,7 +211,7 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: null // { url: instace of URL.createObjectURL , name: string }
+        attachment: [] // [ { url: instace of URL.createObjectURL , name: string }, ... ]
       }
     }
   },
@@ -404,17 +406,21 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      if (!this.$refs.textarea.value && !this.ephemeral.attachment) {
+      const hasAttachments = this.this.ephemeral.attachment.length > 0
+      const getName = entry => entry.name
+
+      if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
-      if (this.ephemeral.attachment) {
+      if (hasAttachments) {
         // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
         msgToSend = msgToSend +
           (msgToSend ? '\r\n' : '') +
-          `{ File Attached: ${this.ephemeral.attachment.name} } - Feature coming soon!`
-        this.removeAttachment()
+          `{ Attached: ${this.ephemeral.attachment.map(getName).join(', ')} } - Feature coming soon!`
+
+        this.clearAllAttachments()
       }
 
       this.$emit('send', msgToSend) // TODO remove first / last empty lines
@@ -438,36 +444,51 @@ export default ({
         const lastDotIndex = name.lastIndexOf('.')
         return lastDotIndex === -1 ? '' : name.substring(lastDotIndex)
       }
-      const targetFile = filesList[0]
-      const fileExt = getFileExtension(targetFile.name)
-      const fileUrl = URL.createObjectURL(targetFile)
-      const fileSize = targetFile.size
+      const list = []
 
-      if (fileSize > Math.pow(10, 9)) {
-        // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
-        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
-      } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
-        // Give users a warning about unsupported file types
-        return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
+      if (this.ephemeral.attachment.length) {
+        // make sure to clear the previous state if there is already attached file(s).
+        this.clearAllAttachments()
       }
 
-      if (this.ephemeral.attachment) {
-        // make sure to clear the state if there is already another attached file.
-        this.removeAttachment()
+      for (const file of filesList) {
+        const fileExt = getFileExtension(file.name)
+        const fileUrl = URL.createObjectURL(file)
+        const fileSize = file.size
+
+        if (fileSize > Math.pow(10, 9)) {
+          // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
+        } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
+          // Give users a warning about unsupported file types
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
+        }
+
+        list.push({
+          url: fileUrl,
+          name: file.name,
+          extension: fileExt,
+          attachType: file.type.match('image/') ? 'image' : 'non-image'
+        })
       }
 
-      this.ephemeral.attachment = {
-        url: fileUrl,
-        name: targetFile.name,
-        extension: fileExt,
-        attachType: targetFile.type.match('image/') ? 'image' : 'non-image'
-      }
+      this.ephemeral.attachment = list
     },
-    removeAttachment () {
+    clearAllAttachments () {
+      this.ephemeral.attachment.forEach(attachment => {
+        URL.revokeObjectURL(attachment.url)
+      })
+      this.ephemeral.attachment = []
+    },
+    removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
       // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
-      URL.revokeObjectURL(this.ephemeral.attachment.url)
-      this.ephemeral.attachment = null
+      const targetIndex = this.ephemeral.attachment.findIndex(entry => targetUrl === entry.url)
+
+      if (targetIndex >= 0) {
+        URL.revokeObjectURL(targetUrl)
+        this.ephemeral.attachment.splice(targetIndex, 1)
+      }
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native

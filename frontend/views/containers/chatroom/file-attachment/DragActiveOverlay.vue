@@ -6,6 +6,7 @@
 
   input.c-dnd-input-helper(
     type='file'
+    multiple
     @dragleave='emitDragEnded'
     @dragend='emitDragEnded'
     @drop='emitDragEnded'

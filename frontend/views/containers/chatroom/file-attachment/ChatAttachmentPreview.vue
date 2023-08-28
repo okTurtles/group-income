@@ -1,25 +1,27 @@
 <template lang='pug'>
 .c-attachment-container
   .c-attachment-preview(
-    :class='"is-" + attachType'
+    v-for='entry in attachmentList'
+    :key='entry.url'
+    :class='"is-" + entry.attachType'
   )
     img.c-preview-img(
-      v-if='attachType === "image"'
-      :src='url'
-      :alt='name'
+      v-if='entry.attachType === "image"'
+      :src='entry.url'
+      :alt='entry.name'
     )
     .c-preview-non-image(v-else)
       .c-non-image-icon
         i.icon-file
 
       .c-non-image-file-info
-        .c-file-name.has-ellipsis {{ name }}
-        .c-file-ext {{ fileExt }}
+        .c-file-name.has-ellipsis {{ entry.name }}
+        .c-file-ext {{ fileExt(entry) }}
 
     button.c-attachment-remove-btn(
       type='button'
       :aria-label='L("Remove attachment")'
-      @click='$emit("remove")'
+      @click='$emit("remove", entry.url)'
     )
       i.icon-times
 </template>
@@ -28,18 +30,16 @@
 export default {
   name: 'ChatAttachmentPreview',
   props: {
-    url: String,
-    name: String,
-    attachType: {
-      // enum of ['image', 'non-image']
-      type: String,
-      default: 'image'
+    attachmentList: {
+      // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
+      type: Array,
+      required: true
     }
   },
-  computed: {
-    fileExt () {
-      const splitted = this.name.split('.')
-      const ext = splitted[splitted.length - 1] || ''
+  methods: {
+    fileExt ({ name }) {
+      const lastDotIndex = name.lastIndexOf('.')
+      const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex)
       return ext.toUpperCase()
     }
   }
@@ -54,6 +54,10 @@ export default {
   padding: 0 0.5rem;
   margin-top: 0.75rem;
   width: 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .c-attachment-preview {
