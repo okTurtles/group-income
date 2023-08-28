@@ -211,40 +211,28 @@ export default ({
     }
   },
   created () {
-    this.setInitialActiveTab()
     this.updatePayments()
   },
-  mounted () {
-    const { section } = this.$route.query
-    const possibleSections = this.tabItems.map(tabItem => tabItem.url)
-    if (section && possibleSections.includes(section)) {
-      this.ephemeral.activeTab = section
-    } else {
-      const defaultTab = possibleSections[0]
-      if (defaultTab) {
-        this.handleTabClick(defaultTab)
-      } else if (section) {
-        const query = omit(this.$route.query, ['section'])
-        this.$router.push({ query }).catch(logExceptNavigationDuplicated)
-      }
-    }
-  },
   watch: {
-    needsIncome () {
-      this.setInitialActiveTab()
-    },
     ourPayments (to, from) {
       if (!deepEqualJSONType(to, from)) {
         this.updatePayments()
       }
     },
-    '$route' (to, from) {
-      const section = to.query.section
-      if (!section) return
-
-      for (const tabItem of this.tabItems) {
-        if (tabItem.url === section) {
+    '$route': {
+      immediate: true,
+      handler (to, from) {
+        const section = to.query.section
+        if (section && this.tabSections.includes(section)) {
           this.ephemeral.activeTab = section
+        } else {
+          const defaultTab = this.tabSections[0]
+          if (defaultTab) {
+            this.handleTabClick(defaultTab)
+          } else if (section) {
+            const query = omit(this.$route.query, ['section'])
+            this.$router.push({ query }).catch(logExceptNavigationDuplicated)
+          }
         }
       }
     }
@@ -317,6 +305,9 @@ export default ({
             four: L('Payment date')
           }
     },
+    tabSections () {
+      return this.tabItems.map(tabItem => tabItem.url)
+    },
     introTitle () {
       return this.needsIncome
         ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
@@ -369,7 +360,7 @@ export default ({
         PaymentRowTodo: () => this.paymentsTodo,
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
-      }[this.ephemeral.activeTab]()
+      }[this.ephemeral.activeTab]?.() || []
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
@@ -395,9 +386,6 @@ export default ({
     humanDate,
     prettyDate (date) {
       return humanDate(date, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })
-    },
-    setInitialActiveTab () {
-      this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
     },
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, null, props)
