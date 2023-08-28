@@ -32,6 +32,10 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.url().should('eq', `${API_URL}/app/contributions`)
 }
 
+function assertMonthOverviewTitle (title) {
+  cy.getByDT('monthOverviewTitle').should('contain', title)
+}
+
 function assertNavTabs (tabs) {
   cy.getByDT('payNav').children().should('have.length', tabs.length)
   cy.getByDT('payNav').within(() => {
@@ -186,6 +190,13 @@ describe('Group Payments', () => {
       ['Payments sent', '0 out of 1'],
       ['Amount sent', '$0 out of $250']
     ])
+    cy.window().its('sbp').then(sbp => {
+      const { distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      // Use 'Date.now()' here rather than 'timeStart' since a few seconds have already elapsed.
+      const start = humanDate(Date.now())
+      const end = humanDate(Date.now() + distributionPeriodLength)
+      assertMonthOverviewTitle(`Period: ${start} - ${end}`)
+    })
 
     cy.getByDT('recordPayment').should('be.disabled')
     // NOTE: keep this comment around just to show the lengths we have to go to

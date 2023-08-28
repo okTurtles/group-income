@@ -2,9 +2,9 @@
 .c-summary(data-test='monthOverview')
   i18n.c-summary-title.is-title-4(
     tag='h4'
-    data-test='thisMonth'
-    :args='{ month: humanDate(Date.now(), { month: "long" }) }'
-  ) {month} overview
+    data-test='monthOverviewTitle'
+    :args='{ start: humanDate(getStartDate()), end: humanDate(getDueDate()) }'
+  ) Period: {start} - {end}
 
   ul
     li.c-summary-item(
@@ -36,7 +36,7 @@ import { mapGetters } from 'vuex'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { L } from '@common/common.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { addTimeToDate, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'MonthOverview',
@@ -44,6 +44,12 @@ export default ({
     ProgressBar
   },
   methods: {
+    getDueDate () {
+      return addTimeToDate(this.getStartDate(), this.groupSettings.distributionPeriodLength)
+    },
+    getStartDate () {
+      return this.periodStampGivenDate(new Date())
+    },
     humanDate,
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
@@ -54,10 +60,12 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
       'ourPaymentsSummary',
-      'ourPayments'
+      'ourPayments',
+      'periodStampGivenDate'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
