@@ -110,12 +110,14 @@ export default ({
     currentDistributionDate () {
       return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
     },
+    distributionStarted () {
+      return this.groupDistributionStarted(new Date().toISOString())
+    },
     skipToProposeDistributionDate () {
-      return !this.groupDistributionStarted && this.ourUsername === this.groupSettings.groupCreator
+      return !this.distributionStarted && this.ourUsername === this.groupSettings.groupCreator
     },
     disabled () {
-      return this.groupDistributionStarted ||
-        (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)
+      return this.distributionStarted || (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)
     }
   },
   beforeMount () {

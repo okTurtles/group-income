@@ -414,7 +414,7 @@ sbp('chelonia/defineContract', {
       return getters.groupMembersCount >= 3
     },
     groupDistributionStarted (state, getters) {
-      return Object.keys(getters.groupPeriodPayments).length >= 2
+      return (currentDate: string) => currentDate >= getters.groupSettings?.distributionDate
     },
     groupProposalSettings (state, getters) {
       return (proposalType = PROPOSAL_GENERIC) => {
@@ -1079,7 +1079,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only group creator can allow public channels.'))
         } else if ('distributionDate' in data && !isGroupCreator) {
           throw new TypeError(L('Only group creator can update distribution date.'))
-        } else if ('distributionDate' in data && getters.groupDistributionStarted) {
+        } else if ('distributionDate' in data && getters.groupDistributionStarted(meta.createdDate)) {
           throw new TypeError(L('Distribution is already started.'))
         }
       },

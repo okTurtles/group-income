@@ -142,7 +142,7 @@ export default ({
           id: 'change-distribution-date',
           name: 'Change distribution date',
           icon: 'chart-pie',
-          isDisabled: this.groupDistributionStarted || (!this.groupShouldPropose && !isUserGroupCreator)
+          isDisabled: this.groupDistributionStarted(new Date().toISOString()) || (!this.groupShouldPropose && !isUserGroupCreator)
         },
         {
           type: 'item',

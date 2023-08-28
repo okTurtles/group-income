@@ -748,8 +748,7 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
 
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          const isCypressOrDistributionStarted = process.env.CI || store.getters.groupDistributionStarted
-          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings) && isCypressOrDistributionStarted) {
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }

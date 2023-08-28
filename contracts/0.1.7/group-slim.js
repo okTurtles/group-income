@@ -1114,7 +1114,7 @@ ${this.getErrorInfo()}`;
         return getters.groupMembersCount >= 3;
       },
       groupDistributionStarted(state, getters) {
-        return Object.keys(getters.groupPeriodPayments).length >= 2;
+        return (currentDate) => currentDate >= getters.groupSettings?.distributionDate;
       },
       groupProposalSettings(state, getters) {
         return (proposalType2 = PROPOSAL_GENERIC) => {
@@ -1643,7 +1643,7 @@ ${this.getErrorInfo()}`;
             throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
           } else if ("distributionDate" in data && !isGroupCreator) {
             throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
-          } else if ("distributionDate" in data && getters.groupDistributionStarted) {
+          } else if ("distributionDate" in data && getters.groupDistributionStarted(meta.createdDate)) {
             throw new TypeError((0, import_common3.L)("Distribution is already started."));
           }
         },
