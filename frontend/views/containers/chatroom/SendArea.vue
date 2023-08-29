@@ -406,7 +406,7 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const hasAttachments = this.this.ephemeral.attachment.length > 0
+      const hasAttachments = this.ephemeral.attachment.length > 0
       const getName = entry => entry.name
 
       if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
