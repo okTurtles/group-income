@@ -61,10 +61,10 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         if (!id) return Promise.resolve()
         const state = sbp(this.config.stateSelector).contracts[id]
         const value = (state
-          ? {
-              HEAD: state.HEAD,
-              height: state.height
-            }
+          ? JSON.stringify({
+            HEAD: state.HEAD,
+            height: state.height
+          })
           : undefined)
         return Promise.resolve(value)
       },
@@ -96,8 +96,8 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
-  'chelonia/db/latestHEADinfo': function (contractID: string): Promise<HEADInfo | void> {
-    return sbp('chelonia/db/get', getLogHead(contractID))
+  'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
+    return sbp('chelonia/db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
     try {
@@ -147,7 +147,7 @@ export default (sbp('sbp/selectors/register', {
         }
       }
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
-      await sbp('chelonia/db/set', getLogHead(contractID), { HEAD: entry.hash(), height: entry.height() })
+      await sbp('chelonia/db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       return entry.hash()
     } catch (e) {
