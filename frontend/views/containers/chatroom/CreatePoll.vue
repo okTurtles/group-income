@@ -1,5 +1,8 @@
 <template lang="pug">
-.c-create-poll(:class='{ "is-active": ephemeral.isActive }' @click='onBackDropClick')
+.c-create-poll(:class='{ "is-active": ephemeral.isActive }'
+  @click='onBackDropClick'
+  @keyup.esc='close'
+)
   .c-create-poll-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
     header.c-header
       i18n.is-title-2.c-popup-title(tag='h2') New poll
@@ -42,6 +45,7 @@
                 i.icon-times
 
           button.link.has-icon(
+            v-if='enableMoreButton'
             type='button'
             @click='addOption'
           )
@@ -63,7 +67,7 @@
               ) {{ n }}
 
         label.checkbox
-          input.input(type='checkbox' v-model='form.allowMultipleChoice')
+          input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
 
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
@@ -90,7 +94,7 @@ import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
@@ -137,6 +141,9 @@ export default {
     optionCount () {
       return this.form.options.length
     },
+    enableMoreButton () {
+      return this.optionCount < POLL_MAX_OPTIONS
+    },
     disableSubmit () {
       return this.$v.invalid ||
         this.form.options.length < 2 ||
@@ -160,10 +167,7 @@ export default {
       }
     },
     onBackDropClick (e) {
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-create-poll-wrapper')
-      const blurredByDurationSelect = document.activeElement && document.activeElement.matches('.c-duration-select')
-
-      if (!element && !blurredByDurationSelect) {
+      if (e.target.matches('.c-create-poll')) {
         this.close()
       }
     },

@@ -76,12 +76,12 @@ export default ({
   },
   watch: {
     '$route' (to, from) {
-      const section = to.query.section
-      if (!section) return
+      const tab = to.query.tab
+      if (!tab) return
 
       for (const tabItem of this.tabNav) {
         for (const link of tabItem.links) {
-          if (this.activeTab !== link.index && link.url === section) {
+          if (this.activeTab !== link.index && link.url === tab) {
             this.activeComponent = link.component
             return this.changeTab(link.index)
           }
@@ -113,7 +113,7 @@ export default ({
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
-          section: tabItem.url
+          tab: tabItem.url
         }
         this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
@@ -124,7 +124,7 @@ export default ({
     }
   },
   mounted () {
-    const defaultTab = this.$route.query.section || this.defaultTab
+    const defaultTab = this.$route.query.tab || this.defaultTab
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
         if (defaultTab === link.url) {
@@ -133,14 +133,24 @@ export default ({
           this.activeComponent = link.component
         }
       }
-      this.tabNav.forEach(item => {
-        item.links.forEach(link => {
-          switchTabIfMatch(link)
-        })
+      const allTabNavLinks = this.tabNav.reduce(
+        (allLinks, item) => [...allLinks, ...item.links], []
+      )
+      // 'fallbackLink' below is for the case where the specified tab route query doesn't match any available tab items in the list. (e.g. ?modal=UserSettings&tab=asdfsadf)
+      // we need to manually direct it to the 'my-account' tab in this case.
+      const fallbackLink = allTabNavLinks.find(item => item.url === 'my-account')
+
+      allTabNavLinks.forEach(item => {
+        switchTabIfMatch(item)
       })
       this.subNav.forEach(navItem => {
         switchTabIfMatch(navItem)
       })
+
+      if (!this.activeComponent) {
+        // if still no matching link is found, fallback to 'my-account' tab.
+        this.tabClick(fallbackLink)
+      }
     }
   },
   beforeDestroy () {

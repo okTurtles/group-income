@@ -132,7 +132,7 @@ export default function L (
 }
 
 export function LError (error: Error): {|reportError: any|} {
-  let url = `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}`
+  let url = `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
   if (!sbp('state/vuex/state').loggedIn) {
     url = 'https://github.com/okTurtles/group-income/issues'
   }

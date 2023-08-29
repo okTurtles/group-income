@@ -51,7 +51,7 @@ export default {
     handleSettingsClick () {
       // BUG - Section notification does not open. Fixed at #946
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
-        section: 'notifications'
+        tab: 'notifications'
       })
       this.toggleTooltip()
     },

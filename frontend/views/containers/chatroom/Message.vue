@@ -20,6 +20,7 @@ export default ({
     MessageBase
   },
   props: {
+    messageHash: String,
     type: String,
     text: String,
     who: String,

@@ -293,7 +293,7 @@ async function startApp () {
       if (this.ephemeral.isCorrupted) {
         sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
-            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
+            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&tab=troubleshooting">`,
             '_a': '</a>'
           }),
           'times-circle'

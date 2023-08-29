@@ -348,12 +348,12 @@ export default ({
         }
       }
     },
-    updateScroll (scrollTargetMessage = null) {
+    updateScroll (scrollTargetMessage = null, effect = false) {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
           if (scrollTargetMessage) {
-            this.scrollToMessage(scrollTargetMessage, false)
+            this.scrollToMessage(scrollTargetMessage, effect)
           } else if (this.$refs.conversation) {
             this.$refs.conversation.scroll({
               left: 0,
@@ -447,7 +447,10 @@ export default ({
           unreadPosition = this.chatRoomUnreadMentions(this.currentChatRoomId)[0].messageHash
         }
       }
-      const messageHashToScroll = this.currentChatRoomScrollPosition || unreadPosition
+      const {
+        mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
+      } = this.$route.query
+      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
       const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
@@ -489,7 +492,7 @@ export default ({
 
       if (shouldInitiate) {
         this.setStartNewMessageIndex()
-        this.updateScroll(messageHashToScroll)
+        this.updateScroll(messageHashToScroll, Boolean(mhash)) // We do want the 'c-focused' animation if there is a message-scroll query.
         return false
       }
 
@@ -728,6 +731,13 @@ export default ({
       this.archiveMessageState(from)
       this.setInitMessages()
     }, 250)
+  },
+  provide () {
+    return {
+      chatMessageUtils: {
+        scrollToMessage: this.scrollToMessage
+      }
+    }
   },
   watch: {
     'summary' (to, from) {

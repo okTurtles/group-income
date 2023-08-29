@@ -36,7 +36,7 @@ export default ({
       }),
       icon: 'exclamation-triangle',
       level: 'danger',
-      linkTo: `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}`,
+      linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`,
       scope: 'app'
     }
   },
@@ -63,7 +63,7 @@ export default ({
       body: data.message,
       icon: 'exclamation-triangle',
       level: 'danger',
-      linkTo: `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(data.message)}`,
+      linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(data.message)}`,
       scope: 'app'
     }
   },

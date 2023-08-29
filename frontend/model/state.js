@@ -364,7 +364,7 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
           }
         }
       }

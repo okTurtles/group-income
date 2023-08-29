@@ -1,10 +1,12 @@
 <template lang='pug'>
 .c-poll-voted
   .c-content-header
-    i18n.c-poll-label(tag='label') poll
+    .c-label-container
+      i18n.c-poll-label(tag='label') poll
+      i18n.pill.is-primary.c-expiry-badge(v-if='!isPollExpired' :args='{ expiry: pollExpiryDate }') Expires on: {expiry}
     h3.is-title-4 {{ pollData.question }}
 
-    i18n.pill.is-neutral.c-poll-expired-badge(v-if='isPollExpired') Poll closed
+    i18n.pill.is-neutral.c-poll-closed-badge(v-if='isPollExpired') Poll closed
     menu-parent.c-poll-menu(v-else)
       menu-trigger.is-icon.c-poll-menu-trigger
         i.icon-ellipsis-v
@@ -39,6 +41,7 @@ import { uniq } from '@model/contracts/shared/giLodash.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
 import { POLL_STATUS } from '@model/contracts/shared/constants.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PollVoteResult',
@@ -59,6 +62,9 @@ export default ({
     ]),
     isPollExpired () {
       return this.pollData.status === POLL_STATUS.CLOSED
+    },
+    pollExpiryDate () {
+      return humanDate(new Date(this.pollData.expires_date_ms))
     },
     list () {
       const percents = []
@@ -104,14 +110,19 @@ export default ({
   padding-right: 3.25rem;
 }
 
+.c-expiry-badge {
+  margin-bottom: 1rem;
+}
+
 .c-poll-label {
   display: block;
   text-transform: uppercase;
   color: $text_1;
   font-size: $size_5;
+  margin-right: 0.25rem;
 }
 
-.c-poll-expired-badge {
+.c-poll-closed-badge {
   position: absolute;
   top: 1rem;
   right: 1rem;
