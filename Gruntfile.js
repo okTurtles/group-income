@@ -16,7 +16,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { copyFile, readFile } = require('fs/promises')
+const { copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -136,9 +136,36 @@ module.exports = (grunt) => {
     }
   }
 
+  async function redeployAndUpdateMainSrc (manifestDir) {
+    if (development) {
+      const { API_URL, GI_PERSIST } = process.env
+      const { dirname, filename } = databaseOptionBags[GI_PERSIST] ?? {}
+      let dest = './data'
+      if (GI_PERSIST === 'sqlite') dest = path.join(dirname, filename)
+      if (GI_PERSIST === 'fs') dest = dirname
+      if (!GI_PERSIST) dest = API_URL
+      grunt.log.writeln(chalk.underline(`Running 'chel deploy to ${dest}'`))
+      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error redeploying contracts')
+      console.log(stdout)
+      const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
+      const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+      await writeFile(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n')
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel deploy'"))
+    }
+  }
+
   async function genManifestsAndDeploy (dir, version) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir)
+  }
+
+  async function genManifestsAndRedeploy (dir, version) {
+    await generateManifests(dir, version)
+    await deployAndUpdateMainSrc(dir)
+    await redeployAndUpdateMainSrc(dir)
   }
 
   // Used by both the alias plugin and the Vue plugin.
@@ -181,6 +208,16 @@ module.exports = (grunt) => {
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
+  }
+
+  const databaseOptionBags = {
+    fs: {
+      dirname: './data'
+    },
+    sqlite: {
+      dirname: './data',
+      filename: 'groupincome.db'
+    }
   }
 
   // https://esbuild.github.io/api/
@@ -604,8 +641,8 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
-              // genManifestsAndDeploy modifies manifests.json, which means we need
+              await genManifestsAndRedeploy(distContracts, packageJSON.contractsVersion)
+              // genManifestsAndRedeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
               await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
