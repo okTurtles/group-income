@@ -549,6 +549,9 @@ const getters = {
     }
     return groupDMs
   },
+  groupDirectMessages (state, getters) {
+    return getters.ourDirectMessagesByGroup[state.currentGroupId]
+  },
   isDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => {
@@ -569,17 +572,8 @@ const getters = {
       return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
     }
   },
-  isPrivateChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      const contractID = chatRoomId || getters.currentChatRoomId
-      return state[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
-  },
   isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => {
-      username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users?.[username]
-    }
+    return (chatRoomId: string, username?: string) => !!state[chatRoomId]?.users?.[username || getters.ourUsername]
   },
   groupDirectMessageInfo (state, getters) {
     return chatRoomId => {

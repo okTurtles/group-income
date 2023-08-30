@@ -42,7 +42,6 @@ const ChatMixin: Object = {
       'getGroupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPrivateChatRoom',
       'ourContactProfiles',
       'isDirectMessage',
       'isPrivateDirectMessage',
