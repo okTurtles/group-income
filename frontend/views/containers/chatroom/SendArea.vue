@@ -446,7 +446,7 @@ export default ({
       }
       const attachmentsExist = Boolean(this.ephemeral.attachment.length)
       const list = appendItems && attachmentsExist
-        ? [ ...this.ephemeral.attachment ]
+        ? [...this.ephemeral.attachment]
         : []
 
       if (attachmentsExist) {
