@@ -399,6 +399,8 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
+        // The state above might be null, so we re-grab it
+        const state = sbp('state/vuex/state')
         // update the 'lastLoggedIn' field in user's group profiles
         sbp('state/vuex/getters').groupsByName
           .map(entry => entry.contractID)
