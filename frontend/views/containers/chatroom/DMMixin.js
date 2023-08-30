@@ -39,7 +39,6 @@ const DMMixin: Object = {
       sbp('gi.actions/identity/createDirectMessage', {
         contractID: this.ourIdentityContractId,
         data: {
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
           usernames: [username]
         }
       })
@@ -49,7 +48,6 @@ const DMMixin: Object = {
       sbp('gi.actions/identity/createDirectMessage', {
         contractID: this.ourIdentityContractId,
         data: {
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
           usernames
         }
       })
@@ -64,7 +62,6 @@ const DMMixin: Object = {
       await sbp('gi.actions/identity/joinDirectMessage', {
         contractID: profile.contractID,
         data: {
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
           contractID: chatRoomId
         }
       })

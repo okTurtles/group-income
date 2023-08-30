@@ -407,7 +407,7 @@ export default (sbp('sbp/selectors/register', {
           .forEach(cId => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite add added our profile)
-            if (state[cId]?.profiles?.[username]) {
+            if (sbp('state/vuex/state')[cId]?.profiles?.[username]) {
               sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
             }
           })
@@ -498,13 +498,14 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
     const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+    const currentGroupId = rootState.currentGroupId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
         attributes: {
           name: '',
           description: '',
-          privacyLevel: params.data.privacyLevel, // CHATROOM_PRIVACY_LEVEL.PRIVATE | CHATROOM_PRIVACY_LEVEL.GROUP
+          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
           type: CHATROOM_TYPES.INDIVIDUAL
         }
       },
@@ -539,7 +540,7 @@ export default (sbp('sbp/selectors/register', {
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
       data: {
-        privacyLevel: params.data.privacyLevel,
+        groupContractID: currentGroupId,
         contractID: message.contractID()
       }
     })
@@ -553,7 +554,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: profile.contractID,
         contractName: 'gi.contracts/identity',
-        originatingContractID: rootState.currentGroupId,
+        originatingContractID: currentGroupId,
         originatingContractName: 'gi.contracts/group',
         subjectContractID: message.contractID(),
         keyIds: '*'
@@ -563,12 +564,12 @@ export default (sbp('sbp/selectors/register', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: profile.contractID,
         data: {
-          privacyLevel: params.data.privacyLevel,
+          groupContractID: currentGroupId,
           // TODO: We need to handle multiple groups and the possibility of not
           // having any groups in common
           contractID: message.contractID()
         },
-        signingContractID: rootState.currentGroupId,
+        signingContractID: currentGroupId,
         hooks
       })
     }

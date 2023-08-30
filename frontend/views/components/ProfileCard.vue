@@ -166,7 +166,6 @@ export default ({
         sbp('gi.actions/identity/createDirectMessage', {
           contractID: this.ourIdentityContractId,
           data: {
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
             usernames: [this.username]
           }
         })

@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
-import { merge } from './shared/giLodash.js'
+import { merge, omit } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object, unionOf, boolean, literalOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
@@ -27,6 +27,17 @@ sbp('chelonia/defineContract', {
     },
     ourDirectMessages (state, getters) {
       return getters.currentIdentityState.chatRooms || {}
+    },
+    ourDirectMessagesByGroup (state, getters) {
+      const ourDMsByGroup = {}
+      for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
+        const { groupContractID } = getters.ourDirectMessages[chatRoomId]
+        ourDMsByGroup[groupContractID] = {
+          ...ourDMsByGroup[groupContractID],
+          chatRoomId: omit(getters.ourDirectMessages[chatRoomId], ['groupContractID'])
+        }
+      }
+      return ourDMsByGroup
     }
   },
   actions: {
@@ -62,7 +73,9 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
-          attributes: {},
+          attributes: {
+            allowDMInvite: true
+          },
           chatRooms: {}
         }, data)
         for (const key in initialState) {
@@ -121,14 +134,14 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/createDirectMessage': {
       validate: (data, { state, getters }) => {
         objectOf({
-          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+          groupContractID: string,
           contractID: string
         })(data)
       },
       process ({ data }, { state }) {
         Vue.set(state.chatRooms, data.contractID, {
-          privacyLevel: data.privacyLevel,
-          hidden: false // NOTE: this attr is used to hide/show direct message
+          groupContractID: data.groupContractID,
+          visible: true // NOTE: this attr is used to hide/show direct message
         })
       },
       async sideEffect ({ contractID, data }) {
@@ -143,7 +156,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinDirectMessage': {
       validate: objectOf({
-        privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+        groupContractID: string,
         contractID: string
       }),
       process ({ data }, { state, getters }) {
@@ -153,14 +166,12 @@ sbp('chelonia/defineContract', {
         }
 
         Vue.set(state.chatRooms, data.contractID, {
-          privacyLevel: data.privacyLevel,
-          // TODO: Handle this attribute properly
-          hidden: Boolean(0) && !state.attributes.autoJoinAllowance
+          groupContractID: data.groupContractID,
+          visible: state.attributes.allowDMInvite
         })
       },
-      async sideEffect ({ contractID, data }, { state, getters }) {
-        // TODO: Handle this attribute properly
-        if (Boolean(1) || state.attributes.autoJoinAllowance) {
+      async sideEffect ({ data }, { getters }) {
+        if (getters.ourDirectMessages[data.contractID].visible) {
           await sbp('chelonia/contract/sync', data.contractID)
         }
       }
@@ -169,18 +180,18 @@ sbp('chelonia/defineContract', {
       validate: (data, { state, getters }) => {
         objectOf({
           contractID: string,
-          hidden: boolean
+          visible: boolean
         })(data)
         if (!getters.ourDirectMessages[data.contractID]) {
           throw new TypeError(L('Not existing direct message.'))
         }
       },
       process ({ data }, { state, getters }) {
-        Vue.set(state.chatRooms[data.contractID], 'hidden', data.hidden)
+        Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
       },
       sideEffect ({ data }) {
-        const { contractID, hidden } = data
-        hidden ? leaveChatRoom({ contractID }) : sbp('chelonia/contract/sync', contractID)
+        const { contractID, visible } = data
+        visible ? sbp('chelonia/contract/sync', contractID) : leaveChatRoom({ contractID })
       }
     }
   }
