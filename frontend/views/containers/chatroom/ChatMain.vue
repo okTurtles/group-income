@@ -764,7 +764,7 @@ export default ({
         this.dndState.isActive = false
 
         e?.dataTransfer.files?.length &&
-          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files)
+          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
       }
     }
   },
