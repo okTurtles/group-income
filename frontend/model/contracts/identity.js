@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
-import { merge, omit } from './shared/giLodash.js'
+import { merge } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object, unionOf, boolean, literalOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
@@ -27,17 +27,6 @@ sbp('chelonia/defineContract', {
     },
     ourDirectMessages (state, getters) {
       return getters.currentIdentityState.chatRooms || {}
-    },
-    ourDirectMessagesByGroup (state, getters) {
-      const ourDMsByGroup = {}
-      for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
-        const { groupContractID } = getters.ourDirectMessages[chatRoomId]
-        ourDMsByGroup[groupContractID] = {
-          ...ourDMsByGroup[groupContractID],
-          chatRoomId: omit(getters.ourDirectMessages[chatRoomId], ['groupContractID'])
-        }
-      }
-      return ourDMsByGroup
     }
   },
   actions: {

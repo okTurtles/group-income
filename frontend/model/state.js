@@ -550,7 +550,15 @@ const getters = {
     return groupDMs
   },
   groupDirectMessages (state, getters) {
-    return getters.ourDirectMessagesByGroup[state.currentGroupId]
+    const directMessages = getters.ourDirectMessagesByGroup[state.currentGroupId]
+    const currentGroupDirectMessages = {}
+    for (const chatRoomId of Object.keys(directMessages)) {
+      currentGroupDirectMessages[chatRoomId] = {
+        ...directMessages[chatRoomId],
+        users: []
+      }
+    }
+    return currentGroupDirectMessages
   },
   isDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
