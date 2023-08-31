@@ -4,7 +4,7 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, difference, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
@@ -278,9 +278,9 @@ export default (sbp('sbp/selectors/register', {
       this.postSyncOperations[contractID][key] = op
     }
     const secretKeyGetter = (o, p) => {
-      if (o[p]) return o[p]
+      if (has(o, p)) return o[p]
       const rootState = sbp(this.config.stateSelector)
-      if (rootState?.secretKeys?.[p]) {
+      if (rootState?.secretKeys && has(rootState.secretKeys, p)) {
         const key = deserializeKey(rootState.secretKeys[p])
         o[p] = key
         return key
@@ -339,12 +339,12 @@ export default (sbp('sbp/selectors/register', {
       if (!key) return
       const id = keyId(key)
       // Store transient keys transientSecretKeys
-      if (!(this.transientSecretKeys[id])) {
+      if (!has(this.transientSecretKeys, id)) {
         this.transientSecretKeys[id] = key
       }
       if (transient) return
       // If the key is marked as persistent, write it to the state as well
-      if (!rootState.secretKeys[id]) {
+      if (!has(rootState.secretKeys, id)) {
         this.config.reactiveSet(rootState.secretKeys, id, serializeKey(key, true))
       }
     })
@@ -361,9 +361,9 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/haveSecretKey': function (keyId: string, persistent?: boolean) {
-    if (!persistent && keyId in this.transientSecretKeys) return true
+    if (!persistent && has(this.transientSecretKeys, keyId)) return true
     const rootState = sbp(this.config.stateSelector)
-    return !!rootState?.secretKeys?.[keyId]
+    return !!rootState?.secretKeys && has(rootState.secretKeys, keyId)
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {

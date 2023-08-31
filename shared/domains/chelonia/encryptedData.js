@@ -33,10 +33,10 @@ const encryptData = function (eKeyId: string, data: any) {
 
   const deserializedKey = typeof key === 'string' ? deserializeKey(key) : key
 
-  return JSON.stringify([
+  return [
     keyId(deserializedKey),
     encrypt(deserializedKey, JSON.stringify(data))
-  ])
+  ]
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing the
@@ -46,13 +46,11 @@ const decryptData = function (height: number, data: string, additionalKeys: Obje
     throw new ChelErrorDecryptionError('Missing contract state')
   }
 
-  const deserializedData = JSON.parse(data)
-
-  if (!Array.isArray(deserializedData) || deserializedData.length !== 2 || deserializedData.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+  if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
     throw new ChelErrorDecryptionError('Invalid message format')
   }
 
-  const [eKeyId, message] = deserializedData
+  const [eKeyId, message] = data
   // height as NaN is used to allow checking for revokedKeys as well as
   // authorizedKeys when decrypting data. This is normally inappropriate because
   // revoked keys should be considered compromised and not used for encrypting
@@ -109,7 +107,7 @@ export const encryptedOutgoingData = (state: Object, eKeyId: string, data: any):
 
   const returnProps = {
     toJSON: boundStringValueFn,
-    toString: boundStringValueFn,
+    toString: () => JSON.stringify(boundStringValueFn),
     valueOf: () => data
   }
 
@@ -137,7 +135,7 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
 
   const returnProps = {
     toJSON: boundStringValueFn,
-    toString: boundStringValueFn,
+    toString: () => JSON.stringify(boundStringValueFn),
     valueOf: () => data
   }
 
@@ -160,7 +158,7 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
 
   return {
     toJSON: stringValueFn,
-    toString: stringValueFn,
+    toString: () => JSON.stringify(stringValueFn),
     valueOf: decryptedValueFn
   }
 }
@@ -179,17 +177,15 @@ export const encryptedIncomingForeignData = (contractID: string, _0: any, data: 
 
   return {
     toJSON: stringValueFn,
-    toString: stringValueFn,
+    toString: () => JSON.stringify(stringValueFn),
     valueOf: decryptedValueFn
   }
 }
 
 export const encryptedDataKeyId = (data: string): string => {
-  const deserializedData = JSON.parse(data)
-
-  if (!Array.isArray(deserializedData) || deserializedData.length !== 2 || deserializedData.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+  if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
     throw new ChelErrorDecryptionError('Invalid message format')
   }
 
-  return deserializedData[0]
+  return data[0]
 }

@@ -424,12 +424,16 @@ export default (sbp('sbp/selectors/register', {
                 targetState._volatile.watch.push(...previousVolatileState.watch)
               }
             }
-            if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
-
-            config.reactiveSet(targetState._volatile, 'pendingKeyRequests', targetState._volatile.pendingKeyRequests.filter((pkr) => { return v.keyRequestId && pkr?.id === v.keyRequestId }))
-          } else {
-            console.log('No pendingKeyRequests')
           }
+
+          if (!Array.isArray(targetState._volatile?.pendingKeyRequests) || !v.keyRequestId) return
+
+          config.reactiveSet(
+            targetState._volatile, 'pendingKeyRequests',
+            targetState._volatile.pendingKeyRequests.filter((pkr) =>
+              pkr?.id !== v.keyRequestId
+            )
+          )
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
