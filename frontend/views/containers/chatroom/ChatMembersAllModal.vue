@@ -179,11 +179,8 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.chatRoomAttribute
       let title = name
-      if (this.isPrivateDirectMessage()) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
-      } else if (this.isGroupDirectMessage()) {
-        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        title = this.ourGroupDirectMessages[this.currentChatRoomId].title
       }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
@@ -297,15 +294,15 @@ export default ({
       if (this.isDirectMessage()) {
         if (this.isPrivacyLevelPrivate) {
           const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const chatRoomId = this.getGroupDMByUsers(usernames)
+          const chatRoomId = this.ourGroupDirectMessageFromUsernames(usernames)
           if (chatRoomId) {
             this.redirect(chatRoomId)
           } else {
-            this.createGroupDM(usernames)
+            this.createDirectMessage(usernames)
           }
           this.closeModal()
         } else {
-          await this.addMemberToGroupDM(this.currentChatRoomId, username)
+          await this.addMemberToDirectMessage(this.currentChatRoomId, username)
           this.canAddMembers = this.canAddMembers.map(member =>
             member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
         }

@@ -42,22 +42,29 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in filteredRecents'
-          @click='onAddSelection(username)'
-          :key='username'
+          v-for='{charRoomId, partners, lastJoinedPartner, title, picture} in filteredRecents'
+          @click='onAddSelection(partners)'
+          :key='charRoomId'
         )
-          profile-card(:username='username' deactivated direction='top-left')
+          profile-card(
+            v-if='partners.length === 1'
+            :username='partners[0]'
+            deactivated
+            direction='top-left'
+          )
             .c-identity
-              avatar-user(:username='username' size='sm')
-              .c-name(data-test='username')
+              avatar-user(:username='partners[0]' size='sm')
+              .c-name(data-test='partners[0]')
                 span
-                  strong {{ localizedName(username, displayName) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                  strong {{ title }}
+                  .c-display-name(v-if='title !== partners[0]' data-test='profileName') @{{ partners[0] }}
+          .group-wrapper(v-else)
+            strong {{ title }}
 
       .is-subtitle
         i18n(
           tag='h3'
-          :args='{  nbMembers: filteredOthers.length }'
+          :args='{ nbMembers: filteredOthers.length }'
         ) Others ({nbMembers})
       transition-group(
         name='slide-list'
@@ -80,6 +87,7 @@ modal-base-template.has-background(
 
 <script>
 import { L, LTags } from '@common/common.js'
+import { difference } from '@model/contracts/shared/giLodash.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UsersSelector from '@components/UsersSelector.vue'
@@ -112,25 +120,23 @@ export default ({
     ]),
     ourNewDMContacts () {
       return this.ourContacts
-        .filter(username => username !== this.ourUsername &&
-          (!this.ourPrivateDirectMessages[username] || this.ourPrivateDirectMessages[username].hidden))
+        .filter(username => {
+          const chatRoomId = this.ourGroupDirectMessageFromUsernames(username)
+          return username !== this.ourUsername && (!chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible)
+        })
         .map(username => this.ourContactProfiles[username])
     },
-    ourNewContactsCount () {
-      return this.ourNewDMContacts.length
-    },
     ourRecentConversations () {
-      return Object.keys(this.ourPrivateDirectMessages)
-        .filter(username => {
-          const chatRoomId = this.getPrivateDMByUser(username)
-          return !this.ourPrivateDirectMessages[username].hidden &&
-            // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new parter made direct message with me
+      return Object.keys(this.ourGroupDirectMessages)
+        .filter(chatRoomId => {
+          return this.ourGroupDirectMessages[chatRoomId].visible &&
+            // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new partner made direct message with me
             // it's when the identity contract is updated, but chatroom contract is not fully synced yet
             this.ourUnreadMessages[chatRoomId]
-        }).map(username => {
-          const chatRoomId = this.getPrivateDMByUser(username)
+        }).map(chatRoomId => {
+          const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomId]
           const lastMessageDate = this.ourUnreadMessages[chatRoomId].readUntil?.createdDate
-          return { username, lastMessageDate }
+          return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDate }
         })
         .sort((former, latter) => {
           if (former.lastMessageDate > latter.lastMessageDate) {
@@ -138,15 +144,21 @@ export default ({
           } else if (former.lastMessageDate > latter.lastMessageDate) {
             return 1
           }
-          const nameA = this.ourContactProfiles[former.username].displayName || former.username
-          const nameB = this.ourContactProfiles[latter.username].displayName || latter.username
-          return nameA > nameB ? 1 : -1
+          return former.title > latter.title ? 1 : -1
         })
-        .map(({ username }) => this.ourContactProfiles[username])
     },
     filteredRecents () {
-      return filterByKeyword(this.ourRecentConversations, this.searchText, ['username', 'displayName'])
-        .filter(profile => !this.selections.includes(profile.username))
+      return this.ourRecentConversations.filter(({ title, partners }) => {
+        const upperCasedSearchText = String(this.searchText).toUpperCase()
+        if (String(title).toUpperCase().indexOf(upperCasedSearchText) > -1) {
+          return true
+        } else if (String(partners.join(', ')).toUpperCase().indexOf(upperCasedSearchText) > -1) {
+          return true
+        } else if (difference(partners, this.selections).length) {
+          return true
+        }
+        return false
+      })
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
@@ -165,46 +177,39 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    openPrivateDM (username) {
-      const chatRoomId = this.getPrivateDMByUser(username)
-      if (!chatRoomId) { // Not created DM
-        this.createPrivateDM(username)
-      } else if (this.ourPrivateDirectMessages[username].hidden) {
-        this.setDMVisibility(chatRoomId, false)
-        // TODO: need to redirect
-      } else if (this.ourPrivateDirectMessages[username]) {
-        this.redirect(chatRoomId)
-      }
-
-      this.closeModal()
-    },
     onChangeKeyword (keyword) {
       this.searchText = keyword
     },
-    onAddSelection (username) {
-      this.selections.push(username)
+    onAddSelection (usernames) {
+      if (typeof usernames === 'string') {
+        usernames = [usernames]
+      }
+      for (const username of usernames) {
+        if (!this.selections.includes(username)) {
+          this.selections.push(username)
+        }
+      }
     },
     onRemoveSelection (username) {
       this.selections = this.selections.filter(un => un !== username)
     },
     onSubmit () {
       if (this.selections.length) {
-        if (this.selections.length === 1) {
-          this.openPrivateDM(this.selections[0])
+        const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.selections)
+        if (chatRoomId) {
+          this.redirect(chatRoomId)
         } else {
-          const chatRoomId = this.getGroupDMByUsers(this.selections)
-          if (chatRoomId) {
-            this.redirect(chatRoomId)
-          } else {
-            this.createGroupDM(this.selections)
-          }
+          this.createDirectMessage(this.selections)
         }
       } else if (this.searchText) {
-        const profile = this.filteredRecents[0] || this.filteredOthers[0]
-        if (profile) {
-          this.openPrivateDM(profile.username)
+        if (this.filteredRecents.length) {
+          this.redirect(this.filteredRecents[0].chatRoomId)
+        } else if (this.filteredOthers.length) {
+          this.createDirectMessage(this.filteredOthers[0].username)
         }
       }
+
+      this.closeModal()
     },
     closeModal () {
       this.$refs.modal.close()

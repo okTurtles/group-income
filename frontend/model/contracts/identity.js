@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object, unionOf, boolean, literalOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, boolean } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -14,7 +14,7 @@ import {
 import { leaveChatRoom } from './shared/functions.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
-import { CHATROOM_PRIVACY_LEVEL, IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',

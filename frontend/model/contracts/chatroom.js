@@ -95,15 +95,11 @@ function messageReceivePostEffect ({
   }
 
   let title = `# ${chatRoomName}`
-  let partnerProfile
+  let icon
   if (isDirectMessage) {
-    if (rootGetters.isGroupDirectMessage(contractID)) {
-      title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`
-    } else {
-      partnerProfile = rootGetters.ourContactProfiles[username]
-      // NOTE: partner identity contract could not be synced at the time of use
-      title = `# ${partnerProfile?.displayName || username}`
-    }
+    // NOTE: partner identity contract could not be synced yet
+    title = rootGetters.ourGroupDirectMessages[contractID].title || username
+    icon = rootGetters.ourGroupDirectMessages[contractID].picture
   }
   const path = `/group-chat/${contractID}`
 
@@ -114,7 +110,7 @@ function messageReceivePostEffect ({
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  shouldNotifyMessage && makeNotification({ title, body: text, icon: partnerProfile?.picture, path })
+  shouldNotifyMessage && makeNotification({ title, body: text, icon, path })
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
@@ -199,8 +195,8 @@ sbp('chelonia/defineContract', {
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
-        const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-        if (!state.onlyRenderMessage || isPrivateDM) {
+        const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+        if (!state.onlyRenderMessage || isDirectMessage) {
           return
         }
 
@@ -214,22 +210,18 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ data, contractID, hash, meta }, { state }) {
         const rootGetters = sbp('state/vuex/getters')
-        const { username } = data
         const loggedIn = sbp('state/vuex/state').loggedIn
+        const { type, privacyLevel } = state.attributes
+        const { username } = data
+        const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
 
         emitMessageEvent({ contractID, hash })
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+        if (!isDirectMessage) {
+          // NOTE: To ignore scroll to the message of this hash
+          //       since we don't create notification message when join the direct message
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+        }
         if (username === loggedIn.username) {
-          const { type, privacyLevel } = state.attributes
-          const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-          if (isPrivateDM) {
-            // NOTE: To ignore scroll to the message of this hash
-            //       since we don't create notification for join activity in privateDM
-            sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
-              chatRoomId: contractID,
-              deletedDate: meta.createdDate
-            })
-          }
           const lookupResult = await Promise.allSettled(
             Object.keys(state.users)
               .filter((name) =>

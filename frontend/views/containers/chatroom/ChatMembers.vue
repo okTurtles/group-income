@@ -12,42 +12,27 @@
 
   ul.c-group-list
     list-item(
-      v-for='{username, displayName, picture} in privateDirectMessages'
+      v-for='(chatRoomId, {partners, title, picture}) in ourGroupDirectMessages'
       tag='router-link'
-      :to='buildUrl(username)'
-      :data-test='username'
-      :key='username'
+      :to='buildUrl(partners)'
+      :data-test='chatRoomId'
+      :key='chatRoomId'
     )
-      .profile-wrapper
-        profile-card(:username='username' deactivated)
-          avatar-user(:username='username' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
+      .profile-wrapper(v-if='partners.length === 1')
+        profile-card(:username='partners[0]' deactivated)
+          avatar-user(:username='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(data-test='partners[0]') {{ title }}
 
-      .c-unreadcount-wrapper
-        .pill.is-danger(
-          v-if='getUnreadMsgCountOnPrivateDM(username)'
-        ) {{limitedUnreadCount(getUnreadMsgCountOnPrivateDM(username))}}
-
-    list-item(
-      v-for='{contractID, title, othersCount, picture} in groupDirectMessages'
-      tag='router-link'
-      :to='buildUrl(contractID, false)'
-      :data-test='contractID'
-      :key='contractID'
-    )
-      .group-wrapper
+      .group-wrapper(v-else)
         .picture-wrapper
-          avatar(
-            :src='picture'
-            :alt='title'
-            size='xs'
-          )
-          .c-badge {{ othersCount }}
+          avatar(:src='picture' :alt='title' size='xs')
+          .c-badge {{ partners.length }}
         span.is-unstyled.c-name.has-ellipsis(data-test='title') {{ title }}
+
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='getUnreadMsgCount(contractID)'
-        ) {{limitedUnreadCount(getUnreadMsgCount(contractID))}}
+          v-if='getUnreadMsgCount(chatRoomId)'
+        ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomId))}}
 </template>
 
 <script>
@@ -62,7 +47,7 @@ import ListItem from '@components/ListItem.vue'
 import { L } from '@common/common.js'
 
 export default ({
-  name: 'GroupMembers',
+  name: 'ChatMembers',
   components: {
     Avatar,
     AvatarUser,
@@ -83,29 +68,12 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount',
       'ourContactProfiles',
       'groupShouldPropose',
-      'ourUsername',
-      'userDisplayName',
-      'ourPrivateDirectMessages',
       'ourGroupDirectMessages',
       'chatRoomUnreadMentions',
-      'directMessageIDFromUsername',
-      'groupDirectMessageInfo'
-    ]),
-    privateDirectMessages () {
-      return Object.keys(this.ourPrivateDirectMessages)
-        .filter(username => !this.ourPrivateDirectMessages[username].hidden)
-        .map(username => this.ourContactProfiles[username])
-    },
-    groupDirectMessages () {
-      return Object.keys(this.ourGroupDirectMessages)
-        .filter(contractID => this.$store.state.contracts[contractID] &&
-          Object.keys(this.$store.state[contractID]?.users || {}).length > 1 // NOTE: presence check is for considering contract is syncing
-        )
-        .map(contractID => this.groupDirectMessageInfo(contractID))
-    }
+      'ourGroupDirectMessageFromUsernames'
+    ])
   },
   methods: {
     invite () {
@@ -114,15 +82,12 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    localizedName (username, displayName) {
-      const name = displayName || this.userDisplayName(username)
-      return username === this.ourUsername ? L('{name} (you)', { name }) : name
-    },
-    buildUrl (username, isPrivacyLevelPrivate = true) {
-      const chatRoomId = isPrivacyLevelPrivate ? this.directMessageIDFromUsername(username) : username
+    buildUrl (partners) {
       return {
         name: 'GroupChatConversation',
-        params: { chatRoomId }
+        params: {
+          chatRoomId: this.ourGroupDirectMessageFromUsernames(partners)
+        }
       }
     },
     headerButtonAction () {
@@ -131,10 +96,6 @@ export default ({
       if (modalAction) {
         this.openModal(modalAction)
       }
-    },
-    getUnreadMsgCountOnPrivateDM (username) {
-      const chatRoomId = this.directMessageIDFromUsername(username)
-      return this.getUnreadMsgCount(chatRoomId)
     },
     getUnreadMsgCount (chatRoomId) {
       return this.chatRoomUnreadMentions(chatRoomId).length

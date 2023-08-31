@@ -2,6 +2,7 @@
 
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
+  CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES
 } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
@@ -407,7 +408,7 @@ export default (sbp('sbp/selectors/register', {
           .forEach(cId => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite add added our profile)
-            if (sbp('state/vuex/state')[cId]?.profiles?.[username]) {
+            if (state[cId]?.profiles?.[username]) {
               sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
             }
           })
