@@ -58,7 +58,15 @@ function captureLogEntry (type, ...args) {
     type,
     // Detect when arg is an Error and capture it properly.
     // ex: uncaught Vue errors or custom try/catch errors.
-    msg: args.map((arg) => arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+    msg: args.map((arg) => {
+      try {
+        return JSON.parse(
+          JSON.stringify(arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+        )
+      } catch (e) {
+        return `[captureLogs failed to stringify argument of type '${typeof arg}'. Err: ${e.message}]`
+      }
+    })
   }
   getLogger().entries.add(entry)
   // To avoid infinite loop because we log all selector calls, we run sbp calls
@@ -116,22 +124,14 @@ function downloadLogs (elLink: Object): void {
     logs: getLogger().entries.toArray()
   })], { type: 'application/json' })
 
-  if (window.navigator.msSaveOrOpenBlob) {
-    // IE10+ and Edge
-    console.log('download using MS API')
-    window.navigator.msSaveOrOpenBlob(file, filename)
-  } else {
-    console.log('download using URL obj')
-
-    const url = URL.createObjectURL(file)
-    elLink.href = url
-    elLink.download = filename
-    elLink.click()
-    setTimeout(() => {
-      elLink.href = '#'
-      window.URL.revokeObjectURL(url)
-    }, 0)
-  }
+  const url = URL.createObjectURL(file)
+  elLink.href = url
+  elLink.download = filename
+  elLink.click()
+  setTimeout(() => {
+    elLink.href = '#'
+    URL.revokeObjectURL(url)
+  }, 0)
 }
 
 function getLogger (): Object {

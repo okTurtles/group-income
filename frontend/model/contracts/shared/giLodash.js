@@ -268,3 +268,8 @@ export function get (obj: Object, path: string[], defaultValue: any): any {
 
   return result === undefined ? defaultValue : result
 }
+
+export const has = ((
+  // $FlowFixMe
+  Function.prototype.call.bind(Object.prototype.hasOwnProperty): any
+): (Object, string | symbol | number) => boolean)

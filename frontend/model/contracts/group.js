@@ -31,10 +31,9 @@ function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   return value
 }
 
-function initGroupProfile (contractID: string, joinedDate: string) {
+function initGroupProfile (joinedDate: string) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
-    contractID,
     joinedDate,
     lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
@@ -554,7 +553,7 @@ sbp('chelonia/defineContract', {
           },
           streaks: initGroupStreaks(),
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
+            [meta.username]: initGroupProfile(meta.createdDate)
           },
           chatRooms: {},
           totalPledgeAmount: 0
@@ -997,7 +996,7 @@ sbp('chelonia/defineContract', {
         //       since we are making it possible for the same username to leave and
         //       rejoin the group. All of their past posts will be re-associated with
         //       them upon re-joining.
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -1008,6 +1007,7 @@ sbp('chelonia/defineContract', {
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       async sideEffect ({ meta, contractID }, { state }) {
+        const rootGetters = sbp('state/vuex/getters')
         const { loggedIn } = sbp('state/vuex/state')
         const { profiles = {} } = state
 
@@ -1016,10 +1016,27 @@ sbp('chelonia/defineContract', {
         if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name in profiles) {
-            if (name !== loggedIn.username) {
-              await sbp('chelonia/contract/sync', profiles[name].contractID)
-            }
+          const lookupResult = await Promise.allSettled(
+            Object.keys(profiles)
+              .filter((name) =>
+                !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
+              .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
+                if (!r) throw new Error('Cannot lookup username: ' + name)
+                return r
+              }))
+          )
+          const errors = lookupResult
+            .filter(({ status }) => status === 'rejected')
+            .map((r) => (r: any).reason)
+          await sbp('chelonia/contract/sync',
+            lookupResult
+              .filter(({ status }) => status === 'fulfilled')
+              .map((r) => (r: any).value)
+          ).catch(e => errors.push(e))
+          if (errors.length) {
+            const msg = `Encountered ${errors.length} errors while accepting invites`
+            console.error(msg, errors)
+            throw new Error(msg)
           }
         } else {
           const myProfile = profiles[loggedIn.username]
@@ -1170,40 +1187,7 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
-      }/*,
-      TODO REMOVE
-      async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
-        const rootState = sbp('state/vuex/state')
-        const contracts = rootState.contracts || {}
-        const { identityContractID } = rootState.loggedIn
-        const userState = rootState[identityContractID]
-        const state = rootState[contractID]
-
-        if (rootState[data.chatRoomID]?._volatile) {
-          return
-        }
-        // the specific scenario here is joining chatrooms (should be the general channel in this
-        // case) . This is required because joining a chatroom is a two-step process (i.e., first
-        // a group is joined, we get the list of chatrooms and then request to join) due to them
-        // being encrypted.
-        // TODO: This entire sideEffect needs to be deleted, because instead of using OP_KEY_REQUEST
-        //       we're going to use OP_KEYSHARE in advance so that the chatrooms are instantly
-        //       joinable.
-        await sbp('chelonia/out/keyRequest', {
-          originatingContractID: identityContractID,
-          originatingContractName: contracts[identityContractID].type,
-          contractID: data.chatRoomID,
-          contractName: 'gi.contracts/chatroom',
-          // This is finding the CSK by name under the assumption that there is only one CSK (which holds for group contracts)
-          signingKey: state._volatile?.keys?.[(((Object.values(Object(state._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)],
-          innerSigningKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'csk')?.id,
-          encryptionKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'cek')?.id,
-          hooks: {
-            prepublish: null,
-            postpublish: null
-          }
-        })
-      } */
+      }
     },
     'gi.contracts/group/deleteChatRoom': {
       validate: (data, { getters, meta }) => {
@@ -1462,6 +1446,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/rotateKeys': (contractID, state) => {
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')
@@ -1471,7 +1456,7 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
-        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+        console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {

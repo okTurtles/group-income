@@ -189,7 +189,6 @@ sbp('chelonia/defineContract', {
         username: string // username of joining member
       }),
       process ({ data, meta, hash, id }, { state }) {
-        const rootGetters = sbp('state/vuex/getters')
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
@@ -197,7 +196,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        Vue.set(state.users, username, { contractID: rootGetters.ourContactProfiles[username].contractID, joinedDate: meta.createdDate })
+        Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
         const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -213,10 +212,14 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, contractID, hash, meta }, { state }) {
+      async sideEffect ({ data, contractID, hash, meta }, { state }) {
+        const rootGetters = sbp('state/vuex/getters')
+        const { username } = data
+        const loggedIn = sbp('state/vuex/state').loggedIn
+
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-        if (data.username === sbp('state/vuex/state').loggedIn.username) {
+        if (username === loggedIn.username) {
           const { type, privacyLevel } = state.attributes
           const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
           if (isPrivateDM) {
@@ -226,6 +229,36 @@ sbp('chelonia/defineContract', {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
             })
+          }
+          const lookupResult = await Promise.allSettled(
+            Object.keys(state.users)
+              .filter((name) =>
+                !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
+              .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
+                if (!r) throw new Error('Cannot lookup username: ' + name)
+                return r
+              }))
+          )
+          const errors = lookupResult
+            .filter(({ status }) => status === 'rejected')
+            .map((r) => (r: any).reason)
+          await sbp('chelonia/contract/sync',
+            lookupResult
+              .filter(({ status }) => status === 'fulfilled')
+              .map((r) => (r: any).value)
+          ).catch(e => errors.push(e))
+          if (errors.length) {
+            const msg = `Encountered ${errors.length} errors while joining a chatroom`
+            console.error(msg, errors)
+            throw new Error(msg)
+          }
+        } else {
+          if (!rootGetters.ourContactProfiles[username]) {
+            const contractID = await sbp('namespace/lookup', username)
+            if (!contractID) {
+              throw new Error('Cannot lookup username: ' + username)
+            }
+            await sbp('chelonia/contract/sync', contractID)
           }
         }
       }
@@ -653,6 +686,7 @@ sbp('chelonia/defineContract', {
   },
   methods: {
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')
@@ -662,7 +696,7 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys']).catch(e => {
-        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+        console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }

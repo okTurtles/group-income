@@ -142,19 +142,14 @@ export default (sbp('sbp/selectors/register', {
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
 
+    // Before creating the contract, put all keys into transient store
+    sbp('chelonia/storeSecretKeys',
+      [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+    )
+
     let userID
     // next create the identity contract itself
     try {
-      await sbp('chelonia/configure', {
-        transientSecretKeys: {
-          [IPKid]: IPK,
-          [IEKid]: IEK,
-          [CSKid]: CSK,
-          [CEKid]: CEK,
-          [PEKid]: PEK
-        }
-      })
-
       const user = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
@@ -169,6 +164,11 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: 0,
             permissions: '*',
             allowedActions: '*',
+            meta: {
+              private: {
+                transient: true
+              }
+            },
             data: IPKp
           },
           {
@@ -180,6 +180,11 @@ export default (sbp('sbp/selectors/register', {
             // make sense here? It is not being used and these types of permissions
             // can be problematic because selectors can be updated
             permissions: ['gi.contracts/identity/keymeta'],
+            meta: {
+              private: {
+                transient: true
+              }
+            },
             data: IEKp
           },
           {
@@ -231,6 +236,13 @@ export default (sbp('sbp/selectors/register', {
       })
 
       userID = user.contractID()
+
+      // After the contract has been created, store pesistent keys
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK, PEK].map(key => ({ key }))
+      )
+      // And remove transient keys, which require a user password
+      sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
 
       await sbp('chelonia/contract/sync', userID)
     } catch (e) {
@@ -351,11 +363,10 @@ export default (sbp('sbp/selectors/register', {
       ? await (async () => {
         const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        const IEKid = keyId(IEK)
 
-        return { [IEKid]: IEK }
+        return [{ key: IEK, transient: true }]
       })()
-      : {}
+      : []
 
     try {
       sbp('appLogs/startCapture', username)
@@ -375,7 +386,7 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
-      await sbp('chelonia/configure', { transientSecretKeys })
+      await sbp('chelonia/storeSecretKeys', transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
@@ -388,11 +399,17 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
+        // The state above might be null, so we re-grab it
+        const state = sbp('state/vuex/state')
         // update the 'lastLoggedIn' field in user's group profiles
         sbp('state/vuex/getters').groupsByName
           .map(entry => entry.contractID)
           .forEach(cId => {
-            sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId })
+            // We send this action only for groups we have fully joined (i.e.,
+            // accepted an invite add added our profile)
+            if (state[cId]?.profiles?.[username]) {
+              sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
+            }
           })
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
@@ -421,17 +438,22 @@ export default (sbp('sbp/selectors/register', {
       // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
       await sbp('chelonia/contract/wait')
+      // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
       const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+      // Doing both 'state/vuex/save' above and 'gi.db/settings/delete' doesn't
+      // make much sense, because delete undoes save
+      // TODO: In the future, the goal is to encrypt the state so that it doesn't
+      // need to be deleted.
       await sbp('gi.db/settings/delete', username)
-      await sbp('chelonia/configure', { transientSecretKeys: null })
+      sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
-    sbp('state/vuex/commit', 'logout')
+    sbp('state/vuex/reset')
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },

@@ -1,4 +1,4 @@
-import { pick } from '@model/contracts/shared/giLodash.js'
+import { has, pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -32,42 +32,42 @@ sbp('sbp/selectors/register', {
 
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
-    if (contractState?._volatile?.keys && Object.keys(contractState?._volatile?.keys).length) {
-      const state = await sbp('chelonia/latestContractState', contractID)
-      const originatingContractState = originatingContractID && originatingContractID !== contractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
+    const state = await sbp('chelonia/latestContractState', contractID)
+    const originatingContractState = originatingContractID && originatingContractID !== contractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
 
-      const CEKid = findKeyIdByName(state, 'cek')
-      const CSKid = findKeyIdByName(originatingContractState, 'csk')
+    const CEKid = findKeyIdByName(state, 'cek')
+    const CSKid = findKeyIdByName(originatingContractState, 'csk')
 
-      if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
-        throw new Error('Missing CEK; unable to proceed sharing keys')
-      }
-
-      const keysToShare = Array.isArray(keyIds) ? pick(contractState._volatile.keys, keyIds) : keyIds === '*' ? contractState._volatile.keys : null
-
-      if (!keysToShare) {
-        throw new TypeError('Invalid parameter: keyIds')
-      }
-
-      await sbp('chelonia/out/keyShare', {
-        contractID,
-        contractName,
-        originatingContractID,
-        originatingContractName,
-        data: {
-          contractID: subjectContractID,
-          keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
-            id: keyId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(state, CEKid, key)
-              }
-            }
-          }))
-        },
-        signingKeyId: CSKid
-      })
+    if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
+      throw new Error('Missing CEK; unable to proceed sharing keys')
     }
+
+    const secretKeys = sbp('state/vuex/state')['secretKeys']
+
+    const keysToShare = Array.isArray(keyIds) ? pick(secretKeys, keyIds) : keyIds === '*' ? pick(secretKeys, Object.keys(contractState._vm.authorizedKeys)) : null
+
+    if (!keysToShare) {
+      throw new TypeError('Invalid parameter: keyIds')
+    }
+
+    await sbp('chelonia/out/keyShare', {
+      contractID,
+      contractName,
+      originatingContractID,
+      originatingContractName,
+      data: {
+        contractID: subjectContractID,
+        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+          id: keyId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(state, CEKid, key)
+            }
+          }
+        }))
+      },
+      signingKeyId: CSKid
+    })
   },
   // TODO: Move to chelonia
   'gi.actions/out/rotateKeys': async (
@@ -83,13 +83,13 @@ sbp('sbp/selectors/register', {
 
     // $FlowFixMe
     const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
-      return !!data.meta?.private && (
+      return !!data.meta?.private && data._notAfterHeight === undefined && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
           : keysToRotate === '*'
             ? true
             // $FlowFixMe
-            : state._volatile?.pendingKeyRevocations && Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, id))
+            : state._volatile?.pendingKeyRevocations && has(state._volatile.pendingKeyRevocations, id))
     }).map(([id, data]: [string, GIKey]) => {
       const newKey = keygenOfSameType(data.data)
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
@@ -98,8 +98,7 @@ sbp('sbp/selectors/register', {
     // $FlowFixMe
     const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
-      // $FlowFixMe
-      const isRotatedEncryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName)
+      const isRotatedEncryptionKey = has(newKeys, encryptionKeyName)
       const encryptionKey = isRotatedEncryptionKey ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
 
       if (state._vm.authorizedKeys[id].ringLevel < ringLevel) {

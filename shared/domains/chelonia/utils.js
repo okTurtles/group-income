@@ -5,18 +5,18 @@ import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 
-export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
+export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
 
-export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k.foreignKey?.includes(contractID)).map(k => k.id)
+export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight === undefined && k.foreignKey?.includes(contractID)).map(k => k.id)
 
-export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.revokedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name).map(k => k.id)
+export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight !== undefined).map(k => k.id)
 
-export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, additionalKeyIds: ?string[]): ?string => {
+export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string => {
   return state._vm?.authorizedKeys &&
-    (state._volatile?.keys || additionalKeyIds?.length) &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) =>
+      (k._notAfterHeight === undefined) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
-      (state._volatile?.keys?.[k.id] || additionalKeyIds?.includes(k.id)) &&
+      sbp('chelonia/haveSecretKey', k.id) &&
       (Array.isArray(permissions)
         ? permissions.reduce((acc, permission) =>
           acc && (k.permissions === '*' || k.permissions.includes(permission)), true
@@ -30,6 +30,7 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) =>
+      (k._notAfterHeight === undefined) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
       (Array.isArray(permissions)
         ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission)), true)
@@ -41,7 +42,7 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
 export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
   const signingKeyPermissions = Array.isArray(signingKey.permissions) ? new Set(signingKey.permissions) : signingKey.permissions
   const signingKeyAllowedActions = Array.isArray(signingKey.allowedActions) ? new Set(signingKey.allowedActions) : signingKey.allowedActions
-  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
+  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.forEach(k => {
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
@@ -49,19 +50,19 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
     }
     if (signingKeyPermissions !== '*') {
       if (!Array.isArray(k.permissions) || !k.permissions.reduce((acc, cv) => acc && signingKeyPermissions.has(cv), true)) {
-        throw new Error('Unable to add or update a key with more permissions than the signing key. singingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
+        throw new Error('Unable to add or update a key with more permissions than the signing key. signingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
       }
     }
     if (signingKeyAllowedActions !== '*' && k.allowedActions) {
       if (!signingKeyAllowedActions || !Array.isArray(k.allowedActions) || !k.allowedActions.reduce((acc, cv) => acc && signingKeyAllowedActions.has(cv), true)) {
-        throw new Error('Unable to add or update a key with more allowed actions than the signing key. singingKey allowed actions: ' + String(signingKey?.allowedActions) + '; key add allowed actions: ' + String(k.allowedActions))
+        throw new Error('Unable to add or update a key with more allowed actions than the signing key. signingKey allowed actions: ' + String(signingKey?.allowedActions) + '; key add allowed actions: ' + String(k.allowedActions))
       }
     }
   })
 }
 
 export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: string[]) => {
-  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
+  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.map(id => state._vm.authorizedKeys[id]).forEach((k, i) => {
     if (!k) throw new Error('Nonexisting key ID ' + v[i])
@@ -87,7 +88,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
     if (uk.data && existingKey.meta?.private && !(uk.meta?.private)) {
       throw new Error('Missing private key. Old key ID: ' + uk.oldKeyId)
     }
-    if (uk.id) {
+    if (uk.id && uk.id !== uk.oldKeyId) {
       keysToDelete.push(uk.oldKeyId)
     }
     const updatedKey = { ...existingKey }
@@ -124,15 +125,20 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
     let decryptedKey: ?string
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.content) {
-      if (key.id && key.meta.private.content) {
+      if (
+        key.id &&
+        key.meta.private.content &&
+        !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
+      ) {
         try {
           decryptedKey = key.meta.private.content.valueOf()
           decryptedKeys.push([key.id, decryptedKey])
-          if (!(key.id in this.config.transientSecretKeys)) {
-            this.config.transientSecretKeys[key.id] = deserializeKey(decryptedKey)
-          }
+          sbp('chelonia/storeSecretKeys', [{
+            key: deserializeKey(decryptedKey),
+            transient: !!key.meta.private.transient
+          }])
         } catch (e) {
-          console.error(`Secret key decryption error '${e.message || e}':`, e)
+          console.warn(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
           // render the contract unusable because it will undo all our changes to the state,
           // and it's possible that an error here shouldn't necessarily break the entire
@@ -151,7 +157,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,
         expires: key.meta.expires,
-        inviteSecret: decryptedKey || state._volatile?.keys?.[key.id],
+        inviteSecret: decryptedKey || this.transientSecretKeys[key.id],
         responses: []
       })
     }
@@ -184,18 +190,6 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
     }
   }
 
-  console.log('@@@@@ KAP KL ' + decryptedKeys.length + ' cID ' + contractID)
-  if (decryptedKeys.length) {
-    if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
-    if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
-
-    for (const [id, value] of decryptedKeys) {
-      // TODO (Jul 11 2023): Something is probably going wrong here wrt encryptedIncomingData
-      console.log('@@@@@ KAP SV ', { ...state._volatile.keys, id, value })
-      this.config.reactiveSet(state._volatile.keys, id, value)
-    }
-  }
-
   subscribeToForeignKeyContracts.call(this, contractID, state)
 }
 
@@ -215,19 +209,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 
       const rootState = sbp(this.config.stateSelector)
 
-      const foreignContractState = rootState[foreignContract]
-
-      // Do we have the corresponding private key? If so, add it to this contract
-      // This is done here and at syncContractAndWatchKeys
-      // The reason for duplicating code is to allow for keys to be available
-      // as early as possible
-      if (foreignContractState._volatile?.keys?.[key.id]) {
-        if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
-        if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
-        state._volatile.keys[key.id] = foreignContractState._volatile.keys?.[key.id]
-      }
-
-      const signingKey = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_DEL], ['sig'], key.ringLevel, Object.keys(this.config.transientSecretKeys))
+      const signingKey = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_DEL], ['sig'], key.ringLevel)
       const canMirrorOperations = !!signingKey
 
       // If we cannot mirror operations, then there is nothing left to do
@@ -273,7 +255,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   // When recreateEvent is called we may already be in a queued event, so we
   // call syncContract directly instead of sync
   await sbp('chelonia/contract/sync', contractID)
-  const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
+  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID)
   const head = entry.head()
 
   const [opT, opV] = entry.op()
@@ -315,7 +297,9 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
     newOpV = recreateOperation(opT, opV)
   }
 
-  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD }, signatureFn)
+  if (!newOpV) return
+
+  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD, height: previousHeight + 1 }, signatureFn)
 
   return entry
 }

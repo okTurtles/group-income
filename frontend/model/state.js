@@ -25,7 +25,7 @@ const initialState = {
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
   chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
-  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  contracts: {}, // contractIDs => { type:string, HEAD:string, height:number } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
@@ -53,6 +53,12 @@ setInterval(function () {
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
   'state/vuex/state': () => store.state,
+  'state/vuex/reset': () => {
+    const state = cloneDeep(initialState)
+    state.notifications = notificationModule.state()
+    state.settings = settingsModule.state()
+    store.replaceState(state)
+  },
   'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
@@ -101,9 +107,6 @@ sbp('sbp/selectors/register', {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-  },
-  logout (state) {
-    Object.assign(state, cloneDeep(initialState))
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
@@ -498,17 +501,7 @@ const getters = {
   globalProfile (state, getters) {
     // get profile from username who is part of current group
     return username => {
-      const groupProfile = getters.groupProfile(username)
-      const identityState = groupProfile && state[groupProfile.contractID]
-      return identityState && identityState.attributes
-    }
-  },
-  globalProfile2 (state, getters) {
-    // get profile from username who is part of the group identified by it's group ID
-    return (groupID, username) => {
-      const groupProfile = state[groupID]?.profiles[username]
-      const identityState = groupProfile && state[groupProfile.contractID]
-      return identityState && identityState.attributes
+      return getters.ourContactProfiles[username]
     }
   },
   ourContactProfiles (state, getters) {
@@ -606,9 +599,6 @@ const getters = {
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
-  },
-  currentChatVolatile (state, getters) {
-    return state?.[getters.currentChatRoomId]?._volatile || null
   },
   currentChatVm (state, getters) {
     return state?.[getters.currentChatRoomId]?._vm || null

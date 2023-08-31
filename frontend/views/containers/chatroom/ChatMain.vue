@@ -35,11 +35,10 @@
             :description='summary.attributes.description'
           )
 
-      template(v-for='(message, index) in messages')
+      div(v-for='(message, index) in messages' :key='index')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
           :class='{"is-new": isNew(message.hash)}'
-          :key='`date-${index}`'
         )
           i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
           span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
@@ -47,7 +46,6 @@
         component(
           :is='messageType(message)'
           :ref='message.hash'
-          :key='message.id'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
@@ -190,7 +188,7 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
-    this.archiveMessageState(this.currentChatRoomId)
+    this.archiveMessageState()
   },
   computed: {
     ...mapGetters([
@@ -418,7 +416,6 @@ export default ({
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
-        _volatile: cloneDeep(this.currentChatVolatile),
         _vm: cloneDeep(this.currentChatVm),
         messages: [],
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
@@ -451,7 +448,7 @@ export default ({
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
       } = this.$route.query
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
-      const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', this.currentChatRoomId)
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
@@ -466,9 +463,7 @@ export default ({
         }
         if (newEvents.length) {
           for (const event of newEvents) {
-            // TODO: REMOVEME
-            console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (renderMoreMessages)')
-            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
+            this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
           this.$forceUpdate()
@@ -510,9 +505,7 @@ export default ({
 
       this.initializeState()
       for (const event of this.latestEvents) {
-        // TODO: REMOVEME
-        console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (rerenderEvents)')
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
+        this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
     },
@@ -553,9 +546,15 @@ export default ({
       }
     },
     async listenChatRoomActions (contractID: string, message: GIMessage) {
-      if (contractID !== this.currentChatRoomId) {
-        // TODO: REMOVEME
-        console.log('contractID !== this.currentChatRoomId', { contractID, currentChatRoomId: this.currentChatRoomId })
+      // We must check this.summary.chatRoomId and not this.currentChatRoomId
+      // because they might be different, as this.summary is computed from
+      // this.currentChatRoomId.
+      // The watch below will ensure that this.messageState.contract is correct
+      // for the current contract, which is needed for signature verification
+      // when calling processMessage.
+      // The watch is setup for this.summary and not for this.currentChatRoomId,
+      // which is why this check must also check for this.summary.chatRoomId
+      if (contractID !== this.summary.chatRoomId) {
         return
       }
 
@@ -591,9 +590,11 @@ export default ({
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // TODO: REMOVEME
-      console.log('CHATMAIN.VUE: CALLING PROCESSMESSAGE (listenChatRoomActions)')
-      await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
+      if (contractID !== this.summary.chatRoomId) {
+        console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomId}; avoiding any further processing`)
+        return
+      }
+      this.messageState.contract = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
 
       this.latestEvents.push(message.serialize())
 
@@ -703,32 +704,41 @@ export default ({
         })
       }
     }, 500),
-    archiveMessageState (chatRoomId) {
-      if (!this.isJoinedChatRoom(chatRoomId)) {
+    archiveMessageState () {
+      // Copy of a reference to this.latestEvents to ensure it doesn't change
+      const latestEvents = this.latestEvents
+      if (latestEvents.length === 0) {
         return
       }
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
-      const to = this.latestEvents.length
-        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1], chatRoomId).hash()
-        : null
+      const fromEvent = GIMessage.deserialize(latestEvents[0])
+      const toEvent = GIMessage.deserialize(latestEvents[latestEvents.length - 1])
+
+      // Get the chatroom ID from the event to ensure that it's consistent with
+      // what will be stored
+      const chatRoomId = fromEvent.contractID()
+
+      if (!this.isJoinedChatRoom(chatRoomId)) return
+
+      const from = fromEvent.hash()
+      const to = toEvent.hash()
 
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
-      if (this.latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
+      if (latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
         sbp('gi.db/archive/delete', this.archiveKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast
         // so it's good to initiate using input parameter chatRoomId
-        sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
+        sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(latestEvents))
       }
     },
     archiveKeyFromChatRoomId (chatRoomId) {
       const curChatRoomId = chatRoomId || this.currentChatRoomId
       return `messages/${this.ourUsername}/${curChatRoomId}`
     },
-    refreshContent: debounce(function (to, from) {
+    refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      this.archiveMessageState(from)
+      this.archiveMessageState()
       this.setInitMessages()
     }, 250)
   },
@@ -746,6 +756,10 @@ export default ({
       const toIsJoined = to.isJoined
       const fromIsJoined = from.isJoined
 
+      if (toChatRoomId !== fromChatRoomId) {
+        this.initializeState()
+      }
+
       const initAfterSynced = (toChatRoomId, fromChatRoomId) => {
         const initMessagesAfterSynced = (contractID, isSyncing) => {
           if (contractID === toChatRoomId && isSyncing === false) {
@@ -761,7 +775,7 @@ export default ({
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          this.archiveMessageState(fromChatRoomId)
+          this.archiveMessageState()
           toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
         } else {
           this.refreshContent(toChatRoomId, fromChatRoomId)

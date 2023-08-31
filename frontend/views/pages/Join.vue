@@ -170,12 +170,18 @@ export default ({
         const originatingContractID = this.$store.state.loggedIn.identityContractID
         const userState = this.$store.state[originatingContractID]
 
+        const secretKey = deserializeKey(secret)
+
+        sbp('chelonia/storeSecretKeys', [{
+          key: secretKey, transient: true
+        }])
+
         await sbp('gi.actions/group/joinAndSwitch', {
           originatingContractID,
           originatingContractName: 'gi.contracts/identity',
           contractID: groupId,
           contractName: 'gi.contracts/group',
-          signingKey: secret,
+          signingKeyId: keyId(secretKey),
           innerSigningKeyId: findKeyIdByName(userState, 'csk'),
           encryptionKeyId: findKeyIdByName(userState, 'cek')
         })

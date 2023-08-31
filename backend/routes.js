@@ -44,13 +44,22 @@ route.POST('/event', {
   try {
     console.log('/event handler')
     const entry = GIMessage.deserialize(request.payload)
-    await sbp('backend/server/handleEntry', entry)
+    try {
+      await sbp('backend/server/handleEntry', entry)
+    } catch (err) {
+      if (err.name === 'ChelErrorDBBadPreviousHEAD') {
+        console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
+        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
+        const r = Boom.conflict(err.message, { HEADinfo })
+        Object.assign(r.output.headers, {
+          'shelter-headinfo-head': HEADinfo.HEAD,
+          'shelter-headinfo-height': HEADinfo.height
+        })
+        return r
+      }
+    }
     return entry.hash()
   } catch (err) {
-    if (err.name === 'ChelErrorDBBadPreviousHEAD') {
-      console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
-      return Boom.conflict(err.message)
-    }
     return logger(err)
   }
 })
@@ -132,17 +141,17 @@ route.GET('/name/{name}', {}, async function (request, h) {
   }
 })
 
-route.GET('/latestHash/{contractID}', {
+route.GET('/latestHEADinfo/{contractID}', {
   cache: { otherwise: 'no-store' }
 }, async function (request, h) {
   try {
     const { contractID } = request.params
-    const hash = await sbp('chelonia/db/latestHash', contractID)
-    if (!hash) {
-      console.warn(`[backend] latestHash not found for ${contractID}`)
+    const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (!HEADinfo) {
+      console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
       return Boom.notFound()
     }
-    return hash
+    return HEADinfo
   } catch (err) {
     return logger(err)
   }

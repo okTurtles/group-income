@@ -27,7 +27,7 @@ import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import { findKeyIdByName, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
+import { findKeyIdByName, findSuitableSecretKeyId, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
@@ -156,13 +156,10 @@ export default (sbp('sbp/selectors/register', {
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
 
-      await sbp('chelonia/configure', {
-        transientSecretKeys: {
-          [CSKid]: CSK,
-          [CEKid]: CEK,
-          [inviteKeyId]: inviteKey
-        }
-      })
+      // Before creating the contract, put all keys into transient store
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK].map(key => ({ key, transient: true }))
+      )
 
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
@@ -254,6 +251,11 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const contractID = message.contractID()
+
+      // After the contract has been created, store pesistent keys
+      sbp('chelonia/storeSecretKeys',
+        [CEK, CSK, inviteKey].map(key => ({ key }))
+      )
 
       await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
@@ -370,7 +372,9 @@ export default (sbp('sbp/selectors/register', {
       // params.originatingContractID is set, it means that we're joining
       // through an invite link, and we must send a key request to complete
       // the joining process.
-      const hasVolatileKeys = rootState[params.contractID]?._volatile?.keys && Object.keys(rootState[params.contractID]._volatile.keys).length
+      const hasVolatileKeys =
+        params.contractID in rootState &&
+        !!findSuitableSecretKeyId(rootState[params.contractID], '*', ['sig'])
       const sendKeyRequest = (!hasVolatileKeys && params.originatingContractID)
 
       await sbp(
@@ -430,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasVolatileKeys && !state._volatile.pendingKeyRequests?.length) {
+      } else if (hasVolatileKeys && !state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
         if (!state._vm) {
           console.warn('Invalid group state: missing _vm key. contractID=' + params.contractID, { ...state })
@@ -440,7 +444,7 @@ export default (sbp('sbp/selectors/register', {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (!state.profiles?.[username] || state.profiles?.[username].departedDate) {
+        if (!state.profiles?.[username] || state.profiles[username].departedDate) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           // Share our PEK with the group so that group members can see
@@ -553,26 +557,30 @@ export default (sbp('sbp/selectors/register', {
     const state = rootState[contractID]
 
     // $FlowFixMe
-    return Promise.all(Object.values(state.profiles).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
-      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
-      if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${p.contractID}: Missing CEK`)
-        return Promise.resolve()
-      }
-      return {
-        contractID,
-        foreignContractID: p.contractID,
-        // $FlowFixMe
-        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-          id: newId,
-          meta: {
-            private: {
-              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
-            }
+    return Promise.all(
+      Object.entries(state.profiles)
+        .filter(([_, p]) => (p: any).departedDate == null)
+        .map(async ([username]) => {
+          const pContractID = await sbp('namespace/lookup', username)
+          const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
+          if (!CEKid) {
+            console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
+            return Promise.resolve()
+          }
+          return {
+            contractID,
+            foreignContractID: pContractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
           }
         }))
-      }
-    }))
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
@@ -665,7 +673,7 @@ export default (sbp('sbp/selectors/register', {
     // with them so that they are able to read messages and participate
     if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: rootGetters.groupProfile(username).contractID,
+        contractID: rootGetters.ourContactProfiles[username].contractID,
         contractName: 'gi.contracts/identity',
         originatingContractID: params.contractID,
         originatingContractName: 'gi.contracts/group',

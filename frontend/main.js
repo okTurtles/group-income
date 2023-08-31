@@ -102,6 +102,7 @@ async function startApp () {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
+          'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
