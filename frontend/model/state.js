@@ -53,6 +53,12 @@ setInterval(function () {
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
   'state/vuex/state': () => store.state,
+  'state/vuex/reset': () => {
+    const state = cloneDeep(initialState)
+    state.notifications = notificationModule.state()
+    state.settings = settingsModule.state()
+    store.replaceState(state)
+  },
   'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
@@ -101,9 +107,6 @@ sbp('sbp/selectors/register', {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-  },
-  logout (state) {
-    Object.assign(state, cloneDeep(initialState))
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group

@@ -438,17 +438,22 @@ export default (sbp('sbp/selectors/register', {
       // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
       await sbp('chelonia/contract/wait')
+      // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
       const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+      // Doing both 'state/vuex/save' above and 'gi.db/settings/delete' doesn't
+      // make much sense, because delete undoes save
+      // TODO: In the future, the goal is to encrypt the state so that it doesn't
+      // need to be deleted.
       await sbp('gi.db/settings/delete', username)
       sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
-    sbp('state/vuex/commit', 'logout')
+    sbp('state/vuex/reset')
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
