@@ -47,19 +47,18 @@ modal-base-template.has-background(
           :key='chatRoomId'
         )
           profile-card(
-            v-if='partners.length === 1'
-            :username='partners[0]'
+            :username='lastJoinedPartner'
             deactivated
             direction='top-left'
           )
             .c-identity
-              avatar-user(:username='partners[0]' size='sm')
-              .c-name(data-test='partners[0]')
+              .picture-wrapper
+                avatar-user(:username='lastJoinedPartner' size='sm')
+                .c-badge(v-if='partners.length > 1') {{ partners.length }}
+              .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== partners[0]' data-test='profileName') @{{ partners[0] }}
-          .group-wrapper(v-else)
-            strong {{ title }}
+                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.join(', @') }}
 
       .is-subtitle
         i18n(
@@ -154,11 +153,11 @@ export default ({
     filteredRecents () {
       return this.ourRecentConversations.filter(({ title, partners }) => {
         const upperCasedSearchText = String(this.searchText).toUpperCase()
-        if (String(title).toUpperCase().indexOf(upperCasedSearchText) > -1) {
+        if (!difference(partners, this.selections).length) {
+          return false
+        } else if (String(title).toUpperCase().indexOf(upperCasedSearchText) > -1) {
           return true
         } else if (String(partners.join(', ')).toUpperCase().indexOf(upperCasedSearchText) > -1) {
-          return true
-        } else if (difference(partners, this.selections).length) {
           return true
         }
         return false
@@ -336,5 +335,24 @@ export default ({
   display: flex;
   margin-top: 1.875rem;
   margin-bottom: 0.5rem;
+}
+
+.picture-wrapper {
+  position: relative;
+  min-width: 2rem;
+  margin-right: 0.5rem;
+}
+
+.c-badge {
+  position: absolute;
+  bottom: -0.25rem;
+  right: 0;
+  border-radius: 0.5rem;
+  background-color: $general_0;
+  color: $text_0;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.75rem;
+  text-align: center;
 }
 </style>

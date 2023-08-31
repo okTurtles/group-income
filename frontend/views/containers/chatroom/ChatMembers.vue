@@ -33,6 +33,7 @@
         .pill.is-danger(
           v-if='getUnreadMsgCount(chatRoomId)'
         ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomId))}}
+    span {{ ourGroupDirectMessages.length }}
 </template>
 
 <script>
