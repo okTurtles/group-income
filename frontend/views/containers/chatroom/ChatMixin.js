@@ -37,6 +37,7 @@ const ChatMixin: Object = {
       'currentChatRoomState',
       'currentGroupState',
       'groupIdFromChatRoomId',
+      'ourGroupDirectMessages',
       'chatRoomUsers',
       'generalChatRoomId',
       'getGroupChatRooms',

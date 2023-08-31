@@ -12,7 +12,7 @@
 
   ul.c-group-list
     list-item(
-      v-for='(chatRoomId, {partners, title, picture}) in ourGroupDirectMessages'
+      v-for='({partners, title, picture}, chatRoomId) in ourGroupDirectMessages'
       tag='router-link'
       :to='buildUrl(partners)'
       :data-test='chatRoomId'

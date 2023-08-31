@@ -396,7 +396,7 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      const availableMentions = this.users.length === 1
+      const availableMentions = this.users.length === 2
         ? this.users
         : [
             ...this.users,

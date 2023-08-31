@@ -530,7 +530,10 @@ const getters = {
       if (!state[chatRoomId] || !state[chatRoomId].users[getters.ourUsername]) {
         continue
       }
-      if (getters.ourDirectMessages[chatRoomId].groupContractID === getters.currentGroupId && state[chatRoomId]) {
+      if (getters.ourDirectMessages[chatRoomId].groupContractID === state.currentGroupId &&
+        getters.ourDirectMessages[chatRoomId].visible &&
+        state[chatRoomId]
+      ) {
         const users = Object.keys(state[chatRoomId].users)
         const partners = users
           .filter(username => username !== getters.ourUsername)
@@ -545,7 +548,7 @@ const getters = {
           users,
           partners,
           lastJoinedPartner,
-          title: `# ${partners.map(un => getters.ourContactProfiles(un).displayName || un).join(', ')}`,
+          title: partners.map(un => getters.ourContactProfiles[un].displayName || un).join(', '),
           picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
         }
       }
@@ -566,7 +569,7 @@ const getters = {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => {
       const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
+      return getters.isJoinedChatRoom(contractID) && !!getters.ourGroupDirectMessages[contractID]
     }
   },
   isJoinedChatRoom (state, getters) {

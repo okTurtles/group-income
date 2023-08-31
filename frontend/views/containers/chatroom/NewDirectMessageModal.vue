@@ -42,9 +42,9 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{charRoomId, partners, lastJoinedPartner, title, picture} in filteredRecents'
+          v-for='{chatRoomId, partners, lastJoinedPartner, title, picture} in filteredRecents'
           @click='onAddSelection(partners)'
-          :key='charRoomId'
+          :key='chatRoomId'
         )
           profile-card(
             v-if='partners.length === 1'
@@ -121,8 +121,12 @@ export default ({
     ourNewDMContacts () {
       return this.ourContacts
         .filter(username => {
+          if (username === this.ourUsername) {
+            return false
+          }
           const chatRoomId = this.ourGroupDirectMessageFromUsernames(username)
-          return username !== this.ourUsername && (!chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible)
+          console.log(chatRoomId, username, '^&^&^&^&^&^&^&^&^&^&^&')
+          return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
         })
         .map(username => this.ourContactProfiles[username])
     },
