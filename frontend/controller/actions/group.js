@@ -387,7 +387,7 @@ export default (sbp('sbp/selectors/register', {
       // We are expecting to receive keys if:
       //   (a) we are about to send a key request; or
       //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
-      if (sendKeyRequest || sbp('chelonia/contract/isWaitingForResponseToKeyShare', state)) {
+      if (sendKeyRequest || sbp('chelonia/contract/isWaitingForKeyShare', state)) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
@@ -428,7 +428,7 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasSecretKeys && !sbp('chelonia/contract/isWaitingForResponseToKeyShare', state)) {
+      } else if (hasSecretKeys && !sbp('chelonia/contract/isWaitingForKeyShare', state)) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
 
         // We're joining for the first time
