@@ -26,20 +26,6 @@ const DMMixin: Object = {
         data: { usernames }
       })
     },
-    async addMemberToDirectMessage (chatRoomId: string, username: string) {
-      // NOTE: chatRoomId, username should be valid
-      const profile = this.ourContactProfiles[username]
-      await sbp('gi.actions/chatroom/join', {
-        contractID: chatRoomId,
-        data: { username }
-      })
-      await sbp('gi.actions/identity/joinDirectMessage', {
-        contractID: profile.contractID,
-        data: {
-          contractID: chatRoomId
-        }
-      })
-    },
     setDMVisibility (chatRoomId: string, visible: boolean) {
       sbp('gi.actions/identity/setDirectMessageVisibility', {
         contractID: this.ourIdentityContractId,
