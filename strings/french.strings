@@ -75,6 +75,9 @@
 /* MISSING TRANSLATION - main.js */
 "Loading events from server..." = "Loading events from server...";
 
+/* MISSING TRANSLATION - model/contracts/group.js */
+"Can't change distribution date because distribution period has already started." = "Can't change distribution date because distribution period has already started.";
+
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
@@ -854,9 +857,6 @@
 
 /* model/contracts/group.js */
 "Cannot remove yourself." = "Vous ne pouvez pas vous exclure vous-même.";
-
-/* model/contracts/group.js */
-"Distribution is already started." = "La distribution est déjà commencée.";
 
 /* model/contracts/group.js */
 "Invalid associated proposal." = "La proposition associée est invalide.";
@@ -2750,6 +2750,9 @@
 
 /* Not currently used */
 "Direct messages" = "Conversations privées";
+
+/* Not currently used */
+"Distribution is already started." = "La distribution est déjà commencée.";
 
 /* Not currently used */
 "Due in" = "Échéance dans";

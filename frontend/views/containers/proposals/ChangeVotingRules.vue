@@ -2,7 +2,7 @@
 proposal-template(
   ref='proposal'
   :title='title'
-  :disabled='disabled'
+  :disabled='false'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
@@ -87,14 +87,10 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'ourUsername',
       'groupShouldPropose',
       'groupProposalSettings',
       'groupSettings'
     ]),
-    disabled () {
-      return !this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator
-    },
     proposalSettings () {
       return this.groupProposalSettings()
     },

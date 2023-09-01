@@ -1643,8 +1643,8 @@ ${this.getErrorInfo()}`;
             throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
           } else if ("distributionDate" in data && !isGroupCreator) {
             throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
-          } else if ("distributionDate" in data && getters.groupDistributionStarted(meta.createdDate)) {
-            throw new TypeError((0, import_common3.L)("Distribution is already started."));
+          } else if ("distributionDate" in data && (getters.groupDistributionStarted(meta.createdDate) || Object.keys(getters.groupPeriodPayments).length > 1)) {
+            throw new TypeError((0, import_common3.L)("Can't change distribution date because distribution period has already started."));
           }
         },
         process({ contractID, meta, data }, { state, getters }) {
@@ -1653,8 +1653,10 @@ ${this.getErrorInfo()}`;
             import_common3.Vue.set(state.settings, key, data[key]);
           }
           if ("distributionDate" in data) {
-            const period = dateToPeriodStamp(addTimeToDate(data.distributionDate, -getters.groupSettings.distributionPeriodLength));
-            import_common3.Vue.set(state, "paymentsByPeriod", { [period]: Object.values(getters.groupPeriodPayments)[0] });
+            import_common3.Vue.set(state, "paymentsByPeriod", {});
+            const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
+            const period = Object.keys(getters.groupPeriodPayments)[0];
+            curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
           }
           if (mincomeCache !== null) {
             (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, [

@@ -109,6 +109,7 @@ export default ({
     },
     proposalOptions () {
       const isUserGroupCreator = this.ourUsername === this.groupSettings.groupCreator
+      const defaultDisableConfig = !this.groupShouldPropose && !isUserGroupCreator
 
       return [
         { type: 'header', name: 'Group Members' },
@@ -127,7 +128,7 @@ export default ({
           id: 'change-to-percentage-base',
           name: 'Change to percentage base',
           icon: 'vote-yea',
-          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+          isDisabled: defaultDisableConfig
         },
         { type: 'header', name: 'Other proposals' },
         {
@@ -135,21 +136,21 @@ export default ({
           id: 'change-mincome',
           name: 'Change mincome',
           icon: 'dollar-sign',
-          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+          isDisabled: defaultDisableConfig
         },
         {
           type: 'item',
           id: 'change-distribution-date',
           name: 'Change distribution date',
           icon: 'chart-pie',
-          isDisabled: this.groupDistributionStarted(new Date().toISOString()) || (!this.groupShouldPropose && !isUserGroupCreator)
+          isDisabled: this.groupDistributionStarted(new Date().toISOString()) || defaultDisableConfig
         },
         {
           type: 'item',
           id: 'generic-proposal',
           name: 'Generic proposal',
           icon: 'envelope-open-text',
-          isDisabled: this.groupMembersCount < 3
+          isDisabled: !this.groupShouldPropose
         }
       ]
     }

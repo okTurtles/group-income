@@ -2,11 +2,11 @@
   proposal-template(
     ref='proposal'
     :title='L("Change distribution date")'
-    :disabled='$v.form.$invalid || disabled'
+    :disabled='$v.form.$invalid || distributionStarted'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     variant='changeDistributionDate'
-    :skipToPropose='skipToProposeDistributionDate'
+    :shouldImmediateChange='shouldImmediateChangeDistributionDate'
     @submit='submit'
   )
 
@@ -31,7 +31,7 @@
           ) {{ humanDate(item, { month: 'long', year: 'numeric', day: 'numeric' }) }}
       i18n.helper(:args='{currentDistributionDate}') Current distribution date is on {currentDistributionDate}.
 
-    template(#skipToProposeFooter='' v-if='skipToProposeDistributionDate')
+    template(#shouldImmediateChangeFooter='' v-if='shouldImmediateChangeDistributionDate')
       i18n(
         :args='LTags("strong")'
       ) The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).
@@ -113,11 +113,8 @@ export default ({
     distributionStarted () {
       return this.groupDistributionStarted(new Date().toISOString())
     },
-    skipToProposeDistributionDate () {
+    shouldImmediateChangeDistributionDate () {
       return !this.distributionStarted && this.ourUsername === this.groupSettings.groupCreator
-    },
-    disabled () {
-      return this.distributionStarted || (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)
     }
   },
   beforeMount () {
@@ -145,7 +142,7 @@ export default ({
       }
 
       const { distributionDate } = this.form
-      if (this.skipToProposeDistributionDate) {
+      if (this.shouldImmediateChangeDistributionDate) {
         try {
           await sbp('gi.actions/group/updateSettings', {
             contractID: this.currentGroupId, data: { distributionDate }

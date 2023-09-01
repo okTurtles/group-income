@@ -87,7 +87,7 @@
           v-else-if='!groupShouldPropose'
           :args='LTags("strong")'
         ) Your group has less than 3 members, so {strong_}this change will be immediate{_strong} (no voting required).
-        slot(v-else name='skipToProposeFooter')
+        slot(v-else name='shouldImmediateChangeFooter')
 </template>
 
 <script>
@@ -121,7 +121,7 @@ export default ({
         return ['addMember', 'removeMember', 'changeDistributionDate'].indexOf(value) > -1
       }
     },
-    skipToPropose: Boolean
+    shouldImmediateChange: Boolean
   },
   computed: {
     ...mapGetters([
@@ -132,7 +132,7 @@ export default ({
       'groupProposalSettings'
     ]),
     shouldPropose () {
-      return this.groupShouldPropose && !this.skipToPropose
+      return this.groupShouldPropose && !this.shouldImmediateChange
     },
     proposalSettings () {
       return this.groupProposalSettings()

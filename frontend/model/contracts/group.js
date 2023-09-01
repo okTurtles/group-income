@@ -1079,8 +1079,9 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only group creator can allow public channels.'))
         } else if ('distributionDate' in data && !isGroupCreator) {
           throw new TypeError(L('Only group creator can update distribution date.'))
-        } else if ('distributionDate' in data && getters.groupDistributionStarted(meta.createdDate)) {
-          throw new TypeError(L('Distribution is already started.'))
+        } else if ('distributionDate' in data &&
+          (getters.groupDistributionStarted(meta.createdDate) || Object.keys(getters.groupPeriodPayments).length > 1)) {
+          throw new TypeError(L('Can\'t change distribution date because distribution period has already started.'))
         }
       },
       process ({ contractID, meta, data }, { state, getters }) {
@@ -1092,9 +1093,12 @@ sbp('chelonia/defineContract', {
         }
 
         if ('distributionDate' in data) {
-          const period = dateToPeriodStamp(addTimeToDate(data.distributionDate, -getters.groupSettings.distributionPeriodLength))
-          Vue.set(state, 'paymentsByPeriod', { [period]: Object.values(getters.groupPeriodPayments)[0] })
+          Vue.set(state, 'paymentsByPeriod', {})
+          const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters })
+          const period = Object.keys(getters.groupPeriodPayments)[0]
+          curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period)
         }
+
         if (mincomeCache !== null) {
           sbp('gi.contracts/group/pushSideEffect', contractID,
             ['gi.contracts/group/sendMincomeChangedNotification',

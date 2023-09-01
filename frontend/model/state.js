@@ -8,7 +8,7 @@ import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
-import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -747,8 +747,17 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
 
+          // Note: if this code gets called when we're in the period before the 1st distribution
+          //       period, then the distributionDate will get updated to the previous distribution date
+          //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
+          //       before it should.
+          //       `distributionStarted` is different from getters.groupDistributionStarted
+          //       and it allows distributionDate can be updated
+          //       only from the 2nd distribution date when new distribution is started.
+          //       so this `distributionStarted` fixes the issue mentioned above
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
+          const distributionStarted = reactiveDate.date > dateFromPeriodStamp(distributionDateInSettings)
+          if (oldPeriod && newPeriod && distributionStarted && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }
