@@ -16,7 +16,7 @@ import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 import { GIMessage } from './GIMessage.js'
 import { encryptedOutgoingData } from './encryptedData.js'
 import './internals.js'
-import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findKeyIdByName, findRevokedKeyIdsByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -364,6 +364,38 @@ export default (sbp('sbp/selectors/register', {
     if (!persistent && has(this.transientSecretKeys, keyId)) return true
     const rootState = sbp(this.config.stateSelector)
     return !!rootState?.secretKeys && has(rootState.secretKeys, keyId)
+  },
+  'chelonia/contract/isWaitingForResponseToKeyShare': function (contractIDOrState: string | Object) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    return !!contractIDOrState._volatile?.pendingKeyRequests?.length
+  },
+  'chelonia/contract/canPerformOperation': function (contractIDOrState: string | Object, operation: string) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const op = (operation !== '*') ? [operation] : operation
+    return !!findSuitableSecretKeyId(contractIDOrState, op, ['sig'])
+  },
+  'chelonia/contract/currentKeyIdByName': function (contractIDOrState: string | Object, name: string) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const currentKeyId = findKeyIdByName(contractIDOrState, name)
+    return currentKeyId
+  },
+  'chelonia/contract/historicalKeyIdsByName': function (contractIDOrState: string | Object, name: string) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const currentKeyId = findKeyIdByName(contractIDOrState, name)
+    const revokedKeyIds = findRevokedKeyIdsByName(contractIDOrState, name)
+    return currentKeyId ? [currentKeyId, ...revokedKeyIds] : revokedKeyIds
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
