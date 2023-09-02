@@ -47,6 +47,7 @@ console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
+  if (process.env.NODE_ENV === 'development' || process.env.CI) throw err
 }
 
 async function startApp () {
