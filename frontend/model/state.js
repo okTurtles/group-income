@@ -558,7 +558,7 @@ const getters = {
     return currentGroupDirectMessages
   },
   ourGroupDirectMessageFromUsernames (state, getters) {
-    return (partners: string | string[]) => {
+    return (partners) => { // NOTE: string | string[]
       if (typeof partners === 'string') {
         partners = [partners]
       }
