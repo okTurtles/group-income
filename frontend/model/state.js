@@ -527,9 +527,11 @@ const getters = {
   ourGroupDirectMessages (state, getters) {
     const currentGroupDirectMessages = {}
     for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
-      if (!state[chatRoomId] || !state[chatRoomId].users[getters.ourUsername]) {
+      // NOTE: skip DMs whose chatroom contracts are not synced yet
+      if (!state[chatRoomId] || !state[chatRoomId].users?.[getters.ourUsername]) {
         continue
       }
+      // NOTE: get only visible DMs for the current group
       if (getters.ourDirectMessages[chatRoomId].groupContractID === state.currentGroupId &&
         getters.ourDirectMessages[chatRoomId].visible &&
         state[chatRoomId]
