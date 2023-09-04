@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-chat-main(v-if='summary.title')
+.c-chat-main(v-if='summary.chatRoomId')
   emoticons
 
   .c-body
@@ -155,6 +155,7 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
+        renderingChatRoomId: null,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -347,7 +348,7 @@ export default ({
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
-      if (this.summary.title) {
+      if (this.summary.chatRoomId) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
           if (scrollTargetMessage) {
@@ -422,10 +423,11 @@ export default ({
       }
     },
     async renderMoreMessages (shouldInitiate = true) {
+      const chatRoomId = this.renderingChatRoomId
       // NOTE: shouldInitiate describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
       if (shouldInitiate) {
-        await this.loadMessagesFromStorage()
+        await this.loadMessagesFromStorage(chatRoomId)
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
@@ -435,20 +437,19 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
-      const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
       if (this.currentChatRoomReadUntil) {
         if (!this.currentChatRoomReadUntil.deletedDate) {
           unreadPosition = this.currentChatRoomReadUntil.messageHash
-        } else if (this.chatRoomUnreadMentions(this.currentChatRoomId).length) {
-          unreadPosition = this.chatRoomUnreadMentions(this.currentChatRoomId)[0].messageHash
+        } else if (this.chatRoomUnreadMentions(chatRoomId).length) {
+          unreadPosition = this.chatRoomUnreadMentions(chatRoomId)[0].messageHash
         }
       }
       const {
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
       } = this.$route.query
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
-      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', this.currentChatRoomId)
+      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
@@ -473,9 +474,9 @@ export default ({
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-      if (curChatRoomId !== this.currentChatRoomId) {
+      if (chatRoomId !== this.renderingChatRoomId) {
         // NOTE: To avoid rendering the incorrect events for the currentChatRoom
-        // While getting the events from the backend, this.currentChatRoomId could be changed
+        // While getting the events from the backend, this.renderingChatRoomId could be changed
         // In this case, we should avoid the previous events because they are for another channel, not the current channel
         return
       }
@@ -509,8 +510,8 @@ export default ({
       }
       this.$forceUpdate()
     },
-    async loadMessagesFromStorage () {
-      const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId())
+    async loadMessagesFromStorage (chatRoomId) {
+      const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId(chatRoomId))
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -522,6 +523,7 @@ export default ({
     setInitMessages () {
       this.initializeState()
       this.ephemeral.messagesInitiated = false
+      this.renderingChatRoomId = this.currentChatRoomId
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -624,11 +626,14 @@ export default ({
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once which should be ignored
-        // before calling the setInitMessages function
+        //       before calling the setInitMessages function
+        return
+      } else if (this.currentChatRoomId !== this.renderingChatRoomId) {
+        // NOTE: should render messages after the current chatroom state is initiated
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
-        if (completed) {
+        if (completed === true) {
           $state.complete()
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
@@ -640,10 +645,12 @@ export default ({
               })
             }
           }
-        } else {
+        } else if (completed === false) {
           $state.loaded()
         }
-        this.ephemeral.messagesInitiated = true
+        if (completed !== undefined) {
+          this.ephemeral.messagesInitiated = true
+        }
       })
     },
     onChatScroll: debounce(function () {
@@ -733,8 +740,7 @@ export default ({
       }
     },
     archiveKeyFromChatRoomId (chatRoomId) {
-      const curChatRoomId = chatRoomId || this.currentChatRoomId
-      return `messages/${this.ourUsername}/${curChatRoomId}`
+      return `messages/${this.ourUsername}/${chatRoomId}`
     },
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
