@@ -290,7 +290,7 @@ export default ({
     },
     async addToChannel (username: string, undoing = false) {
       if (this.isDirectMessage()) {
-        const usernames = uniq([username].concat(this.ourGroupDirectMessages[this.currentChatRoomId].partners))
+        const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(username))
         const chatRoomId = this.ourGroupDirectMessageFromUsernames(usernames)
         if (chatRoomId) {
           this.redirect(chatRoomId)

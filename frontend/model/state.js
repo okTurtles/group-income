@@ -9,7 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import Vuex from 'vuex'
 import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
-import { omit, merge, cloneDeep, debounce, deepEqualJSONType } from '@model/contracts/shared/giLodash.js'
+import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
@@ -561,7 +561,8 @@ const getters = {
         partners = [partners]
       }
       return Object.keys(getters.ourGroupDirectMessages).find(chatRoomId => {
-        return deepEqualJSONType(getters.ourGroupDirectMessages[chatRoomId].partners, partners)
+        const cPartners = getters.ourGroupDirectMessages[chatRoomId].partners
+        return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
       })
     }
   },

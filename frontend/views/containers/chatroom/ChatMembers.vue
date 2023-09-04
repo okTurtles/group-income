@@ -14,7 +14,7 @@
     list-item(
       v-for='({partners, title, picture}, chatRoomId) in ourGroupDirectMessages'
       tag='router-link'
-      :to='buildUrl(partners)'
+      :to='buildUrl(chatRoomId)'
       :data-test='chatRoomId'
       :key='chatRoomId'
     )
@@ -72,8 +72,7 @@ export default ({
       'ourContactProfiles',
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'chatRoomUnreadMentions',
-      'ourGroupDirectMessageFromUsernames'
+      'chatRoomUnreadMentions'
     ])
   },
   methods: {
@@ -83,12 +82,10 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    buildUrl (partners) {
+    buildUrl (chatRoomId) {
       return {
         name: 'GroupChatConversation',
-        params: {
-          chatRoomId: this.ourGroupDirectMessageFromUsernames(partners)
-        }
+        params: { chatRoomId }
       }
     },
     headerButtonAction () {
