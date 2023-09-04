@@ -16406,7 +16406,7 @@ ${this.getErrorInfo()}`;
     let title = `# ${chatRoomName}`;
     let icon;
     if (isDirectMessage) {
-      title = rootGetters.ourGroupDirectMessages[contractID].title || username;
+      title = rootGetters.ourGroupDirectMessages[contractID].title;
       icon = rootGetters.ourGroupDirectMessages[contractID].picture;
     }
     const path = `/group-chat/${contractID}`;
@@ -16505,15 +16505,19 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
           const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
-          const loggedIn = (0, import_sbp6.default)("state/vuex/state").loggedIn;
-          const { type, privacyLevel } = state.attributes;
           const { username } = data;
-          const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
+          const loggedIn = (0, import_sbp6.default)("state/vuex/state").loggedIn;
           emitMessageEvent({ contractID, hash: hash2 });
-          if (!isDirectMessage) {
-            setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          }
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           if (username === loggedIn.username) {
+            const { type, privacyLevel } = state.attributes;
+            const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
+            if (isDirectMessage) {
+              (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
+                chatRoomId: contractID,
+                deletedDate: meta.createdDate
+              });
+            }
             const lookupResult = await Promise.allSettled(Object.keys(state.users).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp6.default)("namespace/lookup", name).then((r) => {
               if (!r)
                 throw new Error("Cannot lookup username: " + name);

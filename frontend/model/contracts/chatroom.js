@@ -98,7 +98,7 @@ function messageReceivePostEffect ({
   let icon
   if (isDirectMessage) {
     // NOTE: partner identity contract could not be synced yet
-    title = rootGetters.ourGroupDirectMessages[contractID].title || username
+    title = rootGetters.ourGroupDirectMessages[contractID].title
     icon = rootGetters.ourGroupDirectMessages[contractID].picture
   }
   const path = `/group-chat/${contractID}`
@@ -210,18 +210,23 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ data, contractID, hash, meta }, { state }) {
         const rootGetters = sbp('state/vuex/getters')
-        const loggedIn = sbp('state/vuex/state').loggedIn
-        const { type, privacyLevel } = state.attributes
         const { username } = data
-        const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+        const loggedIn = sbp('state/vuex/state').loggedIn
 
         emitMessageEvent({ contractID, hash })
-        if (!isDirectMessage) {
-          // NOTE: To ignore scroll to the message of this hash
-          //       since we don't create notification message when join the direct message
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-        }
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+
         if (username === loggedIn.username) {
+          const { type, privacyLevel } = state.attributes
+          const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+          if (isDirectMessage) {
+            // NOTE: To ignore scroll to the message of this hash
+            //       since we don't create notification when join the direct message
+            sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
+              chatRoomId: contractID,
+              deletedDate: meta.createdDate
+            })
+          }
           const lookupResult = await Promise.allSettled(
             Object.keys(state.users)
               .filter((name) =>
