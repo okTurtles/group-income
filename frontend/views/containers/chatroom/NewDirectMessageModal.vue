@@ -81,7 +81,7 @@ modal-base-template.has-background(
               .c-name(data-test='username')
                 span
                   strong {{ localizedName(username, displayName) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                  .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 </template>
 
 <script>
@@ -177,7 +177,7 @@ export default ({
   },
   methods: {
     localizedName (username, displayName) {
-      const name = displayName || this.userDisplayName(username)
+      const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     onChangeKeyword (keyword) {

@@ -242,7 +242,7 @@ export default ({
           }))
       }
     },
-    localizedName (username: string, displayName?: string) {
+    localizedName (username, displayName) {
       const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
