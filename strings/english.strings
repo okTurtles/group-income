@@ -211,7 +211,7 @@
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
-"All group members will be added to this channel." = "All group members will be added to this channel.";
+"All group members will be able to see or join this channel." = "All group members will be able to see or join this channel.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "All links" = "All links";
@@ -510,7 +510,7 @@
 /* controller/actions/group.js */
 "Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Couldn't join the #{chatroomName} in the group. Doesn't exist.";
 
-/* views/pages/Home.vue */
+/* views/components/UsersSelector.vue, views/pages/Home.vue */
 "Create" = "Create";
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/pages/Home.vue */
@@ -701,6 +701,9 @@
 
 /* views/containers/chatroom/CreatePoll.vue */
 "Expires after (days)" = "Expires after (days)";
+
+/* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"Expires on: {expiry}" = "Expires on: {expiry}";
 
 /* controller/actions/chatroom.js */
 "Failed to add message." = "Failed to add message.";
@@ -1043,6 +1046,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Jump to latest message" = "Jump to latest message";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Jump to poll" = "Jump to poll";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
