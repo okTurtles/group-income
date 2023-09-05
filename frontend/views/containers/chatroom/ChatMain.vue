@@ -613,7 +613,17 @@ export default ({
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+
+      if (this.ephemeral.scrolledDistance < 40) {
+        // NOTE: 40px is the minimum height of a message
+        //       even though user scrolled up, if he scrolled less than 40px (one message)
+        //       should ignore the scroll position, and scroll to the bottom
+        this.debouncedJumpToLatest()
+      }
     },
+    debouncedJumpToLatest: debounce(function () {
+      this.updateScroll()
+    }, 300),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
