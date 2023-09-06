@@ -121,7 +121,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -352,14 +352,19 @@ export default ({
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, effect)
-          } else if (this.$refs.conversation) {
-            this.$refs.conversation.scroll({
-              left: 0,
-              top: this.$refs.conversation.scrollHeight,
-              behavior: 'smooth'
-            })
+          } else {
+            this.jumpToLatest()
           }
         }, 100)
+      }
+    },
+    jumpToLatest (behavior = 'smooth') {
+      if (this.$refs.conversation) {
+        this.$refs.conversation.scroll({
+          left: 0,
+          top: this.$refs.conversation.scrollHeight,
+          behavior
+        })
       }
     },
     retryMessage (index) {
@@ -618,12 +623,12 @@ export default ({
         // NOTE: 40px is the minimum height of a message
         //       even though user scrolled up, if he scrolled less than 40px (one message)
         //       should ignore the scroll position, and scroll to the bottom
-        this.debouncedJumpToLatest()
+        this.throttledJumpToLatest(this)
       }
     },
-    debouncedJumpToLatest: debounce(function () {
-      this.updateScroll()
-    }, 300),
+    throttledJumpToLatest: throttle(function (_this) {
+      _this.jumpToLatest('instant')
+    }, 250),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
