@@ -1954,7 +1954,7 @@
 "The group picture must be a valid url" = "The group picture must be a valid url";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The group {setting} hasn't changed." = "The group {setting} hasn't changed.";
+"The group {setting} hasn\"t changed." = "The group {setting} hasn\"t changed.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "The groups {setting} changed." = "The groups {setting} changed.";

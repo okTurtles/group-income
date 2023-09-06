@@ -267,6 +267,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal expiring on {date}" = "Proposal expiring on {date}";
 
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"The group {setting} hasn\"t changed." = "The group {setting} hasn\"t changed.";
+
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Changed vote to {options}" = "Changed vote to {options}";
 
@@ -1409,9 +1412,6 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "See proposal" = "Voir la proposition";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The group {setting} hasn't changed." = "Le {setting} du groupe n’a pas changé.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "The groups {setting} changed." = "Le {setting} du groupe a été modifié.";
@@ -2981,6 +2981,9 @@
 
 /* Not currently used */
 "The group mincome hasn't changed." = "Le revenu minimum du groupe n’a pas changé.";
+
+/* Not currently used */
+"The group {setting} hasn't changed." = "Le {setting} du groupe n’a pas changé.";
 
 /* Not currently used */
 "The groups mincome changed." = "Le revenu minimum du groupe a été modifié.";

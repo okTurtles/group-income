@@ -650,7 +650,7 @@
   "The form is invalid.": "The form is invalid.",
   "The group has a new member. Say hi to {name}!": "The group has a new member. Say hi to {name}!",
   "The group picture must be a valid url": "The group picture must be a valid url",
-  "The group {setting} hasn't changed.": "The group {setting} hasn't changed.",
+  "The group {setting} hasn\"t changed.": "The group {setting} hasn\"t changed.",
   "The groups {setting} changed.": "The groups {setting} changed.",
   "The link does not exist.": "The link does not exist.",
   "The method \"{methodName}\" is incomplete.": "The method \"{methodName}\" is incomplete.",
