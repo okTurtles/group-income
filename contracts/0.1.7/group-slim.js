@@ -1654,9 +1654,7 @@ ${this.getErrorInfo()}`;
           }
           if ("distributionDate" in data) {
             import_common3.Vue.set(state, "paymentsByPeriod", {});
-            const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
-            const period = Object.keys(getters.groupPeriodPayments)[0];
-            curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
+            initFetchPeriodPayments({ contractID, meta, state, getters });
           }
           if (mincomeCache !== null) {
             (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, [

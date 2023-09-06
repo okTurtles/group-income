@@ -1094,9 +1094,7 @@ sbp('chelonia/defineContract', {
 
         if ('distributionDate' in data) {
           Vue.set(state, 'paymentsByPeriod', {})
-          const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters })
-          const period = Object.keys(getters.groupPeriodPayments)[0]
-          curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period)
+          initFetchPeriodPayments({ contractID, meta, state, getters })
         }
 
         if (mincomeCache !== null) {

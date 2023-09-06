@@ -10778,9 +10778,7 @@ ${this.getErrorInfo()}`;
           }
           if ("distributionDate" in data) {
             vue_esm_default.set(state, "paymentsByPeriod", {});
-            const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
-            const period = Object.keys(getters.groupPeriodPayments)[0];
-            curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
+            initFetchPeriodPayments({ contractID, meta, state, getters });
           }
           if (mincomeCache !== null) {
             (0, import_sbp4.default)("gi.contracts/group/pushSideEffect", contractID, [
