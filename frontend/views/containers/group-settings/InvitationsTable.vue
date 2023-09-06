@@ -41,24 +41,28 @@ page-section.c-section(:title='L("Invite links")')
               i.icon-info
         td.c-invite-link
           link-to-copy.c-invite-link-wrapper(:link='item.inviteLink')
-          button.is-icon-small.c-invite-link-button-mobile(
-            @click='activateWebShare(item.inviteLink)'
-            :aria-label='L("Copy link")'
-          )
-            i.icon-ellipsis-v
-          menu-parent.c-webshare-fallback
-            menu-trigger.is-icon-small.c-fallback-trigger(ref='webShareFallbackBtn')
-            menu-content.c-dropdown-fallback
+
+          menu-parent.c-invite-link-options-mobile.hide-tablet
+            menu-trigger.is-icon-small
+              i.icon-ellipsis-v
+            menu-content.c-dropdown-invite-link
               ul
+                menu-item(
+                  v-if='!item.isAnyoneLink'
+                  tag='button'
+                  item-id='original'
+                  @click='handleSeeOriginal(item)'
+                  icon='check-to-slot'
+                )
+                  i18n See original proposal
                 menu-item(
                   tag='button'
                   icon='link'
+                  @click='copyInviteLink(item.inviteLink)'
                 )
-                  // #780 TODO test/verify if webShare works in a real mobile device.
-                  //      And refactor this markup to only have one menu-parent
                   i18n Copy link
                 menu-item(
-                  v-if='item.status.isActive'
+                  v-if='showRevokeLinkMenu(item)'
                   tag='button'
                   item-id='revoke'
                   icon='times'
@@ -72,13 +76,14 @@ page-section.c-section(:title='L("Invite links")')
             :class='{ "is-danger": item.status.isExpired || item.status.isRevoked }'
           ) {{ item.expiryInfo }}
         td.c-action
-          menu-parent(v-if='!item.isAnyoneLink & item.status.isActive')
+          menu-parent(v-if='showRevokeLinkMenu(item)')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
             menu-content.c-dropdown-action
               ul
                 menu-item(
+                  v-if='!item.isAnyoneLink'
                   tag='button'
                   item-id='original'
                   @click='handleSeeOriginal(item)'
@@ -102,11 +107,15 @@ page-section.c-section(:title='L("Invite links")')
     @click='handleInviteClick'
     :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
+
+  input.c-invisible-input(
+    type='text'
+    ref='copyInput'
+  )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
@@ -114,7 +123,8 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 
@@ -146,6 +156,8 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
+      'groupShouldPropose',
+      'groupSettings',
       'ourUsername'
     ]),
     ...mapState([
@@ -165,21 +177,45 @@ export default ({
       }
 
       return options[this.ephemeral.selectbox.selectedOption]()
+    },
+    isUserGroupCreator () {
+      return this.ourUsername === this.groupSettings.groupCreator
     }
   },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
     },
-    activateWebShare (inviteLink) {
+    copyInviteLink (inviteLink) {
+      const copyToClipBoard = () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(inviteLink)
+        } else {
+          const inputAid = this.$refs.copyInput
+
+          inputAid.value = inviteLink
+          inputAid.select()
+
+          this.$nextTick(() => {
+            document.execCommand('copy')
+            inputAid.blur()
+          })
+        }
+      }
+
       if (navigator.share) {
         navigator.share({
           title: L('Your invite'),
           url: inviteLink
+        }).catch((error) => {
+          console.error('navigator.share failed with:', error)
+          copyToClipBoard()
         })
-      } else {
-        this.$refs.webShareFallbackBtn[0].handleClick()
+
+        return
       }
+
+      copyToClipBoard()
     },
     inviteStatusDescription ({
       isAnyoneLink,
@@ -244,13 +280,36 @@ export default ({
         }
       }
     },
+    showRevokeLinkMenu (inviteItem) {
+      return inviteItem.isAnyoneLink
+        ? this.isUserGroupCreator &&
+          this.groupShouldPropose // 'Anyone' link must only be revokable when the group size is >= 3 (context: https://github.com/okTurtles/group-income/issues/1670)
+        : inviteItem.status.isActive
+    },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        } else {
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
+        }
       }
     },
-    handleSeeOriginal (inviteItem) {
-      console.log(inviteItem, 'TODO - See Original Proposal')
+    async handleSeeOriginal ({ inviteSecret }) {
+      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const archivedProposals = await sbp('gi.db/archive/load', key) || []
+      const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
+        const { data, payload } = entry[1]
+
+        return data.proposalType === PROPOSAL_INVITE_MEMBER &&
+          payload.inviteSecret === inviteSecret
+      })
+
+      if (proposalItemExists) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+      } else {
+        alert(L('Unable to find the original proposal.'))
+      }
     },
     async handleRevokeClick (inviteSecret) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
@@ -348,20 +407,12 @@ export default ({
       width: 100%;
     }
 
-    .c-invite-link-button-mobile {
-      display: none;
-    }
-
     @include phone {
       justify-content: flex-end;
       padding-right: 0.5rem;
 
       &-wrapper {
         display: none;
-      }
-
-      .c-invite-link-button-mobile {
-        display: inline-block;
       }
     }
   }
@@ -430,7 +481,7 @@ export default ({
   }
 
   .c-dropdown-action,
-  .c-dropdown-fallback {
+  .c-dropdown-invite-link {
     width: max-content;
     transform: translateX(-100%);
   }
@@ -440,9 +491,12 @@ export default ({
     margin: 3.5rem 0 0 3rem;
   }
 
-  .c-dropdown-fallback {
+  .c-dropdown-invite-link {
     min-width: 8.5rem;
     margin-top: 2rem;
+    right: unset;
+    left: 2rem;
+    top: 0.5rem;
   }
 
   .c-webshare-fallback {
@@ -452,11 +506,6 @@ export default ({
     transform: translateY(-50%);
     margin-right: 0.5rem;
     z-index: $zindex-tooltip;
-  }
-
-  .c-fallback-trigger {
-    width: 0;
-    height: 0;
   }
 }
 
@@ -473,5 +522,11 @@ export default ({
   .c-arrow {
     margin-right: 0;
   }
+}
+
+.c-invisible-input {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
 }
 </style>

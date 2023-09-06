@@ -179,6 +179,8 @@ page(
               i.icon-cog icon-cog
               i.icon-coins icon-coins
               i.icon-columns icon-columns
+              i.icon-comment icon-comment
+              i.icon-comment-dollar icon-comment-dollar
               i.icon-comments icon-comments
               i.icon-copy icon-copy
               i.icon-dollar-sign icon-dollar-sign
@@ -207,6 +209,7 @@ page(
               i.icon-share-atl share-atl
               i.icon-search icon-search
               i.icon-sort-down sort-down
+              i.icon-star icon-star
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
@@ -221,6 +224,8 @@ page(
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
               i.icon-exclamation-triangle icon-exclamation-triangle
+              i.icon-magnifying-plus icon-magnifying-plus
+              i.icon-magnifying-minus icon-magnifying-minus
         tr
           td
             pre
@@ -608,29 +613,57 @@ page(
   article#tooltips
     section.card
       h2.is-title-2.card-header Tooltips
-      tooltip(
-        text='A simple text inside'
-        )
-        i.icon-exclamation-triangle Basic
 
-      | &nbsp;&nbsp;&nbsp;&nbsp;
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | tooltip(text='A simple text inside')
+              |   i.icon-* Basic
+          td
+            tooltip(text='A simple text inside')
+              i.icon-exclamation-triangle Basic
 
-      tooltip
-        i.icon-exclamation-triangle Complete
-        template(slot='tooltip')
-          p.has-text-bold Custom markdown
-          | It has a maximum width of&nbsp;
-          strong 14rem
-          |  (224px).
+        tr
+          td
+            pre
+              | tooltip
+              |   i.icon-* Complete
+              |   template(slot='tooltip') ...
+          td
+            tooltip
+              i.icon-exclamation-triangle Complete
+              template(slot='tooltip')
+                p.has-text-bold Custom markdown
+                | It has a maximum width of&nbsp;
+                strong 14rem
+                |  (224px).
 
-      | &nbsp;&nbsp;&nbsp;&nbsp;
+        tr
+          td
+            pre
+              | tooltip(direction='right')
+              |   ...
+          td
+            tooltip(direction='right')
+              i.icon-exclamation-triangle Custom Direction
+              template(slot='tooltip')
+                | It accepts multiple directions. Check sourcecode to know more.
 
-      tooltip(
-        direction='right'
-        )
-        i.icon-exclamation-triangle Custom Direction
-        template(slot='tooltip')
-          | It accepts multiple directions. Check sourcecode to know more.
+        tr
+          td
+            pre
+              | tooltip(triggerElementCss='.trigger-target')
+              |   i.icon-* Basic
+          td
+            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
+              span
+                span.link.trigger-target 5 members
+                | &nbsp;have&nbsp;
+                strong on-time payment streaks
 
   article#InviteLink
     section.card
@@ -781,9 +814,14 @@ page(
                   option Other
                 input.input(aria-label='Value')
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td(colspan='2')
+            br
+            h3.is-title-3 Input Group
+
         tr
           td
-            h3.is-title-3 Input Group
             h4.is-title-4 With suffix
             br
             pre
@@ -799,6 +837,25 @@ page(
                 input.input(type='text' placeholder='Amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td
+            h4.is-title-4 Disabled style
+            br
+            pre
+              | label.field
+              |   .label Mincome
+              |   .inputgroup.disabled
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputgroup.disabled(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
         tr
           td
             h4.is-title-4 With shifted btn
@@ -831,7 +888,7 @@ page(
               | label.field
               |   .label Password
               |   .inputgroup
-              |     input.input
+              |     input.input.with-single-addon
               |     .addons
               |       button.is-icon(
               |         :aria-label='Show password'
@@ -842,7 +899,7 @@ page(
             label.field
               .label Password
               .inputgroup(:class='{ error: ephemeral.forms.hasError }')
-                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
+                input.input.with-single-addon(:type='ephemeral.passwordHidden ? "password" : "text"')
                 .addons
                   button.is-icon(
                     aria-label='Show password'
@@ -978,6 +1035,29 @@ page(
                 label='Search for a payment'
                 placeholder='Search...'
                 v-model='form.searchValue'
+              )
+        tr
+          td
+            tr
+              h3.is-title-3 UsersSelector (component)
+          tr
+            td
+              pre
+                | users-selector(
+                |   label='Search for users'
+                |   :usernames='["alexjin", "greg", "andrea"]'
+                |   defaultValue='alexjin'
+                |   :autofocus='true'
+                |   @change='onChange'
+                |   @remove='onRemove'
+                |   @submit='onSubmit'
+                | )
+
+            td
+              users-selector(
+                label='Search for users'
+                :usernames='form.searchUsers'
+                defaultValue='alexjin'
               )
         tr
           td
@@ -1208,6 +1288,42 @@ page(
 
       p *yesButton and noButton parameters are optional
 
+  article#clipboard-uis
+    section.card
+      h2.is-title-2.card-header Clipboard tools
+      p UI elements to use for copying a text or link into the clipboard of user's device.
+      br
+      br
+
+      h3.is-title-3 Link to copy
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | link-to-copy.c-link(link='string')
+          td
+            link-to-copy.c-link(link='/app/join?groupId=21XWnNJvq9&secret=3763')
+
+      br
+      h3.is-title-3 Copyable input
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | copyable-input(v-model='form.copyableInput')
+          td
+            copyable-input(
+              v-model='form.copyableInput'
+            )
+
   article#Illustrations
     section.card
       h2.is-title-2.card-header Illustrations (SVGs)
@@ -1241,6 +1357,30 @@ page(
           component.c-svg(:is='svg.component')
           .c-svgList-text
             p #[b Name]: {{svg.name}}
+
+  article#qrcode
+    section.card
+      h2.is-title-2.card-header QR Code
+      p We have a component named 'QrCode' that uses 'qrious' to encode a string into a qr-code image.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | qr-code(
+              |   value='https://groupincome.org/community/'
+              |   :sideLength='88'
+              | )
+          td
+            qr-code(
+              value='https://groupincome.org/community/'
+              :sideLength='88'
+            )
+      br
+      br
 </template>
 
 <script>
@@ -1253,10 +1393,13 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
+import CopyableInput from '@components/CopyableInput.vue'
+import QrCode from '@components/QrCode.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import UsersSelector from '@components/UsersSelector.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1272,7 +1415,7 @@ import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
 import { mapGetters, mapMutations } from 'vuex'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
 export default ({
   name: 'DesignSystemView',
@@ -1380,7 +1523,9 @@ export default ({
       },
       form: {
         searchValue: '',
+        searchUsers: [],
         selectPayment: 'choose',
+        copyableInput: '',
         sliderValue: 25
       },
       ephemeral: {
@@ -1400,6 +1545,8 @@ export default ({
     ButtonSubmit,
     CalloutCard,
     LinkToCopy,
+    CopyableInput,
+    QrCode,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -1407,6 +1554,7 @@ export default ({
     MenuItem,
     ButtonDropdownMenu,
     Search,
+    UsersSelector,
     Tooltip,
     SvgHello,
     SliderContinuous

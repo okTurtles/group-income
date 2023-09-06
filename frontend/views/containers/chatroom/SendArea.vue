@@ -1,122 +1,133 @@
 <template lang='pug'>
-.c-send.inputgroup(
-  :class='{"is-editing": isEditing}'
-  data-test='messageInputWrapper'
+.c-send-wrapper(
+  :class='{"is-public": isPublicChannel}'
 )
-  .c-mentions(
-    v-if='ephemeral.mention.options.length'
-    ref='mentionWrapper'
+  .c-public-helper(v-if='isPublicChannel')
+    i.icon-exclamation-triangle.is-prefix
+    i18n.has-text-bold This channel is public and everyone on the internet can see its content.
+
+  .c-send.inputgroup(
+    :class='{"is-editing": isEditing}'
+    data-test='messageInputWrapper'
   )
-    template(v-for='(user, index) in ephemeral.mention.options')
-      .c-mention-user(
-        ref='mention'
-        :class='{"is-selected": index === ephemeral.mention.index}'
-        @click.stop='onClickMention(index)'
-      )
-        avatar(:src='user.picture' size='xs')
-        .c-username {{user.username}}
-        .c-display-name(
-          v-if='user.displayName !== user.username'
-        ) ({{user.displayName}})
-
-  .c-jump-to-latest(
-    v-if='scrolledUp && !replyingMessage'
-    @click='$emit("jump-to-latest")'
-  )
-    i18n Jump to latest message
-    button.is-icon-small
-      i.icon-arrow-down
-  .c-replying-wrapper
-    .c-replying(v-if='replyingMessage')
-      i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
-      button.c-clear.is-icon-small(
-        :aria-label='L("Stop replying")'
-        @click='stopReplying'
-      )
-        i.icon-times
-
-  textarea.textarea.c-send-textarea(
-    ref='textarea'
-    :disabled='loading'
-    :placeholder='L("Write your message...")'
-    :style='textareaStyles'
-    @focus='textAreaFocus'
-    @blur='textAreaBlur'
-    @keydown.enter.exact.prevent='handleKeyDownEnter'
-    @keydown.tab.exact='handleKeyDownTab'
-    @keydown.ctrl='isNextLine'
-    @keydown='handleKeydown'
-    @keyup='handleKeyup'
-    v-bind='$attrs'
-  )
-
-  .c-send-actions(ref='actions')
-    .c-edit-actions(v-if='isEditing')
-      i18n.is-small.is-outlined(
-        tag='button'
-        @click='$emit("cancelEdit")'
-      ) Cancel
-
-      i18n.button.is-small(
-        tag='button'
-        @click='sendMessage'
-      ) Save changes
-
-    div(v-if='isEditing')
-      .addons.addons-editing
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Add reaction")'
+    .c-mentions(
+      v-if='ephemeral.mention.options.length'
+      ref='mentionWrapper'
+    )
+      template(v-for='(user, index) in ephemeral.mention.options')
+        .c-mention-user(
+          ref='mention'
+          :class='{"is-selected": index === ephemeral.mention.index}'
+          @click.stop='onClickMention(index)'
         )
-          button.is-icon(
-            :aria-label='L("Add reaction")'
-            @click='openEmoticon'
-          )
-            i.icon-smile-beam
-    div(v-else)
-      .addons
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Create poll")'
-        )
-          button.is-icon(
-            :aria-label='L("Create poll")'
-            @click='createPool'
-          )
-            i.icon-poll
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Add reaction")'
-        )
-          button.is-icon(
-            :aria-label='L("Add reaction")'
-            @click='openEmoticon'
-          )
-            i.icon-smile-beam
+          avatar(:src='user.picture' size='xs')
+          .c-username {{user.username}}
+          .c-display-name(
+            v-if='user.displayName !== user.username'
+          ) ({{user.displayName}})
 
-      i18n.c-send-button(
-        id='mobileSendButton'
-        v-if='showSendButton'
-        tag='button'
-        :class='{ isActive, showSendButton }'
-        @click='sendMessage'
-      ) Send
+    .c-jump-to-latest(
+      v-if='scrolledUp && !replyingMessage'
+      @click='$emit("jump-to-latest")'
+    )
+      i18n Jump to latest message
+      button.is-icon-small
+        i.icon-arrow-down
 
-  .textarea.c-send-mask(
-    ref='mask'
-    :style='maskStyles'
-  )
+    .c-replying-wrapper
+      .c-replying(v-if='replyingMessage')
+        i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+        button.c-clear.is-icon-small(
+          :aria-label='L("Stop replying")'
+          @click='stopReplying'
+        )
+          i.icon-times
+
+    textarea.textarea.c-send-textarea(
+      ref='textarea'
+      :disabled='loading'
+      :placeholder='L("Write your message...")'
+      :style='textareaStyles'
+      @blur='textAreaBlur'
+      @keydown.enter.exact.prevent='handleKeyDownEnter'
+      @keydown.tab.exact='handleKeyDownTab'
+      @keydown.ctrl='isNextLine'
+      @keydown='handleKeydown'
+      @keyup='handleKeyup'
+      v-bind='$attrs'
+    )
+
+    .c-send-actions(ref='actions')
+      div(v-if='isEditing')
+        .addons.addons-editing
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Add reaction")'
+          )
+            button.is-icon(
+              :aria-label='L("Add reaction")'
+              @click='openEmoticon'
+            )
+              i.icon-smile-beam
+
+      .c-edit-actions(v-if='isEditing')
+        i18n.is-small.is-outlined(
+          tag='button'
+          @click='$emit("cancelEdit")'
+        ) Cancel
+
+        i18n.button.is-small(
+          tag='button'
+          @click='sendMessage'
+        ) Save changes
+
+      .c-edit-action-wrapper(v-else)
+        .addons
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Create poll")'
+          )
+            button.is-icon(
+              :aria-label='L("Create poll")'
+              @click='openCreatePollModal'
+            )
+              i.icon-poll
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Add reaction")'
+          )
+            button.is-icon(
+              :aria-label='L("Add reaction")'
+              @click='openEmoticon'
+            )
+              i.icon-smile-beam
+
+        .c-send-button(
+          id='mobileSendButton'
+          tag='button'
+          :class='{ isActive }'
+          @click='sendMessage'
+        )
+          .icon-paper-plane
+
+    .textarea.c-send-mask(
+      ref='mask'
+    )
+
+    create-poll.c-poll(ref='poll')
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
+import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -142,19 +153,17 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
-    Tooltip
+    Tooltip,
+    CreatePoll
   },
   props: {
-    title: String,
     defaultText: String,
-    searchPlaceholder: String,
     scrolledUp: Boolean,
     loading: {
       type: Boolean,
       default: false
     },
     replyingMessage: String,
-    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -165,8 +174,8 @@ export default ({
     return {
       ephemeral: {
         actionsWidth: '',
-        maskHeight: '',
         textWithLines: '',
+        maskHeight: '',
         showButtons: true,
         isPhone: false,
         mention: {
@@ -179,12 +188,19 @@ export default ({
   },
   watch: {
     replyingMessage () {
-      this.$refs.textarea.focus()
+      this.focusOnTextArea()
+    },
+    loading (newValue, oldValue) {
+      if (!newValue) {
+        this.$nextTick(() => {
+          this.focusOnTextArea()
+        })
+      }
     }
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    const mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
@@ -194,7 +210,7 @@ export default ({
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
-    if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
+    this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
   },
@@ -202,11 +218,17 @@ export default ({
     window.removeEventListener('click', this.onWindowMouseClicked)
   },
   computed: {
-    ...mapGetters(['chatRoomUsers', 'globalProfile']),
+    ...mapGetters([
+      'chatRoomUsers',
+      'isPrivateDirectMessage',
+      'currentChatRoomId',
+      'chatRoomAttributes',
+      'ourContactProfiles'
+    ]),
     users () {
       return Object.keys(this.chatRoomUsers)
         .map(username => {
-          const { displayName, picture } = this.globalProfile(username)
+          const { displayName, picture } = this.ourContactProfiles[username]
           return {
             username,
             displayName: displayName || username,
@@ -214,27 +236,23 @@ export default ({
           }
         })
     },
-    textareaStyles () {
-      return {
-        paddingRight: this.ephemeral.actionsWidth + 'px',
-        height: this.ephemeral.maskHeight + 'px'
-      }
-    },
-    maskStyles () {
-      return {
-        paddingRight: this.ephemeral.actionsWidth + 'px'
-      }
-    },
     isActive () {
       return this.ephemeral.textWithLines
     },
-    showSendButton () {
-      return this.ephemeral.isPhone && !this.ephemeral.showButtons
+    textareaStyles () {
+      return {
+        height: this.ephemeral.maskHeight + 'px'
+      }
+    },
+    isPublicChannel () {
+      return this.chatRoomAttributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PUBLIC
     }
   },
   methods: {
-    textAreaFocus () {
-      if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
+    focusOnTextArea () {
+      if (this.$refs.textarea) {
+        this.$refs.textarea.focus()
+      }
     },
     textAreaBlur (event) {
       if (!this.ephemeral.isPhone) {
@@ -243,8 +261,6 @@ export default ({
 
       if (event?.relatedTarget?.id === 'mobileSendButton') {
         this.sendMessage()
-      } else {
-        this.ephemeral.showButtons = true
       }
     },
     isNextLine (e) {
@@ -347,12 +363,8 @@ export default ({
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
       this.$refs.mask.textContent = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
-
       // ...and apply the maks's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
-
-      // ... finaly inform the parent about the new height to adjust the layout
-      this.$emit('height-update', this.ephemeral.maskHeight + 'px')
     },
     createNewLine () {
       this.$refs.textarea.value += '\n'
@@ -371,8 +383,12 @@ export default ({
       this.updateTextArea()
       this.endMention()
     },
-    createPool () {
-      console.log('TODO')
+    openCreatePollModal () {
+      const bbox = this.$el.getBoundingClientRect()
+      this.$refs.poll.open({
+        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
+      })
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
@@ -381,10 +397,13 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      this.ephemeral.mention.options = this.users.concat([{
-        // TODO: use group picture here or broadcast icon
-        username: all, displayName: all, picture: '/assets/images/horn.png'
-      }]).filter(user =>
+      const availableMentions = this.isPrivateDirectMessage()
+        ? this.users
+        : [
+            ...this.users,
+            { username: all, displayName: all, picture: '/assets/images/horn.png' } // TODO: use group picture here or broadcast icon
+          ]
+      this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
       this.ephemeral.mention.position = position
@@ -411,34 +430,61 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$initialHeight: 43px;
+.c-send-wrapper {
+  padding: 1rem;
+
+  @include tablet {
+    padding: 0 1.25rem 1.25rem 1.25rem;
+  }
+
+  &.is-public {
+    background-color: var(--warning_1);
+
+    .c-public-helper {
+      color: $text_0;
+      margin-bottom: 1rem;
+
+      i {
+        color: var(--warning_0);
+      }
+    }
+
+    .inputgroup {
+      border-color: var(--warning_0);
+    }
+  }
+}
 
 .c-send {
   position: relative;
-  margin: 0 1.5rem;
   display: block;
-  padding: 1rem 0 2rem 0;
-
-  @include tablet {
-    margin: 0 2.5rem;
-  }
+  background-color: var(--background_0);
+  border: 1px solid var(--general_0);
+  border-radius: 0.25rem;
 
   &-textarea,
   &-mask {
     display: block;
     width: 100%;
-    min-height: $initialHeight;
     font-size: 1rem;
     word-wrap: break-word;
   }
 
   &-textarea {
-    height: $initialHeight;
     resize: none;
     overflow: hidden;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    background-color: transparent;
+    border: none;
+    padding: 0.5rem;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px transparent;
     }
   }
 
@@ -449,13 +495,8 @@ $initialHeight: 43px;
     opacity: 0;
     pointer-events: none;
     height: auto;
-  }
-
-  &-actions {
-    position: absolute;
-    bottom: 2rem;
-    right: 0;
-    height: $initialHeight;
+    white-space: pre-line;
+    min-height: 0;
   }
 
   &-btn {
@@ -478,8 +519,15 @@ $initialHeight: 43px;
     .c-send-actions {
       position: relative;
       margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
       bottom: 0;
       height: auto;
+      display: flex;
+      justify-content: space-between;
+
+      .c-edit-actions {
+        margin-right: 0.5rem;
+      }
     }
 
     .is-outlined {
@@ -492,17 +540,24 @@ $initialHeight: 43px;
   top: 0;
 }
 
-.inputgroup .addons button.is-icon:focus {
-  box-shadow: none;
-  border: none;
+.inputgroup .addons {
+  position: relative;
+  margin-left: 0.25rem;
+
+  button.is-icon:focus {
+    box-shadow: none;
+    border: none;
+  }
+
+  button.is-icon:first-child:last-child {
+    width: 2rem;
+  }
 }
 
-.inputgroup .addons button.is-icon:first-child:last-child {
-  width: 2rem;
-}
-
-.inputgroup .addons.addons-editing {
-  top: -2.7rem;
+.c-edit-action-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .icon-smile-beam::before {
@@ -521,7 +576,7 @@ $initialHeight: 43px;
   table-layout: fixed;
   width: 100%;
   position: absolute;
-  top: -1rem;
+  top: -2.1rem;
 }
 
 .c-replying {
@@ -552,7 +607,7 @@ $initialHeight: 43px;
   position: absolute;
   left: 0;
   right: 0;
-  top: -1rem;
+  top: -2.125rem;
 }
 
 .c-mentions {
@@ -573,19 +628,19 @@ $initialHeight: 43px;
   align-items: center;
   padding: 0.2rem;
   cursor: pointer;
-}
 
-.c-mentions .c-mention-user.is-selected {
-  background-color: $primary_2;
-}
+  &.is-selected {
+    background-color: $primary_2;
+  }
 
-.c-mentions .c-mention-user .c-username {
-  margin-left: 0.3rem;
-}
+  .c-username {
+    margin-left: 0.3rem;
+  }
 
-.c-mentions .c-mention-user .c-display-name {
-  margin-left: 0.3rem;
-  color: $text_1;
+  .c-display-name {
+    margin-left: 0.3rem;
+    color: $text_1;
+  }
 }
 
 .c-clear {
@@ -595,9 +650,25 @@ $initialHeight: 43px;
 }
 
 .c-send-button {
-  border-radius: 0;
-  margin-top: -1px;
-  margin-right: 0;
   color: $white;
+  background: $general_0;
+  background: grey;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  height: 2rem;
+  width: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.25rem;
+
+  &:hover {
+    color: var(--primary_0);
+    cursor: pointer;
+  }
+
+  &.isActive {
+    background: $primary_0;
+  }
 }
 </style>

@@ -13,6 +13,7 @@
           ) {{ maxDescriptionCharacters - form.description.length }}
 
         textarea.textarea(
+          ref='description'
           name='description'
           :placeholder='L("Description of the channel")'
           maxlength='maxDescriptionCharacters'
@@ -28,7 +29,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click.prevent='close') Cancel
+        i18n.button.is-outlined(@click.prevent='close') Cancel
         i18n.is-success(
           tag='button'
           @click='submit'
@@ -41,7 +42,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -63,6 +64,7 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters(['currentChatRoomId', 'groupSettings', 'currentChatRoomState']),
     maxDescriptionCharacters () {
       return this.currentChatRoomState.settings.maxDescriptionLength
@@ -74,15 +76,19 @@ export default ({
   created () {
     this.form.description = this.currentChatRoomState.attributes.description
   },
+  mounted () {
+    this.$refs.description.focus()
+  },
   methods: {
     close () {
       this.$refs.modal.close()
     },
     async submit () {
       try {
-        await sbp('gi.actions/chatroom/changeDescription', {
-          contractID: this.currentChatRoomId,
+        await sbp('gi.actions/group/changeChatRoomDescription', {
+          contractID: this.currentGroupId,
           data: {
+            chatRoomID: this.currentChatRoomId,
             description: this.form.description
           }
         })
@@ -97,7 +103,7 @@ export default ({
     form: {
       description: {
         [L('Reached character limit.')]: function (value) {
-          return value ? Number(value.length) <= this.maxDescriptionCharacters : false
+          return !value || Number(value.length) <= this.maxDescriptionCharacters
         }
       }
     }

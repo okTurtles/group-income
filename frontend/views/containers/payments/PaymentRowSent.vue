@@ -2,21 +2,39 @@
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment')
     template(slot='cellAmount')
-      strong {{ withGroupCurrency(payment.amount) }}
-      payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
+      .c-amount-container
+        strong {{ withGroupCurrency(payment.amount) }}
+        payment-not-received-tooltip.c-not-received-badge(
+          v-if='notReceived'
+          :member='payment.displayName'
+          :hideText='true'
+        )
+
+      .c-amount-pill-container
+        i18n.pill.is-neutral.hide-tablet Manual
+
+    template(slot='cellMethod')
+      .c-methods-container.hide-phone
+        i18n.pill.is-neutral Manual
+
+    template(slot='cellDate')
+      .cpr-date.has-text-1 {{ humanDate(payment.date) }}
+
+    template(slot='cellRelativeTo')
+      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
 
     template(slot='cellActions')
-      .cpr-date.has-text-1 {{ humanDate(payment.date) }}
       payment-actions-menu
         menu-item(
           tag='button'
           item-id='message'
           icon='info'
-          @click='openModal("PaymentDetail", { id: payment.hash })'
+          @click='openModal("PaymentDetail", { id: payment.hash, period: payment.period })'
         )
           i18n Payment details
 
         menu-item(
+          v-if='!isOldPayment'
           tag='button'
           item-id='message'
           icon='times'
@@ -32,7 +50,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
@@ -55,10 +73,16 @@ export default ({
   computed: {
     ...mapGetters([
       'ourGroupProfile',
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'periodStampGivenDate',
+      'currentPaymentPeriod'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
+    },
+    isOldPayment () {
+      // check if it's a past transaction item.
+      return comparePeriodStamps(this.payment.period, this.currentPaymentPeriod) < 0
     }
   },
   methods: {
@@ -90,4 +114,37 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-relative-to {
+  display: none;
+
+  @include desktop {
+    display: block;
+  }
+}
+
+.c-amount-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+
+  .c-not-received-badge {
+    @include phone {
+      order: -1;
+    }
+  }
+}
+
+.c-amount-pill-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2px;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+}
 </style>

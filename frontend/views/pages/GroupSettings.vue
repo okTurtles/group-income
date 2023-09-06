@@ -56,8 +56,25 @@ page.c-page
 
   invitations-table
 
+  page-section(
+    v-if='configurePublicChannel'
+    :title='L("Public Channels")'
+  )
+    .c-subcontent(data-test='allowPublicChannels')
+      .c-text-content
+        i18n.c-smaller-title(tag='h3') Allow members to create public channels
+        i18n.c-description(tag='p') Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
+      .switch-wrapper
+        input.switch(
+          type='checkbox'
+          name='switch'
+          :checked='allowPublicChannels'
+          @change='togglePublicChannelCreateAllownace'
+        )
+
   page-section(:title='L("Voting System")')
     group-rules-settings
+
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
@@ -126,17 +143,13 @@ export default ({
         groupName,
         sharedValues,
         mincomeCurrency
-      }
+      },
+      allowPublicChannels: false
     }
   },
   computed: {
-    ...mapState([
-      'currentGroupId'
-    ]),
-    ...mapGetters([
-      'groupSettings',
-      'groupMembersCount'
-    ]),
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['groupSettings', 'groupMembersCount']),
     currencies () {
       return currencies
     },
@@ -146,7 +159,18 @@ export default ({
         contractID: this.$store.state.currentGroupId,
         key: 'groupPicture'
       }
+    },
+    isGroupAdmin () {
+      // TODO: https://github.com/okTurtles/group-income/issues/202
+      return false
+    },
+    configurePublicChannel () {
+      // TODO: check if Chelonia server admin allows to create public channels
+      return this.isGroupAdmin && false
     }
+  },
+  mounted () {
+    this.allowPublicChannels = this.groupSettings.allowPublicChannels
   },
   methods: {
     openProposal (component) {
@@ -181,6 +205,26 @@ export default ({
       } else {
         this.openProposal('GroupLeaveModal')
       }
+    },
+    refreshForm () {
+      const { groupName, sharedValues, mincomeCurrency } = this.groupSettings
+      this.form = {
+        groupName,
+        sharedValues,
+        mincomeCurrency
+      }
+    },
+    async togglePublicChannelCreateAllownace (v) {
+      const checked = v.target.checked
+      if (this.groupSettings.allowPublicChannels !== checked) {
+        await sbp('gi.actions/group/updateSettings', {
+          contractID: this.currentGroupId,
+          data: {
+            allowPublicChannels: checked
+          }
+        })
+        this.allowPublicChannels = checked
+      }
     }
   },
   validations: {
@@ -188,6 +232,12 @@ export default ({
       groupName: {
         [L('This field is required')]: required
       }
+    }
+  },
+  watch: {
+    groupSettings () {
+      // re-fetch the latest correct values whenever the user switches groups
+      this.refreshForm()
     }
   }
 }: Object)
@@ -214,5 +264,28 @@ export default ({
   @include desktop {
     display: block;
   }
+}
+
+.c-subcontent {
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+
+  &:last-child {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.c-smaller-title {
+  font-size: $size_4;
+  font-weight: bold;
+}
+
+.c-description {
+  margin-top: 0.125rem;
+  font-size: $size_4;
+  color: $text_1;
 }
 </style>

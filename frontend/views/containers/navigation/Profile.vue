@@ -7,18 +7,18 @@
     button.is-unstyled.c-avatar-user(data-test='openProfileCard')
       avatar-user(:username='ourUsername' size='sm')
       .c-user
-        strong(
+        strong.has-ellipsis(
           :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
         ) {{ userDisplayName || ourUsername }}
 
-        span(
+        span.has-ellipsis(
           data-test='profileName'
           v-if='userDisplayName'
         ) @{{ ourUsername }}
 
   button.is-icon-small(
     data-test='settingsBtn'
-    @click='openModal("UserSettingsModal")'
+    @click='openModalUserSettings'
   )
     i.icon-cog
 </template>
@@ -46,8 +46,8 @@ export default ({
     }
   },
   methods: {
-    openModal (mode) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    openModalUserSettings () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal')
     }
   }
 }: Object)
@@ -88,11 +88,13 @@ export default ({
 
   strong {
     border-bottom: 1px solid transparent;
+    width: 100%;
   }
 
   span {
     font-family: "Lato";
     color: $text_1;
+    width: 100%;
   }
 }
 

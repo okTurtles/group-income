@@ -13,7 +13,7 @@ import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 
 export default ({
-  name: 'Chatroom',
+  name: 'Emoticons',
   components: {
     Picker
   },
@@ -89,8 +89,15 @@ export default ({
       }
     },
     closeEmoticonDlg () {
+      if (!this.isActive) { return }
+
       this.isActive = false
       sbp('okTurtles.events/emit', CLOSE_EMOTICON)
+
+      if (this.lastFocus) {
+        this.lastFocus.focus()
+        this.lastFocus = null
+      }
     }
   }
 }: Object)

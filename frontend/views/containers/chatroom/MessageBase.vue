@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message(
-  :class='[variant, isSameSender && "sameSender"]'
+  :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='openMenu'
   v-touch:swipe.left='reply'
@@ -22,7 +22,13 @@
         p.c-replying(
           if='replyingMessage'
           @click='onReplyMessageClicked'
-        ) {{ replyingMessage }}
+        )
+          template(v-for='(objReplyMessage, index) in replyMessageObjects')
+            span(v-if='isText(objReplyMessage)') {{ objReplyMessage.text }}
+            span.c-mention(
+              v-else-if='isMention(objReplyMessage)'
+              :class='{"c-mention-to-me": objReplyMessage.toMe}'
+            ) {{ objReplyMessage.text }}
         send-area(
           v-if='isEditing'
           :defaultText='text'
@@ -40,9 +46,13 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
+  .c-full-width-body
+    slot(name='full-width-body')
+
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
+    :messageType='type'
     :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
@@ -59,7 +69,7 @@
     @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
-    @copyToClipBoard='copyToClipBoard'
+    @copyMessageLink='copyMessageLink'
   )
 </template>
 
@@ -72,6 +82,7 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
@@ -90,6 +101,7 @@ export default ({
   },
   props: {
     text: String,
+    messageHash: String,
     replyingMessage: String,
     who: String,
     currentUsername: String,
@@ -112,26 +124,20 @@ export default ({
   computed: {
     ...mapGetters(['chatRoomUsers', 'ourUsername']),
     textObjects () {
-      if (!this.text.includes('@')) {
-        return [{ type: TextObjectType.Text, text: this.text }]
-      }
-      const possibleMentions = [
-        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
-        makeMentionFromUsername('').all
-      ]
-
-      return this.text
-        .split(new RegExp(`(${possibleMentions.join('|')})`))
-        .map(t => possibleMentions.includes(t)
-          ? { type: TextObjectType.Mention, text: t }
-          : { type: TextObjectType.Text, text: t }
-        )
+      return this.generateTextObjectsFromText(this.text)
+    },
+    replyMessageObjects () {
+      return this.generateTextObjectsFromText(this.replyingMessage)
     }
   },
   methods: {
     humanDate,
     editMessage () {
-      this.isEditing = true
+      if (this.type === MESSAGE_TYPES.POLL) {
+        alert('TODO: implement editting a poll')
+      } else {
+        this.isEditing = true
+      }
     },
     onReplyMessageClicked () {
       this.$emit('reply-message-clicked')
@@ -151,8 +157,13 @@ export default ({
     reply () {
       this.$emit('reply')
     },
-    copyToClipBoard () {
-      navigator.clipboard.writeText(this.text)
+    copyMessageLink () {
+      if (!this.messageHash) { return }
+
+      const url = new URL(location.href)
+      url.search = `mhash=${this.messageHash}`
+
+      navigator.clipboard.writeText(url.href)
     },
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
@@ -168,6 +179,24 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
+    },
+    generateTextObjectsFromText (text) {
+      if (!text) {
+        return []
+      } else if (!text.includes('@')) {
+        return [{ type: TextObjectType.Text, text }]
+      }
+      const possibleMentions = [
+        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
+        makeMentionFromUsername('').all
+      ]
+
+      return text
+        .split(new RegExp(`(${possibleMentions.join('|')})`))
+        .map(t => possibleMentions.includes(t)
+          ? { type: TextObjectType.Mention, text: t }
+          : { type: TextObjectType.Text, text: t }
+        )
     }
   }
 }: Object)
@@ -180,7 +209,7 @@ export default ({
   padding: 0.5rem 1rem;
 
   @include tablet {
-    padding: 0.5rem 2.5rem;
+    padding: 0.5rem 1.25rem;
   }
   position: relative;
   max-height: 100%;
@@ -197,7 +226,7 @@ export default ({
     }
   }
 
-  &.sameSender {
+  &.same-sender {
     margin-top: 0.25rem;
   }
 
@@ -225,13 +254,14 @@ export default ({
 
 .c-avatar {
   .isHidden &,
-  .sameSender & {
+  .same-sender & {
     visibility: hidden;
     height: 0;
   }
 }
 
-.c-body {
+.c-body,
+.c-full-width-body {
   width: 100%;
 }
 
@@ -244,8 +274,7 @@ export default ({
 }
 
 .c-text {
-  max-width: 32rem;
-  word-wrap: break-word; // too much long words will break
+  word-break: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
 
@@ -257,6 +286,10 @@ export default ({
 
 .c-focused {
   animation: focused 1s linear 0.5s;
+}
+
+.c-disappeared {
+  animation: disappeared 0.5s linear;
 }
 
 .c-replying {
@@ -272,6 +305,10 @@ export default ({
     cursor: pointer;
     color: var(--text_2);
     border-color: var(--text_1); // var(--text_2);
+  }
+
+  .c-mention {
+    background-color: transparent;
   }
 }
 

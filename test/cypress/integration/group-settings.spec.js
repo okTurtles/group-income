@@ -41,13 +41,24 @@ describe('Changing Group Settings', () => {
     const groupPicture = 'imageTest.png' // at fixtures/imageTest
     const newGroupName = 'Turtles'
     const newSharedValues = 'One step at the time.'
+    let groupPictureDataURI
 
     cy.getByDT('groupSettingsLink').click()
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
+      groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
+    cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
+    cy.getByDT('AvatarEditorModal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
+      cy.getByDT('imageHelperTag').invoke('attr', 'src', groupPictureDataURI)
+      cy.getByDT('imageCanvas').should('exist')
+      cy.getByDT('saveBtn').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
 
     cy.getByDT('groupName').should('have.value', groupName)
@@ -103,7 +114,7 @@ describe('Group Voting Rules', () => {
 
     cy.getByDT('groupSettingsLink').click()
     cy.get('ul[data-test="votingRules"] > li')
-      .should('have.length', 2)
+      .should('have.length', 1)
       .first()
       .should('have.attr', 'data-test', ruleName)
       .should('have.attr', 'aria-current', 'true')
@@ -119,7 +130,7 @@ describe('Group Voting Rules', () => {
     })
   }
 
-  it('user1 creates a group with rule "disagreement" of "2"', () => {
+  it.skip('user1 creates a group with rule "disagreement" of "2"', () => {
     cy.giCreateGroup('groupDis_2', { ruleName: 'disagreement', ruleThreshold: 2 })
 
     verifyRuleSelected('disagreement', {
@@ -137,7 +148,7 @@ describe('Group Voting Rules', () => {
     })
   })
 
-  it('user1 changes the group rule to "disagrement" of "4"', () => {
+  it.skip('user1 changes the group rule to "disagrement" of "4"', () => {
     updateRuleSettings('disagreement', 4, { changeSystem: true })
     verifyRuleSelected('disagreement', {
       status: '4',
@@ -153,7 +164,20 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  it('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
+  it('4 new memebers joins the group via shared invitation link', () => {
+    // temp test block while 'disagreement rule' is disabled
+    for (let i = 2; i <= 5; i++) {
+      cy.giAcceptGroupInvite(invitationLinkAnyone, {
+        username: `user${i}-${userId}`,
+        groupName: groupNamePerc40,
+        bypassUI: true
+      })
+    }
+
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+  })
+
+  it.skip('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
     for (let i = 2; i <= 4; i++) {
       cy.giAcceptGroupInvite(invitationLinkAnyone, {
         username: `user${i}-${userId}`,
@@ -171,7 +195,7 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  it('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
+  it.skip('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: `user5-${userId}`,
       groupName: groupNamePerc40,
@@ -215,7 +239,7 @@ describe('Group Voting Rules', () => {
     })
   }
 
-  it('user1 proposes to change rule to percentage 15%). It is rejected once everyone else disagrees.', () => {
+  it.skip('user1 proposes to change rule to percentage 15%). It is rejected once everyone else disagrees.', () => {
     updateRuleSettings('percentage', 0.15, { isProposal: true })
 
     cy.getByDT('dashboard').click()
@@ -234,7 +258,7 @@ describe('Group Voting Rules', () => {
     voteInProposal('user5', 0, 4, 'voteAgainst', { decisive: 'rejected' })
   })
 
-  it('user5 re-creates the same proposal. It is accepted once someone agrees.', () => {
+  it.skip('user5 re-creates the same proposal. It is accepted once someone agrees.', () => {
     updateRuleSettings('percentage', 0.15, { isProposal: true })
 
     cy.getByDT('dashboard').click()
@@ -263,7 +287,7 @@ describe('Group Voting Rules', () => {
 
     getProposalItems().eq(0).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
-      cy.getByDT('typeDescription').should('contain', 'Change percentage based from 15% to 80%.')
+      cy.getByDT('typeDescription').should('contain', 'Change percentage based from 40% to 80%.')
     })
 
     voteInProposal('user2', 0, 1, 'voteFor', { decisive: 'approved' })

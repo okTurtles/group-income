@@ -8,8 +8,11 @@
 # - https://flowtype.org/docs/functions.html
 .*/Gruntfile.js
 .*/cypress.config.js
+.*/Gruntfile.dashboard.js
 .*/dist/.*
-.*/contracts/.*
+.*/dist-dashboard/.*
+<PROJECT_ROOT>/contracts/.*
+.*/backend/dashboard/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js

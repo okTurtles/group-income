@@ -5,12 +5,12 @@ form(data-test='login' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
+      ref='username'
       v-model='form.username'
       @input='debounceField("username")'
       @blur='updateField("username")'
       data-test='loginName'
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
-      autofocus
     )
 
   password-form(:label='L("Password")' name='password' :$v='$v')
@@ -37,7 +37,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { noWhitespace } from '@model/contracts/shared/validators.js'
+import { usernameValidations } from '@containers/access/SignupForm.vue'
 
 export default ({
   name: 'LoginForm',
@@ -45,6 +45,14 @@ export default ({
     validationMixin,
     validationsDebouncedMixins
   ],
+  props: {
+    // ButtonSubmit component waits until the `click` listener (which is `login` function) is finished
+    // This prop is something we could add to wait for it to be finished in `login` process
+    postSubmit: {
+      type: Function,
+      default: () => {}
+    }
+  },
   components: {
     PasswordForm,
     BannerScoped,
@@ -53,13 +61,16 @@ export default ({
   data () {
     return {
       form: {
-        username: null,
-        password: null
+        username: '',
+        password: ''
       }
     }
   },
-  inserted () {
-    this.$refs.username.focus()
+  mounted () {
+    // NOTE: nextTick is needed because debounceField is called once after the form is mounted
+    this.$nextTick(() => {
+      this.$refs.username.focus()
+    })
   },
   methods: {
     async login () {
@@ -75,6 +86,7 @@ export default ({
           username: this.form.username,
           password: this.form.password
         })
+        await this.postSubmit()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
@@ -91,8 +103,7 @@ export default ({
   validations: {
     form: {
       username: {
-        [L('A username is required.')]: required,
-        [L('A username cannot contain whitespace.')]: noWhitespace
+        ...usernameValidations
       },
       password: {
         [L('A password is required.')]: required

@@ -2,7 +2,7 @@
 main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   //- TODO: split this into two files, one showing the login/signup buttons
   //-       and the other showing the create/join group buttons!
-  header(v-if='!$store.state.loggedIn' key='title-login')
+  header(v-if='!isLoggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
     i18n.is-title-1(tag='h1' data-test='welcomeHome') Welcome to Group Income
 
@@ -11,7 +11,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     i18n.is-subtitle(tag='p') Welcome to Group Income
     i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
-  .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
+  .buttons(v-if='!isLoggedIn' key='body-loggin')
     i18n(
       tag='button'
       ref='loginBtn'
@@ -50,11 +50,18 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
         @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
+
+  footer.c-footer(v-if='!isLoggedIn')
+    banner-simple.c-demo-warning(severity='warning')
+      i18n(
+        :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
+      ) This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
+import BannerSimple from '@components/banners/BannerSimple.vue'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
@@ -62,7 +69,13 @@ export default ({
   name: 'Home',
   components: {
     SvgJoinGroup,
-    SvgCreateGroup
+    SvgCreateGroup,
+    BannerSimple
+  },
+  computed: {
+    isLoggedIn () {
+      return this.$store.state.loggedIn
+    }
   },
   mounted () {
     if (this.$route.query.next) {
@@ -165,5 +178,15 @@ export default ({
       margin-bottom: 1rem;
     }
   }
+}
+
+.c-footer {
+  margin-top: 2.25rem;
+  padding: 0 1rem;
+  max-width: 31.25rem;
+}
+
+.c-demo-warning {
+  text-align: left;
 }
 </style>

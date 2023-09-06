@@ -83,3 +83,16 @@ $fills: (
     display: none !important;
   }
 }
+
+// reference: https://ferie.medium.com/detect-a-touch-device-with-only-css-9f8e30fa1134
+.hide-touch-device {
+  @media (hover: none) and (pointer: coarse) {
+    display: none !important;
+  }
+}
+
+.hide-hoverable-device {
+  @media (hover: hover) and (pointer: fine) {
+    display: none !important;
+  }
+}

@@ -1,9 +1,10 @@
 <template lang='pug'>
 tooltip(
+  ref='tooltip'
   :direction='direction'
   :manual='true'
-  ref='tooltip'
   :opacity='1'
+  :deactivated='deactivated'
   :aria-label='L("Show profile")'
 )
   slot
@@ -87,6 +88,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
+import DMMixin from '@containers/chatroom/DMMixin.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
@@ -99,41 +101,37 @@ export default ({
       type: String,
       validator: (value) => ['left', 'top-left'].includes(value),
       default: 'left'
+    },
+    deactivated: {
+      type: Boolean,
+      default: false
     }
   },
+  mixins: [
+    DMMixin
+  ],
   components: {
     AvatarUser,
     ModalClose,
     UserName,
     Tooltip
   },
-  methods: {
-    openModal (modal, props) {
-      this.toggleTooltip()
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
-    },
-    toggleTooltip () {
-      this.$refs.tooltip.toggle()
-    },
-    sendMessage () {
-      console.log('To do: implement send message')
-    }
-  },
   computed: {
     ...mapGetters([
       'ourUsername',
-      'groupProfile',
       'groupProfiles',
       'groupSettings',
       'globalProfile',
       'groupShouldPropose',
-      'ourContributionSummary'
+      'ourContributionSummary',
+      'ourPrivateDirectMessages',
+      'directMessageIDFromUsername'
     ]),
     isSelf () {
       return this.username === this.ourUsername
     },
     profile () {
-      return this.$store.getters.globalProfile(this.username)
+      return this.globalProfile(this.username)
     },
     userGroupProfile () {
       return this.groupProfiles[this.username]
@@ -141,17 +139,39 @@ export default ({
     isActiveGroupMember () {
       return this.userGroupProfile?.status === PROFILE_STATUS.ACTIVE
     },
-
     paymentMethods () {
       return this.userGroupProfile?.paymentMethods
     },
-
     hasIncomeDetails () {
       return !!this.userGroupProfile?.incomeDetailsType
     },
-
     receivingMonetary () {
       return !!this.ourContributionSummary.receivingMonetary
+    }
+  },
+  methods: {
+    openModal (modal, props) {
+      if (this.deactivated) {
+        return
+      }
+      this.toggleTooltip()
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    toggleTooltip () {
+      this.$refs.tooltip.toggle()
+    },
+    sendMessage () {
+      if (!this.ourPrivateDirectMessages[this.username]) {
+        this.createPrivateDM(this.username)
+      } else {
+        const chatRoomId = this.directMessageIDFromUsername(this.username)
+        if (this.ourPrivateDirectMessages[this.username].hidden) {
+          this.setDMVisibility(chatRoomId, false)
+        } else {
+          this.redirect(chatRoomId)
+        }
+      }
+      this.toggleTooltip()
     }
   }
 }: Object)
@@ -220,6 +240,7 @@ export default ({
 
 .c-payment-type {
   padding-right: 0.5rem;
+  user-select: none;
 }
 
 .c-add-payment-button {

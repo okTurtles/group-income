@@ -53,6 +53,7 @@ export default ({
     align-items: center;
     background: $general_2;
     padding: 0 1rem;
+    overflow-x: hidden;
 
     @include tablet {
       padding: 0 1.5rem;

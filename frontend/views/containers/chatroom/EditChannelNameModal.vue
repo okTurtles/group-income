@@ -12,6 +12,7 @@
         ) {{maxNameCharacters - form.name.length}}
 
         input.input(
+          ref='name'
           type='text'
           name='name'
           maxlength='maxNameCharacters'
@@ -26,7 +27,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click='close') Cancel
+        i18n.button.is-outlined(@click='close') Cancel
         i18n.is-success(
           tag='button'
           @click='submit'
@@ -54,7 +55,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId']),
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId', 'getGroupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     }
@@ -63,17 +64,21 @@ export default ({
     return {
       channelId: this.$route.query.channel,
       form: {
-        name: null
+        name: null,
+        existingNames: []
       }
     }
   },
   created () {
     this.form.name = this.currentChatRoomState.attributes.name
+    this.form.existingNames = Object.keys(this.getGroupChatRooms)
+      .map(cId => this.getGroupChatRooms[cId].name)
   },
   mounted () {
     if (this.generalChatRoomId === this.currentChatRoomId) {
       this.close()
     }
+    this.$refs.name.focus()
   },
   methods: {
     close () {
@@ -109,6 +114,14 @@ export default ({
         [L('This field is required')]: required,
         [L('Reached character limit.')]: function (value) {
           return value ? Number(value.length) <= this.maxNameCharacters : false
+        },
+        [L('Duplicate channel name')]: (name, siblings) => {
+          for (const existingName of siblings.existingNames) {
+            if (name.toUpperCase() === existingName.toUpperCase()) {
+              return false
+            }
+          }
+          return true
         }
       }
     }

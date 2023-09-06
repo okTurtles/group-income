@@ -9,15 +9,20 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
       novalidate='true'
     )
       fieldset.field
-        legend.label
-          | {{ $attrs.question }}
+        legend.label(v-safe-html:a='$attrs.question')
 
       .buttons
         button-submit.is-outlined(
+          v-if='$attrs.yesButton'
           @click='submit'
           data-test='submitPrompt'
         ) {{ $attrs.yesButton || L('Yes')}}
-        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton || L('No')}}
+
+        button.is-outlined(
+          v-if='$attrs.noButton'
+          type='button'
+          @click='closeModal'
+        ) {{ $attrs.noButton || L('No')}}
 </template>
 
 <script>
@@ -66,4 +71,13 @@ export default ({
   }
 }
 
+::v-deep .c-modal-header {
+  max-width: 37rem;
+  align-self: center;
+  text-align: center;
+
+  h1 {
+    padding: 1.2rem 0;
+  }
+}
 </style>

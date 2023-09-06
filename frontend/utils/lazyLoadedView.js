@@ -65,6 +65,7 @@ lazyModal('CreateNewChannelModal', () => import('../views/containers/chatroom/Cr
 lazyModal('DeleteChannelModal', () => import('../views/containers/chatroom/DeleteChannelModal.vue'))
 lazyModal('EditChannelDescriptionModal', () => import('../views/containers/chatroom/EditChannelDescriptionModal.vue'))
 lazyModal('EditChannelNameModal', () => import('../views/containers/chatroom/EditChannelNameModal.vue'))
+lazyModal('ChatNotificationSettingsModal', () => import('../views/containers/chatroom/ChatNotificationSettingsModal.vue'))
 lazyModal('GroupLeaveModal', () => import('../views/containers/group-settings/GroupLeaveModal.vue'))
 lazyModal('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
 lazyModal('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))
@@ -74,6 +75,9 @@ lazyModal('NotificationModal', () => import('../views/containers/notifications/N
 lazyModal('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 lazyModal('SignupModal', () => import('../views/containers/access/SignupModal.vue'))
 lazyModal('Prompt', () => import('../views/components/modal/Prompt.vue'))
+lazyModal('SendThankYouModal', () => import('../views/containers/payments/SendThankYouModal.vue'))
+lazyModal('ThankYouNoteModal', () => import('../views/containers/payments/ThankYouNoteModal.vue'))
+lazyModal('AvatarEditorModal', () => import('../views/components/avatar-editor/AvatarEditorModal.vue'))
 lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/group-settings/GroupCreationModal.vue'))
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
@@ -90,14 +94,16 @@ lazyModalFullScreen('PropositionsAllModal', () => import('../views/containers/pr
 
 lazyComponent('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
+lazyComponent('SendPaymentsViaLightning', () => import('../views/containers/payments/SendPaymentsViaLightning.vue'))
 
 lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
 lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))
 lazyComponent('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
-lazyComponent('GroupMembersDirectMessages', () => import('../views/containers/chatroom/GroupMembersDirectMessages.vue'))
+lazyComponent('NewDirectMessageModal', () => import('../views/containers/chatroom/NewDirectMessageModal.vue'))
 lazyComponent('Placeholder', () => import('../views/containers/user-settings/Placeholder.vue'))
 lazyComponent('Troubleshooting', () => import('../views/containers/user-settings/Troubleshooting.vue'))
 lazyComponent('UserProfile', () => import('../views/containers/user-settings/UserProfile.vue'))
+lazyComponent('Acknowledgements', () => import('../views/containers/user-settings/Acknowledgements.vue'))
 
 // TODO Remove after design test period.
 lazyComponent('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))

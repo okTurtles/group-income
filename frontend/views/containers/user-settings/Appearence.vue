@@ -30,7 +30,7 @@
           input.switch(
             type='checkbox'
             name='switch'
-            :checked='$store.state.reducedMotion'
+            :checked='$store.state.settings.reducedMotion'
             @change='handleReducedMotion'
           )
 </template>

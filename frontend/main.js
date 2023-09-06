@@ -5,7 +5,6 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import Favico from 'favico.js'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 
@@ -14,7 +13,7 @@ import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -36,10 +35,14 @@ import './views/utils/vError.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
+import './model/notifications/periodicNotifications.js'
+import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
+import FaviconBadge from './utils/faviconBadge.js'
 
 const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
@@ -63,10 +66,10 @@ async function startApp () {
     // Selectors for which debug logging won't be enabled.
     const selectorBlacklist = [
       'chelonia/db/get',
-      'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
+      'state/vuex/settings',
       'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
@@ -98,10 +101,11 @@ async function startApp () {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
-          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
-          'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+          'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
-          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+          'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
+          'gi.notifications/emit'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -191,6 +195,7 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
+    mixins: [notificationsMixin],
     components: {
       AppStyles,
       BackgroundSounds,
@@ -235,11 +240,22 @@ async function startApp () {
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
+
+        if (this.$store.state.currentGroupId) {
+          this.initOrResetPeriodicNotifications()
+          this.checkAndEmitOneTimeNotifications()
+        }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
+        sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       })
+      sbp('okTurtles.events/on', SWITCH_GROUP, () => {
+        this.initOrResetPeriodicNotifications()
+        this.checkAndEmitOneTimeNotifications()
+      })
+
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
         // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)
@@ -270,7 +286,7 @@ async function startApp () {
       if (this.ephemeral.isCorrupted) {
         sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
-            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
+            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&tab=troubleshooting">`,
             '_a': '</a>'
           }),
           'times-circle'
@@ -280,11 +296,12 @@ async function startApp () {
       this.setBadgeOnTab()
     },
     computed: {
-      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
-          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          // TODO: need to remove the '|| []' after we release 0.2.*
+          .map(cId => (this.ourUnreadMessages[cId].messages || []).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {
@@ -310,12 +327,7 @@ async function startApp () {
         'setReducedMotion'
       ]),
       setBadgeOnTab () {
-        if (!window.favicon) {
-          window.favicon = new Favico({
-            textColor: '#d00'
-          })
-        }
-        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+        FaviconBadge.setBubble(this.shouldSetBadge)
       }
     },
     watch: {

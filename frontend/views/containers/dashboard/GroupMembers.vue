@@ -63,7 +63,7 @@ export default ({
     action: {
       type: String,
       default: 'addMember',
-      validator: (value) => ['addMember', 'chat'].includes(value)
+      validator: (value) => ['addMember'].includes(value)
     }
   },
   computed: {
@@ -90,11 +90,13 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
-      let modalAction = 'AddMembers'
-      if (this.action === 'addMember' && !this.groupShouldPropose) modalAction = 'InvitationLinkModal'
-      // Todo create new group modal
-      if (this.action === 'chat') modalAction = 'GroupMembersDirectMessages'
-      this.openModal(modalAction)
+      if (this.action === 'addMember') {
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
+        } else {
+          this.openModal('InvitationLinkModal')
+        }
+      }
     }
   }
 }: Object)
@@ -145,6 +147,7 @@ export default ({
 }
 
 .c-name {
+  display: inline-block;
   margin-right: 0.5rem;
   margin-left: 0.5rem;
   font-family: inherit;

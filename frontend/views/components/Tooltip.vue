@@ -1,12 +1,7 @@
 <template lang='pug'>
 span.c-twrapper(
-  :tabindex='manual ? "-1" : "0"'
-  @click='toggle'
-  @mouseenter='show'
-  @mouseleave='hide'
-  @focus='show'
-  @blur='hide'
-  :aria-label='text'
+  :class='{ "has-target-within": triggerElementSelector }'
+  v-bind='rootElAttrs'
 )
   slot
 
@@ -58,10 +53,24 @@ export default ({
       type: Number,
       required: false,
       default: 0.95
+    },
+    deactivated: {
+      type: Boolean,
+      default: false
+    },
+    triggerElementSelector: {
+      // Instead of taking the entire 'default-slot' as the trigger element(which is the default behaviour of this component),
+      // specifying this prop will bind the tooltip to 'a particular element within the default-slot' content.
+      // The value must be a valid css-selector string, which will be used in searching via HTMLElement.querySelector()
+      // (Refer to GroupMembersActivity.vue for the use case.)
+      type: String,
+      required: false,
+      default: ''
     }
   },
   data: () => ({
-    trigger: null,
+    triggerDOM: null,
+    trigger: null, // bounding-box info of the trigger DOM.
     tooltip: null,
     tooltipHeight: 0,
     tooltipWidth: 0,
@@ -69,6 +78,16 @@ export default ({
     styles: null,
     lastFocus: null
   }),
+  computed: {
+    rootElAttrs () {
+      return {
+        'tabindex': !this.triggerElementSelector
+          ? (this.manual ? '-1' : '0')
+          : null,
+        'aria-label': !this.triggerElementSelector ? this.text : undefined
+      }
+    }
+  },
   methods: {
     show () {
       if (!this.manual) this.isActive = true
@@ -78,6 +97,9 @@ export default ({
     },
     // Used by parent (ProfileCard.vue)
     toggle () {
+      if (this.deactivated) {
+        return
+      }
       if (!this.manual) { return false }
       this.isActive = !this.isActive
     },
@@ -88,7 +110,7 @@ export default ({
       }
     },
     adjustPosition () {
-      this.trigger = this.$el.getBoundingClientRect()
+      this.trigger = (this.triggerDOM || this.$el).getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const windowHeight = window.innerHeight
@@ -191,6 +213,26 @@ export default ({
         window.removeEventListener('resize', $this.adjustPosition)
       }
     }
+  },
+  mounted () {
+    this.triggerDOM = this.triggerElementSelector ? this.$el.querySelector(this.triggerElementSelector) : this.$el
+
+    this.triggerDOM.addEventListener('click', this.toggle)
+    this.triggerDOM.addEventListener('mouseenter', this.show)
+    this.triggerDOM.addEventListener('mouseleave', this.hide)
+    this.triggerDOM.addEventListener('focus', this.show)
+    this.triggerDOM.addEventListener('blur', this.hide)
+
+    if (this.triggerElementSelector) {
+      this.triggerDOM.style.cursor = 'pointer'
+    }
+  },
+  beforeDestory () {
+    this.triggerDOM.removeEventListener('click', this.toggle)
+    this.triggerDOM.removeEventListener('mouseenter', this.show)
+    this.triggerDOM.removeEventListener('mouseleave', this.hide)
+    this.triggerDOM.removeEventListener('focus', this.show)
+    this.triggerDOM.removeEventListener('blur', this.hide)
   }
 }: Object)
 </script>
@@ -198,7 +240,7 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-twrapper {
+.c-twrapper:not(.has-target-within) {
   cursor: pointer;
 }
 
@@ -249,5 +291,4 @@ export default ({
     background-color: rgba(0, 0, 0, 0.7);
   }
 }
-
 </style>

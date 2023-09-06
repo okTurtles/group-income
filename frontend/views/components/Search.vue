@@ -1,7 +1,5 @@
 <template lang='pug'>
-form.c-search-form(
-  @submit.prevent='submit'
-)
+form.c-search-form(@submit.prevent='')
   label.field
     .sr-only {{label}}
     .inputgroup.c-search
@@ -18,7 +16,7 @@ form.c-search-form(
         v-focus='autofocus'
       )
       .addons
-        button.c-clear.is-icon-small(
+        .button.c-clear.is-icon-small(
           v-if='value !== ""'
           :aria-label='L("Clear search")'
           @click='$emit("input", "")'
@@ -31,18 +29,15 @@ import { L } from '@common/common.js'
 
 export default ({
   name: 'Search',
-
   props: {
     value: {
       type: String,
       required: false
     },
-
     placeholder: {
       type: String,
       default: L('Search...')
     },
-
     label: {
       type: String,
       required: true
@@ -52,7 +47,6 @@ export default ({
       default: false
     }
   },
-
   watch: {
     value () {
       this.$emit('input', this.value)
@@ -71,23 +65,20 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  // hide close by default...
-  .input + .addons button {
-    opacity: 0;
-  }
-
   // visible when interacted
   .input:focus + .addons .c-clear,
-  .c-clear:hover,
-  .c-clear:focus {
+  .input:hover + .addons .c-clear {
     opacity: 1;
   }
 
   .c-clear {
+    // hide close by default...
+    opacity: 0;
     background-color: $general_2;
 
     &:hover,
     &:focus {
+      opacity: 1;
       background-color: $general_1;
     }
   }

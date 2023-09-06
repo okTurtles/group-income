@@ -20,7 +20,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   template(v-else)
     start-inviting-widget(v-if='groupMembersCount === 1')
 
-    contributions-overview-widget(v-if='canDisplayGraph')
+    group-activity(v-if='canDisplayGraph')
 
     contributions-summary-widget
 
@@ -44,7 +44,7 @@ import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
-import ContributionsOverviewWidget from '@containers/contributions/ContributionsOverviewWidget.vue'
+import GroupActivity from '@containers/dashboard/GroupActivity.vue'
 import ContributionsSummaryWidget from '@containers/contributions/ContributionsWidget.vue'
 import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 import MemberRequest from '@containers/proposals/MemberRequest.vue'
@@ -93,7 +93,7 @@ export default ({
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
     },
     hasIncomeDetails () {
-      return !!this.ourGroupProfile.incomeDetailsType
+      return !!this.ourGroupProfile?.incomeDetailsType
     },
     isCloseToDistributionTime () {
       const dDay = new Date(this.groupSettings.distributionDate)
@@ -115,7 +115,9 @@ export default ({
   methods: {
     humanDate,
     handleIncomeClick (e) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      }
     },
     closeBanner () {
       localStorage.setItem(this.bannerStorageKey, true)
@@ -136,7 +138,7 @@ export default ({
     Page,
     AddIncomeDetailsWidget,
     StartInvitingWidget,
-    ContributionsOverviewWidget,
+    GroupActivity,
     ContributionsSummaryWidget,
     ProposalsWidget,
     MemberRequest,

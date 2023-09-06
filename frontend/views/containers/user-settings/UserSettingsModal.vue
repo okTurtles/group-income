@@ -2,7 +2,6 @@
 modal-base-template(class='has-background' :a11yTitle='L("Settings")')
   .wrapper-container
     tab-wrapper(
-      :title='L("Settings")'
       :tabNav='settings'
       defaultTab='my-account'
       @close='$emit("close")'
@@ -17,7 +16,7 @@ import TabWrapper from '@components/tabs/TabWrapper.vue'
 import settings from './settings.js'
 
 export default ({
-  name: 'SettingsWrapper',
+  name: 'UserSettingsModal',
   components: {
     ModalBaseTemplate,
     TabWrapper
@@ -26,7 +25,7 @@ export default ({
     return settings
   },
   created () {
-    sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { section: true })
+    sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { tab: true })
   }
 }: Object)
 </script>
@@ -39,5 +38,13 @@ export default ({
   width: 100%;
   opacity: 1;
   background-color: $general_2;
+
+  @include phone {
+    width: calc(100% + 2rem);
+  }
+
+  @include tablet {
+    width: calc(100% + 3rem);
+  }
 }
 </style>

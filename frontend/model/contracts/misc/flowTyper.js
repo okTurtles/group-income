@@ -234,9 +234,12 @@ export const objectOf = <O: TypeValidatorRecord<*>>
         `missing object property '${unknownAttr}' in ${_scope} type`
       )
     }
+    // IMPORTANT: because esbuild can actually rename the functions in the compiled source
+    //            (e.g. from 'optional' to 'optional2'), we use .includes() instead of ===
+    //            to check the .name of a function
     const undefAttr = typeAttrs.find(property => {
       const propertyTypeFn = typeObj[property]
-      return (propertyTypeFn.name === 'maybe' && !o.hasOwnProperty(property))
+      return (propertyTypeFn.name.includes('maybe') && !o.hasOwnProperty(property))
     })
     if (undefAttr) {
       throw validatorError(
@@ -253,7 +256,7 @@ export const objectOf = <O: TypeValidatorRecord<*>>
       ? (acc, key) => Object.assign(acc, { [key]: typeObj[key](value) })
       : (acc, key) => {
         const typeFn = typeObj[key]
-        if (typeFn.name === 'optional' && !o.hasOwnProperty(key)) {
+        if (typeFn.name.includes('optional') && !o.hasOwnProperty(key)) {
           return Object.assign(acc, {})
         } else {
           return Object.assign(acc, { [key]: typeFn(o[key], `${_scope}.${key}`) })
@@ -263,9 +266,12 @@ export const objectOf = <O: TypeValidatorRecord<*>>
   }
   object2.type = () => {
     const props = Object.keys(typeObj).map(
-      (key) => typeObj[key].name === 'optional'
+      (key) => {
+        const ret = typeObj[key].name.includes('optional')
         ? `${key}?: ${getType(typeObj[key], { noVoid: true })}`
         : `${key}: ${getType(typeObj[key])}`
+        return ret
+      }
     )
     return `{|\n ${props.join(',\n  ')} \n|}`
   }

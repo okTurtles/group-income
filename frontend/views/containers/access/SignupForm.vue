@@ -5,6 +5,7 @@ form(data-test='signup' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
+      ref='username'
       v-model.trim='form.username'
       @input='debounceField("username")'
       @blur='updateField("username")'
@@ -25,7 +26,10 @@ form(data-test='signup' @submit.prevent='')
       v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
-  password-form(:label='L("Password")' name='password' :$v='$v')
+  .c-password-fields-container
+    password-form(:label='L("Password")' name='password' :$v='$v')
+
+    password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
 
   banner-scoped(ref='formMsg' allow-a)
 
@@ -40,9 +44,8 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { email, maxLength, minLength, required } from 'vuelidate/lib/validators'
+import { email, maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -61,23 +64,48 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.js'
 
+export const usernameValidations = {
+  [L('A username is required.')]: required,
+  [L('A username cannot contain whitespace.')]: noWhitespace,
+  [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
+  [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
+  [L('A username cannot contain uppercase letters.')]: noUppercase,
+  [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
+  [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
+  [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores
+}
+
 export default ({
   name: 'SignupForm',
   mixins: [
     validationMixin,
     validationsDebouncedMixins
   ],
+  props: {
+    // ButtonSubmit component waits until the `click` listener (which is `signup` function) is finished
+    // This prop is something we could add to wait for it to be finished in `signup` process
+    postSubmit: {
+      type: Function,
+      default: () => {}
+    }
+  },
   components: {
-    ModalTemplate,
     PasswordForm,
     BannerScoped,
     ButtonSubmit
+  },
+  mounted () {
+    // NOTE: nextTick is needed because debounceField is called once after the form is mounted
+    this.$nextTick(() => {
+      this.$refs.username.focus()
+    })
   },
   data () {
     return {
       form: {
         username: '',
         password: '',
+        passwordConfirm: '',
         email: '',
         pictureBase64: ''
       },
@@ -99,6 +127,7 @@ export default ({
           email: this.form.email,
           password: this.form.password
         })
+        await this.postSubmit()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
@@ -114,14 +143,7 @@ export default ({
     return {
       form: {
         username: {
-          [L('A username is required.')]: required,
-          [L('A username cannot contain whitespace.')]: noWhitespace,
-          [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
-          [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
-          [L('A username cannot contain uppercase letters.')]: noUppercase,
-          [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
-          [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
-          [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores,
+          ...usernameValidations,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
@@ -148,6 +170,9 @@ export default ({
           [L('A password is required.')]: required,
           [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
         },
+        passwordConfirm: {
+          [L('Passwords do not match.')]: sameAs('password')
+        },
         email: {
           [L('An email is required.')]: required,
           [L('Please enter a valid email.')]: email
@@ -157,3 +182,20 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-password-fields-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 1.5rem;
+
+  @include tablet {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+}
+</style>

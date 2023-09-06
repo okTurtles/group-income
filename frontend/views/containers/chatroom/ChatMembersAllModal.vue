@@ -1,5 +1,10 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Channel members")')
+modal-base-template.has-background(
+  ref='modal'
+  :fullscreen='true'
+  :a11yTitle='L("Channel members")'
+  :autofocus='false'
+)
   .c-container
     .c-header
       div
@@ -12,6 +17,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       search(
         :placeholder='L("Search...")'
         :label='L("Search")'
+        :autofocus='true'
         v-model='searchText'
       )
 
@@ -31,17 +37,16 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle
           i18n(
             tag='h3'
-            :args='{  nbMembers: chatRoomUsersInSort.length }'
+            :args='{  nbMembers: filteredRecents.length }'
           ) Channel members ({nbMembers})
 
         transition-group(
-          v-if='addedMembers'
           name='slide-list'
           tag='ul'
           data-test='joinedChannelMembersList'
         )
           li.c-search-member(
-            v-for='{username, displayName, departedDate} in addedMembers'
+            v-for='{username, displayName, departedDate} in filteredRecents'
             :key='username'
           )
             profile-card(:username='username' direction='top-left')
@@ -49,10 +54,10 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 avatar-user(:username='username' size='sm')
                 .c-name(data-test='username')
                   span
-                    strong {{ localizedName(username) }}
-                    .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                    strong {{ localizedName(username, displayName) }}
+                    .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-              .c-actions(v-if='isJoined && removable(username)')
+              .c-actions(v-if='!isDirectMessage() && isJoined && removable(username)')
                 button.is-icon(
                   v-if='!departedDate'
                   :data-test='"removeMember-" + username'
@@ -69,17 +74,16 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{ nbMembers: canAddMembers.length }'
+            :args='{ nbMembers: filteredOthers.length }'
           ) Others ({nbMembers})
 
       transition-group(
-        v-if='searchResult'
         name='slide-list'
         tag='ul'
         data-test='unjoinedChannelMembersList'
       )
         li.c-search-member(
-          v-for='{username, displayName, joinedDate} in searchResult'
+          v-for='{username, displayName, joinedDate} in filteredOthers'
           :key='username'
         )
           profile-card(:username='username' direction='top-left')
@@ -87,8 +91,8 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
               avatar-user(:username='username' size='sm')
               .c-name(data-test='username')
                 span
-                  strong {{ localizedName(username) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                  strong {{ localizedName(username, displayName) }}
+                  .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
             .c-actions(v-if='isJoined')
               i18n.button.is-outlined.is-small(
@@ -102,6 +106,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i.icon-check
                 i18n Added.
                 button.is-unstyled.c-action-undo(
+                  v-if='!isDirectMessage()'
                   @click.stop='removeMember(username, true)'
                 ) {{L("Undo")}}
 </template>
@@ -114,18 +119,16 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
-
-const initDetails = {
-  name: '',
-  description: '',
-  privacyLevel: CHATROOM_PRIVACY_LEVEL.PUBLIC,
-  participants: []
-}
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'ChatMembersAllModal',
+  mixins: [
+    DMMixin
+  ],
   components: {
     ModalBaseTemplate,
     Search,
@@ -137,41 +140,31 @@ export default ({
     return {
       searchText: '',
       addedMembers: [],
-      canAddMembers: [],
-      details: initDetails
-    }
-  },
-  created () {
-    this.updateDetailsForUnjoinedChannel()
-    if (!this.isJoined && !this.attributes.name) {
-      sbp('okTurtles.events/on', CHATROOM_DETAILS_UPDATED, this.updateDetailsForUnjoinedChannel)
+      canAddMembers: []
     }
   },
   computed: {
     ...mapGetters([
-      'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
       'groupMembersSorted',
+      'getGroupChatRooms',
+      'chatRoomUsers',
       'chatRoomUsersInSort',
-      'ourUsername',
-      'userDisplayName',
+      'globalProfile',
       'isJoinedChatRoom'
     ]),
     ...mapState([
       'currentGroupId'
     ]),
-    searchResult () {
-      if (!this.searchText) { return this.canAddMembers }
-
-      const searchTextCaps = this.searchText.toUpperCase()
-      const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.canAddMembers.filter(({ username, displayName }) =>
-        (!searchTextCaps || isInList(username) || isInList(displayName))
-      )
+    filteredRecents () {
+      return filterByKeyword(this.addedMembers, this.searchText, ['username', 'displayName'])
+    },
+    filteredOthers () {
+      return filterByKeyword(this.canAddMembers, this.searchText, ['username', 'displayName'])
     },
     searchCount () {
-      return Object.keys(this.searchResult).length
+      return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
     },
     resultsCopy () {
       const args = {
@@ -184,50 +177,88 @@ export default ({
         : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     },
     attributes () {
-      const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
+      const { name, description, privacyLevel } = this.chatRoomAttribute
+      let title = name
+      if (this.isPrivateDirectMessage()) {
+        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+        title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
+      } else if (this.isGroupDirectMessage()) {
+        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
         [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group members only'),
         [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
       }[privacyLevel]
-      return { name, description, privacy }
+      return { name: title, description, privacy }
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
+    },
+    chatRoomAttribute () {
+      // NOTE: Do not consider to get attributes of private chatroom which the user is not part of
+      //       because it couldn't be happened
+      // TODO: remove 'users', 'deletedDate' to keep consistency when this.isJoined === false
+      return this.isJoined ? this.currentChatRoomState.attributes : this.getGroupChatRooms[this.currentChatRoomId]
+    },
+    chatRoomUsersInOrder () {
+      return this.isJoined
+        ? this.chatRoomUsersInSort
+        : this.groupMembersSorted
+          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users.includes(member.username))
+          .map(member => ({ username: member.username, displayName: member.displayName }))
+    },
+    isPrivacyLevelPrivate () {
+      return this.chatRoomAttribute.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
+  mounted () {
+    this.initializeMembers()
+  },
   methods: {
-    updateDetailsForUnjoinedChannel () {
-      const details = sbp('okTurtles.data/get', 'GROUPCHAT_DETAILS')
-      if (details?.name) {
-        this.details = details
-      }
-      this.initializeMembers()
-    },
     initializeMembers () {
-      const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
-      this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
-      this.canAddMembers = this.groupMembersSorted
-        .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
-        .map(member => ({
-          username: member.username,
-          displayName: member.displayName,
-          joinedDate: null
-        }))
+      if (this.isDirectMessage()) {
+        this.addedMembers = Object.keys(this.chatRoomUsers)
+          .map(username => {
+            const profile = username === this.ourUsername ? this.globalProfile(username) : this.ourContactProfiles[username]
+            return {
+              displayName: profile.displayName,
+              username,
+              departedDate: null
+            }
+          })
+        // TODO: every user needs to sync his contacts and also users from group messages
+        // https://okturtles.slack.com/archives/C0EH7P20Y/p1669109352107659
+        this.canAddMembers = this.ourContacts
+          .filter(username => !this.addedMembers.find(mb => mb.username === username))
+          .map(username => ({
+            username,
+            displayName: this.ourContactProfiles[username].displayName,
+            joinedDate: null
+          }))
+      } else {
+        this.addedMembers = this.chatRoomUsersInOrder.map(member => ({ ...member, departedDate: null }))
+        this.canAddMembers = this.groupMembersSorted
+          .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
+          .map(member => ({
+            username: member.username,
+            displayName: member.displayName,
+            joinedDate: null
+          }))
+      }
     },
-    localizedName (username: string) {
-      const name = this.userDisplayName(username)
+    localizedName (username: string, displayName?: string) {
+      const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     closeModal () {
       this.$refs.modal.close()
-      sbp('okTurtles.events/off', CHATROOM_DETAILS_UPDATED)
     },
     removable (username: string) {
       if (!this.isJoined) {
         return false
       }
-      const { creator } = this.currentChatRoomState.attributes
+      const { creator } = this.chatRoomAttribute
       if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
         return false
       } else if (this.ourUsername === creator) {
@@ -263,6 +294,24 @@ export default ({
       }
     },
     async addToChannel (username: string, undoing = false) {
+      if (this.isDirectMessage()) {
+        if (this.isPrivacyLevelPrivate) {
+          const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
+          const chatRoomId = this.getGroupDMByUsers(usernames)
+          if (chatRoomId) {
+            this.redirect(chatRoomId)
+          } else {
+            this.createGroupDM(usernames)
+          }
+          this.closeModal()
+        } else {
+          await this.addMemberToGroupDM(this.currentChatRoomId, username)
+          this.canAddMembers = this.canAddMembers.map(member =>
+            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+        }
+        return
+      }
+
       if (this.isJoinedChatRoom(this.currentChatRoomId, username)) {
         console.log(`${username} is already joined this chatroom`)
         return

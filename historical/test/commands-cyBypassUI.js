@@ -188,6 +188,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.fixture(image, 'base64').then(fileContent => {
       cy.get('[data-test="groupPicture"]').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
+
     cy.getByDT('nextBtn').click()
 
     if (sharedValues) {

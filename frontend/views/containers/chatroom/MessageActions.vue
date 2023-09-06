@@ -49,7 +49,7 @@ menu-parent(ref='menu')
     )
       i.icon-ellipsis-h
 
-  menu-content.c-content
+  menu-content.c-responsive-menu
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
@@ -84,7 +84,7 @@ menu-parent(ref='menu')
 
       menu-item.is-icon-small(
         tag='button'
-        @click='action("copyToClipBoard")'
+        @click='action("copyMessageLink")'
       )
         i.icon-link
         i18n Copy message Link
@@ -181,21 +181,19 @@ export default ({
   right: 0;
   top: 0;
   height: 100%;
-  width: 13rem;
+  width: auto;
 
   .c-content {
-    @extend %floating-panel;
-
-    @include phone {
-      padding: 0;
-    }
-
-    @include desktop {
+    @include tablet {
       width: 100%;
       left: auto;
       right: 0.5rem;
       top: auto;
       bottom: calc(100% + 1.5rem);
+
+      &.is-active {
+        min-width: 13rem;
+      }
     }
   }
 

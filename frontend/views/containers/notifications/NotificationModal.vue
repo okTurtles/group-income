@@ -45,7 +45,7 @@ export default {
   methods: {
     clickSettings () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
-        section: 'notifications'
+        tab: 'notifications'
       })
     },
     markAllNotificationsAsRead () {

@@ -2,7 +2,7 @@
     <a href="https://groupincome.org"><img width="400px" src="frontend/assets/images/logo-transparent.png" alt="Group Income (Simple Edition)"></a>
     <br />
     <br />
-    <a title="Gitter" href="https://gitter.im/okTurtles/group-income"><img src="https://badges.gitter.im/okTurtles/group-income.svg"></a>
+    <a title="Slack" href="https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ"><img src="https://img.shields.io/badge/slack-%23groupincome-green"></a>
     <a title="Build Status" href="https://app.travis-ci.com/github/okTurtles/group-income"><img src="https://app.travis-ci.com/okTurtles/group-income.svg?branch=master"></a>
     <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income"><img src="https://img.shields.io/badge/visual-source-orange"></a>
     <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
@@ -10,7 +10,7 @@
 
 ## About
 
-[Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
+[Group Income](https://groupincome.org/) is voluntary, decentralized, end-to-end encrypted [basic income](https://search.brave.com/search?q=basic+income) for you and your friends.
 
 ## Getting Started
 
@@ -50,7 +50,7 @@ Some issues have [bounties](https://github.com/okTurtles/group-income/issues?q=i
 
 - Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
 - Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
-- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Gitter](https://gitter.im/okTurtles/group-income) or [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-jc5x4uck-0YqMX5vVGZ9koR2b6LCwiw)!
+- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ)!
 
 Any open contractor positions are posted to: [Open Positions](https://groupincome.org/positions/)
 

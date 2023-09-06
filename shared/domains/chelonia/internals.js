@@ -3,7 +3,7 @@
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
-import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
+import { randomIntFromRange, delay, cloneDeep, debounce } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
@@ -107,7 +107,15 @@ export default (sbp('sbp/selectors/register', {
           ? contractSBP
           : this.config.contracts.defaults.modules[dep]
       },
-      sbp: contractSBP
+      sbp: contractSBP,
+      fetchServerTime: () => {
+        // If contracts need the current timestamp (for example, for metadata 'createdDate')
+        // they must call this function so that clients are kept synchronized to the server's
+        // clock, for consistency, so that if one client's clock is off, it doesn't conflict
+        // with other client's clocks.
+        // See: https://github.com/okTurtles/group-income/issues/531
+        return fetch(`${this.config.connectionURL}/time`).then(handleFetchResult('text'))
+      }
     })
     contractName = this.defContract.name
     this.defContractSelectors.forEach(s => { allowedSels[s] = true })
@@ -119,7 +127,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -134,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
       if (r.ok) {
-        return r.text()
+        return entry
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
@@ -149,7 +157,7 @@ export default (sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.manifest())
+          entry = GIMessage.cloneWith(entry, { previousHEAD })
         }
       } else {
         const message = (await r.json())?.message
@@ -161,6 +169,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
+    const id = message.id()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
@@ -184,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -213,8 +222,8 @@ export default (sbp('sbp/selectors/register', {
     }
     if (processOp && !config.skipProcessing) {
       opFns[opT](opV)
-      config.postOp && config.postOp(message, state)
-      config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
+      config.postOp?.(message, state)
+      config[`postOp_${opT}`]?.(message, state)
     }
   },
   'chelonia/private/in/enqueueHandleEvent': function (event: GIMessage) {
@@ -233,19 +242,32 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-    } else {
+    } else if (!state.pending.includes(contractID)) {
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
-        state.pending.push(contractID)
-      }
+      state.pending.push(contractID)
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
+    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/out/eventsSince', contractID, recent || contractID)
+        const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
+        // Sanity check: verify event with latest hash exists in list of events
+        // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
+        //       https://docs.cypress.io/guides/references/changelog#9-7-0
+        //       https://github.com/cypress-io/cypress/issues/22868
+        let latestHashFound = false
+        for (let i = events.length - 1; i >= 0; i--) {
+          if (GIMessage.deserialize(events[i]).hash() === latest) {
+            latestHashFound = true
+            break
+          }
+        }
+        if (!latestHashFound) {
+          throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
+        }
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
@@ -255,12 +277,13 @@ export default (sbp('sbp/selectors/register', {
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message}`, e)
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
+    } finally {
+      delete this.currentSyncs[contractID]
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
@@ -272,7 +295,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in mutations result in ignored messages
     // Errors in side effects result in dropped messages to be reprocessed
     try {
-      preHandleEvent && await preHandleEvent(message)
+      await preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
@@ -286,7 +309,6 @@ export default (sbp('sbp/selectors/register', {
       if (proceed === false) return
 
       const contractStateCopy = cloneDeep(state[contractID] || null)
-      const stateCopy = cloneDeep(pick(state, ['pending', 'contracts']))
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
       //            contract's 'process' function must be synchronous! The only
@@ -312,21 +334,30 @@ export default (sbp('sbp/selectors/register', {
           if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
             await handleEvent.processSideEffects.call(this, message)
           }
-          postHandleEvent && await postHandleEvent(message)
+        } catch (e) {
+          console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
+          // We used to revert the state and rethrow the error here, but we no longer do that
+          // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
+          this.config.hooks.sideEffectError?.(e, message)
+        }
+        try {
+          await postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
-          console.error(`[chelonia] ERROR '${e.name}' in side-effects for ${message.description()}: ${e.message}`, e, message.serialize())
-          // revert everything
-          handleEvent.revertSideEffect.call(this, { message, state, contractID, contractStateCopy, stateCopy })
-          this.config.hooks.sideEffectError?.(e, message)
-          throw e // rethrow to prevent the contract sync from going forward
+          console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} in event post-handling: ${e.message}`, e, { message: message.serialize() })
         }
       }
     } catch (e) {
       console.error(`[chelonia] ERROR in handleEvent: ${e.message}`, e)
       handleEventError?.(e, message)
-      throw e
+      if (!(e instanceof ChelErrorUnexpected)) {
+        // sometimes we get this error in the following situation:
+        // Cypress tests run, generate a lot of messages, we are logged out, which
+        // clears the state, but we still receive the message, and since the state
+        // has been cleared, no contracts exist, and ChelErrorUnexpected is thrown
+        throw e
+      }
     }
   }
 }): string[])
@@ -387,8 +418,9 @@ const handleEvent = {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
+      const id = message.id()
       const { action, data, meta } = message.decryptedValue()
-      const mutation = { data, meta, hash, contractID }
+      const mutation = { data, meta, hash, id, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
@@ -399,17 +431,6 @@ const handleEvent = {
       contractStateCopy = {}
     }
     this.config.reactiveSet(state, contractID, contractStateCopy)
-  },
-  revertSideEffect ({ message, state, contractID, contractStateCopy, stateCopy }) {
-    console.warn(`[chelonia] reverting entire state because failed sideEffect for ${message.description()}: ${message.serialize()}`)
-    if (!contractStateCopy) {
-      this.config.reactiveDel(state, contractID)
-    } else {
-      this.config.reactiveSet(state, contractID, contractStateCopy)
-    }
-    state.contracts = stateCopy.contracts
-    state.pending = stateCopy.pending
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   }
 }
 

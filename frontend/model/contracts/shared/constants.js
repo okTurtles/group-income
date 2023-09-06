@@ -28,6 +28,11 @@ export const PROPOSAL_GENERIC = 'generic'
 
 export const PROPOSAL_ARCHIVED = 'proposal-archived'
 export const MAX_ARCHIVED_PROPOSALS = 100
+export const PAYMENTS_ARCHIVED = 'payments-archived'
+export const MAX_ARCHIVED_PERIODS = 100
+export const MAX_SAVED_PERIODS = 2
+export const MAX_HISTORY_PERIODS = 6
+export const MAX_GROUP_MEMBER_COUNT = 150 // Dunbar's number (https://en.wikipedia.org/wiki/Dunbar's_number)
 
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
@@ -35,17 +40,20 @@ export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_CANCELLED = 'cancelled'
 
+export const STREAK_ON_TIME_PAYMENTS = 1
+export const STREAK_MISSED_PAYMENTS = 2
+export const STREAK_MISSED_PROPSAL_VOTE = 2
+export const STREAK_NOT_LOGGED_IN_DAYS = 14
+
 // chatroom.js related
 
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
-export const CHATROOM_MESSAGES_PER_PAGE = 20
-
+export const CHATROOM_MAX_ARCHIVE_ACTION_PAGES = 2 // 2 pages of actions
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
-export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 
@@ -55,16 +63,16 @@ export const CHATROOM_TYPES = {
 }
 
 export const CHATROOM_PRIVACY_LEVEL = {
-  GROUP: 'chatroom-privacy-level-group',
-  PRIVATE: 'chatroom-privacy-level-private',
-  PUBLIC: 'chatroom-privacy-level-public'
+  GROUP: 'group',
+  PRIVATE: 'private',
+  PUBLIC: 'public'
 }
 
 export const MESSAGE_TYPES = {
-  POLL: 'message-poll',
-  TEXT: 'message-text',
-  INTERACTIVE: 'message-interactive',
-  NOTIFICATION: 'message-notification'
+  POLL: 'poll',
+  TEXT: 'text',
+  INTERACTIVE: 'interactive',
+  NOTIFICATION: 'notification'
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
@@ -80,7 +88,8 @@ export const MESSAGE_NOTIFICATIONS = {
   UPDATE_DESCRIPTION: 'update-description',
   UPDATE_NAME: 'update-name',
   DELETE_CHANNEL: 'delete-channel',
-  VOTE: 'vote'
+  VOTE_ON_POLL: 'vote-on-poll',
+  CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
 }
 
 export const MESSAGE_VARIANTS = {
@@ -90,7 +99,28 @@ export const MESSAGE_VARIANTS = {
   FAILED: 'failed'
 }
 
-// mailbox.js related
+export const PROPOSAL_VARIANTS = {
+  CREATED: 'created',
+  EXPIRING: 'expiring',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired'
+}
 
-export const MAIL_TYPE_MESSAGE = 'message'
-export const MAIL_TYPE_FRIEND_REQ = 'friend-request'
+export const MESSAGE_NOTIFY_SETTINGS = {
+  ALL_MESSAGES: 'all-messages',
+  DIRECT_MESSAGES: 'direct-messages',
+  NOTHING: 'nothing'
+}
+
+export const POLL_TYPES = {
+  SINGLE_CHOICE: 'single-vote', // allows only 1 choice per member
+  MULTIPLE_CHOICES: 'multiple-votes' // allows multiple choices on the poll
+}
+
+export const POLL_STATUS = {
+  ACTIVE: 'active',
+  CLOSED: 'closed'
+}
+
+export const POLL_MAX_OPTIONS = 20

@@ -67,11 +67,10 @@ export default ({
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: 100%;
 
   @include phone {
     justify-content: left;
-    padding-left: 1rem;
     padding-top: 8rem;
   }
 
@@ -87,10 +86,6 @@ export default ({
 
   .c-description {
     margin: 0 0 0.5rem;
-  }
-
-  @include phone {
-    width: 100vw;
   }
 }
 </style>

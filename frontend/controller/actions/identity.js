@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
-import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
+import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { encryptedAction } from './utils.js'
@@ -52,7 +52,10 @@ export default (sbp('sbp/selectors/register', {
     // proceed with creation
     // first create the mailbox for the user and subscribe to it
     // and do this outside of a try block so that if it throws the error just gets passed up
-    const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
+    const mailbox = await sbp('gi.actions/mailbox/create', {
+      data: { username },
+      options: { sync: true }
+    })
     const mailboxID = mailbox.contractID()
     let userID
     // next create the identity contract itself and associate it with the mailbox
@@ -61,14 +64,11 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/identity',
         publishOptions,
         data: {
-          attributes: { username, email, picture: finalPicture }
+          attributes: { username, email, picture: finalPicture, mailbox: mailboxID }
         }
       })
       userID = user.contractID()
       await sbp('chelonia/contract/sync', userID)
-      await sbp('gi.actions/identity/setAttributes', {
-        contractID: userID, data: { mailbox: mailboxID }
-      })
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -106,7 +106,7 @@ export default (sbp('sbp/selectors/register', {
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
     if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
-      return sbp('gi.contracts/identity/setLoginState', {
+      return sbp('gi.actions/identity/setLoginState', {
         contractID, data: ourLoginState
       })
     }
@@ -116,6 +116,10 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('state/vuex/state')
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
+    const { mailbox } = getters.currentIdentityState.attributes
+    if (mailbox && !Object.keys(state.contracts).includes(mailbox)) {
+      await sbp('chelonia/contract/sync', mailbox)
+    }
     try {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')
@@ -142,7 +146,20 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       }
-      // note: leaving groups will happen when we sync the removeOurselves message
+      // NOTE: should sync all the identity contracts which are not part of same group
+      // but from the direct messages invited by another
+      const chatRoomUsers = uniq(Object.keys(
+        pickWhere(state.contracts, ({ type }) => type === 'gi.contracts/chatroom')
+      ).map(cID => Object.keys(state[cID].users)).flat())
+      const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
+        return getters.ourUsername !== username && !getters.ourContacts.includes(username)
+      }).map(username => sbp('namespace/lookup', username)))
+
+      for (const identityContractID of additionalIdentityContractIDs) {
+        await sbp('chelonia/contract/sync', identityContractID)
+      }
+
+      // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
         const { contracts } = state
         const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
@@ -197,6 +214,14 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/contract/sync', identityContractID)
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
+
+        // update the 'lastLoggedIn' field in user's group profiles
+        sbp('state/vuex/getters').groupsByName
+          .map(entry => entry.contractID)
+          .forEach(cId => {
+            sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId })
+          })
+
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
         const errMsg = L('Error during login contract sync: {err}', { err: err.message })
@@ -236,5 +261,5 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.'))
+  ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.'))
 }): string[])

@@ -17,6 +17,7 @@
 
 // Our globals.
 declare function logger(err: Error): void
+declare function fetchServerTime(): Promise<string>
 // Nodejs globals.
 declare var process: any
 // Third-party globals
@@ -40,7 +41,10 @@ declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: a
 declare module 'form-data' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
+declare module 'node:fs/promises' { declare module.exports: any }
+declare module 'node:path' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
+declare module 'sqlite3' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
@@ -61,6 +65,8 @@ declare module '@sbp/okturtles.data' { declare module.exports: any }
 declare module '@sbp/okturtles.eventqueue' { declare module.exports: any }
 declare module '@sbp/okturtles.events' { declare module.exports: any }
 declare module 'favico.js' { declare module.exports: any }
+declare module 'lru-cache' { declare module.exports: any }
+declare module 'uuid' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
@@ -82,3 +88,4 @@ declare module '@model/contracts/shared/voting/proposals.js' { declare module.ex
 declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
 declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
+declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }

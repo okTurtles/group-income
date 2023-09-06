@@ -236,6 +236,10 @@ button,
     justify-content: flex-start;
   }
 
+  &.is-end {
+    justify-content: flex-end;
+  }
+
   button,
   .button {
     &:not(:last-child) {

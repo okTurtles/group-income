@@ -13,6 +13,14 @@ import './database.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 
+const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
+const staticServeConfig = {
+  routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',
+  distAssets: path.resolve(isCheloniaDashboard ? 'dist-dashboard/assets' : 'dist/assets'),
+  distIndexHtml: path.resolve(isCheloniaDashboard ? './dist-dashboard/index.html' : './dist/index.html'),
+  redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
+}
+
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
@@ -46,10 +54,10 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsSince/{contractID}/{since}', {}, async function (request, h) {
+route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
-    const stream = await sbp('backend/db/streamEntriesSince', contractID, since)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -143,15 +151,15 @@ route.GET('/time', {}, function (request, h) {
   return new Date().toISOString()
 })
 
-// file upload related
-
 // TODO: if the browser deletes our cache then not everyone
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
 
-const MEGABTYE = 1048576 // TODO: add settings for these
+const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
+// File upload route.
+// If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
   // TODO: only allow uploads from registered users
   payload: {
@@ -162,44 +170,44 @@ route.POST('/file', {
       console.error('failAction error:', err)
       return err
     },
-    maxBytes: 6 * MEGABTYE, // TODO: make this a configurable setting
+    maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
     timeout: 10 * SECOND // TODO: make this a configurable setting
   }
 }, async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
-    console.log(request.payload)
     const { hash, data } = request.payload
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
-    // console.log('typeof data:', typeof data)
     const ourHash = blake32Hash(data)
     if (ourHash !== hash) {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
     }
-    await sbp('backend/db/writeFileOnce', hash, data)
+    await sbp('chelonia/db/set', hash, data)
     return '/file/' + hash
   } catch (err) {
     return logger(err)
   }
 })
 
+// Serve data from Chelonia DB.
+// Note that a `Last-Modified` header isn't included in the response.
 route.GET('/file/{hash}', {
   cache: {
     // Do not set other cache options here, to make sure the 'otherwise' option
     // will be used so that the 'immutable' directive gets included.
     otherwise: 'public,max-age=31536000,immutable'
-  },
-  files: {
-    relativeTo: path.resolve('data')
   }
-}, function (request, h) {
+}, async function (request, h) {
   const { hash } = request.params
   console.debug(`GET /file/${hash}`)
-  // Reusing the given `hash` parameter to set the ETag should be faster than
-  // letting Hapi hash the file to compute an ETag itself.
-  return h.file(hash, { etagMethod: false }).etag(hash)
+
+  const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
+  if (!blobOrString) {
+    return Boom.notFound()
+  }
+  return h.response(blobOrString).etag(hash)
 })
 
 // SPA routes
@@ -221,7 +229,7 @@ route.GET('/assets/{subpath*}', {
     }
   },
   files: {
-    relativeTo: path.resolve('dist/assets')
+    relativeTo: staticServeConfig.distAssets
   }
 }, function (request, h) {
   const { subpath } = request.params
@@ -240,10 +248,10 @@ route.GET('/assets/{subpath*}', {
   return h.file(subpath)
 })
 
-route.GET('/app/{path*}', {}, {
-  file: path.resolve('./dist/index.html')
+route.GET(staticServeConfig.routePath, {}, {
+  file: staticServeConfig.distIndexHtml
 })
 
 route.GET('/', {}, function (req, h) {
-  return h.redirect('/app/')
+  return h.redirect(staticServeConfig.redirect)
 })

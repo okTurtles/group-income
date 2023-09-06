@@ -99,6 +99,7 @@ export default (sbp('sbp/selectors/register', {
     }
     this.manifestToContract = {}
     this.whitelistedActions = {}
+    this.currentSyncs = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
@@ -147,12 +148,14 @@ export default (sbp('sbp/selectors/register', {
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
         },
-        [NOTIFICATION_TYPE.APP_VERSION] (msg) {
+        [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION
-          const theirVersion = msg.data
+          const theirVersion = msg.data.GI_VERSION
 
-          if (ourVersion !== theirVersion) {
-            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.APP_VERSION, theirVersion)
+          const ourContractsVersion = process.env.CONTRACTS_VERSION
+          const theirContractsVersion = msg.data.CONTRACTS_VERSION
+          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         }
       }
@@ -207,22 +210,25 @@ export default (sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: ?Object) => {
-          const sideEffects = this.sideEffectStack(message.contractID)
+        // 'mutation' is an object that's similar to 'message', but not identical
+        [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
+          if (contract.actions[action].sideEffect) {
+            state = state || contract.state(mutation.contractID)
+            const gProxy = gettersProxy(state, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+          }
+          // since both /process and /sideEffect could call /pushSideEffect, we make sure
+          // to process the side effects on the stack after calling /sideEffect.
+          const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
               await contract.sbp(...sideEffect)
             } catch (e) {
-              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
-              this.sideEffectStacks[message.contractID] = [] // clear the side effects
+              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${mutation.description}:`, sideEffect)
+              this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
             }
-          }
-          if (contract.actions[action].sideEffect) {
-            state = state || contract.state(message.contractID)
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(message, { state, ...gProxy })
           }
         }
       }))
@@ -286,6 +292,12 @@ export default (sbp('sbp/selectors/register', {
       })
     }))
   },
+  'chelonia/contract/isSyncing': function (contractID: string, { firstSync = false } = {}): boolean {
+    const isSyncing = !!this.currentSyncs[contractID]
+    return firstSync
+      ? isSyncing && this.currentSyncs[contractID].firstSync
+      : isSyncing
+  },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
@@ -307,8 +319,8 @@ export default (sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsSince/${contractID}/${since}`)
+  'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
+    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -344,7 +356,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/latestContractState': async function (contractID: string) {
-    const events = await sbp('chelonia/out/eventsSince', contractID, contractID)
+    const events = await sbp('chelonia/out/eventsAfter', contractID, contractID)
     let state = {}
     // fast-path
     try {
@@ -385,7 +397,7 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifestHash
     )
-    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
+    hooks?.prepublishContract?.(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
@@ -423,7 +435,7 @@ export default (sbp('sbp/selectors/register', {
 
 function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contractName = regexResult && regexResult[2]
+  const contractName = regexResult?.[2]
   if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
   return contractName
 }
@@ -438,12 +450,12 @@ async function outEncryptedOrUnencryptedAction (
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-  const meta = contract.metadata.create()
+  const meta = await contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const message = GIMessage.createV1_0(contractID, previousHEAD,
+  let message = GIMessage.createV1_0(contractID, previousHEAD,
     [
       opType,
       opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
@@ -451,9 +463,9 @@ async function outEncryptedOrUnencryptedAction (
     manifestHash
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
-  hooks && hooks.prepublish && hooks.prepublish(message)
-  await sbp('chelonia/private/out/publishEvent', message, publishOptions)
-  hooks && hooks.postpublish && hooks.postpublish(message)
+  hooks?.prepublish?.(message)
+  message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
+  hooks?.postpublish?.(message)
   return message
 }
 

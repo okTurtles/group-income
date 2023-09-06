@@ -1,9 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import './database.js'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
+import initDB from './database.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
@@ -11,6 +11,8 @@ import { createMessage, createNotification, createServer, NOTIFICATION_TYPE } fr
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
+
+const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
 // NOTE: migration guides for Hapi v16 -> v17:
 //       https://github.com/hapijs/hapi/issues/3658
@@ -35,6 +37,26 @@ const hapi = new Hapi.Server({
       //   ...(process.env.NODE_ENV === 'development' && ['http://localhost:3000'])
       // ]
     }
+  }
+})
+
+// See https://stackoverflow.com/questions/26213255/hapi-set-header-before-sending-response
+hapi.ext({
+  type: 'onPreResponse',
+  method: function (request, h) {
+    try {
+      // Hapi Boom error responses don't have `.header()`,
+      // but custom headers can be manually added using `.output.headers`.
+      // See https://hapi.dev/module/boom/api/.
+      if (typeof request.response.header === 'function') {
+        request.response.header('X-Frame-Options', 'deny')
+      } else {
+        request.response.output.headers['X-Frame-Options'] = 'deny'
+      }
+    } catch (err) {
+      console.warn(chalk.yellow('[backend] Could not set X-Frame-Options header:', err.message))
+    }
+    return h.continue
   }
 })
 
@@ -66,14 +88,14 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
 sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   serverHandlers: {
     connection (socket: Object, request: Object) {
-      if (process.env.NODE_ENV === 'production') {
-        socket.send(createNotification(NOTIFICATION_TYPE.APP_VERSION, process.env.GI_VERSION))
-      }
+      const versionInfo = { GI_VERSION, CONTRACTS_VERSION }
+      socket.send(createNotification(NOTIFICATION_TYPE.VERSION_INFO, versionInfo))
     }
   }
 }))
 
 ;(async function () {
+  await initDB()
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: GiAuth },

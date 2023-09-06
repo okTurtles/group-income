@@ -1,9 +1,6 @@
 <template lang='pug'>
   .tab-wrapper(:class='{"open": open}')
-    nav.tab-nav-sidebar(
-      aria-label='navigation'
-      @click='open = false'
-    )
+    nav.tab-nav-sidebar(aria-label='navigation')
       .tab-nav-header
         i18n.is-title-2.menu-title(tag='h2') Settings
 
@@ -12,7 +9,6 @@
         :key='index'
       )
         legend.tab-legend(v-if='tabItem.legend') {{ tabItem.legend }}
-        hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
           v-for='(link, index) in tabItem.links'
@@ -25,6 +21,16 @@
           .c-icons
             i.icon-chevron-right
 
+        hr.tab-nav-separator
+
+      .tab-nav-list.is-subtitle(
+        v-for='(tabItem, index) in subNav'
+        :key='"sub-" + index'
+        :class='{ "sublink": tabItem.url }'
+        :data-test='`link-${tabItem.url}`'
+        @click='tabClick(tabItem)'
+      ) {{ tabItem.title }}
+
     section.tab-section
       tab-item
 </template>
@@ -34,6 +40,8 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { L } from '@common/common.js'
+import { contractsVersion } from '~/package.json'
 
 export default ({
   name: 'TabWrapper',
@@ -50,7 +58,15 @@ export default ({
       activeComponent: null,
       title: '',
       transitionName: '',
-      open: true
+      open: true,
+      subNav: [{
+        title: `${L('Version')} ${contractsVersion}`
+      }, {
+        title: L('Acknowledgements'),
+        url: 'acknowledgements',
+        component: 'Acknowledgements',
+        index: 11 // NOTE: index should not be duplicated with the link of tabNav
+      }]
     }
   },
   computed: {
@@ -60,12 +76,12 @@ export default ({
   },
   watch: {
     '$route' (to, from) {
-      const section = to.query.section
-      if (!section) return
+      const tab = to.query.tab
+      if (!tab) return
 
       for (const tabItem of this.tabNav) {
         for (const link of tabItem.links) {
-          if (this.activeTab !== link.index && link.url === section) {
+          if (this.activeTab !== link.index && link.url === tab) {
             this.activeComponent = link.component
             return this.changeTab(link.index)
           }
@@ -88,14 +104,18 @@ export default ({
      * Tab click listener change active tab.
      */
     tabClick (tabItem) {
+      if (!tabItem.url) {
+        return
+      }
       this.title = tabItem.title
       this.activeComponent = tabItem.component
+      this.open = false
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
-          section: tabItem.url
+          tab: tabItem.url
         }
-        this.$router.push({ query })
+        this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
       } else {
         sbp(tabItem.action)
@@ -104,17 +124,33 @@ export default ({
     }
   },
   mounted () {
-    const defaultTab = this.$route.query.section || this.defaultTab
+    const defaultTab = this.$route.query.tab || this.defaultTab
     if (defaultTab) {
-      this.tabNav.forEach(item => {
-        item.links.forEach(link => {
-          if (defaultTab === link.url) {
-            this.activeTab = link.index
-            this.title = link.title
-            this.activeComponent = link.component
-          }
-        })
+      const switchTabIfMatch = (link) => {
+        if (defaultTab === link.url) {
+          this.activeTab = link.index
+          this.title = link.title
+          this.activeComponent = link.component
+        }
+      }
+      const allTabNavLinks = this.tabNav.reduce(
+        (allLinks, item) => [...allLinks, ...item.links], []
+      )
+      // 'fallbackLink' below is for the case where the specified tab route query doesn't match any available tab items in the list. (e.g. ?modal=UserSettings&tab=asdfsadf)
+      // we need to manually direct it to the 'my-account' tab in this case.
+      const fallbackLink = allTabNavLinks.find(item => item.url === 'my-account')
+
+      allTabNavLinks.forEach(item => {
+        switchTabIfMatch(item)
       })
+      this.subNav.forEach(navItem => {
+        switchTabIfMatch(navItem)
+      })
+
+      if (!this.activeComponent) {
+        // if still no matching link is found, fallback to 'my-account' tab.
+        this.tabClick(fallbackLink)
+      }
     }
   },
   beforeDestroy () {
@@ -171,6 +207,7 @@ export default ({
   z-index: 2;
   font-family: "Poppins";
   background-color: $general_2;
+  overflow: hidden auto;
 
   @include desktop {
     position: relative;
@@ -228,6 +265,13 @@ export default ({
   }
 }
 
+.tab-nav-list.is-subtitle {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  text-transform: unset;
+  font-family: "Lato";
+}
+
 .tab-nav-header + .tab-nav-list {
   padding-top: 3rem;
 }
@@ -245,7 +289,7 @@ export default ({
 
 .tab-nav-separator {
   height: 1px;
-  margin: -0.5rem 1rem 1rem;
+  margin: 1rem 1rem 0;
   background: $general_0;
 
   @include desktop {
@@ -269,7 +313,7 @@ export default ({
   }
 
   .tab-section {
-    transform: translateX(10%);
+    // transform: translateX(10%);
 
     @include desktop {
       transform: translateX(0);

@@ -17,6 +17,7 @@
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
+          ref='mincomeAmount'
           inputmode='decimal'
           pattern='[0-9]*'
         )
@@ -73,10 +74,10 @@ export default ({
     form: {
       mincomeAmount: {
         [L('This field is required')]: required,
-        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
-        }
+        },
+        [L('Mincome must be greater than 0')]: mincomePositive
       }
     },
     // validation groups by route name for steps
@@ -97,6 +98,9 @@ export default ({
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode'
     ])
+  },
+  mounted () {
+    this.$refs.mincomeAmount.focus()
   },
   methods: {
     validateMincome () {

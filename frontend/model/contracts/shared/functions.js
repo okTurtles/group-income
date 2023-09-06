@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
+import { INVITE_STATUS, MESSAGE_TYPES, POLL_STATUS } from './constants.js'
 import { DAYS_MILLIS } from './time.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -21,6 +21,33 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 // THEM AS MUCH AS YOU LIKE (and generate new contract versions out of them).
 
 // group.js related
+
+export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[] {
+  let hashes = []
+  if (periodPayments) {
+    const { paymentsFrom } = periodPayments
+    for (const fromUser in paymentsFrom) {
+      for (const toUser in paymentsFrom[fromUser]) {
+        hashes = hashes.concat(paymentsFrom[fromUser][toUser])
+      }
+    }
+  }
+
+  return hashes
+}
+
+export function createPaymentInfo (paymentHash: string, payment: Object): {
+  from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
+} {
+  return {
+    from: payment.meta.username,
+    to: payment.data.toUser,
+    hash: paymentHash,
+    amount: payment.data.amount,
+    isLate: !!payment.data.isLate,
+    when: payment.data.completedDate
+  }
+}
 
 export function createInvite ({ quantity = 1, creator, expires, invitee }: {
   quantity: number, creator: string, expires: number, invitee?: string
@@ -46,23 +73,35 @@ export function createInvite ({ quantity = 1, creator, expires, invitee }: {
 
 // chatroom.js related
 
-export function createMessage ({ meta, data, hash, state }: {
-  meta: Object, data: Object, hash: string, state?: Object
+export function createMessage ({ meta, data, hash, id, state }: {
+  meta: Object, data: Object, hash: string, id: string, state?: Object
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
 
   let newMessage = {
     type,
-    datetime: new Date(createdDate).toISOString(),
-    id: hash,
-    from: meta.username
+    id,
+    hash,
+    from: meta.username,
+    datetime: new Date(createdDate).toISOString()
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
   } else if (type === MESSAGE_TYPES.POLL) {
-    // TODO: Poll message creation
+    const pollData = data.pollData
+
+    newMessage = {
+      ...newMessage,
+      pollData: {
+        ...pollData,
+        creator: meta.username,
+        status: POLL_STATUS.ACTIVE,
+        // 'voted' field below will contain the user names of the users who has voted for this option
+        options: pollData.options.map(opt => ({ ...opt, voted: [] }))
+      }
+    }
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
     const params = {
       channelName: state?.attributes.name,
@@ -75,7 +114,10 @@ export function createMessage ({ meta, data, hash, state }: {
       notification: { type: data.notification.type, params }
     }
   } else if (type === MESSAGE_TYPES.INTERACTIVE) {
-    // TODO: Interactive message creation for proposals
+    newMessage = {
+      ...newMessage,
+      proposal: data.proposal
+    }
   }
   return newMessage
 }
@@ -108,9 +150,9 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
-export function findMessageIdx (id: string, messages: Array<Object>): number {
+export function findMessageIdx (hash: string, messages: Array<Object>): number {
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].id === id) {
+    if (messages[i].hash === hash) {
       return i
     }
   }

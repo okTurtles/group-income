@@ -17,7 +17,7 @@ export type Notification = {
   +level: NotificationLevel;
   +linkTo: string;
   read: boolean;
-  // When the notification object was created.
+  // When the corresponding event happened.
   +timestamp: number;
   +type: string;
   // Other properties might be defined according to the notification's type.
@@ -26,6 +26,7 @@ export type Notification = {
 
 export type NotificationData = {
   [key: string]: boolean | number | string;
+  createdDate?: string;
 }
 
 export type NotificationLevel = 'danger' | 'info';
@@ -37,7 +38,8 @@ export type NotificationTemplate = {
   +body: string;
   +icon: string;
   +level: NotificationLevel;
-  +linkTo: string;
+  +linkTo?: string;
+  +sbpInvocation?: Array<string | Object>;
   +scope: NotificationScope;
   +creator?: string;
   +subtype?: string;

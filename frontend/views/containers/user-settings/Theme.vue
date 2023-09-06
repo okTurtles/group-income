@@ -22,35 +22,26 @@
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-import Themes from '~/frontend/model/colors.js'
+import Themes from '~/frontend/model/settings/colors.js'
 import ThemeSvg from './ThemeSvg.vue'
 import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default ({
   name: 'SelectorTheme',
-
   mixins: [colorsMixins],
-
   data () {
     return {
-      themes: Themes
+      themes: Themes // TODO: needs translate label
     }
   },
-
   components: {
     ThemeSvg
   },
-
   methods: {
-    ...mapMutations([
-      'setTheme'
-    ])
+    ...mapMutations(['setTheme'])
   },
-
   computed: {
-    ...mapGetters([
-      'theme'
-    ])
+    ...mapGetters(['theme'])
   }
 }: Object)
 </script>
@@ -62,6 +53,10 @@ export default ({
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   column-gap: 0.75rem;
+
+  @include phone {
+    grid-template-columns: auto;
+  }
 }
 
 .radio {

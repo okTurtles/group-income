@@ -36,7 +36,6 @@ import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import ProposalItem from './ProposalItem.vue'
 import { mapGetters, mapState } from 'vuex'
-// import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PropositionsAllModal',
@@ -54,13 +53,8 @@ export default ({
     }
   }),
   async mounted () {
-    // const openProposals = Object.entries(this.currentGroupState.proposals)
-    //   .sort((a, b) => {
-    //     return compareISOTimestamps(a[1].meta.createdDate, b[1].meta.createdDate)
-    //   })
     const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
     const archivedProposals = await sbp('gi.db/archive/load', key) || []
-    // this.ephemeral.proposals = openProposals.concat(archivedProposals)
     this.ephemeral.proposals = archivedProposals
   },
   methods: {

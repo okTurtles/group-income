@@ -1,15 +1,18 @@
 <template lang='pug'>
 div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
-  header.p-header
+  header.p-header(
+    :class='miniHeader ? "p-mini-header" : ""'
+  )
     slot(name='header')
     h1.is-title-2.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
         alt=''
       )
-      slot(name='title')
+      span
+        slot(name='title')
 
-    toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
+    toggle(v-if='$scopedSlots.sidebar' @toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     slot(name='description')
 
   main.p-main(:class='mainClass')
@@ -38,7 +41,11 @@ export default ({
   props: {
     pageTestName: String,
     pageTestHeaderName: String,
-    mainClass: String
+    mainClass: String,
+    miniHeader: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
@@ -85,11 +92,11 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-with-sidebar,
 .p-no-sidebar {
-  height: 100vh;
+  height: 100%;
   width: 100vw;
 
   @include desktop {
-    height: 100vh;
+    height: 100%;
     width: auto;
   }
 }
@@ -97,11 +104,11 @@ $pagePaddingDesktop: 5.5rem;
 .p-with-sidebar {
   display: grid;
   grid-template-areas: "p-header" "p-main";
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 
   @include desktop {
-    grid-template-columns: 1fr $rightSideWidth;
+    grid-template-columns: minmax(0, 1fr) $rightSideWidth;
     grid-template-areas:
       "p-header p-sidebar"
       "p-main p-sidebar";
@@ -114,6 +121,7 @@ $pagePaddingDesktop: 5.5rem;
   margin: 0 auto;
   padding-top: 1.5rem;
   max-width: 50rem;
+  height: fit-content;
   @include overflow-touch;
 
   &.full-width {
@@ -156,6 +164,12 @@ $pagePaddingDesktop: 5.5rem;
     padding-left: $pagePaddingDesktop;
   }
 
+  &.p-mini-header {
+    @include desktop {
+      min-height: 2.75rem;
+    }
+  }
+
   .c-toggle.sidebar {
     right: -1rem;
 
@@ -168,6 +182,17 @@ $pagePaddingDesktop: 5.5rem;
 .p-title {
   display: flex;
   align-items: center;
+
+  & > span {
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @include touch {
+    max-width: 65vw;
+  }
 }
 
 .c-logo {
@@ -182,11 +207,11 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-sidebar {
   grid-area: p-sidebar;
-  position: absolute;
+  position: fixed;
   z-index: $zindex-sidebar;
   right: 0;
   width: $rightSideWidth;
-  height: 100vh;
+  height: 100%;
   background-color: $general_2;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
@@ -199,7 +224,6 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include desktop {
-    position: fixed;
     transform: translateX(0%);
   }
 
@@ -215,7 +239,7 @@ $pagePaddingDesktop: 5.5rem;
     transform: translateX(0);
 
     .c-toggle {
-      height: 100vh;
+      height: 100%;
       display: block;
     }
   }

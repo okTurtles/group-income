@@ -1,5 +1,8 @@
 <template lang='pug'>
-  div(:class='variant')
+  div(
+    data-test='notificationList'
+    :class='variant'
+  )
     .c-loading(v-if='ephemeral.isLoading')
       i18n.sr-only Loading...
       .c-skeleton(v-for='i in [0, 1, 2, 3]' :key='i')
@@ -15,10 +18,15 @@
         :aria-label='list.title'
       )
         li(v-for='item of list.items')
-          a.c-item(:class='item.read ? "" : "unread"' @click='handleItemClick(item)' draggable='false' @selectstart='ephemeral.isSelectingText = true')
+          a.c-item(
+            :class='item.read ? "" : "unread"'
+            @click='handleItemClick(item)'
+            draggable='false'
+            @selectstart='ephemeral.isSelectingText = true'
+          )
             span.c-thumbCircle
               avatar-user(:username='item.avatarUsername' size='md')
-              i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
+              i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
               span.c-item-text(v-safe-html='item.body')
               span.c-item-date.has-text-1.has-text-small {{ ageTag(item) }}
@@ -73,13 +81,18 @@ export default ({
     }
   },
   methods: {
-    ageTag (item: Object): number {
+    ageTag (item: Object): string {
       return timeSince(item.timestamp)
     },
     handleItemClick (item) {
-      if (!this.ephemeral.isSelectingText) {
+      if (!this.ephemeral.isSelectingText || !window.getSelection().toString()) {
         this.markAsRead(item)
-        this.$router.push(item.linkTo).catch(console.warn)
+
+        if (item.sbpInvocation) {
+          sbp(...item.sbpInvocation)
+        } else if (item.linkTo) {
+          this.$router.push(item.linkTo).catch(console.warn)
+        }
         this.$emit('select')
       }
       this.ephemeral.isSelectingText = false

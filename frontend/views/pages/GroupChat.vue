@@ -1,77 +1,89 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName')
-  template(#title='')
-    .c-header
-      i(
-        v-if='summary.private !== undefined'
-        :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
-      )
-      | {{summary.title}}
-      menu-parent(v-if='summary.joined')
+page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
+  template(#header='')
+    .c-header(data-test='channelName')
+      .avatar-wrapper(v-if='summary.picture')
+        avatar(
+          :src='summary.picture'
+          alt='Partner Picture'
+          size='sm'
+        )
+      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
+      h1.is-title-2.p-title {{summary.title}}
+      menu-parent.c-menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
-        menu-content
+        menu-content.c-responsive-menu
           menu-header
             i18n Channel Options
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator'
+              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
-            menu-item(@click='openModal("ChatMembersAllModal")')
-              i18n Members
             menu-item(
-              :class='`${!summary.general ? "c-separator" : ""}`'
-              @click='openModal("UserSettingsModal", {section: "notifications"})'
+              v-if='ourUsername === summary.attributes.creator && !isDirectMessage()'
+              @click='editDescription'
+              data-test='updateDescription'
+            )
+              i18n(v-if='!summary.attributes.description') Add description
+              i18n(v-else) Update description
+            menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
+              i18n Members
+            menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
+              i18n Add People
+            menu-item(
+              :class='`${!summary.isGeneral && !isDirectMessage() ? "c-separator" : ""}`'
+              @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
-              i18n Notifications settings
+              i18n Notification settings
             menu-item(
-              v-if='!summary.general'
+              v-if='!summary.isGeneral && !isDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator'
+              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
               i18n Delete channel
 
-  template(#description='')
+  template(#description='' v-if='!isDirectMessage()')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
         @click='openModal("ChatMembersAllModal")'
-        :args='{ numMembers: members.size  }'
+        :args='{ numMembers: summary.numberOfUsers  }'
         data-test='channelMembers'
       ) {numMembers} members
-      | ∙
-      .is-unstyled(
-        :class='{"c-link": ourUsername === summary.creator}'
-        v-if='summary.description'
-        data-test='updateDescription'
-        @click='editDescription'
+      template(
+        v-if='summary.attributes.description || ourUsername === summary.attributes.creator'
       )
-        | {{ summary.description }}
-        i.icon-pencil-alt
+        | ∙
+        .is-unstyled(
+          v-if='summary.attributes.description'
+          :class='{"c-link": ourUsername === summary.attributes.creator}'
+          data-test='updateDescription'
+          @click='editDescription'
+        )
+          | {{ summary.attributes.description }}
+          i.icon-pencil-alt
 
-      i18n.is-unstyled(
-        v-else
-        :class='{"c-link": ourUsername === summary.creator}'
-        data-test='updateDescription'
-        @click='editDescription'
-      ) Add description
+        i18n.is-unstyled.c-link(
+          v-else
+          data-test='updateDescription'
+          @click='editDescription'
+        ) Add description
 
   template(#sidebar='')
-    chat-nav(
-      :title='L("Chat")'
-    )
+    chat-nav(:title='L("Chat")')
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
@@ -79,40 +91,38 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         route-name='GroupChatConversation'
       )
 
-      group-members(:title='L("Direct Messages")' action='chat')
+      chat-members(:title='L("Direct Messages")' action='addDirectMessage')
 
   .card.c-card
-    chat-main(
-      :summary='summary'
-      :details='details'
-      :type='type.groups'
-    )
+    chat-main(:summary='summary')
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
+import Avatar from '@components/Avatar.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
-import chatroom from '@containers/chatroom/chatroom.js'
-import GroupMembers from '@containers/dashboard/GroupMembers.vue'
+import ChatMixin from '@containers/chatroom/ChatMixin.js'
+import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
   mixins: [
-    chatroom
+    ChatMixin
   ],
   components: {
     Page,
+    Avatar,
     ChatNav,
     ChatMain,
     ConversationsList,
-    GroupMembers,
+    ChatMembers,
     MenuParent,
     MenuHeader,
     MenuTrigger,
@@ -125,16 +135,16 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'isJoinedChatRoom',
-      'getChatRooms',
+      'getGroupChatRooms',
       'ourUsername'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getChatRooms || {}).map(chatRoomID => ({
-        name: this.getChatRooms[chatRoomID].name,
-        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
+      return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
+        name: this.getGroupChatRooms[chatRoomID].name,
+        privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),
         id: chatRoomID
-      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+      })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
         const formerName = former.name
         const latterName = latter.name
         if (former.joined === latter.joined) {
@@ -153,18 +163,6 @@ export default ({
         order: this.getChatRoomIDsInSort,
         channels: this.chatRoomsInDetail
       }
-    },
-    members () {
-      return {
-        users: this.details.participants,
-        size: this.details.numberOfParticipants
-      }
-    },
-    type () {
-      return {
-        members: CHATROOM_TYPES.INDIVIDUAL,
-        groups: CHATROOM_TYPES.GROUP
-      }
     }
   },
   methods: {
@@ -172,25 +170,20 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     editDescription () {
-      if (this.ourUsername === this.summary.creator) {
-        this.openModal('EditChannelDescriptionModal')
-      }
+      this.openModal('EditChannelDescriptionModal')
     }
   },
   watch: {
     '$route' (to: Object, from: Object) {
-      const { chatRoomId } = to.params
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
-          this.redirectChat('GroupChatConversation')
-        } else {
-          this.updateCurrentChatRoomID(to.params.chatRoomId)
-          if (!this.isJoinedChatRoom(chatRoomId)) {
-            this.loadSummaryAndDetails()
-          }
+      const { chatRoomId } = to.params
+      if (chatRoomId && chatRoomId !== from.params.chatRoomId) {
+        this.updateCurrentChatRoomID(chatRoomId)
+        // NOTE: No need to consider not-joined private chatroom because it's impossible
+        if (!this.isJoinedChatRoom(chatRoomId)) {
+          this.loadLatestState(chatRoomId)
         }
       }
     }
@@ -204,9 +197,20 @@ export default ({
 .c-card {
   margin-top: -1.5rem;
   padding: 0;
+  height: 100%;
+  margin-bottom: 0;
+  border-radius: 0.625rem;
 
   @include tablet {
+    height: calc(100% - 3rem);
     margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  @include phone {
+    margin: -1.5rem -1rem 0 -1rem;
+    height: calc(100% + 1.5rem);
+    border-radius: 0.625rem 0.625rem 0 0;
   }
 
   &:last-child {
@@ -214,9 +218,17 @@ export default ({
   }
 }
 
-::v-deep .c-logo {
-  @include touch {
-    display: none;
+::v-deep {
+  .c-logo {
+    @include touch {
+      display: none;
+    }
+  }
+
+  .p-main {
+    height: auto !important;
+    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+    max-width: unset !important;
   }
 }
 
@@ -224,6 +236,19 @@ export default ({
   text-transform: capitalize;
   display: flex;
   align-items: center;
+  position: relative;
+
+  .p-title {
+    display: block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include touch {
+      max-width: 55vw;
+    }
+  }
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -233,13 +258,15 @@ export default ({
 
   .c-menu {
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
   }
 
   .c-header {
-    font-size: 0.75rem;
+    font-size: $size_5;
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
+
     @include tablet {
       padding-top: 0;
     }
@@ -247,10 +274,8 @@ export default ({
 
   .c-content {
     min-width: 17.5rem;
-    font-size: 0.875rem;
+    font-size: $size_4;
     font-weight: 400;
-
-    @extend %floating-panel;
 
     @include desktop {
       left: -6.8rem;
@@ -314,6 +339,22 @@ export default ({
 
   .c-menu-i {
     transform: rotate(180deg);
+  }
+}
+
+.avatar-wrapper {
+  margin-right: 0.5rem;
+}
+
+.c-menu-parent.c-menu {
+  @include tablet {
+    position: unset;
+
+    .c-responsive-menu {
+      left: 0;
+      right: auto;
+      top: 2.5rem;
+    }
   }
 }
 </style>

@@ -7,53 +7,48 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import Colors from './colors.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
+import settingsModule from '~/frontend/model/settings/vuexModule.js'
 
 Vue.use(Vuex)
 
-const checkSystemColor = () => {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
-    ? THEME_DARK
-    : THEME_LIGHT
+const initialState = {
+  currentGroupId: null,
+  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
+  chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
+  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
+  chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
+  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  pending: [], // contractIDs we've just published but haven't received back yet
+  loggedIn: false, // false | { username: string, identityContractID: string }
+  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
 }
-
-const defaultTheme = 'system'
-const defaultColor = checkSystemColor()
 
 if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (store.state.theme === 'system') {
+    if (sbp('state/vuex/getters').theme === 'system') {
       store.commit('setTheme', 'system')
     }
   })
 }
 
-const initialState = {
-  currentGroupId: null,
-  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
-  chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
-  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
-  loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: defaultTheme,
-  themeColor: defaultColor,
-  reducedMotion: false,
-  notificationEnabled: true,
-  increasedContrast: false,
-  fontSize: 16,
-  appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info']
-}
+const reactiveDate = Vue.observable({ date: new Date() })
+setInterval(function () {
+  // We want the getters to recalculate all of the payments within 1 minute of us entering a new period.
+  const rememberedPeriodStamp = store.getters.periodStampGivenDate?.(reactiveDate.date)
+  const currentPeriodStamp = store.getters.periodStampGivenDate?.(new Date())
+  if (rememberedPeriodStamp !== currentPeriodStamp) {
+    reactiveDate.date = new Date()
+  }
+}, 60 * 1000)
 
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
@@ -61,20 +56,32 @@ sbp('sbp/selectors/register', {
   'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
+  'state/vuex/settings': () => store.state.settings,
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
-    if (!state.notifications) {
-      state.notifications = []
-    }
-    if (!state.currentChatRoomIDs) {
-      state.currentChatRoomIDs = {}
-    }
-    if (!state.chatRoomScrollPosition) {
-      state.chatRoomScrollPosition = {}
-    }
-    if (!state.chatRoomUnread) {
-      state.chatRoomUnread = {}
+    // Example:
+    // if (!state.notifications) {
+    //   state.notifications = []
+    // }
+
+    // TODO: need to remove the whole content after we release 0.2.*
+    for (const chatRoomId in state.chatRoomUnread) {
+      if (!state.chatRoomUnread[chatRoomId].messages) {
+        state.chatRoomUnread[chatRoomId].messages = []
+      }
+      if (state.chatRoomUnread[chatRoomId].mentions) {
+        state.chatRoomUnread[chatRoomId].mentions.forEach(m => {
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.TEXT }, m))
+        })
+        Vue.delete(state.chatRoomUnread[chatRoomId], 'mentions')
+      }
+      if (state.chatRoomUnread[chatRoomId].others) {
+        state.chatRoomUnread[chatRoomId].others.forEach(o => {
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
+        })
+        Vue.delete(state.chatRoomUnread[chatRoomId], 'others')
+      }
     }
   },
   'state/vuex/save': async function () {
@@ -96,48 +103,11 @@ const mutations = {
     state.loggedIn = user
   },
   logout (state) {
-    state.loggedIn = false
-    state.currentGroupId = null
-  },
-  deleteMessage (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages.splice(index, 1) }
-  },
-  markMessageAsRead (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages[index].read = true }
+    Object.assign(state, cloneDeep(initialState))
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
-  },
-  setTheme (state, theme) {
-    state.theme = theme
-    state.themeColor = theme === 'system' ? checkSystemColor() : theme
-  },
-  setReducedMotion (state, isChecked) {
-    state.reducedMotion = isChecked
-  },
-  setTemporaryReducedMotion (state) {
-    const tempSettings = state.reducedMotion
-    state.reducedMotion = true
-    setTimeout(() => {
-      state.reducedMotion = tempSettings
-    }, 300)
-  },
-  setNotificationEnabled (state, enabled) {
-    state.notificationEnabled = enabled
-  },
-  setIncreasedContrast (state, isChecked) {
-    state.increasedContrast = isChecked
-  },
-  setFontSize (state, fontSize) {
-    state.fontSize = fontSize
-  },
-  setAppLogsFilters (state, filters) {
-    state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
     if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
@@ -150,42 +120,50 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
-  setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
-    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
+  setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)
   },
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
-    const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
+  setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
     Vue.set(state.chatRoomUnread, chatRoomId, {
-      since: { messageId, createdDate, deletedDate: null },
-      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+      readUntil: { messageHash, createdDate, deletedDate: null },
+      messages: state.chatRoomUnread[chatRoomId].messages
+        ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
     })
-  },
-  deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
-    Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
-      ...state.chatRoomUnread[chatRoomId].since,
-      deletedDate
-    })
-  },
-  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
-    const prevUnread = state.chatRoomUnread[chatRoomId]
-    if (!prevUnread) {
-      return
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // hack: delete me after upgrade to 0.2.x!
+      Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', [])
+      Vue.set(state.chatRoomUnread[chatRoomId], 'others', [])
     }
-    prevUnread.mentions.push({ messageId, createdDate })
   },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
-    const prevUnread = state.chatRoomUnread[chatRoomId]
-    if (!prevUnread) {
-      return
-    }
-
-    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
+  deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
+    Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
+  },
+  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, type }) {
+    state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
+  },
+  deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
+    Vue.set(
+      state.chatRoomUnread[chatRoomId],
+      'messages',
+      state.chatRoomUnread[chatRoomId].messages.filter(m => m.messageHash !== messageHash)
+    )
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
+  },
+  setChatroomNotificationSettings (state, { chatRoomId, settings }) {
+    if (chatRoomId) {
+      if (!state.chatNotificationSettings[chatRoomId]) {
+        Vue.set(state.chatNotificationSettings, chatRoomId, {})
+      }
+      for (const key in settings) {
+        Vue.set(state.chatNotificationSettings[chatRoomId], key, settings[key])
+      }
+    }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
@@ -230,16 +208,17 @@ const getters = {
   currentChatRoomState (state, getters) {
     return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
-  mailboxContract (state, getters) {
+  currentMailboxState (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
-  mailboxMessages (state, getters) {
-    const mailboxContract = getters.mailboxContract
-    return (mailboxContract && mailboxContract.messages) || []
-  },
-  unreadMessageCount (state, getters) {
-    return getters.mailboxMessages.filter(msg => !msg.read).length
+  chatNotificationSettings (state) {
+    return Object.assign({
+      default: {
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+      }
+    }, state.chatNotificationSettings || {})
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
@@ -326,12 +305,16 @@ const getters = {
   },
   userDisplayName (state, getters) {
     return (username) => {
-      const profile = getters.globalProfile(username) || {}
+      if (username === getters.ourUsername) {
+        return getters.ourUserDisplayName
+      }
+      const profile = getters.ourContactProfiles[username] || {}
       return profile.displayName || username
     }
   },
+  // this getter gets recomputed automatically according to the setInterval on reactiveDate
   currentPaymentPeriod (state, getters) {
-    return getters.periodStampGivenDate(new Date())
+    return getters.periodStampGivenDate(reactiveDate.date)
   },
   thisPeriodPaymentInfo (state, getters) {
     return getters.groupPeriodPayments[getters.currentPaymentPeriod]
@@ -383,11 +366,11 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
@@ -405,13 +388,13 @@ const getters = {
             if (toUser === ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
               }
             }
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPayments (state, getters) {
@@ -473,7 +456,7 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return []
+    if (!profiles || !profiles[getters.ourUsername]) return []
     const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
@@ -509,6 +492,9 @@ const getters = {
         return nameA < nameB ? -1 : 1
       })
   },
+  groupProposals (state, getters) {
+    return contractID => state[contractID]?.proposals
+  },
   globalProfile (state, getters) {
     // get profile from username who is part of current group
     return username => {
@@ -525,17 +511,98 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  colors (state) {
-    return Colors[state.themeColor]
+  ourContactProfiles (state, getters) {
+    const profiles = {}
+    Object.keys(state.contracts)
+      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .forEach(contractID => {
+        const attributes = state[contractID].attributes
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
+          profiles[attributes.username] = { ...attributes, contractID }
+        }
+      })
+    return profiles
   },
-  fontSize (state) {
-    return state.fontSize
+  ourContacts (state, getters) {
+    return Object.keys(getters.ourContactProfiles)
+      .sort((usernameA, usernameB) => {
+        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase() || usernameA
+        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase() || usernameB
+        return nameA > nameB ? 1 : -1
+      })
   },
-  theme (state) {
-    return state.theme
+  ourPrivateDirectMessages (state, getters) {
+    const privateDMs = {}
+    const contractIDs = Object.keys(getters.ourDirectMessages)
+      .filter(cID => getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && state[cID])
+    for (const contractID of contractIDs) {
+      const usernames = Object.keys(state[contractID].users || {}) // NOTE: empty object is used while syncing the contract
+      const partner = usernames[0] === getters.ourUsername ? usernames[1] : usernames[0]
+      if (partner) {
+        privateDMs[partner] = {
+          ...getters.ourDirectMessages[contractID],
+          contractID
+        }
+      }
+    }
+    return privateDMs
   },
-  isDarkTheme (state) {
-    return state.themeColor === THEME_DARK
+  ourGroupDirectMessages (state, getters) {
+    const groupDMs = {}
+    for (const cID of Object.keys(getters.ourDirectMessages)) {
+      if (getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP && state[cID]) {
+        groupDMs[cID] = getters.ourDirectMessages[cID]
+      }
+    }
+    return groupDMs
+  },
+  isDirectMessage (state, getters) {
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
+    }
+  },
+  isPrivateDirectMessage (state, getters) {
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isGroupDirectMessage (state, getters) {
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
+    }
+  },
+  isPrivateChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return state[contractID]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string, username?: string) => {
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users?.[username]
+    }
+  },
+  groupDirectMessageInfo (state, getters) {
+    return chatRoomId => {
+      const usernames = Object.keys(state[chatRoomId].users).filter(username => username !== getters.ourUsername)
+      const lastJoined = usernames.reduce((lastJoined, username) => {
+        const lastJoinedDate = state[chatRoomId].users[lastJoined].joinedDate
+        const currentJoinedDate = state[chatRoomId].users[username].joinedDate
+        return lastJoinedDate > currentJoinedDate ? lastJoined : username
+      }, usernames[0])
+      return {
+        contractID: chatRoomId,
+        title: usernames.join(', '),
+        othersCount: usernames.length,
+        picture: getters.ourContactProfiles[lastJoined]?.picture
+      }
+    }
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -546,15 +613,38 @@ const getters = {
   ourUnreadMessages (state, getters) {
     return state.chatRoomUnread
   },
-  currentChatRoomUnreadSince (state, getters) {
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
+  currentChatRoomReadUntil (state, getters) {
+    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
-  currentChatRoomUnreadMentions (state, getters) {
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
+  chatRoomUnreadMessages (state, getters) {
+    return (chatRoomId: string) => {
+      // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
+      return getters.ourUnreadMessages[chatRoomId]?.messages || []
+    }
   },
   chatRoomUnreadMentions (state, getters) {
     return (chatRoomId: string) => {
-      return getters.ourUnreadMessages[chatRoomId]?.mentions || []
+      // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
+      return (getters.ourUnreadMessages[chatRoomId]?.messages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
+    }
+  },
+  groupUnreadMessages (state, getters) {
+    return (groupID: string) => Object.keys(getters.ourUnreadMessages)
+      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
+      .map(cID => getters.ourUnreadMessages[cID].messages.length)
+      .reduce((sum, n) => sum + n, 0)
+  },
+  directMessageIDFromUsername (state, getters) {
+    return (username: string) => getters.ourPrivateDirectMessages[username]?.contractID
+  },
+  usernameFromDirectMessageID (state, getters) {
+    return (chatRoomId: string) => {
+      for (const username of Object.keys(getters.ourPrivateDirectMessages)) {
+        if (getters.ourPrivateDirectMessages[username].contractID === chatRoomId) {
+          return username
+        }
+      }
     }
   },
   groupIdFromChatRoomId (state, getters) {
@@ -562,28 +652,16 @@ const getters = {
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
         Object.keys(state[cId].chatRooms).includes(chatRoomId))
   },
-  isPrivateChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
-  },
-  isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => {
-      username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users?.[username]
-    }
-  },
   chatRoomsInDetail (state, getters) {
-    const chatRoomsInDetail = merge({}, getters.getChatRooms)
+    const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
-        const unreadMentionsCount = getters.chatRoomUnreadMentions(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadMentionsCount,
+          unreadMessagesCount: getters.chatRoomUnreadMessages(contractID).length,
           joined: true
         }
       } else {
@@ -605,9 +683,19 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   modules: {
-    notifications: notificationModule
+    notifications: notificationModule,
+    settings: settingsModule
   },
   strict: false // we're intentionally modifying state outside of commits
+})
+
+// Somewhat of a hack, I'm not sure why this is necessary now, but ever since changing how
+// getters.currentPaymentPeriod works, this is necessary to force the UI to update immediately
+// after a payment is made.
+store.watch(function (state, getters) {
+  return getters.currentGroupState.settings?.distributionDate
+}, function () {
+  reactiveDate.date = new Date()
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
@@ -636,7 +724,8 @@ if (process.env.NODE_ENV === 'development') {
 const omitGetters = {
   'gi.contracts/group': ['currentGroupState'],
   'gi.contracts/identity': ['currentIdentityState'],
-  'gi.contracts/chatroom': ['currentChatRoomState']
+  'gi.contracts/chatroom': ['currentChatRoomState'],
+  'gi.contracts/mailbox': ['currentMailboxState']
 }
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   const { contracts: { manifests } } = sbp('chelonia/config')
@@ -647,6 +736,28 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
     store.registerModule(contract.name, {
       getters: omit(contract.getters, omitGetters[contract.name] || [])
     })
+
+    if (contract.name === 'gi.contracts/group') {
+      store.watch(
+        (state, getters) => getters.currentPaymentPeriod,
+        (newPeriod, oldPeriod) => {
+          // This watcher is for automatically syncing 'currentPaymentPeriod' with 'groupSettings.distributionDate'.
+          // Before bringing this logic in, how the app updates the state related to group distribution period was,
+          // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
+          // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
+          // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
+
+          // Note: if this code gets called when we're in the period before the 1st distribution
+          //       period, then the distributionDate will get updated to the previous distribution date
+          //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
+          //       before it should.
+          const distributionDateInSettings = store.getters.groupSettings.distributionDate
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
+            sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+          }
+        }
+      )
+    }
   }
 })
 

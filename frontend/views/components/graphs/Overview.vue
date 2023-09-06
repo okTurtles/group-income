@@ -1,5 +1,9 @@
 <template lang='pug'>
 div
+  i18n.is-title-3(
+    tag='h2'
+  ) This month's overview
+
   i18n.has-text-1(tag='p') Group members and their pledges
   .c-chart
     ul.c-chart-legends
@@ -33,8 +37,8 @@ div
 </template>
 
 <script>
-import currencies from '@model/contracts/shared/currencies.js'
 import { mapGetters } from 'vuex'
+import currencies from '@model/contracts/shared/currencies.js'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
 
 export default ({

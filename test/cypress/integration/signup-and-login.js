@@ -20,11 +20,21 @@ describe('Signup, Profile and Login', () => {
 
   it('user1 changes avatar and profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest
+    let profilePictureDataURI
 
     cy.getByDT('settingsBtn').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
+      profilePictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.getByDT('avatar').attachFile({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
+    })
+
+    cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
+    cy.getByDT('AvatarEditorModal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
+      cy.getByDT('imageHelperTag').invoke('attr', 'src', profilePictureDataURI)
+      cy.getByDT('imageCanvas').should('exist')
+      cy.getByDT('saveBtn').click()
     })
 
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
@@ -44,6 +54,25 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('profileDisplayName').should('contain', 'John Bot')
     cy.getByDT('profileName').should('contain', username)
     cy.giLogout()
+  })
+
+  it('sign up button remains disabled if passwords are not the same', () => {
+    const user2 = `user2-${userId}`
+    const password = '123456789'
+    const wrongPassword = 'wRoNgPaSsWoRd123'
+
+    cy.getByDT('signupBtn').click()
+
+    cy.getByDT('signName').type(user2)
+    cy.getByDT('signEmail').type(`${user2}@email.com`)
+    cy.getByDT('password').type(password)
+    cy.getByDT('passwordConfirm').type(wrongPassword)
+    cy.getByDT('signSubmit').should('be.disabled')
+
+    cy.getByDT('passwordConfirm').clear().type(password)
+    cy.getByDT('signSubmit').should('not.be.disabled')
+
+    cy.closeModal()
   })
 
   it('prevent incorrect logins/signup actions', () => {

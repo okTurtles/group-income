@@ -6,7 +6,7 @@
   )
     .button.is-icon-smaller.c-tip
       i.icon-info
-    i18n.pill.is-warning Not received
+    i18n.pill.is-warning.c-tip-text(v-if='!hideText') Not received
 </template>
 
 <script>
@@ -18,7 +18,12 @@ export default ({
     Tooltip
   },
   props: {
-    member: String
+    member: String,
+    hideText: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
   }
 }: Object)
 </script>
@@ -27,6 +32,9 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-tooltip-warning {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
   outline: none;
 
   .c-tip {
@@ -56,5 +64,4 @@ export default ({
     color: #fff;
   }
 }
-
 </style>
