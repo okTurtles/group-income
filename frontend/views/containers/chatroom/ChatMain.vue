@@ -627,8 +627,9 @@ export default ({
       }
     },
     throttledJumpToLatest: throttle(function (_this) {
+      // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
       _this.jumpToLatest('instant')
-    }, 250),
+    }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
