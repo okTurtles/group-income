@@ -41,10 +41,13 @@ const encryptData = function (eKeyId: string, data: any) {
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (height: number, data: string, additionalKeys: Object, validatorFn?: (v: any) => void) {
+const decryptData = function (height: number, data: any, additionalKeys: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
+
+  // Compatibility with signedData (composed signed + encrypted data)
+  if (typeof data.valueOf === 'function') data = data.valueOf()
 
   if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
     throw new ChelErrorDecryptionError('Invalid message format')
@@ -144,8 +147,7 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
     : Object.assign(Object(data), returnProps)
 }
 
-export const encryptedIncomingData = (contractID: string, state: Object, data: string, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
-  const stringValueFn = () => data
+export const encryptedIncomingData = (contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
@@ -157,14 +159,13 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
   }
 
   return {
-    toJSON: stringValueFn,
-    toString: () => JSON.stringify(stringValueFn),
+    toJSON: () => data,
+    toString: () => JSON.stringify(data),
     valueOf: decryptedValueFn
   }
 }
 
-export const encryptedIncomingForeignData = (contractID: string, _0: any, data: string, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
-  const stringValueFn = () => data
+export const encryptedIncomingForeignData = (contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
@@ -176,13 +177,13 @@ export const encryptedIncomingForeignData = (contractID: string, _0: any, data: 
   }
 
   return {
-    toJSON: stringValueFn,
-    toString: () => JSON.stringify(stringValueFn),
+    toJSON: () => data,
+    toString: () => JSON.stringify(data),
     valueOf: decryptedValueFn
   }
 }
 
-export const encryptedDataKeyId = (data: string): string => {
+export const encryptedDataKeyId = (data: any): string => {
   if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
     throw new ChelErrorDecryptionError('Invalid message format')
   }

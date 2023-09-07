@@ -185,6 +185,7 @@ export default (sbp('sbp/selectors/register', {
       parseInt,
       Promise,
       Function,
+      Map,
       ...this.config.contracts.defaults.exposedGlobals,
       require: (dep) => {
         return dep === '@sbp/sbp'
@@ -220,7 +221,7 @@ export default (sbp('sbp/selectors/register', {
       this.env = savedEnv
     }
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, signatureFn?: Function) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
     let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
@@ -249,7 +250,7 @@ export default (sbp('sbp/selectors/register', {
         await delay(randDelay) // wait randDelay ms before sending it again
         // if this isn't OP_CONTRACT, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const newEntry = await recreateEvent(entry, rootState, signatureFn)
+          const newEntry = await recreateEvent(entry, rootState)
           if (!newEntry) {
             return
           }
@@ -284,9 +285,8 @@ export default (sbp('sbp/selectors/register', {
     const height = message.height()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
+    const signingKeyId = message.signingKeyId()
     const config = this.config
-    const signature = message.signature()
-    const signedPayload = message.signedPayload()
     const env = this.env
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
@@ -437,8 +437,8 @@ export default (sbp('sbp/selectors/register', {
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
-        if (v.outerKeyId !== signature.keyId) {
-          throw new Error(`Invalid outer key ID. Expected ${signature.keyId} but got ${v.outerKeyId}`)
+        if (v.outerKeyId !== signingKeyId) {
+          throw new Error(`Invalid outer key ID. Expected ${signingKeyId} but got ${v.outerKeyId}`)
         }
 
         if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
@@ -625,14 +625,7 @@ export default (sbp('sbp/selectors/register', {
     let signingKey: ?GIKey
 
     // Signature verification
-    if (signature.type === 'default') {
-      if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-        console.error('Received unsigned message', message)
-      } else {
-        console.error('Received unsigned message. Aborting.', message)
-        throw new ChelErrorUnexpected('Received unsigned message')
-      }
-    } else {
+    {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
@@ -641,7 +634,7 @@ export default (sbp('sbp/selectors/register', {
       // The server can assist with this.
 
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys, height) : state._vm.authorizedKeys
-      signingKey = authorizedKeys?.[signature.keyId]
+      signingKey = authorizedKeys?.[signingKeyId]
 
       // `signingKey` may not be present in the contract. This happens in cross-contract interactions,
       // where a contract writes to another contract using its own keys. For example, when one requests
@@ -653,7 +646,7 @@ export default (sbp('sbp/selectors/register', {
           'chelonia/latestContractState', message.originatingContractID()
         ])
 
-        signingKey = originatingContractState._vm?.authorizedKeys?.[signature.keyId]
+        signingKey = originatingContractState._vm?.authorizedKeys?.[signingKeyId]
       }
 
       // Verify that the signing key is found, has the correct purpose and is
@@ -674,8 +667,6 @@ export default (sbp('sbp/selectors/register', {
       ) {
         throw new Error('No matching signing key was defined')
       }
-
-      verifySignature(signingKey.data, signedPayload, signature.data)
     }
 
     if (config[`preOp_${opT}`]) {
@@ -746,7 +737,7 @@ export default (sbp('sbp/selectors/register', {
         try {
           await sbp.apply(sbp, op)
         } catch (e) {
-          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e?.message || e })
+          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
         }
       })
     } catch (e) {
@@ -830,10 +821,11 @@ export default (sbp('sbp/selectors/register', {
 
       // 1. Sync (originating) identity contract
 
-      const originatingState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-        'chelonia/latestContractState', originatingContractID
+      await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
+        'chelonia/contract/sync', originatingContractID
       ])
 
+      const originatingState = state[originatingContractID]
       const contractName = state.contracts[contractID].type
       const originatingContractName = originatingState._vm.type
 

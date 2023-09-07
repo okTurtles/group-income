@@ -15,6 +15,7 @@ import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import { encryptedOutgoingData } from './encryptedData.js'
+import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import { findKeyIdByName, findRevokedKeyIdsByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
@@ -166,56 +167,6 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 // 3 => 'gi.contracts'
 // 4 => 'group'
 // 5 => 'payment'
-
-const rawSignatureFnBuilder = (key) => {
-  return (data) => {
-    return {
-      type: key.type,
-      keyId: keyId(key),
-      data: sign(key, data)
-    }
-  }
-}
-
-const signatureFnBuilder = function (this: any, signingContractID, signingKeyId) {
-  const rootState = sbp(this.config.stateSelector)
-
-  if (!signingContractID) {
-    throw new Error(`Invalid signing key ID: ${signingKeyId}`)
-  }
-
-  return (data) => {
-    // Has the key been revoked? If so, attempt to find an authorized key by the same name
-    const designatedKey = rootState[signingContractID]._vm?.authorizedKeys?.[signingKeyId]
-    if (!designatedKey?.purpose.includes('sig')) {
-      throw new Error(`Signing key ID ${signingContractID} is missing or is missing signing purpose`)
-    }
-    if (designatedKey._notAfterHeight !== undefined) {
-      const name = designatedKey.name
-      const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
-
-      if (!newKeyId) {
-        throw new Error(`Signing key ID ${signingKeyId} has been revoked and no new key exists by the same name (${name})`)
-      }
-
-      signingKeyId = newKeyId
-    }
-
-    const key = this.transientSecretKeys[signingKeyId]
-
-    if (!key) {
-      throw new Error(`Missing secret signing key. Signing contract ID: ${signingContractID}, signing key ID: ${signingKeyId}`)
-    }
-
-    const deserializedKey = typeof key === 'string' ? deserializeKey(key) : key
-
-    return {
-      type: deserializedKey.type,
-      keyId: keyId(deserializedKey),
-      data: sign(deserializedKey, data)
-    }
-  }
-}
 
 export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
@@ -688,9 +639,6 @@ export default (sbp('sbp/selectors/register', {
     const contractInfo = this.manifestToContract[manifestHash]
     if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
     const signingKey = this.transientSecretKeys[signingKeyId]
-    // Using rawSignatureFnBuilder because no contract state exists and the
-    // correct signing key is always given in OP_CONTRACT
-    const signatureFn = signingKey ? rawSignatureFnBuilder(signingKey) : undefined
     const payload = ({
       type: contractName,
       keys: keys
@@ -701,14 +649,13 @@ export default (sbp('sbp/selectors/register', {
       height: 0,
       op: [
         GIMessage.OP_CONTRACT,
-        payload
+        signedOutgoingDataWithRawKey(signingKey, payload)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     hooks?.prepublishContract?.(contractMsg)
     const contractID = contractMsg.hash()
-    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
+    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     console.log('Register contract, sending action', {
       params,
       xx: {
@@ -756,7 +703,7 @@ export default (sbp('sbp/selectors/register', {
 
     const payload = (data: GIOpKeyShare)
 
-    const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, originatingContractID || contractID, params.signingKeyId) : undefined
+    const state = destinationContract.state(contractID)
     let msg = GIMessage.createV1_0({
       contractID: contractID,
       originatingContractID,
@@ -764,14 +711,13 @@ export default (sbp('sbp/selectors/register', {
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_SHARE,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: destinationManifestHash,
-      signatureFn
+      manifest: destinationManifestHash
     })
     if (!atomic) {
       hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
       hooks?.postpublish?.(msg)
     }
     return msg
@@ -789,21 +735,19 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyAdd)
     validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
-    const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_ADD,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     if (!atomic) {
       hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
       hooks?.postpublish?.(msg)
     }
     return msg
@@ -819,21 +763,19 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyDel)
     validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
-    const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_DEL,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     if (!atomic) {
       hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
       hooks?.postpublish?.(msg)
     }
     return msg
@@ -849,21 +791,19 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyUpdate)
     validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
-    const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_UPDATE,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     if (!atomic) {
       hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
       hooks?.postpublish?.(msg)
     }
     return msg
@@ -887,13 +827,13 @@ export default (sbp('sbp/selectors/register', {
     const innerSigningKey = this.transientSecretKeys[innerSigningKeyId]
     const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
     signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
+    /// TODO: Make this an inner signature
     const payload = ({
       keyId: innerSigningKeyId,
       outerKeyId: outerKeyId,
       encryptionKeyId: encryptionKeyId,
       data: sign(innerSigningKey, signedInnerData.join('|'))
     }: GIOpKeyRequest)
-    const signatureFn = outerKeyId ? signatureFnBuilder.call(this, contractID, outerKeyId) : undefined
     let msg = GIMessage.createV1_0({
       originatingContractID,
       contractID,
@@ -901,10 +841,9 @@ export default (sbp('sbp/selectors/register', {
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_REQUEST,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     hooks?.prepublish?.(msg)
     // TODO: When processing OP_KEY_SHARE:
@@ -941,7 +880,7 @@ export default (sbp('sbp/selectors/register', {
       data: keyShareKeys,
       signingKeyId
     })
-    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
     hooks?.postpublish?.(msg)
     return msg
   },
@@ -952,23 +891,22 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
+    const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyRequestSeen)
-    const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
     let message = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_REQUEST_SEEN,
-        payload
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     if (!atomic) {
       hooks?.prepublish?.(message)
-      message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, signatureFn)
+      message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
       hooks?.postpublish?.(message)
     }
     return message
@@ -980,6 +918,7 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
+    const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (await Promise.all(data.map(([selector, opParams]) => {
       if (!['chelonia/out/actionEncrypted', 'chelonia/out/actionUnencrypted', 'chelonia/out/keyAdd', 'chelonia/out/keyDel', 'chelonia/out/keyUpdate', 'chelonia/out/keyRequestResponse', 'chelonia/out/keyShare'].includes(selector)) {
@@ -989,20 +928,18 @@ export default (sbp('sbp/selectors/register', {
     }))).map((msg) => {
       return [msg.opType(), msg.opValue()]
     })
-    const signatureFn = params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_ATOMIC,
-        (payload: any)
+        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
       ],
-      manifest: manifestHash,
-      signatureFn
+      manifest: manifestHash
     })
     hooks?.prepublish?.(msg)
-    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
     hooks?.postpublish?.(msg)
     return msg
   },
@@ -1045,21 +982,19 @@ async function outEncryptedOrUnencryptedAction (
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED
     ? unencMessage
     : encryptedOutgoingData(state, ((params.encryptionKeyId: any): string), unencMessage)
-  const signatureFn = atomic ? Boolean : params.signingKeyId ? signatureFnBuilder.call(this, contractID, params.signingKeyId) : undefined
   let message = GIMessage.createV1_0({
     contractID,
     previousHEAD,
     height: previousHeight + 1,
     op: [
       opType,
-      payload
+      signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
     ],
-    manifest: manifestHash,
-    signatureFn
+    manifest: manifestHash
   })
   if (!atomic) {
     hooks?.prepublish?.(message)
-    message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, signatureFn)
+    message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
     hooks?.postpublish?.(message)
   }
   return message

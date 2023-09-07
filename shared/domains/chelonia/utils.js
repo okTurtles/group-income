@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpAtomic, GIOpKeyUpdate } from './GIMessage.js'
+import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
@@ -239,7 +239,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = async (entry: GIMessage, rootState: Object, signatureFn?: Function): Promise<typeof undefined | GIMessage> => {
+export const recreateEvent = async (entry: GIMessage, rootState: Object): Promise<typeof undefined | GIMessage> => {
   const contractID = entry.contractID()
   // We sync the contract to ensure we have the correct local state
   // This way we can fetch new keys and correctly re-sign and re-encrypt
@@ -258,48 +258,68 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID)
   const head = entry.head()
 
-  const [opT, opV] = entry.op()
+  const [opT, rawOpV] = entry.rawOp()
   const state = rootState[contractID]
 
-  const recreateOperation = (opT, opV) => {
+  const recreateOperation = (opT, rawOpV) => {
+    const opV = rawOpV.valueOf()
+    let newOpV
     if (opT === GIMessage.OP_KEY_ADD) {
     // Has this key already been added? (i.e., present in authorizedKeys)
-      opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
-      if (opV.length === 0) {
+      newOpV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
+      if (newOpV.length === 0) {
         console.info('Omitting empty OP_KEY_ADD', { head })
         return
+      } else if (newOpV.length === opV.length) {
+        return rawOpV
       }
     } else if (opT === GIMessage.OP_KEY_DEL) {
     // Has this key already been removed? (i.e., no longer in authorizedKeys)
-      opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
-      if (opV.length === 0) {
+      newOpV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
+      if (newOpV.length === 0) {
         console.info('Omitting empty OP_KEY_DEL', { head })
         return
+      } else if (newOpV.length === opV.length) {
+        return rawOpV
       }
     } else if (opT === GIMessage.OP_KEY_UPDATE) {
     // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-      opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
-      if (opV.length === 0) {
+      newOpV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
+      if (newOpV.length === 0) {
         console.info('Omitting empty OP_KEY_UPDATE', { head })
         return
+      } else if (newOpV.length === opV.length) {
+        return rawOpV
       }
+    } else if (opT === GIMessage.OP_ATOMIC) {
+      newOpV = opV.map((t, v) => recreateOperation(t, v)).filter(Boolean)
+      if (newOpV.length === 0) {
+        console.info('Omitting empty OP_ATOMIC', { head })
+        return
+      } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
+        return rawOpV
+      }
+    } else {
+      return rawOpV
     }
 
-    return opV
+    if (typeof rawOpV.recreate !== 'function') {
+      throw new Error('Unable to recreate operation')
+    }
+
+    return rawOpV.recreate(newOpV)
   }
 
-  let newOpV
+  const newRawOpV = recreateOperation(opT, rawOpV)
 
-  if (opT === GIMessage.OP_ATOMIC) {
-    newOpV = ((opV: any): GIOpAtomic).map((t, v) => recreateOperation(t, v)).filter(Boolean)
-    // TODO: Omit KS when not issuing op key update (key rotation)
-  } else {
-    newOpV = recreateOperation(opT, opV)
-  }
+  if (!newRawOpV) return
 
-  if (!newOpV) return
-
-  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD, height: previousHeight + 1 }, signatureFn)
+  entry = GIMessage.cloneWith(
+    head,
+    [
+      opT,
+      (newRawOpV: any)
+    ], { previousHEAD, height: previousHeight + 1 })
 
   return entry
 }
