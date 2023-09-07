@@ -442,7 +442,7 @@ export default ({
     fileAttachmentHandler (filesList, appendItems = false) {
       const getFileExtension = name => {
         const lastDotIndex = name.lastIndexOf('.')
-        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex)
+        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
       }
       const attachmentsExist = Boolean(this.ephemeral.attachment.length)
       const list = appendItems && attachmentsExist

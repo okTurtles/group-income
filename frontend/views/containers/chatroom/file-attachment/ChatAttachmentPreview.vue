@@ -39,7 +39,7 @@ export default {
   methods: {
     fileExt ({ name }) {
       const lastDotIndex = name.lastIndexOf('.')
-      const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex)
+      const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
       return ext.toUpperCase()
     }
   }
