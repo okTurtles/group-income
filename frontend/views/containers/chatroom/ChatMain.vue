@@ -1,5 +1,15 @@
 <template lang='pug'>
-.c-chat-main(v-if='summary.title')
+.c-chat-main(
+  v-if='summary.title'
+  :class='{ "is-dnd-active": dndState && dndState.isActive }'
+  @dragstart='dragStartHandler'
+  @dragover='dragStartHandler'
+)
+  drag-active-overlay(
+    v-if='dndState && dndState.isActive'
+    @drag-ended='dragEndHandler'
+  )
+
   emoticons
 
   .c-body
@@ -81,6 +91,7 @@
 
   .c-footer
     send-area(
+      ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
@@ -112,6 +123,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -137,7 +149,8 @@ export default ({
     MessageNotification,
     MessagePoll,
     SendArea,
-    ViewArea
+    ViewArea,
+    DragActiveOverlay
   },
   props: {
     summary: {
@@ -166,6 +179,10 @@ export default ({
         contract: {},
         prevFrom: null,
         prevTo: null
+      },
+      dndState: {
+        // drag & drop releated state
+        isActive: false
       }
     }
   },
@@ -742,7 +759,30 @@ export default ({
       this.archiveMessageState(from)
       this.setInitMessages()
       this.setMessageEventListener({ to, from })
-    }, 250)
+    }, 250),
+    // Handlers for file-upload via drag & drop action
+    dragStartHandler (e) {
+      // handler function for 'dragstart', 'dragover' events
+      if (!this.dndState.isActive) {
+        this.dndState.isActive = true
+      }
+
+      if (e?.dataTransfer) {
+        // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+        e.dataTransfer.dropEffect = 'copy'
+      }
+    },
+    dragEndHandler (e) {
+      // handler function for 'dragleave', 'dragend', 'drop' events
+      e.preventDefault()
+
+      if (this.dndState.isActive) {
+        this.dndState.isActive = false
+
+        e?.dataTransfer.files?.length &&
+          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+      }
+    }
   },
   provide () {
     return {
@@ -801,6 +841,12 @@ export default ({
   flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
+  position: relative;
+
+  &.is-dnd-active {
+    position: relative;
+    z-index: 0;
+  }
 }
 
 .c-body {
