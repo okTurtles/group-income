@@ -133,7 +133,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -369,14 +369,19 @@ export default ({
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, effect)
-          } else if (this.$refs.conversation) {
-            this.$refs.conversation.scroll({
-              left: 0,
-              top: this.$refs.conversation.scrollHeight,
-              behavior: 'smooth'
-            })
+          } else {
+            this.jumpToLatest()
           }
         }, 100)
+      }
+    },
+    jumpToLatest (behavior = 'smooth') {
+      if (this.$refs.conversation) {
+        this.$refs.conversation.scroll({
+          left: 0,
+          top: this.$refs.conversation.scrollHeight,
+          behavior
+        })
       }
     },
     retryMessage (index) {
@@ -630,7 +635,18 @@ export default ({
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+
+      if (this.ephemeral.scrolledDistance < 40) {
+        // NOTE: 40px is the minimum height of a message
+        //       even though user scrolled up, if he scrolled less than 40px (one message)
+        //       should ignore the scroll position, and scroll to the bottom
+        this.throttledJumpToLatest(this)
+      }
     },
+    throttledJumpToLatest: throttle(function (_this) {
+      // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
+      _this.jumpToLatest('instant')
+    }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {

@@ -277,6 +277,9 @@
 "Changed vote to {options}" = "Changed vote to {options}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
+"Jump to poll" = "Jump to poll";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Voted on {options}" = "Voted on {options}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessagePoll.vue */
@@ -287,6 +290,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "Change vote" = "Change vote";
+
+/* MISSING TRANSLATION - views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"Expires on: {expiry}" = "Expires on: {expiry}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "poll" = "poll";
@@ -1005,6 +1011,9 @@
 /* views/components/Toggle.vue */
 "Toggle navigation" = "Montrer/cacher la navigation";
 
+/* views/components/UsersSelector.vue, views/pages/Home.vue */
+"Create" = "Créer";
+
 /* views/components/VotingRulesInput.vue */
 "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "Le pourcentage que vous choisissez est vraisemblablement trop bas pour une décision aussi importante. Avez-vous considéré l’usage d’un {a_}seuil de supermajorité{_a} ?";
 
@@ -1252,7 +1261,7 @@
 "Add members" = "Ajouter des membres";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
-"All group members will be added to this channel." = "Tous les membres du groupe seront invités.";
+"All group members will be able to see or join this channel." = "Tous les membres du groupe pourront voir ou rejoindre cette chaîne.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Channel Privacy" = "Confidentialité de la chaîne";
@@ -2599,9 +2608,6 @@
 "Create a new group and invite your friends." = "Créez un nouveau groupe et invitez vos amis.";
 
 /* views/pages/Home.vue */
-"Create" = "Créer";
-
-/* views/pages/Home.vue */
 "Enter an existing group using your username." = "Rejoignez un groupe existant via votre nom d’utilisateur.";
 
 /* views/pages/Home.vue */
@@ -2687,6 +2693,9 @@
 
 /* Not currently used */
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
+
+/* Not currently used */
+"All group members will be added to this channel." = "Tous les membres du groupe seront invités.";
 
 /* Not currently used */
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
