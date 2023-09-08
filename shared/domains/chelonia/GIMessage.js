@@ -96,7 +96,7 @@ const decryptedDeserializedMessage = (op: string, height: number, parsedMessage:
   }
 
   if (op === GIMessage.OP_ATOMIC) {
-    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, height, opV, contractID, additionalKeys, state)])
+    return message.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, height, opV, contractID, additionalKeys, state)])
   }
 
   return message
@@ -229,7 +229,7 @@ export class GIMessage {
     const type = this.opType()
     let message
     let atomicTopLevel = true
-    const validate = (type) => {
+    const validate = (type, message) => {
       switch (type) {
         case GIMessage.OP_CONTRACT:
           if (!this.isFirstMessage() || !atomicTopLevel) throw new Error('OP_CONTRACT: must be first message')
@@ -242,15 +242,17 @@ export class GIMessage {
             throw new TypeError('OP_ATOMIC must be of an array type')
           }
           atomicTopLevel = false
-          message.forEach(([t]) => validate(t))
+          message.forEach(([t, m]) => validate(t, m))
+          break
+        case GIMessage.OP_KEY_ADD:
+        case GIMessage.OP_KEY_DEL:
+        case GIMessage.OP_KEY_UPDATE:
+          if (!Array.isArray(message)) throw new TypeError('OP_KEY_{ADD|DEL|UPDATE} must be of an array type')
           break
         case GIMessage.OP_KEY_SHARE:
         case GIMessage.OP_KEY_REQUEST:
         case GIMessage.OP_KEY_REQUEST_SEEN:
         case GIMessage.OP_ACTION_ENCRYPTED:
-        case GIMessage.OP_KEY_ADD:
-        case GIMessage.OP_KEY_DEL:
-        case GIMessage.OP_KEY_UPDATE:
         // nothing for now
           break
         default:
@@ -261,7 +263,7 @@ export class GIMessage {
       get: () => {
         if (message) return message
         message = messageGetter()
-        validate(type)
+        validate(type, message)
         return message
       }
     })
