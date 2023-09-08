@@ -813,6 +813,7 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
+        this.ephemeral.scrolledDistance = 0
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState(fromChatRoomId)
           toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)

@@ -1526,7 +1526,7 @@ export default ({
           { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
           { type: 'header', name: 'Voting Systems' },
           { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
-          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' }
+          { type: 'item', id: 'change-voting-threshold', name: 'Change voting threshold', icon: 'comment' }
         ]
       },
       form: {
