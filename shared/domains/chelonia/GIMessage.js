@@ -212,23 +212,22 @@ export class GIMessage {
   constructor (params: GIMsgParams) {
     this._mapping = params.mapping
     this._head = params.head
+    let messageGetter: () => Object
     if (has(params, 'signingKeyId') && has(params, 'message')) {
       Object.defineProperty(this, '_signingKeyId', Object.getOwnPropertyDescriptor(params, 'signingKeyId') || {})
       // Avoid verifying the signature unless the value is used
-      Object.defineProperty(this, '_message', Object.getOwnPropertyDescriptor(params, 'message') || {})
+      messageGetter = () => params.message || {}
     } else if (params.signedMessageData) {
       this._signedMessageData = ((params.signedMessageData: any): SignedData<GIOpValue>)
       Object.defineProperty(this, '_signingKeyId', Object.getOwnPropertyDescriptor(this._signedMessageData, 'signingKeyId') || {})
       // Avoid verifying the signature unless the value is used
-      Object.defineProperty(this, '_message', {
-        get: () => this._signedMessageData.valueOf()
-      })
+      messageGetter = () => this._signedMessageData.valueOf() || {}
     } else {
       throw new Error('Illegal GIMessage constructor invocation')
     }
     // perform basic sanity check
-    /* const type = this.opType()
-    const message = this._message
+    const type = this.opType()
+    let message
     let atomicTopLevel = true
     const validate = (type) => {
       switch (type) {
@@ -258,8 +257,14 @@ export class GIMessage {
           throw new Error(`unsupported op: ${type}`)
       }
     }
-    // validate(type)
-    */
+    Object.defineProperty(this, '_message', {
+      get: () => {
+        if (message) return message
+        message = messageGetter()
+        validate(type)
+        return message
+      }
+    })
   }
 
   decryptedValue (): any {
