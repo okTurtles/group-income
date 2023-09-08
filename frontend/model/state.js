@@ -751,11 +751,10 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           //       period, then the distributionDate will get updated to the previous distribution date
           //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
           //       before it should.
-          // NOTE: `distributionStarted` is different from getters.groupDistributionStarted
-          //       it allows distributionDate can be updated automatically ONLY after the distribution is started.
-          //       and it fixes the issue mentioned above
+          // NOTE: `distributionStarted` allows distributionDate can be updated automatically ONLY after
+          //       the distribution is started. And it fixes the issue mentioned above.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          const distributionStarted = reactiveDate.date > dateFromPeriodStamp(distributionDateInSettings)
+          const distributionStarted = store.getters.groupDistributionStarted(reactiveDate.date)
           if (oldPeriod && newPeriod && distributionStarted && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }

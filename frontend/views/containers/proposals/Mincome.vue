@@ -106,7 +106,7 @@ export default ({
     validateMincome () {
       const mincomeAmount = normalizeCurrency(this.form.mincomeAmount)
       if (mincomeAmount === this.groupSettings.mincomeAmount) {
-        this.$refs.formMsg.danger(L('The new mincome should be different from the current one.'))
+        this.$refs.formMsg.danger(L('The new mincome should be different than the current one.'))
         this.ephemeral.currentStep = 0
         return false
       }

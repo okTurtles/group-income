@@ -657,7 +657,7 @@
   "The method name for \"{methodValue}\" is missing.": "The method name for \"{methodValue}\" is missing.",
   "The mincome has changed to {amount}.": "The mincome has changed to {amount}.",
   "The new distribution date should be different from the current one.": "The new distribution date should be different from the current one.",
-  "The new mincome should be different from the current one.": "The new mincome should be different from the current one.",
+  "The new mincome should be different than the current one.": "The new mincome should be different than the current one.",
   "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.": "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.",
   "Theme": "Theme",
   "There are no non-monetary contributions.": "There are no non-monetary contributions.",

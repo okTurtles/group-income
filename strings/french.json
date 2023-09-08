@@ -755,7 +755,7 @@
   "Change minimum income": "Modifier le revenu minimum",
   "Currently {groupMincomeFormatted} monthly.": "Actuellement {groupMincomeFormatted} par mois.",
   "New minimum income": "Nouveau revenu minimum",
-  "The new mincome should be different from the current one.": "Le nouveau revenu minimum devrait être différent du précédent.",
+  "The new mincome should be different than the current one.": "Le nouveau revenu minimum devrait être différent du précédent.",
   "Add {user} to group.": "Ajouter {user} au groupe.",
   "Change disagreement number from {X} to {N}.": "Faire passer le seuil de rejet de {X} à {N}.",
   "Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}.": "Passer d’un système basé sur le nombre de votes négatifs à un système basé sur les pourcentages, avec un seuil minimum d’approbation de {percent}.",

@@ -2269,7 +2269,7 @@
 "New minimum income" = "Nouveau revenu minimum";
 
 /* views/containers/proposals/Mincome.vue */
-"The new mincome should be different from the current one." = "Le nouveau revenu minimum devrait être différent du précédent.";
+"The new mincome should be different than the current one." = "Le nouveau revenu minimum devrait être différent du précédent.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Add {user} to group." = "Ajouter {user} au groupe.";
