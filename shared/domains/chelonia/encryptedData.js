@@ -3,6 +3,13 @@ import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
 
+export interface EncryptedData<T> {
+  encryptionKeyId: string,
+  valueOf: () => T,
+  toJSON: (additionalData: ?string) => [string, string],
+  toString: (additionalData: ?string) => string
+}
+
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const encryptData = function (eKeyId: string, data: any) {
@@ -105,22 +112,27 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   }
 }
 
-export const encryptedOutgoingData = (state: Object, eKeyId: string, data: any): Object => {
+export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T): EncryptedData<T> => {
   const boundStringValueFn = encryptData.bind(state, eKeyId, data)
 
-  const returnProps = {
-    toJSON: boundStringValueFn,
-    toString: () => JSON.stringify(boundStringValueFn),
-    valueOf: () => data
+  return {
+    get encryptionKeyId () {
+      return eKeyId
+    },
+    get toJSON () {
+      return boundStringValueFn
+    },
+    get toString () {
+      return () => JSON.stringify(this.toJSON())
+    },
+    get valueOf () {
+      return () => data
+    }
   }
-
-  return typeof data === 'object'
-    ? Object.assign(Object.create(null), data, returnProps)
-    : Object.assign(Object(data), returnProps)
 }
 
 // Used for OP_CONTRACT as a state does not yet exist
-export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => {
+export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): EncryptedData<T> => {
   const eKeyId = keyId(key)
   const state = {
     _vm: {
@@ -136,18 +148,23 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
   }
   const boundStringValueFn = encryptData.bind(state, eKeyId, data)
 
-  const returnProps = {
-    toJSON: boundStringValueFn,
-    toString: () => JSON.stringify(boundStringValueFn),
-    valueOf: () => data
+  return {
+    get encryptionKeyId () {
+      return eKeyId
+    },
+    get toJSON () {
+      return boundStringValueFn
+    },
+    get toString () {
+      return () => JSON.stringify(this.toJSON())
+    },
+    get valueOf () {
+      return () => data
+    }
   }
-
-  return typeof data === 'object'
-    ? Object.assign(Object.create(null), data, returnProps)
-    : Object.assign(Object(data), returnProps)
 }
 
-export const encryptedIncomingData = (contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): EncryptedData<T> => {
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
@@ -159,13 +176,22 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: a
   }
 
   return {
-    toJSON: () => data,
-    toString: () => JSON.stringify(data),
-    valueOf: decryptedValueFn
+    get encryptionKeyId () {
+      return encryptedDataKeyId(data)
+    },
+    get toJSON () {
+      return () => data
+    },
+    get toString () {
+      return () => JSON.stringify(this.toJSON())
+    },
+    get valueOf () {
+      return decryptedValueFn
+    }
   }
 }
 
-export const encryptedIncomingForeignData = (contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): EncryptedData<T> => {
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
@@ -177,9 +203,18 @@ export const encryptedIncomingForeignData = (contractID: string, _0: any, data: 
   }
 
   return {
-    toJSON: () => data,
-    toString: () => JSON.stringify(data),
-    valueOf: decryptedValueFn
+    get encryptionKeyId () {
+      return encryptedDataKeyId(data)
+    },
+    get toJSON () {
+      return () => data
+    },
+    get toString () {
+      return () => JSON.stringify(this.toJSON())
+    },
+    get valueOf () {
+      return decryptedValueFn
+    }
   }
 }
 

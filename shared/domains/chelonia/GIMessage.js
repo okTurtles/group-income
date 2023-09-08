@@ -7,6 +7,7 @@ import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
+import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { signedIncomingData } from './signedData.js'
@@ -31,8 +32,8 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionEncrypted = { content: string } // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type GIOpActionEncrypted = { content: EncryptedData<GIOpActionUnencrypted> } // encrypted version of GIOpActionUnencrypted
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string; value: JSONType }
@@ -64,8 +65,11 @@ export type GIOp = [GIOpType, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue, signingKeyId: string } | { mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
 
-const decryptedDeserializedMessage = (op: string, height: number, parsedMessage: Object, contractID: string, additionalKeys?: Object, state: Object) => {
-  const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys) : parsedMessage.valueOf()
+const decryptedDeserializedMessage = (op: string, height: number, parsedMessage: SignedData<GIOpValue>, contractID: string, additionalKeys?: Object, state: Object): GIOpValue => {
+  const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
+    // $FlowFixMe
+    ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys)
+    : parsedMessage.valueOf()
 
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     ((message: any): any[]).forEach((key) => {
@@ -84,7 +88,7 @@ const decryptedDeserializedMessage = (op: string, height: number, parsedMessage:
     (message: any).keys?.forEach((key) => {
       if (key.meta?.private?.content) {
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
-        const decryptionContract = message.foreignContractID ? message.foreignContractID : contractID
+        const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
         key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
@@ -96,7 +100,10 @@ const decryptedDeserializedMessage = (op: string, height: number, parsedMessage:
   }
 
   if (op === GIMessage.OP_ATOMIC) {
-    return message.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, height, opV, contractID, additionalKeys, state)])
+    return ((((message: any): GIOpAtomic)
+      .map(([opT, opV]) =>
+        [opT, decryptedDeserializedMessage(opT, height, (opV: any), contractID, additionalKeys, state)]
+      ): any): GIOpAtomic)
   }
 
   return message
@@ -193,13 +200,13 @@ export class GIMessage {
     }
 
     const signedMessageData = signedIncomingData(contractID, state, parsedValue, head.height, parsedValue.head)
-    let message: Object = null
+    let message: GIOpValue | typeof undefined
 
     return new this({
       mapping: { key: blake32Hash(value), value },
       head,
       get message () {
-        if (message) return message
+        if (message !== undefined) return message
         message = decryptedDeserializedMessage(head.op, head.height, signedMessageData, contractID, additionalKeys, state)
         return message
       },

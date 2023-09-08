@@ -988,7 +988,7 @@ async function outEncryptedOrUnencryptedAction (
     height: previousHeight + 1,
     op: [
       opType,
-      signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+      signedOutgoingData(state, params.signingKeyId, (payload: any), this.transientSecretKeys)
     ],
     manifest: manifestHash
   })
