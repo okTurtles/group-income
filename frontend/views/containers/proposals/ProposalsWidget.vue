@@ -112,43 +112,43 @@ export default ({
       const defaultDisableConfig = !this.groupShouldPropose && !isUserGroupCreator
 
       return [
-        { type: 'header', name: 'Group Members' },
-        { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
+        { type: 'header', name: L('Group Members') },
+        { type: 'item', id: 'add-new-member', name: L('Add new member'), icon: 'user-plus' },
         {
           type: 'item',
           id: 'remove-member',
-          name: 'Remove member',
+          name: L('Remove member'),
           icon: 'user-minus',
           isDisabled: this.groupMembersCount < (isUserGroupCreator ? 2 : 3)
         },
-        { type: 'header', name: 'Voting Systems' },
+        { type: 'header', name: L('Voting Systems') },
         // { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
         {
           type: 'item',
-          id: 'change-to-percentage-base',
-          name: 'Change to percentage base',
+          id: 'change-voting-threshold',
+          name: L('Change voting threshold'),
           icon: 'vote-yea',
           isDisabled: defaultDisableConfig
         },
-        { type: 'header', name: 'Other proposals' },
+        { type: 'header', name: L('Other Proposals') },
         {
           type: 'item',
           id: 'change-mincome',
-          name: 'Change mincome',
+          name: L('Change mincome'),
           icon: 'dollar-sign',
           isDisabled: defaultDisableConfig
         },
         {
           type: 'item',
           id: 'change-distribution-date',
-          name: 'Change distribution date',
+          name: L('Change distribution date'),
           icon: 'chart-pie',
           isDisabled: this.groupDistributionStarted(new Date().toISOString()) || defaultDisableConfig
         },
         {
           type: 'item',
           id: 'generic-proposal',
-          name: 'Generic proposal',
+          name: L('Generic proposal'),
           icon: 'envelope-open-text',
           isDisabled: !this.groupShouldPropose
         }
@@ -179,11 +179,11 @@ export default ({
         'change-distribution-date': 'DistributionDateProposal',
         'generic-proposal': 'GenericProposal',
         'change-disagreeing-number': 'ChangeVotingRules',
-        'change-to-percentage-base': 'ChangeVotingRules'
+        'change-voting-threshold': 'ChangeVotingRules'
       }
       const queries = {
         'change-disagreeing-number': { rule: 'disagreement' },
-        'change-to-percentage-base': { rule: 'percentage' },
+        'change-voting-threshold': { rule: 'percentage' },
         'remove-member': { toRemove: true }
       }
 

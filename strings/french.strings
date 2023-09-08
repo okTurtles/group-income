@@ -600,6 +600,27 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "{username} proposed" = "{username} proposed";
 
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Add new member" = "Add new member";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Change mincome" = "Change mincome";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Change voting threshold" = "Change voting threshold";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Generic proposal" = "Generic proposal";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Group Members" = "Group Members";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Other Proposals" = "Other Proposals";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Voting Systems" = "Voting Systems";
+
 /* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue, views/containers/proposals/PropositionsAllModal.vue */
 "Archived proposals" = "Archived proposals";
 
@@ -1008,7 +1029,7 @@
 /* views/components/ProfileCard.vue, views/containers/notifications/NotificationCard.vue */
 "Close profile" = "Fermer le profil";
 
-/* views/components/ProfileCard.vue, views/pages/DesignSystem.vue */
+/* views/components/ProfileCard.vue, views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "Remove member" = "Exclure un membre";
 
 /* views/components/Search.vue, views/components/UsersSelector.vue */
@@ -2245,9 +2266,6 @@
 "percentage based" = "basé sur le pourcentage des votes positifs";
 
 /* views/containers/proposals/DistributionDate.vue */
-"Change distribution date" = "Modifier la date de distribution";
-
-/* views/containers/proposals/DistributionDate.vue */
 "Current distribution date is on {currentDistributionDate}." = "La date de distribution actuelle est le {currentDistributionDate}.";
 
 /* views/containers/proposals/DistributionDate.vue */
@@ -2258,6 +2276,9 @@
 
 /* views/containers/proposals/DistributionDate.vue */
 "The new distribution date should be different from the current one." = "La nouvelle date de distribution doit être différente de la date actuelle.";
+
+/* views/containers/proposals/DistributionDate.vue, views/containers/proposals/ProposalsWidget.vue */
+"Change distribution date" = "Modifier la date de distribution";
 
 /* views/containers/proposals/Mincome.vue */
 "Change minimum income" = "Modifier le revenu minimum";

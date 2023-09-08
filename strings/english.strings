@@ -165,6 +165,9 @@
 /* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
 "Add more" = "Add more";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Add new member" = "Add new member";
+
 /* views/containers/group-settings/InvitationLinkModal.vue, views/containers/proposals/AddMembers.vue */
 "Add new members" = "Add new members";
 
@@ -387,7 +390,7 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Change disagreement number from {X} to {N}." = "Change disagreement number from {X} to {N}.";
 
-/* views/containers/proposals/DistributionDate.vue */
+/* views/containers/proposals/DistributionDate.vue, views/containers/proposals/ProposalsWidget.vue */
 "Change distribution date" = "Change distribution date";
 
 /* views/containers/proposals/ProposalItem.vue */
@@ -398,6 +401,9 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system." = "Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system.";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Change mincome" = "Change mincome";
 
 /* views/containers/proposals/Mincome.vue */
 "Change minimum income" = "Change minimum income";
@@ -422,6 +428,9 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "Change voting system" = "Change voting system";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Change voting threshold" = "Change voting threshold";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
@@ -894,6 +903,9 @@
 /* views/containers/proposals/GenericProposal.vue */
 "Generic Proposal" = "Generic Proposal";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Generic proposal" = "Generic proposal";
+
 /* views/containers/user-settings/NotificationSettings.vue */
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
 
@@ -917,6 +929,9 @@
 
 /* views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Group Members" = "Group Members";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Group Pledging Status" = "Group Pledging Status";
@@ -1416,6 +1431,9 @@
 /* views/containers/contributions/PaymentMethods.vue */
 "Other" = "Other";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Other Proposals" = "Other Proposals";
+
 /* views/containers/contributions/PaymentMethods.vue */
 "Other group members will be able to use this information to send you monthly contributions." = "Other group members will be able to use this information to send you monthly contributions.";
 
@@ -1680,7 +1698,7 @@
 /* views/containers/proposals/AddMembers.vue */
 "Remove invitee" = "Remove invitee";
 
-/* views/components/ProfileCard.vue, views/pages/DesignSystem.vue */
+/* views/components/ProfileCard.vue, views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "Remove member" = "Remove member";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -2192,6 +2210,9 @@
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Voting System";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Voting Systems" = "Voting Systems";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Voting on proposals";
