@@ -10,7 +10,7 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, 
 import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
-import { signedIncomingData } from './signedData.js'
+import { isRawSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -32,18 +32,16 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type ProtoGIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type GIOpActionUnencrypted = ProtoGIOpActionUnencrypted | SignedData<ProtoGIOpActionUnencrypted>
 export type GIOpActionEncrypted = { content: EncryptedData<GIOpActionUnencrypted> } // encrypted version of GIOpActionUnencrypted
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string; value: JSONType }
 export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
-export type GIOpKeyRequest = {
-  keyId: string;
-  outerKeyId: string;
+export type GIOpKeyRequest = SignedData<{
   encryptionKeyId: string;
-  data: string;
-}
+}>
 export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
 export type GIOpKeyUpdate = {
   name: string;
@@ -65,7 +63,10 @@ export type GIOp = [GIOpType, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue, signingKeyId: string } | { mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
 
-const decryptedDeserializedMessage = (op: string, height: number, parsedMessage: SignedData<GIOpValue>, contractID: string, additionalKeys?: Object, state: Object): GIOpValue => {
+const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SignedData<GIOpValue>, additionalKeys?: Object, state: Object): GIOpValue => {
+  const op = head.op
+  const height = head.height
+
   const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
     // $FlowFixMe
     ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys)
@@ -99,10 +100,26 @@ const decryptedDeserializedMessage = (op: string, height: number, parsedMessage:
     })
   }
 
+  if (op === GIMessage.OP_KEY_REQUEST) {
+    if (head.originatingContractID && head.originatingContractID !== contractID) {
+      return signedIncomingData(head.originatingContractID, undefined, message, head.originatingContractHeight, headJSON)
+    } else {
+      return signedIncomingData(contractID, state, message, height, headJSON)
+    }
+  }
+
+  if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
+    if (head.originatingContractID && head.originatingContractID !== contractID) {
+      return signedIncomingData(head.originatingContractID, undefined, message, head.originatingContractHeight, headJSON)
+    } else {
+      return signedIncomingData(contractID, state, message, height, headJSON)
+    }
+  }
+
   if (op === GIMessage.OP_ATOMIC) {
     return ((((message: any): GIOpAtomic)
       .map(([opT, opV]) =>
-        [opT, decryptedDeserializedMessage(opT, height, (opV: any), contractID, additionalKeys, state)]
+        [opT, decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, (opV: any), additionalKeys, state)]
       ): any): GIOpAtomic)
   }
 
@@ -140,6 +157,7 @@ export class GIMessage {
       // originatingContractID is used when one contract writes to another. in this case
       // originatingContractID is the one sending the message to contractID.
       originatingContractID,
+      originatingContractHeight,
       previousHEAD = null,
       height = 0,
       op,
@@ -147,6 +165,7 @@ export class GIMessage {
     }: {
       contractID: string | null,
       originatingContractID?: string,
+      originatingContractHeight?: number,
       previousHEAD?: string | null,
       height: number,
       op: GIOpRaw,
@@ -159,6 +178,7 @@ export class GIMessage {
       height,
       contractID,
       originatingContractID,
+      originatingContractHeight,
       op: op[0],
       manifest,
       // the nonce makes it easier to prevent conflicts during development
@@ -185,13 +205,15 @@ export class GIMessage {
   static deserialize (value: string, additionalKeys?: Object, state?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const parsedValue = JSON.parse(value)
-    const head = JSON.parse(parsedValue.head)
+    const headJSON = parsedValue.head
+    const head = JSON.parse(headJSON)
     const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
 
     // Special case for OP_CONTRACT, since the keys are not yet present in the
     // state
-    if (!state?._vm?.authorizedKeys && head.op === GIMessage.OP_CONTRACT && Array.isArray(parsedValue?._signedData)) {
-      const authorizedKeys = Object.fromEntries(JSON.parse(parsedValue._signedData[0])?.keys.map(k => [k.id, k]))
+    if (!state?._vm?.authorizedKeys && head.op === GIMessage.OP_CONTRACT) {
+      const value = rawSignedIncomingData(parsedValue)
+      const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(k => [k.id, k]))
       state = {
         _vm: {
           authorizedKeys
@@ -207,7 +229,7 @@ export class GIMessage {
       head,
       get message () {
         if (message !== undefined) return message
-        message = decryptedDeserializedMessage(head.op, head.height, signedMessageData, contractID, additionalKeys, state)
+        message = decryptedAndVerifiedDeserializedMessage(head, parsedValue.head, contractID, signedMessageData, additionalKeys, state)
         return message
       },
       get signingKeyId () {
@@ -338,16 +360,9 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
   const headJSON = JSON.stringify(head)
-  const messageJSON = (message.toJSON(headJSON): any)
+  const messageJSON = (message.serialize(headJSON): any)
   messageJSON.head = headJSON
-  const value = JSON.stringify(messageJSON, (_, v) => {
-    // Special handling of SignedData, since it needs the HEAD (this is for
-    // inner signatures)
-    if (v.signingKeyId && typeof v.toJSON === 'function' && v.toJSON.length === 1) {
-      return v.toJSON(headJSON)
-    }
-    return v
-  })
+  const value = JSON.stringify(messageJSON)
   return {
     mapping: { key: blake32Hash(value), value },
     head,

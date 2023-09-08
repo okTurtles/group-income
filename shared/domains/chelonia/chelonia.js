@@ -9,7 +9,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
-import { deserializeKey, keyId, serializeKey, sign } from './crypto.js'
+import { deserializeKey, keyId, serializeKey } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
@@ -824,18 +824,12 @@ export default (sbp('sbp/selectors/register', {
     if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
     const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const innerSigningKey = this.transientSecretKeys[innerSigningKeyId]
-    const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
-    signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
-    /// TODO: Make this an inner signature
-    const payload = ({
-      keyId: innerSigningKeyId,
-      outerKeyId: outerKeyId,
-      encryptionKeyId: encryptionKeyId,
-      data: sign(innerSigningKey, signedInnerData.join('|'))
-    }: GIOpKeyRequest)
+    const payload = (signedOutgoingData(originatingState, innerSigningKeyId, {
+      encryptionKeyId: encryptionKeyId
+    }, this.transientSecretKeys): GIOpKeyRequest)
     let msg = GIMessage.createV1_0({
       originatingContractID,
+      originatingContractHeight: rootState.contracts[originatingContractID].height,
       contractID,
       previousHEAD,
       height: previousHeight + 1,

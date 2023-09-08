@@ -7,12 +7,13 @@ import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, verifySignature } from './crypto.js'
+import { deserializeKey } from './crypto.js'
 import './db.js'
 import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
 import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { signedIncomingData } from './signedData.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[], height: number): Object => {
@@ -437,24 +438,22 @@ export default (sbp('sbp/selectors/register', {
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
-        if (v.outerKeyId !== signingKeyId) {
-          throw new Error(`Invalid outer key ID. Expected ${signingKeyId} but got ${v.outerKeyId}`)
-        }
+        const originatingContractID = message.originatingContractID()
 
-        if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
-          if (state._vm.invites[v.outerKeyId].quantity > 0) {
-            if ((--state._vm.invites[v.outerKeyId].quantity) <= 0) {
-              state._vm.invites[v.outerKeyId].status = INVITE_STATUS.USED
+        if (state._vm?.invites?.[signingKeyId]?.quantity != null) {
+          if (state._vm.invites[signingKeyId].quantity > 0) {
+            if ((--state._vm.invites[signingKeyId].quantity) <= 0) {
+              state._vm.invites[signingKeyId].status = INVITE_STATUS.USED
             }
           } else {
-            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + JSON.stringify(v))
+            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + originatingContractID)
             return
           }
         }
 
-        if (state._vm?.invites?.[v.outerKeyId]?.expires != null) {
-          if (state._vm.invites[v.outerKeyId].expires < Date.now()) {
-            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[v.outerKeyId].expires + ': ' + JSON.stringify(v))
+        if (state._vm?.invites?.[signingKeyId]?.expires != null) {
+          if (state._vm.invites[signingKeyId].expires < Date.now()) {
+            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[signingKeyId].expires + ': ' + originatingContractID)
             return
           }
         }
@@ -463,12 +462,23 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
+        if (!has(v, 'context')) {
+          console.error('Ignoring OP_KEY_REQUEST because it is missing the context attribute')
+          return
+        }
+
+        const context = v.context
+
+        if (context?.[0] !== originatingContractID) {
+          console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
+          return
+        }
+
         if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
+
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
-          message.originatingContractID(),
-          message.head().previousHEAD,
           message.id(),
-          v
+          context
         ])
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
@@ -636,19 +646,6 @@ export default (sbp('sbp/selectors/register', {
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys, height) : state._vm.authorizedKeys
       signingKey = authorizedKeys?.[signingKeyId]
 
-      // `signingKey` may not be present in the contract. This happens in cross-contract interactions,
-      // where a contract writes to another contract using its own keys. For example, when one requests
-      // to join a group, that message cannot be signed by the group because the secret key is only known
-      // to group members. Instead, it is signed with the keys of the person joining.
-      // TODO: Restrict this to OP_KEY_SHARE only
-      if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
-        const originatingContractState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-          'chelonia/latestContractState', message.originatingContractID()
-        ])
-
-        signingKey = originatingContractState._vm?.authorizedKeys?.[signingKeyId]
-      }
-
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
       if (
@@ -813,11 +810,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
-      if (!Array.isArray(entry) || entry.length !== 4) {
+      if (!Array.isArray(entry) || entry.length !== 2) {
         return
       }
 
-      const [originatingContractID, previousHEAD, id, v] = ((entry: any): [string, string, string, GIOpKeyRequest])
+      const [id, [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, [string, Object, number, string]])
 
       // 1. Sync (originating) identity contract
 
@@ -829,21 +826,11 @@ export default (sbp('sbp/selectors/register', {
       const contractName = state.contracts[contractID].type
       const originatingContractName = originatingState._vm.type
 
+      const v = signedIncomingData(originatingContractID, originatingState, rv, originatingContractHeight, headJSON).valueOf()
+
       try {
         // 2. Verify 'data'
-        const { data, keyId, encryptionKeyId, outerKeyId } = v
-
-        const signingKey = originatingState._vm?.authorizedKeys[keyId]
-
-        if (!signingKey || signingKey._notAfter !== undefined || !signingKey.data) {
-          throw new Error('Unable to find signing key')
-        }
-
-        // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
-        const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
-        signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
-
-        verifySignature(signingKey.data, signedInnerData.join('|'), data)
+        const { encryptionKeyId } = v
 
         const keys = pick(
           state['secretKeys'],

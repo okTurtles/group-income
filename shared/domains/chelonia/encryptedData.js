@@ -1,4 +1,5 @@
 import sbp from '@sbp/sbp'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
@@ -6,13 +7,13 @@ import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnex
 export interface EncryptedData<T> {
   encryptionKeyId: string,
   valueOf: () => T,
-  toJSON: (additionalData: ?string) => [string, string],
+  serialize: (additionalData: ?string) => [string, string],
   toString: (additionalData: ?string) => string
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
-const encryptData = function (eKeyId: string, data: any) {
+const encryptData = function (eKeyId: string, data: any, additionalData: string) {
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
   const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
@@ -42,7 +43,16 @@ const encryptData = function (eKeyId: string, data: any) {
 
   return [
     keyId(deserializedKey),
-    encrypt(deserializedKey, JSON.stringify(data))
+    encrypt(deserializedKey, JSON.stringify(data, (_, v) => {
+      if (v && has(v, 'serialize') && typeof v.serialize === 'function') {
+        if (v.serialize.length === 1) {
+          return v.serialize(additionalData)
+        } else {
+          return v.serialize()
+        }
+      }
+      return v
+    }))
   ]
 }
 
@@ -56,7 +66,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   // Compatibility with signedData (composed signed + encrypted data)
   if (typeof data.valueOf === 'function') data = data.valueOf()
 
-  if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+  if (!isRawEncryptedData(data)) {
     throw new ChelErrorDecryptionError('Invalid message format')
   }
 
@@ -106,6 +116,8 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   try {
     const result = JSON.parse(decrypt(deserializedKey, message))
     if (typeof validatorFn === 'function') validatorFn(result)
+    // TODO if (isRawSignedData(result))
+    // signedIncomingData(contractID: string, state: ?Object, result, height, additionalData: string)
     return result
   } catch (e) {
     throw new ChelErrorDecryptionError(e?.message || e)
@@ -119,11 +131,11 @@ export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T)
     get encryptionKeyId () {
       return eKeyId
     },
-    get toJSON () {
-      return boundStringValueFn
+    get serialize () {
+      return (additionalData: ?string) => boundStringValueFn(additionalData || '')
     },
     get toString () {
-      return () => JSON.stringify(this.toJSON())
+      return (additionalData: ?string) => JSON.stringify(this.serialize(additionalData))
     },
     get valueOf () {
       return () => data
@@ -152,11 +164,11 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
     get encryptionKeyId () {
       return eKeyId
     },
-    get toJSON () {
-      return boundStringValueFn
+    get serialize () {
+      return (additionalData: ?string) => boundStringValueFn(additionalData || '')
     },
     get toString () {
-      return () => JSON.stringify(this.toJSON())
+      return (additionalData: ?string) => JSON.stringify(this.serialize(additionalData))
     },
     get valueOf () {
       return () => data
@@ -179,11 +191,11 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     get encryptionKeyId () {
       return encryptedDataKeyId(data)
     },
-    get toJSON () {
+    get serialize () {
       return () => data
     },
     get toString () {
-      return () => JSON.stringify(this.toJSON())
+      return () => JSON.stringify(this.serialize())
     },
     get valueOf () {
       return decryptedValueFn
@@ -206,11 +218,11 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     get encryptionKeyId () {
       return encryptedDataKeyId(data)
     },
-    get toJSON () {
+    get serialize () {
       return () => data
     },
     get toString () {
-      return () => JSON.stringify(this.toJSON())
+      return () => JSON.stringify(this.serialize())
     },
     get valueOf () {
       return decryptedValueFn
@@ -219,9 +231,17 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
 }
 
 export const encryptedDataKeyId = (data: any): string => {
-  if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+  if (!isRawEncryptedData(data)) {
     throw new ChelErrorDecryptionError('Invalid message format')
   }
 
   return data[0]
+}
+
+export const isRawEncryptedData = (data: any): boolean => {
+  if (!Array.isArray(data) || data.length !== 2 || data.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+    return false
+  }
+
+  return true
 }
