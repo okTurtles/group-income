@@ -934,7 +934,7 @@ export default (sbp('sbp/selectors/register', {
       height: previousHeight + 1,
       op: [
         GIMessage.OP_ATOMIC,
-        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+        signedOutgoingData(state, params.signingKeyId, (payload: any), this.transientSecretKeys)
       ],
       manifest: manifestHash
     })

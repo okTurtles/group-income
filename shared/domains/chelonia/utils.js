@@ -1,9 +1,10 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
+import type { GIKey, GIKeyPurpose, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
+import type { SignedData } from './signedData.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
 
@@ -261,46 +262,56 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
   const [opT, rawOpV] = entry.rawOp()
   const state = rootState[contractID]
 
-  const recreateOperation = (opT, rawOpV) => {
+  const recreateOperation = (opT: string, rawOpV: SignedData<GIOpValue>) => {
     const opV = rawOpV.valueOf()
-    let newOpV
-    if (opT === GIMessage.OP_KEY_ADD) {
-    // Has this key already been added? (i.e., present in authorizedKeys)
-      newOpV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
-      if (newOpV.length === 0) {
-        console.info('Omitting empty OP_KEY_ADD', { head })
-        return
-      } else if (newOpV.length === opV.length) {
-        return rawOpV
+    const recreateOperationInternal = (opT: string, opV: GIOpValue): GIOpValue | typeof undefined => {
+      let newOpV: GIOpValue
+      if (opT === GIMessage.OP_KEY_ADD) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        newOpV = ((opV: any): GIOpKeyAdd).filter(({ id }) => !state?._vm.authorizedKeys[id])
+        // Has this key already been added? (i.e., present in authorizedKeys)
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_ADD', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_KEY_DEL) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        // Has this key already been removed? (i.e., no longer in authorizedKeys)
+        newOpV = opV.filter((keyId) => !!state?._vm.authorizedKeys[keyId])
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_DEL', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_KEY_UPDATE) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        // Has this key already been replaced? (i.e., no longer in authorizedKeys)
+        newOpV = ((opV: any): GIOpKeyUpdate).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_UPDATE', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_ATOMIC) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => recreateOperationInternal(t, v)).filter(Boolean): any): GIOpAtomic)
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_ATOMIC', { head })
+        } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
+          return opV
+        }
+      } else {
+        return opV
       }
-    } else if (opT === GIMessage.OP_KEY_DEL) {
-    // Has this key already been removed? (i.e., no longer in authorizedKeys)
-      newOpV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
-      if (newOpV.length === 0) {
-        console.info('Omitting empty OP_KEY_DEL', { head })
-        return
-      } else if (newOpV.length === opV.length) {
-        return rawOpV
-      }
-    } else if (opT === GIMessage.OP_KEY_UPDATE) {
-    // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-      newOpV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
-      if (newOpV.length === 0) {
-        console.info('Omitting empty OP_KEY_UPDATE', { head })
-        return
-      } else if (newOpV.length === opV.length) {
-        return rawOpV
-      }
-    } else if (opT === GIMessage.OP_ATOMIC) {
-      newOpV = opV.map((t, v) => recreateOperation(t, v)).filter(Boolean)
-      if (newOpV.length === 0) {
-        console.info('Omitting empty OP_ATOMIC', { head })
-        return
-      } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
-        return rawOpV
-      }
-    } else {
+    }
+
+    const newOpV = recreateOperationInternal(opT, opV)
+
+    if (newOpV === opV) {
       return rawOpV
+    } else if (newOpV === undefined) {
+      return
     }
 
     if (typeof rawOpV.recreate !== 'function') {

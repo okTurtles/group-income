@@ -1072,8 +1072,10 @@ const handleEvent = {
         }
         return acc
       }
-      for (const actionOpV in msg.reduce(reducer, [])) {
-        await callSideEffect(actionOpV)
+
+      const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+      for (let i = 0; i < actionsOpV.length; i++) {
+        await callSideEffect(actionsOpV[i])
       }
     }
   },
