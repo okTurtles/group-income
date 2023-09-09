@@ -64,13 +64,13 @@ const encryptData = function (eKeyId: string, data: any, additionalData: string)
         }
       }
       return v
-    }))
+    }), additionalData)
   ]
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (height: number, data: any, additionalKeys: Object, validatorFn?: (v: any) => void) {
+const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -126,7 +126,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   const deserializedKey = typeof key === 'string' ? deserializeKey(key) : key
 
   try {
-    const result = JSON.parse(decrypt(deserializedKey, message))
+    const result = JSON.parse(decrypt(deserializedKey, message, additionalData))
     if (typeof validatorFn === 'function') validatorFn(result)
     return result
   } catch (e) {
@@ -193,7 +193,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys ?? rootState.secretKeys, validatorFn)
+    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || '')
@@ -229,7 +229,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     }
     const rootState = sbp('chelonia/rootState')
     const state = rootState?.[contractID]
-    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, validatorFn)
+    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       // TODO: Specify height
