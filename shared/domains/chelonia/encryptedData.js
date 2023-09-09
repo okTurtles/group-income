@@ -219,7 +219,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
 
 export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
   let decryptedValue
-  const decryptedValueFn = () => {
+  const decryptedValueFn = (): any => {
     if (decryptedValue) {
       return decryptedValue
     }

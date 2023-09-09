@@ -336,7 +336,7 @@ export default (sbp('sbp/selectors/register', {
 
           // TODO: Verify signing permissions
 
-          const { data, meta, action } = v
+          const { data, meta, action } = (v: any)
 
           if (signingKey && (signingKey.allowedActions !== '*' && (!Array.isArray(signingKey.allowedActions) || !signingKey.allowedActions.includes(action)))) {
             throw new Error('Signing key is not allowed for action ' + action)
@@ -1075,7 +1075,7 @@ const handleEvent = {
           v = (v: any).valueOf()
         }
 
-        const { action, data, meta } = v
+        const { action, data, meta } = (v: any)
         const mutation = {
           data,
           meta,
