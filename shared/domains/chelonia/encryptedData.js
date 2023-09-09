@@ -216,7 +216,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
       return decryptedValueFn
     },
     get toJSON () {
-      return this.serialize()
+      return this.serialize
     }
   })
 }
@@ -253,7 +253,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
       return decryptedValueFn
     },
     get toJSON () {
-      return this.serialize()
+      return this.serialize
     }
   })
 }

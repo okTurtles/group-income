@@ -11,7 +11,8 @@ export interface SignedData<T> {
   serialize: (additionalData: ?string) => { _signedData: [string, string, string] },
   context?: [string, Object, number, string],
   toString: (additionalData: ?string) => string,
-  recreate?: (data: T) => SignedData<T>
+  recreate?: (data: T) => SignedData<T>,
+  toJSON?: () => [string, string]
 }
 
 const proto: Object = Object.create(null)
@@ -219,6 +220,9 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
     },
     get valueOf () {
       return verifySignedValueFn
+    },
+    get toJSON () {
+      return this.serialize
     }
   })
 }
@@ -268,6 +272,9 @@ export const rawSignedIncomingData = (data: any): SignedData<any> => {
     },
     get valueOf () {
       return verifySignedValueFn
+    },
+    get toJSON () {
+      return this.serialize
     }
   })
 }
