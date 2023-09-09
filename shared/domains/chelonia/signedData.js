@@ -14,6 +14,16 @@ export interface SignedData<T> {
   recreate?: (data: T) => SignedData<T>
 }
 
+const proto: Object = Object.create(null)
+
+const wrapper = <T>(o: T): T => {
+  return Object.setPrototypeOf(o, proto)
+}
+
+export const isSignedData = (o: any): boolean => {
+  return o && Object.getPrototypeOf(o) === proto && has(o, 'signingKeyId') && has(o, 'valueOf')
+}
+
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const signData = function (sKeyId: string, data: any, additionalKeys: Object, additionalData: string) {
@@ -121,7 +131,7 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
   const boundStringValueFn = signData.bind(state, sKeyId, data, additionalKeys)
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
-  return {
+  return wrapper({
     get signingKeyId () {
       return sKeyId
     },
@@ -137,7 +147,7 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
     get recreate () {
       return (data: T) => signedOutgoingData(state, sKeyId, data, additionalKeys)
     }
-  }
+  })
 }
 
 // Used for OP_CONTRACT as a state does not yet exist
@@ -159,7 +169,7 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
   const boundStringValueFn = signData.bind(state, sKeyId, data, { [sKeyId]: key })
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
-  return {
+  return wrapper({
     get signingKeyId () {
       return sKeyId
     },
@@ -175,7 +185,7 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
     get recreate () {
       return (data: T) => signedOutgoingDataWithRawKey(key, data)
     }
-  }
+  })
 }
 
 export const signedIncomingData = (contractID: string, state: ?Object, data: any, height: number, additionalData: string): SignedData<any> => {
@@ -193,7 +203,7 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
       }
     : () => JSON.parse(data._signedData[0])
 
-  return {
+  return wrapper({
     get signingKeyId () {
       if (verifySignedValue) return verifySignedValue[0]
       return signedDataKeyId(data)
@@ -210,7 +220,7 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
     get valueOf () {
       return verifySignedValueFn
     }
-  }
+  })
 }
 
 export const signedDataKeyId = (data: any): string => {
@@ -245,7 +255,7 @@ export const rawSignedIncomingData = (data: any): SignedData<any> => {
     return verifySignedValue[1]
   }
 
-  return {
+  return wrapper({
     get signingKeyId () {
       if (verifySignedValue) return verifySignedValue[0]
       return signedDataKeyId(data)
@@ -259,5 +269,5 @@ export const rawSignedIncomingData = (data: any): SignedData<any> => {
     get valueOf () {
       return verifySignedValueFn
     }
-  }
+  })
 }

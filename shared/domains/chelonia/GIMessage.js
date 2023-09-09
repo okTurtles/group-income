@@ -69,14 +69,14 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
 
   const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
     // $FlowFixMe
-    ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys)
+    ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
     : parsedMessage.valueOf()
 
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     ((message: any): any[]).forEach((key) => {
       // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
       if (key.meta?.private?.content) {
-        key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, (value) => {
+        key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
@@ -90,7 +90,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
       if (key.meta?.private?.content) {
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
         const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
-        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, (value) => {
+        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
@@ -108,12 +108,14 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     }
   }
 
+  // Actions must be signed using a key for the current contract
   if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
-    if (head.originatingContractID && head.originatingContractID !== contractID) {
-      return signedIncomingData(head.originatingContractID, undefined, message, head.originatingContractHeight, headJSON)
-    } else {
-      return signedIncomingData(contractID, state, message, height, headJSON)
-    }
+    return signedIncomingData(contractID, state, message, height, headJSON)
+  }
+
+  // Inner signatures handled by encryptedData
+  if (op === GIMessage.OP_ACTION_ENCRYPTED) {
+    return message
   }
 
   if (op === GIMessage.OP_ATOMIC) {

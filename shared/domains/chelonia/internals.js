@@ -13,7 +13,7 @@ import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
 import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
-import { signedIncomingData } from './signedData.js'
+import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[], height: number): Object => {
@@ -328,6 +328,14 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
+          let innerSigningKeyId: string | typeof undefined
+          if (isSignedData(v)) {
+            innerSigningKeyId = (v: any).signingKeyId
+            v = (v: any).valueOf()
+          }
+
+          // TODO: Verify signing permissions
+
           const { data, meta, action } = v
 
           if (signingKey && (signingKey.allowedActions !== '*' && (!Array.isArray(signingKey.allowedActions) || !signingKey.allowedActions.includes(action)))) {
@@ -337,7 +345,23 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
+
+          sbp(
+            `${manifestHash}/${action}/process`,
+            {
+              data,
+              meta,
+              hash,
+              id,
+              contractID,
+              signingKeyId,
+              innerSigningKeyId,
+              get innerSigningContractID () {
+                return innerSigningKeyId && state._vm.authorizedKeys[innerSigningKeyId].foreignKey ? new URL(state._vm.authorizedKeys[innerSigningKeyId].foreignKey).pathname : contractID
+              }
+            },
+            state
+          )
         }
       },
       [GIMessage.OP_KEY_SHARE] (v: GIOpKeyShare) {
@@ -478,6 +502,7 @@ export default (sbp('sbp/selectors/register', {
 
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
           message.id(),
+          signingKeyId,
           context
         ])
 
@@ -492,11 +517,11 @@ export default (sbp('sbp/selectors/register', {
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
-          const keyId = state._vm.pendingKeyshares[hash][2].outerKeyId
+          const keyId = state._vm.pendingKeyshares[hash][1]
+          const originatingContractID = state._vm.pendingKeyshares[hash][2][0]
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
-            state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[hash][0])
+            state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
-          const originatingContractID = state._vm.pendingKeyshares[hash][0]
           delete state._vm.pendingKeyshares[hash]
           delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
@@ -810,11 +835,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
-      if (!Array.isArray(entry) || entry.length !== 2) {
+      if (!Array.isArray(entry) || entry.length !== 3) {
         return
       }
 
-      const [id, [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, [string, Object, number, string]])
+      const [id, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, string, [string, Object, number, string]])
 
       // 1. Sync (originating) identity contract
 
@@ -1043,8 +1068,26 @@ const handleEvent = {
       const hash = message.hash()
       const id = message.id()
       const callSideEffect = (field) => {
-        const { action, data, meta } = ((field.valueOf(): any): GIOpActionUnencrypted)
-        const mutation = { data, meta, hash, id, contractID, description: message.description() }
+        let v = field.valueOf()
+        let innerSigningKeyId: string | typeof undefined
+        if (isSignedData(v)) {
+          innerSigningKeyId = (v: any).signingKeyId
+          v = (v: any).valueOf()
+        }
+
+        const { action, data, meta } = v
+        const mutation = {
+          data,
+          meta,
+          hash,
+          id,
+          contractID,
+          description: message.description(),
+          innerSigningKeyId,
+          get innerSigningContractID () {
+            return innerSigningKeyId && state._vm.authorizedKeys[innerSigningKeyId].foreignKey ? new URL(state._vm.authorizedKeys[innerSigningKeyId].foreignKey).pathname : contractID
+          }
+        }
         return sbp(`${manifestHash}/${action}/sideEffect`, mutation)
       }
       const msg = Object(message.message())

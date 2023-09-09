@@ -43,6 +43,7 @@ export type ChelActionParams = {
   contractID: string;
   data: Object;
   signingKeyId: string;
+  innerSigningKeyId: string;
   encryptionKeyId: ?string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -970,12 +971,15 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
+  const signedMessage = params.innerSigningKeyId
+    ? signedOutgoingData(state, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)
+    : unencMessage
   if (opType === GIMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
     throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')
   }
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED
-    ? unencMessage
-    : encryptedOutgoingData(state, ((params.encryptionKeyId: any): string), unencMessage)
+    ? signedMessage
+    : encryptedOutgoingData(state, ((params.encryptionKeyId: any): string), signedMessage)
   let message = GIMessage.createV1_0({
     contractID,
     previousHEAD,

@@ -3,6 +3,7 @@ import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
+import { isRawSignedData, signedIncomingData } from './signedData.js'
 
 export interface EncryptedData<T> {
   encryptionKeyId: string,
@@ -116,8 +117,6 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   try {
     const result = JSON.parse(decrypt(deserializedKey, message))
     if (typeof validatorFn === 'function') validatorFn(result)
-    // TODO if (isRawSignedData(result))
-    // signedIncomingData(contractID: string, state: ?Object, result, height, additionalData: string)
     return result
   } catch (e) {
     throw new ChelErrorDecryptionError(e?.message || e)
@@ -176,14 +175,19 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
   }
 }
 
-export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, validatorFn?: (v: any) => void): EncryptedData<T> => {
+export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
   let decryptedValue
-  const decryptedValueFn = () => {
+  const decryptedValueFn = (): any => {
     if (decryptedValue) {
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
     decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys ?? rootState.secretKeys, validatorFn)
+
+    if (isRawSignedData(decryptedValue)) {
+      decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || '')
+    }
+
     return decryptedValue
   }
 
@@ -203,14 +207,21 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
   }
 }
 
-export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, validatorFn?: (v: any) => void): EncryptedData<T> => {
+export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(rootState?.[contractID], NaN, data, additionalKeys ?? rootState.secretKeys, validatorFn)
+    const state = rootState?.[contractID]
+    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, validatorFn)
+
+    if (isRawSignedData(decryptedValue)) {
+      // TODO: Specify height
+      return signedIncomingData(contractID, state, decryptedValue, NaN, additionalData || '')
+    }
+
     return decryptedValue
   }
 

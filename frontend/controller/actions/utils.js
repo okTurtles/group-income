@@ -29,6 +29,7 @@ export function encryptedAction (
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
+      innerSigningKeyId: signingKeyId,
       encryptionKeyId,
       action: action.replace('gi.actions', 'gi.contracts'),
       originatingContractID

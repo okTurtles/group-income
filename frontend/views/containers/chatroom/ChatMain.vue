@@ -290,7 +290,8 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = message.decryptedValue()
+            const msgValue = message.decryptedValue().valueOf()
+
             const { meta, data } = msgValue
             this.messageState.contract.messages.push({
               ...createMessage({ meta, data, hash: message.hash(), id: message.id() }),
@@ -561,7 +562,10 @@ export default ({
       const isMessageAddedOrDeleted = (message: GIMessage) => {
         if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-        const { action, meta } = message.decryptedValue()
+        // TODO: Avoid .decryptedValue().valueOf() because apart from looking
+        // funny it also discards information about the signature, which is
+        // necessary to validate the sender of the message
+        const { action, meta } = message.decryptedValue().valueOf()
         const rootState = sbp('state/vuex/state')
         let addedOrDeleted = 'NONE'
 
