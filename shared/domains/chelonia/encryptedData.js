@@ -9,7 +9,8 @@ export interface EncryptedData<T> {
   encryptionKeyId: string,
   valueOf: () => T,
   serialize: (additionalData: ?string) => [string, string],
-  toString: (additionalData: ?string) => string
+  toString: (additionalData: ?string) => string,
+  toJSON?: () => [string, string]
 }
 
 const proto: Object = Object.create(null)
@@ -213,6 +214,9 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     },
     get valueOf () {
       return decryptedValueFn
+    },
+    get toJSON () {
+      return this.serialize()
     }
   })
 }
@@ -247,6 +251,9 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     },
     get valueOf () {
       return decryptedValueFn
+    },
+    get toJSON () {
+      return this.serialize()
     }
   })
 }
