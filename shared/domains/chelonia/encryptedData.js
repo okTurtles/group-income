@@ -12,6 +12,16 @@ export interface EncryptedData<T> {
   toString: (additionalData: ?string) => string
 }
 
+const proto: Object = Object.create(null)
+
+const wrapper = <T>(o: T): T => {
+  return Object.setPrototypeOf(o, proto)
+}
+
+export const isEncryptedData = (o: any): boolean => {
+  return o && Object.getPrototypeOf(o) === proto && has(o, 'encryptionKeyId') && has(o, 'valueOf')
+}
+
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const encryptData = function (eKeyId: string, data: any, additionalData: string) {
@@ -126,7 +136,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
 export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T): EncryptedData<T> => {
   const boundStringValueFn = encryptData.bind(state, eKeyId, data)
 
-  return {
+  return wrapper({
     get encryptionKeyId () {
       return eKeyId
     },
@@ -139,7 +149,7 @@ export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T)
     get valueOf () {
       return () => data
     }
-  }
+  })
 }
 
 // Used for OP_CONTRACT as a state does not yet exist
@@ -159,7 +169,7 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
   }
   const boundStringValueFn = encryptData.bind(state, eKeyId, data)
 
-  return {
+  return wrapper({
     get encryptionKeyId () {
       return eKeyId
     },
@@ -172,7 +182,7 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
     get valueOf () {
       return () => data
     }
-  }
+  })
 }
 
 export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
@@ -191,7 +201,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     return decryptedValue
   }
 
-  return {
+  return wrapper({
     get encryptionKeyId () {
       return encryptedDataKeyId(data)
     },
@@ -204,7 +214,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     get valueOf () {
       return decryptedValueFn
     }
-  }
+  })
 }
 
 export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, data: any, _1: any, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
@@ -225,7 +235,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     return decryptedValue
   }
 
-  return {
+  return wrapper({
     get encryptionKeyId () {
       return encryptedDataKeyId(data)
     },
@@ -238,7 +248,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     get valueOf () {
       return decryptedValueFn
     }
-  }
+  })
 }
 
 export const encryptedDataKeyId = (data: any): string => {
