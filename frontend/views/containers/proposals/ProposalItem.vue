@@ -177,6 +177,15 @@ export default ({
                 currentValue: currencies[mincomeCurrency].displayWithCurrency(currentValue),
                 proposedValue: currencies[mincomeCurrency].displayWithCurrency(proposedValue)
               }
+            },
+            'distributionDate': () => {
+              const { currentValue, proposedValue } = this.proposal.data.proposalData
+
+              return {
+                setting: L('distribution date'),
+                currentValue: humanDate(currentValue, { month: 'long', year: 'numeric', day: 'numeric' }),
+                proposedValue: humanDate(proposedValue, { month: 'long', year: 'numeric', day: 'numeric' })
+              }
             }
           }[setting]()
 
