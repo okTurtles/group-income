@@ -17,6 +17,9 @@ export default (sbp('sbp/selectors/register', {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
 
+      const rootState = sbp('state/vuex/state')
+      const userID = rootState.loggedIn.identityContractID
+
       if (!cekOpts) {
         const CEK = keygen(CURVE25519XSALSA20POLY1305)
         const CEKid = keyId(CEK)
@@ -94,6 +97,9 @@ export default (sbp('sbp/selectors/register', {
         [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
       )
 
+      const userCSKid = findKeyIdByName(rootState[userID], 'csk')
+      if (!userCSKid) throw new Error('User CSK id not found')
+
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
         signingKeyId: cskOpts.id,
@@ -121,6 +127,18 @@ export default (sbp('sbp/selectors/register', {
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
             data: cekOpts.data
+          },
+          {
+            foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+            id: userCSKid,
+            data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+            // TODO: permissions for inner signing key7s
+            permissions: [],
+            // TODO: permissions for inner signing key7s
+            allowedActions: [],
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            name: `${userID}/${userCSKid}`
           }
         ],
         contractName: 'gi.contracts/chatroom'

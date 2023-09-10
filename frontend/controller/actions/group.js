@@ -25,6 +25,7 @@ import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -115,6 +116,9 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
+    const rootState = sbp('state/vuex/state')
+    const userID = rootState.loggedIn.identityContractID
+
     // Create the necessary keys to initialise the contract
     // eslint-disable-next-line camelcase
     const CSK = keygen(EDWARDS25519SHA512BATCH)
@@ -135,8 +139,6 @@ export default (sbp('sbp/selectors/register', {
     const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
     const inviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(inviteKey, true))
-
-    const rootState = sbp('state/vuex/state')
 
     try {
       const proposalSettings = {
@@ -159,6 +161,9 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/storeSecretKeys',
         [CEK, CSK].map(key => ({ key, transient: true }))
       )
+
+      const userCSKid = findKeyIdByName(rootState[userID], 'csk')
+      if (!userCSKid) throw new Error('User CSK id not found')
 
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
@@ -211,6 +216,18 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: inviteKeyP
+          },
+          {
+            foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+            id: userCSKid,
+            data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+            // TODO: permissions for inner signing key7s
+            permissions: [],
+            // TODO: permissions for inner signing key7s
+            allowedActions: [],
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            name: `${userID}/${userCSKid}`
           }
         ],
         data: {
@@ -282,8 +299,6 @@ export default (sbp('sbp/selectors/register', {
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
       })
-
-      const userID = rootState.loggedIn.identityContractID
 
       // As the group's creator, we share the group secret keys with
       // ourselves, which we need to do be able to sync the group with a
@@ -448,6 +463,27 @@ export default (sbp('sbp/selectors/register', {
             keyIds: [PEKid]
           })
 
+          const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
+          const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+          await sbp('chelonia/out/keyAdd', {
+            contractID: params.contractID,
+            contractName: 'gi.contracts/group',
+            data: [{
+              foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+              id: userCSKid,
+              data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+              // TODO: Permissions
+              // TODO: Remove key when leaving group
+              // TODO: Do the same when joining a chatroom
+              permissions: [],
+              allowedActions: [],
+              purpose: ['sig'],
+              ringLevel: Number.MAX_SAFE_INTEGER,
+              name: `${userID}/${userCSKid}`
+            }],
+            signingKeyId: CSKid
+          })
+
           // Send inviteAccept action to the group to add ourselves to the
           // members list
           await sbp('gi.actions/group/inviteAccept', {
@@ -457,8 +493,6 @@ export default (sbp('sbp/selectors/register', {
               postpublish: null
             }
           })
-
-          const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
 
           // Add the group's CSK to our identity contract so that we can receive
           // key rotation updates and DMs.

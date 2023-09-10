@@ -25,11 +25,11 @@ export function encryptedAction (
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
-      innerSigningKeyId: signingKeyId,
+      innerSigningKeyId,
       encryptionKeyId,
       action: action.replace('gi.actions', 'gi.contracts'),
       originatingContractID
@@ -39,9 +39,11 @@ export function encryptedAction (
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
+        const rootState = sbp('state/vuex/state')
         const signingState = !params.signingContractID || params.signingContractID === params.contractID ? state : await sbp('chelonia/latestContractState', params.signingContractID)
 
         const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
+        const innerSigningKeyId = params.innerSigningKeyId || (rootState.contracts[params.contractID].type === 'gi.contracts/identity' ? undefined : findKeyIdByName(rootState[rootState.loggedIn.identityContractID], 'csk'))
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
         if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
@@ -49,7 +51,12 @@ export function encryptedAction (
           return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId, params.originatingContractID)
+        if ((rootState.contracts[params.contractID].type !== 'gi.contracts/identity' && !innerSigningKeyId) || (innerSigningKeyId && !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
+          console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID: params.contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
+          return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
+        }
+
+        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId, encryptionKeyId, params.originatingContractID)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {

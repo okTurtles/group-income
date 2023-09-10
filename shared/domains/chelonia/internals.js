@@ -16,6 +16,12 @@ import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateK
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
+const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state: Object) => {
+  return signingKeyId && state._vm.authorizedKeys[signingKeyId].foreignKey
+    ? new URL(state._vm.authorizedKeys[signingKeyId].foreignKey).pathname
+    : contractID
+}
+
 const keysToMap = (keys: GIKey[], height: number): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a GIMessage may not be serializable (i.e., supported by the
@@ -355,9 +361,12 @@ export default (sbp('sbp/selectors/register', {
               id,
               contractID,
               signingKeyId,
+              get signingContractID () {
+                return getContractIDfromKeyId(contractID, signingKeyId, state)
+              },
               innerSigningKeyId,
               get innerSigningContractID () {
-                return innerSigningKeyId && state._vm.authorizedKeys[innerSigningKeyId].foreignKey ? new URL(state._vm.authorizedKeys[innerSigningKeyId].foreignKey).pathname : contractID
+                return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
               }
             },
             state
@@ -1067,6 +1076,7 @@ const handleEvent = {
       const manifestHash = message.manifest()
       const hash = message.hash()
       const id = message.id()
+      const signingKeyId = message.signingKeyId()
       const callSideEffect = (field) => {
         let v = field.valueOf()
         let innerSigningKeyId: string | typeof undefined
@@ -1083,9 +1093,13 @@ const handleEvent = {
           id,
           contractID,
           description: message.description(),
+          signingKeyId,
+          get signingContractID () {
+            return getContractIDfromKeyId(contractID, signingKeyId, state)
+          },
           innerSigningKeyId,
           get innerSigningContractID () {
-            return innerSigningKeyId && state._vm.authorizedKeys[innerSigningKeyId].foreignKey ? new URL(state._vm.authorizedKeys[innerSigningKeyId].foreignKey).pathname : contractID
+            return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
           }
         }
         return sbp(`${manifestHash}/${action}/sideEffect`, mutation)
