@@ -13,14 +13,7 @@
 // https://on.cypress.io/configuration
 // ***********************************************************
 
-// ***********************************************
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-
 import 'cypress-pipe'
-
 import './commands.js'
 import './output-logs.js'
 

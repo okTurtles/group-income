@@ -376,12 +376,10 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
     cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
-    cy.get('.buttons').within(() => {
-      cy.getByDT('addMembers').should('exist')
-      if (!description) {
-        cy.getByDT('addDescription').should('exist')
-      }
-    })
+    cy.getByDT('addMembers').should('exist')
+    if (!description) {
+      cy.getByDT('addDescription').should('exist')
+    }
   })
 })
 
