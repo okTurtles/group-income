@@ -116,7 +116,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
-import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -290,14 +290,10 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = message.decryptedValue().valueOf()
-
-            const { meta, data } = msgValue
-            this.messageState.contract.messages.push({
-              ...createMessage({ meta, data, hash: message.hash(), id: message.id() }),
-              // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
-              // when we don't get event after a certain period
-              pending: true // NOTE: do not RENAME this as it's being used inside the contract
+            sbp('chelonia/in/processMessage', message, this.messageState.contract).then((state) => {
+              this.messageState.contract = state
+            }).catch((e) => {
+              console.error('Error sending message during pre-publish: ' + e.message)
             })
             this.stopReplying()
             this.updateScroll()

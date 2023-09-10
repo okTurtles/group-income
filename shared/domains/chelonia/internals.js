@@ -360,6 +360,7 @@ export default (sbp('sbp/selectors/register', {
               hash,
               id,
               contractID,
+              direction: message.direction(),
               signingKeyId,
               get signingContractID () {
                 return getContractIDfromKeyId(contractID, signingKeyId, state)
@@ -1093,6 +1094,7 @@ const handleEvent = {
           id,
           contractID,
           description: message.description(),
+          direction: message.direction(),
           signingKeyId,
           get signingContractID () {
             return getContractIDfromKeyId(contractID, signingKeyId, state)

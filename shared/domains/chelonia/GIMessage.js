@@ -61,7 +61,8 @@ export type GIOpValue = ProtoGIOpValue | GIOpAtomic
 export type GIOpRaw = [GIOpType, SignedData<GIOpValue>]
 export type GIOp = [GIOpType, GIOpValue]
 
-type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue, signingKeyId: string } | { mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
+export type GIMsgDirection = 'incoming' | 'outgoing'
+type GIMsgParams = { direction: GIMsgDirection, mapping: Object; head: Object; message: GIOpValue, signingKeyId: string } | { direction: GIMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
 
 const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SignedData<GIOpValue>, additionalKeys?: Object, state: Object): GIOpValue => {
   const op = head.op
@@ -135,6 +136,7 @@ export class GIMessage {
   _message: Object
   _signedMessageData: SignedData<GIOpValue>
   _signingKeyId: string
+  _direction: GIMsgDirection
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -227,6 +229,7 @@ export class GIMessage {
     let message: GIOpValue | typeof undefined
 
     return new this({
+      direction: 'incoming',
       mapping: { key: blake32Hash(value), value },
       head,
       get message () {
@@ -241,6 +244,7 @@ export class GIMessage {
   }
 
   constructor (params: GIMsgParams) {
+    this._direction = params.direction
     this._mapping = params.mapping
     this._head = params.head
     let messageGetter: () => Object
@@ -349,6 +353,10 @@ export class GIMessage {
     // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
     return this.head().nonce
   }
+
+  direction (): 'incoming' | 'outgoing' {
+    return this._direction
+  }
 }
 
 function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgParams {
@@ -366,6 +374,7 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   messageJSON.head = headJSON
   const value = JSON.stringify(messageJSON)
   return {
+    direction: has(message, 'recreate') ? 'outgoing' : 'incoming',
     mapping: { key: blake32Hash(value), value },
     head,
     signedMessageData: message

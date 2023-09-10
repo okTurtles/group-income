@@ -370,8 +370,14 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ direction, data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
+          return
+        }
+        if (direction === 'outgoing') {
+          // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
+          // when we don't get event after a certain period
+          state.messages.push({ ...createMessage({ meta, data, hash, id, state }), pending: true })
           return
         }
         // NOTE: id(GIMessage.id()) should be used as identifier for GIMessages, but not hash(GIMessage.hash())
