@@ -656,7 +656,7 @@ export default ({
           $state.loaded()
         }
         if (completed !== undefined) {
-          // NOTE: 'this.ephemeral.messagesInitiated' can only be set true only when renderMoreMessages are successfully proceeded
+          // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
           this.ephemeral.messagesInitiated = true
         }
       })
