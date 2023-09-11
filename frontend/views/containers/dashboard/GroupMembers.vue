@@ -68,7 +68,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
       'groupMembersCount',
       'groupMembersSorted',
       'groupShouldPropose',
