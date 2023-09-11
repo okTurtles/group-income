@@ -177,7 +177,7 @@ const rawSignatureFnBuilder = (key) => {
   }
 }
 
-const signatureFnBuilder = function (signingContractID: string, signingKeyId: string) {
+const signatureFnBuilder = function (this: any, signingContractID, signingKeyId) {
   const rootState = sbp(this.config.stateSelector)
 
   if (!signingContractID) {
