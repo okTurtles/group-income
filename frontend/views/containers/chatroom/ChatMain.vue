@@ -428,6 +428,8 @@ export default ({
       }
     },
     async renderMoreMessages (shouldInitiate = true) {
+      // NOTE: 'this.renderingChatRoomId' can be changed while running this function
+      //       we save it in the contant variable 'chatRoomId'
       const chatRoomId = this.renderingChatRoomId
       // NOTE: shouldInitiate describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
@@ -480,9 +482,9 @@ export default ({
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
       if (chatRoomId !== this.renderingChatRoomId) {
-        // NOTE: To avoid rendering the incorrect events for the currentChatRoom
-        // While getting the events from the backend, this.renderingChatRoomId could be changed
-        // In this case, we should avoid the previous events because they are for another channel, not the current channel
+        // NOTE: This is to avoid rendering the incorrect events for the current chatroom
+        //       while getting the events from the backend, this.renderingChatRoomId could be changed
+        //       In this case, we should avoid the previous events because they are for another channel, not for the current one
         return
       }
 
@@ -654,6 +656,7 @@ export default ({
           $state.loaded()
         }
         if (completed !== undefined) {
+          // NOTE: 'this.ephemeral.messagesInitiated' can only be set true only when renderMoreMessages are successfully proceeded
           this.ephemeral.messagesInitiated = true
         }
       })

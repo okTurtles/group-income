@@ -124,7 +124,6 @@ export default ({
             return false
           }
           const chatRoomId = this.ourGroupDirectMessageFromUsernames(username)
-          console.log(chatRoomId, username, '^&^&^&^&^&^&^&^&^&^&^&')
           return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
         })
         .map(username => this.ourContactProfiles[username])
