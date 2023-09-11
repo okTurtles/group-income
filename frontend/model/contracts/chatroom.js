@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -307,25 +307,25 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
-        username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
-        member: string // username to be removed
+        username: string,
+        operator: string
       }),
       process ({ data, meta, hash, id }, { state }) {
-        const { member } = data
-        const isKicked = data.username && member !== data.username
-        if (!state.onlyRenderMessage && !state.users[member]) {
-          throw new Error(`Can not leave the chatroom which ${member} are not part of`)
+        const { username, operator } = data
+        const isKicked = username !== operator
+        if (!state.onlyRenderMessage && !state.users[username]) {
+          throw new Error(`Can not leave the chatroom which ${username} are not part of`)
         }
-        Vue.delete(state.users, member)
+        Vue.delete(state.users, username)
 
         if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
-        const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {})
+        const notificationData = createNotificationData(notificationType, isKicked ? { username } : {})
         const newMessage = createMessage({
-          meta: isKicked ? meta : { ...meta, username: member },
+          meta: isKicked ? meta : { ...meta, username },
           hash,
           id,
           data: notificationData,
@@ -334,7 +334,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ data, hash, contractID, meta }, { state }) {
-        if (data.member === sbp('state/vuex/state').loggedIn.username) {
+        if (data.username === sbp('state/vuex/state').loggedIn.username) {
           if (sbp('chelonia/contract/isSyncing', contractID)) {
             return
           }

@@ -36,18 +36,19 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-export async function leaveAllChatRooms (groupContractID: string, member: string) {
-  // let user leaves all the chatrooms before leaving group
+export async function leaveAllChatRooms (groupContractID: string, username: string) {
+  // NOTE: user should be left from all the chatrooms before leaving group
   const rootState = sbp('state/vuex/state')
   const chatRooms = rootState[groupContractID].chatRooms
   const chatRoomIDsToLeave = Object.keys(chatRooms)
-    .filter(cID => chatRooms[cID].users.includes(member))
+    .filter(cID => chatRooms[cID].users.includes(username))
 
   try {
     for (const chatRoomID of chatRoomIDsToLeave) {
       await sbp('gi.actions/group/leaveChatRoom', {
         contractID: groupContractID,
-        data: { chatRoomID, member, leavingGroup: true }
+        data: { chatRoomID, username },
+        options: { leavingGroup: true }
       })
     }
   } catch (e) {
@@ -712,6 +713,30 @@ export default (sbp('sbp/selectors/register', {
     })
     return message
   }),
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async function (sendMessage, params) {
+    const rootState = sbp('state/vuex/state')
+    const { username, chatRoomID } = params.data
+
+    await sbp('gi.actions/chatroom/leave', {
+      contractID: chatRoomID,
+      data: {
+        username,
+        operator: params.options?.leavingGroup ? username : rootState.loggedIn.username
+      },
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
+
+    return await sendMessage({
+      ...omit(params, ['options', 'action', 'hooks']),
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
+      }
+    })
+  }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
       ...omit(params, ['options', 'hooks']),
@@ -965,7 +990,6 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
-  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
