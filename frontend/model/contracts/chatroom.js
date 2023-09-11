@@ -308,6 +308,9 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
         username: string,
+        // NOTE: 'operator' is someone who works as main actor of this action.
+        //       It is used to select profile picture of message inside the ChatMain.vue.
+        //       'operator' always equals to 'username' unless 'operator' kicks 'username' in the chatroom.
         operator: string
       }),
       process ({ data, meta, hash, id }, { state }) {
