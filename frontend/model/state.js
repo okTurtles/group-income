@@ -544,6 +544,9 @@ const getters = {
             const p2JoinedDate = new Date(state[chatRoomId].users[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
+        // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
+        //       His profile picture can be used as the picture of the direct message
+        //       possibly with the badge of the number of partners.
         const lastJoinedPartner = partners[partners.length - 1]
         currentGroupDirectMessages[chatRoomId] = {
           ...getters.ourDirectMessages[chatRoomId],

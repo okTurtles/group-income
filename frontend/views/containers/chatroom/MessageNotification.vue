@@ -57,6 +57,9 @@ export default ({
       const displayName = this.userDisplayName(username)
 
       const notificationTemplates = {
+        // NOTE: 'onDirectMessage' is not being used at the moment
+        //       since no notification messages are made inside the direct messages.
+        //       But it's not removed because it could be useful in the future.
         onDirectMessage: {
           [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member: {displayName}', { displayName }),
           [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined')

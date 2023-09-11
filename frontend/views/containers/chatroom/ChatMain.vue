@@ -155,6 +155,11 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
+        // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
+        //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomId
+        //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
+        //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
+        //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
         renderingChatRoomId: null,
         replyingMessage: null,
         replyingMessageHash: null,
