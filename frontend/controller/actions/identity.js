@@ -499,6 +499,8 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
     const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+    // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
+    //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
     const currentGroupId = rootState.currentGroupId
 
     const message = await sbp('gi.actions/chatroom/create', {
