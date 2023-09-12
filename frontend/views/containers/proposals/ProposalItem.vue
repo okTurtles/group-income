@@ -340,6 +340,10 @@ export default ({
 .c-item-wrapper {
   margin-top: 2rem;
 
+  &:first-child {
+    margin-top: 0;
+  }
+
   &:not(:last-child) {
     padding-bottom: 2rem;
     border-bottom: 1px solid $general_1;

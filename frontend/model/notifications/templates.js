@@ -111,8 +111,8 @@ export default ({
       body: L('{name} has left your group. Contributions were updated accordingly.', {
         name: strong(data.username)
       }),
-      icon: 'icon-minus',
-      level: 'info',
+      icon: 'user-minus',
+      level: 'danger',
       linkTo: '/contributions',
       scope: 'group'
     }
