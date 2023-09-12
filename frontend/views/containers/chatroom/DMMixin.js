@@ -16,21 +16,28 @@ const DMMixin: Object = {
     ])
   },
   methods: {
-    createDirectMessage (usernames: string | string[]) {
+    async createDirectMessage (usernames: string | string[]) {
       if (typeof usernames === 'string') {
         usernames = [usernames]
       }
-      // NOTE: username should be valid
-      sbp('gi.actions/identity/createDirectMessage', {
-        contractID: this.ourIdentityContractId,
-        data: { usernames }
-      })
+      try {
+        await sbp('gi.actions/identity/createDirectMessage', {
+          contractID: this.ourIdentityContractId,
+          data: { usernames }
+        })
+      } catch (err) {
+        alert(err.message)
+      }
     },
-    setDMVisibility (chatRoomId: string, visible: boolean) {
-      sbp('gi.actions/identity/setDirectMessageVisibility', {
-        contractID: this.ourIdentityContractId,
-        data: { contractID: chatRoomId, visible }
-      })
+    async setDMVisibility (chatRoomId: string, visible: boolean) {
+      try {
+        await sbp('gi.actions/identity/setDirectMessageVisibility', {
+          contractID: this.ourIdentityContractId,
+          data: { contractID: chatRoomId, visible }
+        })
+      } catch (err) {
+        alert(err.message)
+      }
     },
     redirect (chatRoomId: string) {
       // NOTE: chatRoomId should be valid

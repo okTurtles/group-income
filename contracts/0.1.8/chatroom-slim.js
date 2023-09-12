@@ -7371,8 +7371,7 @@ ${this.getErrorInfo()}`;
             },
             attributes: {
               creator: meta.username,
-              deletedDate: null,
-              archivedDate: null
+              deletedDate: null
             },
             users: {},
             messages: []
@@ -7395,8 +7394,7 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
-            console.warn("Can not join the chatroom which you are already part of");
-            return;
+            throw new Error(`Can not join the chatroom which ${username} is already part of`);
           }
           import_common.Vue.set(state.users, username, { joinedDate: meta.createdDate });
           const { type, privacyLevel } = state.attributes;
@@ -7492,7 +7490,7 @@ ${this.getErrorInfo()}`;
           const { member } = data;
           const isKicked = data.username && member !== data.username;
           if (!state.onlyRenderMessage && !state.users[member]) {
-            throw new Error(`Can not leave the chatroom which ${member} are not part of`);
+            throw new Error(`Can not leave the chatroom which ${member} is not part of`);
           }
           import_common.Vue.delete(state.users, member);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {

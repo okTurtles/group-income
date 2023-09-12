@@ -163,8 +163,7 @@ sbp('chelonia/defineContract', {
           },
           attributes: {
             creator: meta.username,
-            deletedDate: null,
-            archivedDate: null
+            deletedDate: null
           },
           users: {},
           messages: []
@@ -187,9 +186,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, id }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
-          // this can happen when we're logging in on another machine, and also in other circumstances
-          console.warn('Can not join the chatroom which you are already part of')
-          return
+          throw new Error(`Can not join the chatroom which ${username} is already part of`)
         }
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
@@ -311,7 +308,7 @@ sbp('chelonia/defineContract', {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
-          throw new Error(`Can not leave the chatroom which ${member} are not part of`)
+          throw new Error(`Can not leave the chatroom which ${member} is not part of`)
         }
         Vue.delete(state.users, member)
 
