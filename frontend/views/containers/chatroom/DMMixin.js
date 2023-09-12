@@ -40,7 +40,6 @@ const DMMixin: Object = {
       }
     },
     redirect (chatRoomId: string) {
-      // NOTE: chatRoomId should be valid
       this.$router.push({
         name: 'GroupChatConversation',
         params: { chatRoomId }
