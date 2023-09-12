@@ -148,14 +148,14 @@ export default ({
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       // proposals which are archived in the last 24 hours
       this.ephemeral.archivedProposals = archivedProposals
-        .filter(([hash, obj]) => Date.now() - new Date(obj.dateClosed).getTime() < DAYS_MILLIS)
-        .sort(([hash1, obj1], [hash2, obj2]) => new Date(obj2.dateClosed).getTime() - new Date(obj1.dateClosed).getTime())
+        .filter(([hash, prop]) => Date.now() - new Date(prop.dateClosed).getTime() < DAYS_MILLIS)
+        .sort(([hash1, prop1], [hash2, prop2]) => new Date(prop2.dateClosed).getTime() - new Date(prop1.dateClosed).getTime())
       // after a day, remove it from the list
       this.clearTimeouts()
-      for (const [hash, obj] of this.ephemeral.archivedProposals) {
+      for (const [hash, proposal] of this.ephemeral.archivedProposals) {
         this.ephemeral.timeouts.push(setTimeout(() => {
           this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
-        }, new Date(obj.dateClosed).getTime() - Date.now() + DAYS_MILLIS))
+        }, new Date(proposal.dateClosed).getTime() - Date.now() + DAYS_MILLIS))
       }
     },
     clearTimeouts () {
