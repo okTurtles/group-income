@@ -160,6 +160,7 @@ export default ({
       'ourUsername',
       'ourUserDisplayName',
       'groupSettings',
+      'currentWelcomeInvite',
       'groupShouldPropose'
     ]),
     ...mapState([
@@ -294,7 +295,8 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        if (this.groupShouldPropose) {
+        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+        if (this.groupShouldPropose || isWelcomeInviteExpired) {
           sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
         } else {
           sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')

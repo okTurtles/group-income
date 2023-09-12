@@ -7,7 +7,12 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import {
+  CHATROOM_PRIVACY_LEVEL,
+  MESSAGE_NOTIFY_SETTINGS,
+  MESSAGE_TYPES,
+  INVITE_INITIAL_CREATOR
+} from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -445,6 +450,12 @@ const getters = {
       amountDone,
       amountTotal
     }
+  },
+  currentWelcomeInvite (state, getters) {
+    const invites = getters.currentGroupState.invites
+    const inviteId = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
+    const expires = getters.currentGroupState._vm.authorizedKeys[inviteId].meta.expires
+    return { inviteId, expires }
   },
   // list of group names and contractIDs
   groupsByName (state) {

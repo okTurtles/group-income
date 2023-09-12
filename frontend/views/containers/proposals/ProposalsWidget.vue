@@ -73,6 +73,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
+      'currentWelcomeInvite',
       'currentIdentityState',
       'groupShouldPropose',
       'groupSettings',
@@ -164,7 +165,8 @@ export default ({
         'remove-member': { toRemove: true }
       }
 
-      if (itemId === 'add-new-member' && this.groupShouldPropose) {
+      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+      if (itemId === 'add-new-member' && (this.groupShouldPropose || isWelcomeInviteExpired)) {
         return sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
       }
 
