@@ -931,7 +931,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (isGroupSizeLarge) {
       const translationArgs = {
-        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}' target='_blank'>`,
+        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUNBARS_NUMBER}' target='_blank'>`,
         _a: '</a>'
       }
       const promptConfig = enforceDunbar

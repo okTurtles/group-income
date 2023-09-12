@@ -14,7 +14,7 @@ const ALLOWED_URLS: Object = Object.freeze(Object.fromEntries([
   ['DONATE_PAGE', 'https://groupincome.org/donate'],
   ['FAQ_PAGE', 'https://groupincome.org/faq'],
   ['COMMUNITY_PAGE', 'https://groupincome.org/community'],
-  ['WIKIPEDIA_DUMBARS_NUMBER', "https://en.wikipedia.org/wiki/Dunbar's_number"]
+  ['WIKIPEDIA_DUNBARS_NUMBER', "https://en.wikipedia.org/wiki/Dunbar's_number"]
 ]))
 
 Vue.prototype.ALLOWED_URLS = ALLOWED_URLS
