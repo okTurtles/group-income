@@ -191,9 +191,7 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        const { type, privacyLevel } = state.attributes
-        const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-        if (!state.onlyRenderMessage || isDirectMessage) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
@@ -214,9 +212,7 @@ sbp('chelonia/defineContract', {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
         if (username === loggedIn.username) {
-          const { type, privacyLevel } = state.attributes
-          const isDirectMessage = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-          if (isDirectMessage) {
+          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             // NOTE: To ignore scroll to the message of this hash
             //       since we don't create notification when join the direct message
             sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
@@ -312,7 +308,7 @@ sbp('chelonia/defineContract', {
         }
         Vue.delete(state.users, member)
 
-        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
@@ -397,7 +393,7 @@ sbp('chelonia/defineContract', {
           messageHash: newMessage.hash,
           datetime: newMessage.datetime,
           text: newMessage.text,
-          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL,
+          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
           messageType: data.type,
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
@@ -429,7 +425,7 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
-        if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 

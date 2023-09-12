@@ -560,6 +560,9 @@ const getters = {
     }
     return currentGroupDirectMessages
   },
+  // NOTE: this getter is used to find the ID of the direct message in the current group
+  //       with the name[s] of partner[s]. Normally it's more useful to find direct message
+  //       by the partners instead of contractID
   ourGroupDirectMessageFromUsernames (state, getters) {
     return (partners) => { // NOTE: string | string[]
       if (typeof partners === 'string') {

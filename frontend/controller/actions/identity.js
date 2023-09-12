@@ -509,7 +509,7 @@ export default (sbp('sbp/selectors/register', {
           name: '',
           description: '',
           privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-          type: CHATROOM_TYPES.INDIVIDUAL
+          type: CHATROOM_TYPES.DIRECT_MESSAGE
         }
       },
       hooks: {

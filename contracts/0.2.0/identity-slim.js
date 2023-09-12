@@ -166,6 +166,14 @@ ${this.getErrorInfo()}`;
       return data;
     };
   }
+  var optional = (typeFn) => {
+    const unionFn = unionOf(typeFn, undef);
+    function optional2(v) {
+      return unionFn(v);
+    }
+    optional2.type = ({ noVoid }) => !noVoid ? getType(unionFn) : getType(typeFn);
+    return optional2;
+  };
   function undef(value, _scope = "") {
     if (isEmpty(value) || isUndef(value))
       return void 0;
@@ -186,6 +194,20 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
+  function unionOf_(...typeFuncs) {
+    function union(value, _scope = "") {
+      for (const typeFn of typeFuncs) {
+        try {
+          return typeFn(value, _scope);
+        } catch (_) {
+        }
+      }
+      throw validatorError(union, value, _scope);
+    }
+    union.type = () => `(${typeFuncs.map((fn) => getType(fn)).join(" | ")})`;
+    return union;
+  }
+  var unionOf = unionOf_;
 
   // frontend/model/contracts/shared/validators.js
   var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
@@ -329,15 +351,19 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity/createDirectMessage": {
         validate: (data, { state, getters }) => {
           objectOf({
-            groupContractID: string,
+            groupContractID: optional(string),
             contractID: string
           })(data);
         },
         process({ data }, { state }) {
-          import_common.Vue.set(state.chatRooms, data.contractID, {
-            groupContractID: data.groupContractID,
-            visible: true
-          });
+          const { groupContractID, contractID } = data;
+          if (groupContractID) {
+            import_common.Vue.set(state.chatRooms, contractID, {
+              groupContractID,
+              visible: true
+            });
+          } else {
+          }
         },
         async sideEffect({ contractID, data }) {
           await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
@@ -348,17 +374,21 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/joinDirectMessage": {
         validate: objectOf({
-          groupContractID: string,
+          groupContractID: optional(string),
           contractID: string
         }),
         process({ data }, { state, getters }) {
-          if (getters.ourDirectMessages[data.contractID]) {
+          const { groupContractID, contractID } = data;
+          if (getters.ourDirectMessages[contractID]) {
             throw new TypeError((0, import_common.L)("Already joined direct message."));
           }
-          import_common.Vue.set(state.chatRooms, data.contractID, {
-            groupContractID: data.groupContractID,
-            visible: state.attributes.allowDMInvite
-          });
+          if (groupContractID) {
+            import_common.Vue.set(state.chatRooms, contractID, {
+              groupContractID,
+              visible: state.attributes.allowDMInvite
+            });
+          } else {
+          }
         },
         async sideEffect({ data }, { getters }) {
           if (getters.ourDirectMessages[data.contractID].visible) {

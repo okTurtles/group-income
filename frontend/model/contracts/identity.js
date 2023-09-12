@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object, boolean } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -123,15 +123,22 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/createDirectMessage': {
       validate: (data, { state, getters }) => {
         objectOf({
-          groupContractID: string,
-          contractID: string
+          // NOTE: 'groupContractID' is the contract ID of the group where the direct messages is created
+          //       it's optional parameter meaning the direct message could be created outside of the group
+          groupContractID: optional(string),
+          contractID: string // NOTE: chatroom contract id
         })(data)
       },
       process ({ data }, { state }) {
-        Vue.set(state.chatRooms, data.contractID, {
-          groupContractID: data.groupContractID,
-          visible: true // NOTE: this attr is used to hide/show direct message
-        })
+        const { groupContractID, contractID } = data
+        if (groupContractID) {
+          Vue.set(state.chatRooms, contractID, {
+            groupContractID,
+            visible: true // NOTE: this attr is used to hide/show direct message
+          })
+        } else {
+          // TODO: create a direct message outside of the group
+        }
       },
       async sideEffect ({ contractID, data }) {
         await sbp('chelonia/contract/sync', data.contractID)
@@ -145,19 +152,24 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinDirectMessage': {
       validate: objectOf({
-        groupContractID: string,
+        groupContractID: optional(string),
         contractID: string
       }),
       process ({ data }, { state, getters }) {
         // NOTE: this method is always created by another
-        if (getters.ourDirectMessages[data.contractID]) {
+        const { groupContractID, contractID } = data
+        if (getters.ourDirectMessages[contractID]) {
           throw new TypeError(L('Already joined direct message.'))
         }
 
-        Vue.set(state.chatRooms, data.contractID, {
-          groupContractID: data.groupContractID,
-          visible: state.attributes.allowDMInvite
-        })
+        if (groupContractID) {
+          Vue.set(state.chatRooms, contractID, {
+            groupContractID,
+            visible: state.attributes.allowDMInvite
+          })
+        } else {
+          // TODO: join a direct message outside of the group
+        }
       },
       async sideEffect ({ data }, { getters }) {
         if (getters.ourDirectMessages[data.contractID].visible) {
