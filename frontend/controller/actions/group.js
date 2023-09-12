@@ -27,7 +27,6 @@ import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import { findKeyIdByName, findSuitableSecretKeyId, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
@@ -315,19 +314,18 @@ export default (sbp('sbp/selectors/register', {
           ringLevel: Number.MAX_SAFE_INTEGER,
           name: `${contractID}/${CSKid}`
         }],
-        signingKeyId: findKeyIdByName(rootState[userID], 'csk')
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
       })
 
       // Share our PEK with the group so that group members can see
       // our name and profile information
-      const PEKid = findKeyIdByName(rootState[userID], 'pek')
-      const revokedPEKids = findRevokedKeyIdsByName(rootState[userID], 'pek')
+      const keyIds = sbp('chelonia/contract/historicalKeyIdsByName', userID, 'pek')
 
-      PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
+      keyIds.length && await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: contractID,
         contractName: 'gi.contracts/group',
         subjectContractID: userID,
-        keyIds: [PEKid, ...revokedPEKids]
+        keyIds: keyIds
       })
 
       return message
@@ -367,33 +365,29 @@ export default (sbp('sbp/selectors/register', {
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
-      // Do we need to send a key request?
-      // If we don't have the group contract in our state and
-      // params.originatingContractID is set, it means that we're joining
-      // through an invite link, and we must send a key request to complete
-      // the joining process.
-      const hasVolatileKeys =
-        params.contractID in rootState &&
-        !!findSuitableSecretKeyId(rootState[params.contractID], '*', ['sig'])
-      const sendKeyRequest = (!hasVolatileKeys && params.originatingContractID)
-
-      await sbp(
-        'chelonia/withEnv', {
-          skipActionProcessing: !!sendKeyRequest || !!rootState[params.contractID]?._volatile?.pendingKeyRequests?.length
-        },
-        ['chelonia/contract/sync', params.contractID]
-      )
+      await sbp('chelonia/contract/sync', params.contractID)
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
 
       const state = rootState[params.contractID]
 
+      // Have we got the secret keys to the group? If we haven't, we are not
+      // able to participate in the group yet and may need to send a key
+      // request.
+      const hasSecretKeys = sbp('chelonia/contract/canPerformOperation', state, '*')
+      // Do we need to send a key request?
+      // If we don't have the group contract in our state and
+      // params.originatingContractID is set, it means that we're joining
+      // through an invite link, and we must send a key request to complete
+      // the joining process.
+      const sendKeyRequest = (!hasSecretKeys && params.originatingContractID)
+
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
       //   (a) we are about to send a key request; or
       //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
-      if (sendKeyRequest || state._volatile?.pendingKeyRequests?.length) {
+      if (sendKeyRequest || sbp('chelonia/contract/isWaitingForKeyShare', state)) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
@@ -434,12 +428,8 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasVolatileKeys && !state._volatile?.pendingKeyRequests?.length) {
+      } else if (hasSecretKeys && !sbp('chelonia/contract/isWaitingForKeyShare', state)) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
-        if (!state._vm) {
-          console.warn('Invalid group state: missing _vm key. contractID=' + params.contractID, { ...state })
-          return
-        }
 
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
@@ -449,7 +439,7 @@ export default (sbp('sbp/selectors/register', {
 
           // Share our PEK with the group so that group members can see
           // our name and profile information
-          const PEKid = findKeyIdByName(rootState[userID], 'pek')
+          const PEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
 
           PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
             contractID: params.contractID,
@@ -468,7 +458,7 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-          const CSKid = findKeyIdByName(rootState[params.contractID], 'csk')
+          const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
 
           // Add the group's CSK to our identity contract so that we can receive
           // key rotation updates and DMs.
@@ -483,7 +473,7 @@ export default (sbp('sbp/selectors/register', {
               permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
               allowedActions: ['gi.contracts/identity/joinDirectMessage']
             }],
-            signingKeyId: findKeyIdByName(rootState[userID], 'csk')
+            signingKeyId: sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
           })
 
           if (generalChatRoomId) {
@@ -562,7 +552,7 @@ export default (sbp('sbp/selectors/register', {
         .filter(([_, p]) => (p: any).departedDate == null)
         .map(async ([username]) => {
           const pContractID = await sbp('namespace/lookup', username)
-          const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
+          const CEKid = sbp('chelonia/contract/currentKeyIdByName', rootState[pContractID], 'cek')
           if (!CEKid) {
             console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
             return Promise.resolve()
@@ -597,8 +587,8 @@ export default (sbp('sbp/selectors/register', {
 
     // For 'public' and 'group' chatrooms, use the group's CSK and CEK
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const cskId = findKeyIdByName(contractState, 'csk')
-      const cekId = findKeyIdByName(contractState, 'cek')
+      const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
+      const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
 
       csk = {
         id: cskId,
@@ -941,7 +931,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (isGroupSizeLarge) {
       const translationArgs = {
-        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}' target='_blank'>`,
+        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUNBARS_NUMBER}' target='_blank'>`,
         _a: '</a>'
       }
       const promptConfig = enforceDunbar

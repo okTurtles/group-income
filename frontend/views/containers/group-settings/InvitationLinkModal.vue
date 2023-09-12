@@ -28,7 +28,6 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { serializeKey } from '../../../../shared/domains/chelonia/crypto.js'
 import { humanDate } from '@model/contracts/shared/time.js'
@@ -44,17 +43,13 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentWelcomeInvite',
       'currentGroupState'
     ]),
-    welcomeInviteId () {
-      const invites = this.currentGroupState.invites
-      const initialInvite = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
-      return initialInvite
-    },
     welcomeInviteSecret () {
-      const key = this.$store.state.secretKeys[this.welcomeInviteId]
+      const key = this.$store.state.secretKeys[this.currentWelcomeInvite.inviteId]
       if (!key) {
-        console.error(`undefined key for welcomeInviteId: ${this.welcomeInviteId}`)
+        console.error(`undefined key for welcomeInviteId: ${this.currentWelcomeInvite.inviteId}`)
         return undefined
       }
       return typeof key !== 'string' ? serializeKey(key, true) : key
@@ -66,13 +61,7 @@ export default ({
       }
     },
     expireDate () {
-      let expireDate
-      try {
-        expireDate = this.currentGroupState._vm.authorizedKeys[this.welcomeInviteId].meta.expires
-      } catch (e) {
-        console.warning('An error occurred trying to get the invite expiration date', e)
-      }
-      return humanDate(expireDate, { month: 'long', day: 'numeric' })
+      return humanDate(this.currentWelcomeInvite.expires, { month: 'long', day: 'numeric' })
     }
   },
   methods: {
