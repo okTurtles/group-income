@@ -374,6 +374,7 @@ sbp('chelonia/defineContract', {
         if (!state.onlyRenderMessage) {
           return
         }
+        // Called from the prepublish hook
         if (direction === 'outgoing') {
           // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
           // when we don't get event after a certain period
