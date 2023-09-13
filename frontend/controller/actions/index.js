@@ -44,7 +44,16 @@ sbp('sbp/selectors/register', {
 
     const secretKeys = sbp('state/vuex/state')['secretKeys']
 
-    const keysToShare = Array.isArray(keyIds) ? pick(secretKeys, keyIds) : keyIds === '*' ? pick(secretKeys, Object.keys(contractState._vm.authorizedKeys)) : null
+    const keysToShare = Array.isArray(keyIds)
+      ? pick(secretKeys, keyIds)
+      : keyIds === '*'
+        ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
+          .filter(([, key]) => {
+            return !!key.meta?.private?.content
+          })
+          .map(([id]) => id)
+        )
+        : null
 
     if (!keysToShare) {
       throw new TypeError('Invalid parameter: keyIds')

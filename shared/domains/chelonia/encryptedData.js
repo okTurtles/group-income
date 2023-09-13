@@ -139,6 +139,8 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
 }
 
 export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T): EncryptedData<T> => {
+  if (!state || data === undefined || !eKeyId) throw new TypeError('Invalid invocation')
+
   const boundStringValueFn = encryptData.bind(state, eKeyId, data)
 
   return wrapper({
@@ -159,6 +161,8 @@ export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T)
 
 // Used for OP_CONTRACT as a state does not yet exist
 export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): EncryptedData<T> => {
+  if (data === undefined || !key) throw new TypeError('Invalid invocation')
+
   const eKeyId = keyId(key)
   const state = {
     _vm: {

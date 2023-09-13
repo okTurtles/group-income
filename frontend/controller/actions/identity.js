@@ -569,6 +569,7 @@ export default (sbp('sbp/selectors/register', {
           contractID: message.contractID()
         },
         signingContractID: rootState.currentGroupId,
+        innerSigningContractID: rootState.currentGroupId,
         hooks
       })
     }

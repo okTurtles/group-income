@@ -350,7 +350,6 @@ sbp('chelonia/defineContract', {
 
         const rootGetters = sbp('state/vuex/getters')
         const userID = rootGetters.ourContactProfiles[data.member]?.contractID
-        console.log('@@@leave/sideEffect', { userID, data })
         if (userID) {
           sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
         }
@@ -714,7 +713,7 @@ sbp('chelonia/defineContract', {
       })
     },
     'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
-      const keyIds = findForeignKeysByContractID(userID, state)
+      const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return
 

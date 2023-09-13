@@ -22,13 +22,26 @@ const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state
     : contractID
 }
 
-const keysToMap = (keys: GIKey[], height: number): Object => {
+const keysToMap = (keys: GIKey[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a GIMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
   const keysCopy = cloneDeep(keys)
   return Object.fromEntries(keysCopy.map(key => {
     key._notBeforeHeight = height
+    if (authorizedKeys?.[key.id]) {
+      if (authorizedKeys[key.id]._notAfterHeight == null) {
+        throw new Error('Cannot set existing unrevoked key')
+      }
+      // If the key was get previously, preserve its _notBeforeHeight
+      // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
+      // supposed to be active. This is a trade-off for simplicity, instead of
+      // considering discrete periods, which is the correct solution
+      // Discrete ranges *MUST* be implemented because they impact permissions
+      key._notBeforeHeight = Math.min(height, authorizedKeys[key.id]._notBeforeHeight ?? 0)
+    } else {
+      key._notBeforeHeight = height
+    }
     delete key._notAfterHeight
     return [key.id, key]
   }))
@@ -312,11 +325,6 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
         config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys, height))
-
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_CONTRACT')
-        }
-
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
         // When you login you have the IEK which is derived from your password, and you
@@ -545,25 +553,19 @@ export default (sbp('sbp/selectors/register', {
         // Order is so that KEY_ADD doesn't overwrite existing keys
         // TODO: Verify ringLevel
         // TODO: Handle the case of an existing key: its permissions are then augmented
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_ADD')
-        }
         v.forEach((k) => {
-          if (has(state._vm.authorizedKeys, k.id)) {
+          if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
             throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
           }
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
-        config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v, height), ...state._vm.authorizedKeys })
+        config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keysToMap(v, height, state._vm.authorizedKeys) })
         keyAdditionProcessor.call(self, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
-        if (!state._volatile) config.reactiveSet(state._volatile, '_volatile', Object.create(null))
+        if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
-        }
         validateKeyDelPermissions(contractID, signingKey, state, v)
         v.forEach((keyId) => {
           const key = state._vm.authorizedKeys[keyId]
@@ -622,9 +624,6 @@ export default (sbp('sbp/selectors/register', {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         // Order is so that KEY_UPDATE doesn't overwrite existing keys
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
-        }
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
@@ -680,6 +679,10 @@ export default (sbp('sbp/selectors/register', {
 
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys, height) : state._vm.authorizedKeys
       signingKey = authorizedKeys?.[signingKeyId]
+
+      if (!signingKey) {
+        throw new Error(`Signing key with ID ${signingKeyId} not found but is mandatory`)
+      }
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation

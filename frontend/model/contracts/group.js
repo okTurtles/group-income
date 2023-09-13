@@ -1496,7 +1496,7 @@ sbp('chelonia/defineContract', {
       })
     },
     'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
-      const keyIds = findForeignKeysByContractID(userID, state)
+      const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return
 

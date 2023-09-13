@@ -19,6 +19,7 @@ export type GIActionParams = {
   encryptionKeyId: ?string;
   originatingContractID: ?string;
   signingContractID: ?string;
+  innerSigningContractID: ?string;
   innerSigningKeyId: ?string;
   hooks?: {
     prepublishContract?: null | (Object) => void;

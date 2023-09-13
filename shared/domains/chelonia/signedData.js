@@ -127,6 +127,7 @@ const verifySignatureData = function (height: number, data: any, additionalData:
 }
 
 export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, additionalKeys?: Object): SignedData<T> => {
+  if (!state || data === undefined || !sKeyId) throw new TypeError('Invalid invocation')
   const rootState = sbp('chelonia/rootState')
 
   if (!additionalKeys) {

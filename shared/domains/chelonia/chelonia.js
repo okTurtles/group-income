@@ -737,7 +737,7 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyAdd).filter((k) => {
       if (has(state._vm.authorizedKeys, k.id)) {
-        if (state._vm.authorizedKeys[k.id]._notAfterHeight != null) {
+        if (state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
           // if (state._vm.authorizedKeys[k.id].permissions === '*')
           // TODO: Check permissions, etc.
           return false
