@@ -66,11 +66,20 @@ page(
 
         .c-tabs-chip-container
           next-distribution-pill
-          i18n.is-outlined.is-small(tag='button' type='button') Export CSV
+          i18n.is-outlined.is-small(
+            v-if='showExportPaymentsButton'
+            tag='button'
+            type='button'
+            @click='openExportPaymentsModal') Export CSV
 
       .c-chip-container-below-tabs
         next-distribution-pill.c-distribution-pill
-        i18n.is-outlined.is-small(tag='button' type='button') Export CSV
+        i18n.is-outlined.is-small(
+          v-if='showExportPaymentsButton'
+          tag='button'
+          type='button'
+          @click='openExportPaymentsModal'
+        ) Export CSV
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -388,6 +397,10 @@ export default ({
     showTabSelectionMenu () {
       return this.tabItems.length > 0
     },
+    showExportPaymentsButton () {
+      return ['PaymentRowSent', 'PaymentRowReceived'].includes(this.ephemeral.activeTab) &&
+        this.paymentsListData.length > 0
+    },
     isDevEnv () {
       return process.env.NODE_ENV === 'development'
     }
@@ -481,6 +494,14 @@ export default ({
       if (Object.keys(this.groupSettings).length) {
         this.historicalPayments = await this.getHistoricalPaymentsInTypes()
       }
+    },
+    openExportPaymentsModal () {
+      const modalTypeMap = {
+        'PaymentRowSent': 'sent',
+        'PaymentRowReceived': 'received'
+      }
+
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ExportPaymentsModal', { type: modalTypeMap[this.ephemeral.activeTab] })
     }
   }
 }: Object)
