@@ -92,13 +92,8 @@ describe('Group Payments', () => {
     })
 
     setIncomeDetails(true, 250)
-    cy.giLogout()
-  })
 
-  // TODO: move these assertions to unit tests.
-  it('period-related getters should work in the waiting period', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
-
+    // TODO: move these assertions to unit tests.
     cy.window().its('sbp').then(sbp => {
       // The getters we're going to test.
       const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod } = sbp('state/vuex/getters')
