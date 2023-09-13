@@ -955,6 +955,12 @@ sbp('chelonia/defineContract', {
             // gi.contracts/group/removeOurselves will eventually trigger this
             // as well
             sbp('gi.contracts/group/rotateKeys', contractID, state)
+
+            const rootGetters = sbp('state/vuex/getters')
+            const userID = rootGetters.ourContactProfiles[data.member]?.contractID
+            if (userID) {
+              sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
+            }
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
@@ -1487,6 +1493,21 @@ sbp('chelonia/defineContract', {
 
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
+    },
+    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+      const keyIds = findForeignKeysByContractID(userID, state)
+
+      if (!keyIds?.length) return
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
+        contractID,
+        contractName: 'gi.contracts/group',
+        data: keyIds,
+        signingKeyId: CSKid
+      }]).catch(e => {
+        console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }

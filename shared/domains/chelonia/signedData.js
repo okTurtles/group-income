@@ -15,14 +15,18 @@ export interface SignedData<T> {
   toJSON?: () => [string, string]
 }
 
+// `proto` & `wrapper` are utilities for `isSignedData`
 const proto: Object = Object.create(null)
 
 const wrapper = <T>(o: T): T => {
   return Object.setPrototypeOf(o, proto)
 }
 
+// `isSignedData` will return true for objects created by the various
+// `signed*Data` functions. It's meant to implement functionality equivalent
+// to `o instanceof SignedData`
 export const isSignedData = (o: any): boolean => {
-  return o && Object.getPrototypeOf(o) === proto && has(o, 'signingKeyId') && has(o, 'valueOf')
+  return !!o && Object.getPrototypeOf(o) === proto
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing some
@@ -189,7 +193,7 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
   })
 }
 
-export const signedIncomingData = (contractID: string, state: ?Object, data: any, height: number, additionalData: string): SignedData<any> => {
+export const signedIncomingData = (contractID: string, state: ?Object, data: any, height: number, additionalData: string, mapperFn?: Function): SignedData<any> => {
   const stringValueFn = () => data
   let verifySignedValue
   // TODO: Temporary until the server can validate signatures
@@ -200,6 +204,7 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
         }
         const rootState = sbp('chelonia/rootState')
         verifySignedValue = verifySignatureData.call(state || rootState?.[contractID], height, data, additionalData)
+        if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
         return verifySignedValue[1]
       }
     : () => JSON.parse(data._signedData[0])

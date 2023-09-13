@@ -2,7 +2,7 @@
 import sbp from '@sbp/sbp'
 
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { omit } from '@model/contracts/shared/giLodash.js'
+import { has, omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -192,8 +192,39 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
-  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params) => {
+  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
+    const userID = rootGetters.ourContactProfiles[params.data.username]?.contractID
+
+    if (!userID || !has(rootState, userID)) {
+      throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
+    }
+
+    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+
     await sbp('chelonia/contract/sync', params.contractID)
+
+    // Add the user's CSK to the contract
+    await sbp('chelonia/out/keyAdd', {
+      contractID: params.contractID,
+      contractName: 'gi.contracts/chatroom',
+      data: [{
+        foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+        id: userCSKid,
+        data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+        // TODO: Permissions
+        // TODO: Remove key when leaving group
+        // TODO: Do the same when joining a chatroom
+        permissions: [],
+        allowedActions: [],
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        name: `${userID}/${userCSKid}`
+      }],
+      signingKeyId
+    })
+
     return sendMessage(params)
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),

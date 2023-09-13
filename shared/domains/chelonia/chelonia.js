@@ -723,7 +723,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return msg
   },
-  'chelonia/out/keyAdd': async function (params: ChelKeyAddParams): Promise<GIMessage> {
+  'chelonia/out/keyAdd': async function (params: ChelKeyAddParams): Promise<GIMessage | void> {
     // TODO: For foreign keys, recalculate the key id
     // TODO: Make this a noop if the key already exsits with the given permissions
     const { atomic, contractID, contractName, data, hooks, publishOptions } = params
@@ -733,8 +733,20 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
+
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const payload = (data: GIOpKeyAdd)
+    const payload = (data: GIOpKeyAdd).filter((k) => {
+      if (has(state._vm.authorizedKeys, k.id)) {
+        if (state._vm.authorizedKeys[k.id]._notAfterHeight != null) {
+          // if (state._vm.authorizedKeys[k.id].permissions === '*')
+          // TODO: Check permissions, etc.
+          return false
+        }
+      }
+
+      return true
+    })
+    if (payload.length === 0) return
     validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     let msg = GIMessage.createV1_0({
       contractID,
@@ -920,7 +932,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error('Selector not allowed in OP_ATOMIC: ' + selector)
       }
       return sbp(selector, { ...opParams, ...params, data: opParams.data, atomic: true })
-    }))).map((msg) => {
+    }))).filter(Boolean).flatMap((msg) => {
       return [msg.opType(), msg.opValue()]
     })
     let msg = GIMessage.createV1_0({

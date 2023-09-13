@@ -13,14 +13,18 @@ export interface EncryptedData<T> {
   toJSON?: () => [string, string]
 }
 
+// `proto` & `wrapper` are utilities for `isEncryptedData`
 const proto: Object = Object.create(null)
 
 const wrapper = <T>(o: T): T => {
   return Object.setPrototypeOf(o, proto)
 }
 
+// `isEncryptedData` will return true for objects created by the various
+// `encrypt*Data` functions. It's meant to implement functionality equivalent
+// to `o instanceof EncryptedData`
 export const isEncryptedData = (o: any): boolean => {
-  return o && Object.getPrototypeOf(o) === proto && has(o, 'encryptionKeyId') && has(o, 'valueOf')
+  return !!o && Object.getPrototypeOf(o) === proto
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing some

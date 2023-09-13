@@ -5,7 +5,7 @@
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
@@ -346,6 +346,13 @@ sbp('chelonia/defineContract', {
           if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
             sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
           }
+        }
+
+        const rootGetters = sbp('state/vuex/getters')
+        const userID = rootGetters.ourContactProfiles[data.member]?.contractID
+        console.log('@@@leave/sideEffect', { userID, data })
+        if (userID) {
+          sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
         }
       }
     },
@@ -704,6 +711,21 @@ sbp('chelonia/defineContract', {
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys']).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      })
+    },
+    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+      const keyIds = findForeignKeysByContractID(userID, state)
+
+      if (!keyIds?.length) return
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
+        contractID,
+        contractName: 'gi.contracts/chatroom',
+        data: keyIds,
+        signingKeyId: CSKid
+      }]).catch(e => {
+        console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }

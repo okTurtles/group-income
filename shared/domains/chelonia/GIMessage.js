@@ -62,22 +62,26 @@ export type GIOpRaw = [GIOpType, SignedData<GIOpValue>]
 export type GIOp = [GIOpType, GIOpValue]
 
 export type GIMsgDirection = 'incoming' | 'outgoing'
-type GIMsgParams = { direction: GIMsgDirection, mapping: Object; head: Object; message: GIOpValue, signingKeyId: string } | { direction: GIMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
+type GIMsgParams = { direction: GIMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
 
-const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SignedData<GIOpValue>, additionalKeys?: Object, state: Object): GIOpValue => {
+// Takes a raw message and processes it so that EncryptedData and SignedData
+// attributes are defined
+const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: GIOpValue, additionalKeys?: Object, state: Object): GIOpValue => {
   const op = head.op
   const height = head.height
 
   const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
     // $FlowFixMe
     ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
-    : parsedMessage.valueOf()
+    : parsedMessage
 
+  // If the operation is GIMessage.OP_KEY_ADD or GIMessage.OP_KEY_UPDATE,
+  // extract encrypted data from key.meta?.private?.content
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     ((message: any): any[]).forEach((key) => {
-      // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
       if (key.meta?.private?.content) {
         key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+          // Validator function to verify the key matches its expected ID
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
@@ -86,6 +90,9 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
       }
     })
   }
+
+  // If the operation is GIMessage.OP_CONTRACT or GIMessage.OP_KEY_SHARE,
+  // extract encrypted data from keys?.[].meta?.private?.content
   if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(op)) {
     (message: any).keys?.forEach((key) => {
       if (key.meta?.private?.content) {
@@ -101,6 +108,8 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     })
   }
 
+  // If the operation is OP_KEY_REQUEST, the payload is expected to be
+  // SignedData
   if (op === GIMessage.OP_KEY_REQUEST) {
     if (head.originatingContractID && head.originatingContractID !== contractID) {
       return signedIncomingData(head.originatingContractID, undefined, message, head.originatingContractHeight, headJSON)
@@ -109,16 +118,19 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     }
   }
 
+  // If the operation is OP_ACTION_UNENCRYPTED, it may contain an inner
+  // signature
   // Actions must be signed using a key for the current contract
   if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
     return signedIncomingData(contractID, state, message, height, headJSON)
   }
 
-  // Inner signatures handled by encryptedData
+  // Inner signatures are handled by EncryptedData
   if (op === GIMessage.OP_ACTION_ENCRYPTED) {
     return message
   }
 
+  // If the operation is OP_ATOMIC, call this function recursively
   if (op === GIMessage.OP_ATOMIC) {
     return ((((message: any): GIOpAtomic)
       .map(([opT, opV]) =>
@@ -135,7 +147,6 @@ export class GIMessage {
   _head: Object
   _message: Object
   _signedMessageData: SignedData<GIOpValue>
-  _signingKeyId: string
   _direction: GIMsgDirection
 
   static OP_CONTRACT: 'c' = 'c'
@@ -208,8 +219,7 @@ export class GIMessage {
 
   static deserialize (value: string, additionalKeys?: Object, state?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
-    const parsedValue = JSON.parse(value)
-    const headJSON = parsedValue.head
+    const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
     const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
 
@@ -225,21 +235,16 @@ export class GIMessage {
       }
     }
 
-    const signedMessageData = signedIncomingData(contractID, state, parsedValue, head.height, parsedValue.head)
-    let message: GIOpValue | typeof undefined
+    const signedMessageData = signedIncomingData(
+      contractID, state, parsedValue, head.height, parsedValue.head,
+      (message) => decryptedAndVerifiedDeserializedMessage(head, parsedValue.head, contractID, message, additionalKeys, state)
+    )
 
     return new this({
       direction: 'incoming',
       mapping: { key: blake32Hash(value), value },
       head,
-      get message () {
-        if (message !== undefined) return message
-        message = decryptedAndVerifiedDeserializedMessage(head, parsedValue.head, contractID, signedMessageData, additionalKeys, state)
-        return message
-      },
-      get signingKeyId () {
-        return signedMessageData.signingKeyId
-      }
+      signedMessageData
     })
   }
 
@@ -247,22 +252,10 @@ export class GIMessage {
     this._direction = params.direction
     this._mapping = params.mapping
     this._head = params.head
-    let messageGetter: () => Object
-    if (has(params, 'signingKeyId') && has(params, 'message')) {
-      Object.defineProperty(this, '_signingKeyId', Object.getOwnPropertyDescriptor(params, 'signingKeyId') || {})
-      // Avoid verifying the signature unless the value is used
-      messageGetter = () => params.message || {}
-    } else if (params.signedMessageData) {
-      this._signedMessageData = ((params.signedMessageData: any): SignedData<GIOpValue>)
-      Object.defineProperty(this, '_signingKeyId', Object.getOwnPropertyDescriptor(this._signedMessageData, 'signingKeyId') || {})
-      // Avoid verifying the signature unless the value is used
-      messageGetter = () => this._signedMessageData.valueOf() || {}
-    } else {
-      throw new Error('Illegal GIMessage constructor invocation')
-    }
+    this._signedMessageData = ((params.signedMessageData: any): SignedData<GIOpValue>)
+
     // perform basic sanity check
     const type = this.opType()
-    let message
     let atomicTopLevel = true
     const validate = (type, message) => {
       switch (type) {
@@ -294,13 +287,19 @@ export class GIMessage {
           throw new Error(`unsupported op: ${type}`)
       }
     }
+
+    // this._message is set as a getter to verify the signature only once the
+    // message contents are read
     Object.defineProperty(this, '_message', {
-      get: () => {
-        if (message) return message
-        message = messageGetter()
-        validate(type, message)
+      get: ((validated?: boolean) => () => {
+        const message = this._signedMessageData.valueOf()
+        // If we haven't validated the message, validate it now
+        if (!validated) {
+          validate(type, message)
+          validated = true
+        }
         return message
-      }
+      })()
     })
   }
 
@@ -320,7 +319,7 @@ export class GIMessage {
 
   opValue (): GIOpValue { return this.message() }
 
-  signingKeyId (): string { return this._signingKeyId }
+  signingKeyId (): string { return this._signedMessageData.signingKeyId }
 
   manifest (): string { return this.head().manifest }
 
@@ -370,8 +369,7 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
   const headJSON = JSON.stringify(head)
-  const messageJSON = (message.serialize(headJSON): any)
-  messageJSON.head = headJSON
+  const messageJSON = { ...message.serialize(headJSON), head: headJSON }
   const value = JSON.stringify(messageJSON)
   return {
     direction: has(message, 'recreate') ? 'outgoing' : 'incoming',

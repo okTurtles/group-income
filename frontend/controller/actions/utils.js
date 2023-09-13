@@ -25,7 +25,7 @@ export function encryptedAction (
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
@@ -43,7 +43,7 @@ export function encryptedAction (
         const signingState = !params.signingContractID || params.signingContractID === params.contractID ? state : await sbp('chelonia/latestContractState', params.signingContractID)
 
         const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
-        const innerSigningKeyId = params.innerSigningKeyId || (rootState.contracts[params.contractID].type === 'gi.contracts/identity' ? undefined : findKeyIdByName(rootState[rootState.loggedIn.identityContractID], 'csk'))
+        const innerSigningKeyId = params.innerSigningKeyId || (params.contractID === rootState.loggedIn.identityContractID ? undefined : findKeyIdByName(rootState[rootState.loggedIn.identityContractID], 'csk'))
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
         if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
@@ -51,7 +51,7 @@ export function encryptedAction (
           return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
         }
 
-        if ((rootState.contracts[params.contractID].type !== 'gi.contracts/identity' && !innerSigningKeyId) || (innerSigningKeyId && !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
+        if ((params.contractID !== rootState.loggedIn.identityContractID && !innerSigningKeyId) || (innerSigningKeyId && !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
           console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID: params.contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
           return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
         }
