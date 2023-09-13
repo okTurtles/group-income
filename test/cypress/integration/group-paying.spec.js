@@ -141,8 +141,6 @@ describe('Group Payments', () => {
 
     // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
     //       REFERENCE IN CASE WE RUN INTO MORE!
-    // NOTE: when we had this command here, Cypress would sometimes fail because cy.window() would
-    //       for some reason return a promise that wouldn't resolve.
     cy.giForceDistributionDateToNow()
 
     // Period-related getters should also work in a normal period.
@@ -176,8 +174,6 @@ describe('Group Payments', () => {
       /* eslint-enable no-unused-expressions */
     })
     cy.getByDT('paymentsLink').click()
-    // Moving it here seems to have fixed things.
-    // cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertNavTabs(['Todo1', 'Completed'])

@@ -165,6 +165,9 @@
 /* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
 "Add more" = "Add more";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Add new member" = "Add new member";
+
 /* views/containers/group-settings/InvitationLinkModal.vue, views/containers/proposals/AddMembers.vue */
 "Add new members" = "Add new members";
 
@@ -211,7 +214,7 @@
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
-"All group members will be added to this channel." = "All group members will be added to this channel.";
+"All group members will be able to see or join this channel." = "All group members will be able to see or join this channel.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "All links" = "All links";
@@ -351,6 +354,9 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Browser notifications";
 
+/* model/contracts/group.js */
+"Can't change distribution date because distribution period has already started." = "Can't change distribution date because distribution period has already started.";
+
 /* controller/actions/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Cancel";
 
@@ -384,6 +390,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Change disagreement number from {X} to {N}." = "Change disagreement number from {X} to {N}.";
 
+/* views/containers/proposals/DistributionDate.vue, views/containers/proposals/ProposalsWidget.vue */
+"Change distribution date" = "Change distribution date";
+
 /* views/containers/proposals/ProposalItem.vue */
 "Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}.";
 
@@ -392,6 +401,9 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system." = "Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system.";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Change mincome" = "Change mincome";
 
 /* views/containers/proposals/Mincome.vue */
 "Change minimum income" = "Change minimum income";
@@ -416,6 +428,9 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "Change voting system" = "Change voting system";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Change voting threshold" = "Change voting threshold";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
@@ -450,7 +465,7 @@
 /* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
 "Chat" = "Chat";
 
-/* views/components/group-creation-steps/GroupMincome.vue */
+/* views/components/group-creation-steps/GroupMincome.vue, views/containers/proposals/DistributionDate.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -510,7 +525,7 @@
 /* controller/actions/group.js */
 "Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Couldn't join the #{chatroomName} in the group. Doesn't exist.";
 
-/* views/pages/Home.vue */
+/* views/components/UsersSelector.vue, views/pages/Home.vue */
 "Create" = "Create";
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/pages/Home.vue */
@@ -548,6 +563,9 @@
 
 /* views/containers/access/PasswordModal.vue */
 "Current Password" = "Current Password";
+
+/* views/containers/proposals/DistributionDate.vue */
+"Current distribution date is on {currentDistributionDate}." = "Current distribution date is on {currentDistributionDate}.";
 
 /* views/containers/proposals/Mincome.vue */
 "Currently {groupMincomeFormatted} monthly." = "Currently {groupMincomeFormatted} monthly.";
@@ -623,6 +641,9 @@
 
 /* views/containers/contributions/SupportHistory.vue */
 "Distributed: {done}" = "Distributed: {done}";
+
+/* model/notifications/templates.js */
+"Distribution date change" = "Distribution date change";
 
 /* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "Do not forget to send your pledge by {date}.";
@@ -701,6 +722,9 @@
 
 /* views/containers/chatroom/CreatePoll.vue */
 "Expires after (days)" = "Expires after (days)";
+
+/* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"Expires on: {expiry}" = "Expires on: {expiry}";
 
 /* controller/actions/chatroom.js */
 "Failed to add message." = "Failed to add message.";
@@ -879,6 +903,9 @@
 /* views/containers/proposals/GenericProposal.vue */
 "Generic Proposal" = "Generic Proposal";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Generic proposal" = "Generic proposal";
+
 /* views/containers/user-settings/NotificationSettings.vue */
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
 
@@ -902,6 +929,9 @@
 
 /* views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Group Members" = "Group Members";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Group Pledging Status" = "Group Pledging Status";
@@ -1043,6 +1073,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Jump to latest message" = "Jump to latest message";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Jump to poll" = "Jump to poll";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
@@ -1221,6 +1254,9 @@
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "New Password";
 
+/* views/containers/proposals/DistributionDate.vue */
+"New distribution date" = "New distribution date";
+
 /* views/containers/proposals/Mincome.vue */
 "New minimum income" = "New minimum income";
 
@@ -1344,6 +1380,12 @@
 /* controller/actions/group.js */
 "Only channel members can invite others to join." = "Only channel members can invite others to join.";
 
+/* model/contracts/group.js */
+"Only group creator can allow public channels." = "Only group creator can allow public channels.";
+
+/* model/contracts/group.js */
+"Only group creator can update distribution date." = "Only group creator can update distribution date.";
+
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
 
@@ -1388,6 +1430,9 @@
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Other" = "Other";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Other Proposals" = "Other Proposals";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Other group members will be able to use this information to send you monthly contributions." = "Other group members will be able to use this information to send you monthly contributions.";
@@ -1552,13 +1597,7 @@
 "Proposal from {from} to add new members is expiring." = "Proposal from {from} to add new members is expiring.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the mincome is expiring." = "Proposal from {from} to change the mincome is expiring.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the voting rules is expiring." = "Proposal from {from} to change the voting rules is expiring.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the voting system is expiring." = "Proposal from {from} to change the voting system is expiring.";
+"Proposal from {from} to change the {setting} is expiring." = "Proposal from {from} to change the {setting} is expiring.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to remove members is expiring." = "Proposal from {from} to remove members is expiring.";
@@ -1659,7 +1698,7 @@
 /* views/containers/proposals/AddMembers.vue */
 "Remove invitee" = "Remove invitee";
 
-/* views/components/ProfileCard.vue, views/pages/DesignSystem.vue */
+/* views/components/ProfileCard.vue, views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "Remove member" = "Remove member";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -1920,32 +1959,23 @@
 /* views/pages/Payments.vue */
 "The distribution period begins on: {startDate}" = "The distribution period begins on: {startDate}";
 
+/* views/containers/proposals/DistributionDate.vue */
+"The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/pages/GroupSettings.vue */
 "The form is invalid." = "The form is invalid.";
 
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {name}!" = "The group has a new member. Say hi to {name}!";
 
-/* views/containers/chatroom/MessageInteractive.vue */
-"The group mincome hasn't changed." = "The group mincome hasn't changed.";
-
 /* views/components/group-creation-steps/GroupName.vue */
 "The group picture must be a valid url" = "The group picture must be a valid url";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The groups mincome changed." = "The groups mincome changed.";
+"The group {setting} hasn\"t changed." = "The group {setting} hasn\"t changed.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting rules changed" = "The groups voting rules changed";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting rules hasn't changed." = "The groups voting rules hasn't changed.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting system changed." = "The groups voting system changed.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting system hasn't changed." = "The groups voting system hasn't changed.";
+"The groups {setting} changed." = "The groups {setting} changed.";
 
 /* model/contracts/group.js */
 "The link does not exist." = "The link does not exist.";
@@ -1958,6 +1988,9 @@
 
 /* model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
+
+/* views/containers/proposals/DistributionDate.vue */
+"The new distribution date should be different from the current one." = "The new distribution date should be different from the current one.";
 
 /* views/containers/proposals/Mincome.vue */
 "The new mincome should be different than the current one." = "The new mincome should be different than the current one.";
@@ -2177,6 +2210,9 @@
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Voting System";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Voting Systems" = "Voting Systems";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Voting on proposals";
@@ -2406,10 +2442,13 @@
 /* views/containers/proposals/ChangeVotingRules.vue */
 "disagreement number" = "disagreement number";
 
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalItem.vue */
+"distribution date" = "distribution date";
+
 /* views/containers/group-settings/InvitationsTable.vue */
 "invite link" = "invite link";
 
-/* views/containers/proposals/ProposalItem.vue */
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalItem.vue */
 "mincome" = "mincome";
 
 /* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
@@ -2435,6 +2474,12 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "state" = "state";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"voting rules" = "voting rules";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"voting system" = "voting system";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "yes" = "yes";
@@ -2506,13 +2551,7 @@
 "{from} wants to add new members to the group." = "{from} wants to add new members to the group.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups mincome." = "{from} wants to change the groups mincome.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting rules." = "{from} wants to change the groups voting rules.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
+"{from} wants to change the groups {setting}." = "{from} wants to change the groups {setting}.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} wants to remove members from the group.";
@@ -2546,6 +2585,9 @@
 
 /* model/notifications/templates.js */
 "{member} proposed to add a member to the group. Vote now!" = "{member} proposed to add a member to the group. Vote now!";
+
+/* model/notifications/templates.js */
+"{member} proposed to change the group distribution date. Vote now!" = "{member} proposed to change the group distribution date. Vote now!";
 
 /* model/notifications/templates.js */
 "{member} proposed to change the group mincome. Vote now!" = "{member} proposed to change the group mincome. Vote now!";

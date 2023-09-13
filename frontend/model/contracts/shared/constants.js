@@ -122,3 +122,5 @@ export const POLL_STATUS = {
   ACTIVE: 'active',
   CLOSED: 'closed'
 }
+
+export const POLL_MAX_OPTIONS = 20
