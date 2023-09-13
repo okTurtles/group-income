@@ -236,8 +236,8 @@ export class GIMessage {
     }
 
     const signedMessageData = signedIncomingData(
-      contractID, state, parsedValue, head.height, parsedValue.head,
-      (message) => decryptedAndVerifiedDeserializedMessage(head, parsedValue.head, contractID, message, additionalKeys, state)
+      contractID, state, parsedValue, head.height, headJSON,
+      (message) => decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, message, additionalKeys, state)
     )
 
     return new this({
