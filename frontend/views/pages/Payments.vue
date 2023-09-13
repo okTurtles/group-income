@@ -64,11 +64,13 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-tabs-chip-container.hide-phone
+        .c-tabs-chip-container
           next-distribution-pill
+          i18n.is-outlined.is-small(tag='button' type='button') Export CSV
 
       .c-chip-container-below-tabs
-        next-distribution-pill.hide-tablet.c-distribution-pill
+        next-distribution-pill.c-distribution-pill
+        i18n.is-outlined.is-small(tag='button' type='button') Export CSV
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -514,10 +516,15 @@ export default ({
   }
 
   .c-tabs-chip-container {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
     align-self: center;
     height: max-content;
-    padding: 0 1.5rem 0 0;
     margin: 0.75rem 0;
+    padding: 0 1.5rem 0 0;
   }
 }
 
@@ -526,18 +533,12 @@ export default ({
   flex-direction: row;
   flex-wrap: wrap-reverse;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
 
-  > * {
-    margin-bottom: 1.25rem;
-
-    @include tablet {
-      margin-bottom: 2.5rem;
-    }
-  }
-
-  h3 {
-    margin-right: 1.25rem;
+  @include tablet {
+    margin-bottom: 2.5rem;
   }
 }
 
