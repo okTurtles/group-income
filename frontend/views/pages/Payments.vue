@@ -740,8 +740,15 @@ export default ({
   @include tablet {
     position: absolute;
     bottom: 0;
-    right: 12rem;
-    margin-top: 0;
+    right: 11.2rem;
+    margin-top: 0; 
+  }
+
+  @media screen and (min-width: $desktop) and (max-width: 1290px) {
+    position: relative;
+    bottom: unset;
+    right: unset;
+    margin-top: 0.75rem;
   }
 }
 </style>
