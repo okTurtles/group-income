@@ -11,19 +11,10 @@
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
 
-// const browserify = require('@cypress/browserify-preprocessor')
+const browserify = require('@cypress/browserify-preprocessor')
 
-// module.exports = (on) => {
-//   // Make cypress share the same babelrc config as the rest of the project
-//   // https://github.com/cypress-io/cypress-browserify-preprocessor#modifying-default-options
-//   const options = browserify.defaultOptions
-//   options.browserifyOptions.transform[1][1].babelrc = true
-
-//   on('file:preprocessor', browserify(options))
-// }
-
-const webpackPreprocessor = require('@cypress/webpack-preprocessor')
-const defaults = webpackPreprocessor.defaultOptions
+const options = browserify.defaultOptions
+options.browserifyOptions.transform[1][1].babelrc = true
 
 // This flag is used to avoid running further test specs in case a spec failed.
 // Note that just returning a rejection from 'after:spec' would prevent the spec
@@ -32,8 +23,10 @@ const defaults = webpackPreprocessor.defaultOptions
 let lastSpecFailed = false
 
 module.exports = (on, config) => {
-  delete defaults.webpackOptions.module.rules[0].use[0].options.presets
-  on('file:preprocessor', webpackPreprocessor(defaults))
+  // Make cypress share the same babelrc config as the rest of the project
+  // https://github.com/cypress-io/cypress-browserify-preprocessor#modifying-default-options
+  on('file:preprocessor', browserify(options))
+
   on('after:spec', (spec, results) => {
     if (results?.stats?.failures > 0) {
       lastSpecFailed = true
