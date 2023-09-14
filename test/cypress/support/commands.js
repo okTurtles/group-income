@@ -15,6 +15,8 @@ const API_URL = Cypress.config('baseUrl')
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 
+const defaultPassword = '123456789'
+
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -26,7 +28,7 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 })
 
 Cypress.Commands.add('giSignup', (username, {
-  password = '123456789',
+  password = defaultPassword,
   isInvitation = false,
   groupName,
   bypassUI = false
@@ -59,7 +61,7 @@ Cypress.Commands.add('giSignup', (username, {
 })
 
 Cypress.Commands.add('giLogin', (username, {
-  password = '123456789',
+  password = defaultPassword,
   bypassUI
 } = {}) => {
   if (bypassUI) {
@@ -291,10 +293,10 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       for (let i = 0; i < 2; i++) {
         await new Promise(resolve => setTimeout(resolve, 2000))
         await sbp('gi.actions/identity/logout')
-        await sbp('gi.actions/identity/login', { username: existingMemberUsername, password: '123456789' })
+        await sbp('gi.actions/identity/login', { username: existingMemberUsername, password: defaultPassword })
         await new Promise(resolve => setTimeout(resolve, 2000))
         await sbp('gi.actions/identity/logout')
-        await sbp('gi.actions/identity/login', { username: username, password: '123456789' })
+        await sbp('gi.actions/identity/login', { username: username, password: defaultPassword })
         await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
       }
     })
