@@ -49,6 +49,11 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
       @click='exportToCSV'
       :disabled='!form.allPeriod && form.period === "choose"'
     ) Export payments
+
+    a.c-invisible-download-helper(
+      ref='downloadHelper'
+      :download='ephemeral.downloadName'
+    )
 </template>
 
 <script>
@@ -70,7 +75,9 @@ export default ({
         allPeriod: false
       },
       ephemeral: {
-        periodOpts: []
+        periodOpts: [],
+        downloadUrl: '',
+        downloadName: ''
       }
     }
   },
@@ -102,8 +109,8 @@ export default ({
       const itemsToExport = this.form.allPeriod
         ? this.data
         : this.data.filter(
-            entry => entry.period === this.form.period
-          )
+          entry => entry.period === this.form.period
+        )
 
       const tableHeadings = [
         this.paymentType === 'sent' ? L('Sent to') : L('Sent by'),
@@ -120,8 +127,20 @@ export default ({
             : this.userDisplayName(entry.meta.username), // 'Sent by' or 'Sent to'
           this.withGroupCurrency(entry.data.amount), // 'Amount',
           L('Manual'), // 'Payment metod' - !!TODO: once lightning payment is implemented in the app, update the logic here too.
-          humanDate(entry.meta.createdDate, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }), // 'Date & Time'
-          humanDate(entry.period, { month: 'long', year: 'numeric', day: 'numeric' }), // 'Period'
+          humanDate(
+            entry.meta.createdDate, 
+            {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }
+          ).replaceAll(',', ''), // 'Date & Time'
+          humanDate(
+            entry.period,
+            { month: 'long', year: 'numeric', day: 'numeric' }
+          ).replaceAll(',', ''), // 'Period'
           this.withGroupCurrency(entry.data.groupMincome) // Mincome at the time
         ]
       })
@@ -131,7 +150,14 @@ export default ({
         csvContent += row.join(',') + '\r\n'
       }
 
-      console.log('@@ csvContent generated: ', csvContent)
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8,' })
+      const downloadUrl = URL.createObjectURL(blob)
+      this.ephemeral.downloadName = `${this.paymentType === 'sent' ? L('Sent') : L('Received')} payments.csv`
+      this.$refs.downloadHelper.setAttribute('href', downloadUrl)
+
+      this.$nextTick(() => {
+        this.$refs.downloadHelper.click()
+      })
     }
   },
   mounted () {
@@ -169,5 +195,11 @@ export default ({
 
 .c-all-period-checkbox {
   margin-right: 0;
+}
+
+.c-invisible-download-helper {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
