@@ -6,19 +6,36 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
   i18n.c-sub-title.has-text-1(:args='{ type: $route.query.type }') Export your {type} payment history to .csv
 
   label.field
-    i18n.label Payment period
+    .label.c-select-label
+      i18n Payment period
+
+      label.checkbox.c-all-period-checkbox
+        input.input(
+          type='checkbox'
+          name='all-period'
+          v-model='form.allPeriod'
+        )
+        i18n Export all periods
 
     .selectbox
       select.select.c-period-select(
         name='period'
         required=''
+        :disabled='form.allPeriod'
         v-model='form.period'
+        :class='{ "is-empty": form.period === "choose" }'
       )
         option(
-          v-for='n in 30'
-          :key='"duration-" + n'
-          :value='n'
-        ) {{ n }}
+          value='choose'
+          :disabled='true'
+        )
+          i18n Select payment period
+
+        option(
+          v-for='period in ephemeral.periodOpts'
+          :key='period'
+          :value='period'
+        ) {{ displayPeriod(period) }}
 
   .buttons.c-btns-container
     i18n.is-outlined(
@@ -35,6 +52,8 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
 
 <script>
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import { uniq } from '@model/contracts/shared/giLodash.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -45,9 +64,16 @@ export default ({
   data () {
     return {
       form: {
-        period: null
+        period: 'choose',
+        allPeriod: false
+      },
+      ephemeral: {
+        periodOpts: []
       }
     }
+  },
+  props: {
+    data: Array
   },
   computed: {
     modalTitle () {
@@ -55,11 +81,21 @@ export default ({
     }
   },
   methods: {
+    displayPeriod (period) {
+      return humanDate(period, { month: 'short', day: 'numeric', year: 'numeric' })
+    },
     close () {
       this.$refs.modal.close()
     },
     exportToCSV () {
       alert('TODO: Implement!')
+    }
+  },
+  mounted () {
+    if (this.data?.length) {
+      this.ephemeral.periodOpts = uniq(this.data.map(entry => entry.period))
+    } else {
+      this.close()
     }
   }
 })
@@ -80,5 +116,15 @@ export default ({
   margin-top: 2rem;
   width: 100%;
   justify-content: space-between;
+}
+
+.c-select-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.c-all-period-checkbox {
+  margin-right: 0;
 }
 </style>

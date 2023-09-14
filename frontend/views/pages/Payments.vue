@@ -64,22 +64,11 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-tabs-chip-container
+        .c-tabs-chip-container.hide-phone
           next-distribution-pill
-          i18n.is-outlined.is-small(
-            v-if='showExportPaymentsButton'
-            tag='button'
-            type='button'
-            @click='openExportPaymentsModal') Export CSV
 
       .c-chip-container-below-tabs
-        next-distribution-pill.c-distribution-pill
-        i18n.is-outlined.is-small(
-          v-if='showExportPaymentsButton'
-          tag='button'
-          type='button'
-          @click='openExportPaymentsModal'
-        ) Export CSV
+        next-distribution-pill.hide-tablet.c-distribution-pill
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -131,6 +120,13 @@ page(
               @change-page='handlePageChange'
               @change-rows-per-page='handleRowsPerPageChange'
             )
+
+            .c-export-csv-container(v-if='showExportPaymentsButton')
+              i18n.is-outlined.is-small(
+                tag='button'
+                type='button'
+                @click='openExportPaymentsModal'
+              ) Export CSV
 
         .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
           p.c-lightning-todo-msg Coming Soon.
@@ -238,8 +234,11 @@ export default ({
           this.ephemeral.activeTab = section
         } else {
           const fromQuery = from?.query || {}
-          const isFromPaymentDetailModal = fromQuery.modal === 'PaymentDetail'
-          const defaultTab = isFromPaymentDetailModal
+          const isFromTableRelatedModals = [
+            'PaymentDetail',
+            'ExportPaymentsModal'
+          ].includes(fromQuery.modal)
+          const defaultTab = isFromTableRelatedModals
             // When payment detail modal is closed, the payment table has to remain in the previously active tab.
             // (context: https://github.com/okTurtles/group-income/issues/1686)
             ? fromQuery.section || this.tabSections[0]
@@ -501,7 +500,10 @@ export default ({
         'PaymentRowReceived': 'received'
       }
 
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'ExportPaymentsModal', { type: modalTypeMap[this.ephemeral.activeTab] })
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ExportPaymentsModal',
+        { type: modalTypeMap[this.ephemeral.activeTab] }, // query params
+        { data: this.paymentsListData }
+      )
     }
   }
 }: Object)
@@ -537,25 +539,17 @@ export default ({
   }
 
   .c-tabs-chip-container {
-    display: none;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
     align-self: center;
     height: max-content;
-    margin: 0.75rem 0;
     padding: 0 1.5rem 0 0;
+    margin: 0.75rem 0;
   }
 }
 
 .c-chip-container-below-tabs {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap-reverse;
-  align-items: center;
   justify-content: flex-start;
-  gap: 0.5rem;
   margin-bottom: 1.25rem;
 
   @include tablet {
@@ -730,5 +724,12 @@ export default ({
 
 .c-lightning-todo-msg {
   margin-top: 2rem;
+}
+
+.c-export-csv-container {
+  position: relative;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
