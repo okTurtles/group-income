@@ -3,7 +3,7 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
   template(slot='title')
     span {{ modalTitle }}
 
-  i18n.c-sub-title.has-text-1(:args='{ type: $route.query.type }') Export your {type} payment history to .csv
+  i18n.c-sub-title.has-text-1(:args='{ type: paymentType }') Export your {type} payment history to .csv
 
   label.field
     .label.c-select-label
@@ -47,10 +47,12 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
     i18n(
       tag='button'
       @click='exportToCSV'
+      :disabled='!form.allPeriod && form.period === "choose"'
     ) Export payments
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { humanDate } from '@model/contracts/shared/time.js'
@@ -76,8 +78,15 @@ export default ({
     data: Array
   },
   computed: {
+    ...mapGetters([
+      'userDisplayName',
+      'withGroupCurrency'
+    ]),
     modalTitle () {
-      return L('Export {type} payments', { type: this.$route.query.type })
+      return L('Export {type} payments', { type: this.paymentType })
+    },
+    paymentType () {
+      return this.$route.query.type
     }
   },
   methods: {
@@ -88,7 +97,41 @@ export default ({
       this.$refs.modal.close()
     },
     exportToCSV () {
-      alert('TODO: Implement!')
+      // logic here is inspired from the article below:
+      // https://medium.com/@idorenyinudoh10/how-to-export-data-from-javascript-to-a-csv-file-955bdfc394a9
+      const itemsToExport = this.form.allPeriod
+        ? this.data
+        : this.data.filter(
+            entry => entry.period === this.form.period
+          )
+
+      const tableHeadings = [
+        this.paymentType === 'sent' ? L('Sent to') : L('Sent by'),
+        L('Amount'),
+        L('Payment method'),
+        L('Date & Time'),
+        L('Period'),
+        L('Mincome at the time')
+      ]
+      const tableRows = itemsToExport.map(entry => {
+        return [
+          this.paymentType === 'sent'
+            ? this.userDisplayName(entry.data.toUser)
+            : this.userDisplayName(entry.meta.username), // 'Sent by' or 'Sent to'
+          this.withGroupCurrency(entry.data.amount), // 'Amount',
+          L('Manual'), // 'Payment metod' - !!TODO: once lightning payment is implemented in the app, update the logic here too.
+          humanDate(entry.meta.createdDate, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }), // 'Date & Time'
+          humanDate(entry.period, { month: 'long', year: 'numeric', day: 'numeric' }), // 'Period'
+          this.withGroupCurrency(entry.data.groupMincome) // Mincome at the time
+        ]
+      })
+
+      let csvContent = tableHeadings.join(',') + '\r\n'
+      for (const row of tableRows) {
+        csvContent += row.join(',') + '\r\n'
+      }
+
+      console.log('@@ csvContent generated: ', csvContent)
     }
   },
   mounted () {
