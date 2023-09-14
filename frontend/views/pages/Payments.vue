@@ -121,8 +121,9 @@ page(
               @change-rows-per-page='handleRowsPerPageChange'
             )
 
-            .c-export-csv-container(v-if='showExportPaymentsButton')
-              i18n.is-outlined.is-small(
+            .c-export-csv-container
+              i18n.is-outlined.is-small.c-export-csv-btn(
+                v-if='showExportPaymentsButton'
                 tag='button'
                 type='button'
                 @click='openExportPaymentsModal'
@@ -677,6 +678,7 @@ export default ({
 
 // Footer
 .c-footer {
+  position: relative;
   padding-top: 1.5rem;
 
   @include tablet {
@@ -727,9 +729,19 @@ export default ({
 }
 
 .c-export-csv-container {
-  position: relative;
-  margin-top: 2rem;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.c-export-csv-btn {
+  margin-top: 0.75rem;
+
+  @include tablet {
+    position: absolute;
+    bottom: 0;
+    right: 12rem;
+    margin-top: 0;
+  }
 }
 </style>

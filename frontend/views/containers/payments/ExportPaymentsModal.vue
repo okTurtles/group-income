@@ -5,17 +5,18 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
 
   i18n.c-sub-title.has-text-1(:args='{ type: paymentType }') Export your {type} payment history to .csv
 
-  label.field
-    .label.c-select-label
-      i18n Payment period
+  .c-all-period-checkbox
+    label.checkbox
+      input.input(
+        type='checkbox'
+        name='all-period'
+        v-model='form.allPeriod'
+      )
+      i18n Export all periods
 
-      label.checkbox.c-all-period-checkbox
-        input.input(
-          type='checkbox'
-          name='all-period'
-          v-model='form.allPeriod'
-        )
-        i18n Export all periods
+  label.field
+    .label
+      i18n Payment period
 
     .selectbox
       select.select.c-period-select(
@@ -177,7 +178,6 @@ export default ({
   position: relative;
   width: 100%;
   text-align: left;
-  margin-bottom: 1.5rem;
 }
 
 .c-btns-container {
@@ -187,14 +187,15 @@ export default ({
   justify-content: space-between;
 }
 
-.c-select-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .c-all-period-checkbox {
-  margin-right: 0;
+  position: relative;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  .checkbox {
+    margin-right: 0;
+  }
 }
 
 .c-invisible-download-helper {
