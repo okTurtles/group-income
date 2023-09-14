@@ -128,7 +128,7 @@ export default ({
           this.withGroupCurrency(entry.data.amount), // 'Amount',
           L('Manual'), // 'Payment metod' - !!TODO: once lightning payment is implemented in the app, update the logic here too.
           humanDate(
-            entry.meta.createdDate, 
+            entry.meta.createdDate,
             {
               year: 'numeric',
               month: 'long',
