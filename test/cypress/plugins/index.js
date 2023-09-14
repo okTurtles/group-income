@@ -22,6 +22,9 @@
 //   on('file:preprocessor', browserify(options))
 // }
 
+const webpackPreprocessor = require('@cypress/webpack-preprocessor')
+const defaults = webpackPreprocessor.defaultOptions
+
 // This flag is used to avoid running further test specs in case a spec failed.
 // Note that just returning a rejection from 'after:spec' would prevent the spec
 // video from being processed, so we have to do it in the next 'before:spec'
@@ -29,6 +32,8 @@
 let lastSpecFailed = false
 
 module.exports = (on, config) => {
+  delete defaults.webpackOptions.module.rules[0].use[0].options.presets
+  on('file:preprocessor', webpackPreprocessor(defaults))
   on('after:spec', (spec, results) => {
     if (results?.stats?.failures > 0) {
       lastSpecFailed = true
