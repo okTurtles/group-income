@@ -741,7 +741,7 @@ export default ({
     position: absolute;
     bottom: 0;
     right: 11.2rem;
-    margin-top: 0; 
+    margin-top: 0;
   }
 
   @media screen and (min-width: $desktop) and (max-width: 1290px) {
