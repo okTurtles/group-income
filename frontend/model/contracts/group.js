@@ -1479,7 +1479,7 @@ sbp('chelonia/defineContract', {
 
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      if (groupCSKids.length) {
+      if (groupCSKids?.length) {
         sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
           contractID: identityContractID,
           contractName: 'gi.contracts/identity',

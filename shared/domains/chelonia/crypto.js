@@ -229,16 +229,11 @@ export const sign = (inKey: Key | string, data: string): string => {
     throw new Error('Secret key missing')
   }
 
-  try {
-    const messageUint8 = strToBuf(data)
-    const signature = nacl.sign.detached(messageUint8, key.secretKey)
-    const base64Signature = bytesOrObjectToB64(signature)
+  const messageUint8 = strToBuf(data)
+  const signature = nacl.sign.detached(messageUint8, key.secretKey)
+  const base64Signature = bytesOrObjectToB64(signature)
 
-    return base64Signature
-  } catch (e) {
-    console.error(e, { data })
-    throw e
-  }
+  return base64Signature
 }
 export const verifySignature = (inKey: Key | string, data: string, signature: string): void => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
@@ -282,22 +277,17 @@ export const encrypt = (inKey: Key | string, data: string, ad?: string): string 
       encryptionNonce = nonce
     }
 
-    try {
-      const messageUint8 = strToBuf(data)
-      const box = nacl.secretbox(messageUint8, encryptionNonce, key.secretKey)
+    const messageUint8 = strToBuf(data)
+    const box = nacl.secretbox(messageUint8, encryptionNonce, key.secretKey)
 
-      const fullMessage = new Uint8Array(nonce.length + box.length)
+    const fullMessage = new Uint8Array(nonce.length + box.length)
 
-      fullMessage.set(nonce)
-      fullMessage.set(box, nonce.length)
+    fullMessage.set(nonce)
+    fullMessage.set(box, nonce.length)
 
-      const base64FullMessage = bytesOrObjectToB64(fullMessage)
+    const base64FullMessage = bytesOrObjectToB64(fullMessage)
 
-      return base64FullMessage
-    } catch (e) {
-      console.error(e, { data })
-      throw e
-    }
+    return base64FullMessage
   } else if (key.type === CURVE25519XSALSA20POLY1305) {
     if (!key.publicKey) {
       throw new Error('Public key missing')
@@ -317,26 +307,21 @@ export const encrypt = (inKey: Key | string, data: string, ad?: string): string 
       encryptionNonce = nonce
     }
 
-    try {
-      const messageUint8 = strToBuf(data)
-      const ephemeralKey = nacl.box.keyPair()
-      const box = nacl.box(messageUint8, encryptionNonce, key.publicKey, ephemeralKey.secretKey)
-      // Attempt to discard the data in memory for ephemeralKey.secretKey
-      ephemeralKey.secretKey.fill(0)
+    const messageUint8 = strToBuf(data)
+    const ephemeralKey = nacl.box.keyPair()
+    const box = nacl.box(messageUint8, encryptionNonce, key.publicKey, ephemeralKey.secretKey)
+    // Attempt to discard the data in memory for ephemeralKey.secretKey
+    ephemeralKey.secretKey.fill(0)
 
-      const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)
+    const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)
 
-      fullMessage.set(ephemeralKey.publicKey)
-      fullMessage.set(nonce, nacl.box.publicKeyLength)
-      fullMessage.set(box, nacl.box.publicKeyLength + nonce.length)
+    fullMessage.set(ephemeralKey.publicKey)
+    fullMessage.set(nonce, nacl.box.publicKeyLength)
+    fullMessage.set(box, nacl.box.publicKeyLength + nonce.length)
 
-      const base64FullMessage = bytesOrObjectToB64(fullMessage)
+    const base64FullMessage = bytesOrObjectToB64(fullMessage)
 
-      return base64FullMessage
-    } catch (e) {
-      console.error(e, { data })
-      throw e
-    }
+    return base64FullMessage
   }
 
   throw new Error('Unsupported algorithm')

@@ -568,8 +568,13 @@ export default (sbp('sbp/selectors/register', {
           // having any groups in common
           contractID: message.contractID()
         },
+        // For now, we're repeating the signingContractID and the
+        // innerSigningContractID. The outer signing contract ID (this) might be
+        // changed if we encrypt some of the OP_KEY_* opcodes
+        // Otherwise, we could set innerSigningContractID to <null> to avoid
+        // a double signature with the same key
         signingContractID: rootState.currentGroupId,
-        innerSigningContractID: rootState.currentGroupId,
+        innerSigningContractID: null,
         hooks
       })
     }

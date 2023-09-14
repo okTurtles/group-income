@@ -132,10 +132,8 @@ export default (sbp('sbp/selectors/register', {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
             id: userCSKid,
             data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-            // TODO: permissions for inner signing key7s
-            permissions: [],
-            // TODO: permissions for inner signing key7s
-            allowedActions: [],
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+            allowedActions: '*',
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
             name: `${userID}/${userCSKid}`
@@ -213,11 +211,8 @@ export default (sbp('sbp/selectors/register', {
         foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
         id: userCSKid,
         data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-        // TODO: Permissions
-        // TODO: Remove key when leaving group
-        // TODO: Do the same when joining a chatroom
-        permissions: [],
-        allowedActions: [],
+        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        allowedActions: '*',
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
         name: `${userID}/${userCSKid}`

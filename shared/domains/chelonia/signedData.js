@@ -12,7 +12,9 @@ export interface SignedData<T> {
   context?: [string, Object, number, string],
   toString: (additionalData: ?string) => string,
   recreate?: (data: T) => SignedData<T>,
-  toJSON?: () => [string, string]
+  toJSON?: () => [string, string],
+  get: (k: string) => any,
+  set?: (k: string, v: any) => void
 }
 
 // `proto` & `wrapper` are utilities for `isSignedData`
@@ -31,7 +33,7 @@ export const isSignedData = (o: any): boolean => {
 
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
-const signData = function (sKeyId: string, data: any, additionalKeys: Object, additionalData: string) {
+const signData = function (sKeyId: string, data: any, extraFields: Object, additionalKeys: Object, additionalData: string) {
   if (!additionalData) {
     throw new ChelErrorSignatureError('Signature additional data must be provided')
   }
@@ -76,6 +78,7 @@ const signData = function (sKeyId: string, data: any, additionalKeys: Object, ad
   const payloadToSign = blake32Hash(`${blake32Hash(additionalData)}${blake32Hash(serializedData)}`)
 
   return {
+    ...extraFields,
     _signedData: [
       serializedData,
       keyId(deserializedKey),
@@ -134,7 +137,9 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
     additionalKeys = rootState.secretKeys
   }
 
-  const boundStringValueFn = signData.bind(state, sKeyId, data, additionalKeys)
+  const extraFields = Object.create(null)
+
+  const boundStringValueFn = signData.bind(state, sKeyId, data, extraFields, additionalKeys)
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
   return wrapper({
@@ -152,6 +157,14 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
     },
     get recreate () {
       return (data: T) => signedOutgoingData(state, sKeyId, data, additionalKeys)
+    },
+    get get () {
+      return (k: string) => extraFields[k]
+    },
+    get set () {
+      return (k: string, v: any) => {
+        extraFields[k] = v
+      }
     }
   })
 }
@@ -172,7 +185,9 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
     }
   }
 
-  const boundStringValueFn = signData.bind(state, sKeyId, data, { [sKeyId]: key })
+  const extraFields = Object.create(null)
+
+  const boundStringValueFn = signData.bind(state, sKeyId, data, extraFields, { [sKeyId]: key })
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
   return wrapper({
@@ -190,6 +205,14 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
     },
     get recreate () {
       return (data: T) => signedOutgoingDataWithRawKey(key, data)
+    },
+    get get () {
+      return (k: string) => extraFields[k]
+    },
+    get set () {
+      return (k: string, v: any) => {
+        extraFields[k] = v
+      }
     }
   })
 }
@@ -229,6 +252,9 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
     },
     get toJSON () {
       return this.serialize
+    },
+    get get () {
+      return (k: string) => k !== '_signedData' ? data[k] : undefined
     }
   })
 }
@@ -281,6 +307,9 @@ export const rawSignedIncomingData = (data: any): SignedData<any> => {
     },
     get toJSON () {
       return this.serialize
+    },
+    get get () {
+      return (k: string) => k !== '_signedData' ? data[k] : undefined
     }
   })
 }

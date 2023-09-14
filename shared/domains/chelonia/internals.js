@@ -12,7 +12,7 @@ import './db.js'
 import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -314,12 +314,6 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        // Verify that the signing key is found, has the correct purpose and is
-        // allowed to sign this particular operation
-        if (!signingKey || !Array.isArray(signingKey.purpose) || !signingKey.purpose.includes('sig') || (signingKey.permissions !== '*' && (!Array.isArray(signingKey.permissions) || v.reduce((acc, [opT]) => acc && !(signingKey: any).permissions.includes(opT), true)))) {
-          throw new Error('OP_ATOMIC: Signing key is missing permissions for inner operation')
-        }
-
         v.forEach((u) => opFns[u[0]](u[1]))
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
@@ -351,10 +345,6 @@ export default (sbp('sbp/selectors/register', {
           // TODO: Verify signing permissions
 
           const { data, meta, action } = (v: any)
-
-          if (signingKey && (signingKey.allowedActions !== '*' && (!Array.isArray(signingKey.allowedActions) || !signingKey.allowedActions.includes(action)))) {
-            throw new Error('Signing key is not allowed for action ' + action)
-          }
 
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
@@ -666,8 +656,8 @@ export default (sbp('sbp/selectors/register', {
     if (config.preOp) {
       processOp = config.preOp(message, state) !== false && processOp
     }
-    let signingKey: ?GIKey
 
+    let signingKey: GIKey
     // Signature verification
     {
       // This sync code has potential issues
@@ -677,31 +667,21 @@ export default (sbp('sbp/selectors/register', {
       // The difficulty of this is how to securely determine the message ID to use.
       // The server can assist with this.
 
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys, height) : state._vm.authorizedKeys
-      signingKey = authorizedKeys?.[signingKeyId]
-
-      if (!signingKey) {
-        throw new Error(`Signing key with ID ${signingKeyId} not found but is mandatory`)
-      }
+      const stateForValidation = opT === GIMessage.OP_CONTRACT && !state?._vm?.authorizedKeys
+        ? {
+            _vm: {
+              authorizedKeys: keysToMap(((opV: any): GIOpContract).keys, height)
+            }
+          }
+        : state
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
-      if (
-        !signingKey ||
-        height > signingKey._notAfterHeight ||
-        height < signingKey._notBeforeHeight ||
-        !Array.isArray(signingKey.purpose) ||
-        !signingKey.purpose.includes('sig') ||
-        (
-          signingKey.permissions !== '*' &&
-          (
-            !Array.isArray(signingKey.permissions) ||
-            !signingKey.permissions.includes(opT)
-          )
-        )
-      ) {
+      if (!validateKeyPermissions(stateForValidation, signingKeyId, opT, opV)) {
         throw new Error('No matching signing key was defined')
       }
+
+      signingKey = stateForValidation._vm.authorizedKeys[signingKeyId]
     }
 
     if (config[`preOp_${opT}`]) {

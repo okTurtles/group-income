@@ -49,7 +49,7 @@ sbp('sbp/selectors/register', {
       : keyIds === '*'
         ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
           .filter(([, key]) => {
-            return !!key.meta?.private?.content
+            return !!((key: any): GIKey).meta?.private?.content
           })
           .map(([id]) => id)
         )

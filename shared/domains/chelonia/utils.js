@@ -1,10 +1,11 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue } from './GIMessage.js'
+import type { GIKey, GIKeyPurpose, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
+import { isSignedData } from './signedData.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
 
@@ -38,6 +39,115 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
         : permissions === k.permissions
       ) &&
       purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.map((k) => k.id)
+}
+
+const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string, opV: GIOpActionUnencrypted) => {
+  const data: ProtoGIOpActionUnencrypted = isSignedData(opV)
+    ? (opV: any).valueOf()
+    : (opV: any)
+
+  if (
+    signingKey.allowedActions !== '*' && (
+      !Array.isArray(signingKey.allowedActions) ||
+      !signingKey.allowedActions.includes(data.action)
+    )
+  ) {
+    console.error(`Signing key ${signingKey.id} is not allowed for action ${data.action}`)
+    return false
+  }
+
+  if (isSignedData(opV)) {
+    const s = ((opV: any): SignedData<void>)
+    const innerSigningKey = state._vm?.authorizedKeys?.[s.signingKeyId]
+
+    if (
+      !innerSigningKey ||
+      !Array.isArray(innerSigningKey.purpose) ||
+        !innerSigningKey.purpose.includes('sig') ||
+        (innerSigningKey.permissions !== '*' &&
+          (
+            !Array.isArray(innerSigningKey.permissions) ||
+            !innerSigningKey.permissions.includes(opT + '#inner')
+          )
+        )
+    ) {
+      console.error(`Signing key ${innerSigningKey.id} is missing permissions for operation ${opT}`)
+      return false
+    }
+
+    if (
+      innerSigningKey.allowedActions !== '*' && (
+        !Array.isArray(innerSigningKey.allowedActions) ||
+        !innerSigningKey.allowedActions.includes(data.action + '#inner')
+      )
+    ) {
+      console.error(`Signing key ${innerSigningKey.id} is not allowed for action ${data.action}`)
+      return false
+    }
+  }
+
+  return true
+}
+
+export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue): boolean => {
+  const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
+  if (
+    !signingKey ||
+    !Array.isArray(signingKey.purpose) ||
+      !signingKey.purpose.includes('sig') ||
+      (signingKey.permissions !== '*' &&
+        (
+          !Array.isArray(signingKey.permissions) ||
+          !signingKey.permissions.includes(opT)
+        )
+      )
+  ) {
+    console.error(`Signing key ${signingKey.id} is missing permissions for operation ${opT}`)
+    return false
+  }
+
+  if (opT === GIMessage.OP_ATOMIC) {
+    if (
+      ((opV: any): GIOpAtomic).reduce(
+        (acc, [opT, opV]) => {
+          if (!acc || !(signingKey: any).permissions.includes(opT)) return false
+          if (
+            opT === GIMessage.OP_ACTION_UNENCRYPTED &&
+            !validateActionPermissions(signingKey, state, opT, (opV: any))
+          ) {
+            return false
+          }
+
+          if (
+            opT === GIMessage.OP_ACTION_ENCRYPTED &&
+            !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
+          ) {
+            return false
+          }
+
+          return true
+        }, true)
+    ) {
+      console.error(`OP_ATOMIC: Signing key ${signingKey.id} is missing permissions for inner operation ${opT}`)
+      return false
+    }
+  }
+
+  if (
+    opT === GIMessage.OP_ACTION_UNENCRYPTED &&
+    !validateActionPermissions(signingKey, state, opT, (opV: any))
+  ) {
+    return false
+  }
+
+  if (
+    opT === GIMessage.OP_ACTION_ENCRYPTED &&
+    !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
+  ) {
+    return false
+  }
+
+  return true
 }
 
 export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
