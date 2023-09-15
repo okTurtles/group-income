@@ -115,6 +115,14 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.giLogout()
   })
 
+  it('test users join group', () => {
+    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+      usernames: [user2, user3, user4, user5],
+      existingMemberUsername: user1,
+      bypassUI: true
+    })
+  })
+
   it(`user2 joins "${groupName}" group and create a direct message channel with user1 and sends two messages`, () => {
     joinUser(user2, false)
 

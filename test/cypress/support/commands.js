@@ -9,11 +9,19 @@ import 'cypress-file-upload'
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
+import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 const API_URL = Cypress.config('baseUrl')
 
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
+const getParamsFromInvitationLink = invitationLink => {
+  const params = new URLSearchParams(new URL(invitationLink).search)
+  return {
+    groupId: params.get('groupId'),
+    inviteSecret: params.get('secret')
+  }
+}
 
 const defaultPassword = '123456789'
 
@@ -271,10 +279,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.giSignup(username, { bypassUI: true })
     }
 
-    const params = new URLSearchParams(new URL(invitationLink).search)
-    const groupId = params.get('groupId')
-    const inviteSecret = params.get('secret')
-
+    const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
     cy.window().its('sbp').then(async sbp => {
       const state = await sbp('state/vuex/state')
       const originatingContractID = state['loggedIn']['identityContractID']
@@ -335,6 +340,60 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
   if (shouldLogoutAfter) {
     cy.giLogout()
+  }
+})
+
+Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
+  usernames,
+  existingMemberUsername,
+  bypassUI
+}) => {
+  const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
+  const secretKey = deserializeKey(inviteSecret)
+  for (const username of usernames) {
+    if (bypassUI) {
+      cy.giSignup(username, { bypassUI: true })
+
+      cy.window().its('sbp').then(async sbp => {
+        const state = await sbp('state/vuex/state')
+        const originatingContractID = state['loggedIn']['identityContractID']
+        const userState = state[originatingContractID]
+
+        sbp('chelonia/storeSecretKeys', [{
+          key: secretKey, transient: true
+        }])
+
+        await sbp('gi.actions/group/joinAndSwitch', {
+          originatingContractID,
+          originatingContractName: 'gi.contracts/identity',
+          contractID: groupId,
+          contractName: 'gi.contracts/group',
+          signingKeyId: keyId(secretKey),
+          innerSigningKeyId: findKeyIdByName(userState, 'csk'),
+          encryptionKeyId: findKeyIdByName(userState, 'cek')
+        })
+
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        await sbp('gi.actions/identity/logout')
+      })
+    } else {
+      // NOTE: asdf
+    }
+  }
+
+  if (bypassUI) {
+    cy.window().its('sbp').then(async sbp => {
+      await sbp('gi.actions/identity/login', { username: existingMemberUsername, password: defaultPassword })
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await sbp('gi.actions/identity/logout')
+      for (const username of usernames) {
+        await sbp('gi.actions/identity/login', { username: username, password: defaultPassword })
+        await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+        await sbp('gi.actions/identity/logout')
+      }
+    })
+  } else {
+    // NOTE: asdf
   }
 })
 
