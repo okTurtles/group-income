@@ -1,9 +1,11 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
+import type { GIKey, GIKeyUpdate, GIKeyPurpose, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
+import type { EncryptedData } from './encryptedData.js'
+import { isEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
@@ -150,12 +152,16 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
   return true
 }
 
-export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
+export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKey | EncryptedData<GIKey>)[], skipPrivateCheck?: boolean) => {
   const signingKeyPermissions = Array.isArray(signingKey.permissions) ? new Set(signingKey.permissions) : signingKey.permissions
   const signingKeyAllowedActions = Array.isArray(signingKey.allowedActions) ? new Set(signingKey.allowedActions) : signingKey.allowedActions
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
-  v.forEach(k => {
+  v.forEach(wk => {
+    const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): GIKey)
+    if (!skipPrivateCheck && signingKey._private && !isEncryptedData(wk)) {
+      throw new Error('Signing key is private but it tried adding a public key')
+    }
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
       throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to add or update a key with ringLevel ' + k.ringLevel)
     }
@@ -172,23 +178,34 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
   })
 }
 
-export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: string[]) => {
+export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: (string | EncryptedData<string>)[]) => {
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
-  v.map(id => state._vm.authorizedKeys[id]).forEach((k, i) => {
-    if (!k) throw new Error('Nonexisting key ID ' + v[i])
-    if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
-      throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)
-    }
-  })
+  v
+    .map((wid): string => ((isEncryptedData(wid) ? wid.valueOf() : wid): any))
+    .map(id => state._vm.authorizedKeys[id])
+    .forEach((k, i, a) => {
+      if (!k) throw new Error('Nonexisting key ID ' + a[i])
+      if (signingKey._private && !isEncryptedData(v[i])) {
+        throw new Error('Signing key is private but it tried removing a public key')
+      }
+      if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
+        throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)
+      }
+    })
 }
 
-export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIOpKeyUpdate): [GIKey[], string[]] => {
+export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]): [GIKey[], string[]] => {
   const keysToDelete: string[] = []
-  const keys = v.map((uk): GIKey => {
+  const keys = v.map((wuk): GIKey => {
+    const uk = (((isEncryptedData(wuk) ? wuk.valueOf() : wuk): any): GIKeyUpdate)
+
     const existingKey = state._vm.authorizedKeys[uk.oldKeyId]
     if (!existingKey) {
       throw new Error('Missing old key ID ' + uk.oldKeyId)
+    }
+    if (existingKey._private !== isEncryptedData(wuk)) {
+      throw new Error('_private attribute must be preserved')
     }
     if (uk.name !== existingKey.name) {
       throw new Error('Name cannot be updated')
@@ -224,8 +241,8 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
     }
     return updatedKey
   })
-  validateKeyAddPermissions(contractID, signingKey, state, keys)
-  return [keys, keysToDelete]
+  validateKeyAddPermissions(contractID, signingKey, state, keys, true)
+  return [((keys: any): GIKey[]), keysToDelete]
 }
 
 export const keyAdditionProcessor = function (keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
@@ -378,7 +395,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       let newOpV: GIOpValue
       if (opT === GIMessage.OP_KEY_ADD) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
-        newOpV = ((opV: any): GIOpKeyAdd).filter(({ id }) => state?._vm.authorizedKeys[id]?._notAfterHeight == null)
+        newOpV = ((opV: any): GIOpKeyAdd).filter((k) => state?._vm.authorizedKeys[(k.valueOf(): any).id]?._notAfterHeight == null)
         // Has this key already been added? (i.e., present in authorizedKeys)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_ADD', { head })
@@ -388,7 +405,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       } else if (opT === GIMessage.OP_KEY_DEL) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
         // Has this key already been removed? (i.e., no longer in authorizedKeys)
-        newOpV = opV.filter((keyId) => state?._vm.authorizedKeys[keyId]?._notAfterHeight != null)
+        newOpV = opV.filter((keyId) => state?._vm.authorizedKeys[Object(keyId).valueOf()]?._notAfterHeight != null)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_DEL', { head })
         } else if (newOpV.length === opV.length) {
@@ -397,7 +414,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       } else if (opT === GIMessage.OP_KEY_UPDATE) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
         // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-        newOpV = ((opV: any): GIOpKeyUpdate).filter(({ oldKeyId }) => state?._vm.authorizedKeys[oldKeyId]?._notAfterHeight != null)
+        newOpV = ((opV: any): GIOpKeyUpdate).filter((k) => state?._vm.authorizedKeys[(k.valueOf(): any).oldKeyId]?._notAfterHeight != null)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_UPDATE', { head })
         } else if (newOpV.length === opV.length) {

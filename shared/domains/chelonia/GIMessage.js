@@ -8,7 +8,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedIncomingData, encryptedIncomingForeignData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingForeignData, encryptedOutgoingData, isRawEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
@@ -28,22 +28,26 @@ export type GIKey = {
   foreignKey?: string;
   _notBeforeHeight: number;
   _notAfterHeight?: number;
+  _private?: boolean;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
+export type GIOpContract = { type: string; keys: (GIKey | EncryptedData<GIKey>)[]; parentContract?: string }
 export type ProtoGIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpActionUnencrypted = ProtoGIOpActionUnencrypted | SignedData<ProtoGIOpActionUnencrypted>
 export type GIOpActionEncrypted = EncryptedData<GIOpActionUnencrypted> // encrypted version of GIOpActionUnencrypted
-export type GIOpKeyAdd = GIKey[]
-export type GIOpKeyDel = string[]
+export type GIOpKeyAdd = (GIKey | EncryptedData<GIKey>)[]
+export type GIOpKeyDel = (string | EncryptedData<string>)[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
+export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
+export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
+// TODO encrypted GIOpKeyRequest
 export type GIOpKeyRequest = SignedData<{
   encryptionKeyId: string;
 }>
-export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
-export type GIOpKeyUpdate = {
+export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
+export type GIKeyUpdate = {
   name: string;
   id?: string;
   oldKeyId: string;
@@ -52,7 +56,8 @@ export type GIOpKeyUpdate = {
   permissions?: string[];
   allowedActions?: '*' | string[];
   meta?: Object;
-}[]
+}
+export type GIOpKeyUpdate = (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]
 
 export type GIOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
 type ProtoGIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
@@ -78,8 +83,18 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // If the operation is GIMessage.OP_KEY_ADD or GIMessage.OP_KEY_UPDATE,
   // extract encrypted data from key.meta?.private?.content
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
-    ((message: any): any[]).forEach((key) => {
-      if (key.meta?.private?.content) {
+    return ((message: any): any[]).map((key) => {
+      if (isRawEncryptedData(key)) {
+        return encryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
+          if (!key.meta?.private?.content) return
+          const computedKeyId = keyId(key.meta.private.content)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+          // Re-encrypt the contents to save it encrypted in the local state
+          key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
+        })
+      } else if (key.meta?.private?.content) {
         key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           // Validator function to verify the key matches its expected ID
           const computedKeyId = keyId(value)
@@ -88,14 +103,26 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
           }
         })
       }
+
+      return key
     })
   }
 
-  // If the operation is GIMessage.OP_CONTRACT or GIMessage.OP_KEY_SHARE,
+  // If the operation is GIMessage.OP_CONTRACT,
   // extract encrypted data from keys?.[].meta?.private?.content
-  if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(op)) {
-    (message: any).keys?.forEach((key) => {
-      if (key.meta?.private?.content) {
+  if (op === GIMessage.OP_CONTRACT) {
+    (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
+      if (isRawEncryptedData(key)) {
+        return encryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
+          if (!key.meta?.private?.content) return
+          const computedKeyId = keyId(key.meta.private.content)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+          // Re-encrypt the contents to save it encrypted in the local state
+          key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
+        })
+      } else if (key.meta?.private?.content) {
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
         const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
         key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
@@ -105,7 +132,49 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
           }
         })
       }
+      return key
     })
+  }
+
+  // If the operation is GIMessage.OP_KEY_SHARE,
+  // extract encrypted data from keys?.[].meta?.private?.content
+  if (op === GIMessage.OP_KEY_SHARE) {
+    if (isRawEncryptedData(message)) {
+      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message) => {
+        (message: any).keys?.forEach((key, eKeyId) => {
+          if (!key.meta?.private?.content) return
+          const computedKeyId = keyId(key.meta.private.content)
+          if (message.foreignContractID) {
+            const decryptionContract = String(message.foreignContractID)
+            key.meta.private.content = encryptedIncomingForeignData(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+              const computedKeyId = keyId(value)
+              if (computedKeyId !== key.id) {
+                throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+              }
+            })
+          } else {
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+            // Re-encrypt the contents to save it encrypted in the local state
+            key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
+          }
+        })
+      })
+    } else {
+      (message: any).keys?.forEach((key) => {
+        if (key.meta?.private?.content) {
+          const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
+          const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
+          key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+            const computedKeyId = keyId(value)
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+          })
+        }
+      })
+    }
   }
 
   // If the operation is OP_KEY_REQUEST, the payload is expected to be
@@ -130,11 +199,23 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     return message
   }
 
+  if ([GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST_SEEN].includes(op)) {
+    return ((message: any): any[]).map((key) => {
+      if (isRawEncryptedData(key)) {
+        return encryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+      }
+      return key
+    })
+  }
+
   // If the operation is OP_ATOMIC, call this function recursively
   if (op === GIMessage.OP_ATOMIC) {
     return ((((message: any): GIOpAtomic)
       .map(([opT, opV]) =>
-        [opT, decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, (opV: any), additionalKeys, state)]
+        [
+          opT,
+          decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, (opV: any), additionalKeys, state)
+        ]
       ): any): GIOpAtomic)
   }
 
@@ -269,8 +350,8 @@ export class GIMessage {
           if (!Array.isArray(message)) {
             throw new TypeError('OP_ATOMIC must be of an array type')
           }
-          atomicTopLevel = false
-          message.forEach(([t, m]) => validate(t, m))
+          atomicTopLevel = false;
+          (message: any[]).forEach(([t, m]) => validate(t, m))
           break
         case GIMessage.OP_KEY_ADD:
         case GIMessage.OP_KEY_DEL:

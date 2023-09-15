@@ -4,12 +4,13 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import './db.js'
-import { encryptedOutgoingData } from './encryptedData.js'
+import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
+import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
 import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
@@ -22,10 +23,19 @@ const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state
     : contractID
 }
 
-const keysToMap = (keys: GIKey[], height: number, authorizedKeys?: Object): Object => {
+const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a GIMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
+  keys = keys.map((key) => {
+    if (isEncryptedData(key)) {
+      key = ((key.valueOf(): any): GIKey);
+      (key: any)._private = true
+    } else {
+      (key: any)._private = false
+    }
+    return ((key: any): GIKey)
+  })
   const keysCopy = cloneDeep(keys)
   return Object.fromEntries(keysCopy.map(key => {
     key._notBeforeHeight = height
@@ -318,14 +328,15 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
-        config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys, height))
+        const keys = keysToMap(v.keys, height)
+        config.reactiveSet(state._vm, 'authorizedKeys', keys)
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
         // When you login you have the IEK which is derived from your password, and you
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, v.keys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, (Object.values(keys): any), state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
@@ -372,9 +383,11 @@ export default (sbp('sbp/selectors/register', {
           )
         }
       },
-      [GIMessage.OP_KEY_SHARE] (v: GIOpKeyShare) {
+      [GIMessage.OP_KEY_SHARE] (wv: GIOpKeyShare) {
         console.log('Processing OP_KEY_SHARE')
         // TODO: Prompt to user if contract not in pending
+
+        const v = (isEncryptedData(wv)) ? ((wv: any).valueOf(): ProtoGIOpKeyShare) : ((wv: any): ProtoGIOpKeyShare)
 
         delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
@@ -517,11 +530,13 @@ export default (sbp('sbp/selectors/register', {
         // Call 'chelonia/private/respondToKeyRequests' after sync
         self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
       },
-      [GIMessage.OP_KEY_REQUEST_SEEN] (v: GIOpKeyRequestSeen) {
+      [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
           return
         }
         // TODO: Handle boolean (success) value
+
+        const v = isEncryptedData(wv) ? ((wv: any).valueOf(): ProtoGIOpKeyRequestSeen) : ((wv: any): ProtoGIOpKeyRequestSeen)
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
@@ -540,24 +555,25 @@ export default (sbp('sbp/selectors/register', {
         state._vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        // Order is so that KEY_ADD doesn't overwrite existing keys
-        // TODO: Verify ringLevel
-        // TODO: Handle the case of an existing key: its permissions are then augmented
-        v.forEach((k) => {
+        const keys = keysToMap(v, height, state._vm.authorizedKeys)
+        const keysArray = ((Object.values(v): any): GIKey[])
+        keysArray.forEach((k) => {
           if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
             throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
           }
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
-        config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keysToMap(v, height, state._vm.authorizedKeys) })
-        keyAdditionProcessor.call(self, v, state, contractID, signingKey)
+        config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
+        console.log('@@@@OP_KEY_ADD: ', { v, keys, keysArray })
+        keyAdditionProcessor.call(self, keysArray, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         validateKeyDelPermissions(contractID, signingKey, state, v)
-        v.forEach((keyId) => {
+        const keyIds = ((v.map((k) => isEncryptedData(k) ? k.valueOf() : k): any): string[])
+        keyIds.forEach((keyId) => {
           const key = state._vm.authorizedKeys[keyId]
           if (!key) {
             console.warn('Attempted to delete non-existent key from contract', { contractID, keyId })
@@ -613,7 +629,6 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        // Order is so that KEY_UPDATE doesn't overwrite existing keys
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
@@ -628,14 +643,14 @@ export default (sbp('sbp/selectors/register', {
           }
           config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
         }
-        keyAdditionProcessor.call(self, (v: any), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, updatedKeys, state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
         if (Array.isArray(state._volatile?.watch)) {
           const updatedKeysMap = Object.create(null)
 
-          v.forEach((key) => {
+          updatedKeys.forEach((key) => {
             if (key.data) updatedKeysMap[key.name] = key
           })
 

@@ -56,7 +56,7 @@ export const encryptedAction = (
 
         // Default innerSigningContractID is the current logged in identity
         // contract ID, unless we are signing for the current identity contract
-        const innerSigningContractID = params.innerSigningContractID !== null
+        const innerSigningContractID = params.innerSigningContractID !== undefined
           ? params.innerSigningContractID
           : contractID === rootState.loggedIn.identityContractID
             ? null

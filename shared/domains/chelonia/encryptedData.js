@@ -74,7 +74,7 @@ const encryptData = function (eKeyId: string, data: any, additionalData: string)
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any) => void) {
+const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any, id: string) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -131,7 +131,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
 
   try {
     const result = JSON.parse(decrypt(deserializedKey, message, additionalData))
-    if (typeof validatorFn === 'function') validatorFn(result)
+    if (typeof validatorFn === 'function') validatorFn(result, eKeyId)
     return result
   } catch (e) {
     throw new ChelErrorDecryptionError(e?.message || e)
@@ -194,7 +194,7 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
   })
 }
 
-export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any) => void): EncryptedData<T> => {
+export const encryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any, id: string) => void): EncryptedData<T> => {
   let decryptedValue
   const decryptedValueFn = (): any => {
     if (decryptedValue) {

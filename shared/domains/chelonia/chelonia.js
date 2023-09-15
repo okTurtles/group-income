@@ -14,7 +14,8 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
-import { encryptedOutgoingData } from './encryptedData.js'
+import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
+import type { EncryptedData } from './encryptedData.js'
 import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import { findKeyIdByName, findRevokedKeyIdsByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
@@ -28,7 +29,7 @@ export type ChelRegParams = {
   signingKeyId: string;
   actionSigningKeyId: string;
   actionEncryptionKeyId: ?string;
-  keys: GIKey[];
+  keys: (GIKey | EncryptedData<GIKey>)[];
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -735,7 +736,8 @@ export default (sbp('sbp/selectors/register', {
     const state = contract.state(contractID)
 
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const payload = (data: GIOpKeyAdd).filter((k) => {
+    const payload = (data: GIOpKeyAdd).filter((wk) => {
+      const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): GIKey)
       if (has(state._vm.authorizedKeys, k.id)) {
         if (state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
           // if (state._vm.authorizedKeys[k.id].permissions === '*')
@@ -932,7 +934,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error('Selector not allowed in OP_ATOMIC: ' + selector)
       }
       return sbp(selector, { ...opParams, ...params, data: opParams.data, atomic: true })
-    }))).filter(Boolean).flatMap((msg) => {
+    }))).flat().filter(Boolean).map((msg) => {
       return [msg.opType(), msg.opValue()]
     })
     let msg = GIMessage.createV1_0({
