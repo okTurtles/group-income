@@ -54,8 +54,7 @@ export default ({
   }),
   async mounted () {
     const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
-    const archivedProposals = await sbp('gi.db/archive/load', key) || []
-    this.ephemeral.proposals = archivedProposals
+    this.ephemeral.proposals = await sbp('gi.db/archive/load', key) || []
   },
   methods: {
     unfocusSelect () {

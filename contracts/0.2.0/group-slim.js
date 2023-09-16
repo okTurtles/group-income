@@ -8295,6 +8295,7 @@ ${this.getErrorInfo()}`;
             throw new import_common3.Errors.GIErrorIgnoreAndBan("proposalWithdraw for wrong user!");
           }
           import_common3.Vue.set(proposal, "status", STATUS_CANCELLED);
+          import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
           archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
         }
       },
@@ -8308,6 +8309,7 @@ ${this.getErrorInfo()}`;
               const proposal = state.proposals[proposalId];
               if (proposal) {
                 import_common3.Vue.set(proposal, "status", STATUS_EXPIRED);
+                import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
                 archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
               }
             }
@@ -8714,7 +8716,7 @@ ${this.getErrorInfo()}`;
           proposals2.pop();
         }
         await (0, import_sbp5.default)("gi.db/archive/save", key, proposals2);
-        (0, import_sbp5.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
+        (0, import_sbp5.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, contractID, proposalHash, proposal);
       },
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;
