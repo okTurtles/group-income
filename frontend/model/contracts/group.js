@@ -823,6 +823,7 @@ sbp('chelonia/defineContract', {
           throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
+        Vue.set(proposal, 'dateClosed', meta.createdDate)
         archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
       }
     },
@@ -837,6 +838,7 @@ sbp('chelonia/defineContract', {
 
             if (proposal) {
               Vue.set(proposal, 'status', STATUS_EXPIRED)
+              Vue.set(proposal, 'dateClosed', meta.createdDate)
               archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
             }
           }
@@ -1358,7 +1360,7 @@ sbp('chelonia/defineContract', {
         proposals.pop()
       }
       await sbp('gi.db/archive/save', key, proposals)
-      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
+      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, contractID, proposalHash, proposal)
     },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments
