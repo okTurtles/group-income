@@ -1,5 +1,15 @@
 <template lang='pug'>
-.c-chat-main(v-if='summary.title')
+.c-chat-main(
+  v-if='summary.title'
+  :class='{ "is-dnd-active": dndState && dndState.isActive }'
+  @dragstart='dragStartHandler'
+  @dragover='dragStartHandler'
+)
+  drag-active-overlay(
+    v-if='dndState && dndState.isActive'
+    @drag-ended='dragEndHandler'
+  )
+
   emoticons
 
   .c-body
@@ -79,6 +89,7 @@
 
   .c-footer
     send-area(
+      ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
@@ -110,6 +121,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -118,7 +130,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -134,7 +146,8 @@ export default ({
     MessageNotification,
     MessagePoll,
     SendArea,
-    ViewArea
+    ViewArea,
+    DragActiveOverlay
   },
   props: {
     summary: {
@@ -163,6 +176,10 @@ export default ({
         contract: {},
         prevFrom: null,
         prevTo: null
+      },
+      dndState: {
+        // drag & drop releated state
+        isActive: false
       }
     }
   },
@@ -352,14 +369,19 @@ export default ({
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, effect)
-          } else if (this.$refs.conversation) {
-            this.$refs.conversation.scroll({
-              left: 0,
-              top: this.$refs.conversation.scrollHeight,
-              behavior: 'smooth'
-            })
+          } else {
+            this.jumpToLatest()
           }
         }, 100)
+      }
+    },
+    jumpToLatest (behavior = 'smooth') {
+      if (this.$refs.conversation) {
+        this.$refs.conversation.scroll({
+          left: 0,
+          top: this.$refs.conversation.scrollHeight,
+          behavior
+        })
       }
     },
     retryMessage (index) {
@@ -619,7 +641,18 @@ export default ({
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+
+      if (this.ephemeral.scrolledDistance < 40) {
+        // NOTE: 40px is the minimum height of a message
+        //       even though user scrolled up, if he scrolled less than 40px (one message)
+        //       should ignore the scroll position, and scroll to the bottom
+        this.throttledJumpToLatest(this)
+      }
     },
+    throttledJumpToLatest: throttle(function (_this) {
+      // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
+      _this.jumpToLatest('instant')
+    }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
@@ -740,7 +773,30 @@ export default ({
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState()
       this.setInitMessages()
-    }, 250)
+    }, 250),
+    // Handlers for file-upload via drag & drop action
+    dragStartHandler (e) {
+      // handler function for 'dragstart', 'dragover' events
+      if (!this.dndState.isActive) {
+        this.dndState.isActive = true
+      }
+
+      if (e?.dataTransfer) {
+        // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+        e.dataTransfer.dropEffect = 'copy'
+      }
+    },
+    dragEndHandler (e) {
+      // handler function for 'dragleave', 'dragend', 'drop' events
+      e.preventDefault()
+
+      if (this.dndState.isActive) {
+        this.dndState.isActive = false
+
+        e?.dataTransfer.files?.length &&
+          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+      }
+    }
   },
   provide () {
     return {
@@ -774,6 +830,7 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
+        this.ephemeral.scrolledDistance = 0
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState()
           toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
@@ -801,6 +858,12 @@ export default ({
   flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
+  position: relative;
+
+  &.is-dnd-active {
+    position: relative;
+    z-index: 0;
+  }
 }
 
 .c-body {

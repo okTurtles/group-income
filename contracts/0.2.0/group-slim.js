@@ -7954,6 +7954,9 @@ ${this.getErrorInfo()}`;
       groupShouldPropose(state, getters) {
         return getters.groupMembersCount >= 3;
       },
+      groupDistributionStarted(state, getters) {
+        return (currentDate) => currentDate >= getters.groupSettings?.distributionDate;
+      },
       groupProposalSettings(state, getters) {
         return (proposalType2 = PROPOSAL_GENERIC) => {
           return getters.groupSettings.proposals[proposalType2];
@@ -8216,7 +8219,10 @@ ${this.getErrorInfo()}`;
           const typeToSubTypeMap = {
             [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
             [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
-            [PROPOSAL_GROUP_SETTING_CHANGE]: "CHANGE_MINCOME",
+            [PROPOSAL_GROUP_SETTING_CHANGE]: {
+              mincomeAmount: "CHANGE_MINCOME",
+              distributionDate: "CHANGE_DISTRIBUTION_DATE"
+            }[data.proposalData.setting],
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: "CHANGE_VOTING_RULE",
             [PROPOSAL_GENERIC]: "GENERIC"
           };
@@ -8463,18 +8469,33 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/group/updateSettings": {
-        validate: objectMaybeOf({
-          groupName: (x) => typeof x === "string",
-          groupPicture: (x) => typeof x === "string",
-          sharedValues: (x) => typeof x === "string",
-          mincomeAmount: (x) => typeof x === "number" && x > 0,
-          mincomeCurrency: (x) => typeof x === "string",
-          allowPublicChannels: (x) => typeof x === "boolean"
-        }),
+        validate: (data, { getters, meta }) => {
+          objectMaybeOf({
+            groupName: (x) => typeof x === "string",
+            groupPicture: (x) => typeof x === "string",
+            sharedValues: (x) => typeof x === "string",
+            mincomeAmount: (x) => typeof x === "number" && x > 0,
+            mincomeCurrency: (x) => typeof x === "string",
+            distributionDate: (x) => typeof x === "string",
+            allowPublicChannels: (x) => typeof x === "boolean"
+          })(data);
+          const isGroupCreator = meta.username === getters.groupSettings.groupCreator;
+          if ("allowPublicChannels" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
+          } else if ("distributionDate" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
+          } else if ("distributionDate" in data && (getters.groupDistributionStarted(meta.createdDate) || Object.keys(getters.groupPeriodPayments).length > 1)) {
+            throw new TypeError((0, import_common3.L)("Can't change distribution date because distribution period has already started."));
+          }
+        },
         process({ contractID, meta, data }, { state, getters }) {
           const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;
           for (const key in data) {
             import_common3.Vue.set(state.settings, key, data[key]);
+          }
+          if ("distributionDate" in data) {
+            import_common3.Vue.set(state, "paymentsByPeriod", {});
+            initFetchPeriodPayments({ contractID, meta, state, getters });
           }
           if (mincomeCache !== null) {
             (0, import_sbp5.default)("gi.contracts/group/pushSideEffect", contractID, [

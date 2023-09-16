@@ -415,6 +415,9 @@ sbp('chelonia/defineContract', {
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
+    groupDistributionStarted (state, getters) {
+      return (currentDate: string) => currentDate >= getters.groupSettings?.distributionDate
+    },
     groupProposalSettings (state, getters) {
       return (proposalType = PROPOSAL_GENERIC) => {
         return getters.groupSettings.proposals[proposalType]
@@ -731,7 +734,10 @@ sbp('chelonia/defineContract', {
         const typeToSubTypeMap = {
           [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
           [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
-          [PROPOSAL_GROUP_SETTING_CHANGE]: 'CHANGE_MINCOME',
+          [PROPOSAL_GROUP_SETTING_CHANGE]: {
+            mincomeAmount: 'CHANGE_MINCOME',
+            distributionDate: 'CHANGE_DISTRIBUTION_DATE'
+          }[data.proposalData.setting],
           [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'CHANGE_VOTING_RULE',
           [PROPOSAL_GENERIC]: 'GENERIC'
         }
@@ -1078,20 +1084,38 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/updateSettings': {
       // OPTIMIZE: Make this custom validation function
       // reusable accross other future validators
-      validate: objectMaybeOf({
-        groupName: x => typeof x === 'string',
-        groupPicture: x => typeof x === 'string',
-        sharedValues: x => typeof x === 'string',
-        mincomeAmount: x => typeof x === 'number' && x > 0,
-        mincomeCurrency: x => typeof x === 'string',
-        allowPublicChannels: x => typeof x === 'boolean' // TODO: only group admin can update
-      }),
+      validate: (data, { getters, meta }) => {
+        objectMaybeOf({
+          groupName: x => typeof x === 'string',
+          groupPicture: x => typeof x === 'string',
+          sharedValues: x => typeof x === 'string',
+          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeCurrency: x => typeof x === 'string',
+          distributionDate: x => typeof x === 'string',
+          allowPublicChannels: x => typeof x === 'boolean'
+        })(data)
+
+        const isGroupCreator = meta.username === getters.groupSettings.groupCreator
+        if ('allowPublicChannels' in data && !isGroupCreator) {
+          throw new TypeError(L('Only group creator can allow public channels.'))
+        } else if ('distributionDate' in data && !isGroupCreator) {
+          throw new TypeError(L('Only group creator can update distribution date.'))
+        } else if ('distributionDate' in data &&
+          (getters.groupDistributionStarted(meta.createdDate) || Object.keys(getters.groupPeriodPayments).length > 1)) {
+          throw new TypeError(L('Can\'t change distribution date because distribution period has already started.'))
+        }
+      },
       process ({ contractID, meta, data }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
         const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
 
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
+        }
+
+        if ('distributionDate' in data) {
+          Vue.set(state, 'paymentsByPeriod', {})
+          initFetchPeriodPayments({ contractID, meta, state, getters })
         }
 
         if (mincomeCache !== null) {

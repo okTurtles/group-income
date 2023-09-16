@@ -214,7 +214,7 @@ export default ({
   }
 
   &:last-child {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 }
 

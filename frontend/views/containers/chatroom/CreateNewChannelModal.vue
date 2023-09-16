@@ -102,7 +102,7 @@ import {
 const privacyLevelToDisplay = {
   [CHATROOM_PRIVACY_LEVEL.GROUP]: {
     label: L('Group channel'),
-    description: L('All group members will be added to this channel.'),
+    description: L('All group members will be able to see or join this channel.'),
     icon: 'hashtag'
   },
   [CHATROOM_PRIVACY_LEVEL.PRIVATE]: {
