@@ -190,6 +190,7 @@ const periodicNotificationEntries = [
                 creator: proposal.creator,
                 proposalId: proposal.proposalId,
                 proposalType: proposal.proposalType,
+                proposalData: proposal.proposalData,
                 title: proposal.proposalType === PROPOSAL_GENERIC ? proposal.proposalData.name : ''
               })
             })
