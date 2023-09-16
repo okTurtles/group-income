@@ -2,7 +2,7 @@
 proposal-template(
   :title='L("Generic Proposal")'
   :maxSteps='0'
-  :disabled='$v.form.$invalid'
+  :disabled='$v.form.$invalid || !this.groupShouldPropose'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
@@ -69,6 +69,7 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
+      'groupShouldPropose',
       'groupSettings'
     ])
   },

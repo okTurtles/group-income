@@ -441,6 +441,53 @@ describe('Proposals - Add members', () => {
       getProposalItems().should('have.length', 0)
       cy.closeModal()
     })
+  })
+
+  it('user1, the group creator, doesn\'t need to propose to change distribution date', () => {
+    const openChangeDistributionDateModal = () => {
+      cy.getByDT('proposalsSection').within(() => {
+        cy.getByDT('menuTrigger').click()
+        cy.getByDT('menuContent').within(() => {
+          cy.get('ul').children().eq(7).within(() => {
+            cy.get('button').click()
+          })
+        })
+      })
+    }
+
+    openChangeDistributionDateModal()
+    cy.getByDT('modalProposal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+      cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
+      cy.get('.c-footer')
+        .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
+
+      cy.closeModal()
+    })
+
+    // let newDistributionDate = new Date(new Date(Date.now() + 15 * DAYS_MILLIS).setUTCHours(0, 0, 0, 0))
+    // newDistributionDate = new Date(new Date(
+    //   newDistributionDate.getFullYear(),
+    //   newDistributionDate.getMonth(),
+    //   newDistributionDate.getDate()
+    // ).setUTCHours(0, 0, 0, 0))
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
+    //   cy.get('.c-footer')
+    //     .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
+    //   cy.get('.inputgroup select').select(newDistributionDate.toISOString())
+    //   cy.getByDT('submitBtn').click()
+    //   cy.closeModal()
+    // })
+
+    // openChangeDistributionDateModal()
+    // const humanNewDate = newDistributionDate.toLocaleString(undefined, { month: 'long', day: 'numeric' })
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.get('form .helper').should('contain', `Current distribution date is on ${humanNewDate}.`)
+    //   cy.closeModal()
+    // })
 
     cy.giLogout()
   })
