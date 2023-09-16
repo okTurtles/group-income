@@ -588,7 +588,7 @@ const getters = {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => {
       const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.isJoinedChatRoom(contractID) && !!getters.ourGroupDirectMessages[contractID]
+      return !!getters.ourGroupDirectMessages[contractID]
     }
   },
   isJoinedChatRoom (state, getters) {
