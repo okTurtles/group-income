@@ -449,6 +449,16 @@ export default ({
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
+    /**
+     * Load/render events for one or more pages
+     * @return {boolean | undefined} The return value is used to change the state inside the function 'infiniteHandler'
+     * true: Loaded all the messages, and no more messages exists
+     * false: Messages are loaded, but more messages exist
+     * undefined: Loaded the wrong events from the server so those events should be ignoreed
+     *            and no state changes are needed (like messagesInitiated). Since the renderingChatRoomId could be changed
+     *            while processing this function, this function could do the redundant process. This normally happens
+     *            when user switches channels very fast.
+    */
     async renderMoreMessages (shouldInitiate = true) {
       // NOTE: 'this.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomId'
@@ -669,7 +679,7 @@ export default ({
         //       before calling the setInitMessages function
         return
       } else if (this.currentChatRoomId !== this.renderingChatRoomId) {
-        // NOTE: should render messages after the current chatroom state is initiated
+        // NOTE: should ignore to render messages before chatroom state is initiated
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
@@ -692,6 +702,8 @@ export default ({
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
           this.ephemeral.messagesInitiated = true
         }
+      }).catch(e => {
+        console.error('ChatMain infiniteHandler() error:', e)
       })
     },
     onChatScroll: debounce(function () {
