@@ -47,9 +47,8 @@ const signData = function (sKeyId: string, data: any, extraFields: Object, addit
   }
   if (designatedKey._notAfterHeight !== undefined) {
     const name = (this._vm: any).authorizedKeys[sKeyId].name
-    // TODO: Issue here, appears to be related to changed to changing references
     console.log({ state: this })
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
+    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
 
     if (!newKeyId) {
       throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} has been revoked and no new key exists by the same name (${name})`)

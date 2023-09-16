@@ -40,7 +40,7 @@ const encryptData = function (eKeyId: string, data: any, additionalData: string)
   }
   if (designatedKey._notAfterHeight !== undefined) {
     const name = (this._vm: any).authorizedKeys[eKeyId].name
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => designatedKey._notAfterHeight === undefined && v.name === name && v.purpose.includes('enc')): any)?.id
+    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('enc')): any)?.id
 
     if (!newKeyId) {
       throw new Error(`Encryption key ID ${eKeyId} has been revoked and no new key exists by the same name (${name})`)
