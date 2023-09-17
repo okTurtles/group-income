@@ -261,9 +261,9 @@ export default ({
       const { creator } = this.chatRoomAttribute
       if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
         return false
-      } else if (this.ourUsername === creator) {
-        return true
       } else if (this.ourUsername === username) {
+        return false
+      } else if (this.ourUsername === creator) {
         return true
       }
       return false
@@ -274,6 +274,7 @@ export default ({
         return
       }
       try {
+        const shouldShowKickedBy = this.ourUsername !== username
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
@@ -281,7 +282,7 @@ export default ({
             username
           },
           options: {
-            showKickedBy: this.ourUsername
+            showKickedBy: shouldShowKickedBy ? this.ourUsername : undefined
           }
         })
         if (undoing) {
