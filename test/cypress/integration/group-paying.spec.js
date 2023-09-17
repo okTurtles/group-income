@@ -100,23 +100,25 @@ describe('Group Payments', () => {
       const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
       const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
       const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const twoPeriodLengthsAhead = addTimeToDate(distributionDate, distributionPeriodLength * 2)
       const oneSecondAhead = addTimeToDate(distributionDate, 1000)
       const oneSecondBefore = addTimeToDate(distributionDate, -1000)
       /* eslint-disable no-unused-expressions */
-      expect(periodStampGivenDate(new Date()) === onePeriodLengthBefore).to.be.true
-      expect(periodStampGivenDate(distributionDate) === distributionDate).to.be.true
-      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead).to.be.true
-      expect(periodStampGivenDate(onePeriodLengthBefore) === onePeriodLengthBefore).to.be.true
-      expect(periodStampGivenDate(oneSecondAhead) === distributionDate).to.be.true
-      expect(periodStampGivenDate(oneSecondBefore) === onePeriodLengthBefore).to.be.true
+      expect(periodStampGivenDate(new Date()) === onePeriodLengthBefore, 1).to.be.true
+      expect(periodStampGivenDate(distributionDate) === distributionDate, 2).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead, 3).to.be.true
+      expect(periodStampGivenDate(twoPeriodLengthsAhead) === twoPeriodLengthsAhead, 4).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthBefore) === onePeriodLengthBefore, 5).to.be.true
+      expect(periodStampGivenDate(oneSecondAhead) === distributionDate, 6).to.be.true
+      expect(periodStampGivenDate(oneSecondBefore) === onePeriodLengthBefore, 7).to.be.true
 
-      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead).to.be.true
-      expect(periodAfterPeriod(onePeriodLengthAhead) === undefined).to.be.true
-      expect(periodAfterPeriod(onePeriodLengthBefore) === distributionDate).to.be.true
+      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead, 8).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === twoPeriodLengthsAhead, 9).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthBefore) === distributionDate, 10).to.be.true
 
-      expect(periodBeforePeriod(distributionDate) === onePeriodLengthBefore).to.be.true
-      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate).to.be.true
-      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined).to.be.true
+      expect(periodBeforePeriod(distributionDate) === onePeriodLengthBefore, 11).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 12).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 13).to.be.true
       /* eslint-enable no-unused-expressions */
     })
     cy.giLogout()
@@ -149,6 +151,7 @@ describe('Group Payments', () => {
       const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
       const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
       const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const twoPeriodLengthsAhead = addTimeToDate(distributionDate, distributionPeriodLength * 2)
       const oneSecondAhead = addTimeToDate(distributionDate, 1000)
       const oneSecondBefore = addTimeToDate(distributionDate, -1000)
       const waitingPeriod = groupSortedPeriodKeys[0]
@@ -163,14 +166,19 @@ describe('Group Payments', () => {
       expect(periodStampGivenDate(waitingPeriod) === waitingPeriod, 7).to.be.true
 
       expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead, 8).to.be.true
-      expect(periodAfterPeriod(onePeriodLengthAhead) === undefined, 9).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === twoPeriodLengthsAhead, 9).to.be.true
       expect(periodAfterPeriod(onePeriodLengthBefore) === undefined, 10).to.be.true
-      expect(periodAfterPeriod(waitingPeriod) === distributionDate, 11).to.be.true
+      expect(periodAfterPeriod(oneSecondAhead) === onePeriodLengthAhead, 11).to.be.true
+      expect(periodAfterPeriod(oneSecondBefore) === distributionDate, 12).to.be.true
+      expect(periodAfterPeriod(waitingPeriod) === distributionDate, 13).to.be.true
 
-      expect(periodBeforePeriod(distributionDate) === waitingPeriod, 12).to.be.true
-      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 13).to.be.true
-      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 14).to.be.true
-      expect(periodBeforePeriod(waitingPeriod) === undefined, 15).to.be.true
+      expect(periodBeforePeriod(distributionDate) === waitingPeriod, 14).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 15).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 16).to.be.true
+      expect(periodBeforePeriod(oneSecondAhead) === waitingPeriod, 17).to.be.true
+      expect(periodBeforePeriod(oneSecondBefore) === undefined, 18).to.be.true
+      expect(periodBeforePeriod(twoPeriodLengthsAhead) === onePeriodLengthAhead, 19).to.be.true
+      expect(periodBeforePeriod(waitingPeriod) === undefined, 20).to.be.true
       /* eslint-enable no-unused-expressions */
     })
     cy.getByDT('paymentsLink').click()

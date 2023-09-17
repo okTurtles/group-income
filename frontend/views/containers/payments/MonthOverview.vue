@@ -36,7 +36,7 @@ import { mapGetters } from 'vuex'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { L } from '@common/common.js'
-import { addTimeToDate, humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'MonthOverview',
@@ -45,7 +45,7 @@ export default ({
   },
   methods: {
     getDueDate () {
-      return addTimeToDate(this.getStartDate(), this.groupSettings.distributionPeriodLength)
+      return this.dueDateForPeriod(this.currentPaymentPeriod)
     },
     getStartDate () {
       return this.periodStampGivenDate(new Date())
@@ -61,6 +61,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
+      'dueDateForPeriod',
       'ourGroupProfile',
       'groupSettings',
       'ourPaymentsSummary',

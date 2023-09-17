@@ -73,6 +73,9 @@ export default ({
     PaymentRow
   },
   mixins: [PaymentsMixin],
+  data: {
+    relativeTo: null
+  },
   props: {
     payment: {
       type: Object,
@@ -86,9 +89,6 @@ export default ({
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     }
-  },
-  created () {
-    this.updatePayment()
   },
   methods: {
     humanDate,
@@ -116,8 +116,13 @@ export default ({
         alert(e.message)
       }
     },
-    async updatePayment () {
-      this.payment.relativeTo = await this.getPeriodStampGivenDate(this.payment.date)
+    async updatePaymentRelativeTo (paymentDate) {
+      this.relativeTo = await this.historicalPeriodStampGivenDate(paymentDate)
+    }
+  },
+  watch: {
+    payment (to, from) {
+      this.updatePaymentRelativeTo(to.date)
     }
   }
 }: Object)

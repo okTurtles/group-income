@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isIsoString, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -314,136 +314,51 @@ sbp('chelonia/defineContract', {
     },
     // Oldest period key first.
     groupSortedPeriodKeys (state, getters) {
+      const { distributionDate, distributionPeriodLength } = getters.groupSettings
+      if (!distributionDate) return []
       // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
       // A comparator function isn't required for now since our keys are ISO strings.
-      return Object.keys(getters.currentGroupState.paymentsByPeriod ?? {}).sort()
+      const keys = Object.keys(getters.groupPeriodPayments).sort()
+      // Append the waiting period stamp if necessary.
+      if (!keys.length && MAX_SAVED_PERIODS > 0) {
+        keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)))
+      }
+      // Append the distribution date if necessary.
+      if (keys[keys.length - 1] !== distributionDate) {
+        keys.push(distributionDate)
+      }
+      return keys
     },
-    // Returns either the known period stamp for the given date,
-    // or the predicted one according to the period length.
-    // May return 'undefined', in which case the caller should check archived data.
+    // paymentTotalFromUserToUser (state, getters) {
+    // // this code was removed in https://github.com/okTurtles/group-income/pull/1691
+    // // because it was unused. feel free to bring it back if needed.
+    // },
+    //
+    // The following three getters return either a known period stamp for the given date,
+    // or a predicted one according to the period length.
+    // They may also return 'undefined', in which case the caller should check archived data.
     periodStampGivenDate (state, getters) {
-      return (recentDate: string | Date) => {
-        if (typeof recentDate !== 'string') recentDate = recentDate.toISOString()
-        if (!isIsoString(recentDate)) throw new TypeError('must be date or isostring')
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-        if (!distributionDate) return
-        const sortedPeriodKeys = getters.groupSortedPeriodKeys
-        // Maybe the distribution date has just been updated,
-        // but the corresponding period has not started or is not stored yet.
-        // So we try to use the distribution date first.
-        if (recentDate >= distributionDate) {
-          // Only extrapolate one period length in the future.
-          const extrapolatedDistributionDate = addTimeToDate(
-            distributionDate, distributionPeriodLength
-          ).toISOString()
-          if (recentDate >= extrapolatedDistributionDate) {
-            return dateToPeriodStamp(extrapolatedDistributionDate)
-          }
-          return dateToPeriodStamp(distributionDate)
-        }
-        // For dates before the distribution date, we check the stored data first,
-        // as simply substracting the default period length won't give the previous period stamp
-        // if the distribution date was updated during that period.
-        if (!sortedPeriodKeys.length) {
-          // Looks like we're in the waiting period but haven't stored it yet.
-          const waitingPeriodStamp = dateToPeriodStamp(
-            addTimeToDate(distributionDate, -distributionPeriodLength)
-          )
-          return recentDate >= dateFromPeriodStamp(waitingPeriodStamp).toISOString() ? waitingPeriodStamp : undefined
-        }
-        const oldestKnownStamp = sortedPeriodKeys[0]
-        const latestKnownStamp = sortedPeriodKeys[sortedPeriodKeys.length - 1]
-        if (recentDate < oldestKnownStamp) return
-        if (recentDate >= latestKnownStamp) {
-          const extrapolatedPeriodStamp = dateToPeriodStamp(
-            addTimeToDate(dateFromPeriodStamp(latestKnownStamp), distributionPeriodLength)
-          )
-          if (recentDate >= extrapolatedPeriodStamp) return extrapolatedPeriodStamp
-          return latestKnownStamp
-        }
-        for (let i = 1; i < sortedPeriodKeys.length; i++) {
-          if (recentDate < sortedPeriodKeys) return sortedPeriodKeys[i - 1]
-        }
-        // This should not happen
+      return (date: string | Date): string | void => {
+        return periodStampsForDate(date, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).current
       }
     },
-    // May return 'undefined', in which case the caller should check archived data.
     periodBeforePeriod (state, getters) {
-      return (periodStamp: string) => {
-        if (!isPeriodStamp(periodStamp)) throw new TypeError('must be periodStamp')
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-        if (!distributionDate) return
-        // This is not always the current period stamp.
-        const distributionDateStamp = dateToPeriodStamp(distributionDate)
-        const sortedPeriodKeys = getters.groupSortedPeriodKeys
-        const latestKnownStamp = sortedPeriodKeys[sortedPeriodKeys.length - 1]
-        // Maybe the distribution date has just been updated,
-        // but the corresponding period has not started or is not stored yet.
-        // So we try to use the distribution date first.
-        if (periodStamp > distributionDateStamp) {
-          // Only extrapolate one period length in the future.
-          const onePeriodLenghtAhead = addTimeToDate(distributionDate, distributionPeriodLength)
-          if (periodStamp === dateToPeriodStamp(onePeriodLenghtAhead)) return distributionDate
-          else return
-        }
-        if (periodStamp === distributionDateStamp) {
-          if (sortedPeriodKeys.length) {
-            // If the distribution date doesn't match the latest known period stamp,
-            // then either that stamp is for the waiting period,
-            // or the distribution date has just been updated.
-            // In both cases we can return it.
-            if (latestKnownStamp !== distributionDateStamp) return latestKnownStamp
-            // Otherwise it's a normal period, therefore substracting the period length would not be reliable.
-            else return sortedPeriodKeys[sortedPeriodKeys.length - 2] ?? undefined
-          } else {
-            // If no period has been stored yet, then we're in the waiting period and can do arithmetic.
-            return dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength))
-          }
-        }
-        const index = sortedPeriodKeys.indexOf(periodStamp)
-        if (index === -1) {
-          // Maybe the given stamp is wrong and has no associated period,
-          // but is one period length ahead of a known one.
-          // TODO: just return 'undefined' when sure it's always safe.
-          const maybePreviousStamp = dateToPeriodStamp(
-            addTimeToDate(dateFromPeriodStamp(periodStamp), -distributionPeriodLength)
-          )
-          return sortedPeriodKeys.includes(maybePreviousStamp) ? maybePreviousStamp : undefined
-        }
-        // If index is 0 then the caller will have to check the archive.
-        if (index === 0) return
-        return sortedPeriodKeys[index - 1]
+      return (periodStamp: string): string | void => {
+        return periodStampsForDate(periodStamp, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).previous
       }
     },
-    // May return 'undefined', in which case the caller should check archived data.
     periodAfterPeriod (state, getters) {
-      return (periodStamp: string) => {
-        if (!isPeriodStamp(periodStamp)) throw new TypeError('must be periodStamp')
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-        if (!distributionDate) return
-        // This is not always the current period stamp.
-        const distributionDateStamp = dateToPeriodStamp(distributionDate)
-        const sortedPeriodKeys = getters.groupSortedPeriodKeys
-
-        // Maybe the distribution date has just been updated,
-        // and the corresponding period has not started or is not stored yet.
-        if (periodStamp > distributionDateStamp) return
-        if (periodStamp === distributionDateStamp) {
-          return dateToPeriodStamp(addTimeToDate(distributionDate, distributionPeriodLength))
-        }
-        // Maybe we're in the waiting period but haven't stored it yet.
-        if (!sortedPeriodKeys.length) {
-          const waitingPeriodStamp = dateToPeriodStamp(
-            addTimeToDate(distributionDate, -distributionPeriodLength)
-          )
-          return periodStamp === waitingPeriodStamp ? distributionDate : undefined
-        }
-        const index = sortedPeriodKeys.indexOf(periodStamp)
-        if (index === -1) return
-        // Maybe the given stamp is the last stored one but doesn't match the distribution date.
-        if (index === sortedPeriodKeys.length - 1) return dateToPeriodStamp(distributionDate)
-        // Now 'index + 1' is always a valid index.
-        return sortedPeriodKeys[index + 1]
+      return (periodStamp: string): string | void => {
+        return periodStampsForDate(periodStamp, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).next
       }
     },
     dueDateForPeriod (state, getters) {
@@ -1361,7 +1276,7 @@ sbp('chelonia/defineContract', {
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
         const current = getters.groupSettings?.distributionDate
-        const inWaitingPeriod = !current || new Date().toISOString() < current
+        const inWaitingPeriod = !current || meta.createdDate < current
         // Maybe we're updating the distribution date while in the waiting period.
         if (inWaitingPeriod && meta.createdDate !== current) {
           getters.groupSettings.distributionDate = meta.createdDate

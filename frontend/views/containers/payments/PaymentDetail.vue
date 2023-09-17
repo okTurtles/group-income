@@ -115,7 +115,7 @@ export default ({
         // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
         this.payment = {
           ...cloneDeep(payment),
-          periodstamp: await this.getPeriodStampGivenDate(payment.meta.createdDate)
+          periodstamp: await this.historicalPeriodStampGivenDate(payment.meta.createdDate)
         }
         this.payment.isOldPayment = comparePeriodStamps(this.payment.periodstamp, this.currentPaymentPeriod) < 0
       } else {

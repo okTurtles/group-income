@@ -7,6 +7,48 @@ export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
 export const MONTHS_MILLIS = 30 * DAYS_MILLIS
 
+const plusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+  dateToPeriodStamp(addTimeToDate(timestamp, periodLength))
+)
+
+const minusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+  dateToPeriodStamp(addTimeToDate(timestamp, -periodLength))
+)
+
+// @parameter knownSortedStamps:
+// - MUST be sorted in ascending order (lower timestamps first)
+// - MAY NOT contain duplicate elements
+export function periodStampsForDate (
+  date: Date | string,
+  { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
+): Object {
+  if (typeof date === 'string' && !isIsoString(date)) {
+    throw new TypeError('must be ISO string')
+  }
+  const timestamp = new Date(date).toISOString()
+  let previous, current, next
+  if (knownSortedStamps.length) {
+    const latest = knownSortedStamps[knownSortedStamps.length - 1]
+    if (timestamp >= latest) {
+      current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength })
+      next = plusOnePeriodLength(current, periodLength)
+      previous = current > latest
+        ? minusOnePeriodLength(current, periodLength)
+        : knownSortedStamps[knownSortedStamps.length - 2] ?? undefined
+    } else {
+      for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
+        if (timestamp >= knownSortedStamps[i]) {
+          current = knownSortedStamps[i]
+          // `i + 1` is always a valid index.
+          next = knownSortedStamps[i + 1]
+          previous = knownSortedStamps[i - 1] ?? undefined
+        }
+      }
+    }
+  }
+  return { previous, current, next }
+}
+
 export function addMonthsToDate (date: string, months: number): Date {
   const now = new Date(date)
   return new Date(now.setMonth(now.getMonth() + months))

@@ -2,7 +2,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
-import { humanDate, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
+import { humanDate, dateFromPeriodStamp, periodStampsForDate } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 // NOTE: this mixin combines payment information
@@ -14,6 +14,8 @@ const PaymentsMixin: Object = {
       'currentGroupState',
       'dueDateForPeriod',
       'groupPeriodPayments',
+      'groupSettings',
+      'groupSortedPeriodKeys',
       'ourUsername',
       'ourPayments',
       'periodAfterPeriod',
@@ -23,8 +25,8 @@ const PaymentsMixin: Object = {
     ])
   },
   methods: {
-    async getPeriodStampGivenPayment (payment) {
-      return await this.getPeriodStampGivenDate(payment.date)
+    async historicalPeriodStampGivenPayment (payment) {
+      return await this.historicalPeriodStampGivenDate(payment.date)
     },
 
     // Oldest key first.
@@ -33,51 +35,33 @@ const PaymentsMixin: Object = {
       const archivedPaymentsByPeriod = await sbp('gi.db/archive/load', key) || {}
       return [
         ...Object.keys(archivedPaymentsByPeriod).sort(),
-        ...Object.keys(this.groupPeriodPayments).sort()
+        ...this.groupSortedPeriodKeys
       ]
     },
 
-    // Note: 'recentDate' is a confusing name, as it can be in the future, or far in the past.
-    async getPeriodStampGivenDate (givenDate: string | Date) {
-      if (typeof givenDate !== 'string') givenDate = givenDate.toISOString()
-      const maybeResult = this.periodStampGivenDate(givenDate)
-      if (maybeResult) return maybeResult
-
-      const sortedPeriodKeys = await this.getSortedPeriodKeys()
-      if (!sortedPeriodKeys.length) return
-
-      if (givenDate < sortedPeriodKeys[0]) return
-      if (givenDate > sortedPeriodKeys[sortedPeriodKeys.length - 1]) return sortedPeriodKeys[sortedPeriodKeys.length - 1]
-      for (let i = 0; i < sortedPeriodKeys.length; i++) {
-        if (givenDate === sortedPeriodKeys[i]) return sortedPeriodKeys[i]
-        if (givenDate < sortedPeriodKeys[i]) return sortedPeriodKeys[i - 1] ?? undefined
-      }
-      // This should not happen
+    async historicalPeriodStampGivenDate (givenDate: string | Date) {
+      return periodStampsForDate(givenDate, {
+        knownSortedStamps: await this.getSortedPeriodKeys(),
+        periodLength: this.groupSettings.distributionPeriodLength
+      }).current
     },
 
-    async getPeriodBeforePeriod (periodStamp: string) {
-      const maybeResult = this.periodBeforePeriod(periodStamp)
-      if (maybeResult) return maybeResult
-
-      const sortedPeriodKeys = await this.getSortedPeriodKeys()
-      const index = sortedPeriodKeys.indexOf(periodStamp)
-      // If 'index' is 0 or -1 then either there is no previous period for the given stamp,
-      // or it has been deleted from the archive.
-      return index > 0 ? sortedPeriodKeys[index - 1] : undefined
+    async historicalPeriodBeforePeriod (periodStamp: string) {
+      return periodStampsForDate(periodStamp, {
+        knownSortedStamps: await this.getSortedPeriodKeys(),
+        periodLength: this.groupSettings.distributionPeriodLength
+      }).previous
     },
 
-    async getPeriodAfterPeriod (periodStamp: string) {
-      const maybeResult = this.periodAfterPeriod(periodStamp)
-      if (maybeResult) return maybeResult
-
-      const sortedPeriodKeys = await this.getSortedPeriodKeys()
-      const index = sortedPeriodKeys.indexOf(periodStamp)
-      // The case 'index === length - 1' should have been handled by the getter.
-      return index === -1 ? undefined : sortedPeriodKeys[index + 1]
+    async historicalPeriodAfterPeriod (periodStamp: string) {
+      return periodStampsForDate(periodStamp, {
+        knownSortedStamps: await this.getSortedPeriodKeys(),
+        periodLength: this.groupSettings.distributionPeriodLength
+      }).next
     },
 
     async getDueDateForPeriod (periodStamp: string) {
-      return await this.getPeriodAfterPeriod(periodStamp)
+      return await this.historicalPeriodAfterPeriod(periodStamp)
     },
 
     // ====================

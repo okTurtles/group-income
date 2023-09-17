@@ -48,11 +48,11 @@ export default ({
       this.history = []
 
       let period = null
-      const firstDistributionPeriod = await this.getPeriodStampGivenDate(this.groupCreatedDate)
+      const firstDistributionPeriod = await this.historicalPeriodStampGivenDate(this.groupCreatedDate)
       const getLen = obj => Object.keys(obj).length
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
-        period = period === null ? this.currentPaymentPeriod : await this.getPeriodBeforePeriod(period)
+        period = period === null ? this.currentPaymentPeriod : await this.historicalPeriodBeforePeriod(period)
         if (!period || comparePeriodStamps(period, firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
