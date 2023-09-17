@@ -703,10 +703,13 @@ export default (sbp('sbp/selectors/register', {
     return message
   }),
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async function (sendMessage, params) {
-    const chatRoomPayload = omit(params.data, ['chatRoomID'])
+    let chatRoomPayload = omit(params.data, ['chatRoomID'])
     // NOTE: showKickedBy is in the options field because it's only needed for chatroom contract
     if (params.options?.showKickedBy) {
-      chatRoomPayload.showKickedBy = params.options.showKickedBy
+      chatRoomPayload = {
+        ...chatRoomPayload,
+        showKickedBy: params.options.showKickedBy
+      }
     }
     await sbp('gi.actions/chatroom/leave', {
       contractID: params.data.chatRoomID,
