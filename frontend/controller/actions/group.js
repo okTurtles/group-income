@@ -46,8 +46,7 @@ export async function leaveAllChatRooms (groupContractID: string, username: stri
     for (const chatRoomID of chatRoomIDsToLeave) {
       await sbp('gi.actions/group/leaveChatRoom', {
         contractID: groupContractID,
-        data: { chatRoomID, username },
-        options: { leavingGroup: true }
+        data: { chatRoomID, username }
       })
     }
   } catch (e) {
@@ -704,15 +703,14 @@ export default (sbp('sbp/selectors/register', {
     return message
   }),
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async function (sendMessage, params) {
-    const rootState = sbp('state/vuex/state')
-    const { username, chatRoomID } = params.data
-
+    const chatRoomPayload = omit(params.data, ['chatRoomID'])
+    // NOTE: showKickedBy is in the options field because it's only needed for chatroom contract
+    if (params.options?.showKickedBy) {
+      chatRoomPayload.showKickedBy = params.options.showKickedBy
+    }
     await sbp('gi.actions/chatroom/leave', {
-      contractID: chatRoomID,
-      data: {
-        username,
-        operator: params.options?.leavingGroup ? username : rootState.loggedIn.username
-      },
+      contractID: params.data.chatRoomID,
+      data: chatRoomPayload,
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null

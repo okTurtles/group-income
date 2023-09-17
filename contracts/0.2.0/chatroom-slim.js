@@ -7490,11 +7490,11 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/leave": {
         validate: objectOf({
           username: string,
-          operator: string
+          showKickedBy: optional(string)
         }),
         process({ data, meta, hash, id }, { state }) {
-          const { username, operator } = data;
-          const isKicked = username !== operator;
+          const { username, showKickedBy } = data;
+          const isKicked = showKickedBy && username !== showKickedBy;
           if (!state.onlyRenderMessage && !state.users[username]) {
             throw new Error(`Can not leave the chatroom which ${username} are not part of`);
           }
@@ -7502,10 +7502,10 @@ ${this.getErrorInfo()}`;
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
-          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
+          const notificationType = isKicked ? MESSAGE_NOTIFICATIONS.KICK_MEMBER : MESSAGE_NOTIFICATIONS.LEAVE_MEMBER;
           const notificationData = createNotificationData(notificationType, isKicked ? { username } : {});
           const newMessage = createMessage({
-            meta: isKicked ? meta : { ...meta, username },
+            meta: { ...meta, username: showKickedBy || username },
             hash,
             id,
             data: notificationData,

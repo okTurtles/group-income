@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, string, arrayOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -308,14 +308,13 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
         username: string,
-        // NOTE: 'operator' is someone who works as main actor of this action.
-        //       It is used to select profile picture of message inside the ChatMain.vue.
-        //       'operator' always equals to 'username' unless 'operator' kicks 'username' in the chatroom.
-        operator: string
+        // NOTE: 'showKickedBy' is someone whose profile picture should be used for the notification message
+        //       it has it's value only when someone else kicks 'data.username' from the chatroom
+        showKickedBy: optional(string)
       }),
       process ({ data, meta, hash, id }, { state }) {
-        const { username, operator } = data
-        const isKicked = username !== operator
+        const { username, showKickedBy } = data
+        const isKicked = showKickedBy && username !== showKickedBy
         if (!state.onlyRenderMessage && !state.users[username]) {
           throw new Error(`Can not leave the chatroom which ${username} are not part of`)
         }
@@ -325,10 +324,10 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
+        const notificationType = isKicked ? MESSAGE_NOTIFICATIONS.KICK_MEMBER : MESSAGE_NOTIFICATIONS.LEAVE_MEMBER
         const notificationData = createNotificationData(notificationType, isKicked ? { username } : {})
         const newMessage = createMessage({
-          meta: isKicked ? meta : { ...meta, username },
+          meta: { ...meta, username: showKickedBy || username },
           hash,
           id,
           data: notificationData,

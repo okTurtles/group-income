@@ -279,6 +279,9 @@ export default ({
           data: {
             chatRoomID: this.currentChatRoomId,
             username
+          },
+          options: {
+            showKickedBy: this.ourUsername
           }
         })
         if (undoing) {
