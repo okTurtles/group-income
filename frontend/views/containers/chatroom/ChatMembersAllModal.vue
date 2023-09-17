@@ -274,7 +274,6 @@ export default ({
         return
       }
       try {
-        const shouldShowKickedBy = this.ourUsername !== username
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
@@ -282,7 +281,7 @@ export default ({
             username
           },
           options: {
-            showKickedBy: shouldShowKickedBy ? this.ourUsername : undefined
+            showKickedBy: this.ourUsername
           }
         })
         if (undoing) {
