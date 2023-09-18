@@ -357,7 +357,9 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
-    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    if (!params.options?.skipInviteAccept) {
+      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    }
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -366,7 +368,10 @@ export default (sbp('sbp/selectors/register', {
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
-      if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
+      if (!rootState.contracts[params.contractID]) {
+        // NOTE: already kicked from the group by someone else
+        return
+      } else if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
 
@@ -517,8 +522,6 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
-
-        sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
       // This could happen, for example, after logging in if we still haven't
@@ -530,6 +533,7 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     } finally {
+      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       saveLoginState('joining', params.contractID)
     }
   },
