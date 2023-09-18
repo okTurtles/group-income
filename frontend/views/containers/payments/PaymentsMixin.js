@@ -30,7 +30,7 @@ const PaymentsMixin: Object = {
     },
 
     // Oldest key first.
-    async getSortedPeriodKeys () {
+    async getAllSortedPeriodKeys () {
       const historicalPaymentPeriods = await this.getHistoricalPaymentPeriods()
       return [
         ...Object.keys(historicalPaymentPeriods).sort(),
@@ -40,21 +40,21 @@ const PaymentsMixin: Object = {
 
     async historicalPeriodStampGivenDate (givenDate: string | Date) {
       return periodStampsForDate(givenDate, {
-        knownSortedStamps: await this.getSortedPeriodKeys(),
+        knownSortedStamps: await this.getAllSortedPeriodKeys(),
         periodLength: this.groupSettings.distributionPeriodLength
       }).current
     },
 
     async historicalPeriodBeforePeriod (periodStamp: string) {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: await this.getSortedPeriodKeys(),
+        knownSortedStamps: await this.getAllSortedPeriodKeys(),
         periodLength: this.groupSettings.distributionPeriodLength
       }).previous
     },
 
     async historicalPeriodAfterPeriod (periodStamp: string) {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: await this.getSortedPeriodKeys(),
+        knownSortedStamps: await this.getAllSortedPeriodKeys(),
         periodLength: this.groupSettings.distributionPeriodLength
       }).next
     },
