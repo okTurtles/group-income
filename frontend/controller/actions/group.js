@@ -165,6 +165,9 @@ export default (sbp('sbp/selectors/register', {
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
+      const userCEKid = findKeyIdByName(rootState[userID], 'csk')
+      if (!userCEKid) throw new Error('User CEK id not found')
+
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
         publishOptions,
@@ -217,7 +220,7 @@ export default (sbp('sbp/selectors/register', {
             },
             data: inviteKeyP
           },
-          {
+          encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
             id: userCSKid,
             data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -226,7 +229,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
             name: `${userID}/${userCSKid}`
-          }
+          })
         ],
         data: {
           settings: {
@@ -283,6 +286,16 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
+      await sbp('gi.actions/group/joinAndSwitch', {
+        originatingContractID: userID,
+        originatingContractName: 'gi.contracts/identity',
+        contractID: contractID,
+        contractName: 'gi.contracts/group',
+        signingKeyId: CSKid,
+        innerSigningKeyId: userCSKid,
+        encryptionKeyId: userCEKid
+      })
+
       // create a 'General' chatroom contract and let the creator join
       await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID,
@@ -298,6 +311,7 @@ export default (sbp('sbp/selectors/register', {
         encryptionKeyId: CEKid
       })
 
+      /*
       // As the group's creator, we share the group secret keys with
       // ourselves, which we need to do be able to sync the group with a
       // fresh session.
@@ -321,8 +335,8 @@ export default (sbp('sbp/selectors/register', {
           data: CSKp,
           // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
           // that a chatroom has just been created
-          permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
-          allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+          permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+          allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
           purpose: ['sig'],
           ringLevel: Number.MAX_SAFE_INTEGER,
           name: `${contractID}/${CSKid}`
@@ -340,6 +354,8 @@ export default (sbp('sbp/selectors/register', {
         subjectContractID: userID,
         keyIds: keyIds
       })
+
+      */
 
       return message
     } catch (e) {
@@ -428,6 +444,7 @@ export default (sbp('sbp/selectors/register', {
         // Send the key request
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
+          innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
           hooks: {
             prepublish: params.hooks?.prepublish,
             postpublish: null
@@ -450,6 +467,8 @@ export default (sbp('sbp/selectors/register', {
         if (!state.profiles?.[username] || state.profiles[username].departedDate) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
+          const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+
           // Share our PEK with the group so that group members can see
           // our name and profile information
           const PEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
@@ -463,10 +482,12 @@ export default (sbp('sbp/selectors/register', {
 
           const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
           const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+          const userCEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'cek')
+
           await sbp('chelonia/out/keyAdd', {
             contractID: params.contractID,
             contractName: 'gi.contracts/group',
-            data: [{
+            data: [encryptedOutgoingData(state, CEKid, {
               foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
               id: userCSKid,
               data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -475,7 +496,7 @@ export default (sbp('sbp/selectors/register', {
               purpose: ['sig'],
               ringLevel: Number.MAX_SAFE_INTEGER,
               name: `${userID}/${userCSKid}`
-            }],
+            })],
             signingKeyId: CSKid
           })
 
@@ -491,17 +512,17 @@ export default (sbp('sbp/selectors/register', {
 
           // Add the group's CSK to our identity contract so that we can receive
           // key rotation updates and DMs.
-          await sbp('chelonia/out/keyUpdate', {
+          await sbp('chelonia/out/keyAdd', {
             contractID: userID,
             contractName: 'gi.contracts/identity',
-            data: [{
+            data: [encryptedOutgoingData(rootState[userID], userCEKid, {
               name: rootState[userID]._vm.authorizedKeys[CSKid].name,
               oldKeyId: CSKid,
               // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
               // that a chatroom has just been created
-              permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
-              allowedActions: ['gi.contracts/identity/joinDirectMessage']
-            }],
+              permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+              allowedActions: ['gi.contracts/identity/joinDirectMessage#inner']
+            })],
             signingKeyId: sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
           })
 

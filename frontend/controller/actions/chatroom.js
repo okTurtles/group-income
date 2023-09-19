@@ -40,11 +40,13 @@ export default (sbp('sbp/selectors/register', {
         }
       }
 
+      const CEK = cekOpts._rawKey ? cekOpts._rawKey : deserializeKey(cekOpts.data)
+
       if (!cskOpts) {
         const CSK = keygen(EDWARDS25519SHA512BATCH)
         const CSKid = keyId(CSK)
         const CSKp = serializeKey(CSK, false)
-        const CSKs = encryptedOutgoingDataWithRawKey(cekOpts._rawKey ? cekOpts._rawKey : deserializeKey(cekOpts.data), serializeKey(CSK, true))
+        const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
 
         cskOpts = {
           id: CSKid,
@@ -128,7 +130,7 @@ export default (sbp('sbp/selectors/register', {
             meta: cekOpts.meta,
             data: cekOpts.data
           },
-          {
+          encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
             id: userCSKid,
             data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -137,7 +139,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
             name: `${userID}/${userCSKid}`
-          }
+          })
         ],
         contractName: 'gi.contracts/chatroom'
       })
@@ -199,15 +201,17 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
     const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
 
     await sbp('chelonia/contract/sync', params.contractID)
+    const state = rootState[params.contractID]
 
     // Add the user's CSK to the contract
     await sbp('chelonia/out/keyAdd', {
       contractID: params.contractID,
       contractName: 'gi.contracts/chatroom',
-      data: [{
+      data: [encryptedOutgoingData(state, CEKid, {
         foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
         id: userCSKid,
         data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -216,7 +220,7 @@ export default (sbp('sbp/selectors/register', {
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
         name: `${userID}/${userCSKid}`
-      }],
+      })],
       signingKeyId
     })
 

@@ -460,12 +460,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
-    const signingKeyId = findKeyIdByName(state, 'csk')
 
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+      const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
-      if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK`)
+      const CSKid = findKeyIdByName(rootState[groupID], 'csk')
+
+      if (!CEKid || !CSKid) {
+        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
         // We intentionally don't throw here to be able to share keys with the
         // remaining groups
         return Promise.resolve()
@@ -473,21 +475,19 @@ export default (sbp('sbp/selectors/register', {
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
-        originatingContractID: contractID,
-        originatingContractName: 'gi.contracts/identity',
-        data: {
+        data: encryptedOutgoingData(groupState, CEKid, {
           contractID: groupID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
             meta: {
               private: {
-                content: encryptedOutgoingData(rootState[groupID], CEKid, serializeKey(newKey, true))
+                content: serializeKey(newKey, true)
               }
             }
           }))
-        },
-        signingKeyId
+        }),
+        signingKeyId: CSKid
       })
     })).then(() => undefined)
   },

@@ -9,7 +9,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
-import { deserializeKey, keyId, serializeKey } from './crypto.js'
+import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
@@ -18,7 +18,7 @@ import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
-import { findKeyIdByName, findRevokedKeyIdsByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -103,7 +103,8 @@ export type ChelKeyShareParams = {
   contractID: string;
   contractName: string;
   data: GIOpKeyShare;
-  signingKeyId: string;
+  signingKeyId?: string;
+  signingKey?: Key;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -121,6 +122,8 @@ export type ChelKeyRequestParams = {
   signingKeyId: string;
   innerSigningKeyId: string;
   encryptionKeyId: string;
+  innerEncryptionKeyId: string;
+  fullEncryption?: boolean;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -705,6 +708,10 @@ export default (sbp('sbp/selectors/register', {
 
     const payload = (data: GIOpKeyShare)
 
+    if (!params.signingKeyId && !params.signingKey) {
+      throw new TypeError('Either signingKeyId or signingKey must be specified')
+    }
+
     const state = destinationContract.state(contractID)
     let msg = GIMessage.createV1_0({
       contractID: contractID,
@@ -713,7 +720,9 @@ export default (sbp('sbp/selectors/register', {
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_SHARE,
-        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+        params.signingKeyId
+          ? signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+          : signedOutgoingDataWithRawKey(params.signingKey, payload)
       ],
       manifest: destinationManifestHash
     })
@@ -824,7 +833,7 @@ export default (sbp('sbp/selectors/register', {
     return msg
   },
   'chelonia/out/keyRequest': async function (params: ChelKeyRequestParams): Promise<GIMessage> {
-    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, signingKeyId: outerKeyId, innerSigningKeyId, encryptionKeyId } = params
+    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, fullEncryption } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const originatingManifestHash = this.config.contracts.manifests[originatingContractName]
     const contract = this.manifestToContract[manifestHash]?.contract
@@ -839,56 +848,61 @@ export default (sbp('sbp/selectors/register', {
     if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
     const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const payload = (signedOutgoingData(originatingState, innerSigningKeyId, {
-      encryptionKeyId: encryptionKeyId
-    }, this.transientSecretKeys): GIOpKeyRequest)
+
+    const keyRequestReplyKey = keygen(EDWARDS25519SHA512BATCH)
+    const keyRequestReplyKeyId = keyId(keyRequestReplyKey)
+    const keyRequestReplyKeyP = serializeKey(keyRequestReplyKey, false)
+    const keyRequestReplyKeyS = serializeKey(keyRequestReplyKey, true)
+
+    const signingKeyId = findSuitableSecretKeyId(originatingState, [GIMessage.OP_KEY_ADD], ['sig'])
+    if (!signingKeyId) {
+      throw ChelErrorUnexpected(`Unable to send key request. Originating contract is missing a key with OP_KEY_ADD permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
+    }
+    await sbp('chelonia/out/keyAdd', {
+      contractID: originatingContractID,
+      contractName: originatingContractName,
+      data: {
+        id: keyRequestReplyKeyId,
+        name: 'krrk-' + keyRequestReplyKeyId,
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        permissions: [GIMessage.OP_KEY_SHARE],
+        meta: {
+          private: {
+            content: encryptedOutgoingData(originatingState, encryptionKeyId, keyRequestReplyKeyS),
+            shareable: false
+          },
+          keyRequest: {
+            contractID: fullEncryption ? encryptedOutgoingData(originatingState, contractID, keyRequestReplyKeyS) : contractID
+          }
+        },
+        data: keyRequestReplyKeyP
+      },
+      signingKeyId
+    })
+    const payload = ({
+      contractID: originatingContractID,
+      height: rootState.contracts[originatingContractID].height,
+      replyWith: signedOutgoingData(originatingState, innerSigningKeyId, {
+        encryptionKeyId,
+        responseKey: fullEncryption ? keyRequestReplyKeyS : encryptedOutgoingData(state, innerEncryptionKeyId, keyRequestReplyKeyS)
+      }, this.transientSecretKeys)
+    }: GIOpKeyRequest)
     let msg = GIMessage.createV1_0({
-      originatingContractID,
-      originatingContractHeight: rootState.contracts[originatingContractID].height,
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_REQUEST,
-        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+        signedOutgoingData(state, params.signingKeyId,
+          fullEncryption
+            ? (encryptedOutgoingData(state, innerEncryptionKeyId, payload): any)
+            : payload, this.transientSecretKeys
+        )
       ],
       manifest: manifestHash
     })
     hooks?.prepublish?.(msg)
-    // TODO: When processing OP_KEY_SHARE:
-    //      (1) include the hash if relevant
-    //      (2) for foreign keys with OP_KEY_SHARE permission, allow only
-    //          if in response to an OP_KEY_REQUEST
-    const keyShareKeys = findSuitablePublicKeyIds(state, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])?.map((keyId) => ({
-      foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`,
-      id: keyId,
-      data: state._vm.authorizedKeys[keyId].data,
-      permissions: [GIMessage.OP_KEY_SHARE],
-      purpose: ['sig'],
-      ringLevel: Number.MAX_SAFE_INTEGER,
-      name: `${contractID}/${keyId}`,
-      meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } }
-    }))
-    if (!keyShareKeys?.length) {
-      throw ChelErrorUnexpected(`Unable to send key request. Contract is missing a key with OP_KEY_REQUEST_SEEN permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
-    }
-    const signingKeyId = findSuitableSecretKeyId(originatingState, [GIMessage.OP_KEY_ADD], ['sig'])
-    if (!signingKeyId) {
-      throw ChelErrorUnexpected(`Unable to send key request. Originating contract is missing a key with OP_KEY_ADD permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
-    }
-    // TODO: REMOVE THE console.log below
-    console.log({ keyShareKeys, originatingContractID, contractID, st: state, svm: state._vm?.authorizedKeys })
-    // TODO: This might need to be keyUpdate (or nothing), depending on whether
-    // the key already exists
-    // TODO: Rollback mechanism  based on keyDel / keyUpdate when appropriate
-    // for keyAdd (if the following publishEvent fails, since in that case
-    // we won't receive a response back)
-    await sbp('chelonia/out/keyAdd', {
-      contractID: originatingContractID,
-      contractName: originatingContractName,
-      data: keyShareKeys,
-      signingKeyId
-    })
     msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
     hooks?.postpublish?.(msg)
     return msg

@@ -281,3 +281,21 @@ export const isRawEncryptedData = (data: any): boolean => {
 
   return true
 }
+
+export const unwrapMaybeEncryptedData = (data: any): { encryptionKeyId: string | null, data: any } | void => {
+  if (isEncryptedData(data)) {
+    try {
+      return {
+        encryptionKeyId: data.encryptionKeyId,
+        data: data.valueOf()
+      }
+    } catch (e) {
+      console.warn(e)
+    }
+  } else {
+    return {
+      encryptionKeyId: null,
+      data
+    }
+  }
+}

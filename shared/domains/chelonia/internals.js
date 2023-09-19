@@ -9,11 +9,11 @@ import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import './db.js'
-import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedOutgoingData, isRawEncryptedData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -28,14 +28,14 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
   // Keys in a GIMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
   keys = keys.map((key) => {
-    if (isEncryptedData(key)) {
-      key = ((key.valueOf(): any): GIKey);
-      (key: any)._private = true
-    } else {
-      (key: any)._private = false
+    const data = unwrapMaybeEncryptedData(key)
+    if (!data) return undefined
+    if (data.encryptionKeyId) {
+      data.data._private = data.encryptionKeyId
     }
-    return ((key: any): GIKey)
-  })
+    return ((data.data: any): GIKey)
+  }).filter(Boolean)
+
   const keysCopy = cloneDeep(keys)
   return Object.fromEntries(keysCopy.map(key => {
     key._notBeforeHeight = height
@@ -88,8 +88,10 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
         const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel)
 
+        const encryptionKeyId = foreignContractKey._private
+
         if (signingKeyId) {
-          return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
+          return [[name, foreignContractKey.name, encryptionKeyId], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
         }
 
         return undefined
@@ -109,7 +111,12 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
           await sbp(outputSelector, {
             contractID: cID,
             contractName,
-            data: keyNamesToUpdate.map(outputMapper),
+            data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
+              if (keyNamesToUpdate[i][2]) {
+                return encryptedOutgoingData(rootState[cID], keyNamesToUpdate[i][2], v)
+              }
+              return v
+            }),
             signingKeyId
           })
         } catch (e) {
@@ -336,7 +343,7 @@ export default (sbp('sbp/selectors/register', {
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, (Object.values(keys): any), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, v.keys, state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
@@ -387,7 +394,9 @@ export default (sbp('sbp/selectors/register', {
         console.log('Processing OP_KEY_SHARE')
         // TODO: Prompt to user if contract not in pending
 
-        const v = (isEncryptedData(wv)) ? ((wv: any).valueOf(): ProtoGIOpKeyShare) : ((wv: any): ProtoGIOpKeyShare)
+        const data = unwrapMaybeEncryptedData(wv)
+        if (!data) return
+        const v = (data.data: ProtoGIOpKeyShare)
 
         delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
@@ -472,18 +481,22 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          if (!Array.isArray(targetState._volatile?.pendingKeyRequests) || !v.keyRequestId) return
+          if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
 
           config.reactiveSet(
             targetState._volatile, 'pendingKeyRequests',
             targetState._volatile.pendingKeyRequests.filter((pkr) =>
-              pkr?.id !== v.keyRequestId
+              pkr?.name !== signingKey.name
             )
           )
         })
       },
-      [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
-        const originatingContractID = message.originatingContractID()
+      [GIMessage.OP_KEY_REQUEST] (wv: GIOpKeyRequest) {
+        const data = unwrapMaybeEncryptedData(wv)
+        if (!data) return
+        const v = data.data
+
+        const originatingContractID = v.contractID
 
         if (state._vm?.invites?.[signingKeyId]?.quantity != null) {
           if (state._vm.invites[signingKeyId].quantity > 0) {
@@ -507,12 +520,12 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
-        if (!has(v, 'context')) {
+        if (!has(v.replyWith, 'context')) {
           console.error('Ignoring OP_KEY_REQUEST because it is missing the context attribute')
           return
         }
 
-        const context = v.context
+        const context = v.replyWith.context
 
         if (context?.[0] !== originatingContractID) {
           console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
@@ -522,7 +535,8 @@ export default (sbp('sbp/selectors/register', {
         if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
 
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
-          message.id(),
+          !!data.encryptionKeyId,
+          message.height(),
           signingKeyId,
           context
         ])
@@ -536,12 +550,14 @@ export default (sbp('sbp/selectors/register', {
         }
         // TODO: Handle boolean (success) value
 
-        const v = isEncryptedData(wv) ? ((wv: any).valueOf(): ProtoGIOpKeyRequestSeen) : ((wv: any): ProtoGIOpKeyRequestSeen)
+        const data = unwrapMaybeEncryptedData(wv)
+        if (!data) return
+        const v = (data.data: ProtoGIOpKeyRequestSeen)
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
-          const keyId = state._vm.pendingKeyshares[hash][1]
-          const originatingContractID = state._vm.pendingKeyshares[hash][2][0]
+          const keyId = state._vm.pendingKeyshares[hash][2]
+          const originatingContractID = state._vm.pendingKeyshares[hash][3][0]
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
@@ -564,16 +580,21 @@ export default (sbp('sbp/selectors/register', {
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
-        console.log('@@@@OP_KEY_ADD: ', { v, keys, keysArray })
-        keyAdditionProcessor.call(self, keysArray, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         validateKeyDelPermissions(contractID, signingKey, state, v)
-        const keyIds = ((v.map((k) => isEncryptedData(k) ? k.valueOf() : k): any): string[])
+        const keyIds = ((v.map((k) => {
+          const data = unwrapMaybeEncryptedData(k)
+          if (!data) return undefined
+          return data.data
+        }): any): string[])
         keyIds.forEach((keyId) => {
+          if (keyId === undefined) return
+
           const key = state._vm.authorizedKeys[keyId]
           if (!key) {
             console.warn('Attempted to delete non-existent key from contract', { contractID, keyId })
@@ -847,7 +868,7 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      const [id, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, string, [string, Object, number, string]])
+      const [fullEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, string, [string, Object, number, string]])
 
       // 1. Sync (originating) identity contract
 
@@ -864,6 +885,12 @@ export default (sbp('sbp/selectors/register', {
       try {
         // 2. Verify 'data'
         const { encryptionKeyId } = v
+
+        const responseKey = isRawEncryptedData(v.responseKey)
+          ? encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
+          : v.responseKey
+
+        const deserializedResponseKey = deserializeKey(responseKey)
 
         const keys = pick(
           state['secretKeys'],
@@ -893,19 +920,34 @@ export default (sbp('sbp/selectors/register', {
                   shareable: true
                 }
               }
-            })),
-            keyRequestId: id
+            }))
           },
-          signingKeyId
+          signingKey: deserializedResponseKey
         })
 
         // 4(i). Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: true } })
+        const payload = { keyRequestHash: hash, success: true }
+        await sbp('chelonia/out/keyRequestResponse', {
+          contractID,
+          contractName,
+          signingKeyId,
+          data: fullEncryption
+            ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+            : payload
+        })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
+        const payload = { keyRequestHash: hash, success: false }
 
         // 4(ii). Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: false } })
+        await sbp('chelonia/out/keyRequestResponse', {
+          contractID,
+          contractName,
+          signingKeyId,
+          data: fullEncryption
+            ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+            : payload
+        })
       }
     }))
   },

@@ -20,6 +20,7 @@ import { unadjustedDistribution, adjustedDistribution } from './shared/distribut
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
@@ -1501,10 +1502,14 @@ sbp('chelonia/defineContract', {
       if (!keyIds?.length) return
 
       const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+
+      if (!CEKid) throw new Error('Missing encryption key')
+
       sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
         contractID,
         contractName: 'gi.contracts/group',
-        data: keyIds,
+        data: keyIds.map(k => encryptedOutgoingData(state, CEKid, k)),
         signingKeyId: CSKid
       }]).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)

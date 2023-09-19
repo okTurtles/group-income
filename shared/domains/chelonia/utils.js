@@ -5,7 +5,7 @@ import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { EncryptedData } from './encryptedData.js'
-import { isEncryptedData } from './encryptedData.js'
+import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
@@ -158,8 +158,10 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.forEach(wk => {
-    const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): GIKey)
-    if (!skipPrivateCheck && signingKey._private && !isEncryptedData(wk)) {
+    const data = unwrapMaybeEncryptedData(wk)
+    if (!data) return
+    const k = (data.data: GIKey)
+    if (!skipPrivateCheck && signingKey._private && !data.encryptionKeyId) {
       throw new Error('Signing key is private but it tried adding a public key')
     }
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
@@ -182,11 +184,13 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v
-    .map((wid): string => ((isEncryptedData(wid) ? wid.valueOf() : wid): any))
-    .map(id => state._vm.authorizedKeys[id])
-    .forEach((k, i, a) => {
-      if (!k) throw new Error('Nonexisting key ID ' + a[i])
-      if (signingKey._private && !isEncryptedData(v[i])) {
+    .forEach((wid) => {
+      const data = unwrapMaybeEncryptedData(wid)
+      if (!data) return
+      const id = data.data
+      const k = state._vm.authorizedKeys[id]
+      if (!k) throw new Error('Nonexisting key ID ' + id)
+      if (signingKey._private && !data.encryptionKeyId) {
         throw new Error('Signing key is private but it tried removing a public key')
       }
       if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
@@ -197,14 +201,16 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
 
 export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]): [GIKey[], string[]] => {
   const keysToDelete: string[] = []
-  const keys = v.map((wuk): GIKey => {
-    const uk = (((isEncryptedData(wuk) ? wuk.valueOf() : wuk): any): GIKeyUpdate)
+  const keys = v.map((wuk): GIKey | void => {
+    const data = unwrapMaybeEncryptedData(wuk)
+    if (!data) return undefined
+    const uk = (data.data: GIKeyUpdate)
 
     const existingKey = state._vm.authorizedKeys[uk.oldKeyId]
     if (!existingKey) {
       throw new Error('Missing old key ID ' + uk.oldKeyId)
     }
-    if (existingKey._private !== isEncryptedData(wuk)) {
+    if (!existingKey._private !== !data.encryptionKeyId) {
       throw new Error('_private attribute must be preserved')
     }
     if (uk.name !== existingKey.name) {
@@ -240,16 +246,19 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
       updatedKey.data = uk.data
     }
     return updatedKey
-  })
+  }).filter(Boolean)
   validateKeyAddPermissions(contractID, signingKey, state, keys, true)
   return [((keys: any): GIKey[]), keysToDelete]
 }
 
-export const keyAdditionProcessor = function (keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
+export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
   console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
-  for (const key of keys) {
+  for (const wkey of keys) {
+    const data = unwrapMaybeEncryptedData(wkey)
+    if (!data) continue
+    const key = data.data
     let decryptedKey: ?string
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.content) {
@@ -293,7 +302,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
     // Is this KEY operation the result of requesting keys for another contract?
     console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
     if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
-      const { id, contractID: keyRequestContractID } = key.meta?.keyRequest
+      const { contractID: keyRequestContractID } = key.meta?.keyRequest
 
       const rootState = sbp(this.config.stateSelector)
 
@@ -311,7 +320,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
         }
 
         // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ id, name: signingKey.name })
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: signingKey.name })
 
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }

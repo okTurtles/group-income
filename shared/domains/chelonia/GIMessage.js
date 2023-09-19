@@ -28,7 +28,7 @@ export type GIKey = {
   foreignKey?: string;
   _notBeforeHeight: number;
   _notAfterHeight?: number;
-  _private?: boolean;
+  _private?: false | string;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
@@ -42,9 +42,15 @@ export type GIOpPropSet = { key: string; value: JSONType }
 export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
 export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
 // TODO encrypted GIOpKeyRequest
-export type GIOpKeyRequest = SignedData<{
-  encryptionKeyId: string;
-}>
+export type ProtoGIOpKeyRequest = {
+  contractID: string;
+  height: number;
+  replyWith: SignedData<{
+    encryptionKeyId: string;
+    responseKey: string | EncryptedData<string>;
+  }>
+}
+export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
 export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
 export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
 export type GIKeyUpdate = {
@@ -177,13 +183,16 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     }
   }
 
-  // If the operation is OP_KEY_REQUEST, the payload is expected to be
-  // SignedData
+  // If the operation is OP_KEY_REQUEST, the payload might be EncryptedData
+  // The ReplyWith attribute is SignedData
   if (op === GIMessage.OP_KEY_REQUEST) {
-    if (head.originatingContractID && head.originatingContractID !== contractID) {
-      return signedIncomingData(head.originatingContractID, undefined, message, head.originatingContractHeight, headJSON)
+    if (isRawEncryptedData(message)) {
+      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (msg) => {
+        msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
+      })
     } else {
-      return signedIncomingData(contractID, state, message, height, headJSON)
+      const msg = (message: any)
+      msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
     }
   }
 
