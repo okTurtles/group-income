@@ -166,6 +166,9 @@ const PaymentsMixin: Object = {
       }
       return total
     },
+    // Returns the stored payment period object for a given period stamp,
+    // or an empty object if not found.
+    // TODOs: rename to getPaymentPeriod, and maybe avoid loading all historical payment periods.
     async getPeriodPayment (period: string) {
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         return this.groupPeriodPayments[period] || {}
@@ -173,6 +176,7 @@ const PaymentsMixin: Object = {
       const archPaymentsByPeriod = await this.getHistoricalPaymentPeriods()
       return archPaymentsByPeriod[period] || {}
     },
+    // Returns a human-readable description of the time interval identified by a given period stamp.
     getPeriodFromStartToDueDate (period) {
       const dueDate = this.dueDateForPeriod(period)
       return `${humanDate(dateFromPeriodStamp(period))} - ${humanDate(dateFromPeriodStamp(dueDate))}`
