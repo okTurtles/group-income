@@ -7,11 +7,11 @@ export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
 export const MONTHS_MILLIS = 30 * DAYS_MILLIS
 
-const plusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+export const plusOnePeriodLength = (timestamp: string, periodLength: number): string => (
   dateToPeriodStamp(addTimeToDate(timestamp, periodLength))
 )
 
-const minusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+export const minusOnePeriodLength = (timestamp: string, periodLength: number): string => (
   dateToPeriodStamp(addTimeToDate(timestamp, -periodLength))
 )
 
