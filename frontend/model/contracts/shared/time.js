@@ -22,10 +22,11 @@ export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
 ): Object {
-  if (typeof date === 'string' && !isIsoString(date)) {
-    throw new TypeError('must be ISO string')
+  // `isNaN` - not `Number.isNaN` - is used here to catch `Invalid Date` objects.
+  if (!(date instanceof Date && !isNaN(date)) && !isIsoString(date)) {
+    throw new TypeError('must be ISO string or valid Date object')
   }
-  const timestamp = new Date(date).toISOString()
+  const timestamp = typeof date === 'string' ? date : date.toISOString()
   let previous, current, next
   if (knownSortedStamps.length) {
     const latest = knownSortedStamps[knownSortedStamps.length - 1]
@@ -181,7 +182,7 @@ export function isFullMonthstamp (arg: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
 }
 
-export function isIsoString (arg: string): boolean {
+export function isIsoString (arg: any): boolean {
   return typeof arg === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
 }
 
