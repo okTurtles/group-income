@@ -43,6 +43,7 @@ export function periodStampsForDate (
           // `i + 1` is always a valid index.
           next = knownSortedStamps[i + 1]
           previous = knownSortedStamps[i - 1]
+          break
         }
       }
     }
