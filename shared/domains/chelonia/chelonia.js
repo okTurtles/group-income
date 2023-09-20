@@ -14,6 +14,8 @@ import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnrecoverable } from './errors.js'
 import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
 
+const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10)
+
 // TODO: define ChelContractType for /defineContract
 
 export type ChelRegParams = {
@@ -320,9 +322,28 @@ export default (sbp('sbp/selectors/register', {
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
   'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
+    let events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
+      // Sanity check
+      if (GIMessage.deserialize(b64ToStr(events[events.length - 1])).hash() !== since) {
+        throw new Error('hash() !== since')
+      }
+      // Maybe we didn't receive all the requested events because of eventsAfter's limit.
+      if (MAX_EVENTS_AFTER && (events.length === MAX_EVENTS_AFTER)) {
+        while (true) {
+          const intermediateEventHash = GIMessage.deserialize(b64ToStr(events[0])).hash()
+          const nextEvents = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${intermediateEventHash}`)
+            .then(handleFetchResult('json'))
+          // Break if we didn't receive any event we didn't have yet.
+          // Note: nextEvents usually ends with an intermediate event we already have.
+          if (!Array.isArray(nextEvents) || nextEvents.length < 2) break
+          nextEvents.pop()
+          events = [...nextEvents, ...events]
+          // Only continue if we hit the limit again.
+          if (nextEvents.length !== MAX_EVENTS_AFTER - 1) break
+        }
+      }
       return events.reverse().map(b64ToStr)
     }
   },

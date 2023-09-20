@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
-import { createCircularList } from '~/frontend/utils/circularList.js'
+import { createCircularList } from '~/shared/circularList.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
