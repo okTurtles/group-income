@@ -1276,11 +1276,10 @@ sbp('chelonia/defineContract', {
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
         const current = getters.groupSettings?.distributionDate
-        const inWaitingPeriod = !current || meta.createdDate < current
         // Maybe we're updating the distribution date while in the waiting period.
-        if (inWaitingPeriod && meta.createdDate !== current) {
+        if (!getters.groupDistributionStarted(meta.createdDate)) {
           getters.groupSettings.distributionDate = meta.createdDate
-        } else if (current !== period) {
+        } else if (period > current) {
           // right before updating to the new distribution period, make sure to update various payment-related group streaks.
           updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = period
