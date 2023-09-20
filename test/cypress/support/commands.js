@@ -8,8 +8,6 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
-import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
-import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -281,19 +279,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
     cy.window().its('sbp').then(async sbp => {
-      const state = await sbp('state/vuex/state')
-      const originatingContractID = state['loggedIn']['identityContractID']
-      const userState = state[originatingContractID]
-
-      await sbp('gi.actions/group/joinAndSwitch', {
-        originatingContractID,
-        originatingContractName: 'gi.contracts/identity',
-        contractID: groupId,
-        contractName: 'gi.contracts/group',
-        signingKey: inviteSecret,
-        innerSigningKeyId: findKeyIdByName(userState, 'csk'),
-        encryptionKeyId: findKeyIdByName(userState, 'cek')
-      })
+      await sbp('gi.actions/group/joinBySecret', groupId, inviteSecret)
 
       for (let i = 0; i < 2; i++) {
         await new Promise(resolve => setTimeout(resolve, 2000))
@@ -349,30 +335,12 @@ Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   bypassUI
 }) => {
   const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
-  const secretKey = deserializeKey(inviteSecret)
   for (const username of usernames) {
     if (bypassUI) {
       cy.giSignup(username, { bypassUI: true })
 
       cy.window().its('sbp').then(async sbp => {
-        const state = await sbp('state/vuex/state')
-        const originatingContractID = state['loggedIn']['identityContractID']
-        const userState = state[originatingContractID]
-
-        sbp('chelonia/storeSecretKeys', [{
-          key: secretKey, transient: true
-        }])
-
-        await sbp('gi.actions/group/joinAndSwitch', {
-          originatingContractID,
-          originatingContractName: 'gi.contracts/identity',
-          contractID: groupId,
-          contractName: 'gi.contracts/group',
-          signingKeyId: keyId(secretKey),
-          innerSigningKeyId: findKeyIdByName(userState, 'csk'),
-          encryptionKeyId: findKeyIdByName(userState, 'cek')
-        })
-
+        await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
         await new Promise(resolve => setTimeout(resolve, 2000))
         await sbp('gi.actions/identity/logout')
       })

@@ -31,7 +31,8 @@ import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey, deserializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -537,6 +538,27 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
+  },
+  'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
+    const rootState = sbp('state/vuex/state')
+    const originatingContractID = rootState.loggedIn.identityContractID
+    const userState = rootState[originatingContractID]
+
+    const secretKey = deserializeKey(secret)
+
+    sbp('chelonia/storeSecretKeys', [{
+      key: secretKey, transient: true
+    }])
+
+    await sbp('gi.actions/group/joinAndSwitch', {
+      originatingContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID: groupId,
+      contractName: 'gi.contracts/group',
+      signingKeyId: keyId(secretKey),
+      innerSigningKeyId: findKeyIdByName(userState, 'csk'),
+      encryptionKeyId: findKeyIdByName(userState, 'cek')
+    })
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
