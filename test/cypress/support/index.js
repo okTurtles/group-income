@@ -15,7 +15,7 @@
 
 import 'cypress-pipe'
 import './commands.js'
-// import './output-logs.js'
+import './output-logs.js'
 
 before(function () {
   cy.clearCookies()
