@@ -356,17 +356,19 @@ export default (sbp('sbp/selectors/register', {
     const identityContractID = await sbp('namespace/lookup', username)
 
     if (!identityContractID) {
-      throw new GIErrorUIRuntimeError(L('Invalid username or password'))
+      throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
     }
 
-    const transientSecretKeys = password
-      ? await (async () => {
+    const transientSecretKeys = []
+    if (password) {
+      try {
         const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-
-        return [{ key: IEK, transient: true }]
-      })()
-      : []
+        transientSecretKeys.push({ key: IEK, transient: true })
+      } catch (e) {
+        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+      }
+    }
 
     try {
       sbp('appLogs/startCapture', username)
