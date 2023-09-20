@@ -35,14 +35,14 @@ export function periodStampsForDate (
       next = plusOnePeriodLength(current, periodLength)
       previous = current > latest
         ? minusOnePeriodLength(current, periodLength)
-        : knownSortedStamps[knownSortedStamps.length - 2] ?? undefined
+        : knownSortedStamps[knownSortedStamps.length - 2]
     } else {
       for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
         if (timestamp >= knownSortedStamps[i]) {
           current = knownSortedStamps[i]
           // `i + 1` is always a valid index.
           next = knownSortedStamps[i + 1]
-          previous = knownSortedStamps[i - 1] ?? undefined
+          previous = knownSortedStamps[i - 1]
         }
       }
     }
