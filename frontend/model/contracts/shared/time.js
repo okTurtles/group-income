@@ -22,9 +22,8 @@ export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
 ): Object {
-  // `isNaN` - not `Number.isNaN` - is used here to catch `Invalid Date` objects.
-  if (!(date instanceof Date && !isNaN(date)) && !isIsoString(date)) {
-    throw new TypeError('must be ISO string or valid Date object')
+  if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
+    throw new TypeError('must be ISO string or Date object')
   }
   const timestamp = typeof date === 'string' ? date : date.toISOString()
   let previous, current, next
