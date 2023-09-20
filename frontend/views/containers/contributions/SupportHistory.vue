@@ -49,7 +49,7 @@ export default ({
   },
   methods: {
     async updateHistory () {
-      const periods = await this.getSortedPeriodKeys()
+      const periods = await this.getAllSortedPeriodKeys()
       this.history = await Promise.all(periods.map(async (period, i) => {
         const totalTodo = await this.getTotalTodoAmountForPeriod(period)
         const totalDone = await this.getTotalPledgesDoneForPeriod(period)
