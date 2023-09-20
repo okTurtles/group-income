@@ -65,8 +65,10 @@ export default ({
     PaymentNotReceivedTooltip,
     PaymentRow
   },
-  data: {
-    relativeTo: null
+  data () {
+    return {
+      relativeTo: null
+    }
   },
   mixins: [PaymentsMixin],
   props: {

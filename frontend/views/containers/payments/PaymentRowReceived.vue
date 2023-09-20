@@ -73,8 +73,10 @@ export default ({
     PaymentRow
   },
   mixins: [PaymentsMixin],
-  data: {
-    relativeTo: null
+  data () {
+    return {
+      relativeTo: null
+    }
   },
   props: {
     payment: {
