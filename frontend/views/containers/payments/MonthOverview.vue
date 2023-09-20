@@ -3,7 +3,7 @@
   i18n.c-summary-title.is-title-4(
     tag='h4'
     data-test='monthOverviewTitle'
-    :args='{ start: humanDate(getStartDate()), end: humanDate(getDueDate()) }'
+    :args='{ start: humanDate(startDate), end: humanDate(dueDate) }'
   ) Period: {start} - {end}
 
   ul
@@ -44,12 +44,6 @@ export default ({
     ProgressBar
   },
   methods: {
-    getDueDate () {
-      return this.dueDateForPeriod(this.currentPaymentPeriod)
-    },
-    getStartDate () {
-      return this.periodStampGivenDate(new Date())
-    },
     humanDate,
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
@@ -70,6 +64,12 @@ export default ({
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    dueDate () {
+      return this.dueDateForPeriod(this.currentPaymentPeriod)
+    },
+    startDate () {
+      return this.periodStampGivenDate(this.currentPaymentPeriod)
     },
     summaryCopy () {
       const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
