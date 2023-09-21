@@ -357,13 +357,10 @@ ${this.getErrorInfo()}`;
         },
         process({ data }, { state }) {
           const { groupContractID, contractID } = data;
-          if (groupContractID) {
-            import_common.Vue.set(state.chatRooms, contractID, {
-              groupContractID,
-              visible: true
-            });
-          } else {
-          }
+          import_common.Vue.set(state.chatRooms, contractID, {
+            groupContractID,
+            visible: true
+          });
         },
         async sideEffect({ contractID, data }) {
           await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);

@@ -131,14 +131,10 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state }) {
         const { groupContractID, contractID } = data
-        if (groupContractID) {
-          Vue.set(state.chatRooms, contractID, {
-            groupContractID,
-            visible: true // NOTE: this attr is used to hide/show direct message
-          })
-        } else {
-          // TODO: create a direct message outside of the group
-        }
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true // NOTE: this attr is used to hide/show direct message
+        })
       },
       async sideEffect ({ contractID, data }) {
         await sbp('chelonia/contract/sync', data.contractID)

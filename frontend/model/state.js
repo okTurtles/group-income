@@ -537,21 +537,21 @@ const getters = {
   ourGroupDirectMessages (state, getters) {
     const currentGroupDirectMessages = {}
     for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
+      const chatRoomState = state[chatRoomId]
+      const directMessageSettings = getters.ourDirectMessages[chatRoomId]
+
       // NOTE: skip DMs whose chatroom contracts are not synced yet
-      if (!state[chatRoomId] || !state[chatRoomId].users?.[getters.ourUsername]) {
+      if (!chatRoomState || !chatRoomState.users?.[getters.ourUsername]) {
         continue
       }
       // NOTE: get only visible DMs for the current group
-      if (getters.ourDirectMessages[chatRoomId].groupContractID === state.currentGroupId &&
-        getters.ourDirectMessages[chatRoomId].visible &&
-        state[chatRoomId]
-      ) {
-        const users = Object.keys(state[chatRoomId].users)
+      if (directMessageSettings.groupContractID === state.currentGroupId && directMessageSettings.visible) {
+        const users = Object.keys(chatRoomState.users)
         const partners = users
           .filter(username => username !== getters.ourUsername)
           .sort((p1, p2) => {
-            const p1JoinedDate = new Date(state[chatRoomId].users[p1].joinedDate).getTime()
-            const p2JoinedDate = new Date(state[chatRoomId].users[p2].joinedDate).getTime()
+            const p1JoinedDate = new Date(chatRoomState.users[p1].joinedDate).getTime()
+            const p2JoinedDate = new Date(chatRoomState.users[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
         // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
@@ -559,7 +559,7 @@ const getters = {
         //       possibly with the badge of the number of partners.
         const lastJoinedPartner = partners[partners.length - 1]
         currentGroupDirectMessages[chatRoomId] = {
-          ...getters.ourDirectMessages[chatRoomId],
+          ...directMessageSettings,
           users,
           partners,
           lastJoinedPartner,
@@ -578,8 +578,9 @@ const getters = {
       if (typeof partners === 'string') {
         partners = [partners]
       }
-      return Object.keys(getters.ourGroupDirectMessages).find(chatRoomId => {
-        const cPartners = getters.ourGroupDirectMessages[chatRoomId].partners
+      const currentGroupDirectMessages = getters.ourGroupDirectMessages
+      return Object.keys(currentGroupDirectMessages).find(chatRoomId => {
+        const cPartners = currentGroupDirectMessages[chatRoomId].partners
         return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
       })
     }
