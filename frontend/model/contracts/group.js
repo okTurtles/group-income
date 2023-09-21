@@ -553,9 +553,7 @@ sbp('chelonia/defineContract', {
             allowPublicChannels: false
           },
           streaks: initGroupStreaks(),
-          profiles: {
-            [meta.username]: initGroupProfile(meta.createdDate)
-          },
+          profiles: {},
           chatRooms: {},
           totalPledgeAmount: 0
         }, data)

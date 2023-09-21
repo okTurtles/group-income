@@ -353,6 +353,14 @@ export default (sbp('sbp/selectors/register', {
     const revokedKeyIds = findRevokedKeyIdsByName(contractIDOrState, name)
     return currentKeyId ? [currentKeyId, ...revokedKeyIds] : revokedKeyIds
   },
+  'chelonia/contract/suitableSigningKey': function (contractIDOrState: string | Object, permissions, purposes, ringLevel) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel)
+    return keyId
+  },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
@@ -861,7 +869,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/out/keyAdd', {
       contractID: originatingContractID,
       contractName: originatingContractName,
-      data: {
+      data: [{
         id: keyRequestReplyKeyId,
         name: 'krrk-' + keyRequestReplyKeyId,
         purpose: ['sig'],
@@ -877,7 +885,7 @@ export default (sbp('sbp/selectors/register', {
           }
         },
         data: keyRequestReplyKeyP
-      },
+      }],
       signingKeyId
     })
     const payload = ({

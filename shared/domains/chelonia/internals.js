@@ -395,6 +395,7 @@ export default (sbp('sbp/selectors/register', {
         // TODO: Prompt to user if contract not in pending
 
         const data = unwrapMaybeEncryptedData(wv)
+        console.log('@@@@@GIMessage.OP_KEY_SHARE', { data })
         if (!data) return
         const v = (data.data: ProtoGIOpKeyShare)
 
@@ -408,6 +409,7 @@ export default (sbp('sbp/selectors/register', {
         let targetState = cheloniaState[v.contractID]
         const newKeysReceived = []
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
+        console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (
@@ -848,6 +850,8 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractState = state[contractID] ?? {}
 
+    console.log('pendingKeyshares', contractState._vm.pendingKeyshares)
+
     if (!contractState._vm || !contractState._vm.pendingKeyshares) {
       return
     }
@@ -864,7 +868,7 @@ export default (sbp('sbp/selectors/register', {
     }
 
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
-      if (!Array.isArray(entry) || entry.length !== 3) {
+      if (!Array.isArray(entry) || entry.length !== 4) {
         return
       }
 

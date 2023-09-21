@@ -130,7 +130,8 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
         })
       } else if (key.meta?.private?.content) {
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
-        const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
+        // $FlowFixMe
+        const decryptionContract = ((message.foreignContractID ? message.foreignContractID : contractID): string)
         key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {
@@ -146,12 +147,12 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === GIMessage.OP_KEY_SHARE) {
     if (isRawEncryptedData(message)) {
-      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message) => {
-        (message: any).keys?.forEach((key, eKeyId) => {
+      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message, eKeyId) => {
+        (message: any).keys?.forEach((key) => {
           if (!key.meta?.private?.content) return
           const computedKeyId = keyId(key.meta.private.content)
           if (message.foreignContractID) {
-            const decryptionContract = String(message.foreignContractID)
+            const decryptionContract = message.foreignContractID
             key.meta.private.content = encryptedIncomingForeignData(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
               const computedKeyId = keyId(value)
               if (computedKeyId !== key.id) {

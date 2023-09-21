@@ -286,18 +286,8 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      await sbp('gi.actions/group/joinAndSwitch', {
-        originatingContractID: userID,
-        originatingContractName: 'gi.contracts/identity',
-        contractID: contractID,
-        contractName: 'gi.contracts/group',
-        signingKeyId: CSKid,
-        innerSigningKeyId: userCSKid,
-        encryptionKeyId: userCEKid
-      })
-
-      // create a 'General' chatroom contract and let the creator join
-      await sbp('gi.actions/group/addAndJoinChatRoom', {
+      // create a 'General' chatroom contract
+      await sbp('gi.actions/group/addChatRoom', {
         contractID,
         data: {
           attributes: {
@@ -309,6 +299,16 @@ export default (sbp('sbp/selectors/register', {
         },
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
+      })
+
+      await sbp('gi.actions/group/joinAndSwitch', {
+        originatingContractID: userID,
+        originatingContractName: 'gi.contracts/identity',
+        contractID: contractID,
+        contractName: 'gi.contracts/group',
+        signingKeyId: CSKid,
+        innerSigningKeyId: userCSKid,
+        encryptionKeyId: userCEKid
       })
 
       /*
@@ -516,14 +516,18 @@ export default (sbp('sbp/selectors/register', {
             contractID: userID,
             contractName: 'gi.contracts/identity',
             data: [encryptedOutgoingData(rootState[userID], userCEKid, {
-              name: rootState[userID]._vm.authorizedKeys[CSKid].name,
-              oldKeyId: CSKid,
+              foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+              id: CSKid,
+              data: state._vm.authorizedKeys[CSKid].data,
               // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
               // that a chatroom has just been created
               permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-              allowedActions: ['gi.contracts/identity/joinDirectMessage#inner']
+              allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
+              purpose: ['sig'],
+              ringLevel: Number.MAX_SAFE_INTEGER,
+              name: `${params.contractID}/${CSKid}`
             })],
-            signingKeyId: sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+            signingKeyId: sbp('chelonia/contract/suitableSigningKey', userID, [GIMessage.OP_KEY_ADD], ['sig'])
           })
 
           if (generalChatRoomId) {
