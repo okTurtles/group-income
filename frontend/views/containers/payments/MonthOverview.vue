@@ -3,7 +3,7 @@
   i18n.c-summary-title.is-title-4(
     tag='h4'
     data-test='monthOverviewTitle'
-    :args='{ start: humanDate(startDate), end: humanDate(dueDate) }'
+    :args='{ start: humanStartDate, end: humanDueDate }'
   ) Period: {start} - {end}
 
   ul
@@ -65,11 +65,11 @@ export default ({
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    dueDate () {
-      return this.dueDateForPeriod(this.currentPaymentPeriod)
+    humanDueDate () {
+      return this.humanDate(this.dueDateForPeriod(this.currentPaymentPeriod))
     },
-    startDate () {
-      return this.periodStampGivenDate(this.currentPaymentPeriod)
+    humanStartDate () {
+      return this.humanDate(this.periodStampGivenDate(this.currentPaymentPeriod))
     },
     summaryCopy () {
       const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
