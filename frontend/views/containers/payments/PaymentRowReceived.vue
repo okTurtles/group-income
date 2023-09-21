@@ -117,15 +117,10 @@ export default ({
         console.error(e)
         alert(e.message)
       }
-    },
-    async updatePaymentRelativeTo (paymentDate) {
-      this.relativeTo = await this.historicalPeriodStampGivenDate(paymentDate)
     }
   },
-  watch: {
-    payment (to, from) {
-      this.updatePaymentRelativeTo(to.date)
-    }
+  async mounted () {
+    this.relativeTo = await this.historicalPeriodStampGivenDate(this.payment.date)
   }
 }: Object)
 </script>

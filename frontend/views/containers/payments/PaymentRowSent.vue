@@ -90,9 +90,6 @@ export default ({
       return comparePeriodStamps(this.payment.period, this.currentPaymentPeriod) < 0
     }
   },
-  created () {
-    this.updatePayment()
-  },
   methods: {
     humanDate,
     openModal (name, props) {
@@ -114,15 +111,10 @@ export default ({
         console.error(e)
         alert(e.message)
       }
-    },
-    async updatePaymentRelativeTo (paymentDate) {
-      this.relativeTo = await this.historicalPeriodStampGivenDate(paymentDate)
     }
   },
-  watch: {
-    payment (to, from) {
-      this.updatePaymentRelativeTo(to.date)
-    }
+  async mounted () {
+    this.relativeTo = await this.historicalPeriodStampGivenDate(this.payment.date)
   }
 }: Object)
 </script>
