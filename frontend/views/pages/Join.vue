@@ -19,8 +19,8 @@ div
         h1.is-title-1.c-title(data-test='groupName') {{ ephemeral.invitation.groupName }}
         p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
-        signup-form(v-if='isStatus("SIGNING")' :postSubmit='accept')
-        login-form(v-else :postSubmit='accept')
+        signup-form(v-if='isStatus("SIGNING")' :postSubmit='acceptAfterLogin')
+        login-form(v-else :postSubmit='acceptAfterLogin')
 
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
@@ -101,8 +101,10 @@ export default ({
     // For some reason in some Cypress tests it loses the route query when initialized is called
     this.ephemeral.query = this.$route.query
     if (syncFinished || !this.ourUsername) {
+      // NOTE: user has already logged in or should login/signup later
       this.initialize()
     } else {
+      // NOTE: user is in the middle of login process
       sbp('okTurtles.events/once', LOGIN, () => this.initialize())
     }
   },
@@ -159,6 +161,13 @@ export default ({
     },
     goHome () {
       this.$router.push({ path: '/' })
+    },
+    acceptAfterLogin () {
+      if (syncFinished) {
+        this.accept()
+      } else {
+        sbp('okTurtles.events/once', LOGIN, () => this.accept())
+      }
     },
     async accept () {
       this.ephemeral.errorMsg = null

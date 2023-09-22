@@ -35,17 +35,20 @@ export default ({
     ...mapGetters(['groupSettings', 'ourUsername']),
     ...mapState(['currentGroupId']),
     ourGroupProfile () {
-      return this.$store.state[this.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
     }
   },
   mounted () {
-    this.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupIdWhenMounted = this.currentGroupId
   },
   watch: {
-    ourGroupProfile (to, from) {
-      // if our group profile appears in the group state, it means we've joined the group
-      if (to) {
-        this.ephemeral.groupJoined = true
+    ourGroupProfile: {
+      immediate: true,
+      handler (to, from) {
+        // if our group profile appears in the group state, it means we've joined the group
+        if (to) {
+          this.ephemeral.groupJoined = true
+        }
       }
     }
   }
