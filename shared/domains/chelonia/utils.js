@@ -301,16 +301,16 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
 
     // Is this KEY operation the result of requesting keys for another contract?
     console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
-    if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
-      const { contractID: keyRequestContractID } = key.meta?.keyRequest
-
-      const rootState = sbp(this.config.stateSelector)
+    if (key.meta?.keyRequest?.contractID && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
+      const data = unwrapMaybeEncryptedData(key.meta.keyRequest.contractID)
 
       // Are we subscribed to this contract?
       // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
       // Setting pendingKeyRequests in these cases could result in issues
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
-      if (keyRequestContractID) {
+      if (data) {
+        const keyRequestContractID = data.data
+        const rootState = sbp(this.config.stateSelector)
         if (!rootState[keyRequestContractID]) {
           this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
         } else if (!rootState[keyRequestContractID]._volatile) {
@@ -320,7 +320,7 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
         }
 
         // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: signingKey.name })
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: key.name })
 
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }

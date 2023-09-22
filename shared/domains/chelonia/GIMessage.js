@@ -8,7 +8,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedIncomingData, encryptedIncomingForeignData, encryptedOutgoingData, isRawEncryptedData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
@@ -47,7 +47,7 @@ export type ProtoGIOpKeyRequest = {
   height: number;
   replyWith: SignedData<{
     encryptionKeyId: string;
-    responseKey: string | EncryptedData<string>;
+    responseKey: EncryptedData<string>;
   }>
 }
 export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
@@ -90,17 +90,8 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // extract encrypted data from key.meta?.private?.content
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     return ((message: any): any[]).map((key) => {
-      if (isRawEncryptedData(key)) {
-        return encryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
-          if (!key.meta?.private?.content) return
-          const computedKeyId = keyId(key.meta.private.content)
-          if (computedKeyId !== key.id) {
-            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-          }
-          // Re-encrypt the contents to save it encrypted in the local state
-          key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
-        })
-      } else if (key.meta?.private?.content) {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
+        if (!key.meta?.private?.content) return
         key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           // Validator function to verify the key matches its expected ID
           const computedKeyId = keyId(value)
@@ -108,9 +99,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
           }
         })
-      }
-
-      return key
+      })
     })
   }
 
@@ -118,17 +107,8 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === GIMessage.OP_CONTRACT) {
     (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
-      if (isRawEncryptedData(key)) {
-        return encryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
-          if (!key.meta?.private?.content) return
-          const computedKeyId = keyId(key.meta.private.content)
-          if (computedKeyId !== key.id) {
-            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-          }
-          // Re-encrypt the contents to save it encrypted in the local state
-          key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
-        })
-      } else if (key.meta?.private?.content) {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
+        if (!key.meta?.private?.content) return
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
         // $FlowFixMe
         const decryptionContract = ((message.foreignContractID ? message.foreignContractID : contractID): string)
@@ -138,63 +118,34 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
             throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
           }
         })
-      }
-      return key
+      })
     })
   }
 
   // If the operation is GIMessage.OP_KEY_SHARE,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === GIMessage.OP_KEY_SHARE) {
-    if (isRawEncryptedData(message)) {
-      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message, eKeyId) => {
-        (message: any).keys?.forEach((key) => {
-          if (!key.meta?.private?.content) return
-          const computedKeyId = keyId(key.meta.private.content)
-          if (message.foreignContractID) {
-            const decryptionContract = message.foreignContractID
-            key.meta.private.content = encryptedIncomingForeignData(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
-              const computedKeyId = keyId(value)
-              if (computedKeyId !== key.id) {
-                throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-              }
-            })
-          } else {
-            if (computedKeyId !== key.id) {
-              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-            }
-            // Re-encrypt the contents to save it encrypted in the local state
-            key.meta.private.content = encryptedOutgoingData(state, eKeyId, key.meta.private.content)
+    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message, eKeyId) => {
+      (message: any).keys?.forEach((key) => {
+        if (!key.meta?.private?.content) return
+        const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
+        const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
+        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+          const computedKeyId = keyId(value)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
           }
         })
       })
-    } else {
-      (message: any).keys?.forEach((key) => {
-        if (key.meta?.private?.content) {
-          const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
-          const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
-          key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
-            const computedKeyId = keyId(value)
-            if (computedKeyId !== key.id) {
-              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-            }
-          })
-        }
-      })
-    }
+    })
   }
 
   // If the operation is OP_KEY_REQUEST, the payload might be EncryptedData
   // The ReplyWith attribute is SignedData
   if (op === GIMessage.OP_KEY_REQUEST) {
-    if (isRawEncryptedData(message)) {
-      return encryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (msg) => {
-        msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
-      })
-    } else {
-      const msg = (message: any)
+    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (msg) => {
       msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
-    }
+    })
   }
 
   // If the operation is OP_ACTION_UNENCRYPTED, it may contain an inner
@@ -211,10 +162,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
 
   if ([GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST_SEEN].includes(op)) {
     return ((message: any): any[]).map((key) => {
-      if (isRawEncryptedData(key)) {
-        return encryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
-      }
-      return key
+      return maybeEncryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
     })
   }
 

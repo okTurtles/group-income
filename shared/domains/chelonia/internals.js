@@ -407,7 +407,6 @@ export default (sbp('sbp/selectors/register', {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         let targetState = cheloniaState[v.contractID]
-        const newKeysReceived = []
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
@@ -423,7 +422,6 @@ export default (sbp('sbp/selectors/register', {
                   key: deserializeKey(decrypted),
                   transient: !!key.meta.private.transient
                 }])
-                newKeysReceived.push(key.id)
                 if (
                   targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                     Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
@@ -442,11 +440,6 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
-        }
-
-        // If we already have the keys, we can return as the contract state will not be affected
-        if (newKeysReceived.length === 0) {
-          return
         }
 
         internalSideEffectStack?.push(async () => {
@@ -481,6 +474,8 @@ export default (sbp('sbp/selectors/register', {
                 targetState._volatile.watch.push(...previousVolatileState.watch)
               }
             }
+          } else {
+            sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID })
           }
 
           if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
@@ -518,7 +513,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
+        if (config.skipActionProcessing || env.skipActionProcessing) {
           return
         }
 
@@ -547,7 +542,7 @@ export default (sbp('sbp/selectors/register', {
         self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
       },
       [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
+        if (config.skipActionProcessing || env.skipActionProcessing) {
           return
         }
         // TODO: Handle boolean (success) value

@@ -201,10 +201,11 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
+    await sbp('chelonia/contract/sync', params.contractID)
+
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
     const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
 
-    await sbp('chelonia/contract/sync', params.contractID)
     const state = rootState[params.contractID]
 
     // Add the user's CSK to the contract

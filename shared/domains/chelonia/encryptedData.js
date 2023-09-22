@@ -299,3 +299,12 @@ export const unwrapMaybeEncryptedData = (data: any): { encryptionKeyId: string |
     }
   }
 }
+
+export const maybeEncryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any, id: string) => void): EncryptedData<T> => {
+  if (isRawEncryptedData(data)) {
+    return encryptedIncomingData(contractID, state, data, height, additionalKeys, additionalData)
+  } else {
+    validatorFn?.(data, '')
+    return data
+  }
+}

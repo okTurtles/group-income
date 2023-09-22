@@ -165,7 +165,7 @@ export default (sbp('sbp/selectors/register', {
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
-      const userCEKid = findKeyIdByName(rootState[userID], 'csk')
+      const userCEKid = findKeyIdByName(rootState[userID], 'cek')
       if (!userCEKid) throw new Error('User CEK id not found')
 
       const message = await sbp('chelonia/out/registerContract', {
@@ -308,7 +308,10 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/group',
         signingKeyId: CSKid,
         innerSigningKeyId: userCSKid,
-        encryptionKeyId: userCEKid
+        encryptionKeyId: userCEKid,
+        options: {
+          skipUsableKeysCheck: true
+        }
       })
 
       /*
@@ -385,7 +388,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept?: boolean } }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -404,7 +407,7 @@ export default (sbp('sbp/selectors/register', {
       // Have we got the secret keys to the group? If we haven't, we are not
       // able to participate in the group yet and may need to send a key
       // request.
-      const hasSecretKeys = sbp('chelonia/contract/canPerformOperation', state, '*')
+      const hasSecretKeys = !params.options?.skipUsableKeysCheck && sbp('chelonia/contract/canPerformOperation', state, '*')
       // Do we need to send a key request?
       // If we don't have the group contract in our state and
       // params.originatingContractID is set, it means that we're joining
@@ -431,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
-          sbp('gi.actions/group/join', params)
+          sbp('gi.actions/group/join', { ...params, options: { ...params.options, skipUsableKeysCheck: false } })
         }
 
         // The event handler is configured before sending the request
@@ -587,7 +590,7 @@ export default (sbp('sbp/selectors/register', {
       saveLoginState('joining', params.contractID)
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept: boolean } }) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)

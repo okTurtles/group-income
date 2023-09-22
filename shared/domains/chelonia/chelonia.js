@@ -893,7 +893,7 @@ export default (sbp('sbp/selectors/register', {
       height: rootState.contracts[originatingContractID].height,
       replyWith: signedOutgoingData(originatingState, innerSigningKeyId, {
         encryptionKeyId,
-        responseKey: fullEncryption ? keyRequestReplyKeyS : encryptedOutgoingData(state, innerEncryptionKeyId, keyRequestReplyKeyS)
+        responseKey: encryptedOutgoingData(state, innerEncryptionKeyId, keyRequestReplyKeyS)
       }, this.transientSecretKeys)
     }: GIOpKeyRequest)
     let msg = GIMessage.createV1_0({
