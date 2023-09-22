@@ -24,7 +24,7 @@
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
   // frontend/model/contracts/identity.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp = __toESM(__require("@sbp/sbp"));
   var import_common = __require("@common/common.js");
 
   // frontend/model/contracts/shared/giLodash.js
@@ -216,39 +216,16 @@ ${this.getErrorInfo()}`;
   var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
   var noUppercase = (value) => value.toLowerCase() === value;
 
-  // frontend/model/contracts/shared/functions.js
-  var import_sbp = __toESM(__require("@sbp/sbp"));
-
-  // frontend/model/contracts/shared/constants.js
-  var IDENTITY_USERNAME_MAX_CHARS = 80;
-
   // frontend/views/utils/misc.js
   function logExceptNavigationDuplicated(err) {
     err.name !== "NavigationDuplicated" && console.error(err);
   }
 
-  // frontend/model/contracts/shared/functions.js
-  async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp.default)("state/vuex/getters");
-    if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp.default)("state/vuex/commit", "setCurrentChatRoomId", {
-        groupId: rootState.currentGroupId
-      });
-      const curRouteName = (0, import_sbp.default)("controller/router").history.current.name;
-      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
-      }
-    }
-    (0, import_sbp.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp.default)("chelonia/contract/remove", contractID).catch((e) => {
-      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
-    });
-  }
+  // frontend/model/contracts/shared/constants.js
+  var IDENTITY_USERNAME_MAX_CHARS = 80;
 
   // frontend/model/contracts/identity.js
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp.default)("chelonia/defineContract", {
     name: "gi.contracts/identity",
     getters: {
       currentIdentityState(state) {
@@ -294,9 +271,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           const initialState = merge({
             settings: {},
-            attributes: {
-              allowDMInvite: true
-            },
+            attributes: {},
             chatRooms: {}
           }, data);
           for (const key in initialState) {
@@ -336,9 +311,9 @@ ${this.getErrorInfo()}`;
           import_common.Vue.set(state, "loginState", data);
         },
         sideEffect({ contractID }) {
-          if (contractID === (0, import_sbp2.default)("state/vuex/getters").ourIdentityContractId) {
-            (0, import_sbp2.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
-              (0, import_sbp2.default)("gi.notifications/emit", "ERROR", {
+          if (contractID === (0, import_sbp.default)("state/vuex/getters").ourIdentityContractId) {
+            (0, import_sbp.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
+              (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
                 message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
                   errName: e.name,
                   errMsg: e.message || "?"
@@ -363,9 +338,9 @@ ${this.getErrorInfo()}`;
           });
         },
         async sideEffect({ contractID, data }) {
-          await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
-          if (!(0, import_sbp2.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
+          await (0, import_sbp.default)("chelonia/contract/sync", data.contractID);
+          if (!(0, import_sbp.default)("chelonia/contract/isSyncing", contractID)) {
+            await (0, import_sbp.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
           }
         }
       },
@@ -379,17 +354,14 @@ ${this.getErrorInfo()}`;
           if (getters.ourDirectMessages[contractID]) {
             throw new TypeError((0, import_common.L)("Already joined direct message."));
           }
-          if (groupContractID) {
-            import_common.Vue.set(state.chatRooms, contractID, {
-              groupContractID,
-              visible: state.attributes.allowDMInvite
-            });
-          } else {
-          }
+          import_common.Vue.set(state.chatRooms, contractID, {
+            groupContractID,
+            visible: true
+          });
         },
         async sideEffect({ data }, { getters }) {
           if (getters.ourDirectMessages[data.contractID].visible) {
-            await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+            await (0, import_sbp.default)("chelonia/contract/sync", data.contractID);
           }
         }
       },
@@ -405,10 +377,6 @@ ${this.getErrorInfo()}`;
         },
         process({ data }, { state, getters }) {
           import_common.Vue.set(state.chatRooms[data.contractID], "visible", data.visible);
-        },
-        sideEffect({ data }) {
-          const { contractID, visible } = data;
-          visible ? (0, import_sbp2.default)("chelonia/contract/sync", contractID) : leaveChatRoom({ contractID });
         }
       }
     }

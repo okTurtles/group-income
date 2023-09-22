@@ -11,7 +11,6 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase
 } from './shared/validators.js'
-import { leaveChatRoom } from './shared/functions.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
@@ -62,9 +61,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
-          attributes: {
-            allowDMInvite: true
-          },
+          attributes: {},
           chatRooms: {}
         }, data)
         for (const key in initialState) {
@@ -158,14 +155,10 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Already joined direct message.'))
         }
 
-        if (groupContractID) {
-          Vue.set(state.chatRooms, contractID, {
-            groupContractID,
-            visible: state.attributes.allowDMInvite
-          })
-        } else {
-          // TODO: join a direct message outside of the group
-        }
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true
+        })
       },
       async sideEffect ({ data }, { getters }) {
         if (getters.ourDirectMessages[data.contractID].visible) {
@@ -185,10 +178,6 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state, getters }) {
         Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
-      },
-      sideEffect ({ data }) {
-        const { contractID, visible } = data
-        visible ? sbp('chelonia/contract/sync', contractID) : leaveChatRoom({ contractID })
       }
     }
   }
