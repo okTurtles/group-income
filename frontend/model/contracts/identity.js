@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object, unionOf, boolean, literalOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -11,10 +11,9 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase
 } from './shared/validators.js'
-import { leaveChatRoom } from './shared/functions.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
-import { CHATROOM_PRIVACY_LEVEL, IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -121,14 +120,17 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/createDirectMessage': {
       validate: (data, { state, getters }) => {
         objectOf({
-          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
-          contractID: string
+          // NOTE: 'groupContractID' is the contract ID of the group where the direct messages is created
+          //       it's optional parameter meaning the direct message could be created outside of the group
+          groupContractID: optional(string),
+          contractID: string // NOTE: chatroom contract id
         })(data)
       },
       process ({ data }, { state }) {
-        Vue.set(state.chatRooms, data.contractID, {
-          privacyLevel: data.privacyLevel,
-          hidden: false // NOTE: this attr is used to hide/show direct message
+        const { groupContractID, contractID } = data
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true // NOTE: this attr is used to hide/show direct message
         })
       },
       async sideEffect ({ contractID, data }) {
@@ -143,24 +145,23 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinDirectMessage': {
       validate: objectOf({
-        privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+        groupContractID: optional(string),
         contractID: string
       }),
       process ({ data }, { state, getters }) {
         // NOTE: this method is always created by another
-        if (getters.ourDirectMessages[data.contractID]) {
+        const { groupContractID, contractID } = data
+        if (getters.ourDirectMessages[contractID]) {
           throw new TypeError(L('Already joined direct message.'))
         }
 
-        Vue.set(state.chatRooms, data.contractID, {
-          privacyLevel: data.privacyLevel,
-          // TODO: Handle this attribute properly
-          hidden: Boolean(0) && !state.attributes.autoJoinAllowance
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true
         })
       },
-      async sideEffect ({ contractID, data }, { state, getters }) {
-        // TODO: Handle this attribute properly
-        if (Boolean(1) || state.attributes.autoJoinAllowance) {
+      async sideEffect ({ data }, { getters }) {
+        if (getters.ourDirectMessages[data.contractID].visible) {
           await sbp('chelonia/contract/sync', data.contractID)
         }
       }
@@ -169,18 +170,14 @@ sbp('chelonia/defineContract', {
       validate: (data, { state, getters }) => {
         objectOf({
           contractID: string,
-          hidden: boolean
+          visible: boolean
         })(data)
         if (!getters.ourDirectMessages[data.contractID]) {
           throw new TypeError(L('Not existing direct message.'))
         }
       },
       process ({ data }, { state, getters }) {
-        Vue.set(state.chatRooms[data.contractID], 'hidden', data.hidden)
-      },
-      sideEffect ({ data }) {
-        const { contractID, hidden } = data
-        hidden ? leaveChatRoom({ contractID }) : sbp('chelonia/contract/sync', contractID)
+        Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
       }
     }
   }
