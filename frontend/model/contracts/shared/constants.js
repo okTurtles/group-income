@@ -53,7 +53,7 @@ export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 
 export const CHATROOM_TYPES = {
-  INDIVIDUAL: 'individual',
+  DIRECT_MESSAGE: 'direct-message',
   GROUP: 'group'
 }
 
