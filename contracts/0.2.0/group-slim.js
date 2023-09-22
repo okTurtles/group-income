@@ -7064,7 +7064,7 @@ ${this.getErrorInfo()}`;
   var STATUS_EXPIRED = "expired";
   var STATUS_CANCELLED = "cancelled";
   var CHATROOM_TYPES = {
-    INDIVIDUAL: "individual",
+    DIRECT_MESSAGE: "direct-message",
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {

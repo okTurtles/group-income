@@ -16176,7 +16176,7 @@ ${this.getErrorInfo()}`;
   var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
   var MESSAGE_RECEIVE = "message-receive";
   var CHATROOM_TYPES = {
-    INDIVIDUAL: "individual",
+    DIRECT_MESSAGE: "direct-message",
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
@@ -16404,21 +16404,17 @@ ${this.getErrorInfo()}`;
       });
     }
     let title = `# ${chatRoomName}`;
-    let partnerProfile;
+    let icon;
     if (isDirectMessage) {
-      if (rootGetters.isGroupDirectMessage(contractID)) {
-        title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`;
-      } else {
-        partnerProfile = rootGetters.ourContactProfiles[username];
-        title = `# ${partnerProfile?.displayName || username}`;
-      }
+      title = rootGetters.ourGroupDirectMessages[contractID].title;
+      icon = rootGetters.ourGroupDirectMessages[contractID].picture;
     }
     const path = `/group-chat/${contractID}`;
     const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default;
     const { messageNotification, messageSound } = chatNotificationSettings;
     const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
     const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    shouldNotifyMessage && makeNotification({ title, body: text2, icon: partnerProfile?.picture, path });
+    shouldNotifyMessage && makeNotification({ title, body: text2, icon, path });
     shouldSoundMessage && (0, import_sbp6.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
   (0, import_sbp6.default)("chelonia/defineContract", {
@@ -16469,8 +16465,7 @@ ${this.getErrorInfo()}`;
             },
             attributes: {
               creator: meta.username,
-              deletedDate: null,
-              archivedDate: null
+              deletedDate: null
             },
             users: {},
             messages: []
@@ -16493,13 +16488,10 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash: hash2, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
-            console.warn("Can not join the chatroom which you are already part of");
-            return;
+            throw new Error(`Can not join the chatroom which ${username} is already part of`);
           }
           vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
-          const { type, privacyLevel } = state.attributes;
-          const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
-          if (!state.onlyRenderMessage || isPrivateDM) {
+          if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -16514,9 +16506,7 @@ ${this.getErrorInfo()}`;
           emitMessageEvent({ contractID, hash: hash2 });
           setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           if (username === loggedIn.username) {
-            const { type, privacyLevel } = state.attributes;
-            const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
-            if (isPrivateDM) {
+            if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
               (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
                 chatRoomId: contractID,
                 deletedDate: meta.createdDate
@@ -16590,10 +16580,10 @@ ${this.getErrorInfo()}`;
           const { username, showKickedBy } = data;
           const isKicked = showKickedBy && username !== showKickedBy;
           if (!state.onlyRenderMessage && !state.users[username]) {
-            throw new Error(`Can not leave the chatroom which ${username} are not part of`);
+            throw new Error(`Can not leave the chatroom which ${username} is not part of`);
           }
           vue_esm_default.delete(state.users, username);
-          if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
           const notificationType = isKicked ? MESSAGE_NOTIFICATIONS.KICK_MEMBER : MESSAGE_NOTIFICATIONS.LEAVE_MEMBER;
@@ -16670,7 +16660,7 @@ ${this.getErrorInfo()}`;
             messageHash: newMessage.hash,
             datetime: newMessage.datetime,
             text: newMessage.text,
-            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL,
+            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
             messageType: data.type,
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
@@ -16700,7 +16690,7 @@ ${this.getErrorInfo()}`;
           emitMessageEvent({ contractID, hash: hash2 });
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
-          if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
           const isAlreadyAdded = !!(0, import_sbp6.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);

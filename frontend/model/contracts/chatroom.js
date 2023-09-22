@@ -95,15 +95,11 @@ function messageReceivePostEffect ({
   }
 
   let title = `# ${chatRoomName}`
-  let partnerProfile
+  let icon
   if (isDirectMessage) {
-    if (rootGetters.isGroupDirectMessage(contractID)) {
-      title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`
-    } else {
-      partnerProfile = rootGetters.ourContactProfiles[username]
-      // NOTE: partner identity contract could not be synced at the time of use
-      title = `# ${partnerProfile?.displayName || username}`
-    }
+    // NOTE: partner identity contract could not be synced yet
+    title = rootGetters.ourGroupDirectMessages[contractID].title
+    icon = rootGetters.ourGroupDirectMessages[contractID].picture
   }
   const path = `/group-chat/${contractID}`
 
@@ -114,7 +110,7 @@ function messageReceivePostEffect ({
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  shouldNotifyMessage && makeNotification({ title, body: text, icon: partnerProfile?.picture, path })
+  shouldNotifyMessage && makeNotification({ title, body: text, icon, path })
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
@@ -167,8 +163,7 @@ sbp('chelonia/defineContract', {
           },
           attributes: {
             creator: meta.username,
-            deletedDate: null,
-            archivedDate: null
+            deletedDate: null
           },
           users: {},
           messages: []
@@ -191,16 +186,12 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, id }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
-          // this can happen when we're logging in on another machine, and also in other circumstances
-          console.warn('Can not join the chatroom which you are already part of')
-          return
+          throw new Error(`Can not join the chatroom which ${username} is already part of`)
         }
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        const { type, privacyLevel } = state.attributes
-        const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-        if (!state.onlyRenderMessage || isPrivateDM) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
@@ -219,12 +210,11 @@ sbp('chelonia/defineContract', {
 
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+
         if (username === loggedIn.username) {
-          const { type, privacyLevel } = state.attributes
-          const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-          if (isPrivateDM) {
+          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             // NOTE: To ignore scroll to the message of this hash
-            //       since we don't create notification for join activity in privateDM
+            //       since we don't create notification when join the direct message
             sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
@@ -316,11 +306,11 @@ sbp('chelonia/defineContract', {
         const { username, showKickedBy } = data
         const isKicked = showKickedBy && username !== showKickedBy
         if (!state.onlyRenderMessage && !state.users[username]) {
-          throw new Error(`Can not leave the chatroom which ${username} are not part of`)
+          throw new Error(`Can not leave the chatroom which ${username} is not part of`)
         }
         Vue.delete(state.users, username)
 
-        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
@@ -405,7 +395,7 @@ sbp('chelonia/defineContract', {
           messageHash: newMessage.hash,
           datetime: newMessage.datetime,
           text: newMessage.text,
-          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL,
+          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
           messageType: data.type,
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
@@ -437,7 +427,7 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
-        if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
