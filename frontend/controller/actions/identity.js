@@ -2,6 +2,7 @@
 
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
+  CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES
 } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
@@ -322,7 +323,7 @@ export default (sbp('sbp/selectors/register', {
       // but from the direct messages invited by another
       const chatRoomUsers = uniq(Object.keys(
         pickWhere(state.contracts, ({ type }) => type === 'gi.contracts/chatroom')
-      ).map(cID => Object.keys(state[cID].users)).flat())
+      ).map(cID => Object.keys(state[cID].users || {})).flat())
       const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
         return getters.ourUsername !== username && !getters.ourContacts.includes(username)
       }).map(username => sbp('namespace/lookup', username)))
@@ -498,14 +499,17 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
     const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+    // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
+    //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
+    const currentGroupId = rootState.currentGroupId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
         attributes: {
           name: '',
           description: '',
-          privacyLevel: params.data.privacyLevel, // CHATROOM_PRIVACY_LEVEL.PRIVATE | CHATROOM_PRIVACY_LEVEL.GROUP
-          type: CHATROOM_TYPES.INDIVIDUAL
+          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+          type: CHATROOM_TYPES.DIRECT_MESSAGE
         }
       },
       hooks: {
@@ -539,7 +543,7 @@ export default (sbp('sbp/selectors/register', {
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
       data: {
-        privacyLevel: params.data.privacyLevel,
+        groupContractID: currentGroupId,
         contractID: message.contractID()
       }
     })
@@ -553,7 +557,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: profile.contractID,
         contractName: 'gi.contracts/identity',
-        originatingContractID: rootState.currentGroupId,
+        originatingContractID: currentGroupId,
         originatingContractName: 'gi.contracts/group',
         subjectContractID: message.contractID(),
         keyIds: '*'
@@ -563,12 +567,12 @@ export default (sbp('sbp/selectors/register', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: profile.contractID,
         data: {
-          privacyLevel: params.data.privacyLevel,
+          groupContractID: currentGroupId,
           // TODO: We need to handle multiple groups and the possibility of not
           // having any groups in common
           contractID: message.contractID()
         },
-        signingContractID: rootState.currentGroupId,
+        signingContractID: currentGroupId,
         hooks
       })
     }

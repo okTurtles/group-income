@@ -249,7 +249,6 @@ export default ({
   computed: {
     ...mapGetters([
       'chatRoomUsers',
-      'isPrivateDirectMessage',
       'currentChatRoomId',
       'chatRoomAttributes',
       'ourContactProfiles'
@@ -500,12 +499,18 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      const availableMentions = this.isPrivateDirectMessage()
-        ? this.users
-        : [
-            ...this.users,
-            { username: all, displayName: all, picture: '/assets/images/horn.png' } // TODO: use group picture here or broadcast icon
-          ]
+      let availableMentions = this.users
+      // NOTE: '@all' mention should only be needed when the members are more than 3
+      if (this.users.length > 2) {
+        availableMentions = [
+          ...availableMentions,
+          {
+            username: all,
+            displayName: all,
+            picture: '/assets/images/horn.png'
+          }
+        ]
+      }
       this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))

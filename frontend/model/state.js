@@ -8,13 +8,12 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import {
-  CHATROOM_PRIVACY_LEVEL,
   MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_TYPES,
   INVITE_INITIAL_CREATOR
 } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
-import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
@@ -535,78 +534,63 @@ const getters = {
         return nameA > nameB ? 1 : -1
       })
   },
-  ourPrivateDirectMessages (state, getters) {
-    const privateDMs = {}
-    const contractIDs = Object.keys(getters.ourDirectMessages)
-      .filter(cID => getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && state[cID])
-    for (const contractID of contractIDs) {
-      const usernames = Object.keys(state[contractID].users || {}) // NOTE: empty object is used while syncing the contract
-      const partner = usernames[0] === getters.ourUsername ? usernames[1] : usernames[0]
-      if (partner) {
-        privateDMs[partner] = {
-          ...getters.ourDirectMessages[contractID],
-          contractID
+  ourGroupDirectMessages (state, getters) {
+    const currentGroupDirectMessages = {}
+    for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
+      const chatRoomState = state[chatRoomId]
+      const directMessageSettings = getters.ourDirectMessages[chatRoomId]
+
+      // NOTE: skip DMs whose chatroom contracts are not synced yet
+      if (!chatRoomState || !chatRoomState.users?.[getters.ourUsername]) {
+        continue
+      }
+      // NOTE: get only visible DMs for the current group
+      if (directMessageSettings.groupContractID === state.currentGroupId && directMessageSettings.visible) {
+        const users = Object.keys(chatRoomState.users)
+        const partners = users
+          .filter(username => username !== getters.ourUsername)
+          .sort((p1, p2) => {
+            const p1JoinedDate = new Date(chatRoomState.users[p1].joinedDate).getTime()
+            const p2JoinedDate = new Date(chatRoomState.users[p2].joinedDate).getTime()
+            return p1JoinedDate - p2JoinedDate
+          })
+        // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
+        //       His profile picture can be used as the picture of the direct message
+        //       possibly with the badge of the number of partners.
+        const lastJoinedPartner = partners[partners.length - 1]
+        currentGroupDirectMessages[chatRoomId] = {
+          ...directMessageSettings,
+          users,
+          partners,
+          lastJoinedPartner,
+          title: partners.map(un => getters.ourContactProfiles[un].displayName || un).join(', '),
+          picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
         }
       }
     }
-    return privateDMs
+    return currentGroupDirectMessages
   },
-  ourGroupDirectMessages (state, getters) {
-    const groupDMs = {}
-    for (const cID of Object.keys(getters.ourDirectMessages)) {
-      if (getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP && state[cID]) {
-        groupDMs[cID] = getters.ourDirectMessages[cID]
+  // NOTE: this getter is used to find the ID of the direct message in the current group
+  //       with the name[s] of partner[s]. Normally it's more useful to find direct message
+  //       by the partners instead of contractID
+  ourGroupDirectMessageFromUsernames (state, getters) {
+    return (partners) => { // NOTE: string | string[]
+      if (typeof partners === 'string') {
+        partners = [partners]
       }
+      const currentGroupDirectMessages = getters.ourGroupDirectMessages
+      return Object.keys(currentGroupDirectMessages).find(chatRoomId => {
+        const cPartners = currentGroupDirectMessages[chatRoomId].partners
+        return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
+      })
     }
-    return groupDMs
   },
   isDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
-    return chatRoomId => {
-      const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
-    }
-  },
-  isPrivateDirectMessage (state, getters) {
-    // NOTE: identity contract could not be synced at the time of calling this getter
-    return chatRoomId => {
-      const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
-  },
-  isGroupDirectMessage (state, getters) {
-    return chatRoomId => {
-      const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
-    }
-  },
-  isPrivateChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      const contractID = chatRoomId || getters.currentChatRoomId
-      return state[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
+    return chatRoomId => !!getters.ourGroupDirectMessages[chatRoomId || getters.currentChatRoomId]
   },
   isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => {
-      username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users?.[username]
-    }
-  },
-  groupDirectMessageInfo (state, getters) {
-    return chatRoomId => {
-      const usernames = Object.keys(state[chatRoomId].users).filter(username => username !== getters.ourUsername)
-      const lastJoined = usernames.reduce((lastJoined, username) => {
-        const lastJoinedDate = state[chatRoomId].users[lastJoined].joinedDate
-        const currentJoinedDate = state[chatRoomId].users[username].joinedDate
-        return lastJoinedDate > currentJoinedDate ? lastJoined : username
-      }, usernames[0])
-      return {
-        contractID: chatRoomId,
-        title: usernames.join(', '),
-        othersCount: usernames.length,
-        picture: getters.ourContactProfiles[lastJoined]?.picture
-      }
-    }
+    return (chatRoomId: string, username?: string) => !!state[chatRoomId]?.users?.[username || getters.ourUsername]
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -641,18 +625,6 @@ const getters = {
       .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
       .map(cID => getters.ourUnreadMessages[cID].messages.length)
       .reduce((sum, n) => sum + n, 0)
-  },
-  directMessageIDFromUsername (state, getters) {
-    return (username: string) => getters.ourPrivateDirectMessages[username]?.contractID
-  },
-  usernameFromDirectMessageID (state, getters) {
-    return (chatRoomId: string) => {
-      for (const username of Object.keys(getters.ourPrivateDirectMessages)) {
-        if (getters.ourPrivateDirectMessages[username].contractID === chatRoomId) {
-          return username
-        }
-      }
-    }
   },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)

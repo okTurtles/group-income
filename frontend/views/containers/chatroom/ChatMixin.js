@@ -37,18 +37,14 @@ const ChatMixin: Object = {
       'currentChatRoomState',
       'currentGroupState',
       'groupIdFromChatRoomId',
+      'ourGroupDirectMessages',
       'chatRoomUsers',
       'generalChatRoomId',
       'getGroupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPrivateChatRoom',
       'ourContactProfiles',
-      'isDirectMessage',
-      'isPrivateDirectMessage',
-      'isGroupDirectMessage',
-      'usernameFromDirectMessageID',
-      'groupDirectMessageInfo'
+      'isDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -58,13 +54,9 @@ const ChatMixin: Object = {
 
       let title = this.currentChatRoomState.attributes.name
       let picture
-      if (this.isPrivateDirectMessage(this.currentChatRoomId)) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        const partner = this.ourContactProfiles[partnerUsername]
-        title = partner?.displayName || partnerUsername
-        picture = partner?.picture
-      } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
-        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        title = this.ourGroupDirectMessages[this.currentChatRoomId].title
+        picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
 
       return {
