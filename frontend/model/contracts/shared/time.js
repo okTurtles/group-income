@@ -22,6 +22,7 @@ export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
 ): Object {
+  // $FlowFixMe - Pedantic '[method-unbinding]' error
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
     throw new TypeError('must be ISO string or Date object')
   }
