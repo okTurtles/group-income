@@ -84,6 +84,9 @@ export default ({
       required: true
     }
   },
+  async mounted () {
+    this.relativeTo = await this.historicalPeriodStampGivenDate(this.payment.date)
+  },
   computed: {
     ...mapGetters([
       'withGroupCurrency'
@@ -118,9 +121,6 @@ export default ({
         alert(e.message)
       }
     }
-  },
-  async mounted () {
-    this.relativeTo = await this.historicalPeriodStampGivenDate(this.payment.date)
   }
 }: Object)
 </script>
