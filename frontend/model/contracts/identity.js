@@ -61,9 +61,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
-          attributes: {
-            allowDMInvite: true
-          },
+          attributes: {},
           chatRooms: {}
         }, data)
         for (const key in initialState) {

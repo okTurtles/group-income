@@ -9368,9 +9368,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           const initialState = merge({
             settings: {},
-            attributes: {
-              allowDMInvite: true
-            },
+            attributes: {},
             chatRooms: {}
           }, data);
           for (const key in initialState) {
