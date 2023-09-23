@@ -382,11 +382,60 @@ ${this.getErrorInfo()}`;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
   var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+  var plusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, periodLength));
+  var minusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, -periodLength));
+  function periodStampsForDate(date, { knownSortedStamps, periodLength }) {
+    if (!(isIsoString(date) || Object.prototype.toString.call(date) === "[object Date]")) {
+      throw new TypeError("must be ISO string or Date object");
+    }
+    const timestamp = typeof date === "string" ? date : date.toISOString();
+    let previous, current, next;
+    if (knownSortedStamps.length) {
+      const latest = knownSortedStamps[knownSortedStamps.length - 1];
+      if (timestamp >= latest) {
+        current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength });
+        next = plusOnePeriodLength(current, periodLength);
+        previous = current > latest ? minusOnePeriodLength(current, periodLength) : knownSortedStamps[knownSortedStamps.length - 2];
+      } else {
+        for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
+          if (timestamp >= knownSortedStamps[i]) {
+            current = knownSortedStamps[i];
+            next = knownSortedStamps[i + 1];
+            previous = knownSortedStamps[i - 1];
+            break;
+          }
+        }
+      }
+    }
+    return { previous, current, next };
+  }
   function dateToPeriodStamp(date) {
     return new Date(date).toISOString();
   }
   function dateFromPeriodStamp(daystamp) {
     return new Date(daystamp);
+  }
+  function periodStampGivenDate({ recentDate, periodStart, periodLength }) {
+    const periodStartDate = dateFromPeriodStamp(periodStart);
+    let nextPeriod = addTimeToDate(periodStartDate, periodLength);
+    const curDate = new Date(recentDate);
+    let curPeriod;
+    if (curDate < nextPeriod) {
+      if (curDate >= periodStartDate) {
+        return periodStart;
+      } else {
+        curPeriod = periodStartDate;
+        do {
+          curPeriod = addTimeToDate(curPeriod, -periodLength);
+        } while (curDate < curPeriod);
+      }
+    } else {
+      do {
+        curPeriod = nextPeriod;
+        nextPeriod = addTimeToDate(nextPeriod, periodLength);
+      } while (curDate >= nextPeriod);
+    }
+    return dateToPeriodStamp(curPeriod);
   }
   function dateIsWithinPeriod({ date, periodStart, periodLength }) {
     const dateObj = new Date(date);
@@ -1008,106 +1057,40 @@ ${this.getErrorInfo()}`;
         return getters.groupSettings.mincomeCurrency;
       },
       groupSortedPeriodKeys(state, getters) {
-        return Object.keys(getters.currentGroupState.paymentsByPeriod ?? {}).sort();
+        const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+        if (!distributionDate)
+          return [];
+        const keys = Object.keys(getters.groupPeriodPayments).sort();
+        if (!keys.length && MAX_SAVED_PERIODS > 0) {
+          keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)));
+        }
+        if (keys[keys.length - 1] !== distributionDate) {
+          keys.push(distributionDate);
+        }
+        return keys;
       },
       periodStampGivenDate(state, getters) {
-        return (recentDate) => {
-          if (typeof recentDate !== "string")
-            recentDate = recentDate.toISOString();
-          if (!isIsoString(recentDate))
-            throw new TypeError("must be date or isostring");
-          const { distributionDate, distributionPeriodLength } = getters.groupSettings;
-          if (!distributionDate)
-            return;
-          const sortedPeriodKeys = getters.groupSortedPeriodKeys;
-          if (recentDate >= distributionDate) {
-            const extrapolatedDistributionDate = addTimeToDate(distributionDate, distributionPeriodLength).toISOString();
-            if (recentDate >= extrapolatedDistributionDate) {
-              return dateToPeriodStamp(extrapolatedDistributionDate);
-            }
-            return dateToPeriodStamp(distributionDate);
-          }
-          if (!sortedPeriodKeys.length) {
-            const waitingPeriodStamp = dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength));
-            return recentDate >= dateFromPeriodStamp(waitingPeriodStamp).toISOString() ? waitingPeriodStamp : void 0;
-          }
-          const oldestKnownStamp = sortedPeriodKeys[0];
-          const latestKnownStamp = sortedPeriodKeys[sortedPeriodKeys.length - 1];
-          if (recentDate < oldestKnownStamp)
-            return;
-          if (recentDate >= latestKnownStamp) {
-            const extrapolatedPeriodStamp = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(latestKnownStamp), distributionPeriodLength));
-            if (recentDate >= extrapolatedPeriodStamp)
-              return extrapolatedPeriodStamp;
-            return latestKnownStamp;
-          }
-          for (let i = 1; i < sortedPeriodKeys.length; i++) {
-            if (recentDate < sortedPeriodKeys)
-              return sortedPeriodKeys[i - 1];
-          }
+        return (date) => {
+          return periodStampsForDate(date, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).current;
         };
       },
       periodBeforePeriod(state, getters) {
         return (periodStamp) => {
-          if (!isPeriodStamp(periodStamp))
-            throw new TypeError("must be periodStamp");
-          const { distributionDate, distributionPeriodLength } = getters.groupSettings;
-          if (!distributionDate)
-            return;
-          const distributionDateStamp = dateToPeriodStamp(distributionDate);
-          const sortedPeriodKeys = getters.groupSortedPeriodKeys;
-          const latestKnownStamp = sortedPeriodKeys[sortedPeriodKeys.length - 1];
-          if (periodStamp > distributionDateStamp) {
-            const onePeriodLenghtAhead = addTimeToDate(distributionDate, distributionPeriodLength);
-            if (periodStamp === dateToPeriodStamp(onePeriodLenghtAhead))
-              return distributionDate;
-            else
-              return;
-          }
-          if (periodStamp === distributionDateStamp) {
-            if (sortedPeriodKeys.length) {
-              if (latestKnownStamp !== distributionDateStamp)
-                return latestKnownStamp;
-              else
-                return sortedPeriodKeys[sortedPeriodKeys.length - 2] ?? void 0;
-            } else {
-              return dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength));
-            }
-          }
-          const index = sortedPeriodKeys.indexOf(periodStamp);
-          if (index === -1) {
-            const maybePreviousStamp = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -distributionPeriodLength));
-            return sortedPeriodKeys.includes(maybePreviousStamp) ? maybePreviousStamp : void 0;
-          }
-          if (index === 0)
-            return;
-          return sortedPeriodKeys[index - 1];
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).previous;
         };
       },
       periodAfterPeriod(state, getters) {
         return (periodStamp) => {
-          if (!isPeriodStamp(periodStamp))
-            throw new TypeError("must be periodStamp");
-          const { distributionDate, distributionPeriodLength } = getters.groupSettings;
-          if (!distributionDate)
-            return;
-          const distributionDateStamp = dateToPeriodStamp(distributionDate);
-          const sortedPeriodKeys = getters.groupSortedPeriodKeys;
-          if (periodStamp > distributionDateStamp)
-            return;
-          if (periodStamp === distributionDateStamp) {
-            return dateToPeriodStamp(addTimeToDate(distributionDate, distributionPeriodLength));
-          }
-          if (!sortedPeriodKeys.length) {
-            const waitingPeriodStamp = dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength));
-            return periodStamp === waitingPeriodStamp ? distributionDate : void 0;
-          }
-          const index = sortedPeriodKeys.indexOf(periodStamp);
-          if (index === -1)
-            return;
-          if (index === sortedPeriodKeys.length - 1)
-            return dateToPeriodStamp(distributionDate);
-          return sortedPeriodKeys[index + 1];
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).next;
         };
       },
       dueDateForPeriod(state, getters) {
@@ -1860,10 +1843,7 @@ ${this.getErrorInfo()}`;
         process({ meta }, { state, getters }) {
           const period = getters.periodStampGivenDate(meta.createdDate);
           const current = getters.groupSettings?.distributionDate;
-          const inWaitingPeriod = !current || new Date().toISOString() < current;
-          if (inWaitingPeriod && meta.createdDate !== current) {
-            getters.groupSettings.distributionDate = meta.createdDate;
-          } else if (current !== period) {
+          if (current !== period) {
             updateGroupStreaks({ state, getters });
             getters.groupSettings.distributionDate = period;
           }
