@@ -44,7 +44,6 @@ export default ({
     ProgressBar
   },
   methods: {
-    humanDate,
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
@@ -66,10 +65,10 @@ export default ({
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     humanDueDate () {
-      return this.humanDate(this.dueDateForPeriod(this.currentPaymentPeriod))
+      return humanDate(this.dueDateForPeriod(this.currentPaymentPeriod))
     },
     humanStartDate () {
-      return this.humanDate(this.periodStampGivenDate(this.currentPaymentPeriod))
+      return humanDate(this.periodStampGivenDate(this.currentPaymentPeriod))
     },
     summaryCopy () {
       const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
