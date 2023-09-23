@@ -21,7 +21,7 @@
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
 
     template(slot='cellRelativeTo')
-      .c-relative-to.has-text-1 {{ humanDate(payment.relativeTo) }}
+      .c-relative-to.has-text-1 {{ humanDate(payment.period) }}
 
     template(slot='cellActions')
       payment-actions-menu
@@ -65,20 +65,12 @@ export default ({
     PaymentNotReceivedTooltip,
     PaymentRow
   },
-  data () {
-    return {
-      relativeTo: null
-    }
-  },
   mixins: [PaymentsMixin],
   props: {
     payment: {
       type: Object,
       required: true
     }
-  },
-  async mounted () {
-    this.relativeTo = await this.historicalPeriodStampGivenDate(this.payment.date)
   },
   computed: {
     ...mapGetters([
@@ -89,7 +81,7 @@ export default ({
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     },
     isOldPayment () {
-      // check if it's a past transaction item.
+      // Check if the payment is relative to an older period.
       return comparePeriodStamps(this.payment.period, this.currentPaymentPeriod) < 0
     }
   },
