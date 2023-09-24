@@ -16798,6 +16798,9 @@ ${this.getErrorInfo()}`;
   var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight === void 0)?.id;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight === void 0 && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
+  // frontend/model/notifications/mutationKeys.js
+  var REMOVE_NOTIFICATION = "removeNotification";
+
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {
     let value = obj[key];
@@ -17480,6 +17483,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp6.default)("state/vuex/state");
+          const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
@@ -17504,6 +17508,9 @@ ${this.getErrorInfo()}`;
             }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID)).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
             });
+            for (const notification of rootGetters.notificationsByGroup(contractID)) {
+              (0, import_sbp6.default)("state/vuex/commit", REMOVE_NOTIFICATION, notification);
+            }
           } else {
             const myProfile = getters.groupProfile(username);
             if (isActionYoungerThanUser(meta, myProfile)) {
