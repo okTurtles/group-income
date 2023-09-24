@@ -21,6 +21,7 @@ import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
+import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -904,6 +905,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
+        const rootGetters = sbp('state/vuex/getters')
         const contracts = rootState.contracts || {}
         const { username } = rootState.loggedIn
 
@@ -946,6 +948,11 @@ sbp('chelonia/defineContract', {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
             })
           // TODO - #828 remove other group members contracts if applicable
+
+          // NOTE: remove all notifications whose scope is in this group
+          for (const notification of rootGetters.notificationsByGroup(contractID)) {
+            sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
+          }
         } else {
           const myProfile = getters.groupProfile(username)
 
