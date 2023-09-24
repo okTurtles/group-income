@@ -42,8 +42,9 @@ function initGroupProfile (contractID: string, joinedDate: string) {
   }
 }
 
-function initPaymentPeriod ({ getters }) {
+function initPaymentPeriod ({ meta, getters }) {
   return {
+    start: getters.periodStampGivenDate(meta.createdDate),
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -85,7 +86,7 @@ function clearOldPayments ({ contractID, state, getters }) {
 
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
+  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
   clearOldPayments({ contractID, state, getters })
   return periodPayments
 }
