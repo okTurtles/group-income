@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate, plusOnePeriodLength } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -43,8 +43,10 @@ function initGroupProfile (contractID: string, joinedDate: string) {
 }
 
 function initPaymentPeriod ({ meta, getters }) {
+  const start = getters.periodStampGivenDate(meta.createdDate)
   return {
-    start: getters.periodStampGivenDate(meta.createdDate),
+    start,
+    end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -87,6 +89,11 @@ function clearOldPayments ({ contractID, state, getters }) {
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
+  const previousPeriod = getters.periodBeforePeriod(period)
+  // Update the '.end' field of the previous in-memory period, if any.
+  if (previousPeriod in state.paymentsByPeriod) {
+    state.paymentsByPeriod[previousPeriod].end = period
+  }
   clearOldPayments({ contractID, state, getters })
   return periodPayments
 }
