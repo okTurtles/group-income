@@ -14,7 +14,11 @@ export interface EncryptedData<T> {
 }
 
 // `proto` & `wrapper` are utilities for `isEncryptedData`
-const proto: Object = Object.create(null)
+const proto: Object = Object.create(null, {
+  _isEncryptedData: {
+    value: true
+  }
+})
 
 const wrapper = <T>(o: T): T => {
   return Object.setPrototypeOf(o, proto)
@@ -24,7 +28,7 @@ const wrapper = <T>(o: T): T => {
 // `encrypt*Data` functions. It's meant to implement functionality equivalent
 // to `o instanceof EncryptedData`
 export const isEncryptedData = (o: any): boolean => {
-  return !!o && Object.getPrototypeOf(o) === proto
+  return !!o && !!Object.getPrototypeOf(o)?._isEncryptedData
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing some
@@ -302,7 +306,7 @@ export const unwrapMaybeEncryptedData = (data: any): { encryptionKeyId: string |
 
 export const maybeEncryptedIncomingData = <T>(contractID: string, state: Object, data: any, height: number, additionalKeys?: Object, additionalData?: string, validatorFn?: (v: any, id: string) => void): EncryptedData<T> => {
   if (isRawEncryptedData(data)) {
-    return encryptedIncomingData(contractID, state, data, height, additionalKeys, additionalData)
+    return encryptedIncomingData(contractID, state, data, height, additionalKeys, additionalData, validatorFn)
   } else {
     validatorFn?.(data, '')
     return data

@@ -1472,6 +1472,7 @@ sbp('chelonia/defineContract', {
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
       const PEKid = findKeyIdByName(state, 'pek')
 
       const groupCSKids = findForeignKeysByContractID(state, groupContractID)
@@ -1479,16 +1480,24 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
       if (groupCSKids?.length) {
+        if (!CEKid) {
+          throw new Error('Identity CEK not found')
+        }
+
         sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
           contractID: identityContractID,
           contractName: 'gi.contracts/identity',
-          data: groupCSKids,
+          data: groupCSKids.map((k) => encryptedOutgoingData(state, CEKid, k)),
           signingKeyId: CSKid
         }])
           .catch(e => {
             console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
           })
       }
+
+      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
+        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
 
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)

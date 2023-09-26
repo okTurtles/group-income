@@ -91,14 +91,22 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
     return ((message: any): any[]).map((key) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
-        if (!key.meta?.private?.content) return
-        key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+        if (key.meta?.private?.content) {
+          key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           // Validator function to verify the key matches its expected ID
-          const computedKeyId = keyId(value)
-          if (computedKeyId !== key.id) {
-            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            const computedKeyId = keyId(value)
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+          })
+        }
+        if (key.meta?.keyRequest?.contractID) {
+          try {
+            key.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf()
+          } catch {
+            delete key.meta.keyRequest.contractID
           }
-        })
+        }
       })
     })
   }
@@ -125,7 +133,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // If the operation is GIMessage.OP_KEY_SHARE,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === GIMessage.OP_KEY_SHARE) {
-    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message, eKeyId) => {
+    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message) => {
       (message: any).keys?.forEach((key) => {
         if (!key.meta?.private?.content) return
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
@@ -160,10 +168,14 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     return message
   }
 
-  if ([GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST_SEEN].includes(op)) {
+  if (op === GIMessage.OP_KEY_DEL) {
     return ((message: any): any[]).map((key) => {
-      return maybeEncryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+      return maybeEncryptedIncomingData(contractID, state, (key: any), height, additionalKeys, headJSON, undefined)
     })
+  }
+
+  if (op === GIMessage.OP_KEY_REQUEST_SEEN) {
+    return maybeEncryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
   }
 
   // If the operation is OP_ATOMIC, call this function recursively

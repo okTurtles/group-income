@@ -124,6 +124,8 @@ export type ChelKeyRequestParams = {
   encryptionKeyId: string;
   innerEncryptionKeyId: string;
   fullEncryption?: boolean;
+  permissions?: '*' | string[];
+  allowedActions?: '*' | string[];
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -353,12 +355,12 @@ export default (sbp('sbp/selectors/register', {
     const revokedKeyIds = findRevokedKeyIdsByName(contractIDOrState, name)
     return currentKeyId ? [currentKeyId, ...revokedKeyIds] : revokedKeyIds
   },
-  'chelonia/contract/suitableSigningKey': function (contractIDOrState: string | Object, permissions, purposes, ringLevel) {
+  'chelonia/contract/suitableSigningKey': function (contractIDOrState: string | Object, permissions, purposes, ringLevel, allowedActions) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
       contractIDOrState = rootState[contractIDOrState]
     }
-    const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel)
+    const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel, allowedActions)
     return keyId
   },
   // TODO: allow connecting to multiple servers at once
@@ -563,6 +565,26 @@ export default (sbp('sbp/selectors/register', {
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
+  'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
+    const state = sbp(this.config.stateSelector)
+    const contractState = state[contractID]
+
+    const keyIds = Object.values(contractState._vm.authorizedKeys).filter((k) => {
+      // $FlowFixMe
+      return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractIDToDisconnect
+    }).map(k => (k: any).id)
+
+    console.log('chelonia/contract/disconnect:  ', { keyIds })
+
+    if (!keyIds.length) return
+
+    return await sbp('chelonia/out/keyDel', {
+      contractID,
+      contractName: contractState._vm.type,
+      data: keyIds,
+      signingKeyId: findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'])
+    })
+  },
   'chelonia/in/processMessage': (message: GIMessage, state: Object) => {
     const stateCopy = cloneDeep(state)
     return sbp('chelonia/private/in/processMessage', message, stateCopy).then(() => stateCopy).catch((e) => {
@@ -730,6 +752,7 @@ export default (sbp('sbp/selectors/register', {
         GIMessage.OP_KEY_SHARE,
         params.signingKeyId
           ? signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+          // $FlowFixMe
           : signedOutgoingDataWithRawKey(params.signingKey, payload)
       ],
       manifest: destinationManifestHash
@@ -874,14 +897,19 @@ export default (sbp('sbp/selectors/register', {
         name: 'krrk-' + keyRequestReplyKeyId,
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
-        permissions: [GIMessage.OP_KEY_SHARE],
+        permissions: params.permissions === '*'
+          ? '*'
+          : Array.isArray(params.permissions)
+            ? [...params.permissions, GIMessage.OP_KEY_SHARE]
+            : [GIMessage.OP_KEY_SHARE],
+        allowedActions: params.allowedActions,
         meta: {
           private: {
             content: encryptedOutgoingData(originatingState, encryptionKeyId, keyRequestReplyKeyS),
             shareable: false
           },
           keyRequest: {
-            contractID: fullEncryption ? encryptedOutgoingData(originatingState, contractID, keyRequestReplyKeyS) : contractID
+            contractID: fullEncryption ? encryptedOutgoingData(originatingState, encryptionKeyId, contractID) : contractID
           }
         },
         data: keyRequestReplyKeyP
@@ -1007,8 +1035,9 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
+  const innerSigningKey = this.transientSecretKeys[params.innerSigningKeyId]
   const signedMessage = params.innerSigningKeyId
-    ? signedOutgoingData(state, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)
+    ? signedOutgoingDataWithRawKey(innerSigningKey, (unencMessage: any), this.transientSecretKeys)
     : unencMessage
   if (opType === GIMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
     throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')

@@ -84,7 +84,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: '*',
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,

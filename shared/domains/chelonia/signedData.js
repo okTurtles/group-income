@@ -18,7 +18,11 @@ export interface SignedData<T> {
 }
 
 // `proto` & `wrapper` are utilities for `isSignedData`
-const proto: Object = Object.create(null)
+const proto: Object = Object.create(null, {
+  _isSignedData: {
+    value: true
+  }
+})
 
 const wrapper = <T>(o: T): T => {
   return Object.setPrototypeOf(o, proto)
@@ -28,7 +32,7 @@ const wrapper = <T>(o: T): T => {
 // `signed*Data` functions. It's meant to implement functionality equivalent
 // to `o instanceof SignedData`
 export const isSignedData = (o: any): boolean => {
-  return !!o && Object.getPrototypeOf(o) === proto
+  return !!o && !!Object.getPrototypeOf(o)?._isSignedData
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing some

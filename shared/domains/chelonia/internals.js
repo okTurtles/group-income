@@ -7,9 +7,9 @@ import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey } from './crypto.js'
+import { deserializeKey, keyId } from './crypto.js'
 import './db.js'
-import { encryptedIncomingData, encryptedOutgoingData, isRawEncryptedData, unwrapMaybeEncryptedData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
@@ -37,7 +37,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
   }).filter(Boolean)
 
   const keysCopy = cloneDeep(keys)
-  return Object.fromEntries(keysCopy.map(key => {
+  return Object.fromEntries(keysCopy.map((key, i) => {
     key._notBeforeHeight = height
     if (authorizedKeys?.[key.id]) {
       if (authorizedKeys[key.id]._notAfterHeight == null) {
@@ -196,6 +196,13 @@ export default (sbp('sbp/selectors/register', {
     saferEval({
       // pass in globals that we want access to by default in the sandbox
       // note: you can undefine these by setting them to undefined in exposedGlobals
+      ...(typeof self !== 'undefined' && {
+        self: {
+          crypto: {
+            getRandomValues: (v) => self.crypto.getRandomValues(v)
+          }
+        }
+      }),
       console,
       Object,
       Error,
@@ -208,8 +215,12 @@ export default (sbp('sbp/selectors/register', {
       // $FlowFixMe
       BigInt,
       Boolean,
+      Buffer,
       String,
       Number,
+      Int8Array,
+      Int16Array,
+      Int32Array,
       Uint8Array,
       Uint16Array,
       Uint32Array,
@@ -634,7 +645,7 @@ export default (sbp('sbp/selectors/register', {
         if (Array.isArray(state._volatile?.watch)) {
           const updatedKeysMap = Object.create(null)
 
-          v.forEach((keyId) => {
+          keyIds.forEach((keyId) => {
             updatedKeysMap[state._vm.authorizedKeys[keyId].name] = {
               name: state._vm.authorizedKeys[keyId].name,
               oldKeyId: keyId
@@ -661,7 +672,7 @@ export default (sbp('sbp/selectors/register', {
           }
           config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
         }
-        keyAdditionProcessor.call(self, updatedKeys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, (updatedKeys: any), state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
@@ -867,7 +878,7 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      const [fullEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [string, string, [string, Object, number, string]])
+      const [fullEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
 
       // 1. Sync (originating) identity contract
 
@@ -885,11 +896,11 @@ export default (sbp('sbp/selectors/register', {
         // 2. Verify 'data'
         const { encryptionKeyId } = v
 
-        const responseKey = isRawEncryptedData(v.responseKey)
-          ? encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
-          : v.responseKey
+        const responseKey = encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
 
         const deserializedResponseKey = deserializeKey(responseKey)
+
+        sbp('chelonia/storeSecretKeys', { key: deserializedResponseKey })
 
         const keys = pick(
           state['secretKeys'],
@@ -907,8 +918,6 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/out/keyShare', {
           contractID: originatingContractID,
           contractName: originatingContractName,
-          originatingContractName: contractName,
-          originatingContractID: contractID,
           data: {
             contractID: contractID,
             keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
@@ -926,6 +935,7 @@ export default (sbp('sbp/selectors/register', {
 
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
+        // TODO: Combine these two operations (KRR and KS) into one using OP_ATOMIC
         await sbp('chelonia/out/keyRequestResponse', {
           contractID,
           contractName,
@@ -933,6 +943,26 @@ export default (sbp('sbp/selectors/register', {
           data: fullEncryption
             ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
             : payload
+        })
+
+        await sbp('chelonia/out/keyShare', {
+          contractID,
+          contractName,
+          data: {
+            contractID: originatingContractID,
+            keys: [
+              {
+                id: keyId(deserializedResponseKey),
+                meta: {
+                  private: {
+                    content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                    shareable: true
+                  }
+                }
+              }
+            ]
+          },
+          signingKeyId
         })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)

@@ -195,7 +195,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            permissions: '*',
             allowedActions: '*',
             meta: {
               private: {
@@ -219,8 +219,10 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: inviteKeyP
-          },
-          encryptedOutgoingDataWithRawKey(CEK, {
+          }
+          /* ,
+           // TODO: If this is needed, explain why this is wrapped
+           encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
             id: userCSKid,
             data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -229,7 +231,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
             name: `${userID}/${userCSKid}`
-          })
+          }) */
         ],
         data: {
           settings: {
@@ -283,7 +285,8 @@ export default (sbp('sbp/selectors/register', {
         data: {
           inviteKeyId,
           creator: INVITE_INITIAL_CREATOR
-        }
+        },
+        innerSigningContractID: null
       })
 
       // create a 'General' chatroom contract
@@ -298,7 +301,8 @@ export default (sbp('sbp/selectors/register', {
           }
         },
         signingKeyId: CSKid,
-        encryptionKeyId: CEKid
+        encryptionKeyId: CEKid,
+        innerSigningContractID: null
       })
 
       await sbp('gi.actions/group/joinAndSwitch', {
@@ -404,7 +408,8 @@ export default (sbp('sbp/selectors/register', {
 
       const state = rootState[params.contractID]
 
-      // Have we got the secret keys to the group? If we haven't, we are not
+      // Do we have the secret keys with the right permissions to be able to
+      // perform all operations in the group? If we haven't, we are not
       // able to participate in the group yet and may need to send a key
       // request.
       const hasSecretKeys = !params.options?.skipUsableKeysCheck && sbp('chelonia/contract/canPerformOperation', state, '*')
@@ -448,6 +453,9 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
+          permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+          allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+          fullEncryption: true,
           hooks: {
             prepublish: params.hooks?.prepublish,
             postpublish: null
@@ -506,7 +514,7 @@ export default (sbp('sbp/selectors/register', {
           // Send inviteAccept action to the group to add ourselves to the
           // members list
           await sbp('gi.actions/group/inviteAccept', {
-            ...omit(params, ['options', 'action', 'hooks']),
+            ...omit(params, ['options', 'action', 'hooks', 'signingKeyId']),
             hooks: {
               prepublish: params.hooks?.prepublish,
               postpublish: null
@@ -536,7 +544,7 @@ export default (sbp('sbp/selectors/register', {
           if (generalChatRoomId) {
             // Join the general chatroom
             await sbp('gi.actions/group/joinChatRoom', {
-              ...omit(params, ['options', 'data', 'hooks']),
+              ...omit(params, ['options', 'data', 'hooks', 'signingKeyId']),
               data: {
                 chatRoomID: generalChatRoomId
               },
@@ -722,8 +730,6 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: rootGetters.ourContactProfiles[username].contractID,
         contractName: 'gi.contracts/identity',
-        originatingContractID: params.contractID,
-        originatingContractName: 'gi.contracts/group',
         subjectContractID: params.data.chatRoomID,
         keyIds: '*'
       })

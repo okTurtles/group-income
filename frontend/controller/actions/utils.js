@@ -66,7 +66,7 @@ export const encryptedAction = (
           state[innerSigningContractID] = await sbp('chelonia/latestContractState', innerSigningContractID)
         }
 
-        const signingKeyId = findKeyIdByName(state[signingContractID], signingKeyName ?? 'csk')
+        const signingKeyId = params.signingKeyId || findKeyIdByName(state[signingContractID], signingKeyName ?? 'csk')
         const innerSigningKeyId = params.innerSigningKeyId || (
           innerSigningContractID && findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
         )

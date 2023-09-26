@@ -206,7 +206,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
             allowedActions: '*',
             meta: {
               private: {
@@ -553,8 +553,6 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: profile.contractID,
         contractName: 'gi.contracts/identity',
-        originatingContractID: rootState.currentGroupId,
-        originatingContractName: 'gi.contracts/group',
         subjectContractID: message.contractID(),
         keyIds: '*'
       })
@@ -568,13 +566,10 @@ export default (sbp('sbp/selectors/register', {
           // having any groups in common
           contractID: message.contractID()
         },
-        // For now, we're repeating the signingContractID and the
-        // innerSigningContractID. The outer signing contract ID (this) might be
-        // changed if we encrypt some of the OP_KEY_* opcodes
-        // Otherwise, we could set innerSigningContractID to <null> to avoid
-        // a double signature with the same key
-        signingContractID: rootState.currentGroupId,
-        innerSigningContractID: null,
+        // For now, we assume that we're messaging someone which whom we
+        // share a group
+        signingKeyId: sbp('chelonia/contract/suitableSigningKey', profile.contractID, [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        innerSigningContractID: rootState.currentGroupId,
         hooks
       })
     }

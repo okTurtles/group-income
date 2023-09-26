@@ -1,6 +1,7 @@
 import { has, pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -21,8 +22,6 @@ sbp('sbp/selectors/register', {
   'gi.actions/out/shareVolatileKeys': async ({
     contractID,
     contractName,
-    originatingContractID,
-    originatingContractName,
     subjectContractID,
     keyIds
   }) => {
@@ -33,10 +32,9 @@ sbp('sbp/selectors/register', {
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
     const state = await sbp('chelonia/latestContractState', contractID)
-    const originatingContractState = originatingContractID && originatingContractID !== contractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
 
     const CEKid = findKeyIdByName(state, 'cek')
-    const CSKid = findKeyIdByName(originatingContractState, 'csk')
+    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
 
     if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
       throw new Error('Missing CEK; unable to proceed sharing keys')
@@ -59,23 +57,23 @@ sbp('sbp/selectors/register', {
       throw new TypeError('Invalid parameter: keyIds')
     }
 
+    const payload = {
+      contractID: subjectContractID,
+      keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+        id: keyId,
+        meta: {
+          private: {
+            content: encryptedOutgoingData(state, CEKid, key)
+          }
+        }
+      }))
+    }
+
     await sbp('chelonia/out/keyShare', {
       contractID,
       contractName,
-      originatingContractID,
-      originatingContractName,
-      data: encryptedOutgoingData(state, CEKid, {
-        contractID: subjectContractID,
-        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
-          id: keyId,
-          meta: {
-            private: {
-              content: key
-            }
-          }
-        }))
-      }),
-      signingKeyId: CSKid
+      data: encryptedOutgoingData(state, CEKid, payload),
+      signingKeyId: signingKeyId
     })
   },
   // TODO: Move to chelonia

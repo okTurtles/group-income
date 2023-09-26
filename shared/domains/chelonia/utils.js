@@ -15,19 +15,28 @@ export const findForeignKeysByContractID = (state: Object, contractID: string): 
 
 export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight !== undefined).map(k => k.id)
 
-export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string => {
+export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, allowedActions?: '*' | string[]): ?string => {
   return state._vm?.authorizedKeys &&
-    ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) =>
-      (k._notAfterHeight === undefined) &&
-      (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
-      sbp('chelonia/haveSecretKey', k.id) &&
-      (Array.isArray(permissions)
-        ? permissions.reduce((acc, permission) =>
-          acc && (k.permissions === '*' || k.permissions.includes(permission)), true
+    ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[])
+      .filter((k) => {
+        return k._notAfterHeight === undefined &&
+        (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
+        sbp('chelonia/haveSecretKey', k.id) &&
+        (Array.isArray(permissions)
+          ? permissions.reduce((acc, permission) =>
+            acc && (k.permissions === '*' || k.permissions.includes(permission)), true
+          )
+          : permissions === k.permissions
+        ) &&
+      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true) &&
+      (Array.isArray(allowedActions)
+        ? allowedActions.reduce((acc, action) =>
+          acc && (k.allowedActions === '*' || k.allowedActions?.includes(action)), true
         )
-        : permissions === k.permissions
-      ) &&
-      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.id
+        : allowedActions ? allowedActions === k.allowedActions : true
+      )
+      })
+      .sort((a, b) => b.ringLevel - a.ringLevel)[0]?.id
 }
 
 // TODO: Resolve inviteKey being added (doesn't have krs permission)
@@ -40,7 +49,9 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
         ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission)), true)
         : permissions === k.permissions
       ) &&
-      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.map((k) => k.id)
+      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))
+      .sort((a, b) => b.ringLevel - a.ringLevel)
+      .map((k) => k.id)
 }
 
 const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string, opV: GIOpActionUnencrypted) => {
@@ -189,7 +200,10 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
       if (!data) return
       const id = data.data
       const k = state._vm.authorizedKeys[id]
-      if (!k) throw new Error('Nonexisting key ID ' + id)
+      if (!k) {
+        console.log({ id, _vm: { ...state._vm } })
+        throw new Error('Nonexisting key ID ' + id)
+      }
       if (signingKey._private && !data.encryptionKeyId) {
         throw new Error('Signing key is private but it tried removing a public key')
       }
