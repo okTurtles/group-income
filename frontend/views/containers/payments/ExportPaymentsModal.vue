@@ -5,15 +5,6 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
 
   i18n.c-sub-title.has-text-1(:args='{ type: paymentType }') Export your {type} payment history to .csv
 
-  .c-all-period-checkbox
-    label.checkbox
-      input.input(
-        type='checkbox'
-        name='all-period'
-        v-model='form.allPeriod'
-      )
-      i18n Export all periods
-
   label.field
     .label
       i18n Payment period
@@ -22,7 +13,6 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
       select.select.c-period-select(
         name='period'
         required=''
-        :disabled='form.allPeriod'
         v-model='form.period'
         :class='{ "is-empty": form.period === "choose" }'
       )
@@ -31,6 +21,9 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
           :disabled='true'
         )
           i18n Select payment period
+
+        option(value='all')
+          i18n Export all periods
 
         option(
           v-for='period in ephemeral.periodOpts'
@@ -48,7 +41,7 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
     i18n(
       tag='button'
       @click='exportToCSV'
-      :disabled='!form.allPeriod && form.period === "choose"'
+      :disabled='form.period === "choose"'
     ) Export payments
 
     a.c-invisible-download-helper(
@@ -72,8 +65,7 @@ export default ({
   data () {
     return {
       form: {
-        period: 'choose',
-        allPeriod: false
+        period: 'choose'
       },
       ephemeral: {
         periodOpts: [],
@@ -107,7 +99,7 @@ export default ({
     exportToCSV () {
       // logic here is inspired from the article below:
       // https://medium.com/@idorenyinudoh10/how-to-export-data-from-javascript-to-a-csv-file-955bdfc394a9
-      const itemsToExport = this.form.allPeriod
+      const itemsToExport = this.form.period === 'all'
         ? this.data
         : this.data.filter(
           entry => entry.period === this.form.period
@@ -178,6 +170,7 @@ export default ({
   position: relative;
   width: 100%;
   text-align: left;
+  margin-bottom: 1.5rem;
 }
 
 .c-btns-container {
@@ -185,17 +178,6 @@ export default ({
   margin-top: 2rem;
   width: 100%;
   justify-content: space-between;
-}
-
-.c-all-period-checkbox {
-  position: relative;
-  margin-top: 0.25rem;
-  margin-bottom: 1.5rem;
-  width: 100%;
-
-  .checkbox {
-    margin-right: 0;
-  }
 }
 
 .c-invisible-download-helper {
