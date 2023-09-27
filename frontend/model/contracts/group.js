@@ -958,7 +958,7 @@ sbp('chelonia/defineContract', {
             const rootGetters = sbp('state/vuex/getters')
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID
             if (userID) {
-              sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
+              sbp('gi.contracts/group/removeForeignKeys', contractID, userID, state)
             }
           }
           // TODO - #828 remove the member contract if applicable.
@@ -1503,7 +1503,7 @@ sbp('chelonia/defineContract', {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
-    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+    'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
       const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return
