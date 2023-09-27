@@ -102,6 +102,10 @@ sbp('sbp/selectors/register', {
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
 
+    if (!newKeys.length) {
+      return
+    }
+
     // $FlowFixMe
     const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
@@ -141,7 +145,7 @@ sbp('sbp/selectors/register', {
       }
     })
 
-    const signingKeyId = findSuitableSecretKeyId(state, [], ['sig'], ringLevel)
+    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
       throw new Error('No suitable signing key found')

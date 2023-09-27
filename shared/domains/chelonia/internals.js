@@ -599,15 +599,17 @@ export default (sbp('sbp/selectors/register', {
           const data = unwrapMaybeEncryptedData(k)
           if (!data) return undefined
           return data.data
-        }): any): string[])
-        keyIds.forEach((keyId) => {
-          if (keyId === undefined) return
-
-          const key = state._vm.authorizedKeys[keyId]
-          if (!key) {
+        }): any): string[]).filter((keyId) => {
+          if (!keyId || typeof keyId !== 'string') return false
+          if (!has(state._vm.authorizedKeys, (keyId: any)) || state._vm.authorizedKeys[keyId]._notAfterHeight != null) {
             console.warn('Attempted to delete non-existent key from contract', { contractID, keyId })
-            return
+            return false
           }
+          return true
+        })
+
+        keyIds.forEach((keyId) => {
+          const key = state._vm.authorizedKeys[keyId]
           state._vm.authorizedKeys[keyId]._notAfterHeight = height
 
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
