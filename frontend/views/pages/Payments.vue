@@ -67,8 +67,8 @@ page(
         .c-tabs-chip-container.hide-phone
           next-distribution-pill
 
-      .c-chip-container-below-tabs
-        next-distribution-pill.hide-tablet.c-distribution-pill
+      .c-chip-container-below-tabs.hide-tablet
+        next-distribution-pill.c-distribution-pill
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
