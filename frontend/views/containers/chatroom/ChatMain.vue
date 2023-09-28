@@ -45,10 +45,11 @@
             :description='summary.attributes.description'
           )
 
-      div(v-for='(message, index) in messages' :key='index')
+      template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
           :class='{"is-new": isNew(message.hash)}'
+          :key='`date-${index}`'
         )
           i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
           span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
@@ -56,6 +57,7 @@
         component(
           :is='messageType(message)'
           :ref='message.hash'
+          :key='message.id'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
