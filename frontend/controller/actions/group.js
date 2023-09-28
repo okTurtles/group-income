@@ -31,7 +31,8 @@ import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey, deserializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -357,7 +358,10 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
-    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    console.log('[gi.actions/group/join]:', params.options?.skipInviteAccept)
+    if (!params.options?.skipInviteAccept) {
+      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    }
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -402,7 +406,12 @@ export default (sbp('sbp/selectors/register', {
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
-          sbp('gi.actions/group/join', params)
+          sbp('gi.actions/group/join', {
+            ...params,
+            options: {
+              skipInviteAccept: false
+            }
+          })
         }
 
         // The event handler is configured before sending the request
@@ -537,6 +546,27 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
+  },
+  'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
+    const rootState = sbp('state/vuex/state')
+    const originatingContractID = rootState.loggedIn.identityContractID
+    const userState = rootState[originatingContractID]
+
+    const secretKey = deserializeKey(secret)
+
+    sbp('chelonia/storeSecretKeys', [{
+      key: secretKey, transient: true
+    }])
+
+    await sbp('gi.actions/group/joinAndSwitch', {
+      originatingContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID: groupId,
+      contractName: 'gi.contracts/group',
+      signingKeyId: keyId(secretKey),
+      innerSigningKeyId: findKeyIdByName(userState, 'csk'),
+      encryptionKeyId: findKeyIdByName(userState, 'cek')
+    })
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)

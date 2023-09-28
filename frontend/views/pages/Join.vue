@@ -57,7 +57,6 @@ import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
@@ -167,24 +166,7 @@ export default ({
         return this.$router.push({ path: '/dashboard' })
       }
       try {
-        const originatingContractID = this.$store.state.loggedIn.identityContractID
-        const userState = this.$store.state[originatingContractID]
-
-        const secretKey = deserializeKey(secret)
-
-        sbp('chelonia/storeSecretKeys', [{
-          key: secretKey, transient: true
-        }])
-
-        await sbp('gi.actions/group/joinAndSwitch', {
-          originatingContractID,
-          originatingContractName: 'gi.contracts/identity',
-          contractID: groupId,
-          contractName: 'gi.contracts/group',
-          signingKeyId: keyId(secretKey),
-          innerSigningKeyId: findKeyIdByName(userState, 'csk'),
-          encryptionKeyId: findKeyIdByName(userState, 'cek')
-        })
+        await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
         // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {

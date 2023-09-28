@@ -111,8 +111,8 @@ export default ({
       body: L('{name} has left your group. Contributions were updated accordingly.', {
         name: strong(data.username)
       }),
-      icon: 'icon-minus',
-      level: 'info',
+      icon: 'user-minus',
+      level: 'danger',
       linkTo: '/contributions',
       scope: 'group'
     }
@@ -134,6 +134,7 @@ export default ({
     const bodyTemplateMap = {
       ADD_MEMBER: (creator: string) => L('{member} proposed to add a member to the group. Vote now!', { member: strong(creator) }),
       CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
+      CHANGE_DISTRIBUTION_DATE: (creator: string) => L('{member} proposed to change the group distribution date. Vote now!', { member: strong(creator) }),
       CHANGE_VOTING_RULE: (creator: string) => L('{member} proposed to change the group voting system. Vote now!', { member: strong(creator) }),
       REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) }),
       GENERIC: (creator: string) => L('{member} created a proposal. Vote now!', { member: strong(creator) })
@@ -141,7 +142,8 @@ export default ({
 
     const iconMap = {
       ADD_MEMBER: 'user-plus',
-      CHANGE_MINCOME: 'coins',
+      CHANGE_MINCOME: 'dollar-sign',
+      CHANGE_DISTRIBUTION_DATE: 'chart-pie',
       CHANGE_VOTING_RULE: 'vote-yea',
       REMOVE_MEMBER: 'user-minus',
       GENERIC: 'envelope-open-text'
@@ -158,11 +160,14 @@ export default ({
       scope: 'group'
     }
   },
-  PROPOSAL_EXPIRING (data: { creator: string, proposalType: string, title?: string, proposalId: string }) {
+  PROPOSAL_EXPIRING (data: { creator: string, proposalType: string, proposalData: any, title?: string, proposalId: string }) {
     const typeToTitleMap = {
       [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
       [PROPOSAL_REMOVE_MEMBER]: L('Member removal'),
-      [PROPOSAL_GROUP_SETTING_CHANGE]: L('Mincome change'),
+      [PROPOSAL_GROUP_SETTING_CHANGE]: {
+        mincomeAmount: L('Mincome change'),
+        distributionDate: L('Distribution date change')
+      }[data.proposalData.setting],
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]: L('Voting rule change'),
       [PROPOSAL_GENERIC]: data.title
     }

@@ -8,12 +8,18 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
-import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
 
 const API_URL = Cypress.config('baseUrl')
 
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
+const getParamsFromInvitationLink = invitationLink => {
+  const params = new URLSearchParams(new URL(invitationLink).search)
+  return {
+    groupId: params.get('groupId'),
+    inviteSecret: params.get('secret')
+  }
+}
 
 const defaultPassword = '123456789'
 
@@ -54,7 +60,9 @@ Cypress.Commands.add('giSignup', (username, {
   }
 
   if (isInvitation) {
-    cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
+    // cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
+    cy.url().should('eq', `${API_URL}/app/pending-approval`)
+    cy.getByDT('pendingApprovalTitle').should('contain', 'Waiting for approval to join')
   } else {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
   }
@@ -62,7 +70,8 @@ Cypress.Commands.add('giSignup', (username, {
 
 Cypress.Commands.add('giLogin', (username, {
   password = defaultPassword,
-  bypassUI
+  bypassUI,
+  firstLogin = false
 } = {}) => {
   if (bypassUI) {
     cy.window().its('sbp').then(async sbp => {
@@ -73,6 +82,7 @@ Cypress.Commands.add('giLogin', (username, {
       await sbp('gi.actions/identity/login', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
+
     cy.get('nav').within(() => {
       cy.getByDT('dashboard').click()
     })
@@ -94,6 +104,10 @@ Cypress.Commands.add('giLogin', (username, {
     cy.get(el).should('have.attr', 'data-logged-in', 'yes')
     cy.get(el).should('have.attr', 'data-sync', '')
   })
+
+  if (firstLogin) {
+    cy.giCheckIfJoinedGeneralChatroom()
+  }
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
@@ -108,9 +122,9 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
-Cypress.Commands.add('giSwitchUser', (user) => {
+Cypress.Commands.add('giSwitchUser', (user, firstLogin = false) => {
   cy.giLogout()
-  cy.giLogin(user, { bypassUI: true })
+  cy.giLogin(user, { bypassUI: true, firstLogin })
 })
 
 Cypress.Commands.add('closeModal', () => {
@@ -271,24 +285,9 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.giSignup(username, { bypassUI: true })
     }
 
-    const params = new URLSearchParams(new URL(invitationLink).search)
-    const groupId = params.get('groupId')
-    const inviteSecret = params.get('secret')
-
+    const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
     cy.window().its('sbp').then(async sbp => {
-      const state = await sbp('state/vuex/state')
-      const originatingContractID = state['loggedIn']['identityContractID']
-      const userState = state[originatingContractID]
-
-      await sbp('gi.actions/group/joinAndSwitch', {
-        originatingContractID,
-        originatingContractName: 'gi.contracts/identity',
-        contractID: groupId,
-        contractName: 'gi.contracts/group',
-        signingKey: inviteSecret,
-        innerSigningKeyId: findKeyIdByName(userState, 'csk'),
-        encryptionKeyId: findKeyIdByName(userState, 'cek')
-      })
+      await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
 
       for (let i = 0; i < 2; i++) {
         await new Promise(resolve => setTimeout(resolve, 2000))
@@ -336,6 +335,40 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   if (shouldLogoutAfter) {
     cy.giLogout()
   }
+})
+
+Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
+  usernames,
+  existingMemberUsername,
+  groupName,
+  bypassUI
+}) => {
+  const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
+  for (const username of usernames) {
+    if (bypassUI) {
+      cy.giSignup(username, { bypassUI })
+      cy.window().its('sbp').then(sbp => {
+        sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+      })
+    } else {
+      cy.visit(invitationLink)
+      cy.giSignup(username, { isInvitation: true, groupName })
+    }
+
+    // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
+    cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
+    // TODO: should remove the following cy.wait()
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+
+    cy.giLogout()
+  }
+
+  cy.giLogin(existingMemberUsername, { bypassUI })
+  // TODO: should remove the following cy.wait()
+  // eslint-disable-next-line cypress/no-unnecessary-waiting
+  cy.wait(2000)
+  cy.giLogout()
 })
 
 Cypress.Commands.add('giAddRandomIncome', () => {
@@ -439,7 +472,9 @@ Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (groupName) => {
   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME)
   cy.getByDT('dashboard').click()
-  cy.getByDT('groupName').should('contain', groupName)
+  if (groupName) {
+    cy.getByDT('groupName').should('contain', groupName)
+  }
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (

@@ -122,6 +122,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { uniq } from '@model/contracts/shared/giLodash.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
@@ -179,11 +180,8 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.chatRoomAttribute
       let title = name
-      if (this.isPrivateDirectMessage()) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
-      } else if (this.isGroupDirectMessage()) {
-        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        title = this.ourGroupDirectMessages[this.currentChatRoomId].title
       }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
@@ -207,9 +205,6 @@ export default ({
         : this.groupMembersSorted
           .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users.includes(member.username))
           .map(member => ({ username: member.username, displayName: member.displayName }))
-    },
-    isPrivacyLevelPrivate () {
-      return this.chatRoomAttribute.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   mounted () {
@@ -247,7 +242,7 @@ export default ({
           }))
       }
     },
-    localizedName (username: string, displayName?: string) {
+    localizedName (username, displayName) {
       const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
@@ -295,20 +290,15 @@ export default ({
     },
     async addToChannel (username: string, undoing = false) {
       if (this.isDirectMessage()) {
-        if (this.isPrivacyLevelPrivate) {
-          const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const chatRoomId = this.getGroupDMByUsers(usernames)
-          if (chatRoomId) {
-            this.redirect(chatRoomId)
-          } else {
-            this.createGroupDM(usernames)
-          }
-          this.closeModal()
+        const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(username))
+        const chatRoomId = this.ourGroupDirectMessageFromUsernames(usernames)
+        if (chatRoomId) {
+          this.redirect(chatRoomId)
         } else {
-          await this.addMemberToGroupDM(this.currentChatRoomId, username)
-          this.canAddMembers = this.canAddMembers.map(member =>
-            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+          this.createDirectMessage(usernames)
         }
+        this.closeModal()
+
         return
       }
 
