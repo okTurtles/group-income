@@ -358,7 +358,10 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
-    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    console.log('[gi.actions/group/join]:', params.options?.skipInviteAccept)
+    if (!params.options?.skipInviteAccept) {
+      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
+    }
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -403,7 +406,12 @@ export default (sbp('sbp/selectors/register', {
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
-          sbp('gi.actions/group/join', params)
+          sbp('gi.actions/group/join', {
+            ...params,
+            options: {
+              skipInviteAccept: false
+            }
+          })
         }
 
         // The event handler is configured before sending the request

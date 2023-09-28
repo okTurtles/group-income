@@ -3,6 +3,7 @@ import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared
 const API_URL = Cypress.config('baseUrl')
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const anotherGroupName = 'Donuts'
 const groupMincome = 250
 const groupNewMincome = 500
 const groupInviteLinkExpiry = {
@@ -427,6 +428,66 @@ describe('Proposals - Add members', () => {
       })
 
     assertMincome(groupNewMincome)
+  })
+
+  it('user1 creates a new group and checks that all the proposals are per group', () => {
+    cy.giCreateGroup(anotherGroupName, { mincome: groupMincome, bypassUI: true })
+
+    getProposalItems().should('have.length', 0)
+
+    cy.getByDT('openAllProposals').click()
+    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
+    cy.getByDT('modal').within(() => {
+      getProposalItems().should('have.length', 0)
+      cy.closeModal()
+    })
+  })
+
+  it('user1, the group creator, doesn\'t need to propose to change distribution date', () => {
+    const openChangeDistributionDateModal = () => {
+      cy.getByDT('proposalsSection').within(() => {
+        cy.getByDT('menuTrigger').click()
+        cy.getByDT('menuContent').within(() => {
+          cy.get('ul').children().eq(7).within(() => {
+            cy.get('button').click()
+          })
+        })
+      })
+    }
+
+    openChangeDistributionDateModal()
+    cy.getByDT('modalProposal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+      cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
+      cy.get('.c-footer')
+        .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
+
+      cy.closeModal()
+    })
+
+    // let newDistributionDate = new Date(new Date(Date.now() + 15 * DAYS_MILLIS).setUTCHours(0, 0, 0, 0))
+    // newDistributionDate = new Date(new Date(
+    //   newDistributionDate.getFullYear(),
+    //   newDistributionDate.getMonth(),
+    //   newDistributionDate.getDate()
+    // ).setUTCHours(0, 0, 0, 0))
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
+    //   cy.get('.c-footer')
+    //     .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
+    //   cy.get('.inputgroup select').select(newDistributionDate.toISOString())
+    //   cy.getByDT('submitBtn').click()
+    //   cy.closeModal()
+    // })
+
+    // openChangeDistributionDateModal()
+    // const humanNewDate = newDistributionDate.toLocaleString(undefined, { month: 'long', day: 'numeric' })
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.get('form .helper').should('contain', `Current distribution date is on ${humanNewDate}.`)
+    //   cy.closeModal()
+    // })
 
     cy.giLogout()
   })

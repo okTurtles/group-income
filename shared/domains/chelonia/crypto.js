@@ -11,7 +11,6 @@ export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
-  console.log('[bytesOrObjectToB64]:', ary, ary instanceof Uint8Array, typeof ary)
   if (!(ary instanceof Uint8Array)) {
     throw Error('Unsupported type')
   }

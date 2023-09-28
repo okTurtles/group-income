@@ -26,7 +26,6 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'LeaveChannelModal',
@@ -38,16 +37,16 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
-      'usernameFromDirectMessageID',
+      'ourGroupDirectMessages',
+      'isDirectMessage',
       'ourContactProfiles'
     ]),
     ...mapState(['loggedIn', 'currentGroupId']),
     channelName () {
       if (!this.currentChatRoomState.attributes) {
         return ''
-      } else if (this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
-        const username = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        return this.ourContactProfiles[username].displayName || username
+      } else if (this.isDirectMessage(this.currentChatRoomId)) {
+        return this.ourGroupDirectMessages[this.currentChatRoomId].title
       } else {
         return this.currentChatRoomState.attributes.name
       }

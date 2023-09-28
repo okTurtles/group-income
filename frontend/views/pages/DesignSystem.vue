@@ -226,6 +226,8 @@ page(
               i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
+              i.icon-paper-clip icon-paper-clip
+              i.icon-file icon-file
         tr
           td
             pre
@@ -1414,6 +1416,7 @@ import SvgJoinGroup from '@svgs/join-group.svg'
 import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
+import SvgAttachment from '@svgs/attachment.svg'
 import { mapGetters, mapMutations } from 'vuex'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
@@ -1510,6 +1513,11 @@ export default ({
             component: SvgVote,
             name: 'SvgVote',
             sprite: 'Dashboard'
+          },
+          {
+            component: SvgAttachment,
+            name: 'SvgAttachment',
+            sprite: 'Chat'
           }
         ],
         buttonDropdownMenuOpts: [
@@ -1518,7 +1526,7 @@ export default ({
           { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
           { type: 'header', name: 'Voting Systems' },
           { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
-          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' }
+          { type: 'item', id: 'change-voting-threshold', name: 'Change voting threshold', icon: 'comment' }
         ]
       },
       form: {
@@ -1832,5 +1840,9 @@ table {
     text-decoration: underline;
     color: $primary_0;
   }
+}
+
+.svg-attachment {
+  fill: $text_0;
 }
 </style>

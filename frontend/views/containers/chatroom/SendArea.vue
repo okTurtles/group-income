@@ -57,6 +57,12 @@
       v-bind='$attrs'
     )
 
+    chat-attachment-preview(
+      v-if='ephemeral.attachment.length'
+      :attachmentList='ephemeral.attachment'
+      @remove='removeAttachment'
+    )
+
     .c-send-actions(ref='actions')
       div(v-if='isEditing')
         .addons.addons-editing
@@ -104,6 +110,23 @@
               @click='openEmoticon'
             )
               i.icon-smile-beam
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Attach file")'
+          )
+            button.is-icon.c-file-attachment-btn(
+              :aria-label='L("Attach file")'
+              @click='openFileAttach'
+            )
+              i.icon-paper-clip
+              input(
+                ref='fileAttachmentInputEl'
+                type='file'
+                multiple
+                :accept='supportedFileExtensions'
+                @change='fileAttachmentHandler($event.target.files)'
+              )
 
         .c-send-button(
           id='mobileSendButton'
@@ -121,13 +144,17 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -154,7 +181,8 @@ export default ({
   components: {
     Avatar,
     Tooltip,
-    CreatePoll
+    CreatePoll,
+    ChatAttachmentPreview
   },
   props: {
     defaultText: String,
@@ -182,7 +210,8 @@ export default ({
           position: -1,
           options: [],
           index: -1
-        }
+        },
+        attachment: [] // [ { url: instace of URL.createObjectURL , name: string }, ... ]
       }
     }
   },
@@ -220,7 +249,6 @@ export default ({
   computed: {
     ...mapGetters([
       'chatRoomUsers',
-      'isPrivateDirectMessage',
       'currentChatRoomId',
       'chatRoomAttributes',
       'ourContactProfiles'
@@ -246,6 +274,9 @@ export default ({
     },
     isPublicChannel () {
       return this.chatRoomAttributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PUBLIC
+    },
+    supportedFileExtensions () {
+      return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
     }
   },
   methods: {
@@ -374,11 +405,24 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      if (!this.$refs.textarea.value) {
+      const hasAttachments = this.ephemeral.attachment.length > 0
+      const getName = entry => entry.name
+
+      if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
+      let msgToSend = this.$refs.textarea.value || ''
+      if (hasAttachments) {
+        // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
+        msgToSend = msgToSend +
+          (msgToSend ? '\r\n' : '') +
+          `{ Attached: ${this.ephemeral.attachment.map(getName).join(', ')} } - Feature coming soon!`
+
+        this.clearAllAttachments()
+      }
+
+      this.$emit('send', msgToSend) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
@@ -390,6 +434,64 @@ export default ({
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
     },
+    openFileAttach (e) {
+      e.target.blur()
+      this.$refs.fileAttachmentInputEl.click()
+    },
+    fileAttachmentHandler (filesList, appendItems = false) {
+      const getFileExtension = name => {
+        const lastDotIndex = name.lastIndexOf('.')
+        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
+      }
+      const attachmentsExist = Boolean(this.ephemeral.attachment.length)
+      const list = appendItems && attachmentsExist
+        ? [...this.ephemeral.attachment]
+        : []
+
+      if (attachmentsExist) {
+        // make sure to clear the previous state if there is already attached file(s).
+        this.clearAllAttachments()
+      }
+
+      for (const file of filesList) {
+        const fileExt = getFileExtension(file.name)
+        const fileUrl = URL.createObjectURL(file)
+        const fileSize = file.size
+
+        if (fileSize > Math.pow(10, 9)) {
+          // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
+        } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
+          // Give users a warning about unsupported file types
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
+        }
+
+        list.push({
+          url: fileUrl,
+          name: file.name,
+          extension: fileExt,
+          attachType: file.type.match('image/') ? 'image' : 'non-image'
+        })
+      }
+
+      this.ephemeral.attachment = list
+    },
+    clearAllAttachments () {
+      this.ephemeral.attachment.forEach(attachment => {
+        URL.revokeObjectURL(attachment.url)
+      })
+      this.ephemeral.attachment = []
+    },
+    removeAttachment (targetUrl) {
+      // when a URL is no longer needed, it needs to be released from the memory.
+      // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
+      const targetIndex = this.ephemeral.attachment.findIndex(entry => targetUrl === entry.url)
+
+      if (targetIndex >= 0) {
+        URL.revokeObjectURL(targetUrl)
+        this.ephemeral.attachment.splice(targetIndex, 1)
+      }
+    },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
       this.closeEmoticon()
@@ -397,12 +499,18 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      const availableMentions = this.isPrivateDirectMessage()
-        ? this.users
-        : [
-            ...this.users,
-            { username: all, displayName: all, picture: '/assets/images/horn.png' } // TODO: use group picture here or broadcast icon
-          ]
+      let availableMentions = this.users
+      // NOTE: '@all' mention should only be needed when the members are more than 3
+      if (this.users.length > 2) {
+        availableMentions = [
+          ...availableMentions,
+          {
+            username: all,
+            displayName: all,
+            picture: '/assets/images/horn.png'
+          }
+        ]
+      }
       this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
@@ -551,6 +659,19 @@ export default ({
 
   button.is-icon:first-child:last-child {
     width: 2rem;
+  }
+}
+
+.c-file-attachment-btn {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 

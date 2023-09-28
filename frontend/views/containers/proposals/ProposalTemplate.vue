@@ -7,7 +7,7 @@
     :a11yTitle='title'
   )
     template(slot='subtitle')
-      i18n(v-if='groupShouldPropose') New proposal
+      i18n(v-if='shouldPropose') New proposal
     template(slot='title')
       i18n(key='title1' v-if='isConfirmation') Your proposal was created
       span(v-else) {{ title }}
@@ -44,7 +44,7 @@
         button-submit(
           key='change'
           :class='submitStyleNonProposal'
-          v-if='!groupShouldPropose'
+          v-if='!shouldPropose'
           @click='submit'
           :disabled='disabled'
           data-test='submitBtn'
@@ -53,7 +53,7 @@
         button(
           type='button'
           key='next'
-          v-if='groupShouldPropose && isNextStep'
+          v-if='shouldPropose && isNextStep'
           @click.prevent='next'
           :disabled='disabled'
           data-test='nextBtn'
@@ -82,11 +82,12 @@
     template(slot='footer' v-if='!isConfirmation')
       .c-footer
         i.icon-vote-yea
-        span(v-if='groupShouldPropose' v-safe-html='footerVotingExplanation')
+        span(v-if='shouldPropose' v-safe-html='footerVotingExplanation')
         i18n(
-          v-else
+          v-else-if='!groupShouldPropose'
           :args='LTags("strong")'
         ) Your group has less than 3 members, so {strong_}this change will be immediate{_strong} (no voting required).
+        slot(v-else name='shouldImmediateChangeFooter')
 </template>
 
 <script>
@@ -117,16 +118,22 @@ export default ({
     },
     variant: {
       validator (value) {
-        return ['addMember', 'removeMember'].indexOf(value) > -1
+        return ['addMember', 'removeMember', 'changeDistributionDate'].indexOf(value) > -1
       }
-    }
+    },
+    shouldImmediateChange: Boolean
   },
   computed: {
     ...mapGetters([
+      'groupSettings',
+      'ourUsername',
       'groupMembersCount',
       'groupShouldPropose',
       'groupProposalSettings'
     ]),
+    shouldPropose () {
+      return this.groupShouldPropose && !this.shouldImmediateChange
+    },
     proposalSettings () {
       return this.groupProposalSettings()
     },
@@ -213,7 +220,7 @@ export default ({
       return n
     },
     async submit () {
-      const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null
+      const form = this.shouldPropose ? { reason: this.$refs.reason.value } : null
       await this.$listeners.submit(form)
     },
     onEnterPressed () {

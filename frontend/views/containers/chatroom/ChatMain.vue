@@ -1,5 +1,15 @@
 <template lang='pug'>
-.c-chat-main(v-if='summary.title')
+.c-chat-main(
+  v-if='summary.chatRoomId'
+  :class='{ "is-dnd-active": dndState && dndState.isActive }'
+  @dragstart='dragStartHandler'
+  @dragover='dragStartHandler'
+)
+  drag-active-overlay(
+    v-if='dndState && dndState.isActive'
+    @drag-ended='dragEndHandler'
+  )
+
   emoticons
 
   .c-body
@@ -79,6 +89,7 @@
 
   .c-footer
     send-area(
+      ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
@@ -110,6 +121,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -118,7 +130,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -134,7 +146,8 @@ export default ({
     MessageNotification,
     MessagePoll,
     SendArea,
-    ViewArea
+    ViewArea,
+    DragActiveOverlay
   },
   props: {
     summary: {
@@ -155,6 +168,12 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
+        // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
+        //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomId
+        //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
+        //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
+        //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
+        renderingChatRoomId: null,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -163,6 +182,10 @@ export default ({
         contract: {},
         prevFrom: null,
         prevTo: null
+      },
+      dndState: {
+        // drag & drop releated state
+        isActive: false
       }
     }
   },
@@ -347,19 +370,24 @@ export default ({
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
-      if (this.summary.title) {
+      if (this.summary.chatRoomId) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, effect)
-          } else if (this.$refs.conversation) {
-            this.$refs.conversation.scroll({
-              left: 0,
-              top: this.$refs.conversation.scrollHeight,
-              behavior: 'smooth'
-            })
+          } else {
+            this.jumpToLatest()
           }
         }, 100)
+      }
+    },
+    jumpToLatest (behavior = 'smooth') {
+      if (this.$refs.conversation) {
+        this.$refs.conversation.scroll({
+          left: 0,
+          top: this.$refs.conversation.scrollHeight,
+          behavior
+        })
       }
     },
     retryMessage (index) {
@@ -421,11 +449,24 @@ export default ({
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
+    /**
+     * Load/render events for one or more pages
+     * @return {boolean | undefined} The return value is used to change the state inside the function 'infiniteHandler'
+     * true: Loaded all the messages, and no more messages exists
+     * false: Messages are loaded, but more messages exist
+     * undefined: Loaded the wrong events from the server so those events should be ignoreed
+     *            and no state changes are needed (like messagesInitiated). Since the renderingChatRoomId could be changed
+     *            while processing this function, this function could do the redundant process. This normally happens
+     *            when user switches channels very fast.
+    */
     async renderMoreMessages (shouldInitiate = true) {
+      // NOTE: 'this.renderingChatRoomId' can be changed while running this function
+      //       we save it in the contant variable 'chatRoomId'
+      const chatRoomId = this.renderingChatRoomId
       // NOTE: shouldInitiate describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
       if (shouldInitiate) {
-        await this.loadMessagesFromStorage()
+        await this.loadMessagesFromStorage(chatRoomId)
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
@@ -435,20 +476,19 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
-      const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
       if (this.currentChatRoomReadUntil) {
         if (!this.currentChatRoomReadUntil.deletedDate) {
           unreadPosition = this.currentChatRoomReadUntil.messageHash
-        } else if (this.chatRoomUnreadMentions(this.currentChatRoomId).length) {
-          unreadPosition = this.chatRoomUnreadMentions(this.currentChatRoomId)[0].messageHash
+        } else if (this.chatRoomUnreadMentions(chatRoomId).length) {
+          unreadPosition = this.chatRoomUnreadMentions(chatRoomId)[0].messageHash
         }
       }
       const {
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
       } = this.$route.query
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
-      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', this.currentChatRoomId)
+      const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
@@ -473,10 +513,10 @@ export default ({
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-      if (curChatRoomId !== this.currentChatRoomId) {
-        // NOTE: To avoid rendering the incorrect events for the currentChatRoom
-        // While getting the events from the backend, this.currentChatRoomId could be changed
-        // In this case, we should avoid the previous events because they are for another channel, not the current channel
+      if (chatRoomId !== this.renderingChatRoomId) {
+        // NOTE: This is to avoid rendering the incorrect events for the current chatroom
+        //       while getting the events from the backend, this.renderingChatRoomId could be changed
+        //       In this case, we should avoid the previous events because they are for another channel, not for the current one
         return
       }
 
@@ -509,8 +549,8 @@ export default ({
       }
       this.$forceUpdate()
     },
-    async loadMessagesFromStorage () {
-      const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId())
+    async loadMessagesFromStorage (chatRoomId) {
+      const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId(chatRoomId))
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -522,6 +562,7 @@ export default ({
     setInitMessages () {
       this.initializeState()
       this.ephemeral.messagesInitiated = false
+      this.renderingChatRoomId = this.currentChatRoomId
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -619,16 +660,30 @@ export default ({
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+
+      if (this.ephemeral.scrolledDistance < 40) {
+        // NOTE: 40px is the minimum height of a message
+        //       even though user scrolled up, if he scrolled less than 40px (one message)
+        //       should ignore the scroll position, and scroll to the bottom
+        this.throttledJumpToLatest(this)
+      }
     },
+    throttledJumpToLatest: throttle(function (_this) {
+      // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
+      _this.jumpToLatest('instant')
+    }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once which should be ignored
-        // before calling the setInitMessages function
+        //       before calling the setInitMessages function
+        return
+      } else if (this.currentChatRoomId !== this.renderingChatRoomId) {
+        // NOTE: should ignore to render messages before chatroom state is initiated
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
-        if (completed) {
+        if (completed === true) {
           $state.complete()
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
@@ -640,10 +695,15 @@ export default ({
               })
             }
           }
-        } else {
+        } else if (completed === false) {
           $state.loaded()
         }
-        this.ephemeral.messagesInitiated = true
+        if (completed !== undefined) {
+          // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
+          this.ephemeral.messagesInitiated = true
+        }
+      }).catch(e => {
+        console.error('ChatMain infiniteHandler() error:', e)
       })
     },
     onChatScroll: debounce(function () {
@@ -733,14 +793,36 @@ export default ({
       }
     },
     archiveKeyFromChatRoomId (chatRoomId) {
-      const curChatRoomId = chatRoomId || this.currentChatRoomId
-      return `messages/${this.ourUsername}/${curChatRoomId}`
+      return `messages/${this.ourUsername}/${chatRoomId}`
     },
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState()
       this.setInitMessages()
-    }, 250)
+    }, 250),
+    // Handlers for file-upload via drag & drop action
+    dragStartHandler (e) {
+      // handler function for 'dragstart', 'dragover' events
+      if (!this.dndState.isActive) {
+        this.dndState.isActive = true
+      }
+
+      if (e?.dataTransfer) {
+        // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+        e.dataTransfer.dropEffect = 'copy'
+      }
+    },
+    dragEndHandler (e) {
+      // handler function for 'dragleave', 'dragend', 'drop' events
+      e.preventDefault()
+
+      if (this.dndState.isActive) {
+        this.dndState.isActive = false
+
+        e?.dataTransfer.files?.length &&
+          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+      }
+    }
   },
   provide () {
     return {
@@ -774,6 +856,7 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
+        this.ephemeral.scrolledDistance = 0
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState()
           toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
@@ -801,6 +884,12 @@ export default ({
   flex-direction: column;
   overflow: hidden;
   border-radius: 10px;
+  position: relative;
+
+  &.is-dnd-active {
+    position: relative;
+    z-index: 0;
+  }
 }
 
 .c-body {

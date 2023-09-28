@@ -5,6 +5,8 @@ div
     svg-invitation.c-svg
 
     i18n.is-title-1(
+      data-test='pendingApprovalTitle'
+      :data-groupId='currentGroupId'
       tag='h2'
       :args='{ groupName: groupSettings.groupName }'
     ) Waiting for approval to join {groupName}!
@@ -35,11 +37,11 @@ export default ({
     ...mapGetters(['groupSettings', 'ourUsername']),
     ...mapState(['currentGroupId']),
     ourGroupProfile () {
-      return this.$store.state[this.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
     }
   },
   mounted () {
-    this.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupIdWhenMounted = this.currentGroupId
   },
   watch: {
     ourGroupProfile (to, from) {
