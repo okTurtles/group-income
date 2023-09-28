@@ -130,6 +130,7 @@ export default (sbp('sbp/selectors/register', {
             meta: cekOpts.meta,
             data: cekOpts.data
           },
+          // TODO: Find a way to have this wrapping be done by Chelonia directly
           encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
             id: userCSKid,
@@ -212,6 +213,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/out/keyAdd', {
       contractID: params.contractID,
       contractName: 'gi.contracts/chatroom',
+      // TODO: Find a way to have this wrapping be done by Chelonia directly
       data: [encryptedOutgoingData(state, CEKid, {
         foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
         id: userCSKid,

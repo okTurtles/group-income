@@ -220,18 +220,6 @@ export default (sbp('sbp/selectors/register', {
             },
             data: inviteKeyP
           }
-          /* ,
-           // TODO: If this is needed, explain why this is wrapped
-           encryptedOutgoingDataWithRawKey(CEK, {
-            foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-            id: userCSKid,
-            data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-            allowedActions: '*',
-            purpose: ['sig'],
-            ringLevel: Number.MAX_SAFE_INTEGER,
-            name: `${userID}/${userCSKid}`
-          }) */
         ],
         data: {
           settings: {
@@ -286,6 +274,8 @@ export default (sbp('sbp/selectors/register', {
           inviteKeyId,
           creator: INVITE_INITIAL_CREATOR
         },
+        // The initial invite does not have an inner signature as it's part
+        // of the group creation process
         innerSigningContractID: null
       })
 
@@ -302,6 +292,8 @@ export default (sbp('sbp/selectors/register', {
         },
         signingKeyId: CSKid,
         encryptionKeyId: CEKid,
+        // The #General chatroom does not have an inner signature as it's part
+        // of the group creation process
         innerSigningContractID: null
       })
 
@@ -314,55 +306,13 @@ export default (sbp('sbp/selectors/register', {
         innerSigningKeyId: userCSKid,
         encryptionKeyId: userCEKid,
         options: {
+          // Normally, calling join will require receiving the group's keys
+          // in an OP_KEY_SHARE for joining. However, as the group creator,
+          // we already have those keys. This option allows to to call join
+          // as though we didn't have the group keys
           skipUsableKeysCheck: true
         }
       })
-
-      /*
-      // As the group's creator, we share the group secret keys with
-      // ourselves, which we need to do be able to sync the group with a
-      // fresh session.
-      // This is a special case, as normally these keys would be shared using
-      // invites
-      await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: userID,
-        contractName: 'gi.contracts/identity',
-        subjectContractID: contractID,
-        keyIds: '*'
-      })
-
-      // Add the group's CSK to our identity contract so that we can receive
-      // key rotation updates and DMs.
-      await sbp('chelonia/out/keyAdd', {
-        contractID: userID,
-        contractName: 'gi.contracts/identity',
-        data: [{
-          foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent('csk')}`,
-          id: CSKid,
-          data: CSKp,
-          // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
-          // that a chatroom has just been created
-          permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-          allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
-          purpose: ['sig'],
-          ringLevel: Number.MAX_SAFE_INTEGER,
-          name: `${contractID}/${CSKid}`
-        }],
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-      })
-
-      // Share our PEK with the group so that group members can see
-      // our name and profile information
-      const keyIds = sbp('chelonia/contract/historicalKeyIdsByName', userID, 'pek')
-
-      keyIds.length && await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: contractID,
-        contractName: 'gi.contracts/group',
-        subjectContractID: userID,
-        keyIds: keyIds
-      })
-
-      */
 
       return message
     } catch (e) {

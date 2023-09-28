@@ -574,8 +574,6 @@ export default (sbp('sbp/selectors/register', {
       return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractIDToDisconnect
     }).map(k => (k: any).id)
 
-    console.log('chelonia/contract/disconnect:  ', { keyIds })
-
     if (!keyIds.length) return
 
     return await sbp('chelonia/out/keyDel', {
@@ -908,7 +906,7 @@ export default (sbp('sbp/selectors/register', {
       contractName: originatingContractName,
       data: [{
         id: keyRequestReplyKeyId,
-        name: 'krrk-' + keyRequestReplyKeyId,
+        name: '#krrk-' + keyRequestReplyKeyId,
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
         permissions: params.permissions === '*'

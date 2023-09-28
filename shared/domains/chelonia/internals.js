@@ -176,6 +176,8 @@ export default (sbp('sbp/selectors/register', {
         // stops (() => this)().fetch
         // needs additional step of locking down Function constructor to stop:
         // new (()=>{}).constructor("console.log(typeof this.fetch)")()
+        globals.self = globals
+        globals.globalThis = globals
         with (new Proxy(globals, {
           get (o, p) { return o[p] },
           has (o, p) { /* console.log('has', p); */ return true }
@@ -196,13 +198,10 @@ export default (sbp('sbp/selectors/register', {
     saferEval({
       // pass in globals that we want access to by default in the sandbox
       // note: you can undefine these by setting them to undefined in exposedGlobals
-      ...(typeof self !== 'undefined' && {
-        self: {
-          crypto: {
-            getRandomValues: (v) => self.crypto.getRandomValues(v)
-          }
-        }
-      }),
+      crypto: {
+        // $FlowFixMe
+        getRandomValues: (v) => globalThis.crypto.getRandomValues(v)
+      },
       console,
       Object,
       Error,
@@ -947,6 +946,8 @@ export default (sbp('sbp/selectors/register', {
             : payload
         })
 
+        // Upon successful key share, we want to share deserializedResponseKey
+        // with ourselves
         await sbp('chelonia/out/keyShare', {
           contractID,
           contractName,

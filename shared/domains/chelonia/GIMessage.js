@@ -100,10 +100,13 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
             }
           })
         }
+        // key.meta?.keyRequest?.contractID could be optionally encrypted
         if (key.meta?.keyRequest?.contractID) {
           try {
             key.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf()
           } catch {
+            // If we couldn't decrypt it, this value is of no use to us (we
+            // can't keep track of key requests and key shares), so we delete it
             delete key.meta.keyRequest.contractID
           }
         }
@@ -137,7 +140,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
       (message: any).keys?.forEach((key) => {
         if (!key.meta?.private?.content) return
         const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
-        const decryptionContract = String(message.foreignContractID ? message.foreignContractID : contractID)
+        const decryptionContract = message.foreignContractID || contractID
         key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           const computedKeyId = keyId(value)
           if (computedKeyId !== key.id) {

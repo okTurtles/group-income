@@ -255,6 +255,12 @@ export const verifySignature = (inKey: Key | string, data: string, signature: st
     throw new Error('Invalid signature')
   }
 }
+
+/**
+ * @param inKey - Encryption key to use
+ * @param data - Data to encrypt
+ * @param ad - Additional data (the AD in AEAD), used for validation
+ */
 export const encrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
