@@ -194,7 +194,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
-     // NOTE: no notification messages in DM
+    // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 
     cy.url().then(url => url).as('groupMessageLink')
