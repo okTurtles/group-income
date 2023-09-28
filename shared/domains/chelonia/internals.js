@@ -11,7 +11,7 @@ import { deserializeKey, keyId } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
 import { findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -274,7 +274,6 @@ export default (sbp('sbp/selectors/register', {
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     while (true) {
-      const rootState = sbp(this.config.stateSelector)
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),
@@ -298,6 +297,7 @@ export default (sbp('sbp/selectors/register', {
         await delay(randDelay) // wait randDelay ms before sending it again
         // if this isn't OP_CONTRACT, recreate and resend message
         if (!entry.isFirstMessage()) {
+          const rootState = sbp(this.config.stateSelector)
           const newEntry = await recreateEvent(entry, rootState)
           if (!newEntry) {
             return
@@ -1071,14 +1071,12 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
-      handleEventError?.(e, message)
-      if (!(e instanceof ChelErrorUnexpected)) {
-        // sometimes we get this error in the following situation:
-        // Cypress tests run, generate a lot of messages, we are logged out, which
-        // clears the state, but we still receive the message, and since the state
-        // has been cleared, no contracts exist, and ChelErrorUnexpected is thrown
-        throw e
+      try {
+        handleEventError?.(e, message)
+      } catch (e2) {
+        console.error('[chelonia] Ignoring user error in handleEventError hook:', e2)
       }
+      throw e
     }
   }
 }): string[])

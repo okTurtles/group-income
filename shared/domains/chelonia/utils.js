@@ -204,8 +204,11 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
         console.log({ id, _vm: { ...state._vm } })
         throw new Error('Nonexisting key ID ' + id)
       }
-      if (signingKey._private && !data.encryptionKeyId) {
-        throw new Error('Signing key is private but it tried removing a public key')
+      if (signingKey._private) {
+        throw new Error('Signing key is private')
+      }
+      if (!k._private !== !data.encryptionKeyId) {
+        throw new Error('_private attribute must be preserved')
       }
       if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
         throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)

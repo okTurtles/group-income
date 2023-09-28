@@ -5,7 +5,6 @@
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -726,7 +725,7 @@ sbp('chelonia/defineContract', {
       sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
         contractID,
         contractName: 'gi.contracts/chatroom',
-        data: keyIds.map(k => encryptedOutgoingData(state, CEKid, k)),
+        data: keyIds,
         signingKeyId: CSKid
       }]).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)

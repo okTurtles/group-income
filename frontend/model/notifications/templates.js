@@ -1,4 +1,4 @@
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import type {
   NewProposalType,
   NotificationTemplate
@@ -22,15 +22,21 @@ export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
     const { activity, error, message } = data
     const contractID = message.contractID()
-    const [opType] = message.op()
-    const { action, meta } = message.decryptedValue()
+    const opType = message.opType()
+    const value = message.decryptedValue()
+    let action
+    let meta
+    if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
+      action = value.action
+      meta = value.meta
+    }
     return {
       body: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
         ...LTags('b'),
         errName: error.name,
         activity,
         action: action ?? opType,
-        who: meta?.username ?? 'TODO: signing keyID',
+        who: meta?.username ?? message.signingKeyId(),
         contract: contractName(contractID),
         errMsg: error.message ?? '?'
       }),

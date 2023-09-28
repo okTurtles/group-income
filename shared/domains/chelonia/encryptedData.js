@@ -294,7 +294,7 @@ export const unwrapMaybeEncryptedData = (data: any): { encryptionKeyId: string |
         data: data.valueOf()
       }
     } catch (e) {
-      console.warn(e)
+      console.warn('unwrapMaybeEncryptedData: Unable to decrypt', e)
     }
   } else {
     return {

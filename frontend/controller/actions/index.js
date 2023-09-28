@@ -164,7 +164,7 @@ sbp('sbp/selectors/register', {
         contractID,
         contractName,
         data: [
-          ...keyShares.map((data) => ['chelonia/out/keyShare', { data: encryptedOutgoingData(state, CEKid, data) }]),
+          ...keyShares.map((data) => ['chelonia/out/keyShare', { data }]),
           ['chelonia/out/keyUpdate', { data: updatedKeys }]
         ],
         signingKeyId

@@ -816,7 +816,14 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const payload = (data: GIOpKeyDel)
+    const payload = (data: GIOpKeyDel).map((keyId) => {
+      if (!has(state._vm.authorizedKeys, keyId) || state._vm.authorizedKeys[keyId]._notAfterHeight != null) return undefined
+      if (state._vm.authorizedKeys[keyId]._private) {
+        return encryptedOutgoingData(state, state._vm.authorizedKeys[keyId]._private, keyId)
+      } else {
+        return keyId
+      }
+    }).filter(Boolean)
     validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     let msg = GIMessage.createV1_0({
       contractID,
@@ -824,7 +831,7 @@ export default (sbp('sbp/selectors/register', {
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_DEL,
-        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+        signedOutgoingData(state, params.signingKeyId, (payload: any), this.transientSecretKeys)
       ],
       manifest: manifestHash
     })
@@ -844,7 +851,14 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
-    const payload = (data: GIOpKeyUpdate)
+    const payload = (data: GIOpKeyUpdate).map((key) => {
+      const { oldKeyId } = key
+      if (state._vm.authorizedKeys[oldKeyId]._private) {
+        return encryptedOutgoingData(state, state._vm.authorizedKeys[oldKeyId]._private, state._vm.authorizedKeys[oldKeyId]._private, key)
+      } else {
+        return key
+      }
+    })
     validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     let msg = GIMessage.createV1_0({
       contractID,

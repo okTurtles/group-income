@@ -555,13 +555,16 @@ export default ({
         return
       }
 
+      // TODO: The next line will _not_ get information about any inner signatures,
+      // which is used for determininng the sender of a message. Update with
+      // another call to GIMessage to get signature information
+      const value = message.decryptedValue()
+      if (!value) throw new Error('Unable to decrypt message')
+
       const isMessageAddedOrDeleted = (message: GIMessage) => {
         if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-        // TODO: Avoid .decryptedValue().valueOf() because apart from looking
-        // funny it also discards information about the signature, which is
-        // necessary to validate the sender of the message
-        const { action, meta } = message.decryptedValue().valueOf()
+        const { action, meta } = value
         const rootState = sbp('state/vuex/state')
         let addedOrDeleted = 'NONE'
 
@@ -581,7 +584,7 @@ export default ({
       if (addedOrDeleted === 'DELETED') {
         // NOTE: Message will be deleted in processMessage function
         //       but need to make animation to delete it, probably here
-        const messageHash = message.decryptedValue().data.hash
+        const messageHash = value.data.hash
         const msgIndex = findMessageIdx(messageHash, this.messages)
         document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 

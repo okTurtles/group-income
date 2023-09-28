@@ -8,9 +8,9 @@ import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
-import { isRawSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
+import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -355,7 +355,25 @@ export class GIMessage {
   }
 
   decryptedValue (): any {
-    return Object(this.opValue()).valueOf()
+    const value = this.message()
+    const data = unwrapMaybeEncryptedData(value)
+    // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
+    // on failure)
+    if (data?.data) {
+      // The data inside could be signed. In this case, we unwrap that to get
+      // to the inner contents
+      if (isSignedData(data.data)) {
+        try {
+          return data.data.valueOf()
+        } catch {
+          // Signature verification failed. In this case, we return undefined
+          return undefined
+        }
+      } else {
+        return data.data
+      }
+    }
+    return undefined
   }
 
   head (): Object { return this._head }
