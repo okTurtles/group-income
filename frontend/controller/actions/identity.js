@@ -440,14 +440,14 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/wait')
       // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
-      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
       // Doing both 'state/vuex/save' above and 'gi.db/settings/delete' doesn't
       // make much sense, because delete undoes save
       // TODO: In the future, the goal is to encrypt the state so that it doesn't
       // need to be deleted.
-      await sbp('gi.db/settings/delete', username)
+      // const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+      // await sbp('gi.db/settings/delete', username)
       sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {

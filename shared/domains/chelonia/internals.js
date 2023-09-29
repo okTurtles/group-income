@@ -867,7 +867,7 @@ export default (sbp('sbp/selectors/register', {
 
     delete contractState._vm.pendingKeyshares
 
-    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])
+    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE], ['sig'])
 
     if (!signingKeyId) {
       console.log('Unable to respond to key request because there is no suitable secret key with OP_KEY_REQUEST_SEEN permission')
@@ -936,36 +936,46 @@ export default (sbp('sbp/selectors/register', {
 
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
-        // TODO: Combine these two operations (KRR and KS) into one using OP_ATOMIC
-        await sbp('chelonia/out/keyRequestResponse', {
+        await sbp('chelonia/out/atomic', {
           contractID,
           contractName,
           signingKeyId,
-          data: fullEncryption
-            ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
-            : payload
-        })
-
-        // Upon successful key share, we want to share deserializedResponseKey
-        // with ourselves
-        await sbp('chelonia/out/keyShare', {
-          contractID,
-          contractName,
-          data: {
-            contractID: originatingContractID,
-            keys: [
+          data: [
+            [
+              'chelonia/out/keyRequestResponse',
               {
-                id: keyId(deserializedResponseKey),
-                meta: {
-                  private: {
-                    content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
-                    shareable: true
-                  }
+                data:
+                  fullEncryption
+                    ? encryptedOutgoingData(
+                      contractState,
+                      findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
+                      payload
+                    )
+                    : payload
+              }
+            ],
+            [
+              // Upon successful key share, we want to share deserializedResponseKey
+              // with ourselves
+              'chelonia/out/keyShare',
+              {
+                data: {
+                  contractID: originatingContractID,
+                  keys: [
+                    {
+                      id: keyId(deserializedResponseKey),
+                      meta: {
+                        private: {
+                          content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                          shareable: true
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             ]
-          },
-          signingKeyId
+          ]
         })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
