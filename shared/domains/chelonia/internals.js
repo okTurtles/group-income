@@ -4,24 +4,54 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, verifySignature } from './crypto.js'
+import { deserializeKey, keyId } from './crypto.js'
 import './db.js'
-import { encryptedOutgoingData } from './encryptedData.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
+import type { EncryptedData } from './encryptedData.js'
+import { ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
-const keysToMap = (keys: GIKey[], height: number): Object => {
+const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state: Object) => {
+  return signingKeyId && state._vm.authorizedKeys[signingKeyId].foreignKey
+    ? new URL(state._vm.authorizedKeys[signingKeyId].foreignKey).pathname
+    : contractID
+}
+
+const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a GIMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
+  keys = keys.map((key) => {
+    const data = unwrapMaybeEncryptedData(key)
+    if (!data) return undefined
+    if (data.encryptionKeyId) {
+      data.data._private = data.encryptionKeyId
+    }
+    return ((data.data: any): GIKey)
+  }).filter(Boolean)
+
   const keysCopy = cloneDeep(keys)
-  return Object.fromEntries(keysCopy.map(key => {
+  return Object.fromEntries(keysCopy.map((key, i) => {
     key._notBeforeHeight = height
+    if (authorizedKeys?.[key.id]) {
+      if (authorizedKeys[key.id]._notAfterHeight == null) {
+        throw new Error('Cannot set existing unrevoked key')
+      }
+      // If the key was get previously, preserve its _notBeforeHeight
+      // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
+      // supposed to be active. This is a trade-off for simplicity, instead of
+      // considering discrete periods, which is the correct solution
+      // Discrete ranges *MUST* be implemented because they impact permissions
+      key._notBeforeHeight = Math.min(height, authorizedKeys[key.id]._notBeforeHeight ?? 0)
+    } else {
+      key._notBeforeHeight = height
+    }
     delete key._notAfterHeight
     return [key.id, key]
   }))
@@ -58,8 +88,10 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
         const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel)
 
+        const encryptionKeyId = foreignContractKey._private
+
         if (signingKeyId) {
-          return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
+          return [[name, foreignContractKey.name, encryptionKeyId], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
         }
 
         return undefined
@@ -79,7 +111,12 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
           await sbp(outputSelector, {
             contractID: cID,
             contractName,
-            data: keyNamesToUpdate.map(outputMapper),
+            data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
+              if (keyNamesToUpdate[i][2]) {
+                return encryptedOutgoingData(rootState[cID], keyNamesToUpdate[i][2], v)
+              }
+              return v
+            }),
             signingKeyId
           })
         } catch (e) {
@@ -139,6 +176,8 @@ export default (sbp('sbp/selectors/register', {
         // stops (() => this)().fetch
         // needs additional step of locking down Function constructor to stop:
         // new (()=>{}).constructor("console.log(typeof this.fetch)")()
+        globals.self = globals
+        globals.globalThis = globals
         with (new Proxy(globals, {
           get (o, p) { return o[p] },
           has (o, p) { /* console.log('has', p); */ return true }
@@ -159,6 +198,10 @@ export default (sbp('sbp/selectors/register', {
     saferEval({
       // pass in globals that we want access to by default in the sandbox
       // note: you can undefine these by setting them to undefined in exposedGlobals
+      crypto: {
+        // $FlowFixMe
+        getRandomValues: (v) => globalThis.crypto.getRandomValues(v)
+      },
       console,
       Object,
       Error,
@@ -171,8 +214,12 @@ export default (sbp('sbp/selectors/register', {
       // $FlowFixMe
       BigInt,
       Boolean,
+      Buffer,
       String,
       Number,
+      Int8Array,
+      Int16Array,
+      Int32Array,
       Uint8Array,
       Uint16Array,
       Uint32Array,
@@ -185,6 +232,7 @@ export default (sbp('sbp/selectors/register', {
       parseInt,
       Promise,
       Function,
+      Map,
       ...this.config.contracts.defaults.exposedGlobals,
       require: (dep) => {
         return dep === '@sbp/sbp'
@@ -220,12 +268,11 @@ export default (sbp('sbp/selectors/register', {
       this.env = savedEnv
     }
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, signatureFn?: Function) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
     let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     while (true) {
-      const rootState = sbp(this.config.stateSelector)
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),
@@ -249,7 +296,8 @@ export default (sbp('sbp/selectors/register', {
         await delay(randDelay) // wait randDelay ms before sending it again
         // if this isn't OP_CONTRACT, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const newEntry = await recreateEvent(entry, rootState, signatureFn)
+          const rootState = sbp(this.config.stateSelector)
+          const newEntry = await recreateEvent(entry, rootState)
           if (!newEntry) {
             return
           }
@@ -284,9 +332,8 @@ export default (sbp('sbp/selectors/register', {
     const height = message.height()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
+    const signingKeyId = message.signingKeyId()
     const config = this.config
-    const signature = message.signature()
-    const signedPayload = message.signedPayload()
     const env = this.env
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
@@ -294,22 +341,12 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        // Verify that the signing key is found, has the correct purpose and is
-        // allowed to sign this particular operation
-        if (!signingKey || !Array.isArray(signingKey.purpose) || !signingKey.purpose.includes('sig') || (signingKey.permissions !== '*' && (!Array.isArray(signingKey.permissions) || v.reduce((acc, [opT]) => acc && !(signingKey: any).permissions.includes(opT), true)))) {
-          throw new Error('OP_ATOMIC: Signing key is missing permissions for inner operation')
-        }
-
         v.forEach((u) => opFns[u[0]](u[1]))
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
-        config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys, height))
-
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_CONTRACT')
-        }
-
+        const keys = keysToMap(v.keys, height)
+        config.reactiveSet(state._vm, 'authorizedKeys', keys)
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
         // When you login you have the IEK which is derived from your password, and you
@@ -327,21 +364,50 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
-          const { data, meta, action } = v
-
-          if (signingKey && (signingKey.allowedActions !== '*' && (!Array.isArray(signingKey.allowedActions) || !signingKey.allowedActions.includes(action)))) {
-            throw new Error('Signing key is not allowed for action ' + action)
+          let innerSigningKeyId: string | typeof undefined
+          if (isSignedData(v)) {
+            innerSigningKeyId = (v: any).signingKeyId
+            v = (v: any).valueOf()
           }
+
+          // TODO: Verify signing permissions
+
+          const { data, meta, action } = (v: any)
 
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
+
+          sbp(
+            `${manifestHash}/${action}/process`,
+            {
+              data,
+              meta,
+              hash,
+              id,
+              contractID,
+              direction: message.direction(),
+              signingKeyId,
+              get signingContractID () {
+                return getContractIDfromKeyId(contractID, signingKeyId, state)
+              },
+              innerSigningKeyId,
+              get innerSigningContractID () {
+                return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
+              }
+            },
+            state
+          )
         }
       },
-      [GIMessage.OP_KEY_SHARE] (v: GIOpKeyShare) {
+      [GIMessage.OP_KEY_SHARE] (wv: GIOpKeyShare) {
         console.log('Processing OP_KEY_SHARE')
         // TODO: Prompt to user if contract not in pending
+
+        const data = unwrapMaybeEncryptedData(wv)
+        console.log('@@@@@GIMessage.OP_KEY_SHARE', { data })
+        if (!data) return
+        const v = (data.data: ProtoGIOpKeyShare)
 
         delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
@@ -351,8 +417,8 @@ export default (sbp('sbp/selectors/register', {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         let targetState = cheloniaState[v.contractID]
-        const newKeysReceived = []
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
+        console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (
@@ -366,7 +432,6 @@ export default (sbp('sbp/selectors/register', {
                   key: deserializeKey(decrypted),
                   transient: !!key.meta.private.transient
                 }])
-                newKeysReceived.push(key.id)
                 if (
                   targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                     Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
@@ -385,11 +450,6 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
-        }
-
-        // If we already have the keys, we can return as the contract state will not be affected
-        if (newKeysReceived.length === 0) {
-          return
         }
 
         internalSideEffectStack?.push(async () => {
@@ -424,69 +484,90 @@ export default (sbp('sbp/selectors/register', {
                 targetState._volatile.watch.push(...previousVolatileState.watch)
               }
             }
+          } else {
+            sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID })
           }
 
-          if (!Array.isArray(targetState._volatile?.pendingKeyRequests) || !v.keyRequestId) return
+          if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
 
           config.reactiveSet(
             targetState._volatile, 'pendingKeyRequests',
             targetState._volatile.pendingKeyRequests.filter((pkr) =>
-              pkr?.id !== v.keyRequestId
+              pkr?.name !== signingKey.name
             )
           )
         })
       },
-      [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
-        if (v.outerKeyId !== signature.keyId) {
-          throw new Error(`Invalid outer key ID. Expected ${signature.keyId} but got ${v.outerKeyId}`)
-        }
+      [GIMessage.OP_KEY_REQUEST] (wv: GIOpKeyRequest) {
+        const data = unwrapMaybeEncryptedData(wv)
+        if (!data) return
+        const v = data.data
 
-        if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
-          if (state._vm.invites[v.outerKeyId].quantity > 0) {
-            if ((--state._vm.invites[v.outerKeyId].quantity) <= 0) {
-              state._vm.invites[v.outerKeyId].status = INVITE_STATUS.USED
+        const originatingContractID = v.contractID
+
+        if (state._vm?.invites?.[signingKeyId]?.quantity != null) {
+          if (state._vm.invites[signingKeyId].quantity > 0) {
+            if ((--state._vm.invites[signingKeyId].quantity) <= 0) {
+              state._vm.invites[signingKeyId].status = INVITE_STATUS.USED
             }
           } else {
-            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + JSON.stringify(v))
+            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + originatingContractID)
             return
           }
         }
 
-        if (state._vm?.invites?.[v.outerKeyId]?.expires != null) {
-          if (state._vm.invites[v.outerKeyId].expires < Date.now()) {
-            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[v.outerKeyId].expires + ': ' + JSON.stringify(v))
+        if (state._vm?.invites?.[signingKeyId]?.expires != null) {
+          if (state._vm.invites[signingKeyId].expires < Date.now()) {
+            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[signingKeyId].expires + ': ' + originatingContractID)
             return
           }
         }
 
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
+        if (config.skipActionProcessing || env.skipActionProcessing) {
+          return
+        }
+
+        if (!has(v.replyWith, 'context')) {
+          console.error('Ignoring OP_KEY_REQUEST because it is missing the context attribute')
+          return
+        }
+
+        const context = v.replyWith.context
+
+        if (context?.[0] !== originatingContractID) {
+          console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
           return
         }
 
         if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
+
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
-          message.originatingContractID(),
-          message.head().previousHEAD,
-          message.id(),
-          v
+          !!data.encryptionKeyId,
+          message.height(),
+          signingKeyId,
+          context
         ])
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
         self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
       },
-      [GIMessage.OP_KEY_REQUEST_SEEN] (v: GIOpKeyRequestSeen) {
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
+      [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
+        if (config.skipActionProcessing || env.skipActionProcessing) {
           return
         }
         // TODO: Handle boolean (success) value
 
+        const data = unwrapMaybeEncryptedData(wv)
+        if (!data) return
+        const v = (data.data: ProtoGIOpKeyRequestSeen)
+
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
-          const keyId = state._vm.pendingKeyshares[hash][2].outerKeyId
+          const keyId = state._vm.pendingKeyshares[hash][2]
+          const originatingContractID = state._vm.pendingKeyshares[hash][3][0]
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
-            state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[hash][0])
+            state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
-          const originatingContractID = state._vm.pendingKeyshares[hash][0]
           delete state._vm.pendingKeyshares[hash]
           delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
@@ -497,35 +578,37 @@ export default (sbp('sbp/selectors/register', {
         state._vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        // Order is so that KEY_ADD doesn't overwrite existing keys
-        // TODO: Verify ringLevel
-        // TODO: Handle the case of an existing key: its permissions are then augmented
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_ADD')
-        }
-        v.forEach((k) => {
-          if (has(state._vm.authorizedKeys, k.id)) {
+        const keys = keysToMap(v, height, state._vm.authorizedKeys)
+        const keysArray = ((Object.values(v): any): GIKey[])
+        keysArray.forEach((k) => {
+          if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
             throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
           }
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
-        config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v, height), ...state._vm.authorizedKeys })
+        config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
         keyAdditionProcessor.call(self, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
-        if (!state._volatile) config.reactiveSet(state._volatile, '_volatile', Object.create(null))
+        if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
-        }
         validateKeyDelPermissions(contractID, signingKey, state, v)
-        v.forEach((keyId) => {
-          const key = state._vm.authorizedKeys[keyId]
-          if (!key) {
+        const keyIds = ((v.map((k) => {
+          const data = unwrapMaybeEncryptedData(k)
+          if (!data) return undefined
+          return data.data
+        }): any): string[]).filter((keyId) => {
+          if (!keyId || typeof keyId !== 'string') return false
+          if (!has(state._vm.authorizedKeys, (keyId: any)) || state._vm.authorizedKeys[keyId]._notAfterHeight != null) {
             console.warn('Attempted to delete non-existent key from contract', { contractID, keyId })
-            return
+            return false
           }
+          return true
+        })
+
+        keyIds.forEach((keyId) => {
+          const key = state._vm.authorizedKeys[keyId]
           state._vm.authorizedKeys[keyId]._notAfterHeight = height
 
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
@@ -563,7 +646,7 @@ export default (sbp('sbp/selectors/register', {
         if (Array.isArray(state._volatile?.watch)) {
           const updatedKeysMap = Object.create(null)
 
-          v.forEach((keyId) => {
+          keyIds.forEach((keyId) => {
             updatedKeysMap[state._vm.authorizedKeys[keyId].name] = {
               name: state._vm.authorizedKeys[keyId].name,
               oldKeyId: keyId
@@ -576,10 +659,6 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        // Order is so that KEY_UPDATE doesn't overwrite existing keys
-        if (!signingKey) {
-          throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
-        }
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
@@ -594,14 +673,14 @@ export default (sbp('sbp/selectors/register', {
           }
           config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
         }
-        keyAdditionProcessor.call(self, (v: any), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, (updatedKeys: any), state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
         if (Array.isArray(state._volatile?.watch)) {
           const updatedKeysMap = Object.create(null)
 
-          v.forEach((key) => {
+          updatedKeys.forEach((key) => {
             if (key.data) updatedKeysMap[key.name] = key
           })
 
@@ -622,17 +701,10 @@ export default (sbp('sbp/selectors/register', {
     if (config.preOp) {
       processOp = config.preOp(message, state) !== false && processOp
     }
-    let signingKey: ?GIKey
 
+    let signingKey: GIKey
     // Signature verification
-    if (signature.type === 'default') {
-      if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-        console.error('Received unsigned message', message)
-      } else {
-        console.error('Received unsigned message. Aborting.', message)
-        throw new ChelErrorUnexpected('Received unsigned message')
-      }
-    } else {
+    {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
@@ -640,42 +712,21 @@ export default (sbp('sbp/selectors/register', {
       // The difficulty of this is how to securely determine the message ID to use.
       // The server can assist with this.
 
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys, height) : state._vm.authorizedKeys
-      signingKey = authorizedKeys?.[signature.keyId]
-
-      // `signingKey` may not be present in the contract. This happens in cross-contract interactions,
-      // where a contract writes to another contract using its own keys. For example, when one requests
-      // to join a group, that message cannot be signed by the group because the secret key is only known
-      // to group members. Instead, it is signed with the keys of the person joining.
-      // TODO: Restrict this to OP_KEY_SHARE only
-      if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
-        const originatingContractState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-          'chelonia/latestContractState', message.originatingContractID()
-        ])
-
-        signingKey = originatingContractState._vm?.authorizedKeys?.[signature.keyId]
-      }
+      const stateForValidation = opT === GIMessage.OP_CONTRACT && !state?._vm?.authorizedKeys
+        ? {
+            _vm: {
+              authorizedKeys: keysToMap(((opV: any): GIOpContract).keys, height)
+            }
+          }
+        : state
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
-      if (
-        !signingKey ||
-        height > signingKey._notAfterHeight ||
-        height < signingKey._notBeforeHeight ||
-        !Array.isArray(signingKey.purpose) ||
-        !signingKey.purpose.includes('sig') ||
-        (
-          signingKey.permissions !== '*' &&
-          (
-            !Array.isArray(signingKey.permissions) ||
-            !signingKey.permissions.includes(opT)
-          )
-        )
-      ) {
+      if (!validateKeyPermissions(stateForValidation, signingKeyId, opT, opV)) {
         throw new Error('No matching signing key was defined')
       }
 
-      verifySignature(signingKey.data, signedPayload, signature.data)
+      signingKey = stateForValidation._vm.authorizedKeys[signingKeyId]
     }
 
     if (config[`preOp_${opT}`]) {
@@ -746,7 +797,7 @@ export default (sbp('sbp/selectors/register', {
         try {
           await sbp.apply(sbp, op)
         } catch (e) {
-          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e?.message || e })
+          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
         }
       })
     } catch (e) {
@@ -806,6 +857,8 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractState = state[contractID] ?? {}
 
+    console.log('pendingKeyshares', contractState._vm.pendingKeyshares)
+
     if (!contractState._vm || !contractState._vm.pendingKeyshares) {
       return
     }
@@ -814,7 +867,7 @@ export default (sbp('sbp/selectors/register', {
 
     delete contractState._vm.pendingKeyshares
 
-    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])
+    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE], ['sig'])
 
     if (!signingKeyId) {
       console.log('Unable to respond to key request because there is no suitable secret key with OP_KEY_REQUEST_SEEN permission')
@@ -826,32 +879,29 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      const [originatingContractID, previousHEAD, id, v] = ((entry: any): [string, string, string, GIOpKeyRequest])
+      const [fullEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
 
       // 1. Sync (originating) identity contract
 
-      const originatingState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-        'chelonia/latestContractState', originatingContractID
+      await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
+        'chelonia/contract/sync', originatingContractID
       ])
 
+      const originatingState = state[originatingContractID]
       const contractName = state.contracts[contractID].type
       const originatingContractName = originatingState._vm.type
 
+      const v = signedIncomingData(originatingContractID, originatingState, rv, originatingContractHeight, headJSON).valueOf()
+
       try {
         // 2. Verify 'data'
-        const { data, keyId, encryptionKeyId, outerKeyId } = v
+        const { encryptionKeyId } = v
 
-        const signingKey = originatingState._vm?.authorizedKeys[keyId]
+        const responseKey = encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
 
-        if (!signingKey || signingKey._notAfter !== undefined || !signingKey.data) {
-          throw new Error('Unable to find signing key')
-        }
+        const deserializedResponseKey = deserializeKey(responseKey)
 
-        // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
-        const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
-        signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
-
-        verifySignature(signingKey.data, signedInnerData.join('|'), data)
+        sbp('chelonia/storeSecretKeys', { key: deserializedResponseKey })
 
         const keys = pick(
           state['secretKeys'],
@@ -869,8 +919,6 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/out/keyShare', {
           contractID: originatingContractID,
           contractName: originatingContractName,
-          originatingContractName: contractName,
-          originatingContractID: contractID,
           data: {
             contractID: contractID,
             keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
@@ -881,19 +929,67 @@ export default (sbp('sbp/selectors/register', {
                   shareable: true
                 }
               }
-            })),
-            keyRequestId: id
+            }))
           },
-          signingKeyId
+          signingKey: deserializedResponseKey
         })
 
         // 4(i). Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: true } })
+        const payload = { keyRequestHash: hash, success: true }
+        await sbp('chelonia/out/atomic', {
+          contractID,
+          contractName,
+          signingKeyId,
+          data: [
+            [
+              'chelonia/out/keyRequestResponse',
+              {
+                data:
+                  fullEncryption
+                    ? encryptedOutgoingData(
+                      contractState,
+                      findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
+                      payload
+                    )
+                    : payload
+              }
+            ],
+            [
+              // Upon successful key share, we want to share deserializedResponseKey
+              // with ourselves
+              'chelonia/out/keyShare',
+              {
+                data: {
+                  contractID: originatingContractID,
+                  keys: [
+                    {
+                      id: keyId(deserializedResponseKey),
+                      meta: {
+                        private: {
+                          content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                          shareable: true
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          ]
+        })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
+        const payload = { keyRequestHash: hash, success: false }
 
         // 4(ii). Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: false } })
+        await sbp('chelonia/out/keyRequestResponse', {
+          contractID,
+          contractName,
+          signingKeyId,
+          data: fullEncryption
+            ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+            : payload
+        })
       }
     }))
   },
@@ -986,14 +1082,12 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
-      handleEventError?.(e, message)
-      if (!(e instanceof ChelErrorUnexpected)) {
-        // sometimes we get this error in the following situation:
-        // Cypress tests run, generate a lot of messages, we are logged out, which
-        // clears the state, but we still receive the message, and since the state
-        // has been cleared, no contracts exist, and ChelErrorUnexpected is thrown
-        throw e
+      try {
+        handleEventError?.(e, message)
+      } catch (e2) {
+        console.error('[chelonia] Ignoring user error in handleEventError hook:', e2)
       }
+      throw e
     }
   }
 }): string[])
@@ -1063,9 +1157,33 @@ const handleEvent = {
       const manifestHash = message.manifest()
       const hash = message.hash()
       const id = message.id()
+      const signingKeyId = message.signingKeyId()
       const callSideEffect = (field) => {
-        const { action, data, meta } = ((field.valueOf(): any): GIOpActionUnencrypted)
-        const mutation = { data, meta, hash, id, contractID, description: message.description() }
+        let v = field.valueOf()
+        let innerSigningKeyId: string | typeof undefined
+        if (isSignedData(v)) {
+          innerSigningKeyId = (v: any).signingKeyId
+          v = (v: any).valueOf()
+        }
+
+        const { action, data, meta } = (v: any)
+        const mutation = {
+          data,
+          meta,
+          hash,
+          id,
+          contractID,
+          description: message.description(),
+          direction: message.direction(),
+          signingKeyId,
+          get signingContractID () {
+            return getContractIDfromKeyId(contractID, signingKeyId, state)
+          },
+          innerSigningKeyId,
+          get innerSigningContractID () {
+            return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
+          }
+        }
         return sbp(`${manifestHash}/${action}/sideEffect`, mutation)
       }
       const msg = Object(message.message())
@@ -1080,8 +1198,10 @@ const handleEvent = {
         }
         return acc
       }
-      for (const actionOpV in msg.reduce(reducer, [])) {
-        await callSideEffect(actionOpV)
+
+      const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+      for (let i = 0; i < actionsOpV.length; i++) {
+        await callSideEffect(actionsOpV[i])
       }
     }
   },

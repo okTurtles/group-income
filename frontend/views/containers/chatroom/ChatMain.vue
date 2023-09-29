@@ -130,7 +130,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
-import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -315,13 +315,10 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = message.decryptedValue()
-            const { meta, data } = msgValue
-            this.messageState.contract.messages.push({
-              ...createMessage({ meta, data, hash: message.hash(), id: message.id() }),
-              // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
-              // when we don't get event after a certain period
-              pending: true // NOTE: do not RENAME this as it's being used inside the contract
+            sbp('chelonia/in/processMessage', message, this.messageState.contract).then((state) => {
+              this.messageState.contract = state
+            }).catch((e) => {
+              console.error('Error sending message during pre-publish: ' + e.message)
             })
             this.stopReplying()
             this.updateScroll()
@@ -601,10 +598,16 @@ export default ({
         return
       }
 
+      // TODO: The next line will _not_ get information about any inner signatures,
+      // which is used for determininng the sender of a message. Update with
+      // another call to GIMessage to get signature information
+      const value = message.decryptedValue()
+      if (!value) throw new Error('Unable to decrypt message')
+
       const isMessageAddedOrDeleted = (message: GIMessage) => {
         if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-        const { action, meta } = message.decryptedValue()
+        const { action, meta } = value
         const rootState = sbp('state/vuex/state')
         let addedOrDeleted = 'NONE'
 
@@ -624,7 +627,7 @@ export default ({
       if (addedOrDeleted === 'DELETED') {
         // NOTE: Message will be deleted in processMessage function
         //       but need to make animation to delete it, probably here
-        const messageHash = message.decryptedValue().data.hash
+        const messageHash = value.data.hash
         const msgIndex = findMessageIdx(messageHash, this.messages)
         document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 

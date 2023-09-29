@@ -2,7 +2,7 @@
 import sbp from '@sbp/sbp'
 
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { omit } from '@model/contracts/shared/giLodash.js'
+import { has, omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -16,6 +16,9 @@ export default (sbp('sbp/selectors/register', {
     try {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
+
+      const rootState = sbp('state/vuex/state')
+      const userID = rootState.loggedIn.identityContractID
 
       if (!cekOpts) {
         const CEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -37,11 +40,13 @@ export default (sbp('sbp/selectors/register', {
         }
       }
 
+      const CEK = cekOpts._rawKey ? cekOpts._rawKey : deserializeKey(cekOpts.data)
+
       if (!cskOpts) {
         const CSK = keygen(EDWARDS25519SHA512BATCH)
         const CSKid = keyId(CSK)
         const CSKp = serializeKey(CSK, false)
-        const CSKs = encryptedOutgoingDataWithRawKey(cekOpts._rawKey ? cekOpts._rawKey : deserializeKey(cekOpts.data), serializeKey(CSK, true))
+        const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
 
         cskOpts = {
           id: CSKid,
@@ -79,7 +84,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: '*',
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
@@ -93,6 +98,9 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/storeSecretKeys',
         [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
       )
+
+      const userCSKid = findKeyIdByName(rootState[userID], 'csk')
+      if (!userCSKid) throw new Error('User CSK id not found')
 
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
@@ -121,7 +129,18 @@ export default (sbp('sbp/selectors/register', {
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
             data: cekOpts.data
-          }
+          },
+          // TODO: Find a way to have this wrapping be done by Chelonia directly
+          encryptedOutgoingDataWithRawKey(CEK, {
+            foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+            id: userCSKid,
+            data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+            allowedActions: '*',
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            name: `${userID}/${userCSKid}`
+          })
         ],
         contractName: 'gi.contracts/chatroom'
       })
@@ -174,8 +193,40 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
-  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params) => {
+  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
+    const userID = rootGetters.ourContactProfiles[params.data.username]?.contractID
+
+    if (!userID || !has(rootState, userID)) {
+      throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
+    }
+
     await sbp('chelonia/contract/sync', params.contractID)
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+
+    const state = rootState[params.contractID]
+
+    // Add the user's CSK to the contract
+    await sbp('chelonia/out/keyAdd', {
+      contractID: params.contractID,
+      contractName: 'gi.contracts/chatroom',
+      // TODO: Find a way to have this wrapping be done by Chelonia directly
+      data: [encryptedOutgoingData(state, CEKid, {
+        foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+        id: userCSKid,
+        data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        allowedActions: '*',
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        name: `${userID}/${userCSKid}`
+      })],
+      signingKeyId
+    })
+
     return sendMessage(params)
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),

@@ -526,6 +526,26 @@ const getters = {
       })
     return profiles
   },
+  ourContactProfilesById (state, getters) {
+    const profiles = {}
+    Object.keys(state.contracts)
+      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .forEach(contractID => {
+        const attributes = state[contractID].attributes
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
+          profiles[contractID] = attributes
+        }
+      })
+    return profiles
+  },
+  ourContactsById (state, getters) {
+    return Object.keys(getters.ourContactProfilesById)
+      .sort((userIdA, userIdB) => {
+        const nameA = ((getters.ourContactProfilesById[userIdA].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdA].username || userIdA
+        const nameB = ((getters.ourContactProfilesById[userIdB].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdB].username || userIdB
+        return nameA > nameB ? 1 : -1
+      })
+  },
   ourContacts (state, getters) {
     return Object.keys(getters.ourContactProfiles)
       .sort((usernameA, usernameB) => {

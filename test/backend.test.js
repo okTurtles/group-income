@@ -130,7 +130,8 @@ describe('Full walkthrough', function () {
         attributes: { username, email }
       },
       hooks: {
-        prepublish: (message) => { message.decryptedValue(JSON.parse) },
+        // TODO when merging: decryptedValue no longer takes an argument (was decryptedValue(JSON.parse))
+        prepublish: (message) => { message.decryptedValue() },
         postpublish: (message) => { testFn && testFn(message) }
       }
     })
