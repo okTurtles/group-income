@@ -193,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
+            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE, GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
             allowedActions: '*',
             meta: {
               private: {
@@ -207,7 +207,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
             allowedActions: '*',
             meta: {
               private: {
@@ -441,14 +441,14 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/wait')
       // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
-      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
       // Doing both 'state/vuex/save' above and 'gi.db/settings/delete' doesn't
       // make much sense, because delete undoes save
       // TODO: In the future, the goal is to encrypt the state so that it doesn't
       // need to be deleted.
-      await sbp('gi.db/settings/delete', username)
+      // const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+      // await sbp('gi.db/settings/delete', username)
       sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {
@@ -461,12 +461,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
-    const signingKeyId = findKeyIdByName(state, 'csk')
 
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+      const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
-      if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK`)
+      const CSKid = findKeyIdByName(rootState[groupID], 'csk')
+
+      if (!CEKid || !CSKid) {
+        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
         // We intentionally don't throw here to be able to share keys with the
         // remaining groups
         return Promise.resolve()
@@ -474,21 +476,19 @@ export default (sbp('sbp/selectors/register', {
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
-        originatingContractID: contractID,
-        originatingContractName: 'gi.contracts/identity',
-        data: {
+        data: encryptedOutgoingData(groupState, CEKid, {
           contractID: groupID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
             meta: {
               private: {
-                content: encryptedOutgoingData(rootState[groupID], CEKid, serializeKey(newKey, true))
+                content: serializeKey(newKey, true)
               }
             }
           }))
-        },
-        signingKeyId
+        }),
+        signingKeyId: CSKid
       })
     })).then(() => undefined)
   },
@@ -557,8 +557,6 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: profile.contractID,
         contractName: 'gi.contracts/identity',
-        originatingContractID: currentGroupId,
-        originatingContractName: 'gi.contracts/group',
         subjectContractID: message.contractID(),
         keyIds: '*'
       })
@@ -572,7 +570,10 @@ export default (sbp('sbp/selectors/register', {
           // having any groups in common
           contractID: message.contractID()
         },
-        signingContractID: currentGroupId,
+        // For now, we assume that we're messaging someone which whom we
+        // share a group
+        signingKeyId: sbp('chelonia/contract/suitableSigningKey', profile.contractID, [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        innerSigningContractID: rootState.currentGroupId,
         hooks
       })
     }
