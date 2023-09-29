@@ -169,7 +169,7 @@ const PaymentsMixin: Object = {
     // Returns the stored payment period object for a given period stamp,
     // or an empty object if not found.
     // TODOs: rename to getPaymentPeriod, and maybe avoid loading all historical payment periods.
-    async getPeriodPayment (period: string) {
+    async getPaymentPeriod (period: string) {
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         return this.groupPeriodPayments[period] || {}
       }

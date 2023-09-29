@@ -56,7 +56,7 @@ export default ({
         if (!period || comparePeriodStamps(period, firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
-        const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
+        const { lastAdjustedDistribution } = await this.getPaymentPeriod(period)
         const doneCount = getLen(paymentDetails)
         const missedCount = getLen(lastAdjustedDistribution || {})
         this.history.unshift({
