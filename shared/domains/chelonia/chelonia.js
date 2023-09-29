@@ -815,6 +815,8 @@ export default (sbp('sbp/selectors/register', {
     const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyDel).map((keyId) => {
+      if (isEncryptedData(keyId)) return keyId
+      // $FlowFixMe
       if (!has(state._vm.authorizedKeys, keyId) || state._vm.authorizedKeys[keyId]._notAfterHeight != null) return undefined
       if (state._vm.authorizedKeys[keyId]._private) {
         return encryptedOutgoingData(state, state._vm.authorizedKeys[keyId]._private, keyId)
@@ -822,7 +824,7 @@ export default (sbp('sbp/selectors/register', {
         return keyId
       }
     }).filter(Boolean)
-    validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
+    validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, (payload: any))
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -850,21 +852,23 @@ export default (sbp('sbp/selectors/register', {
     const state = contract.state(contractID)
     const { HEAD: previousHEAD, height: previousHeight } = atomic ? { HEAD: contractID, height: 0 } : await sbp('chelonia/private/out/latestHEADinfo', contractID)
     const payload = (data: GIOpKeyUpdate).map((key) => {
+      if (isEncryptedData(key)) return key
+      // $FlowFixMe
       const { oldKeyId } = key
       if (state._vm.authorizedKeys[oldKeyId]._private) {
-        return encryptedOutgoingData(state, state._vm.authorizedKeys[oldKeyId]._private, state._vm.authorizedKeys[oldKeyId]._private, key)
+        return encryptedOutgoingData(state, state._vm.authorizedKeys[oldKeyId]._private, key)
       } else {
         return key
       }
     })
-    validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
+    validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, (payload: any))
     let msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       height: previousHeight + 1,
       op: [
         GIMessage.OP_KEY_UPDATE,
-        signedOutgoingData(state, params.signingKeyId, payload, this.transientSecretKeys)
+        signedOutgoingData(state, params.signingKeyId, (payload: any), this.transientSecretKeys)
       ],
       manifest: manifestHash
     })
