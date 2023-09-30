@@ -338,6 +338,10 @@ export default (sbp('sbp/selectors/register', {
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
     console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
+    if (state?._volatile?.dirty) {
+      console.debug('IGNORING OPCODE BECAUSE CONTRACT STATE IS MARKED AS DIRTY.', 'OPCODE:', opName, 'CONTRACT:', contractID)
+      return
+    }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
@@ -450,6 +454,12 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
+        }
+
+        // TODO: Handle foreign keys too
+        if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
+          if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
+          config.reactiveSet(targetState._volatile, 'dirty', true)
         }
 
         internalSideEffectStack?.push(async () => {
@@ -1049,7 +1059,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID].height = height
       }
       // process any side-effects (these must never result in any mutation to the contract state!)
-      if (!processingErrored) {
+      if (!processingErrored && !state[contractID]?._volatile?.dirty) {
         try {
           // Gets run get when skipSideEffects is false
           if (internalSideEffectStack) {
