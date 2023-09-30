@@ -372,7 +372,8 @@ export default (sbp('sbp/selectors/register', {
     try {
       sbp('appLogs/startCapture', username)
       const state = await sbp('gi.db/settings/load', username)
-      let contractIDs = []
+      const contractIDs = []
+      const groupsToRejoin = []
       // login can be called when no settings are saved (e.g. from Signup.vue)
       if (state) {
         // The retrieved local data might need to be completed in case it was originally saved
@@ -380,7 +381,14 @@ export default (sbp('sbp/selectors/register', {
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
-        contractIDs = Object.keys(state.contracts)
+        contractIDs.push(...Object.keys(state.contracts))
+
+        groupsToRejoin.push(...contractIDs.filter((contractID) => {
+          return (
+            state.contracts[contractID].type === 'gi.contracts/group' &&
+            !state.profiles?.[username]
+          )
+        }))
       }
       if (!contractIDs.includes(identityContractID)) {
         contractIDs.push(identityContractID)
@@ -402,6 +410,14 @@ export default (sbp('sbp/selectors/register', {
 
         // The state above might be null, so we re-grab it
         const state = sbp('state/vuex/state')
+
+        await Promise.all(groupsToRejoin.map(groupId => {
+          return state.contracts[groupId] && sbp('gi.actions/group/join', {
+            contractID: groupId,
+            contractName: 'gi.contracts/group'
+          })
+        }))
+
         // update the 'lastLoggedIn' field in user's group profiles
         sbp('state/vuex/getters').groupsByName
           .map(entry => entry.contractID)
