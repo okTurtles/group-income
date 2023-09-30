@@ -383,9 +383,16 @@ export default (sbp('sbp/selectors/register', {
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         contractIDs.push(...Object.keys(state.contracts))
 
+        // Some of the group contracts in the state may not have completed the
+        // two-step join process (i.e., an OP_KEY_SHARE had not been received
+        // after joining the last time the state was saved)
+        // The following identifies those groups and saves them to groupsToRejoin
         groupsToRejoin.push(...contractIDs.filter((contractID) => {
           return (
+            // (1) We're looking for group contracts
             state.contracts[contractID].type === 'gi.contracts/group' &&
+            // (2) That potentially haven't been joined by us
+            //     (in which case state.profiles?.[username] will be undefined)
             !state.profiles?.[username]
           )
         }))
@@ -411,11 +418,19 @@ export default (sbp('sbp/selectors/register', {
         // The state above might be null, so we re-grab it
         const state = sbp('state/vuex/state')
 
+        // Call 'gi.actions/group/join' on all groups which may need re-joining
         await Promise.all(groupsToRejoin.map(groupId => {
-          return state.contracts[groupId] && sbp('gi.actions/group/join', {
-            contractID: groupId,
-            contractName: 'gi.contracts/group'
-          })
+          return (
+            // (1) Check whether the contract exists (may have been removed
+            //     after sync)
+            state.contracts[groupId] &&
+            // (2) Check whether the join process is still incomplete
+            //     This needs to be re-checked because it may have changed after
+            //     sync
+            !state.profiles?.[username] &&
+            // (3) Call join
+            sbp('gi.actions/group/join', { contractID: groupId, contractName: 'gi.contracts/group' })
+          )
         }))
 
         // update the 'lastLoggedIn' field in user's group profiles
