@@ -16,6 +16,7 @@ import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import { encrypt } from '../../shared/domains/chelonia/crypto.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
@@ -99,9 +100,22 @@ sbp('sbp/selectors/register', {
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
     if (state.loggedIn) {
+      const { identityContractID, stateEncryptionKeyId, salt, encryptedStateEncryptionKey } = state.loggedIn
       state.notifications = applyStorageRules(state.notifications || [])
-      // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      if (!stateEncryptionKeyId || !salt || !encryptedStateEncryptionKey) {
+        throw new Error('Invalid logged in state: missing encryption key information')
+      }
+      // Fetch the session encryption key
+      const stateEncryptionKeyS = window.sessionStorage.getItem(stateEncryptionKeyId)
+      if (!stateEncryptionKeyS) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
+      // Encrypt the current state
+      const encryptedState = encrypt(stateEncryptionKeyS, JSON.stringify(state), identityContractID)
+      // Save the three fields of the encrypted state:
+      //   (1) stateEncryptionKeyId
+      //   (2) salt
+      //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
+      //   (4) encryptedState
+      await sbp('gi.db/settings/save', identityContractID, `${stateEncryptionKeyId}.${salt}.${encryptedStateEncryptionKey}.${encryptedState}}`)
     }
   }
 })
