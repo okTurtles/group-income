@@ -79,10 +79,10 @@ export default ({
       if (hash !== this.currentGroupId) {
         sbp('gi.actions/group/switch', hash)
       }
-      if (!emptyGroupPicture && path !== '/dashboard') {
-        this.$router.push(({ path: '/dashboard' }))
-      } else if (emptyGroupPicture && path !== '/pending-approval') {
+      if (emptyGroupPicture && path !== '/pending-approval') {
         this.$router.push(({ path: '/pending-approval' }))
+      } else if (!emptyGroupPicture && path === '/pending-approval') {
+        this.$router.push(({ path: '/dashboard' }))
       }
     },
     groupPictureForContract (contractID) {

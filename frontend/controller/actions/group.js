@@ -33,7 +33,6 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey, deserializeKey } from '../../../shared/domains/chelonia/crypto.js'
-import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -406,12 +405,11 @@ export default (sbp('sbp/selectors/register', {
       } else if (hasSecretKeys && !sbp('chelonia/contract/isWaitingForKeyShare', state)) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
 
+        const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
         if (!state.profiles?.[username] || state.profiles[username].departedDate) {
-          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
           // Share our PEK with the group so that group members can see
@@ -511,10 +509,6 @@ export default (sbp('sbp/selectors/register', {
             .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users.includes(username)))
 
           await sbp('chelonia/contract/sync', chatRoomIds)
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: params.contractID,
-            chatRoomId: rootState[params.contractID].generalChatRoomId
-          })
         }
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
@@ -737,7 +731,10 @@ export default (sbp('sbp/selectors/register', {
       hooks: {
         prepublish: (msg) => {
           sbp('okTurtles.events/once', msg.hash(), (cId, m) => {
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: cId })
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+              groupId: params.contractID,
+              chatRoomId: cId
+            })
           })
         },
         postpublish: params.hooks?.postpublish

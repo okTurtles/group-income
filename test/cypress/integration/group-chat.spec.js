@@ -205,6 +205,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user3 joins ${groupName1} group and logout`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
+      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       bypassUI: true
@@ -224,6 +225,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
+      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       bypassUI: true
@@ -485,6 +487,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = user3
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
+      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       isLoggedIn: true
@@ -503,6 +506,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
+      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       isLoggedIn: true
