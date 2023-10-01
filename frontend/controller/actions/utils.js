@@ -18,17 +18,19 @@ import type { GIActionParams } from './types.js'
 // to emit the encrypted action when appropriate.
 // Note that this function does not currently support specifying custom encryption
 // or signing keys, and that such keys in params get overridden.
-export function encryptedAction (
+export const encryptedAction = (
   action: string,
   humanError: string | Function,
   handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
   encryptionKeyName?: string,
-  signingKeyName?: string
-): Object {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  signingKeyName?: string,
+  innerSigningKeyName?: string
+): Object => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
+      innerSigningKeyId,
       encryptionKeyId,
       action: action.replace('gi.actions', 'gi.contracts'),
       originatingContractID
@@ -37,18 +39,50 @@ export function encryptedAction (
   return {
     [action]: async function (params: GIActionParams) {
       try {
-        const state = await sbp('chelonia/latestContractState', params.contractID)
-        const signingState = !params.signingContractID || params.signingContractID === params.contractID ? state : await sbp('chelonia/latestContractState', params.signingContractID)
+        const contractID = params.contractID
+        if (!contractID) {
+          throw new Error('Missing contract ID')
+        }
+        const state = {
+          [contractID]: await sbp('chelonia/latestContractState', contractID)
+        }
+        const rootState = sbp('state/vuex/state')
 
-        const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
-        const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
-
-        if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
-          console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID: params.contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
-          return Promise.reject(new Error(`No key found to send ${action} for contract ${params.contractID}`))
+        // Default signingContractID is the current contract
+        const signingContractID = params.signingContractID || contractID
+        if (!state[signingContractID]) {
+          state[signingContractID] = await sbp('chelonia/latestContractState', signingContractID)
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId, params.originatingContractID)
+        // Default innerSigningContractID is the current logged in identity
+        // contract ID, unless we are signing for the current identity contract
+        const innerSigningContractID = params.innerSigningContractID !== undefined
+          ? params.innerSigningContractID
+          : contractID === rootState.loggedIn.identityContractID
+            ? null
+            : rootState.loggedIn.identityContractID
+
+        if (innerSigningContractID && !state[innerSigningContractID]) {
+          state[innerSigningContractID] = await sbp('chelonia/latestContractState', innerSigningContractID)
+        }
+
+        const signingKeyId = params.signingKeyId || findKeyIdByName(state[signingContractID], signingKeyName ?? 'csk')
+        const innerSigningKeyId = params.innerSigningKeyId || (
+          innerSigningContractID && findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
+        )
+        const encryptionKeyId = findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
+
+        if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
+          console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
+          throw new Error(`No key found to send ${action} for contract ${contractID}`)
+        }
+
+        if (innerSigningContractID && (!innerSigningKeyId || !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
+          console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
+          throw new Error(`No key found to send ${action} for contract ${contractID}`)
+        }
+
+        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId, encryptionKeyId, params.originatingContractID)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {

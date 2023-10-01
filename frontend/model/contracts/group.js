@@ -556,9 +556,7 @@ sbp('chelonia/defineContract', {
             allowPublicChannels: false
           },
           streaks: initGroupStreaks(),
-          profiles: {
-            [meta.username]: initGroupProfile(meta.createdDate)
-          },
+          profiles: {},
           chatRooms: {},
           totalPledgeAmount: 0
         }, data)
@@ -970,6 +968,12 @@ sbp('chelonia/defineContract', {
             // gi.contracts/group/removeOurselves will eventually trigger this
             // as well
             sbp('gi.contracts/group/rotateKeys', contractID, state)
+
+            const rootGetters = sbp('state/vuex/getters')
+            const userID = rootGetters.ourContactProfiles[data.member]?.contractID
+            if (userID) {
+              sbp('gi.contracts/group/removeForeignKeys', contractID, userID, state)
+            }
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
@@ -1500,13 +1504,18 @@ sbp('chelonia/defineContract', {
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
       const PEKid = findKeyIdByName(state, 'pek')
 
       const groupCSKids = findForeignKeysByContractID(state, groupContractID)
 
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      if (groupCSKids.length) {
+      if (groupCSKids?.length) {
+        if (!CEKid) {
+          throw new Error('Identity CEK not found')
+        }
+
         sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
           contractID: identityContractID,
           contractName: 'gi.contracts/identity',
@@ -1518,8 +1527,31 @@ sbp('chelonia/defineContract', {
           })
       }
 
+      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
+        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
+
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
+    },
+    'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
+      const keyIds = findForeignKeysByContractID(state, userID)
+
+      if (!keyIds?.length) return
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+
+      if (!CEKid) throw new Error('Missing encryption key')
+
+      sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
+        contractID,
+        contractName: 'gi.contracts/group',
+        data: keyIds,
+        signingKeyId: CSKid
+      }]).catch(e => {
+        console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }
