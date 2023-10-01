@@ -476,7 +476,7 @@ export default ({
     async updatePayments () {
       // NOTE: no need to calculate while logging out
       if (Object.keys(this.groupSettings).length) {
-        this.historicalPayments = await this.getHistoricalPaymentsInTypes()
+        this.historicalPayments = await this.getAllPaymentsInTypes()
       }
     }
   }
