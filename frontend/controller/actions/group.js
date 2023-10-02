@@ -411,7 +411,6 @@ export default (sbp('sbp/selectors/register', {
         // inviteAccept action and join the General chatroom
         if (!state.profiles?.[username] || state.profiles[username].departedDate) {
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-
           // Share our PEK with the group so that group members can see
           // our name and profile information
           const PEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')

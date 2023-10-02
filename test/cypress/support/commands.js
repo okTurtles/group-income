@@ -151,24 +151,26 @@ Cypress.Commands.add('giCreateGroup', (name, {
 } = {}) => {
   if (bypassUI) {
     cy.window().its('sbp').then(sbp => {
-      return new Promise(async (resolve) => {
-        const message = await sbp('gi.actions/group/createAndSwitch', {
-          data: {
-            name,
-            sharedValues,
-            mincomeAmount: mincome,
-            mincomeCurrency: 'USD',
-            ruleName,
-            ruleThreshold
-          }
-        })
+      return new Promise(resolve => {
+        (async () => {
+          const message = await sbp('gi.actions/group/createAndSwitch', {
+            data: {
+              name,
+              sharedValues,
+              mincomeAmount: mincome,
+              mincomeCurrency: 'USD',
+              ruleName,
+              ruleThreshold
+            }
+          })
 
-        sbp('okTurtles.events/on', JOINED_GROUP, async ({ contractID }) => {
-          if (contractID === message.contractID()) {
-            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-            resolve()
-          }
-        })
+          sbp('okTurtles.events/on', JOINED_GROUP, async ({ contractID }) => {
+            if (contractID === message.contractID()) {
+              await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+              resolve()
+            }
+          })
+        })()
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
