@@ -8,6 +8,8 @@
 export const LOGIN = 'login'
 export const LOGOUT = 'logout'
 
+export const JOINED_GROUP = 'joined-group'
+
 export const REPLACED_STATE = 'replaced-state'
 
 export const OPEN_MODAL = 'open-modal'

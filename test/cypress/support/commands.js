@@ -7,6 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -149,18 +150,26 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/createAndSwitch', {
-        data: {
-          name,
-          sharedValues,
-          mincomeAmount: mincome,
-          mincomeCurrency: 'USD',
-          ruleName,
-          ruleThreshold
-        }
+    cy.window().its('sbp').then(sbp => {
+      return new Promise(async (resolve) => {
+        const message = await sbp('gi.actions/group/createAndSwitch', {
+          data: {
+            name,
+            sharedValues,
+            mincomeAmount: mincome,
+            mincomeCurrency: 'USD',
+            ruleName,
+            ruleThreshold
+          }
+        })
+
+        sbp('okTurtles.events/on', JOINED_GROUP, async ({ contractID }) => {
+          if (contractID === message.contractID()) {
+            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+            resolve()
+          }
+        })
       })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('groupName').should('contain', name)
