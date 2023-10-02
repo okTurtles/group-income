@@ -908,6 +908,11 @@ sbp('chelonia/defineContract', {
         const { username } = rootState.loggedIn
 
         if (data.member === username) {
+          // NOTE: should remove archived data from IndexedStorage
+          //       regarding the current group (proposals, payments)
+          sbp('gi.contracts/group/removeArchivedProposals', contractID)
+          sbp('gi.contracts/group/removeArchivedPayments', contractID)
+
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
           if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
@@ -1373,6 +1378,11 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/save', key, proposals)
       sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, contractID, proposalHash, proposal)
     },
+    'gi.contracts/group/removeArchivedProposals': async function (contractID) {
+      const { username } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${username}/${contractID}`
+      await sbp('gi.db/archive/delete', key)
+    },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments
       const { username } = sbp('state/vuex/state').loggedIn
@@ -1433,6 +1443,13 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/save', archSentOrReceivedPaymentsKey, archSentOrReceivedPayments)
 
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/removeArchivedPayments': async function (contractID) {
+      const { username } = sbp('state/vuex/state').loggedIn
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
+      await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
+      await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
       // NOTE: When group's mincome has changed, below actions should be taken.
