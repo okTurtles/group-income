@@ -889,8 +889,11 @@ ${this.getErrorInfo()}`;
       incomeDetailsLastUpdatedDate: null
     };
   }
-  function initPaymentPeriod({ getters }) {
+  function initPaymentPeriod({ meta, getters }) {
+    const start = getters.periodStampGivenDate(meta.createdDate);
     return {
+      start,
+      end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
       initialCurrency: getters.groupMincomeCurrency,
       mincomeExchangeRate: 1,
       paymentsFrom: {},
@@ -914,7 +917,11 @@ ${this.getErrorInfo()}`;
   }
   function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
-    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }));
+    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }));
+    const previousPeriod = getters.periodBeforePeriod(period);
+    if (previousPeriod in state.paymentsByPeriod) {
+      state.paymentsByPeriod[previousPeriod].end = period;
+    }
     clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
