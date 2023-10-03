@@ -94,7 +94,7 @@ export default ({
   font-size: $size_4;
 }
 
-::v-deep .c-welcome {
+::v-deep .c-welcome.wrapper {
   position: fixed;
   top: 0;
   left: 0;
