@@ -396,15 +396,15 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
 
-      const loginAttributes: Object = { identityContractID, encryptionParams }
+      const loginAttributes = { identityContractID, encryptionParams, username }
 
       // If username was not provided, retrieve it from the state
       // TODO: This is temporary until username is no longer needed internally
       // in contracts
-      if (username) {
-        loginAttributes.username = username
-      } else {
-        loginAttributes.username = Object.entries(state.namespaceLookups).find(([k, v]) => v === identityContractID)?.[0]
+      if (!loginAttributes.username) {
+        loginAttributes.username = Object.entries(state.namespaceLookups)
+          .find(([k, v]) => v === identityContractID)
+          ?.[0]
       }
 
       sbp('state/vuex/commit', 'login', loginAttributes)
