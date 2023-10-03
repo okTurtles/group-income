@@ -63,7 +63,7 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn): Promise<*> {
     return appSettings.getItem(user).then(async (encryptedValue) => {
-      if (!encryptedValue) {
+      if (!encryptedValue || typeof encryptedValue !== 'string') {
         throw new EmptyValue(`Unable to retrive state for ${user || ''}`)
       }
       // Split the encrypted state into its constituent parts
