@@ -15,7 +15,7 @@ import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSal
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, decrypt, deriveKeyFromPassword, generateSalt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction } from './utils.js'
@@ -360,89 +360,12 @@ export default (sbp('sbp/selectors/register', {
       })()
       : []
 
-    // Used to store stateEncryptionKeyId, salt, encryptedStateEncryptionKey
-    const extraLoginAttributes = {}
-
     try {
-      // Utility class to represent an empty state during error handling
-      class EmptyState extends Error {}
-
       sbp('appLogs/startCapture', identityContractID)
-      const state = await sbp('gi.db/settings/load', identityContractID).then(async (encryptedState) => {
-        if (!encryptedState) {
-          throw new EmptyState(`Unable to retrive state for ${identityContractID || ''}`)
-        }
-        // Split the encrypted state into its constituent parts
-        const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedState.split('.')
+      const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
+        return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
+      }))
 
-        // If the state encryption key is in session storage, retrieve it
-        let stateEncryptionKeyS = await sbp('gi.db/settings/load', stateEncryptionKeyId)
-
-        // If the state encryption key wasn't in session storage but we have
-        // a password, we can derive it
-        if (!stateEncryptionKeyS && password) {
-          // Derive a temporary key from the password to decrypt the state
-          // encryption key
-          const stateKeyEncryptionKey = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
-
-          // Decrypt the state encryption key
-          stateEncryptionKeyS = decrypt(stateKeyEncryptionKey, encryptedStateEncryptionKey, stateEncryptionKeyId)
-
-          // Compute the key ID of the decrypted key and verify that it holds
-          // the expected value
-          const stateEncryptionKeyIdActual = keyId(stateEncryptionKeyS)
-          if (stateEncryptionKeyIdActual !== stateEncryptionKeyId) {
-            throw new Error(`Invalid state key ID: expected ${stateEncryptionKeyId} but got ${stateEncryptionKeyIdActual}`)
-          }
-        }
-
-        // Now, attempt to decrypt the state
-        const state = JSON.parse(decrypt(stateEncryptionKeyS, data, identityContractID || ''))
-
-        // If decryption succeeded, set the necessary values for the login state
-        // and the session storage
-        extraLoginAttributes.stateEncryptionKeyId = stateEncryptionKeyId
-        extraLoginAttributes.salt = salt
-        extraLoginAttributes.encryptedStateEncryptionKey = encryptedStateEncryptionKey
-
-        // Saving the state encryption key in session storage is necessary
-        // for functionality such as refreshing the page to work
-        await sbp('gi.db/settings/save', stateEncryptionKeyId, stateEncryptionKeyS)
-
-        return state
-      }).catch(async (e) => {
-        // If we haven't got a password, we can't proceed deriving keys or
-        // encrypting, so we give up at this point
-        if (!password) { throw e }
-
-        // If the state was empty, this isn't necessarily an error
-        if (!(e instanceof EmptyState)) {
-          console.warn('Error while retrieving local state', e)
-        }
-
-        // Create the necessary keys
-        // First, we generate the state encryption key
-        const stateEncryptionKey = keygen(CURVE25519XSALSA20POLY1305)
-        const stateEncryptionKeyId = keyId(stateEncryptionKey)
-        const stateEncryptionKeyS = serializeKey(stateEncryptionKey, true)
-
-        // Once we have the state encryption key, we generate a salt
-        const salt = generateSalt()
-
-        // We use the salt, the state encryption key ID and the password to
-        // derive a key to encrypt the state encryption key
-        // This key is not stored anywhere, but is used for reconstructing
-        // the state on a fresh session
-        const stateKeyEncryptionKey = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
-
-        // Once everything is place, set the attributes for extraLoginAttributes
-        extraLoginAttributes.stateEncryptionKeyId = stateEncryptionKeyId
-        extraLoginAttributes.salt = salt
-        extraLoginAttributes.encryptedStateEncryptionKey = encrypt(stateKeyEncryptionKey, stateEncryptionKeyS, stateEncryptionKeyId)
-
-        // Save the state encryption key to local storage
-        await sbp('gi.db/settings/save', stateEncryptionKeyId, stateEncryptionKeyS)
-      })
       const contractIDs = []
       const groupsToRejoin = []
       // login can be called when no settings are saved (e.g. from Signup.vue)
@@ -473,15 +396,18 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
 
+      const loginAttributes: Object = { identityContractID, encryptionParams }
+
       // If username was not provided, retrieve it from the state
       // TODO: This is temporary until username is no longer needed internally
       // in contracts
       if (username) {
-        extraLoginAttributes.username = username
+        loginAttributes.username = username
       } else {
-        extraLoginAttributes.username = Object.entries(state.namespaceLookups).find(([k, v]) => v === identityContractID)?.[0]
+        loginAttributes.username = Object.entries(state.namespaceLookups).find(([k, v]) => v === identityContractID)?.[0]
       }
-      sbp('state/vuex/commit', 'login', { ...extraLoginAttributes, identityContractID })
+
+      sbp('state/vuex/commit', 'login', loginAttributes)
       await sbp('chelonia/storeSecretKeys', transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
@@ -554,9 +480,9 @@ export default (sbp('sbp/selectors/register', {
       await sbp('state/vuex/save')
 
       // If there is a state encryption key in session storage, remove it
-      const stateEncryptionKeyId = state.loggedIn?.stateEncryptionKeyId
-      if (stateEncryptionKeyId) {
-        await sbp('gi.db/settings/delete', stateEncryptionKeyId)
+      const encryptionParams = state.loggedIn?.encryptionParams
+      if (encryptionParams) {
+        await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
       }
 
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
