@@ -99,9 +99,9 @@ sbp('sbp/selectors/register', {
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
     if (state.loggedIn) {
+      const { identityContractID, encryptionParams } = state.loggedIn
       state.notifications = applyStorageRules(state.notifications || [])
-      // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
     }
   }
 })

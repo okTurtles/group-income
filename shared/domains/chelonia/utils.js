@@ -1,11 +1,12 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyUpdate, GIKeyPurpose, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
-import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
+import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
@@ -424,7 +425,10 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       let newOpV: GIOpValue
       if (opT === GIMessage.OP_KEY_ADD) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
-        newOpV = ((opV: any): GIOpKeyAdd).filter((k) => state?._vm.authorizedKeys[(k.valueOf(): any).id]?._notAfterHeight == null)
+        newOpV = ((opV: any): GIOpKeyAdd).filter((k) => {
+          const kId = (k.valueOf(): any).id
+          return !has(state._vm.authorizedKeys, kId) || state._vm.authorizedKeys[kId]._notAfterHeight != null
+        })
         // Has this key already been added? (i.e., present in authorizedKeys)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_ADD', { head })
@@ -434,7 +438,10 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       } else if (opT === GIMessage.OP_KEY_DEL) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
         // Has this key already been removed? (i.e., no longer in authorizedKeys)
-        newOpV = opV.filter((keyId) => state?._vm.authorizedKeys[Object(keyId).valueOf()]?._notAfterHeight != null)
+        newOpV = opV.filter((keyId) => {
+          const kId = (Object(keyId).valueOf(): any)
+          return has(state._vm.authorizedKeys, kId) && state._vm.authorizedKeys[kId]._notAfterHeight == null
+        })
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_DEL', { head })
         } else if (newOpV.length === opV.length) {
@@ -443,7 +450,11 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
       } else if (opT === GIMessage.OP_KEY_UPDATE) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
         // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-        newOpV = ((opV: any): GIOpKeyUpdate).filter((k) => state?._vm.authorizedKeys[(k.valueOf(): any).oldKeyId]?._notAfterHeight != null)
+        newOpV = ((opV: any): GIOpKeyUpdate).filter((k) => {
+          const oKId = (k.valueOf(): any).oldKeyId
+          const nKId = (k.valueOf(): any).id
+          return nKId == null || (has(state._vm.authorizedKeys, oKId) && state._vm.authorizedKeys[oKId]._notAfterHeight == null)
+        })
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_KEY_UPDATE', { head })
         } else if (newOpV.length === opV.length) {

@@ -22,7 +22,7 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { LOGOUT, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -369,6 +369,9 @@ export default (sbp('sbp/selectors/register', {
         // The event handler is configured before sending the request
         // to avoid race conditions
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+        sbp('okTurtles.events/once', LOGOUT, () => {
+          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+        })
       }
 
       // After syncing the group contract, we send a key request
