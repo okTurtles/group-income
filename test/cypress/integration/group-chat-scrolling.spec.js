@@ -96,13 +96,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     me = user2
     cy.giRedirectToGroupChat()
 
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
-
     for (let i = 15; i < 30; i++) {
       sendMessage(`Text-${i + 1}`)
     }

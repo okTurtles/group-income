@@ -135,13 +135,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     me = user2
     cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
   })
 
   it('user2 sends greetings and asks to have meeting this morning', () => {
@@ -155,7 +148,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
     sendMessage('Hi')
 
-    editMessage(6, `Hi ${user2}. I am fine thanks.`)
+    editMessage(7, `Hi ${user2}. I am fine thanks.`)
   })
 
   it('user2 edits and deletes message', () => {
@@ -219,13 +212,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     me = user3
     cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
 
     sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
     sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)

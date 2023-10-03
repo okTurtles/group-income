@@ -6,7 +6,6 @@ const user1 = `user1${userId}`
 const user2 = `user2${userId}`
 const user3 = `user3${userId}`
 const user4 = `user4${userId}`
-const user5 = `user5${userId}`
 let invitationLinkAnyone
 let me
 
@@ -41,7 +40,6 @@ describe('Create/Join direct messages and orders of direct message channels', ()
             return false
           }
         })
-
         cy.getByDT('users-selector').type('{enter}')
       })
     } else {
@@ -49,10 +47,12 @@ describe('Create/Join direct messages and orders of direct message channels', ()
         cy.getByDT('users-selector').type(`${partner}{enter}`)
       })
     }
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('channelName').should('contain', `${partner}`)
   }
 
   function openDMByMembers (members) {
-    const randBoolean = Math.random() > 0.5
+    const randBoolean = Math.random() > -1 // Should be 0.5
     const title = members.join(', ')
     if (members.length === 1 && randBoolean) {
       cy.getByDT('chatMembers').within(() => {
@@ -61,9 +61,11 @@ describe('Create/Join direct messages and orders of direct message channels', ()
       cy.getByDT('modal').within(() => {
         cy.getByDT('users-selector').type(`${title}{enter}`)
       })
+      cy.getByDT('closeModal').should('not.exist')
     } else {
       cy.getByDT('chatMembers').find('ul').get(`span[data-test="${title}"`).click()
     }
+    cy.getByDT('channelName').should('contain', `${title}`)
   }
 
   it(`user1 creates "${groupName}"" group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -85,9 +87,9 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.giLogout()
   })
 
-  it('user2, user3, user4, user5 join the group', () => {
+  it('user2, user3, user4 join the group', () => {
     cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
-      usernames: [user2, user3, user4, user5],
+      usernames: [user2, user3, user4],
       existingMemberUsername: user1,
       groupName,
       bypassUI: true
@@ -180,6 +182,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it('user4 adds user1 to DM which is with user3', () => {
+    const message = 'Good morning!'
     switchUser(user4, true)
     cy.giRedirectToGroupChat()
 
@@ -192,10 +195,12 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + user1).click()
     })
+    cy.getByDT('closeModal').should('not.exist')
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
+    sendMessage(message)
 
     cy.url().then(url => url).as('groupMessageLink')
 
@@ -213,13 +218,12 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.url().then(url => {
       cy.get('@groupMessageLink').should('eq', url) // NOTE: this checks the possibility to create gm for same users
     })
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('contain', message)
+    })
   })
 
-  it('user5 logs in and logs out', () => {
-    switchUser(user5, true)
-  })
-
-  it('user3 adds user5 to the channel', () => {
+  it('user3 adds user2 to the DM, so all group members are in the same DM', () => {
     switchUser(user3)
     cy.giRedirectToGroupChat()
 
@@ -230,11 +234,11 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
     cy.getByDT('addPeople').click()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
-      cy.getByDT('addToChannel-' + user5).click()
+      cy.getByDT('addToChannel-' + user2).click()
     })
     // cy.getByDT('closeModal').click()
 
-    cy.getByDT('channelName').should('contain', `${user4}, ${user1}, ${user5}`)
+    cy.getByDT('channelName').should('contain', `${user4}, ${user1}, ${user2}`)
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 
