@@ -84,7 +84,7 @@ export default ({
 
         await sbp('gi.actions/identity/login', {
           username: this.form.username,
-          password: this.form.password
+          passwordFn: ((v) => () => v)(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')
