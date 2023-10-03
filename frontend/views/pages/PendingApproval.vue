@@ -93,4 +93,15 @@ export default ({
 .c-text {
   font-size: $size_4;
 }
+
+::v-deep .c-welcome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100%;
+  background-color: $background_0;
+  z-index: $zindex-sidebar + 1;
+}
 </style>
