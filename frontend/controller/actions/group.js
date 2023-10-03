@@ -359,19 +359,21 @@ export default (sbp('sbp/selectors/register', {
           }
 
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          sbp('okTurtles.events/off', LOGOUT, logoutHandler)
           // The event handler recursively calls this same selector
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
           sbp('gi.actions/group/join', { ...params, options: { ...params.options, skipUsableKeysCheck: false } })
         }
+        const logoutHandler = () => {
+          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+        }
 
         // The event handler is configured before sending the request
         // to avoid race conditions
+        sbp('okTurtles.events/once', LOGOUT, logoutHandler)
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-        sbp('okTurtles.events/once', LOGOUT, () => {
-          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-        })
       }
 
       // After syncing the group contract, we send a key request
