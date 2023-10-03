@@ -80,9 +80,7 @@ export default ({
   computed: {
     ...mapGetters([
       'ourUsername',
-      'userDisplayName',
-      'periodStampGivenDate',
-      'currentPaymentPeriod'
+      'userDisplayName'
     ]),
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
@@ -114,10 +112,13 @@ export default ({
         sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
       }
       if (payment) {
-        this.payment = cloneDeep(payment)
+        const periodstamp = await this.historicalPeriodStampGivenDate(payment.meta.createdDate)
         // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
-        this.payment.periodstamp = this.periodStampGivenDate(this.payment.meta.createdDate)
-        this.payment.isOldPayment = comparePeriodStamps(this.payment.periodstamp, this.currentPaymentPeriod) < 0
+        this.payment = {
+          ...cloneDeep(payment),
+          isOldPayment: comparePeriodStamps(periodstamp, this.currentPaymentPeriod) < 0,
+          periodstamp
+        }
       } else {
         console.warn('PaymentDetail: Missing valid query "id"')
         sbp('okTurtles.events/emit', CLOSE_MODAL)
