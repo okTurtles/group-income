@@ -106,7 +106,7 @@ sbp('sbp/selectors/register', {
         throw new Error('Invalid logged in state: missing encryption key information')
       }
       // Fetch the session encryption key
-      const stateEncryptionKeyS = window.sessionStorage.getItem(stateEncryptionKeyId)
+      const stateEncryptionKeyS = await sbp('gi.db/settings/load', stateEncryptionKeyId)
       if (!stateEncryptionKeyS) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
       // Encrypt the current state
       const encryptedState = encrypt(stateEncryptionKeyS, JSON.stringify(state), identityContractID)

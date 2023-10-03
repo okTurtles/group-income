@@ -376,7 +376,7 @@ export default (sbp('sbp/selectors/register', {
         const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedState.split('.')
 
         // If the state encryption key is in session storage, retrieve it
-        let stateEncryptionKeyS = window.sessionStorage.getItem(stateEncryptionKeyId)
+        let stateEncryptionKeyS = await sbp('gi.db/settings/load', stateEncryptionKeyId)
 
         // If the state encryption key wasn't in session storage but we have
         // a password, we can derive it
@@ -407,7 +407,7 @@ export default (sbp('sbp/selectors/register', {
 
         // Saving the state encryption key in session storage is necessary
         // for functionality such as refreshing the page to work
-        window.sessionStorage.setItem(stateEncryptionKeyId, stateEncryptionKeyS)
+        await sbp('gi.db/settings/save', stateEncryptionKeyId, stateEncryptionKeyS)
 
         return state
       }).catch(async (e) => {
@@ -441,7 +441,7 @@ export default (sbp('sbp/selectors/register', {
         extraLoginAttributes.encryptedStateEncryptionKey = encrypt(stateKeyEncryptionKey, stateEncryptionKeyS, stateEncryptionKeyId)
 
         // Save the state encryption key to local storage
-        window.sessionStorage.setItem(stateEncryptionKeyId, stateEncryptionKeyS)
+        await sbp('gi.db/settings/save', stateEncryptionKeyId, stateEncryptionKeyS)
       })
       const contractIDs = []
       const groupsToRejoin = []
@@ -556,7 +556,7 @@ export default (sbp('sbp/selectors/register', {
       // If there is a state encryption key in session storage, remove it
       const stateEncryptionKeyId = state.loggedIn?.stateEncryptionKeyId
       if (stateEncryptionKeyId) {
-        window.sessionStorage.removeItem(stateEncryptionKeyId)
+        await sbp('gi.db/settings/delete', stateEncryptionKeyId)
       }
 
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
