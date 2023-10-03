@@ -479,7 +479,7 @@ export default (sbp('sbp/selectors/register', {
       // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
 
-      // If there is a state encryption key in session storage, remove it
+      // If there is a state encryption key in the app settings, remove it
       const encryptionParams = state.loggedIn?.encryptionParams
       if (encryptionParams) {
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)

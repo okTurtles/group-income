@@ -69,11 +69,12 @@ sbp('sbp/selectors/register', {
       // Split the encrypted state into its constituent parts
       const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.')
 
-      // If the state encryption key is in session storage, retrieve it
-      let stateEncryptionKeyS = await sbp('gi.db/settings/load', stateEncryptionKeyId)
+      // If the state encryption key is in appSettings, retrieve it
+      let stateEncryptionKeyS = await appSettings.getItem(stateEncryptionKeyId)
 
-      // If the state encryption key wasn't in session storage but we have
-      // a password, we can derive it
+      // If the state encryption key wasn't in appSettings but we have a state
+      // state key encryption derivation function (stateKeyEncryptionKeyFn),
+      // call it
       if (!stateEncryptionKeyS && stateKeyEncryptionKeyFn) {
         // Derive a temporary key from the password to decrypt the state
         // encryption key
@@ -93,8 +94,8 @@ sbp('sbp/selectors/register', {
       // Now, attempt to decrypt the state
       const value = JSON.parse(decrypt(stateEncryptionKeyS, data, user || ''))
 
-      // Saving the state encryption key in session storage is necessary
-      // for functionality such as refreshing the page to work
+      // Saving the state encryption key in appSettings is necessary for
+      // functionality such as refreshing the page to work
       await appSettings.setItem(stateEncryptionKeyId, stateEncryptionKeyS)
 
       return {
