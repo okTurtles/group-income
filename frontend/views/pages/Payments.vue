@@ -258,7 +258,6 @@ export default ({
   computed: {
     ...mapGetters([
       'groupIncomeDistribution',
-      'periodStampGivenDate',
       'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
@@ -334,7 +333,7 @@ export default ({
     },
     // paymentsCount () {
     //   if (Object.keys(this.groupSettings).length) {
-    //     return this.paymentHashesForPeriod(this.periodStampGivenDate(this.groupSettings.distributionDate))?.length
+    //     return this.paymentHashesForPeriod(await this.historicalPeriodStampGivenDate(this.groupSettings.distributionDate))?.length
     //   }
     // },
     paymentsTodo () {
@@ -492,7 +491,7 @@ export default ({
     async updatePayments () {
       // NOTE: no need to calculate while logging out
       if (Object.keys(this.groupSettings).length) {
-        this.historicalPayments = await this.getHistoricalPaymentsInTypes()
+        this.historicalPayments = await this.getAllPaymentsInTypes()
       }
     },
     openExportPaymentsModal () {
