@@ -374,6 +374,97 @@ describe('Group Payments', () => {
     })
   })
 
+  it('user1 sends $250 to user3 (again)', () => {
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+
+    cy.giForceDistributionDateToNow()
+
+    cy.getByDT('paymentsLink').click()
+    cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
+
+    assertNavTabs(['Todo1', 'Completed'])
+    assertMonthOverview([
+      ['Payments sent', '0 out of 1'],
+      ['Amount sent', '$0 out of $250']
+    ])
+    cy.window().its('sbp').then(sbp => {
+      const { distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      // Use 'Date.now()' here rather than 'timeStart' since a few seconds have already elapsed.
+      const start = humanDate(Date.now())
+      const end = humanDate(Date.now() + distributionPeriodLength)
+      assertMonthOverviewTitle(`Period: ${start} - ${end}`)
+    })
+
+    cy.getByDT('recordPayment').should('be.disabled')
+    cy.getByDT('todoCheck').click({ force: true })
+    cy.getByDT('recordPayment').should('not.be.disabled').click()
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
+      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '250')
+      cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
+
+      cy.get('button[type="submit"]').click()
+      cy.getByDT('successClose').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    assertMonthOverview([
+      ['Payments sent', '1 out of 1'],
+      ['Amount sent', '$250 out of $250']
+    ])
+
+    cy.log('assert payments table is correct again')
+    assertNavTabs(['Todo', 'Completed'])
+    cy.getByDT('link-PaymentRowSent').click()
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user3-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
+
+      cy.log('assert payment detail is correct')
+      cy.getByDT('menuTrigger').eq(0).click()
+      cy.getByDT('menuContent').find('ul > li:nth-child(1)').as('btnDetails')
+      cy.get('@btnDetails').should('contain', 'Payment details')
+      cy.get('@btnDetails').click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('amount').should('contain', '$250')
+      cy.getByDT('subtitle').should('contain', `Sent to user3-${userId}`)
+
+      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+    })
+    cy.closeModal()
+
+    cy.log('user3 confirms the received payment again')
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.getByDT('paymentsLink').click()
+
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user1-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
+    })
+
+    assertMonthOverview([
+      ['Payments received', '1 out of 1'],
+      ['Amount received', '$250 out of $250']
+    ])
+
+    cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
+    openNotificationCard({
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Payment details')
+    })
+    cy.closeModal()
+  })
+
   it('user1 changes their income details to "needing" and sees the correct UI', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
@@ -385,7 +476,7 @@ describe('Group Payments', () => {
     cy.getByDT('noPayments').should('exist')
 
     cy.getByDT('link-PaymentRowSent').click()
-    cy.getByDT('payList').find('tbody').children().should('have.length', 1)
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
 
     assertMonthOverview([
       ['Payments received', '0 out of 0'],
