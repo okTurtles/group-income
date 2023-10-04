@@ -93,7 +93,7 @@ There was a problem with {nr} of your payments.
 There was a problem with {number} of your payments.
 ```
 
-### Constructing strings out of strings
+### Avoid building strings out of strings
 
 While sometimes it is safe to use variables (when inserting numbers or proper nouns like names), other times it is better to avoid them entirely.
 
