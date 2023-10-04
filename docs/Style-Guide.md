@@ -93,7 +93,11 @@ There was a problem with {nr} of your payments.
 There was a problem with {number} of your payments.
 ```
 
-Another common mistake is to construct strings out of other strings that are individually translated. For example, say we have the following string:
+### Constructing strings out of strings
+
+While sometimes it is safe to use variables (when inserting numbers or proper nouns like names), other times it is better to avoid them entirely.
+
+For example, a common mistake is to construct strings out of other strings that are individually translated. Say we have the following string:
 
 ```
 Export your {sent_or_received} payment history to .csv
