@@ -90,7 +90,7 @@ sbp('sbp/selectors/register', {
 
     // $FlowFixMe
     const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
-      return !!data.meta?.private?.content && data._notAfterHeight === undefined && (
+      return !!data.meta?.private?.content && data._notAfterHeight == null && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
           : keysToRotate === '*'
@@ -102,7 +102,8 @@ sbp('sbp/selectors/register', {
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
 
-    if (!newKeys.length) {
+    if (!Object.keys(newKeys).length) {
+      console.debug('rotateKeys: No keys to rotate', { contractID })
       return
     }
 
