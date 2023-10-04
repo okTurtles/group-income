@@ -62,16 +62,6 @@ export default (sbp('sbp/selectors/register', {
     data: { username, email, password, picture },
     publishOptions
   }) {
-    // TODO: make sure we namespace these names:
-    //       https://github.com/okTurtles/group-income/issues/598
-    const oldSettings = await sbp('gi.db/settings/load', username)
-    if (oldSettings) {
-      // TODO: prompt to ask user before deleting and overwriting an existing user
-      //       https://github.com/okTurtles/group-income/issues/599
-      console.warn(`deleting settings for pre-existing identity ${username}!`, oldSettings)
-      await sbp('gi.db/settings/delete', username)
-    }
-
     let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
 
     if (picture) {
@@ -350,11 +340,12 @@ export default (sbp('sbp/selectors/register', {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)
     }
   },
-  'gi.actions/identity/login': async function ({ username, password }: {
-    username: string, password: ?string
+  'gi.actions/identity/login': async function ({ username, password, identityContractID }: {
+    username: ?string, password: ?string, identityContractID: ?string
   }) {
-    // TODO: Insert cryptography here
-    const identityContractID = await sbp('namespace/lookup', username)
+    if (username) {
+      identityContractID = await sbp('namespace/lookup', username)
+    }
 
     if (!identityContractID) {
       throw new GIErrorUIRuntimeError(L('Invalid username or password'))
@@ -370,8 +361,10 @@ export default (sbp('sbp/selectors/register', {
       : []
 
     try {
-      sbp('appLogs/startCapture', username)
-      const state = await sbp('gi.db/settings/load', username)
+      sbp('appLogs/startCapture', identityContractID)
+      const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
+        return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
+      }))
       const contractIDs = []
       const groupsToRejoin = []
       // login can be called when no settings are saved (e.g. from Signup.vue)
@@ -400,8 +393,20 @@ export default (sbp('sbp/selectors/register', {
       if (!contractIDs.includes(identityContractID)) {
         contractIDs.push(identityContractID)
       }
-      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
-      sbp('state/vuex/commit', 'login', { username, identityContractID })
+      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+
+      const loginAttributes = { identityContractID, encryptionParams, username }
+
+      // If username was not provided, retrieve it from the state
+      // TODO: This is temporary until username is no longer needed internally
+      // in contracts
+      if (!loginAttributes.username) {
+        loginAttributes.username = Object.entries(state.namespaceLookups)
+          .find(([k, v]) => v === identityContractID)
+          ?.[0]
+      }
+
+      sbp('state/vuex/commit', 'login', loginAttributes)
       await sbp('chelonia/storeSecretKeys', transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
@@ -472,14 +477,15 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/wait')
       // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
+
+      // If there is a state encryption key in the app settings, remove it
+      const encryptionParams = state.loggedIn?.encryptionParams
+      if (encryptionParams) {
+        await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
+      }
+
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
-      // Doing both 'state/vuex/save' above and 'gi.db/settings/delete' doesn't
-      // make much sense, because delete undoes save
-      // TODO: In the future, the goal is to encrypt the state so that it doesn't
-      // need to be deleted.
-      // const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-      // await sbp('gi.db/settings/delete', username)
       sbp('chelonia/clearTransientSecretKeys')
       console.info('successfully logged out')
     } catch (e) {
