@@ -1257,6 +1257,11 @@ sbp('chelonia/defineContract', {
           await sbp('gi.actions/chatroom/leave', {
             contractID: data.chatRoomID,
             data: sendingData,
+            // When a group is being left, we want to also leave chatrooms,
+            // including private chatrooms. Since the user issuing the action
+            // may not be a member of the chatroom, we use the group's CSK
+            // unconditionally in this situation, which should be a key in the
+            // chatroom (either the CSK or the groupKey)
             ...(data.leavingGroup && {
               signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
               innerSigningKeyId: null

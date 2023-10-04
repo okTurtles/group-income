@@ -64,6 +64,9 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.js'
 
+// Returns a function that returns the function's argument
+const wrapValueInFunction = (v) => () => v
+
 export const usernameValidations = {
   [L('A username is required.')]: required,
   [L('A username cannot contain whitespace.')]: noWhitespace,
@@ -125,7 +128,7 @@ export default ({
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          passwordFn: ((v) => () => v)(this.form.password)
+          passwordFn: wrapValueInFunction(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')

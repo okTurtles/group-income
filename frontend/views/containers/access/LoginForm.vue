@@ -39,6 +39,9 @@ import { requestNotificationPermission } from '@model/contracts/shared/nativeNot
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 
+// Returns a function that returns the function's argument
+const wrapValueInFunction = (v) => () => v
+
 export default ({
   name: 'LoginForm',
   mixins: [
@@ -84,7 +87,7 @@ export default ({
 
         await sbp('gi.actions/identity/login', {
           username: this.form.username,
-          passwordFn: ((v) => () => v)(this.form.password)
+          passwordFn: wrapValueInFunction(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')
