@@ -87,18 +87,48 @@ When creating these strings, we sometimes need to pass in a variable using brace
 There was a problem with {nr} of your payments.
 ```
 
-```
-Export your {type} payment history to .csv
-```
-
 ✅ Be clear what values the variable might take on:
 
 ```
 There was a problem with {number} of your payments.
 ```
 
+Another common mistake is to construct strings out of other strings that are individually translated. For example, say we have the following string:
+
 ```
 Export your {sent_or_received} payment history to .csv
+```
+
+The variable name is good because it is very clear what values it might take on, however, it is still better to avoid constructing such strings entirely if possible and instead use two separate, fully-translated strings because we are not guaranteed that the final string will make sense when composed of individually translated parts.
+
+In the above example, `{sent_or_received}` could be either the string `"sent"` or `"received"`, but translating these words individually might result in the wrong word that when inserted into the parent string. Sometimes a foreign language will choose to use different words when the full context is known, or it might change the order of words. For example, Google Translate does the following translation from English to Russian:
+
+```
+Export your sent payment history to .csv => Экспортируйте историю отправленных платежей в .csv.
+Export your received payment history to .csv => Экспортируйте полученную историю платежей в .csv.
+sent => отправил
+received => полученный
+```
+
+Notice here:
+
+1. The words "отправленных" and "полученную" are in different positions relative to the other words.
+2. The full-context translation doesn't even include the individually translated words at all.
+
+❌ Avoid building sentences out of individually translated parts
+
+```
+Export your {sent_or_received} payment history to .csv
+```
+
+✅ Use complete sentences
+
+```js
+exportInstructions () {
+  return this.paymentType === 'sent'
+    ? L('Export your sent payment history to .csv')
+    : L('Export your received payment history to .csv')
+}
 ```
 
 ## Accessibility Style Guide
