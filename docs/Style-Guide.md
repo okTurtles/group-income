@@ -88,7 +88,7 @@ There was a problem with {nr} of your payments.
 ```
 
 ```
-Export your {type} payment history to .csv`
+Export your {type} payment history to .csv
 ```
 
 ✅ Be clear what values the variable might take on:
@@ -98,7 +98,7 @@ There was a problem with {number} of your payments.
 ```
 
 ```
-Export your {sent_or_received} payment history to .csv`
+Export your {sent_or_received} payment history to .csv
 ```
 
 ## Accessibility Style Guide
