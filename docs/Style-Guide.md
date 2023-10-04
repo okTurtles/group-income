@@ -103,9 +103,9 @@ For example, a common mistake is to construct strings out of other strings that 
 Export your {sent_or_received} payment history to .csv
 ```
 
-The variable name is good because it is very clear what values it might take on, however, it is still better to avoid constructing such strings entirely if possible and instead use two separate, fully-translated strings because we are not guaranteed that the final string will make sense when composed of individually translated parts.
+The variable name is good because it is very clear what values it might take on, however, it is still better to avoid constructing such strings entirely if possible and instead use two separate, fully-translated strings because we are not guaranteed that the final string will make sense when composed out of individually translated parts.
 
-In the above example, `{sent_or_received}` could be either the string `"sent"` or `"received"`, but translating these words individually might result in the wrong word that when inserted into the parent string. Sometimes a foreign language will choose to use different words when the full context is known, or it might change the order of words. For example, Google Translate does the following translation from English to Russian:
+In the above example, `{sent_or_received}` could be either the string `"sent"` or `"received"`, but translating these words individually might result in the wrong word when inserted into the parent string. Sometimes a foreign language will choose to use different words when the full context is known, or it might change the order of words. For example, Google Translate does the following translation from English to Russian:
 
 ```
 Export your sent payment history to .csv => Экспортируйте историю отправленных платежей в .csv.
