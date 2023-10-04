@@ -195,19 +195,19 @@ export default ({
     onRemoveSelection (username) {
       this.selections = this.selections.filter(un => un !== username)
     },
-    onSubmit () {
+    async onSubmit () {
       if (this.selections.length) {
         const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.selections)
         if (chatRoomId) {
           this.redirect(chatRoomId)
         } else {
-          this.createDirectMessage(this.selections)
+          await this.createDirectMessage(this.selections)
         }
       } else if (this.searchText) {
         if (this.filteredRecents.length) {
           this.redirect(this.filteredRecents[0].chatRoomId)
         } else if (this.filteredOthers.length) {
-          this.createDirectMessage(this.filteredOthers[0].username)
+          await this.createDirectMessage(this.filteredOthers[0].username)
         }
       }
 

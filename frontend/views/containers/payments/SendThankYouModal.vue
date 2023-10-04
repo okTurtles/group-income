@@ -86,9 +86,9 @@ export default ({
         this.submit()
       }
     },
-    submit () {
+    async submit () {
       try {
-        sbp('gi.actions/group/sendPaymentThankYou', {
+        await sbp('gi.actions/group/sendPaymentThankYou', {
           contractID: this.$store.state.currentGroupId,
           data: {
             fromUser: this.ourUserDisplayName,
