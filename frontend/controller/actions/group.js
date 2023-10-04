@@ -576,19 +576,18 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let csk
     let cek
+
+    const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
+    const csk = {
+      id: cskId,
+      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+      data: contractState._vm.authorizedKeys[cskId].data
+    }
 
     // For 'public' and 'group' chatrooms, use the group's CSK and CEK
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
       const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
-
-      csk = {
-        id: cskId,
-        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
-        data: contractState._vm.authorizedKeys[cskId].data
-      }
 
       cek = {
         id: cekId,
@@ -607,8 +606,11 @@ export default (sbp('sbp/selectors/register', {
       },
       options: {
         ...params.options,
-        csk,
-        cek
+        // The CSK is the CSK for non-private chatrooms
+        csk: cek ? csk : undefined,
+        cek,
+        // The groupKey is the CSK for private chatrooms
+        groupKey: !cek ? csk : undefined
       },
       hooks: {
         prepublish: params.hooks?.prepublish,

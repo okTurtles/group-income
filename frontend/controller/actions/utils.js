@@ -43,6 +43,8 @@ export const encryptedAction = (
         if (!contractID) {
           throw new Error('Missing contract ID')
         }
+        // Writing to a contract requires being subscribed to it
+        await sbp('chelonia/contract/sync', contractID)
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }

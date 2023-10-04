@@ -106,6 +106,7 @@ async function startApp () {
           'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
           'gi.notifications/emit',

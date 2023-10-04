@@ -1254,7 +1254,14 @@ sbp('chelonia/defineContract', {
           const sendingData = data.leavingGroup
             ? { member: data.member }
             : { member: data.member, username: meta.username }
-          await sbp('gi.actions/chatroom/leave', { contractID: data.chatRoomID, data: sendingData })
+          await sbp('gi.actions/chatroom/leave', {
+            contractID: data.chatRoomID,
+            data: sendingData,
+            ...(data.leavingGroup && {
+              signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
+              innerSigningKeyId: null
+            })
+          })
         }
       }
     },
