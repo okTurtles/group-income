@@ -69,6 +69,7 @@
           i18n.is-danger This action cannot be undone.
 
         .buttons
+          // TODO: once account-deletion is implemented, replace this with submit-button component to take care of the async process.
           i18n.button.error.is-outlined(
             tag='button'
             type='submit'
