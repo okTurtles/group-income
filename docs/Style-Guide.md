@@ -121,7 +121,7 @@ Notice here:
 Export your {sent_or_received} payment history to .csv
 ```
 
-✅ Use complete sentences
+✅ Use logic in a computed property to build complete sentences
 
 ```js
 exportInstructions () {
