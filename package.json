@@ -1,0 +1,183 @@
+{
+  "name": "group-income",
+  "version": "0.0.1",
+  "contractsVersion": "0.2.0",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
+    "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
+    "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
+    "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
+    "test": "grunt test",
+    "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
+    "i18n": "node scripts/i18n.js",
+    "flow": "flow",
+    "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
+    "double": "PORT_SHIFT=1 grunt dev",
+    "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
+    "docker": "./scripts/docker.sh",
+    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
+    "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+  },
+  "eslintConfig": {
+    "root": true,
+    "parserOptions": {
+      "parser": "@babel/eslint-parser"
+    },
+    "extends": [
+      "plugin:cypress/recommended",
+      "plugin:flowtype/recommended",
+      "plugin:vue/essential",
+      "standard"
+    ],
+    "plugins": [
+      "cypress",
+      "flowtype",
+      "import"
+    ],
+    "rules": {
+      "require-await": "error",
+      "vue/max-attributes-per-line": "off",
+      "vue/html-indent": "off",
+      "flowtype/no-types-missing-file-annotation": "off",
+      "quote-props": "off",
+      "dot-notation": "off",
+      "import/extensions": [
+        2,
+        "ignorePackages"
+      ]
+    }
+  },
+  "eslintIgnore": [
+    "frontend/assets/*",
+    "frontend/model/contracts/misc/flowTyper.js",
+    "historical/*",
+    "shared/types.js",
+    "dist/*",
+    "dist-dashboard/*",
+    "ignored/*",
+    "node_modules/*",
+    "test/cypress/cache/*",
+    "contracts/*"
+  ],
+  "browserslist": "> 1% and since 2018 and not dead",
+  "stylelint": {
+    "extends": "stylelint-config-standard",
+    "rules": {
+      "at-rule-no-unknown": [
+        true,
+        {
+          "ignoreAtRules": [
+            "include",
+            "mixin",
+            "extend",
+            "content",
+            "each",
+            "for",
+            "if"
+          ]
+        }
+      ],
+      "declaration-empty-line-before": [
+        "never"
+      ],
+      "at-rule-empty-line-before": null,
+      "font-family-no-missing-generic-family-keyword": null,
+      "string-quotes": "double",
+      "selector-pseudo-element-no-unknown": null,
+      "no-descending-specificity": null
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.okturtles.com:okturtles/group-income.git"
+  },
+  "author": "okTurtles Foundation",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "@hapi/boom": "9.1.0",
+    "@hapi/hapi": "20.1.2",
+    "@hapi/inert": "6.0.3",
+    "@hapi/joi": "17.1.1",
+    "@sbp/okturtles.data": "0.1.5",
+    "@sbp/okturtles.eventqueue": "1.0.0",
+    "@sbp/okturtles.events": "0.1.5",
+    "@sbp/sbp": "2.2.0",
+    "blakejs": "1.1.0",
+    "buffer": "6.0.3",
+    "chalk": "4.1.0",
+    "dompurify": "2.2.7",
+    "emoji-mart-vue-fast": "7.0.7",
+    "localforage": "1.9.0",
+    "lru-cache": "7.14.0",
+    "multihashes": "0.4.15",
+    "qrious": "4.0.2",
+    "scrypt-async": "2.0.1",
+    "sqlite3": "5.1.4",
+    "three": "0.151.3",
+    "tweetnacl": "1.0.3",
+    "tweetnacl-util": "0.15.1",
+    "uuid": "9.0.0",
+    "vue": "2.6.12",
+    "vue-clickaway": "2.2.2",
+    "vue-infinite-loading": "2.4.5",
+    "vue-router": "3.5.3",
+    "vue-slider-component": "3.2.11",
+    "vue2-touch-events": "3.0.0",
+    "vuelidate": "0.7.6",
+    "vuex": "3.6.0",
+    "wicg-inert": "3.1.0",
+    "ws": "8.5.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.12.9",
+    "@babel/eslint-parser": "7.16.0",
+    "@babel/plugin-syntax-dynamic-import": "7.8.3",
+    "@babel/plugin-transform-runtime": "7.12.1",
+    "@babel/preset-env": "7.12.7",
+    "@babel/preset-flow": "7.12.1",
+    "@babel/register": "7.12.1",
+    "@babel/runtime": "7.12.5",
+    "@chelonia/cli": "1.1.3",
+    "@vue/component-compiler": "4.2.4",
+    "acorn": "8.0.4",
+    "babel-plugin-module-resolver": "4.1.0",
+    "babel-plugin-root-import": "6.6.0",
+    "browser-sync": "2.27.10",
+    "cypress": "7.7.0",
+    "cypress-file-upload": "5.0.8",
+    "cypress-pipe": "2.0.0",
+    "esbuild": "0.14.47",
+    "esbuild-sass-plugin": "2.2.6",
+    "eslint": "7.32.0",
+    "eslint-config-standard": "16.0.2",
+    "eslint-plugin-cypress": "2.11.3",
+    "eslint-plugin-flowtype": "5.7.2",
+    "eslint-plugin-flowtype-errors": "4.4.0",
+    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-vue": "7.20.0",
+    "flow-bin": "0.154.0",
+    "flow-remove-types": "2.181.0",
+    "grunt": "1.5.3",
+    "grunt-check-dependencies": "1.0.0",
+    "grunt-contrib-clean": "2.0.0",
+    "grunt-contrib-copy": "1.0.0",
+    "grunt-exec": "3.0.0",
+    "load-grunt-tasks": "5.1.0",
+    "mocha": "8.4.0",
+    "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
+    "sass": "1.37.5",
+    "should": "13.2.3",
+    "should-sinon": "0.0.6",
+    "sinon": "9.2.1",
+    "stylelint": "13.8.0",
+    "stylelint-config-standard": "20.0.0",
+    "vue-cli-plugin-pug": "2.0.0",
+    "vue-template-compiler": "2.6.12",
+    "vue-template-es2015-compiler": "1.9.1"
+  }
+}
