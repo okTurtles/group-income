@@ -894,9 +894,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const rootState = sbp(this.config.stateSelector)
-    const state = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-      'chelonia/latestContractState', contractID
-    ])
+    const state = rootState[contractID]
     if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
     const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/private/out/latestHEADinfo', contractID)
