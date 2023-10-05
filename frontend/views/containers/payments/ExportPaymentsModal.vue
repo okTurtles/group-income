@@ -82,11 +82,13 @@ export default ({
       'userDisplayName',
       'withGroupCurrency'
     ]),
-    modalTitle () {
-      return L('Export {type} payments', { type: this.paymentType })
-    },
     paymentType () {
       return this.$route.query.type
+    },
+    modalTitle () {
+      return this.paymentType === 'sent'
+        ? L('Export sent payments')
+        : L('Export received payments')
     },
     exportInstructions () {
       return this.paymentType === 'sent'
