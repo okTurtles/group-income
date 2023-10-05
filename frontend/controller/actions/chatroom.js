@@ -17,6 +17,8 @@ export default (sbp('sbp/selectors/register', {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
 
+      // console.log('@@@@gi.actions/chatroom/create', { cskOpts, cekOpts, params })
+
       const rootState = sbp('state/vuex/state')
       const userID = rootState.loggedIn.identityContractID
 
@@ -89,7 +91,20 @@ export default (sbp('sbp/selectors/register', {
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
             data: cekOpts.data
-          }
+          },
+          ...(params.options?.groupKey
+            ? [{
+                id: params.options.groupKey.id,
+                name: 'groupKey',
+                purpose: ['sig'],
+                ringLevel: 2,
+                permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                allowedActions: ['gi.contracts/chatroom/leave'],
+                foreignKey: params.options.groupKey.foreignKey,
+                meta: params.options.groupKey.meta,
+                data: params.options.groupKey.data
+              }]
+            : [])
         ],
         contractName: 'gi.contracts/chatroom'
       })
@@ -130,6 +145,19 @@ export default (sbp('sbp/selectors/register', {
             meta: cekOpts.meta,
             data: cekOpts.data
           },
+          ...(params.options?.groupKey
+            ? [{
+                id: params.options.groupKey.id,
+                name: 'groupKey',
+                purpose: ['sig'],
+                ringLevel: 2,
+                permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                allowedActions: ['gi.contracts/chatroom/leave'],
+                foreignKey: params.options.groupKey.foreignKey,
+                meta: params.options.groupKey.meta,
+                data: params.options.groupKey.data
+              }]
+            : []),
           // TODO: Find a way to have this wrapping be done by Chelonia directly
           encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
