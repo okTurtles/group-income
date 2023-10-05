@@ -237,8 +237,9 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
+  cy.getByDT('groupName').should('contain', name)
 
-  cy.giCheckIfJoinedGeneralChatroom(name)
+  cy.giCheckIfJoinedGeneralChatroom()
 })
 
 function inviteUser (invitee, index) {
@@ -345,6 +346,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   usernames,
   existingMemberUsername,
+  displayNames,
+  actionBeforeLogout,
   groupName,
   bypassUI
 }) => {
@@ -374,6 +377,25 @@ Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   // eslint-disable-next-line cypress/no-unnecessary-waiting
   cy.wait(2000)
   cy.giLogout()
+
+  const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
+  if (shouldSetDisplayName || actionBeforeLogout) {
+    for (let i = 0; i < usernames.length; i++) {
+      cy.giLogin(usernames[i], { bypassUI, firstLogin: true })
+
+      if (shouldSetDisplayName) {
+        cy.giSetDisplayName(displayNames[i])
+      }
+
+      if (Array.isArray(actionBeforeLogout)) {
+        actionBeforeLogout[i]()
+      } else if (actionBeforeLogout) {
+        actionBeforeLogout()
+      }
+
+      cy.giLogout()
+    }
+  }
 })
 
 Cypress.Commands.add('giAddRandomIncome', () => {
@@ -472,14 +494,11 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
   })
 })
 
-Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (groupName) => {
+Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', () => {
   cy.giRedirectToGroupChat()
   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME)
   cy.getByDT('dashboard').click()
-  if (groupName) {
-    cy.getByDT('groupName').should('contain', groupName)
-  }
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (

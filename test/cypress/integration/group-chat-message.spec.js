@@ -125,7 +125,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName} group`, () => {
+  it(`user2 joins ${groupName} group and sends greetings, asks to have meeting`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
@@ -134,10 +134,8 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       bypassUI: true
     })
     me = user2
-    cy.giRedirectToGroupChat()
-  })
 
-  it('user2 sends greetings and asks to have meeting this morning', () => {
+    cy.giRedirectToGroupChat()
     sendMessage(`Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
     sendMessage('Can we have a meeting this morning?')
   })

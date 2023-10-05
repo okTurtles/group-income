@@ -650,6 +650,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'exec:chelDeployAll', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

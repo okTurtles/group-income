@@ -329,6 +329,9 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/sync', params.contractID)
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
+      } else if (params.options?.skipInviteAccept && !rootState.contracts[params.contractID].profiles?.[username]) {
+        // NOTE: already left the group by someone else
+        return
       }
 
       const state = rootState[params.contractID]
