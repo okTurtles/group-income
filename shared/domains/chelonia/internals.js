@@ -478,9 +478,7 @@ export default (sbp('sbp/selectors/register', {
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
               ['chelonia/contract/removeImmediately', v.contractID],
-              ['chelonia/withEnv', env, [
-                'chelonia/private/in/syncContract', v.contractID
-              ]],
+              ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
@@ -893,9 +891,7 @@ export default (sbp('sbp/selectors/register', {
 
       // 1. Sync (originating) identity contract
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-        'chelonia/contract/sync', originatingContractID
-      ])
+      await sbp('chelonia/contract/sync', originatingContractID)
 
       const originatingState = state[originatingContractID]
       const contractName = state.contracts[contractID].type
