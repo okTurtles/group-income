@@ -68,6 +68,7 @@ async function startApp () {
     const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/set',
+      'chelonia/haveSecretKey',
       'chelonia/storeSecretKeys',
       'state/vuex/state',
       'state/vuex/getters',

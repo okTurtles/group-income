@@ -17,6 +17,8 @@ export default (sbp('sbp/selectors/register', {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
 
+      // console.log('@@@@gi.actions/chatroom/create', { cskOpts, cekOpts, params })
+
       const rootState = sbp('state/vuex/state')
       const userID = rootState.loggedIn.identityContractID
 

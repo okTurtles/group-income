@@ -490,6 +490,11 @@ export default (sbp('sbp/selectors/register', {
     // other selectors are called
     return sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('okTurtles.eventQueue/queueEvent', 'public:' + contractID, sbpInvocation))
   },
+  'chelonia/begin': async (...invocations) => {
+    for (const invocation of invocations) {
+      await sbp(...invocation)
+    }
+  },
   // call this manually to resubscribe/unsubscribe from contracts as needed
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
   'chelonia/pubsub/update': function () {
