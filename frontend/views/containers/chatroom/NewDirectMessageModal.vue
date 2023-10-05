@@ -1,6 +1,5 @@
 <template lang='pug'>
 modal-base-template.has-background(
-  ref='modal'
   :fullscreen='true'
   :a11yTitle='L("New Direct Message")'
   :autofocus='false'
@@ -85,6 +84,7 @@ modal-base-template.has-background(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { difference } from '@model/contracts/shared/giLodash.js'
 import { mapGetters } from 'vuex'
@@ -94,6 +94,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import DMMixin from './DMMixin.js'
 import { filterByKeyword } from '@view-utils/filters.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'NewDirectMessageModal',
@@ -214,7 +215,7 @@ export default ({
       this.closeModal()
     },
     closeModal () {
-      this.$refs.modal.close()
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   }
 }: Object)
