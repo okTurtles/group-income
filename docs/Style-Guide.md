@@ -119,13 +119,13 @@ Notice here:
 1. The words "отправленных" and "полученную" are in different positions relative to the other words.
 2. The full-context translation doesn't even include the individually translated words at all.
 
-❌ Avoid building sentences out of individually translated parts
+❌ Avoid building sentences out of individually translated parts:
 
 ```
 Export your {sent_or_received} payment history to .csv
 ```
 
-✅ Use logic in a computed property to build complete sentences
+✅ Use logic in a computed property to build complete sentences:
 
 ```js
 exportInstructions () {
