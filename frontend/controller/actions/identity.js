@@ -461,8 +461,8 @@ export default (sbp('sbp/selectors/register', {
         const promptOptions = {
           heading: L('Login error'),
           question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
-          yesButton: L('No'),
-          noButton: L('Yes')
+          primaryButton: L('No'),
+          secondaryButton: L('Yes')
         }
 
         sbp('gi.ui/prompt', promptOptions).then((result) => {
