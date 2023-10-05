@@ -3,7 +3,7 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
   template(slot='title')
     span {{ modalTitle }}
 
-  i18n.c-sub-title.has-text-1(:args='{ type: paymentType }') Export your {type} payment history to .csv
+  .c-sub-title.has-text-1 {{ exportInstructions }}
 
   label.field
     .label
@@ -87,6 +87,11 @@ export default ({
     },
     paymentType () {
       return this.$route.query.type
+    },
+    exportInstructions () {
+      return this.paymentType === 'sent'
+        ? L('Export your sent payment history to .csv')
+        : L('Export your received payment history to .csv')
     }
   },
   methods: {
