@@ -37,7 +37,7 @@ function diffLoginStates (s1: ?Object, s2: ?Object) {
 }
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/identity/retrieveSalt': async (username: string, password: string) => {
+  'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -45,7 +45,7 @@ export default (sbp('sbp/selectors/register', {
 
     const { authSalt, s, sig } = authHash
 
-    const h = await hashPassword(password, authSalt)
+    const h = await hashPassword(passwordFn(), authSalt)
 
     const [c, hc] = computeCAndHc(r, s, h)
 
@@ -59,9 +59,10 @@ export default (sbp('sbp/selectors/register', {
     return decryptContractSalt(c, contractHash)
   },
   'gi.actions/identity/create': async function ({
-    data: { username, email, password, picture },
+    data: { username, email, passwordFn, picture },
     publishOptions
   }) {
+    const password = passwordFn()
     let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
 
     if (picture) {
@@ -242,14 +243,14 @@ export default (sbp('sbp/selectors/register', {
     }
     return userID
   },
-  'gi.actions/identity/signup': async function ({ username, email, password }, publishOptions) {
+  'gi.actions/identity/signup': async function ({ username, email, passwordFn }, publishOptions) {
     try {
       const randomAvatar = sbp('gi.utils/avatar/create')
       const userID = await sbp('gi.actions/identity/create', {
         data: {
           username,
           email,
-          password,
+          passwordFn,
           picture: randomAvatar
         },
         publishOptions
@@ -340,8 +341,8 @@ export default (sbp('sbp/selectors/register', {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)
     }
   },
-  'gi.actions/identity/login': async function ({ username, password, identityContractID }: {
-    username: ?string, password: ?string, identityContractID: ?string
+  'gi.actions/identity/login': async function ({ username, passwordFn, identityContractID }: {
+    username: ?string, passwordFn: ?() => string, identityContractID: ?string
   }) {
     if (username) {
       identityContractID = await sbp('namespace/lookup', username)
@@ -351,9 +352,11 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Invalid username or password'))
     }
 
+    const password = passwordFn?.()
+
     const transientSecretKeys = password
       ? await (async () => {
-        const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
+        const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
 
         return [{ key: IEK, transient: true }]
@@ -452,9 +455,23 @@ export default (sbp('sbp/selectors/register', {
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
-        const errMsg = L('Error during login contract sync: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        const errMessage = err?.message || String(err)
+        console.error('Error during login contract sync', errMessage)
+
+        const promptOptions = {
+          heading: L('Login error'),
+          question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
+          primaryButton: L('No'),
+          secondaryButton: L('Yes')
+        }
+
+        sbp('gi.ui/prompt', promptOptions).then((result) => {
+          if (!result) {
+            sbp('gi.actions/identity/logout')
+          }
+        }).catch((e) => {
+          console.error('Error at gi.ui/prompt', e)
+        })
       })
       return identityContractID
     } catch (e) {
@@ -465,9 +482,9 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(humanErr)
     }
   },
-  'gi.actions/identity/signupAndLogin': async function ({ username, email, password }) {
-    const contractIDs = await sbp('gi.actions/identity/signup', { username, email, password })
-    await sbp('gi.actions/identity/login', { username, password })
+  'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {
+    const contractIDs = await sbp('gi.actions/identity/signup', { username, email, passwordFn })
+    await sbp('gi.actions/identity/login', { username, passwordFn })
     return contractIDs
   },
   'gi.actions/identity/logout': async function () {

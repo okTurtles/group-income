@@ -48,6 +48,8 @@ console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
+  // Fix for https://github.com/okTurtles/group-income/issues/684
+  if (process.env.CI) throw err
 }
 
 async function startApp () {
@@ -68,6 +70,8 @@ async function startApp () {
     const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/set',
+      'chelonia/haveSecretKey',
+      'chelonia/storeSecretKeys',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
@@ -105,6 +109,7 @@ async function startApp () {
           'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
           'gi.notifications/emit',

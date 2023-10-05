@@ -35,7 +35,7 @@ Cypress.on('window:before:load', window => {
   Object.defineProperty(window.navigator, 'language', { value: 'en-US' })
 })
 
-Cypress.on('uncaught:exception', (err, runnable) => {
+Cypress.on('uncaught:exception', (err, runnable, promise) => {
   // Returning false here prevents Cypress from failing the test.
   if (err.name === 'NavigationDuplicated' || err.message.includes('navigation')) {
     return false

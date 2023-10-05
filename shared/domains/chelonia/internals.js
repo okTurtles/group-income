@@ -475,13 +475,11 @@ export default (sbp('sbp/selectors/register', {
 
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
-            await sbp('chelonia/contract/remove', v.contractID)
-            // Sync...
-            self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
-
-            // WARNING! THIS MIGHT DEADLOCK!!!
-            await sbp('chelonia/withEnv', env, [
-              'chelonia/private/in/syncContract', v.contractID
+            await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
+              'chelonia/begin',
+              ['chelonia/contract/removeImmediately', v.contractID],
+              ['chelonia/private/in/syncContract', v.contractID],
+              ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
             targetState = cheloniaState[v.contractID]
@@ -893,9 +891,7 @@ export default (sbp('sbp/selectors/register', {
 
       // 1. Sync (originating) identity contract
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-        'chelonia/contract/sync', originatingContractID
-      ])
+      await sbp('chelonia/contract/sync', originatingContractID)
 
       const originatingState = state[originatingContractID]
       const contractName = state.contracts[contractID].type
