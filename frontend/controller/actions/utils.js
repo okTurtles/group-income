@@ -70,7 +70,7 @@ export const encryptedAction = (
 
         const signingKeyId = params.signingKeyId || findKeyIdByName(state[signingContractID], signingKeyName ?? 'csk')
         const innerSigningKeyId = params.innerSigningKeyId || (
-          innerSigningContractID && findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
+          params.innerSigningKeyId !== null && innerSigningContractID && findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
         )
         const encryptionKeyId = findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
 
@@ -84,7 +84,7 @@ export const encryptedAction = (
           throw new Error(`No key found to send ${action} for contract ${contractID}`)
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId, encryptionKeyId, params.originatingContractID)
+        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId || null, encryptionKeyId, params.originatingContractID)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {

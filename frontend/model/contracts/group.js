@@ -1264,7 +1264,7 @@ sbp('chelonia/defineContract', {
             // chatroom (either the CSK or the groupKey)
             ...(data.leavingGroup && {
               signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-              innerSigningKeyId: null
+              innerSigningContractID: null
             })
           })
         }
