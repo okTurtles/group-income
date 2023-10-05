@@ -32,21 +32,20 @@ form.c-search-form(@submit.prevent='')
         )
 
   .buttons.is-end.c-button-container(v-if='usernames.length')
-    i18n.is-success.c-create-btn(
-      tag='button'
-      type='button'
-      @click='$emit("submit")'
-    ) Create
+    button-submit.is-success.c-create-btn(@click='submitHandler')
+      i18n Create
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
   name: 'UsersSelector',
   components: {
-    AvatarUser
+    AvatarUser,
+    ButtonSubmit
   },
   props: {
     label: {
@@ -113,6 +112,9 @@ export default ({
       }
 
       this.value = this.$refs.input.textContent
+    },
+    async submitHandler (event) {
+      await this.$listeners.submit(event)
     }
   },
   watch: {

@@ -1,6 +1,5 @@
 <template lang='pug'>
 modal-base-template.has-background(
-  ref='modal'
   :fullscreen='true'
   :a11yTitle='L("New Direct Message")'
   :autofocus='false'
@@ -85,6 +84,7 @@ modal-base-template.has-background(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { difference } from '@model/contracts/shared/giLodash.js'
 import { mapGetters } from 'vuex'
@@ -94,6 +94,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import DMMixin from './DMMixin.js'
 import { filterByKeyword } from '@view-utils/filters.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'NewDirectMessageModal',
@@ -195,26 +196,26 @@ export default ({
     onRemoveSelection (username) {
       this.selections = this.selections.filter(un => un !== username)
     },
-    onSubmit () {
+    async onSubmit () {
       if (this.selections.length) {
         const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.selections)
         if (chatRoomId) {
           this.redirect(chatRoomId)
         } else {
-          this.createDirectMessage(this.selections)
+          await this.createDirectMessage(this.selections)
         }
       } else if (this.searchText) {
         if (this.filteredRecents.length) {
           this.redirect(this.filteredRecents[0].chatRoomId)
         } else if (this.filteredOthers.length) {
-          this.createDirectMessage(this.filteredOthers[0].username)
+          await this.createDirectMessage(this.filteredOthers[0].username)
         }
       }
 
       this.closeModal()
     },
     closeModal () {
-      this.$refs.modal.close()
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   }
 }: Object)
