@@ -7,6 +7,50 @@ export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
 export const MONTHS_MILLIS = 30 * DAYS_MILLIS
 
+export const plusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+  dateToPeriodStamp(addTimeToDate(timestamp, periodLength))
+)
+
+export const minusOnePeriodLength = (timestamp: string, periodLength: number): string => (
+  dateToPeriodStamp(addTimeToDate(timestamp, -periodLength))
+)
+
+// @parameter knownSortedStamps:
+// - MUST be sorted in ascending order (lower timestamps first)
+// - MAY NOT contain duplicate elements
+export function periodStampsForDate (
+  date: Date | string,
+  { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
+): Object {
+  // $FlowFixMe - Pedantic '[method-unbinding]' error
+  if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
+    throw new TypeError('must be ISO string or Date object')
+  }
+  const timestamp = typeof date === 'string' ? date : date.toISOString()
+  let previous, current, next
+  if (knownSortedStamps.length) {
+    const latest = knownSortedStamps[knownSortedStamps.length - 1]
+    if (timestamp >= latest) {
+      current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength })
+      next = plusOnePeriodLength(current, periodLength)
+      previous = current > latest
+        ? minusOnePeriodLength(current, periodLength)
+        : knownSortedStamps[knownSortedStamps.length - 2]
+    } else {
+      for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
+        if (timestamp >= knownSortedStamps[i]) {
+          current = knownSortedStamps[i]
+          // `i + 1` is always a valid index.
+          next = knownSortedStamps[i + 1]
+          previous = knownSortedStamps[i - 1]
+          break
+        }
+      }
+    }
+  }
+  return { previous, current, next }
+}
+
 export function addMonthsToDate (date: string, months: number): Date {
   const now = new Date(date)
   return new Date(now.setMonth(now.getMonth() + months))
@@ -132,11 +176,15 @@ export function humanDate (
 }
 
 export function isPeriodStamp (arg: string): boolean {
-  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
+  return isIsoString(arg)
 }
 
 export function isFullMonthstamp (arg: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isIsoString (arg: any): boolean {
+  return typeof arg === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
 }
 
 export function isMonthstamp (arg: string): boolean {

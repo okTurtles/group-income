@@ -15,9 +15,9 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate, plusOnePeriodLength } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
-import currencies, { saferFloat } from './shared/currencies.js'
+import currencies from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
@@ -44,8 +44,11 @@ function initGroupProfile (joinedDate: string) {
   }
 }
 
-function initPaymentPeriod ({ getters }) {
+function initPaymentPeriod ({ meta, getters }) {
+  const start = getters.periodStampGivenDate(meta.createdDate)
   return {
+    start,
+    end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -87,7 +90,12 @@ function clearOldPayments ({ contractID, state, getters }) {
 
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
+  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
+  const previousPeriod = getters.periodBeforePeriod(period)
+  // Update the '.end' field of the previous in-memory period, if any.
+  if (previousPeriod in state.paymentsByPeriod) {
+    state.paymentsByPeriod[previousPeriod].end = period
+  }
   clearOldPayments({ contractID, state, getters })
   return periodPayments
 }
@@ -314,32 +322,53 @@ sbp('chelonia/defineContract', {
     groupMincomeCurrency (state, getters) {
       return getters.groupSettings.mincomeCurrency
     },
+    // Oldest period key first.
+    groupSortedPeriodKeys (state, getters) {
+      const { distributionDate, distributionPeriodLength } = getters.groupSettings
+      if (!distributionDate) return []
+      // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
+      // A comparator function isn't required for now since our keys are ISO strings.
+      const keys = Object.keys(getters.groupPeriodPayments).sort()
+      // Append the waiting period stamp if necessary.
+      if (!keys.length && MAX_SAVED_PERIODS > 0) {
+        keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)))
+      }
+      // Append the distribution date if necessary.
+      if (keys[keys.length - 1] !== distributionDate) {
+        keys.push(distributionDate)
+      }
+      return keys
+    },
+    // paymentTotalFromUserToUser (state, getters) {
+    // // this code was removed in https://github.com/okTurtles/group-income/pull/1691
+    // // because it was unused. feel free to bring it back if needed.
+    // },
+    //
+    // The following three getters return either a known period stamp for the given date,
+    // or a predicted one according to the period length.
+    // They may also return 'undefined', in which case the caller should check archived data.
     periodStampGivenDate (state, getters) {
-      return (recentDate: string | Date) => {
-        if (typeof recentDate !== 'string') {
-          recentDate = recentDate.toISOString()
-        }
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-
-        if (!distributionDate) return null
-
-        return periodStampGivenDate({
-          recentDate,
-          periodStart: distributionDate,
-          periodLength: distributionPeriodLength
-        })
+      return (date: string | Date): string | void => {
+        return periodStampsForDate(date, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).current
       }
     },
     periodBeforePeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len))
+      return (periodStamp: string): string | void => {
+        return periodStampsForDate(periodStamp, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).previous
       }
     },
     periodAfterPeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len))
+      return (periodStamp: string): string | void => {
+        return periodStampsForDate(periodStamp, {
+          knownSortedStamps: getters.groupSortedPeriodKeys,
+          periodLength: getters.groupSettings.distributionPeriodLength
+        }).next
       }
     },
     dueDateForPeriod (state, getters) {
@@ -348,37 +377,6 @@ sbp('chelonia/defineContract', {
         //       1 mili-second doesn't make any difference to the users
         //       so periodAfterPeriod is used to make it simple
         return getters.periodAfterPeriod(periodStamp)
-      }
-    },
-    paymentTotalFromUserToUser (state, getters) {
-      return (fromUser, toUser, periodStamp) => {
-        const payments = getters.currentGroupState.payments
-        const periodPayments = getters.groupPeriodPayments
-        const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {}
-        // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
-        //       here, but I couldn't get it to work with our linter. :(
-        //       https://github.com/babel/babel-eslint/issues/511
-        const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-          const payment = payments[hash]
-          let { amount, exchangeRate, status } = payment.data
-          if (status !== PAYMENT_COMPLETED) {
-            return a
-          }
-          const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
-          // if this payment is from a previous period, then make sure to take into account
-          // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both period's
-          // exchange rates
-          if (periodStamp !== paymentCreatedPeriodStamp) {
-            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
-              console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
-              return a
-            }
-            exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate
-          }
-          return a + (amount * exchangeRate * mincomeExchangeRate)
-        }, 0)
-        return saferFloat(total)
       }
     },
     paymentHashesForPeriod (state, getters) {
@@ -420,7 +418,7 @@ sbp('chelonia/defineContract', {
     },
     groupProposalSettings (state, getters) {
       return (proposalType = PROPOSAL_GENERIC) => {
-        return getters.groupSettings.proposals[proposalType]
+        return getters.groupSettings.proposals?.[proposalType]
       }
     },
     groupCurrency (state, getters) {
@@ -1313,7 +1311,6 @@ sbp('chelonia/defineContract', {
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
         const current = getters.groupSettings?.distributionDate
-
         if (current !== period) {
           // right before updating to the new distribution period, make sure to update various payment-related group streaks.
           updateGroupStreaks({ state, getters })
