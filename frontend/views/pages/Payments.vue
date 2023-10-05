@@ -67,8 +67,8 @@ page(
         .c-tabs-chip-container.hide-phone
           next-distribution-pill
 
-      .c-chip-container-below-tabs
-        next-distribution-pill.hide-tablet.c-distribution-pill
+      .c-chip-container-below-tabs.hide-tablet
+        next-distribution-pill.c-distribution-pill
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -120,6 +120,14 @@ page(
               @change-page='handlePageChange'
               @change-rows-per-page='handleRowsPerPageChange'
             )
+
+            .c-export-csv-container
+              i18n.is-outlined.is-small.c-export-csv-btn(
+                v-if='showExportPaymentsButton'
+                tag='button'
+                type='button'
+                @click='openExportPaymentsModal'
+              ) Export CSV
 
         .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
           p.c-lightning-todo-msg Coming Soon.
@@ -227,8 +235,11 @@ export default ({
           this.ephemeral.activeTab = section
         } else {
           const fromQuery = from?.query || {}
-          const isFromPaymentDetailModal = fromQuery.modal === 'PaymentDetail'
-          const defaultTab = isFromPaymentDetailModal
+          const isFromTableRelatedModals = [
+            'PaymentDetail',
+            'ExportPaymentsModal'
+          ].includes(fromQuery.modal)
+          const defaultTab = isFromTableRelatedModals
             // When payment detail modal is closed, the payment table has to remain in the previously active tab.
             // (context: https://github.com/okTurtles/group-income/issues/1686)
             ? fromQuery.section || this.tabSections[0]
@@ -385,6 +396,10 @@ export default ({
     showTabSelectionMenu () {
       return this.tabItems.length > 0
     },
+    showExportPaymentsButton () {
+      return ['PaymentRowSent', 'PaymentRowReceived'].includes(this.ephemeral.activeTab) &&
+        this.paymentsListData.length > 0
+    },
     isDevEnv () {
       return process.env.NODE_ENV === 'development'
     }
@@ -478,6 +493,17 @@ export default ({
       if (Object.keys(this.groupSettings).length) {
         this.historicalPayments = await this.getAllPaymentsInTypes()
       }
+    },
+    openExportPaymentsModal () {
+      const modalTypeMap = {
+        'PaymentRowSent': 'sent',
+        'PaymentRowReceived': 'received'
+      }
+
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ExportPaymentsModal',
+        { type: modalTypeMap[this.ephemeral.activeTab] }, // query params
+        { data: this.paymentsListData }
+      )
     }
   }
 }: Object)
@@ -523,20 +549,11 @@ export default ({
 .c-chip-container-below-tabs {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap-reverse;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  margin-bottom: 1.25rem;
 
-  > * {
-    margin-bottom: 1.25rem;
-
-    @include tablet {
-      margin-bottom: 2.5rem;
-    }
-  }
-
-  h3 {
-    margin-right: 1.25rem;
+  @include tablet {
+    margin-bottom: 2.5rem;
   }
 }
 
@@ -660,6 +677,7 @@ export default ({
 
 // Footer
 .c-footer {
+  position: relative;
   padding-top: 1.5rem;
 
   @include tablet {
@@ -707,5 +725,29 @@ export default ({
 
 .c-lightning-todo-msg {
   margin-top: 2rem;
+}
+
+.c-export-csv-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.c-export-csv-btn {
+  margin-top: 0.75rem;
+
+  @include tablet {
+    position: absolute;
+    bottom: 0;
+    right: 11.75rem;
+    margin-top: 0;
+  }
+
+  @media screen and (min-width: $desktop) and (max-width: 1310px) {
+    position: relative;
+    bottom: unset;
+    right: unset;
+    margin-top: 0.75rem;
+  }
 }
 </style>

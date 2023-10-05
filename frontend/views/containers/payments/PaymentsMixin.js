@@ -29,15 +29,15 @@ const PaymentsMixin: Object = {
       return await this.historicalPeriodStampGivenDate(payment.date)
     },
 
-    async getAllPaymentPeriods () {
-      return { ...await this.getHistoricalPaymentPeriods(), ...this.groupPeriodPayments }
+    async getAllPeriodPayments () {
+      return { ...await this.getHistoricalPeriodPayments(), ...this.groupPeriodPayments }
     },
 
     // Oldest key first.
     async getAllSortedPeriodKeys () {
-      const historicalPaymentPeriods = await this.getHistoricalPaymentPeriods()
+      const historicalPeriodPayments = await this.getHistoricalPeriodPayments()
       return [
-        ...Object.keys(historicalPaymentPeriods).sort(),
+        ...Object.keys(historicalPeriodPayments).sort(),
         ...this.groupSortedPeriodKeys
       ]
     },
@@ -68,7 +68,7 @@ const PaymentsMixin: Object = {
     },
 
     // ====================
-    async getHistoricalPaymentPeriods () {
+    async getHistoricalPeriodPayments () {
       const ourArchiveKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
       return await sbp('gi.db/archive/load', ourArchiveKey) ?? {}
     },
@@ -77,12 +77,12 @@ const PaymentsMixin: Object = {
       const sent = []
       const received = []
       const todo = cloneDeep(this.ourPayments?.todo ?? [])
-      const paymentPeriods = await this.getAllPaymentPeriods()
+      const periodPayments = await this.getAllPeriodPayments()
       const sortPayments = (f, l) => f.meta.createdDate > l.meta.createdDate ? 1 : -1
 
-      for (const periodStamp of Object.keys(paymentPeriods).sort().reverse()) {
+      for (const periodStamp of Object.keys(periodPayments).sort().reverse()) {
         const paymentsByHash = await this.getPaymentDetailsByPeriod(periodStamp)
-        const { paymentsFrom } = paymentPeriods[periodStamp]
+        const { paymentsFrom } = periodPayments[periodStamp]
         for (const fromUser of Object.keys(paymentsFrom)) {
           for (const toUser of Object.keys(paymentsFrom[fromUser])) {
             if (toUser === this.ourUsername || fromUser === this.ourUsername) {
@@ -110,13 +110,12 @@ const PaymentsMixin: Object = {
         const paymentHashes = this.paymentHashesForPeriod(period) || []
         detailedPayments = Object.fromEntries(paymentHashes.map(hash => [hash, this.currentGroupState.payments[hash]]))
       } else {
-        const paymentsByPeriod = await this.getHistoricalPaymentPeriods()
+        const paymentsByPeriod = await this.getHistoricalPeriodPayments()
         const paymentHashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
+        const historicalPaymentDetails = await this.getHistoricalPaymentDetailsByPeriod(period)
 
-        const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
-        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
         for (const hash of paymentHashes) {
-          detailedPayments[hash] = payments[hash]
+          detailedPayments[hash] = historicalPaymentDetails[hash]
         }
       }
       return detailedPayments
@@ -133,18 +132,18 @@ const PaymentsMixin: Object = {
       }
       return payments
     },
-    async getHistoricalPaymentByHashAndPeriod (hash: string, period: string) {
+    async getHistoricalPaymentDetailsByPeriod (period: string) {
       const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
-      const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+      const paymentDetails = await sbp('gi.db/archive/load', paymentsKey) || {}
 
-      return payments[hash]
+      return paymentDetails
     },
     async getHaveNeedsSnapshotByPeriod (period: string) {
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         return this.groupPeriodPayments[period].haveNeedsSnapshot || []
       }
 
-      const paymentsByPeriod = await this.getHistoricalPaymentPeriods()
+      const paymentsByPeriod = await this.getHistoricalPeriodPayments()
       return Object.keys(paymentsByPeriod).includes(period)
         ? paymentsByPeriod[period].haveNeedsSnapshot || []
         : []
@@ -171,7 +170,7 @@ const PaymentsMixin: Object = {
     // or an empty object if not found.
     // TODOs: rename to getPaymentPeriod, and maybe avoid loading all historical payment periods.
     async getPaymentPeriod (period: string) {
-      return this.groupPeriodPayments[period] ?? (await this.getHistoricalPaymentPeriods())[period] ?? {}
+      return this.groupPeriodPayments[period] ?? (await this.getHistoricalPeriodPayments())[period] ?? {}
     },
     // Returns a human-readable description of the time interval identified by a given period stamp.
     getPeriodFromStartToDueDate (period) {
