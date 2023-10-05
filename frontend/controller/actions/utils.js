@@ -58,6 +58,8 @@ export const encryptedAction = (
 
         // Default innerSigningContractID is the current logged in identity
         // contract ID, unless we are signing for the current identity contract
+        // If params.innerSigningContractID is explicitly set to null, then
+        // no default value will be used.
         const innerSigningContractID = params.innerSigningContractID !== undefined
           ? params.innerSigningContractID
           : contractID === rootState.loggedIn.identityContractID
@@ -69,8 +71,20 @@ export const encryptedAction = (
         }
 
         const signingKeyId = params.signingKeyId || findKeyIdByName(state[signingContractID], signingKeyName ?? 'csk')
+        // Inner signing key ID:
+        //  (1) If params.innerSigningKeyId is set, honor it
+        //      (a) If it's null, then no inner signature will be used
+        //      (b) If it's undefined, it's treated the same as if it's not set
+        //  (2) If params.innerSigningKeyId is not set:
+        //      (a) If innerSigningContractID is not set, then no inner
+        //          signature will be used
+        //      (b) Else, use the key by name `innerSigningKeyName` in
+        //          `innerSigningContractID`
+
         const innerSigningKeyId = params.innerSigningKeyId || (
-          params.innerSigningKeyId !== null && innerSigningContractID && findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
+          params.innerSigningKeyId !== null &&
+          innerSigningContractID &&
+          findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
         )
         const encryptionKeyId = findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
 
