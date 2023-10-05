@@ -12,17 +12,17 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
         legend.label(v-safe-html:a='$attrs.question')
 
       .buttons
-        button-submit.is-outlined(
-          v-if='$attrs.yesButton'
-          @click='submit'
-          data-test='submitPrompt'
-        ) {{ $attrs.yesButton || L('Yes')}}
-
         button.is-outlined(
           v-if='$attrs.noButton'
           type='button'
           @click='closeModal'
         ) {{ $attrs.noButton || L('No')}}
+
+        button-submit.is-outlined(
+          v-if='$attrs.yesButton'
+          @click='submit'
+          data-test='submitPrompt'
+        ) {{ $attrs.yesButton || L('Yes')}}
 </template>
 
 <script>

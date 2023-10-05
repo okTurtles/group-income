@@ -455,9 +455,23 @@ export default (sbp('sbp/selectors/register', {
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
-        const errMsg = L('Error during login contract sync: {err}', { err: err.message })
-        console.error(errMsg, err)
-        alert(errMsg)
+        const errMessage = err?.message || String(err)
+        console.error('Error during login contract sync', errMessage)
+
+        const promptOptions = {
+          heading: L('Login error'),
+          question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
+          yesButton: L('No'),
+          noButton: L('Yes')
+        }
+
+        sbp('gi.ui/prompt', promptOptions).then((result) => {
+          if (!result) {
+            sbp('gi.actions/identity/logout')
+          }
+        }).catch((e) => {
+          console.error('Error at gi.ui/prompt', e)
+        })
       })
       return identityContractID
     } catch (e) {
