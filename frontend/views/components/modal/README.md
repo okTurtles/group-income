@@ -82,8 +82,8 @@ To call a prompt with yes / no question we need to call sbp with this format:
 const boolYesOrNo = await sbp('gi.ui/prompt', {
   question: L('Would you like fresh tacos?'),
   heading: L('Update info'),
-  yesButton: L('Yes'),
-  noButton: L('No')
+  primaryButton: L('Yes'),
+  secondaryButton: L('No')
 })
 
 if (boolYesOrNo) {

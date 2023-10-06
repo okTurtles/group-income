@@ -131,7 +131,7 @@ export default (sbp('sbp/selectors/register', {
         }
         const { HEAD: contractHEAD, height: contractHeight } = HEADinfo
         if (entryPreviousHEAD !== contractHEAD) {
-          console.error(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)
+          console.warn(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)
           throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${entryPreviousHEAD}. Expected ${contractHEAD} for contractID: ${contractID}`)
         } else if (!Number.isSafeInteger(entryHeight) || entryHeight !== (contractHeight + 1)) {
           console.error(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)

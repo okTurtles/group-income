@@ -35,14 +35,16 @@ export default ({
     ...mapGetters(['groupSettings', 'ourUsername']),
     ...mapState(['currentGroupId']),
     ourGroupProfile () {
-      return this.$store.state[this.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+      if (!this.ephemeral.groupIdWhenMounted) return
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
     }
   },
   mounted () {
-    this.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupJoined = !!this.ourGroupProfile
   },
   watch: {
-    ourGroupProfile (to, from) {
+    ourGroupProfile (to) {
       // if our group profile appears in the group state, it means we've joined the group
       if (to) {
         this.ephemeral.groupJoined = true
@@ -90,5 +92,16 @@ export default ({
 
 .c-text {
   font-size: $size_4;
+}
+
+::v-deep .c-welcome.wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100%;
+  background-color: $background_0;
+  z-index: $zindex-sidebar + 1;
 }
 </style>

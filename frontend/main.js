@@ -48,6 +48,8 @@ console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
+  // Fix for https://github.com/okTurtles/group-income/issues/684
+  if (process.env.CI) throw err
 }
 
 async function startApp () {
@@ -68,6 +70,8 @@ async function startApp () {
     const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/set',
+      'chelonia/haveSecretKey',
+      'chelonia/storeSecretKeys',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
@@ -105,11 +109,13 @@ async function startApp () {
           'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
-          'chelonia/out/keyDel'
+          'chelonia/out/keyDel',
+          'chelonia/contract/disconnect'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -180,18 +186,18 @@ async function startApp () {
     await sbp('translations/init', navigator.language)
     // NOTE: important to do this before setting up Vue.js because a lot of that relies
     //       on the router stuff which has guards that expect the contracts to be loaded
-    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     try {
-      if (username) {
+      if (identityContractID) {
         sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
-        await sbp('gi.actions/identity/login', { username })
+        await sbp('gi.actions/identity/login', { identityContractID })
       }
     } catch (e) {
       console.error(`caught ${e.name} while logging in: ${e.message}`, e)
       await sbp('gi.actions/identity/logout')
-      console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+      console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
       // TODO: handle this better
-      await sbp('gi.db/settings/delete', username)
+      await sbp('gi.db/settings/delete', identityContractID)
     }
   } catch (e) {
     const errMsg = `Fatal error while initializing Group Income: ${e.name} - ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`

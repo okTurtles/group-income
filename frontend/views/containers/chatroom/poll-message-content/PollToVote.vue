@@ -18,8 +18,19 @@ form(@submit.prevent='')
 
   .buttons.c-buttons-container
     template(v-if='enableSubmitBtn')
-      i18n.is-small(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') Change vote
-      i18n.is-small(v-else tag='button' type='button' @click='submitVotes') Submit
+      button-submit.is-small(
+        v-if='isChangeMode'
+        type='button'
+        @click='changeVotes'
+      )
+        i18n Change vote
+
+      button-submit.is-small(
+        v-else
+        type='button'
+        @click='submitVotes'
+      )
+        i18n Submit
 
     i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='onCancelClick') Cancel
 </template>
@@ -30,13 +41,15 @@ import { mapGetters } from 'vuex'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PollToVote',
   inject: ['pollUtils'],
   components: {
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   props: {
     pollData: Object,

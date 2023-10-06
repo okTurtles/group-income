@@ -1,6 +1,7 @@
 import { has, pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -21,8 +22,6 @@ sbp('sbp/selectors/register', {
   'gi.actions/out/shareVolatileKeys': async ({
     contractID,
     contractName,
-    originatingContractID,
-    originatingContractName,
     subjectContractID,
     keyIds
   }) => {
@@ -33,10 +32,9 @@ sbp('sbp/selectors/register', {
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
     const state = await sbp('chelonia/latestContractState', contractID)
-    const originatingContractState = originatingContractID && originatingContractID !== contractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
 
     const CEKid = findKeyIdByName(state, 'cek')
-    const CSKid = findKeyIdByName(originatingContractState, 'csk')
+    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
 
     if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
       throw new Error('Missing CEK; unable to proceed sharing keys')
@@ -44,29 +42,38 @@ sbp('sbp/selectors/register', {
 
     const secretKeys = sbp('state/vuex/state')['secretKeys']
 
-    const keysToShare = Array.isArray(keyIds) ? pick(secretKeys, keyIds) : keyIds === '*' ? pick(secretKeys, Object.keys(contractState._vm.authorizedKeys)) : null
+    const keysToShare = Array.isArray(keyIds)
+      ? pick(secretKeys, keyIds)
+      : keyIds === '*'
+        ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
+          .filter(([, key]) => {
+            return !!((key: any): GIKey).meta?.private?.content
+          })
+          .map(([id]) => id)
+        )
+        : null
 
     if (!keysToShare) {
       throw new TypeError('Invalid parameter: keyIds')
     }
 
+    const payload = {
+      contractID: subjectContractID,
+      keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+        id: keyId,
+        meta: {
+          private: {
+            content: encryptedOutgoingData(state, CEKid, key)
+          }
+        }
+      }))
+    }
+
     await sbp('chelonia/out/keyShare', {
       contractID,
       contractName,
-      originatingContractID,
-      originatingContractName,
-      data: {
-        contractID: subjectContractID,
-        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
-          id: keyId,
-          meta: {
-            private: {
-              content: encryptedOutgoingData(state, CEKid, key)
-            }
-          }
-        }))
-      },
-      signingKeyId: CSKid
+      data: encryptedOutgoingData(state, CEKid, payload),
+      signingKeyId: signingKeyId
     })
   },
   // TODO: Move to chelonia
@@ -83,7 +90,7 @@ sbp('sbp/selectors/register', {
 
     // $FlowFixMe
     const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
-      return !!data.meta?.private && data._notAfterHeight === undefined && (
+      return !!data.meta?.private?.content && data._notAfterHeight == null && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
           : keysToRotate === '*'
@@ -94,6 +101,11 @@ sbp('sbp/selectors/register', {
       const newKey = keygenOfSameType(data.data)
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
+
+    if (!Object.keys(newKeys).length) {
+      console.debug('rotateKeys: No keys to rotate', { contractID })
+      return
+    }
 
     // $FlowFixMe
     const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
@@ -134,11 +146,15 @@ sbp('sbp/selectors/register', {
       }
     })
 
-    const signingKeyId = findSuitableSecretKeyId(state, [], ['sig'], ringLevel)
+    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
       throw new Error('No suitable signing key found')
     }
+
+    // TODO: GI-specific
+    const CEKid = findKeyIdByName(state, 'cek')
+    if (!CEKid) return
 
     // Share new keys with other contracts
     const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined

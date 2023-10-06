@@ -6,8 +6,12 @@
       slot(name='cellUser')
       template(v-if='!$slots["cellUser"]')
         .c-user
-          avatar-user.c-avatar(:username='payment.username' size='xs')
-          strong.c-name {{payment.displayName}}
+          profile-card(
+            :username='payment.username'
+            direction='top-left'
+          )
+            avatar-user.c-avatar(:username='payment.username' size='xs')
+            strong.c-name {{payment.displayName}}
 
         span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
 
@@ -33,11 +37,13 @@
 
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PaymentRowSent',
   components: {
+    ProfileCard,
     AvatarUser
   },
   props: {
