@@ -364,6 +364,7 @@ export default (sbp('sbp/selectors/register', {
           }
 
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          sbp('okTurtles.events/off', LOGOUT, logoutHandler)
           // The event handler recursively calls this same selector
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
@@ -377,13 +378,14 @@ export default (sbp('sbp/selectors/register', {
             }
           })
         }
+        const logoutHandler = () => {
+          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+        }
 
         // The event handler is configured before sending the request
         // to avoid race conditions
+        sbp('okTurtles.events/once', LOGOUT, logoutHandler)
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-        sbp('okTurtles.events/once', LOGOUT, () => {
-          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-        })
       }
 
       // After syncing the group contract, we send a key request
@@ -603,19 +605,18 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let csk
     let cek
+
+    const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
+    const csk = {
+      id: cskId,
+      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+      data: contractState._vm.authorizedKeys[cskId].data
+    }
 
     // For 'public' and 'group' chatrooms, use the group's CSK and CEK
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
       const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
-
-      csk = {
-        id: cskId,
-        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
-        data: contractState._vm.authorizedKeys[cskId].data
-      }
 
       cek = {
         id: cekId,
@@ -634,8 +635,11 @@ export default (sbp('sbp/selectors/register', {
       },
       options: {
         ...params.options,
-        csk,
-        cek
+        // The CSK is the CSK for non-private chatrooms
+        csk: cek ? csk : undefined,
+        cek,
+        // The groupKey is the CSK for private chatrooms
+        groupKey: !cek ? csk : undefined
       },
       hooks: {
         prepublish: params.hooks?.prepublish,
@@ -926,18 +930,18 @@ export default (sbp('sbp/selectors/register', {
       ? {
           heading: L('Mincome changed'),
           question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
-          yesButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
-          noButton: data.memberType === 'pledging' ? L('Yes') : L('No')
+          primaryButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
+          secondaryButton: data.memberType === 'pledging' ? L('Yes') : L('No')
         }
       : {
           heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
           question: L('You now make more than the mincome. Would you like to increase your pledge?'),
-          yesButton: L('Yes'),
-          noButton: L('No')
+          primaryButton: L('Yes'),
+          secondaryButton: L('No')
         }
 
-    const yesButtonSelected = await sbp('gi.ui/prompt', promptOptions)
-    if (yesButtonSelected) {
+    const primaryButtonSelected = await sbp('gi.ui/prompt', promptOptions)
+    if (primaryButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
@@ -960,17 +964,17 @@ export default (sbp('sbp/selectors/register', {
         ? {
             heading: 'Large group size',
             question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
-            yesButton: L('OK')
+            primaryButton: L('OK')
           }
         : {
             heading: 'Large group size',
             question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
-            yesButton: L('Yes'),
-            noButton: L('Cancel')
+            primaryButton: L('Yes'),
+            secondaryButton: L('Cancel')
           }
 
-      const yesButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-      if (!enforceDunbar && yesButtonSelected) {
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      if (!enforceDunbar && primaryButtonSelected) {
         sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
       } else return false
     } else {

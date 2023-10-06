@@ -17,7 +17,7 @@
   .buttons.is-centered
     i18n(
       tag='button'
-      :disabled='!ourGroupProfile || isButtonClicked'
+      :disabled='isButtonClicked'
       @click='toDashboard'
       data-test='toDashboardBtn'
     ) Awesome
@@ -41,7 +41,7 @@ export default ({
     $v: { type: Object }
   },
   computed: {
-    ...mapGetters(['groupSettings', 'ourGroupProfile'])
+    ...mapGetters(['groupSettings'])
   },
   data () {
     return {

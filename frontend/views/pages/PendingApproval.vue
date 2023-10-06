@@ -6,7 +6,7 @@ div
 
     i18n.is-title-1(
       data-test='pendingApprovalTitle'
-      :data-groupId='currentGroupId'
+      :data-groupId='ephemeral.groupIdWhenMounted'
       tag='h2'
       :args='{ groupName: groupSettings.groupName }'
     ) Waiting for approval to join {groupName}!
@@ -15,7 +15,9 @@ div
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
+import { JOINED_GROUP } from '@utils/events.js'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 
@@ -35,22 +37,27 @@ export default ({
   },
   computed: {
     ...mapGetters(['groupSettings', 'ourUsername']),
-    ...mapState(['currentGroupId']),
     ourGroupProfile () {
       if (!this.ephemeral.groupIdWhenMounted) return
       return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
     }
   },
   mounted () {
-    this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    this.ephemeral.groupJoined = !!this.ourGroupProfile
-  },
-  watch: {
-    ourGroupProfile (to) {
-      // if our group profile appears in the group state, it means we've joined the group
-      if (to) {
-        this.ephemeral.groupJoined = true
+    this.ephemeral.groupIdWhenMounted = this.$store.state.currentGroupId
+    const isSyncing = sbp('chelonia/contract/isSyncing', this.ephemeral.groupIdWhenMounted)
+    console.log('[At Mounted]', isSyncing, JSON.stringify(this.ourGroupProfile))
+    if (isSyncing || !this.ourGroupProfile) {
+      const eventHandler = ({ contractID }) => {
+        console.log('Group Joined:', contractID, '----------------')
+        if (contractID === this.ephemeral.groupIdWhenMounted) {
+          this.ephemeral.groupJoined = true
+          sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
+        }
       }
+
+      sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
+    } else {
+      this.ephemeral.groupJoined = true
     }
   }
 }: Object)
