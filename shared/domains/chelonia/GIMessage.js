@@ -3,10 +3,14 @@
 // TODO: rename GIMessage to ChelMessage
 
 import { v4 as uuidv4 } from 'uuid'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
-import { encryptedIncomingForeignData, encryptedIncomingData } from './encryptedData.js'
+import type { EncryptedData } from './encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
+import type { SignedData } from './signedData.js'
+import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -24,24 +28,32 @@ export type GIKey = {
   foreignKey?: string;
   _notBeforeHeight: number;
   _notAfterHeight?: number;
+  _private?: false | string;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionEncrypted = { content: string } // encrypted version of GIOpActionUnencrypted
-export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
-export type GIOpKeyAdd = GIKey[]
-export type GIOpKeyDel = string[]
+export type GIOpContract = { type: string; keys: (GIKey | EncryptedData<GIKey>)[]; parentContract?: string }
+export type ProtoGIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type GIOpActionUnencrypted = ProtoGIOpActionUnencrypted | SignedData<ProtoGIOpActionUnencrypted>
+export type GIOpActionEncrypted = EncryptedData<GIOpActionUnencrypted> // encrypted version of GIOpActionUnencrypted
+export type GIOpKeyAdd = (GIKey | EncryptedData<GIKey>)[]
+export type GIOpKeyDel = (string | EncryptedData<string>)[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type GIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
-export type GIOpKeyRequest = {
-  keyId: string;
-  outerKeyId: string;
-  encryptionKeyId: string;
-  data: string;
+export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
+export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
+// TODO encrypted GIOpKeyRequest
+export type ProtoGIOpKeyRequest = {
+  contractID: string;
+  height: number;
+  replyWith: SignedData<{
+    encryptionKeyId: string;
+    responseKey: EncryptedData<string>;
+  }>
 }
-export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
-export type GIOpKeyUpdate = {
+export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
+export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
+export type GIKeyUpdate = {
   name: string;
   id?: string;
   oldKeyId: string;
@@ -50,48 +62,134 @@ export type GIOpKeyUpdate = {
   permissions?: string[];
   allowedActions?: '*' | string[];
   meta?: Object;
-}[]
+}
+export type GIOpKeyUpdate = (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]
 
 export type GIOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
 type ProtoGIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
 export type GIOpAtomic = [GIOpType, ProtoGIOpValue][]
 export type GIOpValue = ProtoGIOpValue | GIOpAtomic
-export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
+export type GIOpRaw = [GIOpType, SignedData<GIOpValue>]
+export type GIOp = [GIOpType, GIOpValue]
 
-type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
+export type GIMsgDirection = 'incoming' | 'outgoing'
+type GIMsgParams = { direction: GIMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
 
-const decryptedDeserializedMessage = (op: string, height: number, parsedMessage: Object, contractID: string, additionalKeys?: Object, state: Object) => {
-  const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys) : parsedMessage
+// Takes a raw message and processes it so that EncryptedData and SignedData
+// attributes are defined
+const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: GIOpValue, additionalKeys?: Object, state: Object): GIOpValue => {
+  const op = head.op
+  const height = head.height
+
+  const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
+    // $FlowFixMe
+    ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+    : parsedMessage
+
+  // If the operation is GIMessage.OP_KEY_ADD or GIMessage.OP_KEY_UPDATE,
+  // extract encrypted data from key.meta?.private?.content
   if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
-    ((message: any): any[]).forEach((key) => {
-      // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
-      if (key.meta?.private?.content) {
-        key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, (value) => {
-          const computedKeyId = keyId(value)
-          if (computedKeyId !== key.id) {
-            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+    return ((message: any): any[]).map((key) => {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
+        if (key.meta?.private?.content) {
+          key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+          // Validator function to verify the key matches its expected ID
+            const computedKeyId = keyId(value)
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+          })
+        }
+        // key.meta?.keyRequest?.contractID could be optionally encrypted
+        if (key.meta?.keyRequest?.contractID) {
+          try {
+            key.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf()
+          } catch {
+            // If we couldn't decrypt it, this value is of no use to us (we
+            // can't keep track of key requests and key shares), so we delete it
+            delete key.meta.keyRequest.contractID
           }
-        })
-      }
-    })
-  }
-  if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(op)) {
-    (message: any).keys?.forEach((key) => {
-      if (key.meta?.private?.content) {
-        const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
-        const decryptionContract = message.foreignContractID ? message.foreignContractID : contractID
-        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, (value) => {
-          const computedKeyId = keyId(value)
-          if (computedKeyId !== key.id) {
-            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
-          }
-        })
-      }
+        }
+      })
     })
   }
 
+  // If the operation is GIMessage.OP_CONTRACT,
+  // extract encrypted data from keys?.[].meta?.private?.content
+  if (op === GIMessage.OP_CONTRACT) {
+    (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
+        if (!key.meta?.private?.content) return
+        const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
+        // $FlowFixMe
+        const decryptionContract = ((message.foreignContractID ? message.foreignContractID : contractID): string)
+        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+          const computedKeyId = keyId(value)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+        })
+      })
+    })
+  }
+
+  // If the operation is GIMessage.OP_KEY_SHARE,
+  // extract encrypted data from keys?.[].meta?.private?.content
+  if (op === GIMessage.OP_KEY_SHARE) {
+    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message) => {
+      (message: any).keys?.forEach((key) => {
+        if (!key.meta?.private?.content) return
+        const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
+        const decryptionContract = message.foreignContractID || contractID
+        key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+          const computedKeyId = keyId(value)
+          if (computedKeyId !== key.id) {
+            throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+          }
+        })
+      })
+    })
+  }
+
+  // If the operation is OP_KEY_REQUEST, the payload might be EncryptedData
+  // The ReplyWith attribute is SignedData
+  if (op === GIMessage.OP_KEY_REQUEST) {
+    return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (msg) => {
+      msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
+    })
+  }
+
+  // If the operation is OP_ACTION_UNENCRYPTED, it may contain an inner
+  // signature
+  // Actions must be signed using a key for the current contract
+  if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
+    return signedIncomingData(contractID, state, message, height, headJSON)
+  }
+
+  // Inner signatures are handled by EncryptedData
+  if (op === GIMessage.OP_ACTION_ENCRYPTED) {
+    return message
+  }
+
+  if (op === GIMessage.OP_KEY_DEL) {
+    return ((message: any): any[]).map((key) => {
+      return maybeEncryptedIncomingData(contractID, state, (key: any), height, additionalKeys, headJSON, undefined)
+    })
+  }
+
+  if (op === GIMessage.OP_KEY_REQUEST_SEEN) {
+    return maybeEncryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+  }
+
+  // If the operation is OP_ATOMIC, call this function recursively
   if (op === GIMessage.OP_ATOMIC) {
-    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, height, opV, contractID, additionalKeys, state)])
+    return ((((message: any): GIOpAtomic)
+      .map(([opT, opV]) =>
+        [
+          opT,
+          decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, (opV: any), additionalKeys, state)
+        ]
+      ): any): GIOpAtomic)
   }
 
   return message
@@ -99,12 +197,11 @@ const decryptedDeserializedMessage = (op: string, height: number, parsedMessage:
 
 export class GIMessage {
   // flow type annotations to make flow happy
-  _decrypted: GIOpValue
   _mapping: Object
   _head: Object
   _message: Object
-  _signature: string
-  _signedPayload: string
+  _signedMessageData: SignedData<GIOpValue>
+  _direction: GIMsgDirection
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -129,19 +226,19 @@ export class GIMessage {
       // originatingContractID is used when one contract writes to another. in this case
       // originatingContractID is the one sending the message to contractID.
       originatingContractID,
+      originatingContractHeight,
       previousHEAD = null,
       height = 0,
       op,
-      manifest,
-      signatureFn = defaultSignatureFn
+      manifest
     }: {
       contractID: string | null,
       originatingContractID?: string,
+      originatingContractHeight?: number,
       previousHEAD?: string | null,
       height: number,
-      op: GIOp,
+      op: GIOpRaw,
       manifest: string,
-      signatureFn?: Function
     }
   ): this {
     const head = {
@@ -150,6 +247,7 @@ export class GIMessage {
       height,
       contractID,
       originatingContractID,
+      originatingContractHeight,
       op: op[0],
       manifest,
       // the nonce makes it easier to prevent conflicts during development
@@ -158,51 +256,62 @@ export class GIMessage {
       // cloned using the cloneWith method
       nonce: uuidv4()
     }
-    console.log('createV1_0', { op, head, signatureFn })
-    return new this(messageToParams(head, op[1], op.length === 3 ? op[2] : op[1], signatureFn))
+    console.log('createV1_0', { op, head })
+    return new this(messageToParams(head, op[1]))
   }
 
   // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
     targetHead: Object,
-    targetOp: GIOp,
-    sources: Object,
-    signatureFn?: Function = defaultSignatureFn
+    targetOp: GIOpRaw,
+    sources: Object
   ): this {
     const head = Object.assign({}, targetHead, sources)
-    return new this(messageToParams(head, targetOp[1], targetOp.length === 3 ? targetOp[2] : targetOp[1], signatureFn))
+    return new this(messageToParams(head, targetOp[1]))
   }
 
   static deserialize (value: string, additionalKeys?: Object, state?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
-    const parsedValue = JSON.parse(value)
-    const head = JSON.parse(parsedValue.head)
-    const parsedMessage = JSON.parse(parsedValue.message)
+    const { head: headJSON, ...parsedValue } = JSON.parse(value)
+    const head = JSON.parse(headJSON)
     const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
-    const message = decryptedDeserializedMessage(head.op, head.height, parsedMessage, contractID, additionalKeys, state)
+
+    // Special case for OP_CONTRACT, since the keys are not yet present in the
+    // state
+    if (!state?._vm?.authorizedKeys && head.op === GIMessage.OP_CONTRACT) {
+      const value = rawSignedIncomingData(parsedValue)
+      const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(k => [k.id, k]))
+      state = {
+        _vm: {
+          authorizedKeys
+        }
+      }
+    }
+
+    const signedMessageData = signedIncomingData(
+      contractID, state, parsedValue, head.height, headJSON,
+      (message) => decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, message, additionalKeys, state)
+    )
+
     return new this({
+      direction: 'incoming',
       mapping: { key: blake32Hash(value), value },
       head,
-      message: (message: any),
-      signature: parsedValue.sig,
-      signedPayload: blake32Hash(`${blake32Hash(parsedValue.head)}${blake32Hash(parsedValue.message)}`)
+      signedMessageData
     })
   }
 
-  constructor ({ mapping, head, message, signature, signedPayload, decryptedValue }: GIMsgParams) {
-    this._mapping = mapping
-    this._head = head
-    this._message = message
-    this._signature = signature
-    this._signedPayload = signedPayload
-    if (decryptedValue) {
-      this._decrypted = decryptedValue
-    }
+  constructor (params: GIMsgParams) {
+    this._direction = params.direction
+    this._mapping = params.mapping
+    this._head = params.head
+    this._signedMessageData = ((params.signedMessageData: any): SignedData<GIOpValue>)
+
     // perform basic sanity check
     const type = this.opType()
     let atomicTopLevel = true
-    const validate = (type) => {
+    const validate = (type, message) => {
       switch (type) {
         case GIMessage.OP_CONTRACT:
           if (!this.isFirstMessage() || !atomicTopLevel) throw new Error('OP_CONTRACT: must be first message')
@@ -214,55 +323,82 @@ export class GIMessage {
           if (!Array.isArray(message)) {
             throw new TypeError('OP_ATOMIC must be of an array type')
           }
-          atomicTopLevel = false
-          console.log({ message })
-          message.forEach(([t]) => validate(t))
+          atomicTopLevel = false;
+          (message: any[]).forEach(([t, m]) => validate(t, m))
+          break
+        case GIMessage.OP_KEY_ADD:
+        case GIMessage.OP_KEY_DEL:
+        case GIMessage.OP_KEY_UPDATE:
+          if (!Array.isArray(message)) throw new TypeError('OP_KEY_{ADD|DEL|UPDATE} must be of an array type')
           break
         case GIMessage.OP_KEY_SHARE:
         case GIMessage.OP_KEY_REQUEST:
         case GIMessage.OP_KEY_REQUEST_SEEN:
         case GIMessage.OP_ACTION_ENCRYPTED:
-        case GIMessage.OP_KEY_ADD:
-        case GIMessage.OP_KEY_DEL:
-        case GIMessage.OP_KEY_UPDATE:
         // nothing for now
           break
         default:
           throw new Error(`unsupported op: ${type}`)
       }
     }
-    validate(type)
+
+    // this._message is set as a getter to verify the signature only once the
+    // message contents are read
+    Object.defineProperty(this, '_message', {
+      get: ((validated?: boolean) => () => {
+        const message = this._signedMessageData.valueOf()
+        // If we haven't validated the message, validate it now
+        if (!validated) {
+          validate(type, message)
+          validated = true
+        }
+        return message
+      })()
+    })
   }
 
-  decryptedValue (fn?: Function): any {
-    return Object(this.opValue()).valueOf()
+  decryptedValue (): any {
+    const value = this.message()
+    const data = unwrapMaybeEncryptedData(value)
+    // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
+    // on failure)
+    if (data?.data) {
+      // The data inside could be signed. In this case, we unwrap that to get
+      // to the inner contents
+      if (isSignedData(data.data)) {
+        try {
+          return data.data.valueOf()
+        } catch {
+          // Signature verification failed. In this case, we return undefined
+          return undefined
+        }
+      } else {
+        return data.data
+      }
+    }
+    return undefined
   }
 
   head (): Object { return this._head }
 
-  message (): Object { return this._message }
+  message (): GIOpValue { return this._message }
 
-  op (): GIOp { return this._decrypted ? [this.head().op, this.message(), this.decryptedValue()] : [this.head().op, this.message()] }
+  op (): GIOp { return [this.head().op, this.message()] }
+
+  rawOp (): GIOpRaw { return [this.head().op, this._signedMessageData] }
 
   opType (): GIOpType { return this.head().op }
 
   opValue (): GIOpValue { return this.message() }
 
-  signature (): Object { return this._signature }
-
-  signedPayload (): string { return this._signedPayload }
+  signingKeyId (): string { return this._signedMessageData.signingKeyId }
 
   manifest (): string { return this.head().manifest }
 
   description (): string {
     const type = this.opType()
     let desc = `<op_${type}`
-    if (type === GIMessage.OP_ACTION_ENCRYPTED && this._decrypted) {
-      const { _decrypted } = this
-      if (typeof _decrypted.type === 'string') {
-        desc += `|${_decrypted.type}`
-      }
-    } else if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
+    if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
       const value = this.opValue()
       if (typeof value.type === 'string') {
         desc += `|${value.type}`
@@ -288,21 +424,13 @@ export class GIMessage {
     // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
     return this.head().nonce
   }
-}
 
-function defaultSignatureFn (data: string) {
-  if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-    console.error('Using defaultSignatureFn', { data })
-    return {
-      type: 'default',
-      sig: blake32Hash(data)
-    }
+  direction (): 'incoming' | 'outgoing' {
+    return this._direction
   }
-  console.error('Attempted to call defaultSignatureFn', { data })
-  throw new Error('Attempted to call defaultSignatureFn. Specify a signature function')
 }
 
-function messageToParams (head: Object, message: GIOpValue, decryptedValue: GIOpValue, signatureFn: Function): GIMsgParams {
+function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using deserialize().
@@ -313,21 +441,12 @@ function messageToParams (head: Object, message: GIOpValue, decryptedValue: GIOp
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
   const headJSON = JSON.stringify(head)
-  const messageJSON = JSON.stringify(message)
-  const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
-  const signature = signatureFn(signedPayload)
-  const value = JSON.stringify({
-    head: headJSON,
-    message: messageJSON,
-    sig: signature
-  })
+  const messageJSON = { ...message.serialize(headJSON), head: headJSON }
+  const value = JSON.stringify(messageJSON)
   return {
+    direction: has(message, 'recreate') ? 'outgoing' : 'incoming',
     mapping: { key: blake32Hash(value), value },
     head,
-    message,
-    // provide the decrypted value so that pre/postpublish hooks have access to it if needed
-    decryptedValue,
-    signature,
-    signedPayload
+    signedMessageData: message
   }
 }
