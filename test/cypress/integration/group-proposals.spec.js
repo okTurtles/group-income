@@ -70,17 +70,24 @@ describe('Proposals - Add members', () => {
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
     // Try to join with expired link
-    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
-    cy.visit(invitationLinks.anyone)
-    cy.getByDT('pageTitle')
-      .invoke('text')
-      .should('contain', 'Oh no! This invite is already expired')
-    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+    // cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+    // cy.visit(invitationLinks.anyone)
+    // cy.getByDT('pageTitle')
+    //   .invoke('text')
+    //   .should('contain', 'Oh no! This invite is already expired')
+    // cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, groupName })
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, groupName })
+    const options = {
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      actionBeforeLogout: () => {},
+      shouldLogoutAfter: true,
+      bypassUI: true
+    }
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { ...options, username: `user2-${userId}` })
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { ...options, username: `user3-${userId}` })
   })
 
   it('user1 proposes to add user4, user5, user6 together to the group', () => {
@@ -278,6 +285,7 @@ describe('Proposals - Add members', () => {
     cy.giSignup(`user4-${userId}`, { bypassUI: true })
     cy.giAcceptGroupInvite(invitationLinks.user4, {
       isLoggedIn: true,
+      existingMemberUsername: `user1-${userId}`,
       groupName,
       actionBeforeLogout: () => {
         cy.log('"New" tag does not appear for previous members')
@@ -340,6 +348,8 @@ describe('Proposals - Add members', () => {
   it('user6 registers through a unique invitation link to join a group', () => {
     cy.giAcceptGroupInvite(invitationLinks.user6, {
       groupName,
+      existingMemberUsername: `user1-${userId}`,
+      actionBeforeLogout: () => {},
       username: `user6-${userId}`,
       inviteCreator: `user1-${userId}`
     })

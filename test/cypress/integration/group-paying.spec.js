@@ -125,21 +125,20 @@ describe('Group Payments', () => {
   })
 
   it('Three users join the group and add their income details', () => {
-    const options = { groupName, bypassUI: true, shouldLogoutAfter: false }
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, ...options })
-    setIncomeDetails(false, 900)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, ...options })
-    setIncomeDetails(false, 750)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user4-${userId}`, ...options })
-    setIncomeDetails(true, 100)
+    const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
+    const actionsBeforeLogout = [[false, 900], [false, 750], [true, 100]]
+      .map(([doesPledge, incomeAmount]) => (() => setIncomeDetails(doesPledge, incomeAmount)))
+    cy.giAcceptUsersGroupInvite(invitationLinks.anyone, {
+      usernames,
+      actionBeforeLogout: actionsBeforeLogout,
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      bypassUI: true
+    })
   })
 
   it('user1 sends $250 to user3 (total)', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
     //       REFERENCE IN CASE WE RUN INTO MORE!

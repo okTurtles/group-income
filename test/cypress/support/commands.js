@@ -7,7 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
-import { JOINED_GROUP } from '../../../frontend/utils/events.js'
+import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -75,13 +75,20 @@ Cypress.Commands.add('giLogin', (username, {
   firstLogin = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      const ourUsername = sbp('state/vuex/getters').ourUsername
-      if (ourUsername === username) {
-        throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-      }
-      await sbp('gi.actions/identity/login', { username, password })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    cy.window().its('sbp').then(sbp => {
+      return new Promise(resolve => {
+        const ourUsername = sbp('state/vuex/getters').ourUsername
+        if (ourUsername === username) {
+          throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+        }
+        sbp('okTurtles.events/once', LOGIN, async ({ username: name }) => {
+          if (name === username) {
+            await sbp('controller/router').push({ path: '/' }).catch(e => {})
+            resolve()
+          }
+        })
+        sbp('gi.actions/identity/login', { username, password })
+      })
     })
 
     cy.get('nav').within(() => {
@@ -94,6 +101,10 @@ Cypress.Commands.add('giLogin', (username, {
 
     cy.getByDT('loginSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
+
+    if (firstLogin) {
+      cy.getByDT('toDashboardBtn').click()
+    }
   }
 
   // We changed pages (to dashboard or create group)
@@ -298,8 +309,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.giSignup(username, { bypassUI: true })
     }
 
-    cy.window().its('sbp').then(sbp => {
-      sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+    cy.window().its('sbp').then(async sbp => {
+      await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
     })
   } else {
     cy.visit(invitationLink)
@@ -315,20 +326,28 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
 
   cy.url().should('eq', `${API_URL}/app/pending-approval`)
-  // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
-  cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
-  // TODO: should remove the following cy.wait()
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(1000)
-  cy.giLogout()
 
-  cy.giLogin(existingMemberUsername, { bypassUI })
-  // TODO: should remove the following cy.wait()
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(2000)
-  cy.giLogout()
+  if (existingMemberUsername) {
+    // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
+    cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
+    // TODO: should remove the following cy.wait()
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+    cy.giLogout()
 
-  cy.giLogin(username, { bypassUI, firstLogin: true })
+    cy.giLogin(existingMemberUsername, { bypassUI })
+    // TODO: should remove the following cy.wait()
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(2000)
+    cy.giLogout()
+
+    cy.giLogin(username, { bypassUI, firstLogin: true })
+  } else {
+    // NOTE: if existingMemberUsername doens't exist
+    //       it means the invitation link is unique for someone
+    //       or it means he uses the invitation link by the second time or more
+    cy.getByDT('toDashboardBtn').click()
+  }
 
   if (displayName) {
     cy.giSetDisplayName(displayName)
