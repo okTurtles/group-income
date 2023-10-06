@@ -517,6 +517,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
 
+    // TODO: Also share PEK with DMs
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')

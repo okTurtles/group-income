@@ -939,7 +939,7 @@ sbp('chelonia/defineContract', {
             .catch(e => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
             })
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID))
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
             .catch(e => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
             })
@@ -965,7 +965,11 @@ sbp('chelonia/defineContract', {
 
             // gi.contracts/group/removeOurselves will eventually trigger this
             // as well
-            sbp('gi.contracts/group/rotateKeys', contractID, state)
+            sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
+              sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+            }).catch((e) => {
+              console.error('Error rotating group keys or our PEK', e)
+            })
 
             const rootGetters = sbp('state/vuex/getters')
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID
@@ -1501,11 +1505,11 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
-      sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
+      return sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, revokeGroupKey: ?boolean) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
       const state = rootState[identityContractID]
@@ -1516,31 +1520,33 @@ sbp('chelonia/defineContract', {
       const CEKid = findKeyIdByName(state, 'cek')
       const PEKid = findKeyIdByName(state, 'pek')
 
-      const groupCSKids = findForeignKeysByContractID(state, groupContractID)
-
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      if (groupCSKids?.length) {
-        if (!CEKid) {
-          throw new Error('Identity CEK not found')
+      if (revokeGroupKey) {
+        const groupCSKids = findForeignKeysByContractID(state, groupContractID)
+
+        if (groupCSKids?.length) {
+          if (!CEKid) {
+            throw new Error('Identity CEK not found')
+          }
+
+          sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
+            contractID: identityContractID,
+            contractName: 'gi.contracts/identity',
+            data: groupCSKids,
+            signingKeyId: CSKid
+          }])
+            .catch(e => {
+              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
+            })
         }
 
-        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
-          contractID: identityContractID,
-          contractName: 'gi.contracts/identity',
-          data: groupCSKids,
-          signingKeyId: CSKid
-        }])
-          .catch(e => {
-            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
-          })
+        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
+          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+        })
       }
 
-      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
-        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
-      })
-
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      return sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
