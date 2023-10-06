@@ -99,9 +99,9 @@ sbp('sbp/selectors/register', {
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
     if (state.loggedIn) {
+      const { identityContractID, encryptionParams } = state.loggedIn
       state.notifications = applyStorageRules(state.notifications || [])
-      // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
     }
   }
 })
@@ -526,6 +526,26 @@ const getters = {
       })
     return profiles
   },
+  ourContactProfilesById (state, getters) {
+    const profiles = {}
+    Object.keys(state.contracts)
+      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .forEach(contractID => {
+        const attributes = state[contractID].attributes
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
+          profiles[contractID] = attributes
+        }
+      })
+    return profiles
+  },
+  ourContactsById (state, getters) {
+    return Object.keys(getters.ourContactProfilesById)
+      .sort((userIdA, userIdB) => {
+        const nameA = ((getters.ourContactProfilesById[userIdA].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdA].username || userIdA
+        const nameB = ((getters.ourContactProfilesById[userIdB].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdB].username || userIdB
+        return nameA > nameB ? 1 : -1
+      })
+  },
   ourContacts (state, getters) {
     return Object.keys(getters.ourContactProfiles)
       .sort((usernameA, usernameB) => {
@@ -563,7 +583,11 @@ const getters = {
           users,
           partners,
           lastJoinedPartner,
-          title: partners.map(un => getters.ourContactProfiles[un].displayName || un).join(', '),
+          // TODO: The UI should display display names, usernames and (in the future)
+          // identity contract IDs differently in some way (e.g., font, font size,
+          // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
+          // users (e.g., 'user1' changing their display name to 'user2')
+          title: partners.map(un => getters.ourContactProfiles[un]?.displayName || un).join(', '),
           picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
         }
       }

@@ -1279,16 +1279,16 @@ page(
               br
               | &nbsp  heading: 'Update info',
               br
-              | &nbsp  yesButton: 'Yes',
+              | &nbsp  primaryButton: 'Yes',
               br
-              | &nbsp  noButton: 'No'
+              | &nbsp  secondaryButton: 'No'
               br
               | })
           td
             button.is-outlined(@click='openPrompt()')
               i18n Open Prompt
 
-      p *yesButton and noButton parameters are optional
+      p *primaryButton and secondaryButton parameters are optional
 
   article#clipboard-uis
     section.card

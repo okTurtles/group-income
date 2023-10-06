@@ -37,15 +37,8 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
-      'periodStampGivenDate',
-      'periodBeforePeriod',
-      'groupCreatedDate',
-      'dueDateForPeriod'
-    ]),
-    firstDistributionPeriod () {
-      // group's first distribution period
-      return this.periodStampGivenDate(this.groupCreatedDate)
-    }
+      'groupCreatedDate'
+    ])
   },
   created () {
     this.updateHistory()
@@ -55,17 +48,17 @@ export default ({
       this.history = []
 
       let period = null
+      const firstDistributionPeriod = await this.historicalPeriodStampGivenDate(this.groupCreatedDate)
       const getLen = obj => Object.keys(obj).length
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
-        period = period === null ? this.currentPaymentPeriod : this.periodBeforePeriod(period)
-        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
+        period = period === null ? this.currentPaymentPeriod : await this.historicalPeriodBeforePeriod(period)
+        if (!period || comparePeriodStamps(period, firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
-        const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
+        const { lastAdjustedDistribution } = await this.getPaymentPeriod(period)
         const doneCount = getLen(paymentDetails)
         const missedCount = getLen(lastAdjustedDistribution || {})
-
         this.history.unshift({
           total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
           title: this.getPeriodFromStartToDueDate(period),

@@ -95,20 +95,22 @@ modal-base-template.has-background(
                   .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
             .c-actions(v-if='isJoined')
-              i18n.button.is-outlined.is-small(
+              button-submit.button.is-outlined.is-small(
                 v-if='!joinedDate'
-                tag='button'
+                type='button'
                 @click.stop='addToChannel(username)'
                 :data-test='"addToChannel-" + username'
-                :args='LTags("span")'
-              ) Add {span_} to channel{_span}
+              )
+                i18n(:args='LTags("span")') Add {span_} to channel{_span}
+
               .has-text-success(v-else)
                 i.icon-check
                 i18n Added.
-                button.is-unstyled.c-action-undo(
+                button-submit.is-unstyled.c-action-undo(
                   v-if='!isDirectMessage()'
                   @click.stop='removeMember(username, true)'
-                ) {{L("Undo")}}
+                )
+                  i18n Undo
 </template>
 
 <script>
@@ -119,6 +121,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
@@ -135,7 +138,8 @@ export default ({
     Search,
     AvatarUser,
     GroupMembersTooltipPending,
-    ProfileCard
+    ProfileCard,
+    ButtonSubmit
   },
   data () {
     return {

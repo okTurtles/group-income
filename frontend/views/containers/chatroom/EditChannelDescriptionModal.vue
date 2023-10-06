@@ -30,12 +30,13 @@
 
       .buttons
         i18n.button.is-outlined(@click.prevent='close') Cancel
-        i18n.is-success(
-          tag='button'
+        button-submit.is-success(
+          type='button'
           @click='submit'
           :disabled='$v.form.$invalid'
           data-test='updateChannelDescriptionSubmit'
-        ) Save
+        )
+          i18n Save
 </template>
 
 <script>
@@ -46,6 +47,7 @@ import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({
@@ -54,7 +56,8 @@ export default ({
   components: {
     ModalTemplate,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {

@@ -255,7 +255,13 @@ export const verifySignature = (inKey: Key | string, data: string, signature: st
     throw new Error('Invalid signature')
   }
 }
-export const encrypt = (inKey: Key | string, data: string): string => {
+
+/**
+ * @param inKey - Encryption key to use
+ * @param data - Data to encrypt
+ * @param ad - Additional data (the AD in AEAD), used for validation
+ */
+export const encrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
   if (key.type === XSALSA20POLY1305) {
@@ -264,9 +270,21 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     }
 
     const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
+    let encryptionNonce: typeof nonce
+
+    if (ad) {
+      encryptionNonce = new Uint8Array(nonce)
+      const adHash = nacl.hash(strToBuf(ad))
+      const len = Math.min(adHash.length, nonce.length)
+      for (let i = 0; i < len; i++) {
+        encryptionNonce[i] ^= adHash[i]
+      }
+    } else {
+      encryptionNonce = nonce
+    }
 
     const messageUint8 = strToBuf(data)
-    const box = nacl.secretbox(messageUint8, nonce, key.secretKey)
+    const box = nacl.secretbox(messageUint8, encryptionNonce, key.secretKey)
 
     const fullMessage = new Uint8Array(nonce.length + box.length)
 
@@ -282,10 +300,22 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     }
 
     const nonce = nacl.randomBytes(nacl.box.nonceLength)
+    let encryptionNonce: typeof nonce
+
+    if (ad) {
+      encryptionNonce = new Uint8Array(nonce)
+      const adHash = nacl.hash(strToBuf(ad))
+      const len = Math.min(adHash.length, nonce.length)
+      for (let i = 0; i < len; i++) {
+        encryptionNonce[i] ^= adHash[i]
+      }
+    } else {
+      encryptionNonce = nonce
+    }
 
     const messageUint8 = strToBuf(data)
     const ephemeralKey = nacl.box.keyPair()
-    const box = nacl.box(messageUint8, nonce, key.publicKey, ephemeralKey.secretKey)
+    const box = nacl.box(messageUint8, encryptionNonce, key.publicKey, ephemeralKey.secretKey)
     // Attempt to discard the data in memory for ephemeralKey.secretKey
     ephemeralKey.secretKey.fill(0)
 
@@ -302,7 +332,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
 
   throw new Error('Unsupported algorithm')
 }
-export const decrypt = (inKey: Key | string, data: string): string => {
+export const decrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
   if (key.type === XSALSA20POLY1305) {
@@ -317,6 +347,14 @@ export const decrypt = (inKey: Key | string, data: string): string => {
       nacl.secretbox.nonceLength,
       messageWithNonceAsUint8Array.length
     )
+
+    if (ad) {
+      const adHash = nacl.hash(strToBuf(ad))
+      const len = Math.min(adHash.length, nonce.length)
+      for (let i = 0; i < len; i++) {
+        nonce[i] ^= adHash[i]
+      }
+    }
 
     const decrypted = nacl.secretbox.open(message, nonce, key.secretKey)
 
@@ -337,6 +375,14 @@ export const decrypt = (inKey: Key | string, data: string): string => {
     const message = messageWithNonceAsUint8Array.slice(
       nacl.box.publicKeyLength + nacl.box.nonceLength
     )
+
+    if (ad) {
+      const adHash = nacl.hash(strToBuf(ad))
+      const len = Math.min(adHash.length, nonce.length)
+      for (let i = 0; i < len; i++) {
+        nonce[i] ^= adHash[i]
+      }
+    }
 
     const decrypted = nacl.box.open(message, nonce, ephemeralPublicKey, key.secretKey)
 

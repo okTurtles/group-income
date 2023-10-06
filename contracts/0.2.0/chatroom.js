@@ -989,11 +989,11 @@
       function typedArraySupport() {
         try {
           const arr = new Uint8Array(1);
-          const proto = { foo: function() {
+          const proto3 = { foo: function() {
             return 42;
           } };
-          Object.setPrototypeOf(proto, Uint8Array.prototype);
-          Object.setPrototypeOf(arr, proto);
+          Object.setPrototypeOf(proto3, Uint8Array.prototype);
+          Object.setPrototypeOf(arr, proto3);
           return arr.foo() === 42;
         } catch (e) {
           return false;
@@ -15939,7 +15939,7 @@
   });
 
   // frontend/model/contracts/chatroom.js
-  var import_sbp6 = __toESM(__require("@sbp/sbp"));
+  var import_sbp7 = __toESM(__require("@sbp/sbp"));
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -16131,7 +16131,7 @@ ${this.getErrorInfo()}`;
   var unionOf = unionOf_;
 
   // shared/domains/chelonia/utils.js
-  var import_sbp3 = __toESM(__require("@sbp/sbp"));
+  var import_sbp4 = __toESM(__require("@sbp/sbp"));
 
   // shared/functions.js
   var import_multihashes = __toESM(require_src2());
@@ -16147,7 +16147,7 @@ ${this.getErrorInfo()}`;
   var import_scrypt_async = __toESM(require_scrypt_async());
 
   // shared/domains/chelonia/encryptedData.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // shared/domains/chelonia/errors.js
   var ChelErrorGenerator = (name, base = Error) => class extends base {
@@ -16165,9 +16165,27 @@ ${this.getErrorInfo()}`;
   var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
   var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
   var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+
+  // shared/domains/chelonia/signedData.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var proto = Object.create(null, {
+    _isSignedData: {
+      value: true
+    }
+  });
+
+  // shared/domains/chelonia/encryptedData.js
+  var proto2 = Object.create(null, {
+    _isEncryptedData: {
+      value: true
+    }
+  });
 
   // shared/domains/chelonia/utils.js
   var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight === void 0)?.id;
+  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight === void 0 && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
   var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
@@ -16219,7 +16237,7 @@ ${this.getErrorInfo()}`;
   };
 
   // frontend/model/contracts/shared/functions.js
-  var import_sbp4 = __toESM(__require("@sbp/sbp"));
+  var import_sbp5 = __toESM(__require("@sbp/sbp"));
 
   // frontend/views/utils/misc.js
   function logExceptNavigationDuplicated(err) {
@@ -16270,20 +16288,20 @@ ${this.getErrorInfo()}`;
     return newMessage;
   }
   async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp4.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
+    const rootState = (0, import_sbp5.default)("state/vuex/state");
+    const rootGetters = (0, import_sbp5.default)("state/vuex/getters");
     if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp4.default)("state/vuex/commit", "setCurrentChatRoomId", {
+      (0, import_sbp5.default)("state/vuex/commit", "setCurrentChatRoomId", {
         groupId: rootState.currentGroupId
       });
-      const curRouteName = (0, import_sbp4.default)("controller/router").history.current.name;
+      const curRouteName = (0, import_sbp5.default)("controller/router").history.current.name;
       if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp4.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+        await (0, import_sbp5.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
       }
     }
-    (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp4.default)("chelonia/contract/remove", contractID).catch((e) => {
+    (0, import_sbp5.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
+    (0, import_sbp5.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
+    (0, import_sbp5.default)("chelonia/contract/remove", contractID).catch((e) => {
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
   }
@@ -16303,13 +16321,13 @@ ${this.getErrorInfo()}`;
   }
 
   // frontend/model/contracts/shared/nativeNotification.js
-  var import_sbp5 = __toESM(__require("@sbp/sbp"));
+  var import_sbp6 = __toESM(__require("@sbp/sbp"));
   function makeNotification({ title, body, icon, path }) {
-    if (Notification?.permission === "granted" && (0, import_sbp5.default)("state/vuex/settings").notificationEnabled) {
+    if (Notification?.permission === "granted" && (0, import_sbp6.default)("state/vuex/settings").notificationEnabled) {
       const notification = new Notification(title, { body, icon });
       if (path) {
         notification.onclick = function(event) {
-          (0, import_sbp5.default)("controller/router").push({ path }).catch(console.warn);
+          (0, import_sbp6.default)("controller/router").push({ path }).catch(console.warn);
         };
       }
     }
@@ -16362,13 +16380,13 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash: hash2 }) {
-    if (!(0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
-      (0, import_sbp6.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
+    if (!(0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
+      (0, import_sbp7.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
     }
   }
   function setReadUntilWhileJoining({ contractID, hash: hash2, createdDate }) {
-    if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
-      (0, import_sbp6.default)("state/vuex/commit", "setChatRoomReadUntil", {
+    if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
+      (0, import_sbp7.default)("state/vuex/commit", "setChatRoomReadUntil", {
         chatRoomId: contractID,
         messageHash: hash2,
         createdDate
@@ -16385,10 +16403,10 @@ ${this.getErrorInfo()}`;
     username,
     chatRoomName
   }) {
-    if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
+    if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
       return;
     }
-    const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+    const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
     const isDirectMessage = rootGetters.isDirectMessage(contractID);
     const unreadMessageType = {
       [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : void 0,
@@ -16396,7 +16414,7 @@ ${this.getErrorInfo()}`;
       [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
     }[messageType2];
     if (unreadMessageType) {
-      (0, import_sbp6.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
+      (0, import_sbp7.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
         chatRoomId: contractID,
         messageHash,
         createdDate: datetime,
@@ -16415,9 +16433,9 @@ ${this.getErrorInfo()}`;
     const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
     const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
     shouldNotifyMessage && makeNotification({ title, body: text2, icon, path });
-    shouldSoundMessage && (0, import_sbp6.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+    shouldSoundMessage && (0, import_sbp7.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
-  (0, import_sbp6.default)("chelonia/defineContract", {
+  (0, import_sbp7.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
     metadata: {
       validate: objectOf({
@@ -16426,7 +16444,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       async create() {
-        const { username, identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp7.default)("state/vuex/state").loggedIn;
         return {
           createdDate: await fetchServerTime(),
           username,
@@ -16475,7 +16493,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ contractID }) {
-          vue_esm_default.set((0, import_sbp6.default)("state/vuex/state").chatRoomUnread, contractID, {
+          vue_esm_default.set((0, import_sbp7.default)("state/vuex/state").chatRoomUnread, contractID, {
             readUntil: void 0,
             messages: []
           });
@@ -16500,25 +16518,25 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         async sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
-          const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+          const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
           const { username } = data;
-          const loggedIn = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+          const loggedIn = (0, import_sbp7.default)("state/vuex/state").loggedIn;
           emitMessageEvent({ contractID, hash: hash2 });
           setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           if (username === loggedIn.username) {
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-              (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
+              (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
                 chatRoomId: contractID,
                 deletedDate: meta.createdDate
               });
             }
-            const lookupResult = await Promise.allSettled(Object.keys(state.users).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp6.default)("namespace/lookup", name).then((r) => {
+            const lookupResult = await Promise.allSettled(Object.keys(state.users).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp7.default)("namespace/lookup", name).then((r) => {
               if (!r)
                 throw new Error("Cannot lookup username: " + name);
               return r;
             })));
             const errors = lookupResult.filter(({ status }) => status === "rejected").map((r) => r.reason);
-            await (0, import_sbp6.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
+            await (0, import_sbp7.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
             if (errors.length) {
               const msg = `Encountered ${errors.length} errors while joining a chatroom`;
               console.error(msg, errors);
@@ -16526,11 +16544,11 @@ ${this.getErrorInfo()}`;
             }
           } else {
             if (!rootGetters.ourContactProfiles[username]) {
-              const contractID2 = await (0, import_sbp6.default)("namespace/lookup", username);
+              const contractID2 = await (0, import_sbp7.default)("namespace/lookup", username);
               if (!contractID2) {
                 throw new Error("Cannot lookup username: " + username);
               }
-              await (0, import_sbp6.default)("chelonia/contract/sync", contractID2);
+              await (0, import_sbp7.default)("chelonia/contract/sync", contractID2);
             }
           }
         }
@@ -16598,8 +16616,8 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
-          if (data.username === (0, import_sbp6.default)("state/vuex/state").loggedIn.username) {
-            if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
+          if (data.username === (0, import_sbp7.default)("state/vuex/state").loggedIn.username) {
+            if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -16607,8 +16625,13 @@ ${this.getErrorInfo()}`;
             emitMessageEvent({ contractID, hash: hash2 });
             setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
             if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-              (0, import_sbp6.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
+              (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
             }
+          }
+          const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
+          const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
+          if (userID) {
+            (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state);
           }
         }
       },
@@ -16625,7 +16648,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
             return;
           }
           leaveChatRoom({ contractID });
@@ -16633,8 +16656,12 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/addMessage": {
         validate: messageType,
-        process({ data, meta, hash: hash2, id }, { state }) {
+        process({ direction, data, meta, hash: hash2, id }, { state }) {
           if (!state.onlyRenderMessage) {
+            return;
+          }
+          if (direction === "outgoing") {
+            state.messages.push({ ...createMessage({ meta, data, hash: hash2, id, state }), pending: true });
             return;
           }
           const pendingMsg = state.messages.find((msg) => msg.id === id && msg.pending);
@@ -16648,7 +16675,7 @@ ${this.getErrorInfo()}`;
         sideEffect({ contractID, hash: hash2, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
           setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          const me = (0, import_sbp6.default)("state/vuex/state").loggedIn.username;
+          const me = (0, import_sbp7.default)("state/vuex/state").loggedIn.username;
           if (me === meta.username && data.type !== MESSAGE_TYPES.INTERACTIVE) {
             return;
           }
@@ -16688,12 +16715,12 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash: hash2, meta, data }, { getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
-          const rootState = (0, import_sbp6.default)("state/vuex/state");
+          const rootState = (0, import_sbp7.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
-          const isAlreadyAdded = !!(0, import_sbp6.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);
+          const isAlreadyAdded = !!(0, import_sbp7.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);
           const mentions = makeMentionFromUsername(me);
           const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
           if (!isAlreadyAdded) {
@@ -16708,7 +16735,7 @@ ${this.getErrorInfo()}`;
               chatRoomName: getters.chatRoomAttributes.name
             });
           } else if (!isMentionedMe) {
-            (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
+            (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
               chatRoomId: contractID,
               messageHash: data.hash
             });
@@ -16736,16 +16763,16 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
-          const rootState = (0, import_sbp6.default)("state/vuex/state");
+          const rootState = (0, import_sbp7.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (rootState.chatRoomScrollPosition[contractID] === data.hash) {
-            (0, import_sbp6.default)("state/vuex/commit", "setChatRoomScrollPosition", {
+            (0, import_sbp7.default)("state/vuex/commit", "setChatRoomScrollPosition", {
               chatRoomId: contractID,
               messageHash: null
             });
           }
           if (rootState.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
-            (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
+            (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
             });
@@ -16753,7 +16780,7 @@ ${this.getErrorInfo()}`;
           if (me === meta.username) {
             return;
           }
-          (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
+          (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
             chatRoomId: contractID,
             messageHash: data.hash
           });
@@ -16906,8 +16933,25 @@ ${this.getErrorInfo()}`;
         const CEKid = findKeyIdByName(state, "cek");
         vue_esm_default.set(state._volatile.pendingKeyRevocations, CSKid, true);
         vue_esm_default.set(state._volatile.pendingKeyRevocations, CEKid, true);
-        (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys"]).catch((e) => {
+        (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys"]).catch((e) => {
           console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
+        });
+      },
+      "gi.contracts/chatroom/removeForeignKeys": (contractID, userID, state) => {
+        const keyIds = findForeignKeysByContractID(state, userID);
+        if (!keyIds?.length)
+          return;
+        const CSKid = findKeyIdByName(state, "csk");
+        const CEKid = findKeyIdByName(state, "cek");
+        if (!CEKid)
+          throw new Error("Missing encryption key");
+        (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["chelonia/out/keyDel", {
+          contractID,
+          contractName: "gi.contracts/chatroom",
+          data: keyIds,
+          signingKeyId: CSKid
+        }]).catch((e) => {
+          console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       }
     }
