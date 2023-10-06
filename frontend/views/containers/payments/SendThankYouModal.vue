@@ -52,6 +52,7 @@ modal-template(
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -86,9 +87,9 @@ export default ({
         this.submit()
       }
     },
-    submit () {
+    async submit () {
       try {
-        sbp('gi.actions/group/sendPaymentThankYou', {
+        await sbp('gi.actions/group/sendPaymentThankYou', {
           contractID: this.$store.state.currentGroupId,
           data: {
             fromUser: this.ourUserDisplayName,
@@ -99,7 +100,8 @@ export default ({
 
         this.isConfirmation = true
       } catch (err) {
-        alert("something went wrong! couldn't process your request to send a thank you note.")
+        console.error('SendThankYouModal caught:', err)
+        alert(L("something went wrong! couldn't process your request to send a thank you note."))
       }
     }
   }

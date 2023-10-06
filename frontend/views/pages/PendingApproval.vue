@@ -1,6 +1,6 @@
 <template lang="pug">
 div
-  group-welcome.c-welcome(v-if='ephemeral.groupJoined')
+  group-welcome.c-welcome(v-if='!!ourGroupProfile')
   .c-container(v-else)
     svg-invitation.c-svg
 
@@ -26,8 +26,7 @@ export default ({
   data () {
     return {
       ephemeral: {
-        groupIdWhenMounted: null,
-        groupJoined: false
+        groupIdWhenMounted: null
       }
     }
   },
@@ -40,17 +39,6 @@ export default ({
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-  },
-  watch: {
-    ourGroupProfile: {
-      immediate: true,
-      handler (to, from) {
-        // if our group profile appears in the group state, it means we've joined the group
-        if (to) {
-          this.ephemeral.groupJoined = true
-        }
-      }
-    }
   }
 }: Object)
 </script>
@@ -93,5 +81,16 @@ export default ({
 
 .c-text {
   font-size: $size_4;
+}
+
+::v-deep .c-welcome.wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100%;
+  background-color: $background_0;
+  z-index: $zindex-sidebar + 1;
 }
 </style>

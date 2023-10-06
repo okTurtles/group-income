@@ -45,10 +45,11 @@
             :description='summary.attributes.description'
           )
 
-      div(v-for='(message, index) in messages' :key='index')
+      template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
           :class='{"is-new": isNew(message.hash)}'
+          :key='`date-${index}`'
         )
           i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
           span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
@@ -56,6 +57,7 @@
         component(
           :is='messageType(message)'
           :ref='message.hash'
+          :key='message.id'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
@@ -128,10 +130,12 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
-import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+
+const ignorableScrollDistanceInPixel = 500
 
 export default ({
   name: 'ChatMain',
@@ -238,10 +242,7 @@ export default ({
       }
     },
     isScrolledUp () {
-      if (!this.ephemeral.scrolledDistance) {
-        return false
-      }
-      return this.ephemeral.scrolledDistance > 500
+      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -313,13 +314,10 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = message.decryptedValue()
-            const { meta, data } = msgValue
-            this.messageState.contract.messages.push({
-              ...createMessage({ meta, data, hash: message.hash(), id: message.id() }),
-              // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
-              // when we don't get event after a certain period
-              pending: true // NOTE: do not RENAME this as it's being used inside the contract
+            sbp('chelonia/in/processMessage', message, this.messageState.contract).then((state) => {
+              this.messageState.contract = state
+            }).catch((e) => {
+              console.error('Error sending message during pre-publish: ' + e.message)
             })
             this.stopReplying()
             this.updateScroll()
@@ -599,10 +597,16 @@ export default ({
         return
       }
 
+      // TODO: The next line will _not_ get information about any inner signatures,
+      // which is used for determininng the sender of a message. Update with
+      // another call to GIMessage to get signature information
+      const value = message.decryptedValue()
+      if (!value) throw new Error('Unable to decrypt message')
+
       const isMessageAddedOrDeleted = (message: GIMessage) => {
         if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-        const { action, meta } = message.decryptedValue()
+        const { action, meta } = value
         const rootState = sbp('state/vuex/state')
         let addedOrDeleted = 'NONE'
 
@@ -622,7 +626,7 @@ export default ({
       if (addedOrDeleted === 'DELETED') {
         // NOTE: Message will be deleted in processMessage function
         //       but need to make animation to delete it, probably here
-        const messageHash = message.decryptedValue().data.hash
+        const messageHash = value.data.hash
         const msgIndex = findMessageIdx(messageHash, this.messages)
         document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
@@ -710,17 +714,10 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
-      // Because of infinite-scroll this is not calculated in scrollheight
-      // 117 is the height of `conversation-greetings` component
-      const topOffset = 117
       const curScrollTop = this.$refs.conversation.scrollTop
       const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-      if (!this.$refs.conversation) {
-        this.ephemeral.scrolledDistance = 0
-      } else {
-        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
-      }
+      const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+      this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
 
       if (!this.summary.isJoined) {
         return
@@ -729,8 +726,8 @@ export default ({
       for (let i = this.messages.length - 1; i >= 0; i--) {
         const msg = this.messages[i]
         const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-        const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+        const height = this.$refs[msg.hash][0].$el.clientHeight
+        if (offsetTop + height <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
@@ -743,13 +740,13 @@ export default ({
         }
       }
 
-      if (this.ephemeral.scrolledDistance > 500) {
+      if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
         // Save the current scroll position per each chatroom
         for (let i = 0; i < this.messages.length - 1; i++) {
           const msg = this.messages[i]
           const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-          const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
+          const height = this.$refs[msg.hash][0].$el.clientHeight
+          if (offsetTop + height >= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
               messageHash: this.messages[i + 1].hash // Leave one(+1) message at the front by default for better seeing

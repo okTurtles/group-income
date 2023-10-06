@@ -15,10 +15,12 @@ export type GIActionParams = {
   contractID: string;
   data: Object;
   options?: Object; // these are options for the action wrapper
-  signingKeyId: string;
+  signingKeyId: ?string;
   encryptionKeyId: ?string;
   originatingContractID: ?string;
   signingContractID: ?string;
+  innerSigningContractID: ?string;
+  innerSigningKeyId: ?string;
   hooks?: {
     prepublishContract?: null | (Object) => void;
     prepublish?: null | (Object) => void;
