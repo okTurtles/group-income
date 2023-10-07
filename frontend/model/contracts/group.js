@@ -1375,8 +1375,8 @@ sbp('chelonia/defineContract', {
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
-      const { username } = sbp('state/vuex/state').loggedIn
-      const key = `proposals/${username}/${contractID}`
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
       const proposals = await sbp('gi.db/archive/load', key) || []
       // newest at the front of the array, oldest at the back
       proposals.unshift([proposalHash, proposal])
@@ -1388,13 +1388,13 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments
-      const { username } = sbp('state/vuex/state').loggedIn
+      const { identityContractID, username } = sbp('state/vuex/state').loggedIn
 
       // NOTE: we save payments by period and also in types of 'Sent' and 'Received' as well
       // because it's not efficient to find all sent/received payments from the payments list
-      const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
       const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
-      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
       const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
       // sort payments in order to keep the same sorting format as the recent data in vuex
@@ -1423,7 +1423,7 @@ sbp('chelonia/defineContract', {
         archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
         archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
-        const archPaymentsKey = `payments/${username}/${period}/${contractID}`
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
         const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
         const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
 
@@ -1432,7 +1432,7 @@ sbp('chelonia/defineContract', {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
           const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
 
-          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`)
+          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${identityContractID}/${contractID}`)
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
 
           archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter(payment => !paymentHashes.includes(payment.hash))

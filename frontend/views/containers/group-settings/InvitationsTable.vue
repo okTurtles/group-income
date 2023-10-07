@@ -315,7 +315,7 @@ export default ({
       //       complexity.
       await sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
       /*
-      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
         const { data, payload } = entry[1]
