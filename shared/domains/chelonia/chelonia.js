@@ -223,7 +223,6 @@ export default (sbp('sbp/selectors/register', {
     this.currentSyncs = {}
     this.postSyncOperations = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
-    this.env = {}
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
       if (!stack) {
@@ -253,22 +252,6 @@ export default (sbp('sbp/selectors/register', {
       get: secretKeyGetter,
       ownKeys: secretKeyList
     })
-  },
-  'chelonia/withEnv': function (env: Object, sbpInvocation: Array<*>) {
-    // important: currently all calls to withEnv use the same event queue, meaning
-    // it is more of a potential bottle-neck and more likely to deadlock if the sbpInvocation
-    // leads to another call to withEnv. If this becomes an issue, one potential solution
-    // would be to add the contractID as a parameter and segment this.env based on the contractID.
-    // That has the downside of having unexpected behavior where different envs are used
-    // during the processing of sbpInvocation. For example, if sbpInvocation contains calls
-    // to latestContractState to 2 different contractIDs, then different envs will be used
-    // for each one of them in the cases of segmenting this.env based on contractID. Whereas
-    // with this global env approach both latestContractSyncs would use the same env we pass here.
-    // If necessary, we can implement another selector called 'chelonia/withContractEnv' that
-    // uses segmented envs based on contractID.
-    return sbp('okTurtles.eventQueue/queueEvent', 'chelonia/withEnv', [
-      'chelonia/private/withEnv', env, sbpInvocation
-    ])
   },
   'chelonia/config': function () {
     return cloneDeep(this.config)

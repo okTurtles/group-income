@@ -254,15 +254,6 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/withEnv': async function (env: Object, sbpInvocation: Array<*>) {
-    const savedEnv = this.env
-    this.env = env
-    try {
-      return await sbp(...sbpInvocation)
-    } finally {
-      this.env = savedEnv
-    }
-  },
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
     let attempt = 1
     // auto resend after short random delay
@@ -329,7 +320,6 @@ export default (sbp('sbp/selectors/register', {
     const manifestHash = message.manifest()
     const signingKeyId = message.signingKeyId()
     const config = this.config
-    const env = this.env
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
     console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
@@ -355,14 +345,14 @@ export default (sbp('sbp/selectors/register', {
         keyAdditionProcessor.call(self, v.keys, state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
-        if (!config.skipActionProcessing && !env.skipActionProcessing) {
+        if (!config.skipActionProcessing) {
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](message.opValue().valueOf())
           console.log('OP_ACTION_ENCRYPTED: decrypted')
         }
         console.log('OP_ACTION_ENCRYPTED: skipped action processing')
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
-        if (!config.skipActionProcessing && !env.skipActionProcessing) {
+        if (!config.skipActionProcessing) {
           let innerSigningKeyId: string | typeof undefined
           if (isSignedData(v)) {
             innerSigningKeyId = (v: any).signingKeyId
@@ -526,7 +516,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        if (config.skipActionProcessing || env.skipActionProcessing) {
+        if (config.skipActionProcessing) {
           return
         }
 
@@ -555,7 +545,7 @@ export default (sbp('sbp/selectors/register', {
         self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
       },
       [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
-        if (config.skipActionProcessing || env.skipActionProcessing) {
+        if (config.skipActionProcessing) {
           return
         }
         // TODO: Handle boolean (success) value
@@ -799,7 +789,7 @@ export default (sbp('sbp/selectors/register', {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
 
-      // The postSyncOperations might await on calls to withEnv or queue event, leading to a deadlock. Therefore, we specifically and deliberately don't await on these calls
+      // The postSyncOperations might await on calls to queue event, leading to a deadlock. Therefore, we specifically and deliberately don't await on these calls
       Object.values(this.postSyncOperations[contractID]).map(async (op) => {
         try {
           await sbp.apply(sbp, op)
@@ -1021,7 +1011,7 @@ export default (sbp('sbp/selectors/register', {
       const proceed = await handleEvent.addMessageToDB(message)
       if (proceed === false) return
 
-      const internalSideEffectStack = !this.config.skipSideEffects && !this.env.skipSideEffects ? [] : undefined
+      const internalSideEffectStack = !this.config.skipSideEffects ? [] : undefined
 
       const contractStateCopy = cloneDeep(state[contractID] || null)
       // process the mutation on the state
@@ -1068,7 +1058,7 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
         }
         try {
-          if (!this.config.skipActionProcessing && !this.config.skipSideEffects && !this.env.skipActionProcessing && !this.env.skipSideEffects) {
+          if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
             await handleEvent.processSideEffects.call(this, message, state[contractID])
           }
         } catch (e) {
