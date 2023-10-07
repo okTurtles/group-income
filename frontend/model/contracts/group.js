@@ -1509,7 +1509,7 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, revokeGroupKey: ?boolean) => {
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, disconnectGroup: ?boolean) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
       const state = rootState[identityContractID]
@@ -1522,7 +1522,7 @@ sbp('chelonia/defineContract', {
 
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      if (revokeGroupKey) {
+      if (disconnectGroup) {
         const groupCSKids = findForeignKeysByContractID(state, groupContractID)
 
         if (groupCSKids?.length) {
