@@ -537,7 +537,7 @@ export default (sbp('sbp/selectors/register', {
             id: newId,
             meta: {
               private: {
-                content: serializeKey(newKey, true)
+                content: encryptedOutgoingData(groupState, CEKid, serializeKey(newKey, true))
               }
             }
           }))

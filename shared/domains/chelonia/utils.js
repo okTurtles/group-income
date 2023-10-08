@@ -217,8 +217,8 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
     })
 }
 
-export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]): [GIKey[], string[]] => {
-  const keysToDelete: string[] = []
+export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]): [GIKey[], { [k: string]: string }] => {
+  const updatedMap = ((Object.create(null): any): { [k: string]: string })
   const keys = v.map((wuk): GIKey | void => {
     const data = unwrapMaybeEncryptedData(wuk)
     if (!data) return undefined
@@ -241,7 +241,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
       throw new Error('Missing private key. Old key ID: ' + uk.oldKeyId)
     }
     if (uk.id && uk.id !== uk.oldKeyId) {
-      keysToDelete.push(uk.oldKeyId)
+      updatedMap[uk.id] = uk.oldKeyId
     }
     const updatedKey = { ...existingKey }
     // Set the corresponding updated attributes
@@ -266,7 +266,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
     return updatedKey
   }).filter(Boolean)
   validateKeyAddPermissions(contractID, signingKey, state, keys, true)
-  return [((keys: any): GIKey[]), keysToDelete]
+  return [((keys: any): GIKey[]), updatedMap]
 }
 
 export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {

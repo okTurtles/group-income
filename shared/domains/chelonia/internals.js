@@ -88,10 +88,8 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
         const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel)
 
-        const encryptionKeyId = foreignContractKey._private
-
         if (signingKeyId) {
-          return [[name, foreignContractKey.name, encryptionKeyId], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
+          return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
         }
 
         return undefined
@@ -112,9 +110,6 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
             contractID: cID,
             contractName,
             data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
-              if (keyNamesToUpdate[i][2]) {
-                return encryptedOutgoingData(rootState[cID], keyNamesToUpdate[i][2], v)
-              }
               return v
             }),
             signingKeyId
@@ -667,7 +662,8 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
+        const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
+        const keysToDelete = ((Object.values(updatedMap): any): string[])
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
@@ -689,7 +685,10 @@ export default (sbp('sbp/selectors/register', {
           const updatedKeysMap = Object.create(null)
 
           updatedKeys.forEach((key) => {
-            if (key.data) updatedKeysMap[key.name] = key
+            if (key.data) {
+              updatedKeysMap[key.name] = key
+              updatedKeysMap[key.name].oldKeyId = updatedMap[key.id]
+            }
           })
 
           keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_UPDATE], 'chelonia/out/keyUpdate', (name) => ({
