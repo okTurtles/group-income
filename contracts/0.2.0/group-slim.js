@@ -7176,6 +7176,33 @@ ${this.getErrorInfo()}`;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
   var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+  var plusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, periodLength));
+  var minusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, -periodLength));
+  function periodStampsForDate(date, { knownSortedStamps, periodLength }) {
+    if (!(isIsoString(date) || Object.prototype.toString.call(date) === "[object Date]")) {
+      throw new TypeError("must be ISO string or Date object");
+    }
+    const timestamp = typeof date === "string" ? date : date.toISOString();
+    let previous, current, next;
+    if (knownSortedStamps.length) {
+      const latest = knownSortedStamps[knownSortedStamps.length - 1];
+      if (timestamp >= latest) {
+        current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength });
+        next = plusOnePeriodLength(current, periodLength);
+        previous = current > latest ? minusOnePeriodLength(current, periodLength) : knownSortedStamps[knownSortedStamps.length - 2];
+      } else {
+        for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
+          if (timestamp >= knownSortedStamps[i]) {
+            current = knownSortedStamps[i];
+            next = knownSortedStamps[i + 1];
+            previous = knownSortedStamps[i - 1];
+            break;
+          }
+        }
+      }
+    }
+    return { previous, current, next };
+  }
   function dateToPeriodStamp(date) {
     return new Date(date).toISOString();
   }
@@ -7221,7 +7248,10 @@ ${this.getErrorInfo()}`;
     return new Date(a).getTime() - new Date(b).getTime();
   }
   function isPeriodStamp(arg) {
-    return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
+    return isIsoString(arg);
+  }
+  function isIsoString(arg) {
+    return typeof arg === "string" && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
   }
 
   // frontend/model/contracts/shared/voting/proposals.js
@@ -7717,8 +7747,11 @@ ${this.getErrorInfo()}`;
       incomeDetailsLastUpdatedDate: null
     };
   }
-  function initPaymentPeriod({ getters }) {
+  function initPaymentPeriod({ meta, getters }) {
+    const start = getters.periodStampGivenDate(meta.createdDate);
     return {
+      start,
+      end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
       initialCurrency: getters.groupMincomeCurrency,
       mincomeExchangeRate: 1,
       paymentsFrom: {},
@@ -7742,7 +7775,11 @@ ${this.getErrorInfo()}`;
   }
   function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
-    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }));
+    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }));
+    const previousPeriod = getters.periodBeforePeriod(period);
+    if (previousPeriod in state.paymentsByPeriod) {
+      state.paymentsByPeriod[previousPeriod].end = period;
+    }
     clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
@@ -7884,60 +7921,46 @@ ${this.getErrorInfo()}`;
       groupMincomeCurrency(state, getters) {
         return getters.groupSettings.mincomeCurrency;
       },
+      groupSortedPeriodKeys(state, getters) {
+        const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+        if (!distributionDate)
+          return [];
+        const keys = Object.keys(getters.groupPeriodPayments).sort();
+        if (!keys.length && MAX_SAVED_PERIODS > 0) {
+          keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)));
+        }
+        if (keys[keys.length - 1] !== distributionDate) {
+          keys.push(distributionDate);
+        }
+        return keys;
+      },
       periodStampGivenDate(state, getters) {
-        return (recentDate) => {
-          if (typeof recentDate !== "string") {
-            recentDate = recentDate.toISOString();
-          }
-          const { distributionDate, distributionPeriodLength } = getters.groupSettings;
-          if (!distributionDate)
-            return null;
-          return periodStampGivenDate({
-            recentDate,
-            periodStart: distributionDate,
-            periodLength: distributionPeriodLength
-          });
+        return (date) => {
+          return periodStampsForDate(date, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).current;
         };
       },
       periodBeforePeriod(state, getters) {
         return (periodStamp) => {
-          const len = getters.groupSettings.distributionPeriodLength;
-          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len));
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).previous;
         };
       },
       periodAfterPeriod(state, getters) {
         return (periodStamp) => {
-          const len = getters.groupSettings.distributionPeriodLength;
-          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len));
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).next;
         };
       },
       dueDateForPeriod(state, getters) {
         return (periodStamp) => {
           return getters.periodAfterPeriod(periodStamp);
-        };
-      },
-      paymentTotalFromUserToUser(state, getters) {
-        return (fromUser, toUser, periodStamp) => {
-          const payments = getters.currentGroupState.payments;
-          const periodPayments = getters.groupPeriodPayments;
-          const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {};
-          const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-            const payment = payments[hash];
-            let { amount, exchangeRate, status } = payment.data;
-            if (status !== PAYMENT_COMPLETED) {
-              return a;
-            }
-            const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate);
-            if (periodStamp !== paymentCreatedPeriodStamp) {
-              if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
-                console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment));
-                return a;
-              }
-              exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate;
-            }
-            return a + amount * exchangeRate * mincomeExchangeRate;
-          }, 0);
-          return saferFloat(total);
         };
       },
       paymentHashesForPeriod(state, getters) {
@@ -7976,7 +7999,7 @@ ${this.getErrorInfo()}`;
       },
       groupProposalSettings(state, getters) {
         return (proposalType2 = PROPOSAL_GENERIC) => {
-          return getters.groupSettings.proposals[proposalType2];
+          return getters.groupSettings.proposals?.[proposalType2];
         };
       },
       groupCurrency(state, getters) {
@@ -8375,17 +8398,17 @@ ${this.getErrorInfo()}`;
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
-        sideEffect({ data, meta, contractID }, { state, getters }) {
+        async sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
-            (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID);
-            (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID);
             if ((0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
               return;
             }
+            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID);
+            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID);
             const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
             (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
             (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
@@ -8635,7 +8658,14 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           if (meta.username === rootState.loggedIn.username && !(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
             const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp6.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+            await (0, import_sbp6.default)("gi.actions/chatroom/leave", {
+              contractID: data.chatRoomID,
+              data: sendingData,
+              ...data.leavingGroup && {
+                signingKeyId: (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
+                innerSigningContractID: null
+              }
+            });
           }
         }
       },
@@ -8740,11 +8770,6 @@ ${this.getErrorInfo()}`;
         await (0, import_sbp6.default)("gi.db/archive/save", key, proposals2);
         (0, import_sbp6.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, contractID, proposalHash, proposal);
       },
-      "gi.contracts/group/removeArchivedProposals": async function(contractID) {
-        const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
-        const key = `proposals/${username}/${contractID}`;
-        await (0, import_sbp6.default)("gi.db/archive/delete", key);
-      },
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;
         const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
@@ -8787,10 +8812,20 @@ ${this.getErrorInfo()}`;
         await (0, import_sbp6.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
         (0, import_sbp6.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
       },
+      "gi.contracts/group/removeArchivedProposals": async function(contractID) {
+        const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${username}/${contractID}`;
+        await (0, import_sbp6.default)("gi.db/archive/delete", key);
+      },
       "gi.contracts/group/removeArchivedPayments": async function(contractID) {
         const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
         const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+        const periods = Object.keys(await (0, import_sbp6.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {});
         const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
+        for (const period of periods) {
+          const archPaymentsKey = `payments/${username}/${period}/${contractID}`;
+          await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsKey);
+        }
         await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsByPeriodKey);
         await (0, import_sbp6.default)("gi.db/archive/delete", archSentOrReceivedPaymentsKey);
       },

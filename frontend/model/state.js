@@ -99,9 +99,9 @@ sbp('sbp/selectors/register', {
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
     if (state.loggedIn) {
+      const { identityContractID, encryptionParams } = state.loggedIn
       state.notifications = applyStorageRules(state.notifications || [])
-      // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
     }
   }
 })
@@ -583,7 +583,11 @@ const getters = {
           users,
           partners,
           lastJoinedPartner,
-          title: partners.map(un => getters.ourContactProfiles[un].displayName || un).join(', '),
+          // TODO: The UI should display display names, usernames and (in the future)
+          // identity contract IDs differently in some way (e.g., font, font size,
+          // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
+          // users (e.g., 'user1' changing their display name to 'user2')
+          title: partners.map(un => getters.ourContactProfiles[un]?.displayName || un).join(', '),
           picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
         }
       }

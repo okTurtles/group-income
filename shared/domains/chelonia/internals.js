@@ -88,10 +88,8 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
 
         const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel)
 
-        const encryptionKeyId = foreignContractKey._private
-
         if (signingKeyId) {
-          return [[name, foreignContractKey.name, encryptionKeyId], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
+          return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
         }
 
         return undefined
@@ -112,9 +110,6 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
             contractID: cID,
             contractName,
             data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
-              if (keyNamesToUpdate[i][2]) {
-                return encryptedOutgoingData(rootState[cID], keyNamesToUpdate[i][2], v)
-              }
               return v
             }),
             signingKeyId
@@ -338,6 +333,10 @@ export default (sbp('sbp/selectors/register', {
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
     console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
+    if (state?._volatile?.dirty) {
+      console.debug('IGNORING OPCODE BECAUSE CONTRACT STATE IS MARKED AS DIRTY.', 'OPCODE:', opName, 'CONTRACT:', contractID)
+      return
+    }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
@@ -452,6 +451,12 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
+        // TODO: Handle foreign keys too
+        if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
+          if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
+          config.reactiveSet(targetState._volatile, 'dirty', true)
+        }
+
         internalSideEffectStack?.push(async () => {
           console.log('Processing OP_KEY_SHARE (inside promise)')
           // If an encryption key has been shared with _notBefore lower than the
@@ -465,13 +470,11 @@ export default (sbp('sbp/selectors/register', {
 
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
-            await sbp('chelonia/contract/remove', v.contractID)
-            // Sync...
-            self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
-
-            // WARNING! THIS MIGHT DEADLOCK!!!
-            await sbp('chelonia/withEnv', env, [
-              'chelonia/private/in/syncContract', v.contractID
+            await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
+              'chelonia/begin',
+              ['chelonia/contract/removeImmediately', v.contractID],
+              ['chelonia/private/in/syncContract', v.contractID],
+              ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
             targetState = cheloniaState[v.contractID]
@@ -659,7 +662,8 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
+        const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
+        const keysToDelete = ((Object.values(updatedMap): any): string[])
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
@@ -681,7 +685,10 @@ export default (sbp('sbp/selectors/register', {
           const updatedKeysMap = Object.create(null)
 
           updatedKeys.forEach((key) => {
-            if (key.data) updatedKeysMap[key.name] = key
+            if (key.data) {
+              updatedKeysMap[key.name] = key
+              updatedKeysMap[key.name].oldKeyId = updatedMap[key.id]
+            }
           })
 
           keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_UPDATE], 'chelonia/out/keyUpdate', (name) => ({
@@ -883,9 +890,7 @@ export default (sbp('sbp/selectors/register', {
 
       // 1. Sync (originating) identity contract
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
-        'chelonia/contract/sync', originatingContractID
-      ])
+      await sbp('chelonia/contract/sync', originatingContractID)
 
       const originatingState = state[originatingContractID]
       const contractName = state.contracts[contractID].type
@@ -1049,7 +1054,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID].height = height
       }
       // process any side-effects (these must never result in any mutation to the contract state!)
-      if (!processingErrored) {
+      if (!processingErrored && !state[contractID]?._volatile?.dirty) {
         try {
           // Gets run get when skipSideEffects is false
           if (internalSideEffectStack) {
