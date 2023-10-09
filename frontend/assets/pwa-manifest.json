@@ -1,0 +1,29 @@
+{
+  "name": "Group Income",
+  "short_name": "GI",
+  "start_url": "/",
+  "display": "standalone",
+  "description": "Voluntary decentralized Basic Income system for you and your friends.",
+  "icons": [
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent_35x35.png",
+      "sizes": "35x35",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent_96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent_168x168.png",
+      "sizes": "168x168",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
