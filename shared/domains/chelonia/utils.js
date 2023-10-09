@@ -339,7 +339,6 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
 
         // Mark the contract for which keys were requested as pending keys
         rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: key.name })
-
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }
     }

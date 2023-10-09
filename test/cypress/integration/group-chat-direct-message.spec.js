@@ -215,6 +215,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
+    cy.giWaitUntilMessagesLoaded()
     cy.url().then(url => {
       cy.get('@groupMessageLink').should('eq', url) // NOTE: this checks the possibility to create gm for same users
     })
@@ -236,9 +237,9 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + user2).click()
     })
-    // cy.getByDT('closeModal').click()
 
     cy.getByDT('channelName').should('contain', `${user4}, ${user1}, ${user2}`)
+    cy.giWaitUntilMessagesLoaded()
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 

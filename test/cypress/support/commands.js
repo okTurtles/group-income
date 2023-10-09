@@ -44,7 +44,7 @@ Cypress.Commands.add('giSignup', (username, {
 
   if (bypassUI) {
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { username, email, password })
+      await sbp('gi.actions/identity/signupAndLogin', { username, email, passwordFn: () => password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -87,7 +87,7 @@ Cypress.Commands.add('giLogin', (username, {
             resolve()
           }
         })
-        sbp('gi.actions/identity/login', { username, password })
+        sbp('gi.actions/identity/login', { username, passwordFn: () => password })
       })
     })
 
@@ -548,12 +548,14 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
   cy.giWaitUntilMessagesLoaded()
 })
 
-Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+Cypress.Commands.add('giWaitUntilMessagesLoaded', (isDM = false) => {
   cy.get('.c-initializing').should('not.exist')
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.infinite-status-prompt:first-child')
       .invoke('attr', 'style')
       .should('include', 'display: none')
   })
-  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  if (!isDM) {
+    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  }
 })
