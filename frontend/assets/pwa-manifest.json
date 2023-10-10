@@ -21,6 +21,16 @@
       "type": "image/png"
     },
     {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-transparent_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
       "src": "/assets/images/pwa-icons/group-income-icon-transparent.svg",
       "sizes": "any",
       "type": "image/svg+xml"

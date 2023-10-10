@@ -17,6 +17,10 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim())
 })
 
+self.addEventListener('fetch', function (event) {
+  console.debug(`[sw] fetch : ${event.request.method} - ${event.request.url}`)
+})
+
 // TODO: this doesn't persist data across browser restarts, so try to use
 // the cache instead, or just localstorage. Investigate whether the service worker
 // has the ability to access and clear the localstorage periodically.

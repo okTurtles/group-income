@@ -234,7 +234,7 @@ module.exports = (grunt) => {
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/primary.js']
+      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
     }
   }
   esbuildOptionBags.contracts = {

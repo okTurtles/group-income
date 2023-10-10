@@ -17,6 +17,7 @@ import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
+import './controller/service-worker.js'
 import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -205,6 +206,9 @@ async function startApp () {
     alert(errMsg)
     return
   }
+
+  // register service-worker
+  await sbp('service-workers/setup')
 
   /* eslint-disable no-new */
   new Vue({

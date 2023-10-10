@@ -13,6 +13,8 @@ sbp('sbp/selectors/register', {
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
     // NOTE: user should still be able to use app even if all the SW stuff fails
+    if (!('serviceWorker' in navigator)) { return }
+
     try {
       await navigator.serviceWorker.register('/assets/js/sw-primary.js', {
         scope: '/'
