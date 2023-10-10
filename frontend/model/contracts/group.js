@@ -971,7 +971,7 @@ sbp('chelonia/defineContract', {
             // gi.contracts/group/removeOurselves will eventually trigger this
             // as well
             sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
-              sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
             }).catch((e) => {
               console.error('Error rotating group keys or our PEK', e)
             })
