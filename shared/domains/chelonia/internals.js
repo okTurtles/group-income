@@ -539,14 +539,16 @@ export default (sbp('sbp/selectors/register', {
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
           // Full-encryption (i.e., KRS encryption) requires that this request
           // was encrypted and that the invite is marked as private
-          !!data?.encryptionKeyId && !!state._vm?.invites?.[signingKeyId]?.private,
+          !!data?.encryptionKeyId,
           message.height(),
           signingKeyId,
           ...(context ? [context] : [])
         ])
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
-        self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
+        if (data) {
+          self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
+        }
       },
       [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
         if (config.skipActionProcessing) {
@@ -570,7 +572,6 @@ export default (sbp('sbp/selectors/register', {
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
-          delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -868,9 +869,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    const pending = contractState._vm.pendingKeyshares
-
-    delete contractState._vm.pendingKeyshares
+    const pending = Object.entries(contractState._vm.pendingKeyshares)
 
     const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE], ['sig'])
 
@@ -879,12 +878,14 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
+    await Promise.allSettled(pending.map(async ([hash, entry]) => {
       if (!Array.isArray(entry) || entry.length !== 4) {
         return
       }
 
-      const [fullEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
+      const [keyShareEncryption, height, , [originatingContractID, rv, originatingContractHeight, headJSON]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
+
+      const krsEncryption = !!state._vm?.invites?.[signingKeyId]?.private
 
       // 1. Sync (originating) identity contract
 
@@ -903,6 +904,11 @@ export default (sbp('sbp/selectors/register', {
         const responseKey = encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
 
         const deserializedResponseKey = deserializeKey(responseKey)
+        const responseKeyId = keyId(deserializedResponseKey)
+
+        if (!has(originatingState._vm.authorizedKeys, responseKeyId) || originatingState._vm.authorizedKeys[responseKeyId]._notAfterHeight != null) {
+          throw new Error(`Unable to respond to key request for ${originatingContractID}. Key ${responseKeyId} is not valid.`)
+        }
 
         sbp('chelonia/storeSecretKeys', { key: deserializedResponseKey })
 
@@ -918,27 +924,55 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
+        const keySharePayload = {
+          contractID: contractID,
+          keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
+            id: keyId,
+            meta: {
+              private: {
+                content: encryptedOutgoingData(originatingState, encryptionKeyId, key),
+                shareable: true
+              }
+            }
+          }))
+        }
+
         // 3. Send OP_KEY_SHARE to identity contract
+        if (!has(contractState._vm.pendingKeyshares, hash)) {
+          // While we were getting ready, another client may have shared the keys
+          return
+        }
+
         await sbp('chelonia/out/keyShare', {
           contractID: originatingContractID,
           contractName: originatingContractName,
-          data: {
-            contractID: contractID,
-            keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
-              id: keyId,
-              meta: {
-                private: {
-                  content: encryptedOutgoingData(originatingState, encryptionKeyId, key),
-                  shareable: true
-                }
-              }
-            }))
-          },
+          data: keyShareEncryption
+            ? encryptedOutgoingData(
+              originatingState,
+              findSuitablePublicKeyIds(originatingState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
+              keySharePayload
+            )
+            : keySharePayload,
           signingKey: deserializedResponseKey
         })
 
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
+        const connectionKeyPayload = {
+          contractID: originatingContractID,
+          keys: [
+            {
+              id: keyId(deserializedResponseKey),
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                  shareable: true
+                }
+              }
+            }
+          ]
+        }
+
         await sbp('chelonia/out/atomic', {
           contractID,
           contractName,
@@ -948,7 +982,7 @@ export default (sbp('sbp/selectors/register', {
               'chelonia/out/keyRequestResponse',
               {
                 data:
-                  fullEncryption
+                  krsEncryption
                     ? encryptedOutgoingData(
                       contractState,
                       findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
@@ -962,20 +996,13 @@ export default (sbp('sbp/selectors/register', {
               // with ourselves
               'chelonia/out/keyShare',
               {
-                data: {
-                  contractID: originatingContractID,
-                  keys: [
-                    {
-                      id: keyId(deserializedResponseKey),
-                      meta: {
-                        private: {
-                          content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
-                          shareable: true
-                        }
-                      }
-                    }
-                  ]
-                }
+                data: keyShareEncryption
+                  ? encryptedOutgoingData(
+                    contractState,
+                    findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
+                    connectionKeyPayload
+                  )
+                  : connectionKeyPayload
               }
             ]
           ]
@@ -985,16 +1012,31 @@ export default (sbp('sbp/selectors/register', {
         const payload = { keyRequestHash: hash, success: false }
 
         // 4(ii). Remove originating contract and update current contract with information
+        if (!has(contractState._vm.pendingKeyshares, hash)) {
+          // While we were getting ready, another client may have shared the keys
+          return
+        }
+
         await sbp('chelonia/out/keyRequestResponse', {
           contractID,
           contractName,
           signingKeyId,
-          data: fullEncryption
+          data: krsEncryption
             ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
             : payload
         })
       }
-    }))
+    })).then((results) => {
+      pending.forEach(([hash]) => {
+        delete contractState._vm.pendingKeyshares[hash]
+      })
+
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          throw result.reason
+        }
+      }
+    })
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
     const state = sbp(this.config.stateSelector)

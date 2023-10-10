@@ -122,7 +122,7 @@ function downloadLogs (elLink: Object): void {
     _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     ua: navigator.userAgent,
     logs: getLogger().entries.toArray()
-  })], { type: 'application/json' })
+  }, undefined, 2)], { type: 'application/json' })
 
   const url = URL.createObjectURL(file)
   elLink.href = url
