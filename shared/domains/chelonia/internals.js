@@ -493,8 +493,10 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_REQUEST] (wv: GIOpKeyRequest) {
         const data = unwrapMaybeEncryptedData(wv)
-        if (!data) return
-        const v = data.data
+
+        // If we're unable to decrypt the OP_KEY_REQUEST, then still
+        // proceed to do accounting of invites
+        const v = data?.data || { contractID: '(private)', replyWith: { context: undefined } }
 
         const originatingContractID = v.contractID
 
@@ -527,7 +529,7 @@ export default (sbp('sbp/selectors/register', {
 
         const context = v.replyWith.context
 
-        if (context?.[0] !== originatingContractID) {
+        if (data && (!Array.isArray(context) || (context: any)[0] !== originatingContractID)) {
           console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
           return
         }
@@ -535,10 +537,12 @@ export default (sbp('sbp/selectors/register', {
         if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
 
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
-          !!data.encryptionKeyId,
+          // Full-encryption (i.e., KRS encryption) requires that this request
+          // was encrypted and that the invite is marked as private
+          !!data?.encryptionKeyId && !!state._vm?.invites?.[signingKeyId]?.private,
           message.height(),
           signingKeyId,
-          context
+          ...(context ? [context] : [])
         ])
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
@@ -556,12 +560,16 @@ export default (sbp('sbp/selectors/register', {
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
-          const keyId = state._vm.pendingKeyshares[hash][2]
-          const originatingContractID = state._vm.pendingKeyshares[hash][3][0]
+          const pending = state._vm.pendingKeyshares[hash]
+          delete state._vm.pendingKeyshares[hash]
+          if (pending.length !== 4) return
+
+          // If we were able to respond, clean up responders
+          const keyId = pending[2]
+          const originatingContractID = pending[3][0]
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
-          delete state._vm.pendingKeyshares[hash]
           delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
       },
