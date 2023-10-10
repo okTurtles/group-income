@@ -283,7 +283,11 @@ describe('Proposals - Add members', () => {
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
     cy.giSignup(`user4-${userId}`, { bypassUI: true })
+    // NOTE: need to wait until to save user settings to indexedStorage
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
     cy.giAcceptGroupInvite(invitationLinks.user4, {
+      username: `user4-${userId}`,
       isLoggedIn: true,
       existingMemberUsername: `user1-${userId}`,
       groupName,
@@ -312,7 +316,7 @@ describe('Proposals - Add members', () => {
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
     // Expiry check in Group Settings page and Dashboard
     cy.visit('/')
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
 
@@ -351,7 +355,8 @@ describe('Proposals - Add members', () => {
       existingMemberUsername: `user1-${userId}`,
       actionBeforeLogout: () => {},
       username: `user6-${userId}`,
-      inviteCreator: `user1-${userId}`
+      inviteCreator: `user1-${userId}`,
+      shouldLogoutAfter: true
     })
   })
 

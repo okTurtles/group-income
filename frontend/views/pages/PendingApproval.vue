@@ -45,10 +45,8 @@ export default ({
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.$store.state.currentGroupId
     const isSyncing = sbp('chelonia/contract/isSyncing', this.ephemeral.groupIdWhenMounted)
-    console.log('[At Mounted]', isSyncing, JSON.stringify(this.ourGroupProfile))
     if (isSyncing || !this.ourGroupProfile) {
       const eventHandler = ({ contractID }) => {
-        console.log('Group Joined:', contractID, '----------------')
         if (contractID === this.ephemeral.groupIdWhenMounted) {
           this.ephemeral.groupJoined = true
           sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)

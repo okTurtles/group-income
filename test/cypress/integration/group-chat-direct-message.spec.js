@@ -10,8 +10,8 @@ let invitationLinkAnyone
 let me
 
 describe('Create/Join direct messages and orders of direct message channels', () => {
-  function switchUser (username, firstLogin = false) {
-    cy.giSwitchUser(username, firstLogin)
+  function switchUser (username, firstLoginAfterJoinGroup = false) {
+    cy.giSwitchUser(username, firstLoginAfterJoinGroup)
     me = username
   }
 
@@ -215,7 +215,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
-    cy.giWaitUntilMessagesLoaded()
+    cy.giWaitUntilMessagesLoaded(false)
     cy.url().then(url => {
       cy.get('@groupMessageLink').should('eq', url) // NOTE: this checks the possibility to create gm for same users
     })
@@ -239,7 +239,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('channelName').should('contain', `${user4}, ${user1}, ${user2}`)
-    cy.giWaitUntilMessagesLoaded()
+    cy.giWaitUntilMessagesLoaded(false)
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 
