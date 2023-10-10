@@ -899,7 +899,7 @@ sbp('chelonia/defineContract', {
           { contractID, meta, state, getters }
         )
       },
-      sideEffect ({ data, meta, contractID }, { state, getters }) {
+      async sideEffect ({ data, meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
         const rootGetters = sbp('state/vuex/getters')
         const contracts = rootState.contracts || {}
@@ -911,6 +911,11 @@ sbp('chelonia/defineContract', {
           if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
             return
           }
+
+          // NOTE: should remove archived data from IndexedStorage
+          //       regarding the current group (proposals, payments)
+          await sbp('gi.contracts/group/removeArchivedProposals', contractID)
+          await sbp('gi.contracts/group/removeArchivedPayments', contractID)
 
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
@@ -1446,6 +1451,23 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/save', archSentOrReceivedPaymentsKey, archSentOrReceivedPayments)
 
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/removeArchivedProposals': async function (contractID) {
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
+      await sbp('gi.db/archive/delete', key)
+    },
+    'gi.contracts/group/removeArchivedPayments': async function (contractID) {
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
+      const periods = Object.keys(await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {})
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
+      for (const period of periods) {
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
+        await sbp('gi.db/archive/delete', archPaymentsKey)
+      }
+      await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
+      await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
       // NOTE: When group's mincome has changed, below actions should be taken.

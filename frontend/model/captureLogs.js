@@ -18,13 +18,13 @@ const originalConsole = console
 // These are initialized in `captureLogsStart()`.
 let appLogsFilter: string[] = []
 let logger: Object = null
-let username: string = ''
+let identityContractID: string = ''
 
 // A default storage backend using `localStorage`.
-const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${username}/${key}`)
-const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${username}/${key}`)
+const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${identityContractID}/${key}`)
+const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${identityContractID}/${key}`)
 const setItem = (key: string, value: any): void => {
-  localStorage.setItem(`giConsole/${username}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
+  localStorage.setItem(`giConsole/${identityContractID}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
 }
 
 function createLogger (config: Object): Object {
@@ -77,7 +77,7 @@ function captureLogEntry (type, ...args) {
 }
 
 function captureLogsStart (userLogged: string) {
-  username = userLogged
+  identityContractID = userLogged
 
   logger = getLogger()
 
@@ -169,5 +169,5 @@ sbp('sbp/selectors/register', {
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
-  'appLogs/startCapture' (username) { captureLogsStart(username) }
+  'appLogs/startCapture' (identityContractID) { captureLogsStart(identityContractID) }
 })
