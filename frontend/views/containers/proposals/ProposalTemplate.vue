@@ -199,7 +199,7 @@ export default ({
   },
   methods: {
     close () {
-      this.$refs.modal.close()
+      this.$refs.modal.unload()
     },
     next () {
       // TODO/BUG - we must clear formMsg (if visible) when changing steps.
