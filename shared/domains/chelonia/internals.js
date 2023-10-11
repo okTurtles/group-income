@@ -841,12 +841,16 @@ export default (sbp('sbp/selectors/register', {
 
     // Does the key exist? If not, it has probably been removed and instead
     // of waiting, we need to remove it ourselves
-    if (contractState._vm?.authorizedKeys && !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName)) {
+    if (
+      contractState._vm?.authorizedKeys &&
+      // (_notAfterHeight == null) means (_notAfterHeight === null || _notAfterHeight === undefined)
+      !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName && ((k: any): GIKey)._notAfterHeight == null)
+    ) {
       const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel)
       const externalContractName = state.contracts[externalContractID]?.type
 
       if (externalContractName && signingKeyId) {
-        sbp('chelonia/out/keyDel', { contractID: externalContractID, contractName: externalContractName, data: [keyId], signingKeyId })
+        return await sbp('chelonia/out/keyDel', { contractID: externalContractID, contractName: externalContractName, data: [keyId], signingKeyId })
       }
     }
 

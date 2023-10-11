@@ -409,7 +409,7 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
   // are used for signatures and for encryption.
   // When recreateEvent is called we may already be in a queued event, so we
   // call syncContract directly instead of sync
-  await sbp('chelonia/contract/sync', contractID)
+  await sbp('chelonia/contract/sync', contractID, { force: true })
   const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/queueInvocation', contractID, ['chelonia/db/latestHEADinfo', contractID]) || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')
