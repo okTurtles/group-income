@@ -251,7 +251,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  cy.url().should('eq', `${API_URL}/app/dashboard`)
+  cy.url().should('eq', `${API_URL}/app/pending-approval`)
+  cy.getByDT('toDashboardBtn').should('not.be.disabled').click()
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })

@@ -49,10 +49,12 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     }
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', `${partner}`)
+
+    cy.giWaitUntilMessagesLoaded(false)
   }
 
   function openDMByMembers (members) {
-    const randBoolean = Math.random() > -1 // Should be 0.5
+    const randBoolean = Math.random() > 0.5
     const title = members.join(', ')
     if (members.length === 1 && randBoolean) {
       cy.getByDT('chatMembers').within(() => {
@@ -66,6 +68,8 @@ describe('Create/Join direct messages and orders of direct message channels', ()
       cy.getByDT('chatMembers').find('ul').get(`span[data-test="${title}"`).click()
     }
     cy.getByDT('channelName').should('contain', `${title}`)
+
+    cy.giWaitUntilMessagesLoaded(false)
   }
 
   it(`user1 creates "${groupName}"" group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
