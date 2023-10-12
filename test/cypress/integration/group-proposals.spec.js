@@ -383,7 +383,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 logins and sees all 5 proposals correctly and the new members', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: false })
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases

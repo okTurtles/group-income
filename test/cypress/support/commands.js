@@ -90,7 +90,7 @@ Cypress.Commands.add('giLogin', (username, {
         }
         sbp('okTurtles.events/once', LOGIN, async ({ username: name }) => {
           if (name === username) {
-            await sbp('controller/router').push({ path: '/' }).catch(e => {})
+            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
             resolve()
           }
         })
