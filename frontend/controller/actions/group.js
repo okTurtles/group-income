@@ -514,14 +514,12 @@ export default (sbp('sbp/selectors/register', {
           })
         }
 
-        (async () => {
-          // NOTE: sync identity contracts which are out of sync after joining group
-          const missingIDs = (await Promise.all(
-            Object.keys(state.profiles)
-              .map(username => sbp('namespace/lookup', username))
-          )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
-          await sbp('chelonia/contract/sync', missingIDs)
-        })()
+        // NOTE: sync identity contracts which are out of sync after joining group
+        const missingIDs = (await Promise.all(
+          Object.keys(state.profiles)
+            .map(username => sbp('namespace/lookup', username))
+        )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
+        await sbp('chelonia/contract/sync', missingIDs)
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We have already sent a key request that hasn't been answered. We cannot
