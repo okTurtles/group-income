@@ -377,7 +377,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
         )) return
       }
 
-      this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+      this.setPostSyncOp(contractID, `syncContractAndWatchKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
     })
   } catch (e) {
     console.warn('Error at subscribeToForeignKeyContracts: ' + (e.message || e))

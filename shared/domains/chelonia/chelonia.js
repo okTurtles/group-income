@@ -235,6 +235,8 @@ export default (sbp('sbp/selectors/register', {
     // OP_KEY_REQUEST, as we want to send an OP_KEY_SHARE only to yet-unanswered
     // requests, which is information in the future (from the point of view of
     // the event handler).
+    // We could directly enqueue the operations, but by using a map we avoid
+    // enqueueing more operations than necessary
     // The operations defined here will be executed:
     //   (1) After a call to /sync or /syncContract; or
     //   (2) After an event has been handled, if it was received on a web socket
@@ -376,8 +378,8 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data, transientSecretKeys))
-          //TODO XXX
+          const deserializedMessage = GIMessage.deserialize(msg.data, transientSecretKeys)
+          sbp('chelonia/private/in/enqueueHandleEvent', deserializedMessage)
         },
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION
