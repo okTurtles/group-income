@@ -45,10 +45,11 @@
             :description='summary.attributes.description'
           )
 
-      div(v-for='(message, index) in messages' :key='index')
+      template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
           :class='{"is-new": isNew(message.hash)}'
+          :key='`date-${index}`'
         )
           i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
           span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
@@ -56,6 +57,7 @@
         component(
           :is='messageType(message)'
           :ref='message.hash'
+          :key='message.id'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
@@ -132,6 +134,8 @@ import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+
+const ignorableScrollDistanceInPixel = 500
 
 export default ({
   name: 'ChatMain',
@@ -238,10 +242,7 @@ export default ({
       }
     },
     isScrolledUp () {
-      if (!this.ephemeral.scrolledDistance) {
-        return false
-      }
-      return this.ephemeral.scrolledDistance > 500
+      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -713,17 +714,10 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
-      // Because of infinite-scroll this is not calculated in scrollheight
-      // 117 is the height of `conversation-greetings` component
-      const topOffset = 117
       const curScrollTop = this.$refs.conversation.scrollTop
       const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-      if (!this.$refs.conversation) {
-        this.ephemeral.scrolledDistance = 0
-      } else {
-        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
-      }
+      const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+      this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
 
       if (!this.summary.isJoined) {
         return
@@ -732,8 +726,8 @@ export default ({
       for (let i = this.messages.length - 1; i >= 0; i--) {
         const msg = this.messages[i]
         const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-        const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+        const height = this.$refs[msg.hash][0].$el.clientHeight
+        if (offsetTop + height <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
@@ -746,13 +740,13 @@ export default ({
         }
       }
 
-      if (this.ephemeral.scrolledDistance > 500) {
+      if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
         // Save the current scroll position per each chatroom
         for (let i = 0; i < this.messages.length - 1; i++) {
           const msg = this.messages[i]
           const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-          const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
+          const height = this.$refs[msg.hash][0].$el.clientHeight
+          if (offsetTop + height >= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
               messageHash: this.messages[i + 1].hash // Leave one(+1) message at the front by default for better seeing

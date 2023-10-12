@@ -17519,7 +17519,7 @@ ${this.getErrorInfo()}`;
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
-        sideEffect({ data, meta, contractID }, { state, getters }) {
+        async sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp7.default)("state/vuex/state");
           const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
           const contracts = rootState.contracts || {};
@@ -17528,6 +17528,8 @@ ${this.getErrorInfo()}`;
             if ((0, import_sbp7.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
               return;
             }
+            await (0, import_sbp7.default)("gi.contracts/group/removeArchivedProposals", contractID);
+            await (0, import_sbp7.default)("gi.contracts/group/removeArchivedPayments", contractID);
             const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
             (0, import_sbp7.default)("state/vuex/commit", "setCurrentChatRoomId", {});
             (0, import_sbp7.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
@@ -17777,7 +17779,14 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp7.default)("state/vuex/state");
           if (meta.username === rootState.loggedIn.username && !(0, import_sbp7.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
             const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp7.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+            await (0, import_sbp7.default)("gi.actions/chatroom/leave", {
+              contractID: data.chatRoomID,
+              data: sendingData,
+              ...data.leavingGroup && {
+                signingKeyId: (0, import_sbp7.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
+                innerSigningContractID: null
+              }
+            });
           }
         }
       },
@@ -17923,6 +17932,23 @@ ${this.getErrorInfo()}`;
         await (0, import_sbp7.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
         await (0, import_sbp7.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
         (0, import_sbp7.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
+      },
+      "gi.contracts/group/removeArchivedProposals": async function(contractID) {
+        const { username } = (0, import_sbp7.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${username}/${contractID}`;
+        await (0, import_sbp7.default)("gi.db/archive/delete", key);
+      },
+      "gi.contracts/group/removeArchivedPayments": async function(contractID) {
+        const { username } = (0, import_sbp7.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+        const periods = Object.keys(await (0, import_sbp7.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {});
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
+        for (const period of periods) {
+          const archPaymentsKey = `payments/${username}/${period}/${contractID}`;
+          await (0, import_sbp7.default)("gi.db/archive/delete", archPaymentsKey);
+        }
+        await (0, import_sbp7.default)("gi.db/archive/delete", archPaymentsByPeriodKey);
+        await (0, import_sbp7.default)("gi.db/archive/delete", archSentOrReceivedPaymentsKey);
       },
       "gi.contracts/group/sendMincomeChangedNotification": async function(contractID, meta, data) {
         const myProfile = (0, import_sbp7.default)("state/vuex/getters").ourGroupProfile;
