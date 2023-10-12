@@ -32,6 +32,7 @@ import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { L } from '@common/common.js'
+import { LOGIN, LOGIN_ERROR } from '~/frontend/utils/events.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
@@ -85,14 +86,35 @@ export default ({
       try {
         this.$refs.formMsg.clean()
 
+        const username = this.form.username
+
+        // 'gi.actions/identity/login' syncs the identity contract without
+        // awaiting on it, which can cause issues because this.postSubmit()
+        // can get called before the state for the identity contract is complete.
+        // To avoid these issues, we set up an event handler (on LOGIN) to call
+        // this.postSubmit() once the identity contract has finished syncing
+        // If an error occurred during login, we set up an event handler (on
+        // LOGIN_ERROR) to remove the login event handler.
+        const loginEventHandler = async ({ username: user }) => {
+          if (user !== username) return
+          sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorEventHandler)
+          await this.postSubmit()
+          this.$emit('submit-succeeded')
+
+          requestNotificationPermission()
+        }
+        const loginErrorEventHandler = ({ username: user, error }) => {
+          if (user !== username) return
+          sbp('okTurtles.events/off', LOGIN, loginEventHandler)
+          this.$refs.formMsg.danger(error.message)
+        }
+        sbp('okTurtles.events/once', LOGIN, loginEventHandler)
+        sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorEventHandler)
+
         await sbp('gi.actions/identity/login', {
-          username: this.form.username,
+          username,
           passwordFn: wrapValueInFunction(this.form.password)
         })
-        await this.postSubmit()
-        this.$emit('submit-succeeded')
-
-        requestNotificationPermission()
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

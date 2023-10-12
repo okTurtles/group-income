@@ -9,7 +9,7 @@ import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLod
 import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -455,6 +455,7 @@ export default (sbp('sbp/selectors/register', {
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
+        sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
         const errMessage = err?.message || String(err)
         console.error('Error during login contract sync', errMessage)
 
