@@ -88,6 +88,17 @@ export default ({
 
         const username = this.form.username
 
+        let outerResolve, outerReject
+        // Promise to return once login finished, so that the form doesn't show
+        // as completed.
+        // See the TODO note in startApp (main.js) for how to do this more
+        // cleanly by having 'gi.actions/identity/login' await on the call
+        // to 'chelonia/contract/sync' that happens after logging in.
+        const finishedLoggingIn = new Promise((resolve, reject) => {
+          outerResolve = resolve
+          outerReject = reject
+        })
+
         // 'gi.actions/identity/login' syncs the identity contract without
         // awaiting on it, which can cause issues because this.postSubmit()
         // can get called before the state for the identity contract is complete.
@@ -95,18 +106,13 @@ export default ({
         // this.postSubmit() once the identity contract has finished syncing
         // If an error occurred during login, we set up an event handler (on
         // LOGIN_ERROR) to remove the login event handler.
-        const loginEventHandler = async ({ username: user }) => {
-          if (user !== username) return
+        const loginEventHandler = () => {
           sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorEventHandler)
-          await this.postSubmit()
-          this.$emit('submit-succeeded')
-
-          requestNotificationPermission()
+          outerResolve()
         }
-        const loginErrorEventHandler = ({ username: user, error }) => {
-          if (user !== username) return
+        const loginErrorEventHandler = ({ error }) => {
           sbp('okTurtles.events/off', LOGIN, loginEventHandler)
-          this.$refs.formMsg.danger(error.message)
+          outerReject(error)
         }
         sbp('okTurtles.events/once', LOGIN, loginEventHandler)
         sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorEventHandler)
@@ -115,6 +121,10 @@ export default ({
           username,
           passwordFn: wrapValueInFunction(this.form.password)
         })
+        await finishedLoggingIn
+        await this.postSubmit()
+        this.$emit('submit-succeeded')
+        requestNotificationPermission()
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

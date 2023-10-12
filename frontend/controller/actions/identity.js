@@ -414,6 +414,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/storeSecretKeys', transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
+      // See the TODO note in startApp (main.js) for why this is not awaited
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
         // contract sync might've triggered an async call to /remove, so wait before proceeding
         await sbp('chelonia/contract/wait', contractIDs)
