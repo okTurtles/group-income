@@ -111,6 +111,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
+        // $FlowFixMe[incompatible-use]
         () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
       )
 
@@ -175,6 +176,7 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
+        // $FlowFixMe[incompatible-use]
         () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
       )
 

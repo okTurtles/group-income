@@ -417,7 +417,7 @@ export default (sbp('sbp/selectors/register', {
             ) {
               try {
                 const decrypted = key.meta.private.content.valueOf()
-                sbp('chelonia/storeSecretKeys', [{
+                sbp('chelonia/storeSecretKeys', () => [{
                   key: deserializeKey(decrypted),
                   transient: !!key.meta.private.transient
                 }])
@@ -959,21 +959,16 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    Promise.allSettled(Object.entries(pending).map(([hash, entry]) => {
+    Object.entries(pending).map(([hash, entry]) => {
       if (!Array.isArray(entry) || entry.length !== 4) {
         return undefined
       }
 
       const [,,, [originatingContractID]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
 
-      return sbp('okTurtles.eventQueue/queueEvent', originatingContractID, ['chelonia/private/respondToKeyRequest', contractID, signingKeyId, hash])
-    })).then((result) => {
-      const failed = result.reduce((acc, cv) => cv.status === 'rejected' ? acc + 1 : acc, 0)
-      if (failed > 0) {
-        console.error(`respondToAllKeyRequests: Error while responding to key requests for ${contractID}: ${failed} out of ${result.length} operations failed`)
-      } else {
-        console.info(`respondToAllKeyRequests: Successfully responded to ${result.length} key requests`)
-      }
+      return sbp('okTurtles.eventQueue/queueEvent', originatingContractID, ['chelonia/private/respondToKeyRequest', contractID, signingKeyId, hash]).catch((e) => {
+        console.error(`respondToAllKeyRequests: Error responding to key request ${hash} from ${originatingContractID} to ${contractID}`, e)
+      })
     })
   },
   'chelonia/private/respondToKeyRequest': async function (contractID: string, signingKeyId: string, hash: string) {
