@@ -13,7 +13,7 @@ import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData 
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import { findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -621,7 +621,7 @@ export default (sbp('sbp/selectors/register', {
 
           // Are we deleting a foreign key? If so, we also need to remove
           // the operation from (1) _volatile.watch (on the other contract)
-          // and (2) postSyncOperations
+          // and (2) pendingWatch
           if (key.foreignKey) {
             const fkUrl = new URL(key.foreignKey)
             const foreignContract = fkUrl.pathname
@@ -634,7 +634,10 @@ export default (sbp('sbp/selectors/register', {
               rootState[foreignContract]._volatile.watch = rootState[foreignContract]._volatile.watch.filter(([name, cID]) => name !== foreignKeyName || cID !== contractID)
             }
 
-            delete self.postSyncOperations?.[contractID][`syncContractAndWatchKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`]
+            const pendingWatch = state._vm.pendingWatch?.[foreignContract]
+            if (pendingWatch) {
+              config.reactiveSet(state._vm.pendingWatch, foreignContract, pendingWatch.filter(([, kId]) => kId !== keyId))
+            }
           }
 
           // Set the status to revoked for invite keys
@@ -813,20 +816,31 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/private/enqueuePostSyncOps': function (contractID: string) {
-    return Promise.allSettled(
-      Object.entries(this.postSyncOperations[contractID]).map(([key, op]) => {
-        delete this.postSyncOperations[contractID][key]
-        return sbp('okTurtles.eventQueue/queueEvent', contractID, op).catch((e) => {
-          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
-        })
+    if (!has(this.postSyncOperations, contractID)) return
+
+    // Iterate over each post-sync operation associated with the given contractID.
+    Object.entries(this.postSyncOperations[contractID]).map(([key, op]) => {
+      // Remove the operation which is about to be handled so that subsequent
+      // calls to this selector don't result in repeat calls to the post-sync op
+      delete this.postSyncOperations[contractID][key]
+
+      // Queue the current operation for execution.
+      // Note that we do _not_ await because it could be unsafe to do so.
+      // If the operation fails for some reason, just log the error.
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, op).catch((e) => {
+        console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
       })
-    )
+    })
   },
-  'chelonia/private/in/syncContractAndWatchKeys': async function (contractID: string, keyName: string, externalContractID: string, keyId: string) {
+  'chelonia/private/watchForeignKeys': function (externalContractID: string) {
     const state = sbp(this.config.stateSelector)
     const externalContractState = state[externalContractID]
 
-    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel)
+    const pendingWatch = externalContractState?._vm?.pendingWatch
+
+    if (!pendingWatch || !Object.keys(pendingWatch).length) return
+
+    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'])
     const canMirrorOperations = !!signingKey
 
     // Only sync contract if we are actually able to mirror key operations
@@ -837,37 +851,97 @@ export default (sbp('sbp/selectors/register', {
     // contract, plus those contracts referenced by the foreign keys of those
     // other contracts and so on.
     if (!canMirrorOperations) {
-      console.info('[chelonia/private/in/syncContractAndWatchKeys]: Returning as operations cannot be mirrored', { contractID, keyName, externalContractID, keyId })
+      console.info('[chelonia/private/watchForeignKeys]: Returning as operations cannot be mirrored', { externalContractID })
       return
     }
 
-    await sbp('chelonia/contract/sync', contractID)
+    // For each pending watch operation, queue a synchronization event in the
+    // respective contract queue
+    Object.entries(pendingWatch).forEach(([contractID, keys]) => {
+      if (!Array.isArray(keys) || keys.length === 0) return
 
-    const contractState = state[contractID]
+      sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/in/syncContractAndWatchKeys', contractID, externalContractID]).catch((e) => {
+        console.error(`Error at syncContractAndWatchKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
+      })
+    })
+  },
+  'chelonia/private/in/syncContractAndWatchKeys': async function (contractID: string, externalContractID: string) {
+    const rootState = sbp(this.config.stateSelector)
+    const externalContractState = rootState[externalContractID]
+    const pendingWatch = externalContractState?._vm?.pendingWatch?.[contractID]?.splice(0)
 
-    // Does the key exist? If not, it has probably been removed and instead
-    // of waiting, we need to remove it ourselves
-    if (
-      contractState._vm?.authorizedKeys &&
-      // (_notAfterHeight == null) means (_notAfterHeight === null || _notAfterHeight === undefined)
-      !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName && ((k: any): GIKey)._notAfterHeight == null)
-    ) {
-      const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel)
-      const externalContractName = state.contracts[externalContractID]?.type
+    if (!Array.isArray(pendingWatch) || pendingWatch.length === 0) return
 
-      if (externalContractName && signingKeyId) {
-        return await sbp('chelonia/out/keyDel', { contractID: externalContractID, contractName: externalContractName, data: [keyId], signingKeyId })
+    await sbp('chelonia/private/in/syncContract', contractID)
+
+    const contractState = rootState[contractID]
+    const keysToDelete = []
+
+    pendingWatch.forEach(([keyName, externalId]) => {
+      // Does the key exist? If not, it has probably been removed and instead
+      // of waiting, we need to remove it ourselves
+      const keyId = findKeyIdByName(contractState, keyName)
+      if (!keyId) {
+        keysToDelete.push(externalId)
+
+        return
       }
-    }
 
-    // Add keys to watchlist as another contract is waiting on these
-    // operations
-    if (!contractState._volatile) {
-      this.config.reactiveSet(contractState, '_volatile', Object.create(null, { watch: { value: [[keyName, externalContractID]], configurable: true, enumerable: true, writable: true } }))
-    } else {
-      if (!contractState._volatile.watch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
-      if (Array.isArray(contractState._volatile.watch) && !contractState._volatile.watch.find((v) => v[0] === keyName && v[1] === externalContractID)) contractState._volatile.watch.push([keyName, externalContractID])
+      // Add keys to watchlist as another contract is waiting on these
+      // operations
+      if (!contractState._volatile) {
+        this.config.reactiveSet(contractState, '_volatile', Object.create(null, { watch: { value: [[keyName, externalContractID]], configurable: true, enumerable: true, writable: true } }))
+      } else {
+        if (!contractState._volatile.watch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
+        if (Array.isArray(contractState._volatile.watch) && !contractState._volatile.watch.find((v) => v[0] === keyName && v[1] === externalContractID)) contractState._volatile.watch.push([keyName, externalContractID])
+      }
+    })
+
+    // If there are keys that need to be revoked, queue an event to handle the
+    // deletion
+    if (keysToDelete.length) {
+      if (!externalContractState._volatile) {
+        this.config.reactiveSet(externalContractState, '_volatile', Object.create(null))
+      }
+      if (!externalContractState._volatile.pendingKeyRevocations) {
+        this.config.reactiveSet(externalContractState._volatile, 'pendingKeyRevocations', Object.create(null))
+      }
+      keysToDelete.forEach((id) => this.config.reactiveSet(externalContractState._volatile.pendingKeyRevocations, id, 'del'))
+
+      sbp('okTurtles.eventQueue/queueEvent', externalContractID, ['chelonia/private/deleteRevokedKeys', externalContractID]).catch((e) => {
+        console.error(`Error at deleteRevokedKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
+      })
     }
+  },
+  'chelonia/private/deleteRevokedKeys': function (contractID: string) {
+    const rootState = sbp(this.config.stateSelector)
+    const contractState = rootState[contractID]
+    const pendingKeyRevocations = contractState?._volatile.pendingKeyRevocations
+
+    if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) return
+
+    const keysToDelete = Object.entries(pendingKeyRevocations).filter(([, v]) => v === 'del').map(([id]) => id)
+
+    // Aggregate the keys that we can delete to send them in a single operation
+    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, cv) => {
+      const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
+      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId].ringLevel)
+      if (ringLevel >= currentRingLevel) {
+        return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(cv)]
+      } else if (Number.isFinite(ringLevel)) {
+        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
+        if (signingKeyId) {
+          return [ringLevel, signingKeyId, (currentKeyIds: any).push(cv)]
+        }
+      }
+      return acc
+    }, [Number.POSITIVE_INFINITY, '', []])
+
+    if (keyIds.length === 0) return
+
+    const contractName = contractState._vm.type
+
+    return sbp('chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId })
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)

@@ -10,17 +10,17 @@ import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
-export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
+export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight == null)?.id
 
-export const findForeignKeysByContractID = (state: Object, contractID: string): ?string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight === undefined && k.foreignKey?.includes(contractID)).map(k => k.id)
+export const findForeignKeysByContractID = (state: Object, contractID: string): ?string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map(k => k.id)
 
-export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight !== undefined).map(k => k.id)
+export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight != null).map(k => k.id)
 
 export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, allowedActions?: '*' | string[]): ?string => {
   return state._vm?.authorizedKeys &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[])
       .filter((k) => {
-        return k._notAfterHeight === undefined &&
+        return k._notAfterHeight == null &&
         (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
         sbp('chelonia/haveSecretKey', k.id) &&
         (Array.isArray(permissions)
@@ -44,7 +44,7 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) =>
-      (k._notAfterHeight === undefined) &&
+      (k._notAfterHeight == null) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
       (Array.isArray(permissions)
         ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission)), true)
@@ -377,7 +377,13 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
         )) return
       }
 
-      this.setPostSyncOp(contractID, `syncContractAndWatchKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+      if (!has(state._vm, 'pendingWatch')) this.config.reactiveSet(state._vm, 'pendingWatch', Object.create(null))
+      if (!has(state._vm.pendingWatch, foreignContract)) this.config.reactiveSet(state._vm.pendingWatch, foreignContract, [])
+      if (!state._vm.pendingWatch[foreignContract].includes(foreignKeyName)) {
+        state._vm.pendingWatch[foreignContract].push([foreignKeyName, key.id])
+      }
+
+      this.setPostSyncOp(contractID, `watchForeignKeys-${contractID}`, ['chelonia/private/watchForeignKeys', contractID])
     })
   } catch (e) {
     console.warn('Error at subscribeToForeignKeyContracts: ' + (e.message || e))
