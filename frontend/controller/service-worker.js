@@ -1,6 +1,8 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { handleFetchResult } from './utils/misc.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 
 // NOTE: this file is currently unused. I messed around with it just enough
 // to get it working at the most primitive level and decide that I need to
@@ -16,22 +18,45 @@ sbp('sbp/selectors/register', {
     if (!('serviceWorker' in navigator)) { return }
 
     try {
-      await navigator.serviceWorker.register('/assets/js/sw-primary.js', {
+      const registration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', {
         scope: '/'
       })
-      navigator.serviceWorker.addEventListener('message', function (event) {
-        console.info('Received message from SW:', event.data)
+
+      if (Notification.permission !== 'granted') {
+        await requestNotificationPermission(true)
+      }
+
+      const API_URL = sbp('okTurtles.data/get', 'API_URL')
+      const VAPID_PUBLIC_KEY = await fetch(`${API_URL}/push/vapid_public_key`)
+        .then(handleFetchResult('text'))
+
+      console.log('@@@ received the VAPID_PUBLIC_KEY: ', VAPID_PUBLIC_KEY)
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       })
-      setTimeout(function () {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'set',
-          key: 'foo',
-          value: 'bar'
-        })
-      }, 1000)
+      console.log('@@@ successfully registered push-notification!: ', subscription)
     } catch (e) {
       // TODO: this
       console.error('error setting up service worker:', e)
     }
   }
 })
+
+// helper method
+
+function urlBase64ToUint8Array (base64String) {
+  // reference: https://gist.github.com/Klerith/80abd742d726dd587f4bd5d6a0ab26b6
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}

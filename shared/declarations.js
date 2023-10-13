@@ -32,6 +32,7 @@ declare module '@hapi/boom' { declare module.exports: any }
 declare module '@hapi/hapi' { declare module.exports: any }
 declare module '@hapi/inert' { declare module.exports: any }
 declare module '@hapi/joi' { declare module.exports: any }
+declare module 'web-push' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
@@ -89,4 +90,4 @@ declare module '@model/contracts/shared/functions.js' { declare module.exports: 
 declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
-declare module './controller/service-worker.js' { declare module.exports: eny }
+declare module './controller/service-worker.js' { declare module.exports: any }

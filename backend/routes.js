@@ -10,7 +10,7 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-
+import { getVapidPublicKey } from './push.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 
@@ -369,3 +369,6 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
 
   return Boom.internal('internal error')
 })
+
+// PWA push notification
+route.GET('/push/vapid_public_key', {}, getVapidPublicKey)
