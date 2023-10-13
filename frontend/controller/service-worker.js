@@ -26,18 +26,26 @@ sbp('sbp/selectors/register', {
         await requestNotificationPermission(true)
       }
 
+      // if there is a previous subscription, revoke it first.
+      const existingSubscription = await registration.pushManager.getSubscription()
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe()
+      }
+
+      // get VAPIDPublicKey from the server
       const API_URL = sbp('okTurtles.data/get', 'API_URL')
-      const VAPID_PUBLIC_KEY = await fetch(`${API_URL}/push/vapid_public_key`)
+      const PUBLIC_VAPID_KEY = await fetch(`${API_URL}/push/publickey`)
         .then(handleFetchResult('text'))
 
-      console.log('@@@ received the VAPID_PUBLIC_KEY: ', VAPID_PUBLIC_KEY)
+      // create push subscription
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
       })
-      console.log('@@@ successfully registered push-notification!: ', subscription)
+
+      // send the subscription details to the server
+      await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
     } catch (e) {
-      // TODO: this
       console.error('error setting up service worker:', e)
     }
   }

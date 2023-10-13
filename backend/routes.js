@@ -10,7 +10,7 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-import { getVapidPublicKey } from './push.js'
+import { VAPID_PUBLIC_KEY, pushSubscriptions } from './push.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 
@@ -371,4 +371,21 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
 })
 
 // PWA push notification
-route.GET('/push/vapid_public_key', {}, getVapidPublicKey)
+route.GET('/push/publickey', {}, function () {
+  return VAPID_PUBLIC_KEY
+})
+route.POST('/push/subscribe', {}, function (req, h) {
+  const subscription = JSON.parse(req.payload)
+  // Reference: is it safe to use 'endpoint' as a unique identifier of a push subscription
+  // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
+  pushSubscriptions.set(subscription.endpoint, subscription)
+
+  console.log('@@@current subscription keys: ', [...pushSubscriptions.keys()])
+  return { subscriptionId: subscription.endpoint }
+})
+route.DELETE('/push/unsubscribe/{subscriptionId}', {}, function (req, h) {
+  const { subscriptionId } = req.params
+
+  pushSubscriptions.delete(subscriptionId)
+  return { deletedId: subscriptionId }
+})
