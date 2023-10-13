@@ -173,14 +173,10 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/chatroom'
       })
 
-      const contractID = chatroom.contractID()
-
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
         [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
       )
-
-      await sbp('chelonia/contract/sync', contractID)
 
       return chatroom
     } catch (e) {

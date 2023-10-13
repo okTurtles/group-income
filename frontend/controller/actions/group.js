@@ -237,7 +237,6 @@ export default (sbp('sbp/selectors/register', {
         [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
 
       // Save the initial invite

@@ -235,8 +235,6 @@ export default (sbp('sbp/selectors/register', {
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
-
-      await sbp('chelonia/contract/sync', userID)
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -421,7 +419,7 @@ export default (sbp('sbp/selectors/register', {
         // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
         // we must re-sync our identity contract again to ensure we don't rejoin a group we
         // were just kicked out of
-        await sbp('chelonia/contract/sync', identityContractID)
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
