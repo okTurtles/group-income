@@ -111,7 +111,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
-        [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
+        () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
       )
 
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
@@ -175,7 +175,7 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
+        () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
       )
 
       return chatroom

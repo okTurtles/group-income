@@ -288,7 +288,7 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
         try {
           decryptedKey = key.meta.private.content.valueOf()
           decryptedKeys.push([key.id, decryptedKey])
-          sbp('chelonia/storeSecretKeys', [{
+          sbp('chelonia/storeSecretKeys', () => [{
             key: deserializeKey(decryptedKey),
             transient: !!key.meta.private.transient
           }])

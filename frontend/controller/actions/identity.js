@@ -136,7 +136,7 @@ export default (sbp('sbp/selectors/register', {
 
     // Before creating the contract, put all keys into transient store
     sbp('chelonia/storeSecretKeys',
-      [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+      () => [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
     )
 
     let userID
@@ -231,7 +231,7 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, PEK].map(key => ({ key }))
+        () => [CEK, CSK, PEK].map(key => ({ key }))
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
@@ -409,7 +409,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       sbp('state/vuex/commit', 'login', loginAttributes)
-      await sbp('chelonia/storeSecretKeys', transientSecretKeys)
+      await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited

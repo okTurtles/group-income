@@ -281,9 +281,10 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/storeSecretKeys': function (keys: {key: Key, transient?: boolean}[]) {
+  'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
+    let keys = keysFn?.()
     if (!keys) return
     if (!Array.isArray(keys) && typeof keys === 'object') keys = [keys]
     keys.forEach(({ key, transient }) => {

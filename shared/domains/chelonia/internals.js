@@ -1013,7 +1013,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`Unable to respond to key request for ${originatingContractID}. Key ${responseKeyId} is not valid.`)
       }
 
-      sbp('chelonia/storeSecretKeys', { key: deserializedResponseKey })
+      sbp('chelonia/storeSecretKeys', () => [{ key: deserializedResponseKey }])
 
       const keys = pick(
         state['secretKeys'],
