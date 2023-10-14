@@ -45,6 +45,14 @@ sbp('sbp/selectors/register', {
 
       // send the subscription details to the server
       await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+
+      // Test notification that tells subscription has been established successfully
+      // (Just a demonstration purpose and to be removed when not in development)
+      const testNotification = {
+        title: 'Service worker installed.',
+        body: 'You can now receive various push notifications from the Group Income app!'
+      }
+      await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
     } catch (e) {
       console.error('error setting up service worker:', e)
     }

@@ -49,3 +49,16 @@ self.addEventListener('message', function (event) {
     console.error('[sw] unexpected data:', event.data)
   }
 })
+
+self.addEventListener('push', function (event) {
+  const data = event.data.json()
+  console.debug('[sw] push received: ', data)
+
+  self.registration.showNotification(
+    data.title,
+    {
+      body: data.body || '',
+      icon: '/assets/images/pwa-icons/group-income-icon-transparent.svg'
+    }
+  )
+})
