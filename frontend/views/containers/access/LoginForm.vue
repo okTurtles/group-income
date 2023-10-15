@@ -93,6 +93,12 @@ export default ({
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
+
+        // TODO: remove it once the test is done
+        await sbp('service-worker/send-push', {
+          title: 'Logged in',
+          body: 'Welcome again!'
+        })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

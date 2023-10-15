@@ -134,6 +134,11 @@ export default ({
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
+        // TODO: remove it once the test is done
+        await sbp('service-worker/send-push', {
+          title: 'Signed up',
+          body: 'Welcome! your first time logging in the app.'
+        })
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

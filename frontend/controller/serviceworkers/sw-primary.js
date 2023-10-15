@@ -62,3 +62,13 @@ self.addEventListener('push', function (event) {
     }
   )
 })
+
+self.addEventListener('pushsubscriptionchange', async function (event) {
+  // if a subscription is expired for some reason, re-subscribe it, so it doesn't lead to crashing the server in /push/send route.
+  // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
+  // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
+  const subscription = await self.registration.pushManger.subscribe(event.oldSubscription.options)
+
+  // send the re-newed subscription details to the server
+  await fetch('/push/subscribe', { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+})

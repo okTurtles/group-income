@@ -382,6 +382,7 @@ route.POST('/push/subscribe', {}, function (req, h) {
   // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
   pushSubscriptions.set(subscription.endpoint, subscription)
 
+  console.log('@@ POST /push/subscribe - new subscription received: ', [...pushSubscriptions.keys()])
   return { subscriptionId: subscription.endpoint }
 })
 
@@ -392,15 +393,21 @@ route.DELETE('/push/unsubscribe/{subscriptionId}', {}, function (req, h) {
   return { deletedId: subscriptionId }
 })
 
-route.POST('/push/send', {}, function (req) {
+route.POST('/push/send', {}, async function (req) {
+  // send a push notification to all subscriptions
   const payload = JSON.parse(req.payload)
+  const sendPush = (sub) => pushInstance.sendNotification(
+    sub, JSON.stringify({ title: payload.title, body: payload.body })
+  )
 
   try {
-    for (const subscription of pushSubscriptions.values()) {
-      pushInstance.sendNotification(
-        subscription,
-        JSON.stringify({ title: payload.title, body: payload.body })
-      )
+    if (payload.endpoint) {
+      const subscription = pushSubscriptions.get(payload.endpoint)
+      await sendPush(subscription)
+    } else {
+      for (const subscription of pushSubscriptions.values()) {
+        await sendPush(subscription)
+      }
     }
 
     return 'Push sent successfully'
@@ -410,4 +417,25 @@ route.POST('/push/send', {}, function (req) {
   }
 
   return Boom.internal('internal error')
+})
+
+route.POST('/push/send/{subscriptionId}', {}, async function (req) {
+  // send a push notification to a particular subscription
+  const { subscriptionId } = req.params
+  const payload = JSON.parse(req.payload)
+  const subscription = pushSubscriptions.get(subscriptionId)
+
+  if (subscription) {
+    try {
+      await pushInstance.sendNotification(
+        subscription,
+        JSON.stringify({ title: payload.title, body: payload.body })
+      )
+    } catch (e) {
+      const ip = req.info.remoteAddress
+      console.error('Error at POST /push/send/{subscriptionId}: ' + e.message, { ip })
+    }
+  }
+
+  return Boom.internal(`No subscription found for id '${subscriptionId}'`)
 })

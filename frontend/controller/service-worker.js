@@ -26,14 +26,17 @@ sbp('sbp/selectors/register', {
         await requestNotificationPermission(true)
       }
 
-      // if there is a previous subscription, revoke it first.
+      const API_URL = sbp('okTurtles.data/get', 'API_URL')
+
+      // if there is an existing subscription, no need to create a new one but make sure the server stores it too.
       const existingSubscription = await registration.pushManager.getSubscription()
       if (existingSubscription) {
-        await existingSubscription.unsubscribe()
+        await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(existingSubscription.toJSON()) })
+        return
       }
 
       // get VAPIDPublicKey from the server
-      const API_URL = sbp('okTurtles.data/get', 'API_URL')
+
       const PUBLIC_VAPID_KEY = await fetch(`${API_URL}/push/publickey`)
         .then(handleFetchResult('text'))
 
@@ -46,15 +49,40 @@ sbp('sbp/selectors/register', {
       // send the subscription details to the server
       await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
 
-      // Test notification that tells subscription has been established successfully
+      // Send a test notification that tells that push notification is available via the app now.
       // (Just a demonstration purpose and to be removed when not in development)
       const testNotification = {
         title: 'Service worker installed.',
         body: 'You can now receive various push notifications from the Group Income app!'
       }
+
       await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
     } catch (e) {
       console.error('error setting up service worker:', e)
+    }
+  },
+  'service-worker/send-push': async function (payload) {
+    console.log('@@@ service-worker/send-push is called!!')
+    if (!('serviceWorker' in navigator)) { return }
+
+    const swRegistration = await navigator.serviceWorker.ready
+
+    if (!swRegistration) {
+      console.error('No service-worker registration found!')
+      return
+    }
+
+    const pushSubscription = await swRegistration.pushManager.getSubscription()
+
+    if (pushSubscription) {
+      const API_URL = sbp('okTurtles.data/get', 'API_URL')
+
+      await fetch(
+        `${API_URL}/push/send`,
+        { method: 'POST', body: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint }) }
+      )
+    } else {
+      console.error('No existing subscription found!')
     }
   }
 })
