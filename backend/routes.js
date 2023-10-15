@@ -418,24 +418,3 @@ route.POST('/push/send', {}, async function (req) {
 
   return Boom.internal('internal error')
 })
-
-route.POST('/push/send/{subscriptionId}', {}, async function (req) {
-  // send a push notification to a particular subscription
-  const { subscriptionId } = req.params
-  const payload = JSON.parse(req.payload)
-  const subscription = pushSubscriptions.get(subscriptionId)
-
-  if (subscription) {
-    try {
-      await pushInstance.sendNotification(
-        subscription,
-        JSON.stringify({ title: payload.title, body: payload.body })
-      )
-    } catch (e) {
-      const ip = req.info.remoteAddress
-      console.error('Error at POST /push/send/{subscriptionId}: ' + e.message, { ip })
-    }
-  }
-
-  return Boom.internal(`No subscription found for id '${subscriptionId}'`)
-})
