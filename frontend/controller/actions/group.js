@@ -315,16 +315,27 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept?: boolean } }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean } }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
       const userID = rootState.loggedIn.identityContractID
 
-      console.log('@@@@@@@@ AT join for ' + params.contractID)
+      // params.originatingContractID is set, it means that we're joining through an invite link,
+      const isJoiningGroup = !!params.originatingContractID
+      const preEffectBeforeSync = isJoiningGroup
+        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true) }
+        : () => {}
+      const postEffectAfterSync = isJoiningGroup
+        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false) }
+        : () => {}
 
+      console.log('@@@@@@@@ AT join for ' + params.contractID)
+      preEffectBeforeSync()
       await sbp('chelonia/contract/sync', params.contractID)
+      postEffectAfterSync()
+
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
@@ -527,7 +538,7 @@ export default (sbp('sbp/selectors/register', {
       saveLoginState('joining', params.contractID)
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept: boolean } }) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean } }) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
@@ -676,17 +687,6 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    if (username === me) {
-      // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
-      // Users join the chatroom thru group making group actions
-      // But when user joins the group, he needs to ignore all the actions about chatroom
-      // Because the user is joining group, not joining chatroom
-      // and he is going to make a new action to join 'General' chatroom AGAIN
-      // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
-      // Joining 'General' chatroom is one of the steps to join group
-      // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
-      sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
-    }
     await sendMessage({
       ...omit(params, ['options', 'action', 'hooks']),
       hooks: {

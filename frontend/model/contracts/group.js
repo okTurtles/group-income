@@ -1286,7 +1286,7 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID) || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
+          if (!sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
             await sbp('chelonia/contract/sync', data.chatRoomID)

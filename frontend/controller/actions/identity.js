@@ -296,7 +296,7 @@ export default (sbp('sbp/selectors/register', {
         console.info('synchronizing login state:', { groupsJoined })
         for (const contractID of groupsJoined) {
           try {
-            await sbp('gi.actions/group/join', { contractID, options: { skipInviteAccept: true } })
+            await sbp('gi.actions/group/join', { contractID })
           } catch (e) {
             console.error(`updateLoginStateUponLogin: ${e.name} attempting to join group ${contractID}`, e)
             if (state.contracts[contractID] || state[contractID]) {
