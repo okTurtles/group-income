@@ -17,6 +17,7 @@ import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
+import '~/shared/domains/chelonia/persistent-actions.js'
 import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -43,6 +44,7 @@ const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('LIGHTWEIGHT_CLIENT:', JSON.stringify(process.env.LIGHTWEIGHT_CLIENT))
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
