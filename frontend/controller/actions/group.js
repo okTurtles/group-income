@@ -316,9 +316,7 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept?: boolean } }) {
-    if (!params.options?.skipInviteAccept) {
-      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
-    }
+    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -519,7 +517,10 @@ export default (sbp('sbp/selectors/register', {
           Object.keys(state.profiles)
             .map(username => sbp('namespace/lookup', username))
         )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
-        await sbp('chelonia/contract/sync', missingIDs)
+        if (missingIDs.length > 0) {
+          console.info('found unsynced identity contracts to sync:', missingIDs)
+          await sbp('chelonia/contract/sync', missingIDs)
+        }
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We have already sent a key request that hasn't been answered. We cannot
