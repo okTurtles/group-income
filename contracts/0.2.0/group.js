@@ -17530,7 +17530,7 @@ ${this.getErrorInfo()}`;
             }
             await (0, import_sbp7.default)("gi.contracts/group/removeArchivedProposals", contractID);
             await (0, import_sbp7.default)("gi.contracts/group/removeArchivedPayments", contractID);
-            const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
+            const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null;
             (0, import_sbp7.default)("state/vuex/commit", "setCurrentChatRoomId", {});
             (0, import_sbp7.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
             (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
