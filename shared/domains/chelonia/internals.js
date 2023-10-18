@@ -943,7 +943,7 @@ export default (sbp('sbp/selectors/register', {
 
     // This is safe to do without await because it's sending an operation
     // Using await could deadlock when retying to send the message
-    sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId }])
+    sbp('chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId })
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -1049,7 +1049,7 @@ export default (sbp('sbp/selectors/register', {
     }).then((keySharePayload) => {
       if (!keySharePayload) return
 
-      return sbp('okTurtles.eventQueue/queueEvent', originatingContractID, ['chelonia/out/keyShare', {
+      return sbp('chelonia/out/keyShare', {
         contractID: originatingContractID,
         contractName: originatingContractName,
         data: keyShareEncryption
@@ -1060,7 +1060,7 @@ export default (sbp('sbp/selectors/register', {
           )
           : keySharePayload,
         signingKey: deserializedResponseKey
-      }]).then(() => {
+      }).then(() => {
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
         const connectionKeyPayload = {
@@ -1080,7 +1080,7 @@ export default (sbp('sbp/selectors/register', {
 
         // This is safe to do without await because it's sending an action
         // If we had await it could deadlock when retrying to send the event
-        sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/atomic', {
+        sbp('chelonia/out/atomic', {
           contractID,
           contractName,
           signingKeyId,
@@ -1113,7 +1113,7 @@ export default (sbp('sbp/selectors/register', {
               }
             ]
           ]
-        }]).catch((e) => {
+        }).catch((e) => {
           console.error('Error at respondToKeyRequest while sending keyRequestResponse', e)
         })
       })
@@ -1129,14 +1129,14 @@ export default (sbp('sbp/selectors/register', {
 
       // This is safe to do without await because it's sending an action
       // If we had await it could deadlock when retrying to send the event
-      sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/keyRequestResponse', {
+      sbp('chelonia/out/keyRequestResponse', {
         contractID,
         contractName,
         signingKeyId,
         data: krsEncryption
           ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
           : payload
-      }]).catch((e) => {
+      }).catch((e) => {
         console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)
       })
     }).finally(() => {
