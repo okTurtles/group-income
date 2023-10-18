@@ -1198,7 +1198,7 @@ export default (sbp('sbp/selectors/register', {
         // We don't await on side-effects as it may deadlock if the side-effect
         // ends up putting things in the queue
         if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-          handleEvent.processSideEffects.call(this, message, state[contractID]).catch((e) => {
+          Promise.resolve().then(() => handleEvent.processSideEffects.call(this, message, state[contractID])).catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
             // We used to revert the state and rethrow the error here, but we no longer do that
             // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
@@ -1314,7 +1314,7 @@ const handleEvent = {
             return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
           }
         }
-        return sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, `${manifestHash}/${action}/sideEffect`, mutation)
+        return sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, [`${manifestHash}/${action}/sideEffect`, mutation])
       }
       const msg = Object(message.message())
 
@@ -1332,7 +1332,7 @@ const handleEvent = {
       const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
 
       return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
-        const errors = results.filter((r) => r.status === 'rejected').map((r) => r.reason)
+        const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
         if (errors.length > 0) {
           // $FlowFixMe[cannot-resolve-name]
           throw new AggregateError(errors, `Error at side effects for ${contractID}`)
