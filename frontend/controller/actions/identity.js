@@ -136,7 +136,7 @@ export default (sbp('sbp/selectors/register', {
 
     // Before creating the contract, put all keys into transient store
     sbp('chelonia/storeSecretKeys',
-      [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+      () => [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
     )
 
     let userID
@@ -231,12 +231,10 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, PEK].map(key => ({ key }))
+        () => [CEK, CSK, PEK].map(key => ({ key }))
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
-
-      await sbp('chelonia/contract/sync', userID)
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -408,7 +406,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       sbp('state/vuex/commit', 'login', loginAttributes)
-      await sbp('chelonia/storeSecretKeys', transientSecretKeys)
+      await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited
@@ -418,7 +416,7 @@ export default (sbp('sbp/selectors/register', {
         // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
         // we must re-sync our identity contract again to ensure we don't rejoin a group we
         // were just kicked out of
-        await sbp('chelonia/contract/sync', identityContractID)
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
@@ -516,6 +514,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
 
+    // TODO: Also share PEK with DMs
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')

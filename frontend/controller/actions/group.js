@@ -132,7 +132,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK].map(key => ({ key, transient: true }))
+        () => [CEK, CSK].map(key => ({ key, transient: true }))
       )
 
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
@@ -234,10 +234,9 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, inviteKey].map(key => ({ key }))
+        () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
 
       // Save the initial invite
