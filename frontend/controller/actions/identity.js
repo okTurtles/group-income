@@ -360,6 +360,7 @@ export default (sbp('sbp/selectors/register', {
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
         transientSecretKeys.push({ key: IEK, transient: true })
       } catch (e) {
+        console.error('caught error calling retrieveSalt:', e)
         throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
       }
     }
