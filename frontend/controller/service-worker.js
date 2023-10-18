@@ -23,40 +23,44 @@ sbp('sbp/selectors/register', {
       })
 
       if (Notification.permission !== 'granted') {
+        // To be able to receive a notification, this setting must be turned on.
+        // But user can customise this setting later via 'user-settings' page.
         await requestNotificationPermission(true)
       }
 
       const API_URL = sbp('okTurtles.data/get', 'API_URL')
-
-      // if there is an existing subscription, no need to create a new one but make sure the server stores it too.
       const existingSubscription = await registration.pushManager.getSubscription()
+
       if (existingSubscription) {
+        // If there is an existing subscription, no need to create a new one.
+        // But make sure server knows the subscription details too.
         await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(existingSubscription.toJSON()) })
         return
+      } else {
+        // Create a new push subscription
+
+        // 1. Get the public key from the server
+        const PUBLIC_VAPID_KEY = await fetch(`${API_URL}/push/publickey`)
+          .then(handleFetchResult('text'))
+
+        // 2. Add a new subscription to pushManager using it.
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+        })
+
+        // 3. Send the subscription details to the server. (server needs it to send the push notification)
+        await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+
+        // 4. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
+        const testNotification = {
+          title: 'Service worker installed.',
+          body: 'You can now receive various push notifications from the Group Income app!',
+          endpoint: subscription.endpoint
+        }
+
+        await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
       }
-
-      // get VAPIDPublicKey from the server
-
-      const PUBLIC_VAPID_KEY = await fetch(`${API_URL}/push/publickey`)
-        .then(handleFetchResult('text'))
-
-      // create push subscription
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
-      })
-
-      // send the subscription details to the server
-      await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
-
-      // Send a test notification that tells that push notification is available via the app now.
-      // (Just a demonstration purpose and to be removed when not in development)
-      const testNotification = {
-        title: 'Service worker installed.',
-        body: 'You can now receive various push notifications from the Group Income app!'
-      }
-
-      await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
     } catch (e) {
       console.error('error setting up service worker:', e)
     }

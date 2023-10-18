@@ -376,25 +376,36 @@ route.GET('/push/publickey', {}, function () {
   return VAPID_PUBLIC_KEY
 })
 
-route.POST('/push/subscribe', {}, function (req, h) {
+route.POST('/push/subscribe', {
+  validate: { payload: Joi.string().required() }
+}, function (req, h) {
   const subscription = JSON.parse(req.payload)
   // Reference: is it safe to use 'endpoint' as a unique identifier of a push subscription
   // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
   pushSubscriptions.set(subscription.endpoint, subscription)
 
-  console.log('@@ POST /push/subscribe - new subscription received: ', [...pushSubscriptions.keys()])
   return { subscriptionId: subscription.endpoint }
 })
 
-route.DELETE('/push/unsubscribe/{subscriptionId}', {}, function (req, h) {
+route.DELETE('/push/unsubscribe/{subscriptionId}', {
+  validate: {
+    params: Joi.object({
+      subscriptionId: Joi.string().required()
+    })
+  }
+}, function (req, h) {
   const { subscriptionId } = req.params
 
   pushSubscriptions.delete(subscriptionId)
   return { deletedId: subscriptionId }
 })
 
-route.POST('/push/send', {}, async function (req) {
-  // send a push notification to all subscriptions
+route.POST('/push/send', {
+  validate: { payload: Joi.string().required() }
+}, async function (req) {
+  // This route has the ability to send push notification to either a specific subscription or all stored subscriptions.
+  // To send to a particular subscription, payload must have an 'endpoint' field along with notification data(title, body).
+
   const payload = JSON.parse(req.payload)
   const sendPush = (sub) => pushInstance.sendNotification(
     sub, JSON.stringify({ title: payload.title, body: payload.body })
