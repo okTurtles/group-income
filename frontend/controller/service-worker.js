@@ -66,7 +66,6 @@ sbp('sbp/selectors/register', {
     }
   },
   'service-worker/send-push': async function (payload) {
-    console.log('@@@ service-worker/send-push is called!!')
     if (!('serviceWorker' in navigator)) { return }
 
     const swRegistration = await navigator.serviceWorker.ready
