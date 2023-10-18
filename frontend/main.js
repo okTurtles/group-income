@@ -71,7 +71,7 @@ async function startApp () {
       'chelonia/db/get',
       'chelonia/db/set',
       'chelonia/haveSecretKey',
-      'chelonia/storeSecretKeys',
+      'chelonia/private/enqueuePostSyncOps',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
@@ -190,6 +190,13 @@ async function startApp () {
     try {
       if (identityContractID) {
         sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
+        // TODO: 'gi.actions/identity/login' will return before the contract
+        // state is synced
+        // This is to continue with the following block that is setting up
+        // Vue.js, but as a result the login events listened for below may
+        // have already fired. Instead, this block should be moved below the
+        // Vue.js set up, and the router be updated to handle not having a login
+        // state initially.
         await sbp('gi.actions/identity/login', { identityContractID })
       }
     } catch (e) {

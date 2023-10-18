@@ -9,7 +9,7 @@ import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLod
 import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -136,7 +136,7 @@ export default (sbp('sbp/selectors/register', {
 
     // Before creating the contract, put all keys into transient store
     sbp('chelonia/storeSecretKeys',
-      [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+      () => [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
     )
 
     let userID
@@ -231,12 +231,10 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, PEK].map(key => ({ key }))
+        () => [CEK, CSK, PEK].map(key => ({ key }))
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
-
-      await sbp('chelonia/contract/sync', userID)
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -318,10 +316,7 @@ export default (sbp('sbp/selectors/register', {
       const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
         return getters.ourUsername !== username && !getters.ourContacts.includes(username)
       }).map(username => sbp('namespace/lookup', username)))
-
-      for (const identityContractID of additionalIdentityContractIDs) {
-        await sbp('chelonia/contract/sync', identityContractID)
-      }
+      await sbp('chelonia/contract/sync', additionalIdentityContractIDs)
 
       // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
@@ -411,16 +406,17 @@ export default (sbp('sbp/selectors/register', {
       }
 
       sbp('state/vuex/commit', 'login', loginAttributes)
-      await sbp('chelonia/storeSecretKeys', transientSecretKeys)
+      await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
+      // See the TODO note in startApp (main.js) for why this is not awaited
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
         // contract sync might've triggered an async call to /remove, so wait before proceeding
         await sbp('chelonia/contract/wait', contractIDs)
         // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
         // we must re-sync our identity contract again to ensure we don't rejoin a group we
         // were just kicked out of
-        await sbp('chelonia/contract/sync', identityContractID)
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
@@ -455,6 +451,7 @@ export default (sbp('sbp/selectors/register', {
 
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
+        sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
         const errMessage = err?.message || String(err)
         console.error('Error during login contract sync', errMessage)
 
@@ -517,6 +514,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
 
+    // TODO: Also share PEK with DMs
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
