@@ -941,7 +941,9 @@ export default (sbp('sbp/selectors/register', {
 
     const contractName = contractState._vm.type
 
-    return sbp('chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId })
+    // This is safe to do without await because it's sending an operation
+    // Using await could deadlock when retying to send the message
+    sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId }])
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -995,15 +997,17 @@ export default (sbp('sbp/selectors/register', {
 
     const v = signedIncomingData(originatingContractID, originatingState, rv, originatingContractHeight, headJSON).valueOf()
 
-    try {
-      // 2. Verify 'data'
-      const { encryptionKeyId } = v
+    // 2. Verify 'data'
+    const { encryptionKeyId } = v
 
-      const responseKey = encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
+    const responseKey = encryptedIncomingData(contractID, contractState, v.responseKey, height, this.secretKeys, headJSON).valueOf()
 
-      const deserializedResponseKey = deserializeKey(responseKey)
-      const responseKeyId = keyId(deserializedResponseKey)
+    const deserializedResponseKey = deserializeKey(responseKey)
+    const responseKeyId = keyId(deserializedResponseKey)
 
+    // This is safe to do without await because it's sending actions
+    // If we had await it could deadlock when retrying to send the event
+    Promise.resolve().then(() => {
       if (!has(originatingState._vm.authorizedKeys, responseKeyId) || originatingState._vm.authorizedKeys[responseKeyId]._notAfterHeight != null) {
         throw new Error(`Unable to respond to key request for ${originatingContractID}. Key ${responseKeyId} is not valid.`)
       }
@@ -1037,11 +1041,15 @@ export default (sbp('sbp/selectors/register', {
 
       // 3. Send OP_KEY_SHARE to identity contract
       if (!contractState?._vm?.pendingKeyshares?.[hash]) {
-        // While we were getting ready, another client may have shared the keys
+      // While we were getting ready, another client may have shared the keys
         return
       }
 
-      await sbp('chelonia/out/keyShare', {
+      return keySharePayload
+    }).then((keySharePayload) => {
+      if (!keySharePayload) return
+
+      return sbp('okTurtles.eventQueue/queueEvent', originatingContractID, ['chelonia/out/keyShare', {
         contractID: originatingContractID,
         contractName: originatingContractName,
         data: keyShareEncryption
@@ -1052,60 +1060,64 @@ export default (sbp('sbp/selectors/register', {
           )
           : keySharePayload,
         signingKey: deserializedResponseKey
-      })
-
-      // 4(i). Remove originating contract and update current contract with information
-      const payload = { keyRequestHash: hash, success: true }
-      const connectionKeyPayload = {
-        contractID: originatingContractID,
-        keys: [
-          {
-            id: keyId(deserializedResponseKey),
-            meta: {
-              private: {
-                content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
-                shareable: true
+      }]).then(() => {
+        // 4(i). Remove originating contract and update current contract with information
+        const payload = { keyRequestHash: hash, success: true }
+        const connectionKeyPayload = {
+          contractID: originatingContractID,
+          keys: [
+            {
+              id: keyId(deserializedResponseKey),
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                  shareable: true
+                }
               }
             }
-          }
-        ]
-      }
-
-      await sbp('chelonia/out/atomic', {
-        contractID,
-        contractName,
-        signingKeyId,
-        data: [
-          [
-            'chelonia/out/keyRequestResponse',
-            {
-              data:
-                  krsEncryption
-                    ? encryptedOutgoingData(
-                      contractState,
-                      findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
-                      payload
-                    )
-                    : payload
-            }
-          ],
-          [
-            // Upon successful key share, we want to share deserializedResponseKey
-            // with ourselves
-            'chelonia/out/keyShare',
-            {
-              data: keyShareEncryption
-                ? encryptedOutgoingData(
-                  contractState,
-                  findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
-                  connectionKeyPayload
-                )
-                : connectionKeyPayload
-            }
           ]
-        ]
+        }
+
+        // This is safe to do without await because it's sending an action
+        // If we had await it could deadlock when retrying to send the event
+        sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/atomic', {
+          contractID,
+          contractName,
+          signingKeyId,
+          data: [
+            [
+              'chelonia/out/keyRequestResponse',
+              {
+                data:
+                krsEncryption
+                  ? encryptedOutgoingData(
+                    contractState,
+                    findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
+                    payload
+                  )
+                  : payload
+              }
+            ],
+            [
+              // Upon successful key share, we want to share deserializedResponseKey
+              // with ourselves
+              'chelonia/out/keyShare',
+              {
+                data: keyShareEncryption
+                  ? encryptedOutgoingData(
+                    contractState,
+                    findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
+                    connectionKeyPayload
+                  )
+                  : connectionKeyPayload
+              }
+            ]
+          ]
+        }]).catch((e) => {
+          console.error('Error at respondToKeyRequest while sending keyRequestResponse', e)
+        })
       })
-    } catch (e) {
+    }).catch((e) => {
       console.error('Error at respondToKeyRequest', e)
       const payload = { keyRequestHash: hash, success: false }
 
@@ -1115,20 +1127,22 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      await sbp('chelonia/out/keyRequestResponse', {
+      // This is safe to do without await because it's sending an action
+      // If we had await it could deadlock when retrying to send the event
+      sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/out/keyRequestResponse', {
         contractID,
         contractName,
         signingKeyId,
         data: krsEncryption
           ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
           : payload
+      }]).catch((e) => {
+        console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)
       })
-
-      throw e
-    } finally {
+    }).finally(() => {
       const state = sbp(this.config.stateSelector)
       delete state[contractID]?._vm?.pendingKeyshares?.[hash]
-    }
+    })
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
     const state = sbp(this.config.stateSelector)
@@ -1140,7 +1154,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in mutations result in ignored messages
     // Errors in side effects result in dropped messages to be reprocessed
     try {
-      await preHandleEvent?.(message)
+      preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
@@ -1190,7 +1204,7 @@ export default (sbp('sbp/selectors/register', {
         // Gets run get when skipSideEffects is false
         if (Array.isArray(internalSideEffectStack) && internalSideEffectStack.length > 0) {
           // We don't await on internal side-effects as it may cause deadlocks
-          internalSideEffectStack.map(async fn => await fn()).map((p) => p.catch((e) => {
+          internalSideEffectStack.forEach(fn => sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, fn).catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
           }))
         }
@@ -1207,7 +1221,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         try {
-          await postHandleEvent?.(message)
+          postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
