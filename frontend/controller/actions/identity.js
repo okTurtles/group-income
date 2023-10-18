@@ -316,10 +316,7 @@ export default (sbp('sbp/selectors/register', {
       const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
         return getters.ourUsername !== username && !getters.ourContacts.includes(username)
       }).map(username => sbp('namespace/lookup', username)))
-
-      for (const identityContractID of additionalIdentityContractIDs) {
-        await sbp('chelonia/contract/sync', identityContractID)
-      }
+      await sbp('chelonia/contract/sync', additionalIdentityContractIDs)
 
       // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {

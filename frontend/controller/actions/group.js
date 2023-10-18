@@ -511,6 +511,16 @@ export default (sbp('sbp/selectors/register', {
           })
         }
 
+        // NOTE: sync identity contracts which are out of sync after joining group
+        const missingIDs = (await Promise.all(
+          Object.keys(state.profiles)
+            .map(username => sbp('namespace/lookup', username))
+        )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
+        if (missingIDs.length > 0) {
+          console.info('found unsynced identity contracts to sync:', missingIDs)
+          await sbp('chelonia/contract/sync', missingIDs)
+        }
+
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
