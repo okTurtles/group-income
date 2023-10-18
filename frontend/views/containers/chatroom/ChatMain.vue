@@ -790,7 +790,7 @@ export default ({
       }
     },
     archiveKeyFromChatRoomId (chatRoomId) {
-      return `messages/${this.ourUsername}/${chatRoomId}`
+      return `messages/${this.ourIdentityContractId}/${chatRoomId}`
     },
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents

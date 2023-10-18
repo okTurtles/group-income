@@ -7090,8 +7090,8 @@ ${this.getErrorInfo()}`;
   });
 
   // shared/domains/chelonia/utils.js
-  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight === void 0)?.id;
-  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight === void 0 && k.foreignKey?.includes(contractID)).map((k) => k.id);
+  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight == null)?.id;
+  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
   var CHATROOM_NAME_LIMITS_IN_CHARS = 50;

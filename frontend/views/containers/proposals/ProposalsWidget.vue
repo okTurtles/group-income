@@ -81,6 +81,7 @@ export default ({
       'groupShouldPropose',
       'groupSettings',
       'ourUsername',
+      'ourIdentityContractId',
       'groupMembersCount'
     ]),
     hasProposals () {
@@ -169,7 +170,7 @@ export default ({
     async refreshArchivedProposals () {
       // NOTE: all the archived proposals are displayed in the dashboard widget for 24 hours
       //       https://github.com/okTurtles/group-income/pull/1723#discussion_r1323369824
-      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       // proposals which are archived in the last 24 hours
       this.ephemeral.archivedProposals = archivedProposals

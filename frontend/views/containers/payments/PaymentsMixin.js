@@ -17,6 +17,7 @@ const PaymentsMixin: Object = {
       'groupSettings',
       'groupSortedPeriodKeys',
       'ourUsername',
+      'ourIdentityContractId',
       'ourPayments',
       'periodAfterPeriod',
       'periodBeforePeriod',
@@ -69,7 +70,7 @@ const PaymentsMixin: Object = {
 
     // ====================
     async getHistoricalPeriodPayments () {
-      const ourArchiveKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
+      const ourArchiveKey = `paymentsByPeriod/${this.ourIdentityContractId}/${this.currentGroupId}`
       return await sbp('gi.db/archive/load', ourArchiveKey) ?? {}
     },
 
@@ -133,7 +134,7 @@ const PaymentsMixin: Object = {
       return payments
     },
     async getHistoricalPaymentDetailsByPeriod (period: string) {
-      const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
+      const paymentsKey = `payments/${this.ourIdentityContractId}/${period}/${this.currentGroupId}`
       const paymentDetails = await sbp('gi.db/archive/load', paymentsKey) || {}
 
       return paymentDetails
