@@ -819,7 +819,7 @@ export default (sbp('sbp/selectors/register', {
     if (!has(this.postSyncOperations, contractID)) return
 
     // Iterate over each post-sync operation associated with the given contractID.
-    Object.entries(this.postSyncOperations[contractID]).map(([key, op]) => {
+    Object.entries(this.postSyncOperations[contractID]).forEach(([key, op]) => {
       // Remove the operation which is about to be handled so that subsequent
       // calls to this selector don't result in repeat calls to the post-sync op
       delete this.postSyncOperations[contractID][key]
@@ -827,7 +827,7 @@ export default (sbp('sbp/selectors/register', {
       // Queue the current operation for execution.
       // Note that we do _not_ await because it could be unsafe to do so.
       // If the operation fails for some reason, just log the error.
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, op).catch((e) => {
+      sbp('okTurtles.eventQueue/queueEvent', contractID, op).catch((e) => {
         console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
       })
     })
@@ -1187,28 +1187,25 @@ export default (sbp('sbp/selectors/register', {
       }
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored && !state[contractID]?._volatile?.dirty) {
-        try {
-          // Gets run get when skipSideEffects is false
-          if (internalSideEffectStack) {
-            // The 'await' here might cause deadlocks, since these internal side
-            // effects mostly interact with other contracts, which may cause
-            // dependency loops. It seems to be fine now, but if it causes
-            // issues, it should be removed or addressed some other way
-            await Promise.all(internalSideEffectStack.map(fn => fn()))
-          }
-        } catch (e) {
-          console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
+        // Gets run get when skipSideEffects is false
+        if (Array.isArray(internalSideEffectStack) && internalSideEffectStack.length > 0) {
+          // We don't await on internal side-effects as it may cause deadlocks
+          internalSideEffectStack.map(async fn => await fn()).map((p) => p.catch((e) => {
+            console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
+          }))
         }
-        try {
-          if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-            await handleEvent.processSideEffects.call(this, message, state[contractID])
-          }
-        } catch (e) {
-          console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
-          // We used to revert the state and rethrow the error here, but we no longer do that
-          // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
-          this.config.hooks.sideEffectError?.(e, message)
+
+        // We don't await on side-effects as it may deadlock if the side-effect
+        // ends up putting things in the queue
+        if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
+          handleEvent.processSideEffects.call(this, message, state[contractID]).catch((e) => {
+            console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
+            // We used to revert the state and rethrow the error here, but we no longer do that
+            // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
+            this.config.hooks.sideEffectError?.(e, message)
+          })
         }
+
         try {
           await postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
@@ -1282,7 +1279,7 @@ const handleEvent = {
     }
     await sbp('chelonia/private/in/processMessage', message, state[contractID], internalSideEffectStack)
   },
-  async processSideEffects (message: GIMessage, state: Object) {
+  processSideEffects (message: GIMessage, state: Object) {
     const opT = message.opType()
     if ([GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
       const contractID = message.contractID()
@@ -1290,6 +1287,7 @@ const handleEvent = {
       const hash = message.hash()
       const id = message.id()
       const signingKeyId = message.signingKeyId()
+
       const callSideEffect = (field) => {
         let v = field.valueOf()
         let innerSigningKeyId: string | typeof undefined
@@ -1316,12 +1314,12 @@ const handleEvent = {
             return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
           }
         }
-        return sbp(`${manifestHash}/${action}/sideEffect`, mutation)
+        return sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, `${manifestHash}/${action}/sideEffect`, mutation)
       }
       const msg = Object(message.message())
 
       if (opT !== GIMessage.OP_ATOMIC) {
-        return await callSideEffect(msg)
+        return callSideEffect(msg)
       }
 
       const reducer = (acc, [opT, opV]) => {
@@ -1332,9 +1330,14 @@ const handleEvent = {
       }
 
       const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
-      for (let i = 0; i < actionsOpV.length; i++) {
-        await callSideEffect(actionsOpV[i])
-      }
+
+      return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
+        const errors = results.filter((r) => r.status === 'rejected').map((r) => r.reason)
+        if (errors.length > 0) {
+          // $FlowFixMe[cannot-resolve-name]
+          throw new AggregateError(errors, `Error at side effects for ${contractID}`)
+        }
+      })
     }
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {
