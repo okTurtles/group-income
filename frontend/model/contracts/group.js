@@ -1040,7 +1040,6 @@ sbp('chelonia/defineContract', {
         // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
         if (meta.username === loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) return
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
           const lookupResult = await Promise.allSettled(
