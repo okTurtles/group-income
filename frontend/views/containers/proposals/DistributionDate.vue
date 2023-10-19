@@ -5,7 +5,6 @@
     :disabled='$v.form.$invalid || distributionStarted'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
-    variant='changeDistributionDate'
     :shouldImmediateChange='shouldImmediateChangeDistributionDate'
     @submit='submit'
   )

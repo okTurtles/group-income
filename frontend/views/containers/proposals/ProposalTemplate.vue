@@ -46,7 +46,7 @@
           :class='submitStyleNonProposal'
           v-if='!shouldPropose'
           @click='submit'
-          :disabled='disabled'
+          :disabled='disabled || !isGroupCreator'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -118,7 +118,7 @@ export default ({
     },
     variant: {
       validator (value) {
-        return ['addMember', 'removeMember', 'changeDistributionDate'].indexOf(value) > -1
+        return ['addMember', 'removeMember'].indexOf(value) > -1
       }
     },
     shouldImmediateChange: Boolean
@@ -136,6 +136,9 @@ export default ({
     },
     proposalSettings () {
       return this.groupProposalSettings()
+    },
+    isGroupCreator () {
+      return this.ourUsername === this.groupSettings.groupCreator
     },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
