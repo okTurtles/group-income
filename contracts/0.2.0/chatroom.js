@@ -16594,11 +16594,12 @@ ${this.getErrorInfo()}`;
           username: optional(string),
           member: string
         }),
-        process({ data, meta, hash: hash2, id }, { state }) {
+        process({ data, meta, hash: hash2, id, contractID }, { state }) {
           const { member } = data;
           const isKicked = data.username && member !== data.username;
           if (!state.onlyRenderMessage && !state.users[member]) {
-            throw new Error(`Can not leave the chatroom which ${member} is not part of`);
+            console.warn(`Can not leave the chatroom ${contractID} which ${member} is not part of`);
+            return;
           }
           vue_esm_default.delete(state.users, member);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {

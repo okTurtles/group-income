@@ -392,9 +392,7 @@ export default (sbp('sbp/selectors/register', {
           )
         }))
       }
-      if (!contractIDs.includes(identityContractID)) {
-        contractIDs.push(identityContractID)
-      }
+
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
 
       const loginAttributes = { identityContractID, encryptionParams, username }
@@ -410,69 +408,77 @@ export default (sbp('sbp/selectors/register', {
 
       sbp('state/vuex/commit', 'login', loginAttributes)
       await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
+
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited
-      sbp('chelonia/contract/sync', contractIDs).then(async function () {
-        // contract sync might've triggered an async call to /remove, so wait before proceeding
-        await sbp('chelonia/contract/wait', contractIDs)
-        // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
-        // we must re-sync our identity contract again to ensure we don't rejoin a group we
-        // were just kicked out of
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
-        await sbp('gi.actions/identity/updateLoginStateUponLogin')
-        await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
+      sbp('chelonia/contract/sync', identityContractID, { force: true })
+        .catch((err) => {
+          sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
+          const errMessage = err?.message || String(err)
+          console.error('Error during login contract sync', errMessage)
 
-        // The state above might be null, so we re-grab it
-        const state = sbp('state/vuex/state')
+          const promptOptions = {
+            heading: L('Login error'),
+            question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
+            primaryButton: L('No'),
+            secondaryButton: L('Yes')
+          }
 
-        // Call 'gi.actions/group/join' on all groups which may need re-joining
-        await Promise.all(groupsToRejoin.map(groupId => {
-          return (
-            // (1) Check whether the contract exists (may have been removed
-            //     after sync)
-            state.contracts[groupId] &&
+          sbp('gi.ui/prompt', promptOptions).then((result) => {
+            if (!result) {
+              sbp('gi.actions/identity/logout')
+            }
+          }).catch((e) => {
+            console.error('Error at gi.ui/prompt', e)
+          })
+
+          throw new Error('Unable to sync identity contract')
+        }).then(() =>
+          sbp('chelonia/contract/sync', contractIDs).then(async function () {
+          // contract sync might've triggered an async call to /remove, so wait before proceeding
+            await sbp('chelonia/contract/wait', contractIDs)
+            // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
+            // we must re-sync our identity contract again to ensure we don't rejoin a group we
+            // were just kicked out of
+            await sbp('chelonia/contract/sync', identityContractID, { force: true })
+            await sbp('gi.actions/identity/updateLoginStateUponLogin')
+            await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
+
+            // The state above might be null, so we re-grab it
+            const state = sbp('state/vuex/state')
+
+            // Call 'gi.actions/group/join' on all groups which may need re-joining
+            await Promise.all(groupsToRejoin.map(groupId => {
+              return (
+              // (1) Check whether the contract exists (may have been removed
+              //     after sync)
+                state.contracts[groupId] &&
             // (2) Check whether the join process is still incomplete
             //     This needs to be re-checked because it may have changed after
             //     sync
             !state.profiles?.[username] &&
             // (3) Call join
             sbp('gi.actions/group/join', { contractID: groupId, contractName: 'gi.contracts/group' })
-          )
-        }))
+              )
+            }))
 
-        // update the 'lastLoggedIn' field in user's group profiles
-        sbp('state/vuex/getters').groupsByName
-          .map(entry => entry.contractID)
-          .forEach(cId => {
-            // We send this action only for groups we have fully joined (i.e.,
-            // accepted an invite add added our profile)
-            if (state[cId]?.profiles?.[username]) {
-              sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
-            }
+            // update the 'lastLoggedIn' field in user's group profiles
+            sbp('state/vuex/getters').groupsByName
+              .map(entry => entry.contractID)
+              .forEach(cId => {
+                // We send this action only for groups we have fully joined (i.e.,
+                // accepted an invite add added our profile)
+                if (state[cId]?.profiles?.[username]) {
+                  sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
+                }
+              })
+          }).finally(() => {
+            sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
           })
-
-        sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
-      }).catch((err) => {
-        sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
-        const errMessage = err?.message || String(err)
-        console.error('Error during login contract sync', errMessage)
-
-        const promptOptions = {
-          heading: L('Login error'),
-          question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
-          primaryButton: L('No'),
-          secondaryButton: L('Yes')
-        }
-
-        sbp('gi.ui/prompt', promptOptions).then((result) => {
-          if (!result) {
-            sbp('gi.actions/identity/logout')
-          }
-        }).catch((e) => {
-          console.error('Error at gi.ui/prompt', e)
+        ).catch((err) => {
+          console.error('Error during contract sync upon login', err)
         })
-      })
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
