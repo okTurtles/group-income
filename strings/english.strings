@@ -9,6 +9,9 @@
 /* views/containers/chatroom/MessageBase.vue */
 "(edited)" = "(edited)";
 
+/* views/pages/Join.vue */
+"(group name unavailable)" = "(group name unavailable)";
+
 /* views/containers/contributions/SupportHistory.vue, views/containers/contributions/TodoHistory.vue */
 "* This month contains delayed payments for prior months." = "* This month contains delayed payments for prior months.";
 
@@ -249,7 +252,7 @@
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Already have an account?";
 
-/* model/contracts/mailbox.js */
+/* model/contracts/identity.js */
 "Already joined direct message." = "Already joined direct message.";
 
 /* views/containers/payments/PaymentRowReceived.vue */
@@ -324,6 +327,9 @@
 /* views/containers/contributions/ContributionsWidget.vue */
 "At the moment, no one is in need of contributions." = "At the moment, no one is in need of contributions.";
 
+/* views/containers/chatroom/SendArea.vue */
+"Attach file" = "Attach file";
+
 /* views/containers/proposals/ProposalItem.vue */
 "Automated" = "Automated";
 
@@ -350,6 +356,9 @@
 
 /* views/containers/navigation/Navigation.vue */
 "Blog" = "Blog";
+
+/* views/containers/group-settings/InvitationLinkModal.vue */
+"Broken invite link!" = "Broken invite link!";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Browser notifications";
@@ -464,6 +473,9 @@
 
 /* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
 "Chat" = "Chat";
+
+/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"Chat attachment too large modal" = "Chat attachment too large modal";
 
 /* views/components/group-creation-steps/GroupMincome.vue, views/containers/proposals/DistributionDate.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
@@ -726,6 +738,12 @@
 /* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "Expires on: {expiry}" = "Expires on: {expiry}";
 
+/* controller/actions/group.js */
+"Failed to accept invite." = "Failed to accept invite.";
+
+/* controller/actions/group.js */
+"Failed to add chat channel" = "Failed to add chat channel";
+
 /* controller/actions/chatroom.js */
 "Failed to add message." = "Failed to add message.";
 
@@ -741,7 +759,7 @@
 /* controller/actions/chatroom.js */
 "Failed to close a poll." = "Failed to close a poll.";
 
-/* controller/actions/mailbox.js */
+/* controller/actions/identity.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
 /* controller/actions/chatroom.js */
@@ -750,8 +768,8 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Failed to create chat channel. {reportError}" = "Failed to create chat channel. {reportError}";
 
-/* controller/actions/mailbox.js */
-"Failed to create mailbox: {reportError}" = "Failed to create mailbox: {reportError}";
+/* controller/actions/group.js */
+"Failed to create invite." = "Failed to create invite.";
 
 /* controller/actions/group.js */
 "Failed to create payment." = "Failed to create payment.";
@@ -777,7 +795,7 @@
 /* controller/actions/group.js */
 "Failed to force distribution date." = "Failed to force distribution date.";
 
-/* controller/actions/mailbox.js */
+/* controller/actions/identity.js */
 "Failed to join a direct message." = "Failed to join a direct message.";
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
@@ -822,14 +840,11 @@
 /* controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
-/* controller/actions/mailbox.js */
+/* controller/actions/identity.js */
 "Failed to set direct message visibility." = "Failed to set direct message visibility.";
 
 /* controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
-
-/* controller/actions/mailbox.js */
-"Failed to set mailbox attributes." = "Failed to set mailbox attributes.";
 
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "Failed to set profile attributes.";
@@ -878,6 +893,9 @@
 
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "Fatal error: {reportError}";
+
+/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"File too large" = "File too large";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Filter links" = "Filter links";
@@ -1026,6 +1044,9 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "Income Details" = "Income Details";
 
+/* controller/actions/identity.js */
+"Incorrect username or password" = "Incorrect username or password";
+
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
 
@@ -1040,9 +1061,6 @@
 
 /* views/containers/access/PasswordModal.vue */
 "Invalid password" = "Invalid password";
-
-/* controller/actions/identity.js */
-"Invalid username or password" = "Invalid username or password";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Invite links" = "Invite links";
@@ -1314,7 +1332,7 @@
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
 
-/* model/contracts/mailbox.js */
+/* model/contracts/identity.js */
 "Not existing direct message." = "Not existing direct message.";
 
 /* views/containers/access/LoginModal.vue, views/pages/Join.vue */
@@ -1347,7 +1365,7 @@
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
 "Notifications" = "Notifications";
 
-/* controller/actions/group.js */
+/* controller/actions/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
 "OK" = "OK";
 
 /* views/containers/notifications/NotificationList.vue */
@@ -1391,15 +1409,6 @@
 
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Only the group creator can remove members.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can create direct message channel." = "Only the mailbox creator can create direct message channel.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can hide direct message channel." = "Only the mailbox creator can hide direct message channel.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can set attributes." = "Only the mailbox creator can set attributes.";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Oops, you entered a negative number" = "Oops, you entered a negative number";
@@ -1505,6 +1514,9 @@
 
 /* views/containers/dashboard/GroupActivity.vue, views/pages/Payments.vue */
 "Payments type" = "Payments type";
+
+/* model/state.js */
+"Pending" = "Pending";
 
 /* controller/router.js */
 "Pending Approval" = "Pending Approval";
@@ -1695,6 +1707,9 @@
 /* views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
 "Remove Member" = "Remove Member";
 
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Remove attachment" = "Remove attachment";
+
 /* views/containers/proposals/AddMembers.vue */
 "Remove invitee" = "Remove invitee";
 
@@ -1793,6 +1808,9 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "See proposal" = "See proposal";
+
+/* views/containers/group-settings/InvitationLinkModal.vue */
+"See {a_}logs for details{_a}." = "See {a_}logs for details{_a}.";
 
 /* views/containers/payments/PaymentRowTodo.vue, views/containers/payments/PaymentsList.vue */
 "Select payment item" = "Select payment item";
@@ -1950,6 +1968,9 @@
 /* views/containers/payments/SendThankYouModal.vue */
 "Thank you!" = "Thank you!";
 
+/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"That file is too large and cannot be uploaded. The limit is {sizeLimit}" = "That file is too large and cannot be uploaded. The limit is {sizeLimit}";
+
 /* views/containers/contributions/IncomeDetails.vue */
 "The amount must be a number (e.g. 100.75)" = "The amount must be a number (e.g. 100.75)";
 
@@ -1958,6 +1979,9 @@
 
 /* views/pages/Payments.vue */
 "The distribution period begins on: {startDate}" = "The distribution period begins on: {startDate}";
+
+/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"The file you just attached is not supported and cannot be uploaded to the chat." = "The file you just attached is not supported and cannot be uploaded to the chat.";
 
 /* views/containers/proposals/DistributionDate.vue */
 "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).";
@@ -2157,11 +2181,11 @@
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Type \"{code}\" below" = "Type \"{code}\" below";
 
-/* views/containers/group-settings/InvitationsTable.vue */
-"Unable to find the original proposal." = "Unable to find the original proposal.";
-
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Undo";
+
+/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"Unsupported file type" = "Unsupported file type";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Update Password" = "Update Password";
@@ -2177,6 +2201,9 @@
 
 /* views/components/group-creation-steps/GroupName.vue */
 "Upload an image" = "Upload an image";
+
+/* views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
+"Upload attachment" = "Upload attachment";
 
 /* views/containers/user-settings/Theme.vue */
 "Use system settings" = "Use system settings";
