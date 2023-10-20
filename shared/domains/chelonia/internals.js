@@ -666,6 +666,7 @@ export default (sbp('sbp/selectors/register', {
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         const keysToDelete = ((Object.values(updatedMap): any): string[])
+        console.log('@@@KEY_UPDATE', cloneDeep({ contractID, updatedKeys, keysToDelete }))
         for (const keyId of keysToDelete) {
           if (has(state._volatile.pendingKeyRevocations, keyId)) {
             delete state._volatile.pendingKeyRevocations[keyId]
@@ -676,8 +677,8 @@ export default (sbp('sbp/selectors/register', {
         for (const key of updatedKeys) {
           if (!has(state._vm.authorizedKeys, key.id)) {
             key._notBeforeHeight = height
+            config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
           }
-          config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
         }
         keyAdditionProcessor.call(self, (updatedKeys: any), state, contractID, signingKey)
 

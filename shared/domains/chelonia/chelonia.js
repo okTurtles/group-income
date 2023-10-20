@@ -448,6 +448,10 @@ export default (sbp('sbp/selectors/register', {
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
           if (contract.actions[action].sideEffect) {
             state = state || contract.state(mutation.contractID)
+            if (!state) {
+              console.warn(`[${contract.manifest}/${action}/sideEffect]: Skipping side-effect since there is no contract state for contract ${mutation.contractID}`)
+              return
+            }
             const gProxy = gettersProxy(state, contract.getters)
             await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }

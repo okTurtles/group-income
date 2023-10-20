@@ -7500,11 +7500,11 @@ ${this.getErrorInfo()}`;
           username: string,
           showKickedBy: optional(string)
         }),
-        process({ data, meta, hash, id }, { state }) {
+        process({ data, meta, hash, id, contractID }, { state }) {
           const { username, showKickedBy } = data;
           const isKicked = showKickedBy && username !== showKickedBy;
           if (!state.onlyRenderMessage && !state.users[username]) {
-            throw new Error(`Can not leave the chatroom which ${username} is not part of`);
+            throw new Error(`Can not leave the chatroom ${contractID} which ${username} is not part of`);
           }
           import_common.Vue.delete(state.users, username);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
