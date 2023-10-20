@@ -917,9 +917,10 @@ sbp('chelonia/defineContract', {
           await sbp('gi.contracts/group/removeArchivedProposals', contractID)
           await sbp('gi.contracts/group/removeArchivedPayments', contractID)
 
+          // grab the groupID of any group that we've successfully finished joining
           const groupIdToSwitch = Object.keys(contracts)
-            .find(cID => contracts[cID].type === 'gi.contracts/group' &&
-              cID !== contractID && rootState[cID].settings) || null
+            .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID)
+            .sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           // we can't await on this in here, because it will cause a deadlock, since Chelonia processes

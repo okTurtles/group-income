@@ -321,7 +321,10 @@ export default (sbp('sbp/selectors/register', {
       // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
         const { contracts } = state
-        const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
+        // grab the groupID of any group that we've successfully finished joining
+        const gId = Object.keys(contracts)
+          .filter(cID => contracts[cID].type === 'gi.contracts/group')
+          .sort((cID1, cID2) => state[cID1].profiles?.[state.loggedIn.username] ? -1 : 1)[0]
         if (gId) {
           sbp('gi.actions/group/switch', gId)
           const router = sbp('controller/router')
