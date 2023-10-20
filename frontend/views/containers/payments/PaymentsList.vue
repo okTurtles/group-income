@@ -154,6 +154,7 @@ export default ({
   &.c-is-todo {
     th.c-th-check-all {
       width: 1.125rem;
+      font-size: 14px; // font-size here has to be fixed. Otherwise, it leads to a UI bug(The check icon moving downwards)
 
       .checkbox {
         margin-right: 0.2rem;

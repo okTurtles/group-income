@@ -9,6 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -366,7 +367,9 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
+            if (data.status === PAYMENT_COMPLETED) {
+              payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
+            }
           }
         }
       }
@@ -388,7 +391,10 @@ const getters = {
             if (toUser === ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
+
+                if (data.status === PAYMENT_COMPLETED) {
+                  payments.push({ hash: paymentHash, data, meta, amount: data.amount })
+                }
               }
             }
           }

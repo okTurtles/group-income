@@ -33,11 +33,12 @@ export default ({
   },
   computed: {
     percent () {
-      return `${100 * this.value / this.max}%`
+      return !this.max ? '0%' : `${100 * this.value / this.max}%`
     },
     percentSoft () {
       if (!this.secValue) return false
-      return `${100 * this.secValue / this.max}%`
+
+      return !this.max ? '0%' : `${100 * this.secValue / this.max}%`
     },
     marksStyle () {
       const color = this.percent === '100%'
