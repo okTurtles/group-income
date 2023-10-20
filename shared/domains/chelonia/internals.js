@@ -1242,7 +1242,7 @@ export default (sbp('sbp/selectors/register', {
 }): string[])
 
 const eventsToReinjest = []
-const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)
+const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID, { force: true }), 1000)
 
 const handleEvent = {
   async addMessageToDB (message: GIMessage) {
