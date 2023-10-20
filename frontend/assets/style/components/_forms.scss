@@ -443,7 +443,6 @@ p.error {
     &::after {
       @include icon(check);
       font-size: 10px;
-
       position: absolute;
       width: 6px;
       height: 6px;
