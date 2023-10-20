@@ -86,7 +86,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('password').clear().type('987654321')
 
     cy.getByDT('loginSubmit').click()
-    cy.getByDT('loginError').should('contain', 'Incorrect username or password')
+    cy.getByDT('loginError').should('contain', 'Invalid username or password')
 
     cy.closeModal()
 

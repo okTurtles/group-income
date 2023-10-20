@@ -16,15 +16,6 @@
 "Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
-"Failed to accept invite." = "Failed to accept invite.";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Failed to add chat channel" = "Failed to add chat channel";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Failed to create invite." = "Failed to create invite.";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to mark proposals expired." = "Failed to mark proposals expired.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -46,6 +37,9 @@
 "Mincome changed" = "Mincome changed";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
+"OK" = "OK";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
 "You now make more than the mincome. Would you like to increase your pledge?" = "You now make more than the mincome. Would you like to increase your pledge?";
 
 /* MISSING TRANSLATION - controller/actions/group.js, views/components/modal/Prompt.vue */
@@ -54,17 +48,14 @@
 /* MISSING TRANSLATION - controller/actions/group.js, views/components/modal/Prompt.vue */
 "Yes" = "Yes";
 
-/* MISSING TRANSLATION - controller/actions/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
-"OK" = "OK";
-
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Error during login contract sync: {err}" = "Error during login contract sync: {err}";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
-"Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
-
-/* MISSING TRANSLATION - controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
+
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
@@ -89,6 +80,9 @@
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+
+/* MISSING TRANSLATION - model/contracts/mailbox.js */
+"Only the mailbox creator can hide direct message channel." = "Only the mailbox creator can hide direct message channel.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
@@ -146,9 +140,6 @@
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{name} sent you a {strong_}thank you note{_strong} for your contribution." = "{name} sent you a {strong_}thank you note{_strong} for your contribution.";
-
-/* MISSING TRANSLATION - model/state.js */
-"Pending" = "Pending";
 
 /* MISSING TRANSLATION - views/components/CopyableInput.vue */
 "Copy string" = "Copy string";
@@ -291,30 +282,6 @@
 /* MISSING TRANSLATION - views/containers/chatroom/MessagePoll.vue */
 "Created a new poll:" = "Created a new poll:";
 
-/* MISSING TRANSLATION - views/containers/chatroom/SendArea.vue */
-"Attach file" = "Attach file";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
-"Remove attachment" = "Remove attachment";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"Chat attachment too large modal" = "Chat attachment too large modal";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"File too large" = "File too large";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"That file is too large and cannot be uploaded. The limit is {sizeLimit}" = "That file is too large and cannot be uploaded. The limit is {sizeLimit}";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"The file you just attached is not supported and cannot be uploaded to the chat." = "The file you just attached is not supported and cannot be uploaded to the chat.";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"Unsupported file type" = "Unsupported file type";
-
-/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
-"Upload attachment" = "Upload attachment";
-
 /* MISSING TRANSLATION - views/containers/chatroom/poll-message-content/PollToVote.vue */
 "Submit" = "Submit";
 
@@ -456,11 +423,8 @@
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{percent}{_b}" = "{b_}{percent}{_b}";
 
-/* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
-"Broken invite link!" = "Broken invite link!";
-
-/* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
-"See {a_}logs for details{_a}." = "See {a_}logs for details{_a}.";
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
+"Unable to find the original proposal." = "Unable to find the original proposal.";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "action" = "action";
@@ -720,9 +684,6 @@
 /* MISSING TRANSLATION - views/pages/Home.vue */
 "This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}" = "This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}";
 
-/* MISSING TRANSLATION - views/pages/Join.vue */
-"(group name unavailable)" = "(group name unavailable)";
-
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "ALL" = "ALL";
 
@@ -850,13 +811,7 @@
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";
 
 /* controller/actions/identity.js */
-"Failed to join a direct message." = "Impossible de rejoindre un message privé.";
-
-/* controller/actions/identity.js */
 "Failed to login: {reportError}" = "Erreur lors de la connexion : {reportError}";
-
-/* controller/actions/identity.js */
-"Failed to set direct message visibility." = "Échec de la définition de la visibilité des messages directs.";
 
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "L’attribution des caractéristiques du profil a échoué.";
@@ -871,7 +826,19 @@
 "Failed to upload the profile picture. {codeError}" = "Le chargement de l’image de profil a échoué. {codeError}";
 
 /* controller/actions/identity.js */
-"Incorrect username or password" = "Nom d’utilisateur ou mot de passe incorrect";
+"Invalid username or password" = "Nom d’utilisateur ou mot de passe invalide";
+
+/* controller/actions/mailbox.js */
+"Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
+
+/* controller/actions/mailbox.js */
+"Failed to join a direct message." = "Impossible de rejoindre un message privé.";
+
+/* controller/actions/mailbox.js */
+"Failed to set direct message visibility." = "Échec de la définition de la visibilité des messages directs.";
+
+/* controller/actions/mailbox.js */
+"Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
 
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
@@ -936,11 +903,17 @@
 /* model/contracts/group.js */
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
-/* model/contracts/identity.js */
+/* model/contracts/mailbox.js */
 "Already joined direct message." = "Message direct déjà rejoint.";
 
-/* model/contracts/identity.js */
+/* model/contracts/mailbox.js */
 "Not existing direct message." = "Message direct inexistant.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
 
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
@@ -2824,9 +2797,6 @@
 "Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
 
 /* Not currently used */
-"Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
-
-/* Not currently used */
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
 
 /* Not currently used */
@@ -2852,9 +2822,6 @@
 
 /* Not currently used */
 "Failed to remove {member}: {codeError}" = "Erreur lors de l’exclusion de {member}: {codeError}";
-
-/* Not currently used */
-"Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
 
 /* Not currently used */
 "Failed to update group settings. {reportError}" = "La mise à jour des paramètres de groupe a échoué. {reportError}";
@@ -2953,16 +2920,10 @@
 "Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
 
 /* Not currently used */
-"Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
-
-/* Not currently used */
 "Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
 
 /* Not currently used */
 "Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
-
-/* Not currently used */
-"Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
 
 /* Not currently used */
 "Payments Received" = "Paiements Reçus";
