@@ -859,7 +859,20 @@ export default (sbp('sbp/selectors/register', {
     // For each pending watch operation, queue a synchronization event in the
     // respective contract queue
     Object.entries(pendingWatch).forEach(([contractID, keys]) => {
-      if (!Array.isArray(keys) || keys.length === 0) return
+      if (
+        !Array.isArray(keys) ||
+        // Check that the keys exist and haven't been revoked
+        // $FlowFixMe[incompatible-use]
+        !keys.reduce((acc, [, id]) => {
+          return acc || has(externalContractState._vm.authorizedKeys, id)
+        }, false)
+      ) {
+        console.info('[chelonia/private/watchForeignKeys]: Skipping as none of the keys to watch exist', {
+          externalContractID,
+          contractID
+        })
+        return
+      }
 
       sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/in/syncContractAndWatchKeys', contractID, externalContractID]).catch((e) => {
         console.error(`Error at syncContractAndWatchKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
@@ -871,7 +884,25 @@ export default (sbp('sbp/selectors/register', {
     const externalContractState = rootState[externalContractID]
     const pendingWatch = externalContractState?._vm?.pendingWatch?.[contractID]?.splice(0)
 
-    if (!Array.isArray(pendingWatch) || pendingWatch.length === 0) return
+    // We duplicate the check in 'chelonia/private/watchForeignKeys' because
+    // new events may have been received in the meantime. This avoids
+    // unnecessarily subscribing to the contract
+    if (
+      !Array.isArray(pendingWatch) ||
+      // Check that the keys exist and haven't been revoked
+      !pendingWatch.reduce((acc, [, id]) => {
+        return acc || (
+          has(externalContractState._vm.authorizedKeys, id) &&
+          findKeyIdByName(externalContractState, externalContractState._vm.authorizedKeys[id].name) != null
+        )
+      }, false)
+    ) {
+      console.info('[chelonia/private/syncContractAndWatchKeys]: Skipping as none of the keys to watch exist', {
+        externalContractID,
+        contractID
+      })
+      return
+    }
 
     await sbp('chelonia/private/in/syncContract', contractID)
 

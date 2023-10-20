@@ -351,7 +351,7 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
 export const subscribeToForeignKeyContracts = function (contractID: string, state: Object) {
   try {
     // $FlowFixMe[incompatible-call]
-    Object.values((state._vm.authorizedKeys: { [x: string]: GIKey })).filter((key) => !!((key: any): GIKey).foreignKey).forEach((key: GIKey) => {
+    Object.values((state._vm.authorizedKeys: { [x: string]: GIKey })).filter((key) => !!((key: any): GIKey).foreignKey && findKeyIdByName(state, ((key: any): GIKey).name) != null).forEach((key: GIKey) => {
       const foreignKey = String(key.foreignKey)
       const fkUrl = new URL(foreignKey)
       const foreignContract = fkUrl.pathname
