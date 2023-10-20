@@ -27,7 +27,7 @@ page-section.c-section(:title='L("Invite links")')
     transition-group(name='slidedown' tag='tbody')
       tr(
         v-for='(item, index) in invitesToShow'
-        :key='item.inviteSecret'
+        :key='index'
       )
         td.c-name
           | {{ item.invitee }}
@@ -167,10 +167,10 @@ export default ({
       'currentGroupId'
     ]),
     invitesToShow () {
-      const invites = this.currentGroupState.invites
-      const vmInvites = this.currentGroupState._vm.invites
-
+      const vmInvites = this.currentGroupState._vm?.invites
       if (!vmInvites) { return [] }
+
+      const invites = this.currentGroupState.invites || {}
 
       const invitesList = Object.entries(vmInvites)
         .map(([id, invite]) => [id, { ...invite, creator: invites[id]?.creator, invitee: invites[id]?.invitee }])
