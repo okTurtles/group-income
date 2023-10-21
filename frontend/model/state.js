@@ -9,7 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
-import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -367,9 +367,8 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            if (data.status === PAYMENT_COMPLETED) {
-              payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
-            }
+
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
           }
         }
       }
@@ -392,9 +391,7 @@ const getters = {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
 
-                if (data.status === PAYMENT_COMPLETED) {
-                  payments.push({ hash: paymentHash, data, meta, amount: data.amount })
-                }
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
               }
             }
           }
@@ -431,17 +428,22 @@ const getters = {
     const isOurPayment = (payment) => {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
+    const sumUpAmountReducer = (acc, payment) => acc + payment.amount
     const cPeriod = getters.currentPaymentPeriod
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
     const receivedOrSent = isNeeder
       ? getters.ourPaymentsReceivedInPeriod(cPeriod)
       : getters.ourPaymentsSentInPeriod(cPeriod)
+
+    const markedAsNotReceived = receivedOrSent.filter(payment => payment.data.status === PAYMENT_NOT_RECEIVED)
+    const markedAsNotReceivedTotal = markedAsNotReceived.reduce(sumUpAmountReducer, 0)
+
     const paymentsTotal = ourAdjustedPayments.length + receivedOrSent.length
     const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
-    const paymentsDone = paymentsTotal - nonLateAdjusted.length
+    const paymentsDone = paymentsTotal - nonLateAdjusted.length - markedAsNotReceived.length
     const hasPartials = ourAdjustedPayments.some(p => p.partial)
-    const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
-    const amountLeft = ourAdjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = receivedOrSent.reduce(sumUpAmountReducer, 0) - markedAsNotReceivedTotal
+    const amountLeft = ourAdjustedPayments.reduce((acc, payment) => acc + payment.amount, 0) + markedAsNotReceivedTotal
     const amountTotal = amountDone + amountLeft
     return {
       paymentsDone,
