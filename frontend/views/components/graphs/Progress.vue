@@ -33,7 +33,9 @@ export default ({
   },
   computed: {
     percent () {
-      return !this.max ? '0%' : `${100 * this.value / this.max}%`
+      return !this.max
+        ? '0%' // When this.max 0, the calculation below becomes 'NaN%', so manually specifying 0% here.
+        : `${100 * this.value / this.max}%`
     },
     percentSoft () {
       if (!this.secValue) return false
