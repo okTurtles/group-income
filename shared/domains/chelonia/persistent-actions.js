@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { LOGIN } from '~/frontend/utils/events.js'
 
 type SbpInvocation = any[]
 
@@ -35,7 +34,7 @@ class PersistentAction {
   invocation: SbpInvocation
   options: PersistentActionOptions
   status: PersistentActionStatus
-  timer: Object
+  timer: TimeoutID | void
 
   constructor (invocation: SbpInvocation, options: PersistentActionOptions = {}) {
     this.invocation = invocation
@@ -112,37 +111,26 @@ class PersistentAction {
 
 sbp('sbp/selectors/register', {
   'chelonia.persistentActions/_init' (): void {
-    sbp('okTurtles.events/on', LOGIN, (function () {
-      this.actionsByID = Object.create(null)
-      this.databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
-      this.nextID = 0
-      // Necessary for now as _init cannot be async.
-      this.ready = false
-      sbp('chelonia.persistentActions/_load')
-        .then(() => sbp('chelonia.persistentActions/retryAll'))
-    }.bind(this)))
+    this.actionsByID = Object.create(null)
+    this.nextID = 0
+    // Necessary for now as _init cannot be async. Becomes true when 'configure' has been called.
+    this.ready = false
   },
 
-  // Called on login to load the correct set of actions for the current user.
-  async 'chelonia.persistentActions/_load' (): Promise<void> {
-    const { actionsByID = {}, nextID = 0 } = (await sbp('chelonia/db/get', this.databaseKey)) ?? {}
-    for (const id in actionsByID) {
-      this.actionsByID[id] = new PersistentAction(actionsByID[id].invocation, actionsByID[id].options)
+  // Cancels a specific action by its ID.
+  // The action won't be retried again, but an async action cannot be aborted if its promise is stil pending.
+  'chelonia.persistentActions/cancel' (id: number): void {
+    if (id in this.actionsByID) {
+      this.actionsByID[id].cancel()
+      delete this.actionsByID[id]
+      // Likely no need to await this call.
+      sbp('chelonia.persistentActions/save')
     }
-    this.nextID = nextID
-    this.ready = true
   },
 
-  // Updates the database version of the pending action list.
-  'chelonia.persistentActions/_save' (): Promise<Error | void> {
-    return sbp(
-      'chelonia/db/set',
-      this.databaseKey,
-      { actionsByID: JSON.stringify(this.actionsByID), nextID: this.nextID }
-    )
+  'chelonia.persistentActions/configure' (options: { databaseKey: string }): void {
+    this.databaseKey = options.databaseKey
   },
-
-  // === Public Selectors === //
 
   'chelonia.persistentActions/enqueue' (...args): number[] {
     if (!this.ready) throw new Error(`${tag} Not ready yet.`)
@@ -155,20 +143,9 @@ sbp('sbp/selectors/register', {
       ids.push(id)
     }
     // Likely no need to await this call.
-    sbp('chelonia.persistentActions/_save')
+    sbp('chelonia.persistentActions/save')
     for (const id of ids) this.actionsByID[id].attempt()
     return ids
-  },
-
-  // Cancels a specific action by its ID.
-  // The action won't be retried again, but an async action cannot be aborted if its promise is stil pending.
-  'chelonia.persistentActions/cancel' (id: number): void {
-    if (id in this.actionsByID) {
-      this.actionsByID[id].cancel()
-      delete this.actionsByID[id]
-      // Likely no need to await this call.
-      sbp('chelonia.persistentActions/_save')
-    }
   },
 
   // Forces retrying an existing persisted action given its ID.
@@ -182,11 +159,21 @@ sbp('sbp/selectors/register', {
         await action.attempt()
         // If the action succeded, delete it and update the DB.
         delete this.actionsByID[id]
-        sbp('chelonia.persistentActions/_save')
+        sbp('chelonia.persistentActions/save')
       } catch {
         // Do nothing.
       }
     }
+  },
+
+  // Called on login to load the correct set of actions for the current user.
+  async 'chelonia.persistentActions/load' (): Promise<void> {
+    const { actionsByID = {}, nextID = 0 } = (await sbp('chelonia/db/get', this.databaseKey)) ?? {}
+    for (const id in actionsByID) {
+      this.actionsByID[id] = new PersistentAction(actionsByID[id].invocation, actionsByID[id].options)
+    }
+    this.nextID = nextID
+    this.ready = true
   },
 
   // Retry all existing persisted actions.
@@ -195,6 +182,21 @@ sbp('sbp/selectors/register', {
   'chelonia.persistentActions/retryAll' (): void {
     for (const id in this.actionsByID) {
       sbp('chelonia.persistentActions/forceRetry', id)
+    }
+  },
+
+  // Updates the database version of the pending action list.
+  'chelonia.persistentActions/save' (): Promise<Error | void> {
+    return sbp(
+      'chelonia/db/set',
+      this.databaseKey,
+      { actionsByID: JSON.stringify(this.actionsByID), nextID: this.nextID }
+    )
+  },
+
+  'chelonia.persistentActions/status' (id: number) {
+    if (id in this.actionsByID) {
+      return JSON.stringify(this.actionsByID[id])
     }
   }
 })

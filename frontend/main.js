@@ -44,7 +44,7 @@ const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
-console.info('LIGHTWEIGHT_CLIENT:', JSON.stringify(process.env.LIGHTWEIGHT_CLIENT))
+console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
@@ -242,13 +242,17 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
-      sbp('okTurtles.events/on', LOGIN, () => {
+      sbp('okTurtles.events/on', LOGIN, async () => {
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
+        const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
+        sbp('chelonia.persistentActions/configure', { databaseKey })
+        await sbp('chelonia.persistentActions/load')
+        await sbp('chelonia.persistentActions/retryAll')
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
