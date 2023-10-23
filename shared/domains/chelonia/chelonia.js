@@ -223,7 +223,6 @@ export default (sbp('sbp/selectors/register', {
     this.currentSyncs = {}
     this.postSyncOperations = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
-    this.env = {}
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
       if (!stack) {
@@ -231,6 +230,16 @@ export default (sbp('sbp/selectors/register', {
       }
       return stack
     }
+    // setPostSyncOp defines operations to be run after all recent events have
+    // been processed. This is useful, for example, when responding to
+    // OP_KEY_REQUEST, as we want to send an OP_KEY_SHARE only to yet-unanswered
+    // requests, which is information in the future (from the point of view of
+    // the event handler).
+    // We could directly enqueue the operations, but by using a map we avoid
+    // enqueueing more operations than necessary
+    // The operations defined here will be executed:
+    //   (1) After a call to /sync or /syncContract; or
+    //   (2) After an event has been handled, if it was received on a web socket
     this.setPostSyncOp = (contractID: string, key: string, op: Array<*>) => {
       this.postSyncOperations[contractID] = this.postSyncOperations[contractID] || Object.create(null)
       this.postSyncOperations[contractID][key] = op
@@ -254,22 +263,6 @@ export default (sbp('sbp/selectors/register', {
       ownKeys: secretKeyList
     })
   },
-  'chelonia/withEnv': function (env: Object, sbpInvocation: Array<*>) {
-    // important: currently all calls to withEnv use the same event queue, meaning
-    // it is more of a potential bottle-neck and more likely to deadlock if the sbpInvocation
-    // leads to another call to withEnv. If this becomes an issue, one potential solution
-    // would be to add the contractID as a parameter and segment this.env based on the contractID.
-    // That has the downside of having unexpected behavior where different envs are used
-    // during the processing of sbpInvocation. For example, if sbpInvocation contains calls
-    // to latestContractState to 2 different contractIDs, then different envs will be used
-    // for each one of them in the cases of segmenting this.env based on contractID. Whereas
-    // with this global env approach both latestContractSyncs would use the same env we pass here.
-    // If necessary, we can implement another selector called 'chelonia/withContractEnv' that
-    // uses segmented envs based on contractID.
-    return sbp('okTurtles.eventQueue/queueEvent', 'chelonia/withEnv', [
-      'chelonia/private/withEnv', env, sbpInvocation
-    ])
-  },
   'chelonia/config': function () {
     return cloneDeep(this.config)
   },
@@ -288,9 +281,10 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/storeSecretKeys': function (keys: {key: Key, transient?: boolean}[]) {
+  'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
+    let keys = keysFn?.()
     if (!keys) return
     if (!Array.isArray(keys) && typeof keys === 'object') keys = [keys]
     keys.forEach(({ key, transient }) => {
@@ -385,7 +379,8 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data, transientSecretKeys))
+          const deserializedMessage = GIMessage.deserialize(msg.data, transientSecretKeys)
+          sbp('chelonia/private/in/enqueueHandleEvent', deserializedMessage)
         },
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION
@@ -453,6 +448,10 @@ export default (sbp('sbp/selectors/register', {
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
           if (contract.actions[action].sideEffect) {
             state = state || contract.state(mutation.contractID)
+            if (!state) {
+              console.warn(`[${contract.manifest}/${action}/sideEffect]: Skipping side-effect since there is no contract state for contract ${mutation.contractID}`)
+              return
+            }
             const gProxy = gettersProxy(state, contract.getters)
             await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }
@@ -530,9 +529,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
-  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
+  'chelonia/contract/sync': function (contractIDs: string | string[], params?: { force?: boolean }): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    const forcedSync = !!params?.force
+    const rootState = sbp(this.config.stateSelector)
     return Promise.all(listOfIds.map(contractID => {
+      if (!forcedSync && has(rootState.contracts, contractID)) {
+        return undefined
+      }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with

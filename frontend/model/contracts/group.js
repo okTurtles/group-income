@@ -899,7 +899,7 @@ sbp('chelonia/defineContract', {
           { contractID, meta, state, getters }
         )
       },
-      sideEffect ({ data, meta, contractID }, { state, getters }) {
+      async sideEffect ({ data, meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
         const rootGetters = sbp('state/vuex/getters')
         const contracts = rootState.contracts || {}
@@ -912,9 +912,15 @@ sbp('chelonia/defineContract', {
             return
           }
 
+          // NOTE: should remove archived data from IndexedStorage
+          //       regarding the current group (proposals, payments)
+          await sbp('gi.contracts/group/removeArchivedProposals', contractID)
+          await sbp('gi.contracts/group/removeArchivedPayments', contractID)
+
+          // grab the groupID of any group that we've successfully finished joining
           const groupIdToSwitch = Object.keys(contracts)
-            .find(cID => contracts[cID].type === 'gi.contracts/group' &&
-              cID !== contractID && rootState[cID].settings) || null
+            .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID)
+            .sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
@@ -939,7 +945,7 @@ sbp('chelonia/defineContract', {
             .catch(e => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
             })
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID))
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
             .catch(e => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
             })
@@ -965,7 +971,11 @@ sbp('chelonia/defineContract', {
 
             // gi.contracts/group/removeOurselves will eventually trigger this
             // as well
-            sbp('gi.contracts/group/rotateKeys', contractID, state)
+            sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
+              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+            }).catch((e) => {
+              console.error('Error rotating group keys or our PEK', e)
+            })
 
             const rootGetters = sbp('state/vuex/getters')
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID
@@ -1371,8 +1381,8 @@ sbp('chelonia/defineContract', {
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
-      const { username } = sbp('state/vuex/state').loggedIn
-      const key = `proposals/${username}/${contractID}`
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
       const proposals = await sbp('gi.db/archive/load', key) || []
       // newest at the front of the array, oldest at the back
       proposals.unshift([proposalHash, proposal])
@@ -1384,13 +1394,13 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments
-      const { username } = sbp('state/vuex/state').loggedIn
+      const { identityContractID, username } = sbp('state/vuex/state').loggedIn
 
       // NOTE: we save payments by period and also in types of 'Sent' and 'Received' as well
       // because it's not efficient to find all sent/received payments from the payments list
-      const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
       const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
-      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
       const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
       // sort payments in order to keep the same sorting format as the recent data in vuex
@@ -1419,7 +1429,7 @@ sbp('chelonia/defineContract', {
         archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
         archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
-        const archPaymentsKey = `payments/${username}/${period}/${contractID}`
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
         const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
         const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
 
@@ -1428,7 +1438,7 @@ sbp('chelonia/defineContract', {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
           const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
 
-          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`)
+          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${identityContractID}/${contractID}`)
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
 
           archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter(payment => !paymentHashes.includes(payment.hash))
@@ -1442,6 +1452,23 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/save', archSentOrReceivedPaymentsKey, archSentOrReceivedPayments)
 
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/removeArchivedProposals': async function (contractID) {
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
+      await sbp('gi.db/archive/delete', key)
+    },
+    'gi.contracts/group/removeArchivedPayments': async function (contractID) {
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
+      const periods = Object.keys(await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {})
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
+      for (const period of periods) {
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
+        await sbp('gi.db/archive/delete', archPaymentsKey)
+      }
+      await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
+      await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
       // NOTE: When group's mincome has changed, below actions should be taken.
@@ -1501,11 +1528,11 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
-      sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
+      return sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, disconnectGroup: ?boolean) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
       const state = rootState[identityContractID]
@@ -1516,31 +1543,33 @@ sbp('chelonia/defineContract', {
       const CEKid = findKeyIdByName(state, 'cek')
       const PEKid = findKeyIdByName(state, 'pek')
 
-      const groupCSKids = findForeignKeysByContractID(state, groupContractID)
-
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      if (groupCSKids?.length) {
-        if (!CEKid) {
-          throw new Error('Identity CEK not found')
+      if (disconnectGroup) {
+        const groupCSKids = findForeignKeysByContractID(state, groupContractID)
+
+        if (groupCSKids?.length) {
+          if (!CEKid) {
+            throw new Error('Identity CEK not found')
+          }
+
+          sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
+            contractID: identityContractID,
+            contractName: 'gi.contracts/identity',
+            data: groupCSKids,
+            signingKeyId: CSKid
+          }])
+            .catch(e => {
+              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
+            })
         }
 
-        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
-          contractID: identityContractID,
-          contractName: 'gi.contracts/identity',
-          data: groupCSKids,
-          signingKeyId: CSKid
-        }])
-          .catch(e => {
-            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
-          })
+        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
+          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+        })
       }
 
-      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
-        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
-      })
-
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      return sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },

@@ -44,7 +44,7 @@
         button-submit(
           key='change'
           :class='submitStyleNonProposal'
-          v-if='!shouldPropose'
+          v-if='!isConfirmation && !shouldPropose'
           @click='submit'
           :disabled='disabled'
           data-test='submitBtn'
@@ -199,7 +199,7 @@ export default ({
   },
   methods: {
     close () {
-      this.$refs.modal.close()
+      this.$refs.modal.unload()
     },
     next () {
       // TODO/BUG - we must clear formMsg (if visible) when changing steps.
