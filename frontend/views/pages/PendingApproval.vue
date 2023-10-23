@@ -34,9 +34,11 @@ export default ({
     ...mapGetters(['groupSettings', 'ourUsername']),
     ...mapState(['currentGroupId']),
     ourGroupProfile () {
-      // TODO: 'ourGroupProfile' should not have value
-      //       until the joining group process is completed and the group contract is fully synced.
-      //       this is currently being implemented in the following branch
+      // TODO: While syncing the group contracts, it's not clear if the user is part of group or not
+      //       so we should wait to make decision that the user is the group member or not
+      //       until the group contract is finished being synced.
+      //       Until that time, 'ourGroupProfile' should be undefined, and should not display GroupWelcome.
+      //       This is currently being implemented in the following branch
       //       https://github.com/okTurtles/group-income/tree/1719-fix-all-tests-on-e2e-protocol-branch
       return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
     }
