@@ -7721,8 +7721,8 @@ ${this.getErrorInfo()}`;
   });
 
   // shared/domains/chelonia/utils.js
-  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight === void 0)?.id;
-  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight === void 0 && k.foreignKey?.includes(contractID)).map((k) => k.id);
+  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight == null)?.id;
+  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/notifications/mutationKeys.js
   var REMOVE_NOTIFICATION = "removeNotification";
@@ -8398,7 +8398,7 @@ ${this.getErrorInfo()}`;
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
-        sideEffect({ data, meta, contractID }, { state, getters }) {
+        async sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
           const contracts = rootState.contracts || {};
@@ -8407,7 +8407,9 @@ ${this.getErrorInfo()}`;
             if ((0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
               return;
             }
-            const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
+            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID);
+            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID);
+            const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null;
             (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
             (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
             (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
@@ -8422,7 +8424,7 @@ ${this.getErrorInfo()}`;
               }
             }).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
-            }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID)).catch((e) => {
+            }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
             });
             for (const notification of rootGetters.notificationsByGroup(contractID)) {
@@ -8437,7 +8439,11 @@ ${this.getErrorInfo()}`;
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               });
-              (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID, state);
+              (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID, state).then(() => {
+                return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
+              }).catch((e) => {
+                console.error("Error rotating group keys or our PEK", e);
+              });
               const rootGetters2 = (0, import_sbp6.default)("state/vuex/getters");
               const userID = rootGetters2.ourContactProfiles[data.member]?.contractID;
               if (userID) {
@@ -8656,7 +8662,14 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           if (meta.username === rootState.loggedIn.username && !(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
             const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp6.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+            await (0, import_sbp6.default)("gi.actions/chatroom/leave", {
+              contractID: data.chatRoomID,
+              data: sendingData,
+              ...data.leavingGroup && {
+                signingKeyId: (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
+                innerSigningContractID: null
+              }
+            });
           }
         }
       },
@@ -8751,8 +8764,8 @@ ${this.getErrorInfo()}`;
     },
     methods: {
       "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
-        const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
-        const key = `proposals/${username}/${contractID}`;
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${identityContractID}/${contractID}`;
         const proposals2 = await (0, import_sbp6.default)("gi.db/archive/load", key) || [];
         proposals2.unshift([proposalHash, proposal]);
         while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
@@ -8763,10 +8776,10 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;
-        const { username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
-        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+        const { identityContractID, username } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`;
         const archPaymentsByPeriod = await (0, import_sbp6.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
-        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`;
         const archSentOrReceivedPayments = await (0, import_sbp6.default)("gi.db/archive/load", archSentOrReceivedPaymentsKey) || { sent: [], received: [] };
         const sortPayments = (payments2) => payments2.sort((f, l) => compareISOTimestamps(l.meta.createdDate, f.meta.createdDate));
         for (const period of Object.keys(paymentsByPeriod).sort()) {
@@ -8786,13 +8799,13 @@ ${this.getErrorInfo()}`;
           }
           archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent];
           archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received];
-          const archPaymentsKey = `payments/${username}/${period}/${contractID}`;
+          const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`;
           const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period]);
           const archPayments = Object.fromEntries(hashes.map((hash) => [hash, payments[hash]]));
           while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
             const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
             const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
-            await (0, import_sbp6.default)("gi.db/archive/delete", `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`);
+            await (0, import_sbp6.default)("gi.db/archive/delete", `payments/${shouldBeDeletedPeriod}/${identityContractID}/${contractID}`);
             delete archPaymentsByPeriod[shouldBeDeletedPeriod];
             archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter((payment) => !paymentHashes.includes(payment.hash));
             archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter((payment) => !paymentHashes.includes(payment.hash));
@@ -8802,6 +8815,23 @@ ${this.getErrorInfo()}`;
         await (0, import_sbp6.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
         await (0, import_sbp6.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
         (0, import_sbp6.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
+      },
+      "gi.contracts/group/removeArchivedProposals": async function(contractID) {
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${identityContractID}/${contractID}`;
+        await (0, import_sbp6.default)("gi.db/archive/delete", key);
+      },
+      "gi.contracts/group/removeArchivedPayments": async function(contractID) {
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`;
+        const periods = Object.keys(await (0, import_sbp6.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {});
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`;
+        for (const period of periods) {
+          const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`;
+          await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsKey);
+        }
+        await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsByPeriodKey);
+        await (0, import_sbp6.default)("gi.db/archive/delete", archSentOrReceivedPaymentsKey);
       },
       "gi.contracts/group/sendMincomeChangedNotification": async function(contractID, meta, data) {
         const myProfile = (0, import_sbp6.default)("state/vuex/getters").ourGroupProfile;
@@ -8847,11 +8877,11 @@ ${this.getErrorInfo()}`;
         const CEKid = findKeyIdByName(state, "cek");
         import_common3.Vue.set(state._volatile.pendingKeyRevocations, CSKid, true);
         import_common3.Vue.set(state._volatile.pendingKeyRevocations, CEKid, true);
-        (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys"]).catch((e) => {
+        return (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys"]).catch((e) => {
           console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       },
-      "gi.contracts/group/revokeGroupKeyAndRotateOurPEK": (groupContractID) => {
+      "gi.contracts/group/revokeGroupKeyAndRotateOurPEK": (groupContractID, disconnectGroup) => {
         const rootState = (0, import_sbp6.default)("state/vuex/state");
         const { identityContractID } = rootState.loggedIn;
         const state = rootState[identityContractID];
@@ -8860,25 +8890,27 @@ ${this.getErrorInfo()}`;
         const CSKid = findKeyIdByName(state, "csk");
         const CEKid = findKeyIdByName(state, "cek");
         const PEKid = findKeyIdByName(state, "pek");
-        const groupCSKids = findForeignKeysByContractID(state, groupContractID);
         import_common3.Vue.set(state._volatile.pendingKeyRevocations, PEKid, true);
-        if (groupCSKids?.length) {
-          if (!CEKid) {
-            throw new Error("Identity CEK not found");
+        if (disconnectGroup) {
+          const groupCSKids = findForeignKeysByContractID(state, groupContractID);
+          if (groupCSKids?.length) {
+            if (!CEKid) {
+              throw new Error("Identity CEK not found");
+            }
+            (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
+              contractID: identityContractID,
+              contractName: "gi.contracts/identity",
+              data: groupCSKids,
+              signingKeyId: CSKid
+            }]).catch((e) => {
+              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
+            });
           }
-          (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
-            contractID: identityContractID,
-            contractName: "gi.contracts/identity",
-            data: groupCSKids,
-            signingKeyId: CSKid
-          }]).catch((e) => {
-            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
+          (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/contract/disconnect", identityContractID, groupContractID]).catch((e) => {
+            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
-        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/contract/disconnect", identityContractID, groupContractID]).catch((e) => {
-          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
-        });
-        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+        return (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
           console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },

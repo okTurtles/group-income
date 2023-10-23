@@ -132,7 +132,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK].map(key => ({ key, transient: true }))
+        () => [CEK, CSK].map(key => ({ key, transient: true }))
       )
 
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
@@ -234,10 +234,9 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, inviteKey].map(key => ({ key }))
+        () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
 
       // Save the initial invite
@@ -316,17 +315,24 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept?: boolean } }) {
-    if (!params.options?.skipInviteAccept) {
-      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
-    }
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
       const userID = rootState.loggedIn.identityContractID
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
+      const isJoiningGroup = !!params.originatingContractID
+      const preEffectBeforeSync = isJoiningGroup
+        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true) }
+        : () => {}
+      const postEffectAfterSync = isJoiningGroup
+        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false) }
+        : () => {}
 
+      preEffectBeforeSync()
       await sbp('chelonia/contract/sync', params.contractID)
+      postEffectAfterSync()
+
       if (!rootState.contracts[params.contractID]) {
         // NOTE: already kicked from the group by someone else
         return
@@ -347,7 +353,7 @@ export default (sbp('sbp/selectors/register', {
       // params.originatingContractID is set, it means that we're joining
       // through an invite link, and we must send a key request to complete
       // the joining process.
-      const sendKeyRequest = (!hasSecretKeys && params.originatingContractID)
+      const sendKeyRequest = (!hasSecretKeys && isJoiningGroup)
 
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
@@ -516,6 +522,16 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
+
+        // NOTE: sync identity contracts which are out of sync after joining group
+        const missingIDs = (await Promise.all(
+          Object.keys(state.profiles)
+            .map(username => sbp('namespace/lookup', username))
+        )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
+        if (missingIDs.length > 0) {
+          console.info('found unsynced identity contracts to sync:', missingIDs)
+          await sbp('chelonia/contract/sync', missingIDs)
+        }
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
       // This could happen, for example, after logging in if we still haven't
@@ -527,7 +543,6 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     } finally {
-      sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       saveLoginState('joining', params.contractID)
     }
   },

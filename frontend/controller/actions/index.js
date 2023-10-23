@@ -31,6 +31,7 @@ sbp('sbp/selectors/register', {
 
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
+    await sbp('chelonia/contract/sync', contractID)
     const state = await sbp('chelonia/latestContractState', contractID)
 
     const CEKid = findKeyIdByName(state, 'cek')
