@@ -3,7 +3,8 @@
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
-  CHATROOM_TYPES
+  CHATROOM_TYPES,
+  PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
@@ -13,7 +14,6 @@ import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { PROFILE_STATUS } from './shared/constants.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
