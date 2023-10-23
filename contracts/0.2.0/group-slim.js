@@ -8686,7 +8686,7 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID) || (0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
+            if (!(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
               await (0, import_sbp6.default)("chelonia/contract/sync", data.chatRoomID);
               (0, import_sbp6.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
             }
