@@ -261,6 +261,46 @@ function updateGroupStreaks ({ state, getters }) {
   }
 }
 
+const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) => {
+  const sendingData = leavingGroup
+    ? { member: member }
+    : { member: member, username: meta.username }
+
+  return sbp('gi.actions/chatroom/leave', {
+    contractID: chatRoomID,
+    data: sendingData,
+    // When a group is being left, we want to also leave chatrooms,
+    // including private chatrooms. Since the user issuing the action
+    // may not be a member of the chatroom, we use the group's CSK
+    // unconditionally in this situation, which should be a key in the
+    // chatroom (either the CSK or the groupKey)
+    ...(leavingGroup && {
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
+      innerSigningContractID: null
+    }),
+    hooks: {
+      preSendCheck: (_, state) => {
+        // Avoid sending a duplicate action if the person has already
+        // left or been removed from the chatroom
+        return !!state?.users?.[member]
+      }
+    }
+  })
+}
+
+const leaveAllChatRoomsUponLeaving = (state, member, meta) => {
+  const chatRooms = state.chatRooms
+
+  return Promise.all(Object.keys(chatRooms)
+    .filter(cID => chatRooms[cID].users.includes(member))
+    .map((chatRoomID) => leaveChatRoomAction(state, {
+      chatRoomID,
+      member,
+      leavingGroup: true
+    }, meta))
+  )
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
@@ -905,13 +945,13 @@ sbp('chelonia/defineContract', {
         const contracts = rootState.contracts || {}
         const { username } = rootState.loggedIn
 
-        if (data.member === username) {
-          // If this member is re-joining the group, ignore the rest
-          // so the member doesn't remove themself again.
-          if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-            return
-          }
+        // If this member is re-joining the group, ignore the rest
+        // so the member doesn't remove themself again.
+        if (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+          return
+        }
 
+        if (data.member === username) {
           // NOTE: should remove archived data from IndexedStorage
           //       regarding the current group (proposals, payments)
           await sbp('gi.contracts/group/removeArchivedProposals', contractID)
@@ -988,6 +1028,10 @@ sbp('chelonia/defineContract', {
           // have a DM with them, we don't want to do this. may need to use manual reference counting
           // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
         }
+
+        leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
+          console.error('[gi.contracts/group/removeMember/sideEffect]: Error while leaving all chatrooms', e)
+        })
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
@@ -1259,22 +1303,7 @@ sbp('chelonia/defineContract', {
       async sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-          const sendingData = data.leavingGroup
-            ? { member: data.member }
-            : { member: data.member, username: meta.username }
-          await sbp('gi.actions/chatroom/leave', {
-            contractID: data.chatRoomID,
-            data: sendingData,
-            // When a group is being left, we want to also leave chatrooms,
-            // including private chatrooms. Since the user issuing the action
-            // may not be a member of the chatroom, we use the group's CSK
-            // unconditionally in this situation, which should be a key in the
-            // chatroom (either the CSK or the groupKey)
-            ...(data.leavingGroup && {
-              signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-              innerSigningContractID: null
-            })
-          })
+          await leaveChatRoomAction(state, data, meta)
         }
       }
     },

@@ -36,26 +36,6 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-export async function leaveAllChatRooms (groupContractID: string, member: string) {
-  // let user leaves all the chatrooms before leaving group
-  const rootState = sbp('state/vuex/state')
-  const chatRooms = rootState[groupContractID].chatRooms
-  const chatRoomIDsToLeave = Object.keys(chatRooms)
-    .filter(cID => chatRooms[cID].users.includes(member))
-
-  try {
-    for (const chatRoomID of chatRoomIDsToLeave) {
-      await sbp('gi.actions/group/leaveChatRoom', {
-        contractID: groupContractID,
-        data: { chatRoomID, member, leavingGroup: true }
-      })
-    }
-  } catch (e) {
-    console.error(`leaveAllChatRooms: ${e.name}: ${e.message}`, e)
-    throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
-  }
-}
-
 async function saveLoginState (action: string, contractID: string) {
   try {
     await sbp('gi.actions/identity/saveOurLoginState')
@@ -755,7 +735,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/removeMember',
     (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
     async function (sendMessage, params, signingKeyId) {
-      await leaveAllChatRooms(params.contractID, params.data.member)
       await sendMessage({
         ...omit(params, ['options', 'action'])
       })
@@ -763,9 +742,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/removeOurselves',
     (e) => L('Failed to leave group. {codeError}', { codeError: e.message }),
     async function (sendMessage, params) {
-      const rootState = sbp('state/vuex/state')
-      await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
-      return sendMessage({
+      await sendMessage({
         ...omit(params, ['options', 'action'])
       })
     }),

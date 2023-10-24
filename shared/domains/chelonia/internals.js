@@ -254,11 +254,22 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
+    hooks?.prepublish?.(entry)
     while (true) {
+      if (hooks?.preSendCheck) {
+        const rootState = sbp(this.config.stateSelector)
+        const state = rootState[entry.contractID()]
+
+        if (!hooks.preSendCheck(entry, state)) {
+          console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
+          return
+        }
+      }
+
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),
@@ -268,6 +279,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
       if (r.ok) {
+        hooks?.postpublish?.(entry)
         return entry
       }
       if (r.status === 409) {
