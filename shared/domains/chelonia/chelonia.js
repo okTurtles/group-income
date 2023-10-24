@@ -31,7 +31,6 @@ export type ChelRegParams = {
   actionEncryptionKeyId: ?string;
   keys: (GIKey | EncryptedData<GIKey>)[];
   hooks?: {
-    preSendCheckContract?: (GIMessage, Object) => void;
     prepublishContract?: (GIMessage) => void;
     postpublishContract?: (GIMessage) => void;
     preSendCheck?: (GIMessage, Object) => void;
@@ -700,7 +699,6 @@ export default (sbp('sbp/selectors/register', {
     })
     const contractID = contractMsg.hash()
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, hooks && {
-      preSendCheck: hooks.preSendCheckContract,
       prepublish: hooks.prepublishContract,
       postpublish: hooks.postpublishContract
     })
