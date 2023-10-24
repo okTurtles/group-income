@@ -31,7 +31,10 @@ export type ChelRegParams = {
   actionEncryptionKeyId: ?string;
   keys: (GIKey | EncryptedData<GIKey>)[];
   hooks?: {
+    preSendCheckContract?: (GIMessage, Object) => void;
     prepublishContract?: (GIMessage) => void;
+    postpublishContract?: (GIMessage) => void;
+    preSendCheck?: (GIMessage, Object) => void;
     prepublish?: (GIMessage) => void;
     postpublish?: (GIMessage) => void;
   };
@@ -695,9 +698,12 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifest: manifestHash
     })
-    hooks?.prepublishContract?.(contractMsg)
     const contractID = contractMsg.hash()
-    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
+    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, hooks && {
+      preSendCheck: hooks.preSendCheckContract,
+      prepublish: hooks.prepublishContract,
+      postpublish: hooks.postpublishContract
+    })
     console.log('Register contract, sending action', {
       params,
       xx: {
@@ -765,9 +771,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: destinationManifestHash
     })
     if (!atomic) {
-      hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-      hooks?.postpublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     }
     return msg
   },
@@ -808,9 +812,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     if (!atomic) {
-      hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-      hooks?.postpublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     }
     return msg
   },
@@ -845,9 +847,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     if (!atomic) {
-      hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-      hooks?.postpublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     }
     return msg
   },
@@ -882,9 +882,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     if (!atomic) {
-      hooks?.prepublish?.(msg)
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-      hooks?.postpublish?.(msg)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     }
     return msg
   },
@@ -961,9 +959,7 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifest: manifestHash
     })
-    hooks?.prepublish?.(msg)
-    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-    hooks?.postpublish?.(msg)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     return msg
   },
   'chelonia/out/keyRequestResponse': async function (params: ChelKeyRequestResponseParams): Promise<GIMessage> {
@@ -987,9 +983,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     if (!atomic) {
-      hooks?.prepublish?.(message)
-      message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
-      hooks?.postpublish?.(message)
+      message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, hooks)
     }
     return message
   },
@@ -1020,9 +1014,7 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifest: manifestHash
     })
-    hooks?.prepublish?.(msg)
-    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
-    hooks?.postpublish?.(msg)
+    msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
     return msg
   },
   'chelonia/out/protocolUpgrade': async function () {
@@ -1080,9 +1072,7 @@ async function outEncryptedOrUnencryptedAction (
     manifest: manifestHash
   })
   if (!atomic) {
-    hooks?.prepublish?.(message)
-    message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
-    hooks?.postpublish?.(message)
+    message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, hooks)
   }
   return message
 }
