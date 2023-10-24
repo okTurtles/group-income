@@ -443,7 +443,7 @@ export default (sbp('sbp/selectors/register', {
         }).then(() =>
           sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
             // contract sync might've triggered an async call to /remove, so wait before proceeding
-            await sbp('chelonia/contract/wait', contractIDs)
+            await sbp('chelonia/contract/wait', { waitSideEffect: true })
             // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
             // we must re-sync our identity contract again to ensure we don't rejoin a group we
             // were just kicked out of

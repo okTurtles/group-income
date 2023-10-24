@@ -519,13 +519,20 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   // resolves when all pending actions for these contractID(s) finish
-  'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<*> {
+  'chelonia/contract/wait': function ({ contractIDs, waitSideEffect }: {
+    contractIDs?: string | string[],
+    waitSideEffect?: boolean
+  }): Promise<*> {
     const listOfIds = contractIDs
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
     return Promise.all(listOfIds.map(cID => {
-      return sbp('chelonia/queueInvocation', cID, ['chelonia/private/noop'])
-    }))
+      const invocations = [sbp('chelonia/queueInvocation', cID, ['chelonia/private/noop'])]
+      if (waitSideEffect) {
+        invocations.push(sbp('chelonia/queueInvocation', `sideEffect:${cID}`, ['chelonia/private/noop']))
+      }
+      return invocations
+    }).flat())
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
