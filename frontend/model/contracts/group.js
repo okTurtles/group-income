@@ -1029,7 +1029,9 @@ sbp('chelonia/defineContract', {
           // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
         }
 
-        await leaveAllChatRoomsUponLeaving(state, data.member, meta)
+        leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
+          console.error('[gi.contracts/group/removeMember/sideEffect]: Error while leaving all chatrooms', e)
+        })
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
