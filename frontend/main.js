@@ -115,7 +115,8 @@ async function startApp () {
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
-          'chelonia/contract/disconnect'
+          'chelonia/contract/disconnect',
+          'gi.actions/identity/saveOurLoginState'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,

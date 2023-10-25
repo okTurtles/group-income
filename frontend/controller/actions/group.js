@@ -322,12 +322,13 @@ export default (sbp('sbp/selectors/register', {
       // through an invite link, and we must send a key request to complete
       // the joining process.
       const sendKeyRequest = (!hasSecretKeys && params.originatingContractID)
+      const isWaitingForKeyShare = sbp('chelonia/contract/isWaitingForKeyShare', state)
 
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
       //   (a) we are about to send a key request; or
       //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
-      if (sendKeyRequest || sbp('chelonia/contract/isWaitingForKeyShare', state)) {
+      if (sendKeyRequest || isWaitingForKeyShare) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
@@ -377,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasSecretKeys && !sbp('chelonia/contract/isWaitingForKeyShare', state)) {
+      } else if (hasSecretKeys && !isWaitingForKeyShare) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
 
         // We're joining for the first time
@@ -502,12 +503,19 @@ export default (sbp('sbp/selectors/register', {
         }
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
+      // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
+      // This means that we've been removed from the group
+      } else if (!hasSecretKeys && !isWaitingForKeyShare) {
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
       // This could happen, for example, after logging in if we still haven't
       // received a response to the key request.
-      } else {
+        sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
+        console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
+      } else if (isWaitingForKeyShare) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
+      } else {
+        console.warn('Requested to join group but the state appears invalid. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, isWaitingForKeyShare })
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)

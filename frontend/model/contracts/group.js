@@ -939,100 +939,12 @@ sbp('chelonia/defineContract', {
           { contractID, meta, state, getters }
         )
       },
-      async sideEffect ({ data, meta, contractID }, { state, getters }) {
-        const rootState = sbp('state/vuex/state')
-        const rootGetters = sbp('state/vuex/getters')
-        const contracts = rootState.contracts || {}
-        const { username } = rootState.loggedIn
-
-        // If this member is re-joining the group, ignore the rest
-        // so the member doesn't remove themself again.
-        if (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-          return
-        }
-
-        if (data.member === username) {
-          // NOTE: should remove archived data from IndexedStorage
-          //       regarding the current group (proposals, payments)
-          await sbp('gi.contracts/group/removeArchivedProposals', contractID)
-          await sbp('gi.contracts/group/removeArchivedPayments', contractID)
-
-          // grab the groupID of any group that we've successfully finished joining
-          const groupIdToSwitch = Object.keys(contracts)
-            .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID)
-            .sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
-          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
-          // this sideEffect on the eventqueue for this contractID, and /remove uses that same eventqueue
-          sbp('chelonia/contract/remove', contractID).catch(e => {
-            console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
-          })
-          // this looks crazy, but doing this was necessary to fix a race condition in the
-          // group-member-removal Cypress tests where due to the ordering of asynchronous events
-          // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
-          // We add it to the same queue as '/remove' above gets run on so that it is run after
-          // contractID is removed. See also comments in 'gi.actions/identity/login'.
-          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
-            .then(function () {
-              const router = sbp('controller/router')
-              const switchFrom = router.currentRoute.path
-              const switchTo = groupIdToSwitch ? '/dashboard' : '/'
-              if (switchFrom !== '/join' && switchFrom !== switchTo) {
-                router.push({ path: switchTo }).catch(console.warn)
-              }
-            })
-            .catch(e => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
-            })
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
-            .catch(e => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
-            })
-          // TODO - #828 remove other group members contracts if applicable
-
-          // NOTE: remove all notifications whose scope is in this group
-          for (const notification of rootGetters.notificationsByGroup(contractID)) {
-            sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
-          }
-        } else {
-          const myProfile = getters.groupProfile(username)
-
-          if (isActionYoungerThanUser(meta, myProfile)) {
-            const memberRemovedThemselves = data.member === meta.username
-
-            sbp('gi.notifications/emit', // emit a notification for a member removal.
-              memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
-              {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                username: memberRemovedThemselves ? meta.username : data.member
-              })
-
-            // gi.contracts/group/removeOurselves will eventually trigger this
-            // as well
-            sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
-              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
-            }).catch((e) => {
-              console.error('Error rotating group keys or our PEK', e)
-            })
-
-            const rootGetters = sbp('state/vuex/getters')
-            const userID = rootGetters.ourContactProfiles[data.member]?.contractID
-            if (userID) {
-              sbp('gi.contracts/group/removeForeignKeys', contractID, userID, state)
-            }
-          }
-          // TODO - #828 remove the member contract if applicable.
-          // problem is, if they're in another group we're also a part of, or if we
-          // have a DM with them, we don't want to do this. may need to use manual reference counting
-          // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
-        }
-
-        leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
-          console.error('[gi.contracts/group/removeMember/sideEffect]: Error while leaving all chatrooms', e)
+      sideEffect ({ data, meta, contractID }, { state, getters }) {
+        // Put this invocation at the end of a sync to ensure that leaving and
+        // re-joining works
+        sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', { data, meta, contractID }, { state, getters })).catch(e => {
+          console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e)
         })
-        // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/removeOurselves': {
@@ -1302,7 +1214,7 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+        if (meta.username !== rootState.loggedIn.username || !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
           await leaveChatRoomAction(state, data, meta)
         }
       }
@@ -1547,6 +1459,106 @@ sbp('chelonia/defineContract', {
         })
       }
     },
+    'gi.contracts/group/leaveGroup': async ({ data, meta, contractID }, { getters }) => {
+      const rootState = sbp('state/vuex/state')
+      const rootGetters = sbp('state/vuex/getters')
+      const state = rootState[contractID]
+      const contracts = rootState.contracts || {}
+      const { username } = rootState.loggedIn
+
+      if (!state) {
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`)
+      }
+
+      if ((state.profiles?.[data.member] && !state.profiles[data.member].departedDate) || (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID))) {
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, window.structuredClone(state.profiles))
+        return
+      }
+
+      console.log('@@@@gi.contracts/group/leaveGroup', { contractID })
+
+      if (data.member === username) {
+        // NOTE: should remove archived data from IndexedStorage
+        //       regarding the current group (proposals, payments)
+        await sbp('gi.contracts/group/removeArchivedProposals', contractID)
+        await sbp('gi.contracts/group/removeArchivedPayments', contractID)
+
+        // grab the groupID of any group that we've successfully finished joining
+        const groupIdToSwitch = Object.keys(contracts)
+          .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID)
+          .sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+        sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+        // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
+        // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
+        sbp('chelonia/contract/remove', contractID).catch(e => {
+          console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
+        })
+        // this looks crazy, but doing this was necessary to fix a race condition in the
+        // group-member-removal Cypress tests where due to the ordering of asynchronous events
+        // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
+        // We add it to the same queue as '/remove' above gets run on so that it is run after
+        // contractID is removed. See also comments in 'gi.actions/identity/login'.
+        sbp('gi.actions/identity/saveOurLoginState')
+          .then(function () {
+            const router = sbp('controller/router')
+            const switchFrom = router.currentRoute.path
+            const switchTo = groupIdToSwitch ? '/dashboard' : '/'
+            if (switchFrom !== '/join' && switchFrom !== switchTo) {
+              router.push({ path: switchTo }).catch(console.warn)
+            }
+          })
+          .catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown by saveOurLoginState:`, e)
+          })
+          .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
+          .catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
+          })
+        // TODO - #828 remove other group members contracts if applicable
+
+        // NOTE: remove all notifications whose scope is in this group
+        for (const notification of rootGetters.notificationsByGroup(contractID)) {
+          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
+        }
+      } else {
+        const myProfile = getters.groupProfile(username)
+
+        if (isActionYoungerThanUser(meta, myProfile)) {
+          const memberRemovedThemselves = data.member === meta.username
+
+          sbp('gi.notifications/emit', // emit a notification for a member removal.
+            memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+            {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              username: memberRemovedThemselves ? meta.username : data.member
+            })
+
+          // gi.contracts/group/removeOurselves will eventually trigger this
+          // as well
+          sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
+            return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+          }).catch((e) => {
+            console.error('Error rotating group keys or our PEK', e)
+          })
+
+          const userID = rootGetters.ourContactProfiles[data.member]?.contractID
+          if (userID) {
+            sbp('gi.contracts/group/removeForeignKeys', contractID, userID, state)
+          }
+        }
+        // TODO - #828 remove the member contract if applicable.
+        // problem is, if they're in another group we're also a part of, or if we
+        // have a DM with them, we don't want to do this. may need to use manual reference counting
+        // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
+      }
+
+      leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
+        console.error('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
+      })
+      // TODO - #850 verify open proposals and see if they need some re-adjustment.
+    },
     'gi.contracts/group/rotateKeys': (contractID, state) => {
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
@@ -1557,8 +1569,8 @@ sbp('chelonia/defineContract', {
       Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
       Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 
-      return sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys']).catch(e => {
-        console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      return sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys').catch(e => {
+        console.warn(`rotateKeys: ${e.name} thrown:`, e)
       })
     },
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, disconnectGroup: ?boolean) => {
@@ -1612,13 +1624,13 @@ sbp('chelonia/defineContract', {
 
       if (!CEKid) throw new Error('Missing encryption key')
 
-      sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
+      sbp('chelonia/out/keyDel', {
         contractID,
         contractName: 'gi.contracts/group',
         data: keyIds,
         signingKeyId: CSKid
-      }]).catch(e => {
-        console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      }).catch(e => {
+        console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
     }
   }

@@ -468,11 +468,13 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
         }
       } else if (opT === GIMessage.OP_ATOMIC) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
-        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => recreateOperationInternal(t, v)).filter(Boolean): any): GIOpAtomic)
+        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => [t, recreateOperationInternal(t, v)]).filter(([, v]) => !!v): any): GIOpAtomic)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_ATOMIC', { head })
         } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
           return opV
+        } else {
+          return newOpV
         }
       } else {
         return opV
