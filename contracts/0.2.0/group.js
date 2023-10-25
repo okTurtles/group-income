@@ -16481,8 +16481,8 @@ ${this.getErrorInfo()}`;
         };
         const message = { data: messageData, meta, contractID };
         (0, import_sbp2.default)("gi.contracts/group/removeMember/process", message, state);
-        (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", message]);
         archiveProposal({ state, proposalHash, proposal, contractID });
+        (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", message]);
       },
       [VOTE_AGAINST]: voteAgainst
     },
@@ -17536,7 +17536,7 @@ ${this.getErrorInfo()}`;
             (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+            await (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
               const router = (0, import_sbp7.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";
@@ -17773,30 +17773,15 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/leaveChatRoom": {
         validate: objectOf({
           chatRoomID: string,
-          member: string,
-          leavingGroup: boolean
+          username: string
         }),
         process({ data, meta }, { state }) {
-          vue_esm_default.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.member));
-        },
-        async sideEffect({ meta, data, contractID }, { state }) {
-          const rootState = (0, import_sbp7.default)("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username && !(0, import_sbp7.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
-            const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp7.default)("gi.actions/chatroom/leave", {
-              contractID: data.chatRoomID,
-              data: sendingData,
-              ...data.leavingGroup && {
-                signingKeyId: (0, import_sbp7.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
-                innerSigningContractID: null
-              }
-            });
-          }
+          vue_esm_default.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.username));
         }
       },
       "gi.contracts/group/joinChatRoom": {
-        validate: objectMaybeOf({
-          username: string,
+        validate: objectOf({
+          username: optional(string),
           chatRoomID: string
         }),
         process({ data, meta }, { state }) {

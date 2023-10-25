@@ -933,7 +933,7 @@ sbp('chelonia/defineContract', {
           // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
           // We add it to the same queue as '/remove' above gets run on so that it is run after
           // contractID is removed. See also comments in 'gi.actions/identity/login'.
-          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
+          await sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
             .then(function () {
               const router = sbp('controller/router')
               const switchFrom = router.currentRoute.path
@@ -1249,38 +1249,16 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/leaveChatRoom': {
       validate: objectOf({
         chatRoomID: string,
-        member: string,
-        leavingGroup: boolean // leave chatroom by leaving group
+        username: string
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
-          state.chatRooms[data.chatRoomID].users.filter(u => u !== data.member))
-      },
-      async sideEffect ({ meta, data, contractID }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-          const sendingData = data.leavingGroup
-            ? { member: data.member }
-            : { member: data.member, username: meta.username }
-          await sbp('gi.actions/chatroom/leave', {
-            contractID: data.chatRoomID,
-            data: sendingData,
-            // When a group is being left, we want to also leave chatrooms,
-            // including private chatrooms. Since the user issuing the action
-            // may not be a member of the chatroom, we use the group's CSK
-            // unconditionally in this situation, which should be a key in the
-            // chatroom (either the CSK or the groupKey)
-            ...(data.leavingGroup && {
-              signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-              innerSigningContractID: null
-            })
-          })
-        }
+          state.chatRooms[data.chatRoomID].users.filter(u => u !== data.username))
       }
     },
     'gi.contracts/group/joinChatRoom': {
-      validate: objectMaybeOf({
-        username: string,
+      validate: objectOf({
+        username: optional(string),
         chatRoomID: string
       }),
       process ({ data, meta }, { state }) {

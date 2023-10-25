@@ -136,10 +136,11 @@ const proposals: Object = {
       }
       const message = { data: messageData, meta, contractID }
       sbp('gi.contracts/group/removeMember/process', message, state)
+      archiveProposal({ state, proposalHash, proposal, contractID })
+
       sbp('gi.contracts/group/pushSideEffect', contractID,
         ['gi.contracts/group/removeMember/sideEffect', message]
       )
-      archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },

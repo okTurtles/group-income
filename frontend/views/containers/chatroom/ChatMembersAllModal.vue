@@ -260,9 +260,9 @@ export default ({
       const { creator } = this.chatRoomAttribute
       if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
         return false
-      } else if (this.ourUsername === creator) {
-        return true
       } else if (this.ourUsername === username) {
+        return false
+      } else if (this.ourUsername === creator) {
         return true
       }
       return false
@@ -277,8 +277,10 @@ export default ({
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
-            member: username,
-            leavingGroup: false
+            username
+          },
+          options: {
+            showKickedBy: this.ourUsername
           }
         })
         if (undoing) {

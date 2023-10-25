@@ -7497,24 +7497,23 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/leave": {
         validate: objectOf({
-          username: optional(string),
-          member: string
+          username: string,
+          showKickedBy: optional(string)
         }),
         process({ data, meta, hash, id, contractID }, { state }) {
-          const { member } = data;
-          const isKicked = data.username && member !== data.username;
-          if (!state.onlyRenderMessage && !state.users[member]) {
-            console.warn(`Can not leave the chatroom ${contractID} which ${member} is not part of`);
-            return;
+          const { username, showKickedBy } = data;
+          const isKicked = showKickedBy && username !== showKickedBy;
+          if (!state.onlyRenderMessage && !state.users[username]) {
+            throw new Error(`Can not leave the chatroom ${contractID} which ${username} is not part of`);
           }
-          import_common.Vue.delete(state.users, member);
+          import_common.Vue.delete(state.users, username);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
-          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
-          const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {});
+          const notificationType = isKicked ? MESSAGE_NOTIFICATIONS.KICK_MEMBER : MESSAGE_NOTIFICATIONS.LEAVE_MEMBER;
+          const notificationData = createNotificationData(notificationType, isKicked ? { username } : {});
           const newMessage = createMessage({
-            meta: isKicked ? meta : { ...meta, username: member },
+            meta: { ...meta, username: showKickedBy || username },
             hash,
             id,
             data: notificationData,
@@ -7523,7 +7522,7 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash, contractID, meta }, { state }) {
-          if (data.member === (0, import_sbp6.default)("state/vuex/state").loggedIn.username) {
+          if (data.username === (0, import_sbp6.default)("state/vuex/state").loggedIn.username) {
             if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
               return;
             }
@@ -7536,7 +7535,7 @@ ${this.getErrorInfo()}`;
             }
           }
           const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
-          const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
+          const userID = rootGetters.ourContactProfiles[data.username]?.contractID;
           if (userID) {
             (0, import_sbp6.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state);
           }

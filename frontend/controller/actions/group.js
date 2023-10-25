@@ -36,18 +36,19 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-export async function leaveAllChatRooms (groupContractID: string, member: string) {
-  // let user leaves all the chatrooms before leaving group
+export async function leaveAllChatRooms (groupContractID: string, username: string) {
+  // NOTE: user should be left from all the chatrooms before leaving group
   const rootState = sbp('state/vuex/state')
   const chatRooms = rootState[groupContractID].chatRooms
   const chatRoomIDsToLeave = Object.keys(chatRooms)
-    .filter(cID => chatRooms[cID].users.includes(member))
+    .filter(cID => chatRooms[cID].users.includes(username))
 
   try {
     for (const chatRoomID of chatRoomIDsToLeave) {
       await sbp('gi.actions/group/leaveChatRoom', {
         contractID: groupContractID,
-        data: { chatRoomID, member, leavingGroup: true }
+        data: { chatRoomID, username },
+        options: { leavingGroup: true }
       })
     }
   } catch (e) {
@@ -321,17 +322,12 @@ export default (sbp('sbp/selectors/register', {
       const userID = rootState.loggedIn.identityContractID
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
-      const isJoiningGroup = !!params.originatingContractID
-      const preEffectBeforeSync = isJoiningGroup
-        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true) }
-        : () => {}
-      const postEffectAfterSync = isJoiningGroup
-        ? () => { sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false) }
-        : () => {}
 
-      preEffectBeforeSync()
+      const isJoiningGroup = !!params.originatingContractID
+      isJoiningGroup && sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
       await sbp('chelonia/contract/sync', params.contractID)
-      postEffectAfterSync()
+      await sbp('chelonia/contract/wait', { contractIDs: [params.contractID], waitSideEffect: true })
+      isJoiningGroup && sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
 
       if (!rootState.contracts[params.contractID]) {
         // NOTE: already kicked from the group by someone else
@@ -704,6 +700,43 @@ export default (sbp('sbp/selectors/register', {
     })
     return message
   }),
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async function (sendMessage, params) {
+    const rootState = sbp('state/vuex/state')
+    let chatRoomPayload = omit(params.data, ['chatRoomID'])
+    // NOTE: showKickedBy is in the options field because it's only needed for chatroom contract
+    if (params.options?.showKickedBy) {
+      chatRoomPayload = {
+        ...chatRoomPayload,
+        showKickedBy: params.options.showKickedBy
+      }
+    }
+
+    await sbp('gi.actions/chatroom/leave', {
+      contractID: params.data.chatRoomID,
+      data: chatRoomPayload,
+      // When a group is being left, we want to also leave chatrooms,
+      // including private chatrooms. Since the user issuing the action
+      // may not be a member of the chatroom, we use the group's CSK
+      // unconditionally in this situation, which should be a key in the
+      // chatroom (either the CSK or the groupKey)
+      ...(params.options?.leavingGroup && {
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', rootState[params.contractID], 'csk'),
+        innerSigningContractID: null
+      }),
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
+
+    return await sendMessage({
+      ...omit(params, ['options', 'action', 'hooks']),
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
+      }
+    })
+  }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
       ...omit(params, ['options', 'hooks']),
@@ -957,7 +990,6 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
-  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),

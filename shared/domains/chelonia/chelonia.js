@@ -527,9 +527,10 @@ export default (sbp('sbp/selectors/register', {
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
     return Promise.all(listOfIds.map(cID => {
-      const invocations = [sbp('chelonia/queueInvocation', cID, ['chelonia/private/noop'])]
+      const noopSbpInvocation = ['chelonia/private/noop']
+      const invocations = [sbp('chelonia/queueInvocation', cID, noopSbpInvocation)]
       if (waitSideEffect) {
-        invocations.push(sbp('chelonia/queueInvocation', `sideEffect:${cID}`, ['chelonia/private/noop']))
+        invocations.push(sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${cID}`, noopSbpInvocation))
       }
       return invocations
     }).flat())
