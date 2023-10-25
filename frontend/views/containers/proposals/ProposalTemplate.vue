@@ -44,7 +44,7 @@
         button-submit(
           key='change'
           :class='submitStyleNonProposal'
-          v-if='!shouldPropose'
+          v-if='!isConfirmation && !shouldPropose'
           @click='submit'
           :disabled='disabled'
           data-test='submitBtn'

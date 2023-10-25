@@ -16184,8 +16184,8 @@ ${this.getErrorInfo()}`;
   });
 
   // shared/domains/chelonia/utils.js
-  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight === void 0)?.id;
-  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight === void 0 && k.foreignKey?.includes(contractID)).map((k) => k.id);
+  var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight == null)?.id;
+  var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
   var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
@@ -16594,11 +16594,12 @@ ${this.getErrorInfo()}`;
           username: optional(string),
           member: string
         }),
-        process({ data, meta, hash: hash2, id }, { state }) {
+        process({ data, meta, hash: hash2, id, contractID }, { state }) {
           const { member } = data;
           const isKicked = data.username && member !== data.username;
           if (!state.onlyRenderMessage && !state.users[member]) {
-            throw new Error(`Can not leave the chatroom which ${member} is not part of`);
+            console.warn(`Can not leave the chatroom ${contractID} which ${member} is not part of`);
+            return;
           }
           vue_esm_default.delete(state.users, member);
           if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
