@@ -98,9 +98,9 @@ class PersistentAction {
       await this.trySBP([this.options.successInvocationSelector, result])
   }
 
-  trySBP (invocation: SbpInvocation | void): any {
+  async trySBP (invocation: SbpInvocation | void): Promise<any> {
     try {
-      return invocation ? sbp(...invocation) : undefined
+      return invocation ? await sbp(...invocation) : undefined
     } catch (error) {
       console.error(tag, error.message)
     }
