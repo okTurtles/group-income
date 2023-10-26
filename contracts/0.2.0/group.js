@@ -17536,7 +17536,7 @@ ${this.getErrorInfo()}`;
             (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            (0, import_sbp7.default)("okTurtles.eventQueue/queueEvent", `sideEffect:${contractID}`, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+            (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["okTurtles.eventQueue/queueEvent", `sideEffect:${contractID}`, ["gi.actions/identity/saveOurLoginState"]]).then(function() {
               const router = (0, import_sbp7.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";
