@@ -3,7 +3,8 @@
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
-  CHATROOM_TYPES
+  CHATROOM_TYPES,
+  PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
@@ -294,7 +295,7 @@ export default (sbp('sbp/selectors/register', {
         console.info('synchronizing login state:', { groupsJoined })
         for (const contractID of groupsJoined) {
           try {
-            await sbp('gi.actions/group/join', { contractID, options: { skipInviteAccept: true } })
+            await sbp('gi.actions/group/join', { contractID })
           } catch (e) {
             console.error(`updateLoginStateUponLogin: ${e.name} attempting to join group ${contractID}`, e)
             if (state.contracts[contractID] || state[contractID]) {
@@ -453,15 +454,18 @@ export default (sbp('sbp/selectors/register', {
             // Call 'gi.actions/group/join' on all groups which may need re-joining
             await Promise.all(groupsToRejoin.map(groupId => {
               return (
-              // (1) Check whether the contract exists (may have been removed
-              //     after sync)
+                // (1) Check whether the contract exists (may have been removed
+                //     after sync)
                 state.contracts[groupId] &&
-            // (2) Check whether the join process is still incomplete
-            //     This needs to be re-checked because it may have changed after
-            //     sync
-            !state.profiles?.[username] &&
-            // (3) Call join
-            sbp('gi.actions/group/join', { contractID: groupId, contractName: 'gi.contracts/group' })
+                // (2) Check whether the join process is still incomplete
+                //     This needs to be re-checked because it may have changed after
+                //     sync
+                state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
+                // (3) Call join
+                sbp('gi.actions/group/join', {
+                  contractID: groupId,
+                  contractName: 'gi.contracts/group'
+                })
               )
             }))
 
@@ -471,8 +475,8 @@ export default (sbp('sbp/selectors/register', {
               .forEach(cId => {
                 // We send this action only for groups we have fully joined (i.e.,
                 // accepted an invite add added our profile)
-                if (state[cId]?.profiles?.[username]) {
-                  sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
+                if (state[cId]?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE) {
+                  sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
                 }
               })
           }).finally(() => {

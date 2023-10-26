@@ -270,6 +270,13 @@ export default (sbp('sbp/selectors/register', {
         }
       }
 
+      /* {
+        const rootState = sbp(this.config.stateSelector)
+        const state = rootState[entry.contractID()]
+
+        // console.debug('@@@publishEvent [11]', JSON.parse(JSON.stringify({ state })))
+      } */
+
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),

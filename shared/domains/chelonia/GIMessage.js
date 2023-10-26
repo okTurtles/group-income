@@ -358,25 +358,24 @@ export class GIMessage {
   }
 
   decryptedValue (): any {
-    const value = this.message()
-    const data = unwrapMaybeEncryptedData(value)
-    // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
-    // on failure)
-    if (data?.data) {
+    try {
+      const value = this.message()
+      const data = unwrapMaybeEncryptedData(value)
+      // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
+      // on failure)
+      if (data?.data) {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
-      if (isSignedData(data.data)) {
-        try {
+        if (isSignedData(data.data)) {
           return data.data.valueOf()
-        } catch {
-          // Signature verification failed. In this case, we return undefined
-          return undefined
+        } else {
+          return data.data
         }
-      } else {
-        return data.data
       }
+    } catch {
+      // Signature or encryption error
+      return undefined
     }
-    return undefined
   }
 
   head (): Object { return this._head }

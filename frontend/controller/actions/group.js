@@ -9,6 +9,7 @@ import {
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
+  PROFILE_STATUS,
   PROPOSAL_GENERIC,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,
@@ -294,7 +295,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept?: boolean } }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; } }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -384,7 +385,7 @@ export default (sbp('sbp/selectors/register', {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (!state.profiles?.[username] || state.profiles[username].departedDate) {
+        if (!state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
@@ -524,7 +525,7 @@ export default (sbp('sbp/selectors/register', {
       saveLoginState('joining', params.contractID)
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; skipInviteAccept: boolean } }) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; } }) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)

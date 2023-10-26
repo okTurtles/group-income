@@ -336,6 +336,12 @@ sbp('chelonia/defineContract', {
     groupSettings (state, getters) {
       return getters.currentGroupState.settings || {}
     },
+    pendingAccept (state, getters) {
+      return username => {
+        const profiles = getters.currentGroupState.profiles
+        return profiles?.[username]?.status === PROFILE_STATUS.PENDING
+      }
+    },
     groupProfile (state, getters) {
       return username => {
         const profiles = getters.currentGroupState.profiles
@@ -1470,8 +1476,8 @@ sbp('chelonia/defineContract', {
         console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`)
       }
 
-      if ((state.profiles?.[data.member] && !state.profiles[data.member].departedDate) || (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID))) {
-        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, window.structuredClone(state.profiles))
+      if (state.profiles?.[data.member]?.status !== PROFILE_STATUS.REMOVED || (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID))) {
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, JSON.parse(JSON.stringify(state.profiles)))
         return
       }
 

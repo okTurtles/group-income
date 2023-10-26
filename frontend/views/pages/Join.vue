@@ -52,12 +52,13 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
-import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
@@ -130,7 +131,7 @@ export default ({
           return
         }
         if (this.ourUsername) {
-          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
+          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourUsername])) {
             this.$router.push({ path: '/dashboard' })
           } else {
             await this.accept()
@@ -150,6 +151,8 @@ export default ({
         this.pageStatus = 'SIGNING'
       } catch (e) {
         console.error(e)
+        // eslint-disable-next-line no-debugger
+        debugger
         this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
         this.pageStatus = 'INVALID'
       }
@@ -188,6 +191,8 @@ export default ({
         // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {
+        // eslint-disable-next-line no-debugger
+        debugger
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
