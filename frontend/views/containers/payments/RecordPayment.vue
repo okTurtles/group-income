@@ -131,7 +131,7 @@ export default ({
     ]),
     paymentsList () {
       return this.todoItems.map(item => {
-        return item.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
+        return item.data && item.data.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
           ? {
               hash: item.hash,
               data: item.data,
