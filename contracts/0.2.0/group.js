@@ -17536,8 +17536,7 @@ ${this.getErrorInfo()}`;
             (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            await (0, import_sbp7.default)("chelonia/contract/wait", { contractIDs: [contractID], waitSideEffect: true });
-            await (0, import_sbp7.default)("gi.actions/identity/saveOurLoginState").then(function() {
+            (0, import_sbp7.default)("okTurtles.eventQueue/queueEvent", `sideEffect:${contractID}`, ["gi.actions/identity/saveOurLoginState"]).then(function() {
               const router = (0, import_sbp7.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";
@@ -17546,9 +17545,7 @@ ${this.getErrorInfo()}`;
               }
             }).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
-            }).then(() => {
-              (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true);
-            }).catch((e) => {
+            }).then(() => (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
             });
             for (const notification of rootGetters.notificationsByGroup(contractID)) {
