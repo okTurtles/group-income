@@ -174,6 +174,7 @@ sbp('sbp/selectors/register', {
     }
     this.nextID = nextID
     this.ready = true
+    sbp('chelonia.persistentActions/retryAll')
   },
 
   // Retry all existing persisted actions.
