@@ -933,22 +933,21 @@ sbp('chelonia/defineContract', {
           // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
           // We add it to the same queue as '/remove' above gets run on so that it is run after
           // contractID is removed. See also comments in 'gi.actions/identity/login'.
-          await sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
-            .then(function () {
-              const router = sbp('controller/router')
-              const switchFrom = router.currentRoute.path
-              const switchTo = groupIdToSwitch ? '/dashboard' : '/'
-              if (switchFrom !== '/join' && switchFrom !== switchTo) {
-                router.push({ path: switchTo }).catch(console.warn)
-              }
-            })
-            .catch(e => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
-            })
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
-            .catch(e => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
-            })
+          await sbp('chelonia/contract/wait', { contractIDs: [contractID], waitSideEffect: true })
+          await sbp('gi.actions/identity/saveOurLoginState').then(function () {
+            const router = sbp('controller/router')
+            const switchFrom = router.currentRoute.path
+            const switchTo = groupIdToSwitch ? '/dashboard' : '/'
+            if (switchFrom !== '/join' && switchFrom !== switchTo) {
+              router.push({ path: switchTo }).catch(console.warn)
+            }
+          }).catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
+          }).then(() => {
+            sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true)
+          }).catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
+          })
           // TODO - #828 remove other group members contracts if applicable
 
           // NOTE: remove all notifications whose scope is in this group
