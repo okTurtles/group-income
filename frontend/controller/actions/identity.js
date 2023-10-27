@@ -267,13 +267,13 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
-  'gi.actions/identity/saveOurLoginState': function () {
+  'gi.actions/identity/saveOurLoginState': async function () {
     const getters = sbp('state/vuex/getters')
     const contractID = getters.ourIdentityContractId
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
     if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
-      return sbp('gi.actions/identity/setLoginState', {
+      return await sbp('gi.actions/identity/setLoginState', {
         contractID, data: ourLoginState
       })
     }
