@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
@@ -101,10 +101,13 @@ const ChatMixin: Object = {
           chatRoomId,
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
-          users: Object.fromEntries(users.map(username => {
-            const { displayName, picture, email } = this.globalProfile(username) || {}
-            return [username, { displayName, picture, email }]
-          })),
+          users: Object
+            .entries(users)
+            .filter((profile) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
+            .map(([username]) => {
+              const { displayName, picture, email } = this.globalProfile(username) || {}
+              return [username, { displayName, picture, email }]
+            }),
           numberOfUsers: users.length,
           participants: this.ourContactProfiles // TODO: return only historical contributors
         }

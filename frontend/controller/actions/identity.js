@@ -438,7 +438,7 @@ export default (sbp('sbp/selectors/register', {
 
           throw new Error('Unable to sync identity contract')
         }).then(() =>
-          sbp('chelonia/contract/sync', contractIDs).then(async function () {
+          sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
           // contract sync might've triggered an async call to /remove, so wait before proceeding
             await sbp('chelonia/contract/wait', contractIDs)
             // similarly, since removeMember may have triggered saveOurLoginState asynchronously,

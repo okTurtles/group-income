@@ -261,10 +261,32 @@ function updateGroupStreaks ({ state, getters }) {
   }
 }
 
+const removeGroupChatroomProfile = (state, chatRoomID, member) => {
+  console.log('jjjj removeGroupChatroomProfile', { state, chatRoomID, member })
+  Vue.set(state.chatRooms[chatRoomID], 'users',
+    Object.fromEntries(
+      Object.entries(state.chatRooms[chatRoomID].users)
+        .map(([memberKey, profile]) => {
+          console.log('jjjj removeGroupChatroomProfile ii', {
+            memberKey, member, profile, active: (profile: any)?.status === PROFILE_STATUS.ACTIVE
+          })
+          if (memberKey === member && (profile: any)?.status === PROFILE_STATUS.ACTIVE) {
+            return [member, { status: PROFILE_STATUS.REMOVED }]
+          }
+          return [member, profile]
+        })
+    )
+  )
+}
+
 const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) => {
   const sendingData = leavingGroup
     ? { member: member }
     : { member: member, username: meta.username }
+
+  if (state?.chatRooms?.[chatRoomID]?.users?.[member]?.status !== PROFILE_STATUS.REMOVED) {
+    return
+  }
 
   return sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
@@ -292,7 +314,7 @@ const leaveAllChatRoomsUponLeaving = (state, member, meta) => {
   const chatRooms = state.chatRooms
 
   return Promise.all(Object.keys(chatRooms)
-    .filter(cID => chatRooms[cID].users.includes(member))
+    .filter(cID => chatRooms[cID].users?.[member]?.status === PROFILE_STATUS.REMOVED)
     .map((chatRoomID) => leaveChatRoomAction(state, {
       chatRoomID,
       member,
@@ -944,6 +966,10 @@ sbp('chelonia/defineContract', {
           { username: data.member, dateLeft: meta.createdDate },
           { contractID, meta, state, getters }
         )
+
+        Object.keys(state.chatRooms).forEach((chatroomID) => {
+          removeGroupChatroomProfile(state, chatroomID, data.member)
+        })
       },
       sideEffect ({ data, meta, contractID }, { state, getters }) {
         // Put this invocation at the end of a sync to ensure that leaving and
@@ -1189,7 +1215,7 @@ sbp('chelonia/defineContract', {
           type,
           privacyLevel,
           deletedDate: null,
-          users: []
+          users: {}
         })
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
@@ -1215,8 +1241,7 @@ sbp('chelonia/defineContract', {
         leavingGroup: boolean // leave chatroom by leaving group
       }),
       process ({ data, meta }, { state }) {
-        Vue.set(state.chatRooms[data.chatRoomID], 'users',
-          state.chatRooms[data.chatRoomID].users.filter(u => u !== data.member))
+        removeGroupChatroomProfile(state, data.chatroomID, data.member)
       },
       async sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
@@ -1232,18 +1257,18 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state }) {
         const username = data.username || meta.username
-        state.chatRooms[data.chatRoomID].users.push(username)
+        if (state.profiles[username]?.status !== PROFILE_STATUS.ACTIVE) {
+          throw new Error('Cannot join a chatroom for a group you\'re not a member of')
+        }
+        Vue.set(state.chatRooms[data.chatRoomID].users, username, { status: PROFILE_STATUS.ACTIVE })
       },
-      async sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID) || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
-            // while users are joining chatroom, they don't need to leave chatrooms
-            // this is similar to setting 'JOINING_GROUP' before joining group
-            await sbp('chelonia/contract/sync', data.chatRoomID)
-            sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', false)
-          }
+          sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
+            console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
+          })
         }
       }
     },
@@ -1464,6 +1489,41 @@ sbp('chelonia/defineContract', {
           increased: mincomeIncreased
         })
       }
+    },
+    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, member, loggedInUsername) {
+      const rootState = sbp('state/vuex/state')
+      const state = rootState[contractID]
+      const username = rootState.loggedIn.username
+
+      if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomID]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
+        console.log('jjjjj early return some check not met')
+        return
+      }
+
+      if (username === member) {
+        await sbp('chelonia/contract/sync', chatRoomID)
+      }
+
+      if (!sbp('chelonia/contract/canPerformOperation', chatRoomID, '*')) {
+        console.log('jjjj cantperformpop')
+        return
+      }
+
+      console.log('jjjjj sedingjoin')
+      await sbp('gi.actions/chatroom/join', {
+        contractID: chatRoomID,
+        data: { username: member },
+        hooks: {
+          preSendCheck: (_, state) => {
+            // Avoid sending a duplicate action if the person is already a
+            // chatroom member
+            console.log('jjjjj AT PRE-SEND-CHECK')
+            return !state?.users?.[member]
+          }
+        }
+      }).catch(e => {
+        console.error(`Unable to join ${member} to chatroom ${chatRoomID} for group ${contractID}`, e)
+      })
     },
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID }, { getters }) => {
       const rootState = sbp('state/vuex/state')

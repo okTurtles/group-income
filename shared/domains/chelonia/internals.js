@@ -160,6 +160,7 @@ export default (sbp('sbp/selectors/register', {
       if (allowedSels[selector] || allowedDoms[domain]) {
         return sbp(selector, ...args)
       } else {
+        console.error('[chelonia] selector not on allowlist', { selector, allowedSels, allowedDoms })
         throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
     }

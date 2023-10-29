@@ -380,12 +380,12 @@ export default (sbp('sbp/selectors/register', {
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
       } else if (hasSecretKeys && !isWaitingForKeyShare) {
-        console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
+        console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID, 'prfileStatus', state.profiles?.[username]?.status, JSON.parse(JSON.stringify(state.profiles)))
 
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (!state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
+        if (state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
@@ -484,7 +484,7 @@ export default (sbp('sbp/selectors/register', {
           console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
           // We've already joined
           const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
-            .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users.includes(username)))
+            .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users?.[username].status === PROFILE_STATUS.ACTIVE))
 
           await sbp('chelonia/contract/sync', chatRoomIds)
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
@@ -569,7 +569,7 @@ export default (sbp('sbp/selectors/register', {
     const contractState = rootState[params.contractID]
     const userID = rootState.loggedIn.identityContractID
     for (const contractId in contractState.chatRooms) {
-      if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
+      if (params.data.attributes.name.toUpperCase().normalize() === contractState.chatRooms[contractId].name.toUpperCase().normalize()) {
         throw new GIErrorUIRuntimeError(L('Duplicate channel name'))
       }
     }
@@ -664,35 +664,13 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
-    const message = await sbp('gi.actions/chatroom/join', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-      contractID: params.data.chatRoomID,
-      data: { username },
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
-
-    if (username === me) {
-      // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
-      // Users join the chatroom thru group making group actions
-      // But when user joins the group, he needs to ignore all the actions about chatroom
-      // Because the user is joining group, not joining chatroom
-      // and he is going to make a new action to join 'General' chatroom AGAIN
-      // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
-      // Joining 'General' chatroom is one of the steps to join group
-      // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
-      sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
-    }
-    await sendMessage({
+    return await sendMessage({
       ...omit(params, ['options', 'action', 'hooks']),
       hooks: {
         prepublish: null,
         postpublish: params.hooks?.postpublish
       }
     })
-    return message
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
