@@ -257,26 +257,44 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     let attempt = 1
+    let lastAttemptedHeight
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     hooks?.prepublish?.(entry)
+
+    console.log('jjjjjjj publish entry', { entry })
+
     while (true) {
-      if (hooks?.preSendCheck) {
+      // Queued event to ensure that we send the event with whatever the
+      // 'latest' state may be for that contract (in case we were receiving
+      // something over the web socket)
+      // This also ensures that the state doesn't change while reading it
+      lastAttemptedHeight = entry.height()
+      entry = await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), () => {
         const rootState = sbp(this.config.stateSelector)
         const state = rootState[entry.contractID()]
 
-        if (!hooks.preSendCheck(entry, state)) {
-          console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
-          return
+        if (hooks?.preSendCheck) {
+          if (!hooks.preSendCheck(entry, state)) {
+            console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
+            return
+          }
         }
-      }
 
-      /* {
-        const rootState = sbp(this.config.stateSelector)
-        const state = rootState[entry.contractID()]
+        // if this isn't OP_CONTRACT, recreate and resend message
+        // We always call recreateEvent because we may have received new events
+        // in the web socket
+        if (!entry.isFirstMessage()) {
+          return recreateEvent(entry, state)
+        }
 
-        // console.debug('@@@publishEvent [11]', JSON.parse(JSON.stringify({ state })))
-      } */
+        return entry
+      })
+
+      console.log('jjjjjjj publish entry updated', { entry })
+
+      // If there is no event to send, return
+      if (!entry) return
 
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
@@ -291,7 +309,7 @@ export default (sbp('sbp/selectors/register', {
         return entry
       }
       if (r.status === 409) {
-        if (attempt + 1 > maxAttempts) {
+        if (attempt >= maxAttempts) {
           console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
           throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
@@ -300,14 +318,12 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait randDelay ms before sending it again
-        // if this isn't OP_CONTRACT, recreate and resend message
-        if (!entry.isFirstMessage()) {
-          const rootState = sbp(this.config.stateSelector)
-          const newEntry = await recreateEvent(entry, rootState)
-          if (!newEntry) {
-            return
-          }
-          entry = newEntry
+
+        // TODO: The [pubsub] code seems to miss events that happened between
+        // a call to sync and the subscription time. This is a temporary measure
+        // to handle this until [pubsub] is updated.
+        if (entry.height() === lastAttemptedHeight) {
+          await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), ['chelonia/private/in/syncContract', entry.contractID()])
         }
       } else {
         const message = (await r.json())?.message
@@ -924,7 +940,9 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    await sbp('chelonia/private/in/syncContract', contractID)
+    if (!has(rootState, contractID)) {
+      await sbp('chelonia/private/in/syncContract', contractID)
+    }
 
     const contractState = rootState[contractID]
     const keysToDelete = []
@@ -1255,16 +1273,13 @@ export default (sbp('sbp/selectors/register', {
       if (!processingErrored && !state[contractID]?._volatile?.dirty) {
         // Gets run get when skipSideEffects is false
         if (Array.isArray(internalSideEffectStack) && internalSideEffectStack.length > 0) {
-          // We don't await on internal side-effects as it may cause deadlocks
-          internalSideEffectStack.forEach(fn => sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, fn).catch((e) => {
+          await Promise.all(internalSideEffectStack.map(fn => Promise.resolve(fn()).catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
-          }))
+          })))
         }
 
-        // We don't await on side-effects as it may deadlock if the side-effect
-        // ends up putting things in the queue
         if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-          Promise.resolve().then(() => handleEvent.processSideEffects.call(this, message, state[contractID])).catch((e) => {
+          await handleEvent.processSideEffects.call(this, message, state[contractID])?.catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
             // We used to revert the state and rethrow the error here, but we no longer do that
             // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
@@ -1347,64 +1362,66 @@ const handleEvent = {
   },
   processSideEffects (message: GIMessage, state: Object) {
     const opT = message.opType()
-    if ([GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
-      const contractID = message.contractID()
-      const manifestHash = message.manifest()
-      const hash = message.hash()
-      const id = message.id()
-      const signingKeyId = message.signingKeyId()
-
-      const callSideEffect = (field) => {
-        let v = field.valueOf()
-        let innerSigningKeyId: string | typeof undefined
-        if (isSignedData(v)) {
-          innerSigningKeyId = (v: any).signingKeyId
-          v = (v: any).valueOf()
-        }
-
-        const { action, data, meta } = (v: any)
-        const mutation = {
-          data,
-          meta,
-          hash,
-          id,
-          contractID,
-          description: message.description(),
-          direction: message.direction(),
-          signingKeyId,
-          get signingContractID () {
-            return getContractIDfromKeyId(contractID, signingKeyId, state)
-          },
-          innerSigningKeyId,
-          get innerSigningContractID () {
-            return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
-          }
-        }
-        return sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, [`${manifestHash}/${action}/sideEffect`, mutation])
-      }
-      const msg = Object(message.message())
-
-      if (opT !== GIMessage.OP_ATOMIC) {
-        return callSideEffect(msg)
-      }
-
-      const reducer = (acc, [opT, opV]) => {
-        if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
-          acc.push(Object(opV))
-        }
-        return acc
-      }
-
-      const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
-
-      return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
-        const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
-        if (errors.length > 0) {
-          // $FlowFixMe[cannot-resolve-name]
-          throw new AggregateError(errors, `Error at side effects for ${contractID}`)
-        }
-      })
+    if (![GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+      return
     }
+
+    const contractID = message.contractID()
+    const manifestHash = message.manifest()
+    const hash = message.hash()
+    const id = message.id()
+    const signingKeyId = message.signingKeyId()
+
+    const callSideEffect = (field) => {
+      let v = field.valueOf()
+      let innerSigningKeyId: string | typeof undefined
+      if (isSignedData(v)) {
+        innerSigningKeyId = (v: any).signingKeyId
+        v = (v: any).valueOf()
+      }
+
+      const { action, data, meta } = (v: any)
+      const mutation = {
+        data,
+        meta,
+        hash,
+        id,
+        contractID,
+        description: message.description(),
+        direction: message.direction(),
+        signingKeyId,
+        get signingContractID () {
+          return getContractIDfromKeyId(contractID, signingKeyId, state)
+        },
+        innerSigningKeyId,
+        get innerSigningContractID () {
+          return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
+        }
+      }
+      return Promise.resolve(sbp(`${manifestHash}/${action}/sideEffect`, mutation))
+    }
+    const msg = Object(message.message())
+
+    if (opT !== GIMessage.OP_ATOMIC) {
+      return callSideEffect(msg)
+    }
+
+    const reducer = (acc, [opT, opV]) => {
+      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+        acc.push(Object(opV))
+      }
+      return acc
+    }
+
+    const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+
+    return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
+      const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
+      if (errors.length > 0) {
+        // $FlowFixMe[cannot-resolve-name]
+        throw new AggregateError(errors, `Error at side effects for ${contractID}`)
+      }
+    })
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {
     console.warn(`[chelonia] reverting mutation ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)

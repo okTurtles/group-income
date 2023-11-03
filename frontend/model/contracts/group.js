@@ -262,7 +262,7 @@ function updateGroupStreaks ({ state, getters }) {
 }
 
 const removeGroupChatroomProfile = (state, chatRoomID, member) => {
-  console.log('jjjj removeGroupChatroomProfile', { state, chatRoomID, member })
+  console.log('jjjj removeGroupChatroomProfile', JSON.parse(JSON.stringify({ state, chatRoomID, member })))
   Vue.set(state.chatRooms[chatRoomID], 'users',
     Object.fromEntries(
       Object.entries(state.chatRooms[chatRoomID].users)
@@ -271,9 +271,9 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
             memberKey, member, profile, active: (profile: any)?.status === PROFILE_STATUS.ACTIVE
           })
           if (memberKey === member && (profile: any)?.status === PROFILE_STATUS.ACTIVE) {
-            return [member, { status: PROFILE_STATUS.REMOVED }]
+            return [memberKey, { status: PROFILE_STATUS.REMOVED }]
           }
-          return [member, profile]
+          return [memberKey, profile]
         })
     )
   )
@@ -288,18 +288,30 @@ const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) 
     return
   }
 
+  const extraParams = {}
+
+  // When a group is being left, we want to also leave chatrooms,
+  // including private chatrooms. Since the user issuing the action
+  // may not be a member of the chatroom, we use the group's CSK
+  // unconditionally in this situation, which should be a key in the
+  // chatroom (either the CSK or the groupKey)
+  if (leavingGroup) {
+    const signingKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+    // If we don't have a CSK, it is because we've already been removed.
+    // Proceeding would cause an error
+    if (!signingKeyId) {
+      return
+    }
+
+    extraParams.signingKeyId = signingKeyId
+    extraParams.innerSigningContractID = null
+  }
+
   return sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
-    // When a group is being left, we want to also leave chatrooms,
-    // including private chatrooms. Since the user issuing the action
-    // may not be a member of the chatroom, we use the group's CSK
-    // unconditionally in this situation, which should be a key in the
-    // chatroom (either the CSK or the groupKey)
-    ...(leavingGroup && {
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-      innerSigningContractID: null
-    }),
+    ...extraParams,
     hooks: {
       preSendCheck: (_, state) => {
         // Avoid sending a duplicate action if the person has already
@@ -307,6 +319,13 @@ const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) 
         return !!state?.users?.[member]
       }
     }
+  }).catch((e) => {
+    console.log('jjj action', { e })
+    if (leavingGroup && e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIErrorMissingSigningKeyError') {
+      // This is fine; it just means we were removed by someone else
+      return
+    }
+    throw e
   })
 }
 
@@ -1644,6 +1663,7 @@ sbp('chelonia/defineContract', {
       const { identityContractID } = rootState.loggedIn
       const state = rootState[identityContractID]
 
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
       const CSKid = findKeyIdByName(state, 'csk')

@@ -23,3 +23,14 @@ export class GIErrorUIRuntimeError extends Error {
     }
   }
 }
+
+export class GIErrorMissingSigningKeyError extends Error {
+  constructor (...params: any[]) {
+    super(...params)
+    // this.name = this.constructor.name
+    this.name = 'GIErrorMissingSigningKeyError' // string literal so minifier doesn't overwrite
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}

@@ -235,8 +235,8 @@ export class GIMessage {
       contractID: string | null,
       originatingContractID?: string,
       originatingContractHeight?: number,
-      previousHEAD?: string | null,
-      height: number,
+      previousHEAD?: ?string,
+      height?: ?number,
       op: GIOpRaw,
       manifest: string,
     }
@@ -406,7 +406,7 @@ export class GIMessage {
     return `${desc}|${this.hash()} of ${this.contractID()}>`
   }
 
-  isFirstMessage (): boolean { return !this.head().previousHEAD }
+  isFirstMessage (): boolean { return !this.head().contractID }
 
   contractID (): string { return this.head().contractID || this.hash() }
 

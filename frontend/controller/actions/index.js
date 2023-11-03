@@ -160,6 +160,17 @@ sbp('sbp/selectors/register', {
     // Share new keys with other contracts
     const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
 
+    const preSendCheck = (msg, state) => {
+      const updatedKeysRemaining = updatedKeys.filter((key) => {
+        return state._vm.authorizedKeys[key.oldKeyId]._notAfterHeight == null
+      })
+
+      if (updatedKeysRemaining.length === 0) return false
+
+      // TODO: Update msg to remove unnecessary keys
+      return true
+    }
+
     if (Array.isArray(keyShares) && keyShares.length > 0) {
       // Issue OP_ATOMIC
       await sbp('chelonia/out/atomic', {
@@ -169,7 +180,10 @@ sbp('sbp/selectors/register', {
           ...keyShares.map((data) => ['chelonia/out/keyShare', { data }]),
           ['chelonia/out/keyUpdate', { data: updatedKeys }]
         ],
-        signingKeyId
+        signingKeyId,
+        hooks: {
+          preSendCheck
+        }
       })
     } else {
       // Issue OP_KEY_UPDATE
@@ -177,7 +191,10 @@ sbp('sbp/selectors/register', {
         contractID,
         contractName,
         data: updatedKeys,
-        signingKeyId
+        signingKeyId,
+        hooks: {
+          preSendCheck
+        }
       })
     }
 
