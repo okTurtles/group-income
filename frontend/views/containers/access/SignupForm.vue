@@ -130,7 +130,7 @@ export default ({
           email: this.form.email,
           passwordFn: wrapValueInFunction(this.form.password)
         })
-        await this.postSubmit()
+        await this.postSubmit?.()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()

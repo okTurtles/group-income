@@ -122,7 +122,7 @@ export default ({
           passwordFn: wrapValueInFunction(this.form.password)
         })
         await finishedLoggingIn
-        await this.postSubmit()
+        await this.postSubmit?.()
         this.$emit('submit-succeeded')
         requestNotificationPermission()
       } catch (e) {

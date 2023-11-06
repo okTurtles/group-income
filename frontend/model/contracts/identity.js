@@ -103,6 +103,9 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID }) {
         // it only makes sense to call updateLoginStateUponLogin for ourselves
         if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
+          if (sbp('chelonia/contract/isSyncing', contractID)) {
+            return
+          }
           // makes sure that updateLoginStateUponLogin gets run after the entire identity
           // state has been synced, this way we don't end up joining groups we've left, etc.
           sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])

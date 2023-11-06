@@ -41,6 +41,7 @@ const signData = function (sKeyId: string, data: any, extraFields: Object, addit
   if (!additionalData) {
     throw new ChelErrorSignatureError('Signature additional data must be provided')
   }
+  // console.debug('@@@@SIGNING_DATA [11]', JSON.parse(JSON.stringify({ state: this, sKeyId, data })))
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
   const designatedKey = this._vm?.authorizedKeys?.[sKeyId]
@@ -49,10 +50,10 @@ const signData = function (sKeyId: string, data: any, extraFields: Object, addit
   )) {
     throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} is missing or is missing signing purpose`)
   }
-  if (designatedKey._notAfterHeight !== undefined) {
+  if (designatedKey._notAfterHeight != null) {
     const name = (this._vm: any).authorizedKeys[sKeyId].name
     console.log({ state: this })
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
+    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight != null && v.name === name && v.purpose.includes('sig')): any)?.id
 
     if (!newKeyId) {
       throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} has been revoked and no new key exists by the same name (${name})`)

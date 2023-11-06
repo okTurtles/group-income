@@ -235,8 +235,8 @@ export class GIMessage {
       contractID: string | null,
       originatingContractID?: string,
       originatingContractHeight?: number,
-      previousHEAD?: string | null,
-      height: number,
+      previousHEAD?: ?string,
+      height?: ?number,
       op: GIOpRaw,
       manifest: string,
     }
@@ -358,25 +358,24 @@ export class GIMessage {
   }
 
   decryptedValue (): any {
-    const value = this.message()
-    const data = unwrapMaybeEncryptedData(value)
-    // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
-    // on failure)
-    if (data?.data) {
+    try {
+      const value = this.message()
+      const data = unwrapMaybeEncryptedData(value)
+      // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
+      // on failure)
+      if (data?.data) {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
-      if (isSignedData(data.data)) {
-        try {
+        if (isSignedData(data.data)) {
           return data.data.valueOf()
-        } catch {
-          // Signature verification failed. In this case, we return undefined
-          return undefined
+        } else {
+          return data.data
         }
-      } else {
-        return data.data
       }
+    } catch {
+      // Signature or encryption error
+      return undefined
     }
-    return undefined
   }
 
   head (): Object { return this._head }
@@ -407,7 +406,7 @@ export class GIMessage {
     return `${desc}|${this.hash()} of ${this.contractID()}>`
   }
 
-  isFirstMessage (): boolean { return !this.head().previousHEAD }
+  isFirstMessage (): boolean { return !this.head().contractID }
 
   contractID (): string { return this.head().contractID || this.hash() }
 

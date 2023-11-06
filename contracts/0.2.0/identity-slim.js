@@ -312,6 +312,9 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID }) {
           if (contractID === (0, import_sbp.default)("state/vuex/getters").ourIdentityContractId) {
+            if ((0, import_sbp.default)("chelonia/contract/isSyncing", contractID)) {
+              return;
+            }
             (0, import_sbp.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
               (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
                 message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {

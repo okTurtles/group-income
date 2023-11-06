@@ -8871,6 +8871,8 @@ ${this.getErrorInfo()}`;
         const rootState = (0, import_sbp6.default)("state/vuex/state");
         const { identityContractID } = rootState.loggedIn;
         const state = rootState[identityContractID];
+        if (!state._volatile)
+          import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)
           import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
         const CSKid = findKeyIdByName(state, "csk");
@@ -8896,7 +8898,7 @@ ${this.getErrorInfo()}`;
             console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
-        return (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
           console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },

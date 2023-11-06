@@ -326,7 +326,7 @@ export default (sbp('sbp/selectors/register', {
       const isJoiningGroup = !!params.originatingContractID
       isJoiningGroup && sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
       await sbp('chelonia/contract/sync', params.contractID)
-      await sbp('chelonia/contract/wait', { contractIDs: [params.contractID], waitSideEffect: true })
+      await sbp('chelonia/contract/wait', params.contractID)
       isJoiningGroup && sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
 
       if (!rootState.contracts[params.contractID]) {
