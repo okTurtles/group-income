@@ -122,8 +122,9 @@ class PersistentAction {
 sbp('sbp/selectors/register', {
   'chelonia.persistentActions/_init' (): void {
     this.actionsByID = Object.create(null)
-    // Necessary for now as _init cannot be async. Becomes true when 'configure' has been called.
-    this.ready = false
+    this.checkDatabaseKey = function () {
+      if (!this.databaseKey) throw new TypeError(`${tag} No database key configured`)
+    }.bind(this)
     sbp('okTurtles.events/on', PERSISTENT_ACTION_SUCCESS, ({ id }) => {
       sbp('chelonia.persistentActions/cancel', id)
     })
@@ -145,7 +146,6 @@ sbp('sbp/selectors/register', {
 
   // TODO: validation
   'chelonia.persistentActions/configure' ({ databaseKey, options = {} }: { databaseKey: string; options: Object }): void {
-    if (!databaseKey) throw new TypeError(`${tag} 'databaseKey' is required`)
     this.databaseKey = databaseKey
     for (const key in options) {
       if (key in defaultOptions) {
@@ -157,7 +157,6 @@ sbp('sbp/selectors/register', {
   },
 
   'chelonia.persistentActions/enqueue' (...args): UUIDV4[] {
-    if (!this.ready) throw new Error(`${tag} Not ready yet.`)
     const ids: UUIDV4[] = []
     for (const arg of args) {
       const action = Array.isArray(arg)
@@ -182,6 +181,7 @@ sbp('sbp/selectors/register', {
 
   // Loads and tries every stored persistent action under the configured database key.
   async 'chelonia.persistentActions/load' (): Promise<void> {
+    this.checkDatabaseKey()
     const storedActions = JSON.parse((await sbp('chelonia/db/get', this.databaseKey)) ?? '[]')
     for (const { id, invocation, options } of storedActions) {
       this.actionsByID[id] = new PersistentAction(invocation, options)
@@ -189,7 +189,6 @@ sbp('sbp/selectors/register', {
       // TODO: find a cleaner alternative.
       this.actionsByID[id].id = id
     }
-    this.ready = true
     sbp('chelonia.persistentActions/retryAll')
   },
 
@@ -204,6 +203,7 @@ sbp('sbp/selectors/register', {
 
   // Updates the database version of the attempting action list.
   'chelonia.persistentActions/save' (): Promise<Error | void> {
+    this.checkDatabaseKey()
     return sbp(
       'chelonia/db/set',
       this.databaseKey,
