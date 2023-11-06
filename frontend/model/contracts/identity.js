@@ -104,6 +104,8 @@ sbp('chelonia/defineContract', {
         // it only makes sense to call updateLoginStateUponLogin for ourselves
         if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
           if (sbp('chelonia/contract/isSyncing', contractID)) {
+            // NOTE: no need to enqueue `updateLoginStateUponLoin` invocation
+            //       while syncing/loggingin because it is called in `gi.actions/identity/login`
             return
           }
           // makes sure that updateLoginStateUponLogin gets run after the entire identity
