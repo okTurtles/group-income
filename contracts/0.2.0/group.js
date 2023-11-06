@@ -17536,7 +17536,7 @@ ${this.getErrorInfo()}`;
           const { username } = rootState.loggedIn;
           if (data.member === username) {
             (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
-              if (rootState[contractID].profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
+              if (rootState[contractID]?.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
                 await (0, import_sbp7.default)("gi.contracts/group/removeArchivedProposals", contractID);
                 await (0, import_sbp7.default)("gi.contracts/group/removeArchivedPayments", contractID);
                 const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null;

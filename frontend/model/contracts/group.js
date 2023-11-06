@@ -909,7 +909,7 @@ sbp('chelonia/defineContract', {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
           sbp('chelonia/queueInvocation', contractID, async () => {
-            if (rootState[contractID].profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
+            if (rootState[contractID]?.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
               // NOTE: should remove archived data from IndexedStorage
               //       regarding the current group (proposals, payments)
               await sbp('gi.contracts/group/removeArchivedProposals', contractID)
