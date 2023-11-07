@@ -1,36 +1,10 @@
 'use strict'
 
-export class GIErrorIgnoreAndBan extends Error {
-  // ugly boilerplate because JavaScript is stupid
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = 'GIErrorIgnoreAndBan'
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
+import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
+
+export const GIErrorIgnoreAndBan: typeof Error = ChelErrorGenerator('GIErrorIgnoreAndBan')
 
 // Used to throw human readable errors on UI.
-export class GIErrorUIRuntimeError extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    // this.name = this.constructor.name
-    this.name = 'GIErrorUIRuntimeError' // string literal so minifier doesn't overwrite
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
+export const GIErrorUIRuntimeError: typeof Error = ChelErrorGenerator('GIErrorUIRuntimeError')
 
-export class GIErrorMissingSigningKeyError extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    // this.name = this.constructor.name
-    this.name = 'GIErrorMissingSigningKeyError' // string literal so minifier doesn't overwrite
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
+export const GIErrorMissingSigningKeyError: typeof Error = ChelErrorGenerator('GIErrorMissingSigningKeyError')

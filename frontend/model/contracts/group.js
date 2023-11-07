@@ -271,7 +271,7 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
             memberKey, member, profile, active: (profile: any)?.status === PROFILE_STATUS.ACTIVE
           })
           if (memberKey === member && (profile: any)?.status === PROFILE_STATUS.ACTIVE) {
-            return [memberKey, { status: PROFILE_STATUS.REMOVED }]
+            return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }]
           }
           return [memberKey, profile]
         })
@@ -304,7 +304,10 @@ const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) 
       return
     }
 
+    // Set signing key to the CSK
     extraParams.signingKeyId = signingKeyId
+    // Explicitly opt out of inner signatures. By default, actions will be signed
+    // by the currently logged in user.
     extraParams.innerSigningContractID = null
   }
 

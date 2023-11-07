@@ -485,9 +485,7 @@ export const recreateEvent = async (entry: GIMessage, state: Object): Promise<ty
 
   if (!newRawOpV) return
 
-  const newOp = opT === GIMessage.OP_ATOMIC && (newRawOpV: any).length === 1
-    ? (newRawOpV: any)[0]
-    : [opT, newRawOpV]
+  const newOp = [opT, newRawOpV]
 
   entry = GIMessage.cloneWith(
     head, newOp, { previousHEAD, height: previousHeight + 1 }

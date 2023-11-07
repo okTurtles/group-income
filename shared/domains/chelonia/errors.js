@@ -2,9 +2,9 @@
 
 // ugly boilerplate because JavaScript is stupid
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-const ChelErrorGenerator = (
+export const ChelErrorGenerator = (
   name: string,
-  base = Error
+  base: typeof Error = Error
 ): typeof Error =>
   ((class extends base {
     constructor (...params: any[]) {

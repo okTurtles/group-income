@@ -374,6 +374,8 @@ export class GIMessage {
       }
     } catch {
       // Signature or encryption error
+      // We don't log this error because it's already logged when the value is
+      // retrieved
       return undefined
     }
   }

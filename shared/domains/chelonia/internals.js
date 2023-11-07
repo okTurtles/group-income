@@ -281,7 +281,11 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        // if this isn't OP_CONTRACT, recreate and resend message
+        // if this isn't the first event (i.e., OP_CONTRACT), recreate and
+        // resend message
+        // This is mainly to set height and previousHEAD. For the first event,
+        // this doesn't need to be done because previousHEAD is always undefined
+        // and height is always 0.
         // We always call recreateEvent because we may have received new events
         // in the web socket
         if (!entry.isFirstMessage()) {
@@ -309,7 +313,7 @@ export default (sbp('sbp/selectors/register', {
         return entry
       }
       if (r.status === 409) {
-        if (attempt >= maxAttempts) {
+        if (attempt + 1 > maxAttempts) {
           console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
           throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
@@ -318,13 +322,6 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait randDelay ms before sending it again
-
-        // TODO: The [pubsub] code seems to miss events that happened between
-        // a call to sync and the subscription time. This is a temporary measure
-        // to handle this until [pubsub] is updated.
-        if (entry.height() === lastAttemptedHeight) {
-          await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), ['chelonia/private/in/syncContract', entry.contractID()])
-        }
       } else {
         const message = (await r.json())?.message
         console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
@@ -1372,7 +1369,7 @@ const handleEvent = {
     const id = message.id()
     const signingKeyId = message.signingKeyId()
 
-    const callSideEffect = (field) => {
+    const callSideEffect = async (field) => {
       let v = field.valueOf()
       let innerSigningKeyId: string | typeof undefined
       if (isSignedData(v)) {
@@ -1398,7 +1395,7 @@ const handleEvent = {
           return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
         }
       }
-      return Promise.resolve(sbp(`${manifestHash}/${action}/sideEffect`, mutation))
+      return await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
     const msg = Object(message.message())
 
