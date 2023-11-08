@@ -257,7 +257,6 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     let attempt = 1
-    let lastAttemptedHeight
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     hooks?.prepublish?.(entry)
@@ -269,7 +268,7 @@ export default (sbp('sbp/selectors/register', {
       // 'latest' state may be for that contract (in case we were receiving
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
-      lastAttemptedHeight = entry.height()
+      entry.height()
       entry = await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), () => {
         const rootState = sbp(this.config.stateSelector)
         const state = rootState[entry.contractID()]
@@ -792,7 +791,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
     return result
   },
-  'chelonia/private/in/syncContract': async function (contractID: string) {
+  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
@@ -800,10 +799,18 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-    } else if (!state.pending.includes(contractID)) {
+      if (params?.deferredRemove && !state.contracts[contractID].deferredRemove) {
+        state.contracts[contractID].deferredRemove = params.deferredRemove
+      }
+    } else {
+      const entry = state.pending.find((entry) => entry === contractID || entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      state.pending.push(contractID)
+      if (!entry) {
+        state.pending.push({ contractID, deferredRemove: params?.deferredRemove })
+      } else if (params?.deferredRemove && !entry.deferredRemove) {
+        entry.deferredRemove = params.deferredRemove
+      }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
@@ -1223,7 +1230,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
-      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
+      if (!state.pending.some((entry) => entry?.contractID === contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
         return
       }
@@ -1349,10 +1356,19 @@ const handleEvent = {
       }
       console.debug(`contract ${type} registered for ${contractID}`)
       if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
-      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+      const entry = state.pending.find((entry) => entry?.contractID === contractID)
+      if (entry?.deferredRemove) {
+        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0, deferredRemove: true })
+      } else {
+        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+      }
       // we've successfully received it back, so remove it from expectation pending
-      const index = state.pending.indexOf(contractID)
-      index !== -1 && state.pending.splice(index, 1)
+      if (entry) {
+        const index = state.pending.indexOf(entry)
+        if (index !== -1) {
+          state.pending.splice(index, 1)
+        }
+      }
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
     await sbp('chelonia/private/in/processMessage', message, state[contractID], internalSideEffectStack)

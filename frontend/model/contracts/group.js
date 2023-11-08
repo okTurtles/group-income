@@ -279,7 +279,7 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
   )
 }
 
-const leaveChatRoomAction = (state, { chatRoomID, member, leavingGroup }, meta) => {
+const leaveChatRoomAction = (state, { chatRoomID, member }, meta, leavingGroup) => {
   const sendingData = leavingGroup
     ? { member: member }
     : { member: member, username: meta.username }
@@ -339,9 +339,8 @@ const leaveAllChatRoomsUponLeaving = (state, member, meta) => {
     .filter(cID => chatRooms[cID].users?.[member]?.status === PROFILE_STATUS.REMOVED)
     .map((chatRoomID) => leaveChatRoomAction(state, {
       chatRoomID,
-      member,
-      leavingGroup: true
-    }, meta))
+      member
+    }, meta, true))
   )
 }
 

@@ -38,13 +38,14 @@ export const encryptedAction = (
   }
   return {
     [action]: async function (params: GIActionParams) {
+      const contractID = params.contractID
+      if (!contractID) {
+        throw new Error('Missing contract ID')
+      }
+
       try {
-        const contractID = params.contractID
-        if (!contractID) {
-          throw new Error('Missing contract ID')
-        }
         // Writing to a contract requires being subscribed to it
-        await sbp('chelonia/contract/sync', contractID)
+        await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
@@ -112,6 +113,8 @@ export const encryptedAction = (
           ? `${humanError} ${LError(e).reportError}`
           : humanError(params, e)
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
+      } finally {
+        await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
       }
     }
   }
