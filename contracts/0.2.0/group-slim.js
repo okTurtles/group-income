@@ -8860,7 +8860,7 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/group/rotateKeys": (contractID) => {
-        const state = (0, import_sbp6.default)("state/vuex/getters")[contractID];
+        const state = (0, import_sbp6.default)("state/vuex/state")[contractID];
         if (!state._volatile)
           import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)

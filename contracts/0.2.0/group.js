@@ -17991,7 +17991,7 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/group/rotateKeys": (contractID) => {
-        const state = (0, import_sbp7.default)("state/vuex/getters")[contractID];
+        const state = (0, import_sbp7.default)("state/vuex/state")[contractID];
         if (!state._volatile)
           vue_esm_default.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)

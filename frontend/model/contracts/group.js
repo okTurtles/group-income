@@ -1492,7 +1492,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/rotateKeys': (contractID) => {
-      const state = sbp('state/vuex/getters')[contractID]
+      const state = sbp('state/vuex/state')[contractID]
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
