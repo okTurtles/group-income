@@ -997,15 +997,15 @@ export default (sbp('sbp/selectors/register', {
     const keysToDelete = Object.entries(pendingKeyRevocations).filter(([, v]) => v === 'del').map(([id]) => id)
 
     // Aggregate the keys that we can delete to send them in a single operation
-    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, cv) => {
+    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, keyId) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
-      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId].ringLevel)
+      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId]?.ringLevel ?? Number.POSITIVE_INFINITY)
       if (ringLevel >= currentRingLevel) {
-        return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(cv)]
+        return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(keyId)]
       } else if (Number.isFinite(ringLevel)) {
         const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
         if (signingKeyId) {
-          return [ringLevel, signingKeyId, (currentKeyIds: any).push(cv)]
+          return [ringLevel, signingKeyId, (currentKeyIds: any).push(keyId)]
         }
       }
       return acc
