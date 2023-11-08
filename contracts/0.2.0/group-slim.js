@@ -8404,6 +8404,9 @@ ${this.getErrorInfo()}`;
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
+            if ((0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+              return;
+            }
             (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
               if (rootState[contractID]?.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
                 await (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID);
@@ -8441,16 +8444,18 @@ ${this.getErrorInfo()}`;
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               });
-              (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID, state).then(() => {
-                return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
-              }).catch((e) => {
-                console.error("Error rotating group keys or our PEK", e);
-              });
               const rootGetters2 = (0, import_sbp6.default)("state/vuex/getters");
               const userID = rootGetters2.ourContactProfiles[data.member]?.contractID;
-              if (userID) {
-                (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, userID, state);
-              }
+              (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+                (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID).then(() => {
+                  return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
+                }).catch((e) => {
+                  console.error("Error rotating group keys or our PEK", e);
+                });
+                if (userID) {
+                  (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, userID);
+                }
+              });
             }
           }
         }
@@ -8854,7 +8859,8 @@ ${this.getErrorInfo()}`;
           });
         }
       },
-      "gi.contracts/group/rotateKeys": (contractID, state) => {
+      "gi.contracts/group/rotateKeys": (contractID) => {
+        const state = (0, import_sbp6.default)("state/vuex/getters")[contractID];
         if (!state._volatile)
           import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)
@@ -8898,11 +8904,12 @@ ${this.getErrorInfo()}`;
             console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
-        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+        return (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
           console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },
-      "gi.contracts/group/removeForeignKeys": (contractID, userID, state) => {
+      "gi.contracts/group/removeForeignKeys": (contractID, userID) => {
+        const state = (0, import_sbp6.default)("state/vuex/state")[contractID];
         const keyIds = findForeignKeysByContractID(state, userID);
         if (!keyIds?.length)
           return;
@@ -8910,7 +8917,7 @@ ${this.getErrorInfo()}`;
         const CEKid = findKeyIdByName(state, "cek");
         if (!CEKid)
           throw new Error("Missing encryption key");
-        (0, import_sbp6.default)("chelonia/out/keyDel", {
+        return (0, import_sbp6.default)("chelonia/out/keyDel", {
           contractID,
           contractName: "gi.contracts/group",
           data: keyIds,

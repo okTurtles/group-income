@@ -908,6 +908,9 @@ sbp('chelonia/defineContract', {
         if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+            return
+          }
           sbp('chelonia/queueInvocation', contractID, async () => {
             if (rootState[contractID]?.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
               // NOTE: should remove archived data from IndexedStorage
@@ -961,19 +964,20 @@ sbp('chelonia/defineContract', {
                 username: memberRemovedThemselves ? meta.username : data.member
               })
 
-            // gi.contracts/group/removeOurselves will eventually trigger this
-            // as well
-            sbp('gi.contracts/group/rotateKeys', contractID, state).then(() => {
-              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
-            }).catch((e) => {
-              console.error('Error rotating group keys or our PEK', e)
-            })
-
+            // gi.contracts/group/removeOurselves will eventually trigger this as well
             const rootGetters = sbp('state/vuex/getters')
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID
-            if (userID) {
-              sbp('gi.contracts/group/removeForeignKeys', contractID, userID, state)
-            }
+            sbp('chelonia/queueInvocation', contractID, () => {
+              sbp('gi.contracts/group/rotateKeys', contractID).then(() => {
+                return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+              }).catch((e) => {
+                console.error('Error rotating group keys or our PEK', e)
+              })
+
+              if (userID) {
+                sbp('gi.contracts/group/removeForeignKeys', contractID, userID)
+              }
+            })
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
@@ -1487,7 +1491,8 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/group/rotateKeys': (contractID, state) => {
+    'gi.contracts/group/rotateKeys': (contractID) => {
+      const state = sbp('state/vuex/getters')[contractID]
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
@@ -1538,11 +1543,12 @@ sbp('chelonia/defineContract', {
         })
       }
 
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      return sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
-    'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
+    'gi.contracts/group/removeForeignKeys': (contractID, userID) => {
+      const state = sbp('state/vuex/state')[contractID]
       const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return
@@ -1552,7 +1558,7 @@ sbp('chelonia/defineContract', {
 
       if (!CEKid) throw new Error('Missing encryption key')
 
-      sbp('chelonia/out/keyDel', {
+      return sbp('chelonia/out/keyDel', {
         contractID,
         contractName: 'gi.contracts/group',
         data: keyIds,
