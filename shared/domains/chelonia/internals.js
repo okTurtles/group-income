@@ -257,6 +257,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     let attempt = 1
+    let lastAttemptedHeight
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     hooks?.prepublish?.(entry)
@@ -268,7 +269,7 @@ export default (sbp('sbp/selectors/register', {
       // 'latest' state may be for that contract (in case we were receiving
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
-      entry.height()
+      lastAttemptedHeight = entry.height()
       entry = await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), () => {
         const rootState = sbp(this.config.stateSelector)
         const state = rootState[entry.contractID()]
@@ -321,6 +322,13 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait randDelay ms before sending it again
+
+        // TODO: The [pubsub] code seems to miss events that happened between
+        // a call to sync and the subscription time. This is a temporary measure
+        // to handle this until [pubsub] is updated.
+        if (entry.height() === lastAttemptedHeight) {
+          await sbp('chelonia/contract/sync', entry.contractID(), { force: true })
+        }
       } else {
         const message = (await r.json())?.message
         console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
