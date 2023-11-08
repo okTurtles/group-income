@@ -372,8 +372,8 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
 
 // PWA push notification
 
-route.GET('/push/publickey', {}, function () {
-  return VAPID_PUBLIC_KEY
+route.GET('/push/publickey', {}, function (req, h) {
+  return h.response(VAPID_PUBLIC_KEY).type('text/plain')
 })
 
 route.POST('/push/subscribe', {
