@@ -811,7 +811,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID].deferredRemove = params.deferredRemove
       }
     } else {
-      const entry = state.pending.find((entry) => entry === contractID || entry?.contractID === contractID)
+      const entry = state.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
       if (!entry) {
@@ -952,7 +952,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    if (!has(rootState, contractID)) {
+    if (!has(rootState.contracts, contractID)) {
       await sbp('chelonia/private/in/syncContract', contractID)
     }
 
