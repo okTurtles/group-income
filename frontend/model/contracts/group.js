@@ -10,7 +10,8 @@ import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
   STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
-  INVITE_INITIAL_CREATOR, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
+  INVITE_INITIAL_CREATOR, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS,
+  CHATROOM_GENERAL_NAME
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
@@ -1042,43 +1043,98 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta, contractID }, { state }) {
-        const rootGetters = sbp('state/vuex/getters')
+      sideEffect ({ meta, contractID }, { state }) {
         const { loggedIn } = sbp('state/vuex/state')
-        const { profiles = {} } = state
 
-        // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
-        // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === loggedIn.username) {
-          // we're the person who just accepted the group invite
-          // so subscribe to founder's IdentityContract & everyone else's
-          const lookupResult = await Promise.allSettled(
-            Object.keys(profiles)
-              .filter((name) =>
-                !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
-              .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
-                if (!r) throw new Error('Cannot lookup username: ' + name)
-                return r
-              }))
-          )
-          const errors = lookupResult
-            .filter(({ status }) => status === 'rejected')
-            .map((r) => (r: any).reason)
-          await sbp('chelonia/contract/sync',
-            lookupResult
-              .filter(({ status }) => status === 'fulfilled')
-              .map((r) => (r: any).value)
-          ).catch(e => errors.push(e))
-          if (errors.length) {
-            const msg = `Encountered ${errors.length} errors while accepting invites`
-            console.error(msg, errors)
-            throw new Error(msg)
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const rootState = sbp('state/vuex/state')
+          const rootGetters = sbp('state/vuex/getters')
+          const state = rootState[contractID]
+          const { profiles = {} } = state
+
+          if (profiles[meta.username].status !== PROFILE_STATUS.ACTIVE) {
+            return
           }
-        } else {
+
+          // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
+          // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
+          if (meta.username === loggedIn.username) {
+          // we're the person who just accepted the group invite
+
+            const userID = loggedIn.identityContractID
+
+            // Add the group's CSK to our identity contract so that we can receive
+            // DMs.
+            await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
+
+            const generalChatRoomId = state.generalChatRoomId
+            if (generalChatRoomId) {
+              // Join the general chatroom
+              if (state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE) {
+                sbp('gi.actions/group/joinChatRoom', {
+                  contractID,
+                  data: {
+                    chatRoomID: generalChatRoomId
+                  },
+                  hooks: {
+                    preSendCheck: (_, state) => {
+                      return state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE
+                    }
+                  }
+                }).catch((e) => {
+                  console.error('Error while joining the #General chatroom', e)
+                  // setTimeout to avoid blocking the main thread
+                  setTimeout(() => {
+                    // TODO: Replace alert()
+                    alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
+                  }, 0)
+                })
+              }
+            } else {
+              // setTimeout to avoid blocking the main thread
+              setTimeout(() => {
+                // TODO: Replace alert()
+                alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
+              }, 0)
+            }
+
+            // subscribe to founder's IdentityContract & everyone else's
+            const lookupResult = await Promise.allSettled(
+              Object.keys(profiles)
+                .filter((name) =>
+                  !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
+                .map(async (name) => await sbp('namespace/lookup', name).then((r) => {
+                  if (!r) throw new Error('Cannot lookup username: ' + name)
+                  return r
+                }))
+            )
+            const errors = lookupResult
+              .filter(({ status }) => status === 'rejected')
+              .map((r) => (r: any).reason)
+
+            await sbp('chelonia/contract/sync',
+              lookupResult
+                .filter(({ status }) => status === 'fulfilled')
+                .map((r) => (r: any).value)
+            ).catch(e => errors.push(e))
+
+            if (errors.length) {
+              const msg = `Encountered ${errors.length} errors while accepting invites`
+              console.error(msg, errors)
+              throw new Error(msg)
+            }
+          } else {
+            // we're an existing member of the group getting notified that a
+            // new member has joined, so subscribe to their identity contract
+            await sbp('chelonia/contract/sync', meta.identityContractID)
+          }
+        }).catch(e => {
+          console.error('[gi.contracts/group/inviteAccept/sideEffect]: An error occurred', e)
+        })
+
+        if (meta.username !== loggedIn.username) {
+          const { profiles = {} } = state
           const myProfile = profiles[loggedIn.username]
-          // we're an existing member of the group getting notified that a
-          // new member has joined, so subscribe to their identity contract
-          await sbp('chelonia/contract/sync', meta.identityContractID)
 
           if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.

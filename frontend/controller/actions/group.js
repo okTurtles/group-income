@@ -386,8 +386,6 @@ export default (sbp('sbp/selectors/register', {
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
         if (state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
-          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
           // Share our PEK with the group so that group members can see
@@ -403,7 +401,6 @@ export default (sbp('sbp/selectors/register', {
 
           const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
           const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-          const userCEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'cek')
 
           await sbp('chelonia/out/keyAdd', {
             contractID: params.contractID,
@@ -430,45 +427,6 @@ export default (sbp('sbp/selectors/register', {
               postpublish: null
             }
           })
-
-          // Add the group's CSK to our identity contract so that we can receive
-          // key rotation updates and DMs.
-          await sbp('chelonia/out/keyAdd', {
-            contractID: userID,
-            contractName: 'gi.contracts/identity',
-            data: [encryptedOutgoingData(userID, userCEKid, {
-              foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
-              id: CSKid,
-              data: state._vm.authorizedKeys[CSKid].data,
-              // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
-              // that a chatroom has just been created
-              permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-              allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
-              purpose: ['sig'],
-              ringLevel: Number.MAX_SAFE_INTEGER,
-              name: `${params.contractID}/${CSKid}`
-            })],
-            signingKeyId: sbp('chelonia/contract/suitableSigningKey', userID, [GIMessage.OP_KEY_ADD], ['sig'])
-          })
-
-          if (generalChatRoomId) {
-            // Join the general chatroom
-            await sbp('gi.actions/group/joinChatRoom', {
-              ...omit(params, ['options', 'data', 'hooks', 'signingKeyId']),
-              data: {
-                chatRoomID: generalChatRoomId
-              },
-              hooks: {
-                prepublish: null,
-                postpublish: params.hooks?.postpublish
-              }
-            })
-          } else {
-            // setTimeout to avoid blocking the main thread
-            setTimeout(() => {
-              alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-            }, 0)
-          }
 
           if (rootState.currentGroupId === params.contractID) {
             await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })

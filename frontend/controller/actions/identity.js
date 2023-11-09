@@ -525,6 +525,37 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
+  'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
+    const keyId = sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+
+    const rootState = sbp('state/vuex/state')
+    const foreignContractState = rootState[foreignContractID]
+
+    const existingForeignKeys = sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
+
+    if (existingForeignKeys?.includes(keyId)) {
+      return
+    }
+
+    return await sbp('chelonia/out/keyAdd', {
+      contractID,
+      contractName: 'gi.contracts/identity',
+      data: [encryptedOutgoingData(contractID, CEKid, {
+        foreignKey: `sp:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
+        id: keyId,
+        data: foreignContractState._vm.authorizedKeys[keyId].data,
+        // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+        // that a chatroom has just been created
+        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        name: `${foreignContractID}/${keyId}`
+      })],
+      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
+    })
+  },
   'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]

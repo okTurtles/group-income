@@ -18,7 +18,7 @@ import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
-import { findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -344,6 +344,13 @@ export default (sbp('sbp/selectors/register', {
       return
     }
     return currentKeyId
+  },
+  'chelonia/contract/foreignKeysByContractID': function (contractIDOrState: string | Object, foreignContractID: string) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    return findForeignKeysByContractID(contractIDOrState, foreignContractID)
   },
   'chelonia/contract/historicalKeyIdsByName': function (contractIDOrState: string | Object, name: string) {
     if (typeof contractIDOrState === 'string') {

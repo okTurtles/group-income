@@ -112,6 +112,8 @@ async function startApp () {
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
+          'gi.actions/group/joinChatRoom',
+          'gi.actions/identity/addJoinDirectMessageKey',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
