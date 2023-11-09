@@ -531,7 +531,6 @@ export default (sbp('sbp/selectors/register', {
 
     // TODO: Also share PEK with DMs
     return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
-      const groupState = rootState[groupID]
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
       const CSKid = findKeyIdByName(rootState[groupID], 'csk')
 
@@ -544,14 +543,14 @@ export default (sbp('sbp/selectors/register', {
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
-        data: encryptedOutgoingData(groupState, CEKid, {
+        data: encryptedOutgoingData(groupID, CEKid, {
           contractID: groupID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
             meta: {
               private: {
-                content: encryptedOutgoingData(groupState, CEKid, serializeKey(newKey, true))
+                content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
               }
             }
           }))

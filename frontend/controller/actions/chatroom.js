@@ -208,7 +208,7 @@ export default (sbp('sbp/selectors/register', {
           id: newId,
           meta: {
             private: {
-              content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+              content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
             }
           }
         }))
@@ -235,19 +235,15 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      await sbp('chelonia/contract/sync', params.contractID)
-
       const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
       const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-
-      const state = rootState[params.contractID]
 
       // Add the user's CSK to the contract
       await sbp('chelonia/out/keyAdd', {
         contractID: params.contractID,
         contractName: 'gi.contracts/chatroom',
         // TODO: Find a way to have this wrapping be done by Chelonia directly
-        data: [encryptedOutgoingData(state, CEKid, {
+        data: [encryptedOutgoingData(params.contractID, CEKid, {
           foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
           id: userCSKid,
           data: rootState[userID]._vm.authorizedKeys[userCSKid].data,

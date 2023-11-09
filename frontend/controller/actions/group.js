@@ -408,7 +408,7 @@ export default (sbp('sbp/selectors/register', {
           await sbp('chelonia/out/keyAdd', {
             contractID: params.contractID,
             contractName: 'gi.contracts/group',
-            data: [encryptedOutgoingData(state, CEKid, {
+            data: [encryptedOutgoingData(params.contractID, CEKid, {
               foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
               id: userCSKid,
               data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -436,7 +436,7 @@ export default (sbp('sbp/selectors/register', {
           await sbp('chelonia/out/keyAdd', {
             contractID: userID,
             contractName: 'gi.contracts/identity',
-            data: [encryptedOutgoingData(rootState[userID], userCEKid, {
+            data: [encryptedOutgoingData(userID, userCEKid, {
               foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
               id: CSKid,
               data: state._vm.authorizedKeys[CSKid].data,
@@ -557,7 +557,7 @@ export default (sbp('sbp/selectors/register', {
               id: newId,
               meta: {
                 private: {
-                  content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+                  content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
                 }
               }
             }))

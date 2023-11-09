@@ -952,6 +952,12 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
+    // We check rootState.contracts[contractID] to see if we're already
+    // subscribed to the contract; if not, we call sync.
+    // If we're subscribed, we don't call sync because we should have the latest
+    // state
+    // Checking rootState[contractID] instead of rootState.contracts[contractID]
+    // could give us an incomplete state
     if (!has(rootState.contracts, contractID)) {
       await sbp('chelonia/private/in/syncContract', contractID)
     }
@@ -1116,7 +1122,7 @@ export default (sbp('sbp/selectors/register', {
           id: keyId,
           meta: {
             private: {
-              content: encryptedOutgoingData(originatingState, encryptionKeyId, key),
+              content: encryptedOutgoingData(originatingContractID, encryptionKeyId, key),
               shareable: true
             }
           }
@@ -1138,7 +1144,7 @@ export default (sbp('sbp/selectors/register', {
         contractName: originatingContractName,
         data: keyShareEncryption
           ? encryptedOutgoingData(
-            originatingState,
+            originatingContractID,
             findSuitablePublicKeyIds(originatingState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
             keySharePayload
           )
@@ -1154,7 +1160,7 @@ export default (sbp('sbp/selectors/register', {
               id: keyId(deserializedResponseKey),
               meta: {
                 private: {
-                  content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                  content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
                   shareable: true
                 }
               }
@@ -1175,7 +1181,7 @@ export default (sbp('sbp/selectors/register', {
                 data:
                 krsEncryption
                   ? encryptedOutgoingData(
-                    contractState,
+                    contractID,
                     findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
                     payload
                   )
@@ -1189,7 +1195,7 @@ export default (sbp('sbp/selectors/register', {
               {
                 data: keyShareEncryption
                   ? encryptedOutgoingData(
-                    contractState,
+                    contractID,
                     findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
                     connectionKeyPayload
                   )
@@ -1218,7 +1224,7 @@ export default (sbp('sbp/selectors/register', {
         contractName,
         signingKeyId,
         data: krsEncryption
-          ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+          ? encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
           : payload
       }).catch((e) => {
         console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)

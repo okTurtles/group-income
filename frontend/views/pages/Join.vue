@@ -132,8 +132,10 @@ export default ({
         }
         if (this.ourUsername) {
           if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourUsername])) {
+            console.log('Join.vue, pushing /dashboard')
             this.$router.push({ path: '/dashboard' })
           } else {
+            console.log('Join.vue, calling this.accept()')
             await this.accept()
           }
           return
@@ -166,7 +168,7 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
-      if (this.$store.state.contracts[groupId]) {
+      if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[groupId]?.profiles?.[this.ourUsername]?.status)) {
         return this.$router.push({ path: '/dashboard' })
       }
       try {

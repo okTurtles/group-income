@@ -64,7 +64,7 @@ sbp('sbp/selectors/register', {
         id: keyId,
         meta: {
           private: {
-            content: encryptedOutgoingData(state, CEKid, key)
+            content: encryptedOutgoingData(contractID, CEKid, key)
           }
         }
       }))
@@ -73,7 +73,7 @@ sbp('sbp/selectors/register', {
     await sbp('chelonia/out/keyShare', {
       contractID,
       contractName,
-      data: encryptedOutgoingData(state, CEKid, payload),
+      data: encryptedOutgoingData(contractID, CEKid, payload),
       signingKeyId: signingKeyId
     })
   },
@@ -140,7 +140,7 @@ sbp('sbp/selectors/register', {
               // is already present in _vm.authorizedKeys and because it may
               // be rotated between the time we issue this operation and the
               // time it is written to the contract
-              : encryptedOutgoingData(state, keyId(encryptionKey), serializeKey(newKey, true)),
+              : encryptedOutgoingData(contractID, keyId(encryptionKey), serializeKey(newKey, true)),
             shareable: state._vm.authorizedKeys[id].meta.private.shareable
           }
         }

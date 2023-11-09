@@ -995,7 +995,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, meta, contractID }, { state, getters }) {
         // Put this invocation at the end of a sync to ensure that leaving and
         // re-joining works
-        sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', { data, meta, contractID }, { state, getters })).catch(e => {
+        sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', { data, meta, contractID, getters })).catch(e => {
           console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e)
         })
       }
@@ -1546,7 +1546,7 @@ sbp('chelonia/defineContract', {
         console.error(`Unable to join ${member} to chatroom ${chatRoomID} for group ${contractID}`, e)
       })
     },
-    'gi.contracts/group/leaveGroup': async ({ data, meta, contractID }, { getters }) => {
+    'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, getters }) => {
       const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
       const state = rootState[contractID]
@@ -1708,9 +1708,6 @@ sbp('chelonia/defineContract', {
       if (!keyIds?.length) return
 
       const CSKid = findKeyIdByName(state, 'csk')
-      const CEKid = findKeyIdByName(state, 'cek')
-
-      if (!CEKid) throw new Error('Missing encryption key')
 
       sbp('chelonia/out/keyDel', {
         contractID,
