@@ -495,11 +495,11 @@ export default (sbp('sbp/selectors/register', {
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
               ['chelonia/contract/removeImmediately', v.contractID],
-              ['chelonia/private/in/syncContract', v.contractID],
+              // ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
-            targetState = cheloniaState[v.contractID]
+            targetState = cheloniaState[v.contractID] || {}
 
             if (previousVolatileState && has(previousVolatileState, 'watch')) {
               if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
@@ -1000,7 +1000,10 @@ export default (sbp('sbp/selectors/register', {
     // Aggregate the keys that we can delete to send them in a single operation
     const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, cv) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
-      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId].ringLevel)
+      const ringLevel = Math.min(
+        currentRingLevel,
+        contractState._vm?.authorizedKeys?.[keyId].ringLevel || Number.POSITIVE_INFINITY
+      )
       if (ringLevel >= currentRingLevel) {
         return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(cv)]
       } else if (Number.isFinite(ringLevel)) {
