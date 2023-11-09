@@ -965,19 +965,17 @@ sbp('chelonia/defineContract', {
               })
 
             // gi.contracts/group/removeOurselves will eventually trigger this as well
+            sbp('gi.contracts/group/rotateKeys', contractID).then(() => {
+              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
+            }).catch((e) => {
+              console.error('Error rotating group keys or our PEK', e)
+            })
+
             const rootGetters = sbp('state/vuex/getters')
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID
-            sbp('chelonia/queueInvocation', contractID, () => {
-              sbp('gi.contracts/group/rotateKeys', contractID).then(() => {
-                return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
-              }).catch((e) => {
-                console.error('Error rotating group keys or our PEK', e)
-              })
-
-              if (userID) {
-                sbp('gi.contracts/group/removeForeignKeys', contractID, userID)
-              }
-            })
+            if (userID) {
+              sbp('gi.contracts/group/removeForeignKeys', contractID, userID)
+            }
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we

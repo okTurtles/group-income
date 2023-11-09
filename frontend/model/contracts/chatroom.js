@@ -336,14 +336,14 @@ sbp('chelonia/defineContract', {
           setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
           if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-            sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
+            sbp('gi.contracts/chatroom/rotateKeys', contractID)
           }
         }
 
         const rootGetters = sbp('state/vuex/getters')
         const userID = rootGetters.ourContactProfiles[data.username]?.contractID
         if (userID) {
-          sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
+          sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID)
         }
       }
     },
@@ -690,7 +690,8 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
-    'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
+    'gi.contracts/chatroom/rotateKeys': (contractID) => {
+      const state = sbp('state/vuex/state')[contractID]
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
@@ -704,7 +705,8 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID) => {
+      const state = sbp('state/vuex/state')[contractID]
       const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return

@@ -157,8 +157,10 @@ sbp('sbp/selectors/register', {
     const CEKid = findKeyIdByName(state, 'cek')
     if (!CEKid) return
 
+    console.log('-----------START KEY SHARE -----------', newKeys)
     // Share new keys with other contracts
     const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
+    console.log('-----------END KEY SHARE -----------', keyShares)
 
     if (Array.isArray(keyShares) && keyShares.length > 0) {
       // Issue OP_ATOMIC

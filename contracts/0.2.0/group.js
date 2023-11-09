@@ -17575,18 +17575,16 @@ ${this.getErrorInfo()}`;
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               });
+              (0, import_sbp7.default)("gi.contracts/group/rotateKeys", contractID).then(() => {
+                return (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
+              }).catch((e) => {
+                console.error("Error rotating group keys or our PEK", e);
+              });
               const rootGetters2 = (0, import_sbp7.default)("state/vuex/getters");
               const userID = rootGetters2.ourContactProfiles[data.member]?.contractID;
-              (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => {
-                (0, import_sbp7.default)("gi.contracts/group/rotateKeys", contractID).then(() => {
-                  return (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
-                }).catch((e) => {
-                  console.error("Error rotating group keys or our PEK", e);
-                });
-                if (userID) {
-                  (0, import_sbp7.default)("gi.contracts/group/removeForeignKeys", contractID, userID);
-                }
-              });
+              if (userID) {
+                (0, import_sbp7.default)("gi.contracts/group/removeForeignKeys", contractID, userID);
+              }
             }
           }
         }

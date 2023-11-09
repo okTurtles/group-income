@@ -7531,13 +7531,13 @@ ${this.getErrorInfo()}`;
             emitMessageEvent({ contractID, hash });
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
             if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-              (0, import_sbp6.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
+              (0, import_sbp6.default)("gi.contracts/chatroom/rotateKeys", contractID);
             }
           }
           const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
           const userID = rootGetters.ourContactProfiles[data.username]?.contractID;
           if (userID) {
-            (0, import_sbp6.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state);
+            (0, import_sbp6.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID);
           }
         }
       },
@@ -7830,7 +7830,8 @@ ${this.getErrorInfo()}`;
       }
     },
     methods: {
-      "gi.contracts/chatroom/rotateKeys": (contractID, state) => {
+      "gi.contracts/chatroom/rotateKeys": (contractID) => {
+        const state = (0, import_sbp6.default)("state/vuex/state")[contractID];
         if (!state._volatile)
           import_common.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)
@@ -7843,7 +7844,8 @@ ${this.getErrorInfo()}`;
           console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       },
-      "gi.contracts/chatroom/removeForeignKeys": (contractID, userID, state) => {
+      "gi.contracts/chatroom/removeForeignKeys": (contractID, userID) => {
+        const state = (0, import_sbp6.default)("state/vuex/state")[contractID];
         const keyIds = findForeignKeysByContractID(state, userID);
         if (!keyIds?.length)
           return;
