@@ -256,7 +256,9 @@ async function startApp () {
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
+        // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+        sbp('chelonia.persistentActions/unload')
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
         this.initOrResetPeriodicNotifications()

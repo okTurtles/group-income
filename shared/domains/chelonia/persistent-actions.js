@@ -122,9 +122,9 @@ class PersistentAction {
 sbp('sbp/selectors/register', {
   'chelonia.persistentActions/_init' (): void {
     this.actionsByID = Object.create(null)
-    this.checkDatabaseKey = function () {
+    this.checkDatabaseKey = () => {
       if (!this.databaseKey) throw new TypeError(`${tag} No database key configured`)
-    }.bind(this)
+    }
     sbp('okTurtles.events/on', PERSISTENT_ACTION_SUCCESS, ({ id }) => {
       sbp('chelonia.persistentActions/cancel', id)
     })
@@ -215,5 +215,15 @@ sbp('sbp/selectors/register', {
     return Object.values(this.actionsByID)
       // $FlowFixMe: `PersistentAction` is incompatible with mixed
       .map((action: PersistentAction) => ({ id: action.id, invocation: action.invocation, ...action.status }))
+  },
+
+  // Pauses every currently loaded action, and removes them from memory.
+  // Note: persistent storage is not affected, so that these actions can be later loaded again and retried.
+  'chelonia.persistentActions/unload' (): void {
+    for (const id in this.actionsByID) {
+      // Clear the action's timeout, but don't cancel it so that it can later resumed.
+      this.actionsByID[id].timer && clearTimeout(this.actionsByID[id].timer)
+      delete this.actionsByID[id]
+    }
   }
 })
