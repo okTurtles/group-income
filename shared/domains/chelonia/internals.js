@@ -1000,10 +1000,8 @@ export default (sbp('sbp/selectors/register', {
     // Aggregate the keys that we can delete to send them in a single operation
     const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, cv) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
-      const ringLevel = Math.min(
-        currentRingLevel,
-        contractState._vm?.authorizedKeys?.[keyId].ringLevel || Number.POSITIVE_INFINITY
-      )
+      const contractRingLevel = contractState._vm?.authorizedKeys?.[keyId].ringLevel || Number.POSITIVE_INFINITY
+      const ringLevel = Math.min(currentRingLevel, contractRingLevel)
       if (ringLevel >= currentRingLevel) {
         return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(cv)]
       } else if (Number.isFinite(ringLevel)) {
