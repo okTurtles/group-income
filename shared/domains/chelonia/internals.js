@@ -470,10 +470,10 @@ export default (sbp('sbp/selectors/register', {
                 }
               } catch (e) {
                 if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
-                  console.warn(`OP_KEY_SHARE missing secret key: ${e.message}`,
+                  console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e.message}`,
                     e)
                 } else {
-                  console.error(`OP_KEY_SHARE error '${e.message || e}':`,
+                  console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
                     e)
                 }
               }
