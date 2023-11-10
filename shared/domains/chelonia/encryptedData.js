@@ -94,6 +94,12 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   }
 
   const [eKeyId, message] = data
+  const key = additionalKeys[eKeyId]
+
+  if (!key) {
+    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
+  }
+
   // height as NaN is used to allow checking for revokedKeys as well as
   // authorizedKeys when decrypting data. This is normally inappropriate because
   // revoked keys should be considered compromised and not used for encrypting
@@ -119,19 +125,12 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   // any new attack vectors or venues that were not already available using
   // different means.
   const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
-
   if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'enc'
   )) {
     throw new ChelErrorUnexpected(
       `Key ${eKeyId} is unauthorized or expired for the current contract`
     )
-  }
-
-  const key = additionalKeys[eKeyId]
-
-  if (!key) {
-    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
   }
 
   const deserializedKey = typeof key === 'string' ? deserializeKey(key) : key
