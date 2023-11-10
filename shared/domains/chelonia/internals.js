@@ -1000,14 +1000,16 @@ export default (sbp('sbp/selectors/register', {
     // Aggregate the keys that we can delete to send them in a single operation
     const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, keyId) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
-      const contractRingLevel = contractState._vm?.authorizedKeys?.[keyId]?.ringLevel || Number.POSITIVE_INFINITY
+      const contractRingLevel = contractState._vm?.authorizedKeys?.[keyId]?.ringLevel ?? Number.POSITIVE_INFINITY
       const ringLevel = Math.min(currentRingLevel, contractRingLevel)
       if (ringLevel >= currentRingLevel) {
-        return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(keyId)]
+        (currentKeyIds: any).push(keyId)
+        return [currentRingLevel, currentSigningKeyId, currentKeyIds]
       } else if (Number.isFinite(ringLevel)) {
         const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
         if (signingKeyId) {
-          return [ringLevel, signingKeyId, (currentKeyIds: any).push(keyId)]
+          (currentKeyIds: any).push(keyId)
+          return [ringLevel, signingKeyId, currentKeyIds]
         }
       }
       return acc
@@ -1018,8 +1020,8 @@ export default (sbp('sbp/selectors/register', {
     const contractName = contractState._vm.type
 
     // This is safe to do without await because it's sending an operation
-    // Using await could deadlock when retying to send the message
-    sbp('chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId })
+    // Using await could deadlock when retrying to send the message
+    sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIds, signingKeyId })
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
