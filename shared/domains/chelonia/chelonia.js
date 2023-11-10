@@ -586,11 +586,16 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
+      if (!rootState?.contracts?.[contractID]) {
+        return undefined
+      }
+
       if (params?.removeIfPending) {
-        if (!rootState?.contracts?.[contractID]?.pendingRemove) {
+        if (!rootState.contracts[contractID].pendingRemove) {
+          rootState.contracts[contractID].deferredRemove = false
           return undefined
         }
-      } else if (rootState.contracts?.[contractID]?.deferredRemove) {
+      } else if (rootState.contracts[contractID].deferredRemove) {
         rootState.contracts[contractID].pendingRemove = true
         return undefined
       }
