@@ -39,15 +39,15 @@ const encryptData = function (stateOrContractID: string | Object, eKeyId: string
 
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
-  const designatedKey = state._vm?.authorizedKeys?.[eKeyId]
+  const designatedKey = state?._vm?.authorizedKeys?.[eKeyId]
   if (!designatedKey?.purpose.includes(
     'enc'
   )) {
     throw new Error(`Encryption key ID ${eKeyId} is missing or is missing encryption purpose`)
   }
-  if (designatedKey._notAfterHeight !== undefined) {
+  if (designatedKey._notAfterHeight != null) {
     const name = (state._vm: any).authorizedKeys[eKeyId].name
-    const newKeyId = (Object.values(state._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('enc')): any)?.id
+    const newKeyId = (Object.values(state._vm?.authorizedKeys).find((v: any) => v._notAfterHeight == null && v.name === name && v.purpose.includes('enc')): any)?.id
 
     if (!newKeyId) {
       throw new Error(`Encryption key ID ${eKeyId} has been revoked and no new key exists by the same name (${name})`)

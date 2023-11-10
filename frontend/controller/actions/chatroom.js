@@ -231,6 +231,7 @@ export default (sbp('sbp/selectors/register', {
     const isCurrentUserJoining = rootState.loggedIn.identityContractID === userID
 
     if (isCurrentUserJoining) {
+      sbp('chelonia/contract/cancelRemove', params.contractID)
       sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, true)
     }
 

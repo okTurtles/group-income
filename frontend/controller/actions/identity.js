@@ -556,12 +556,13 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
     })
   },
-  'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
+    const username = state.attributes.username
 
     // TODO: Also share PEK with DMs
-    return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+    await Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
       const CSKid = findKeyIdByName(rootState[groupID], 'csk')
 
@@ -586,9 +587,27 @@ export default (sbp('sbp/selectors/register', {
             }
           }))
         }),
-        signingKeyId: CSKid
+        signingKeyId: CSKid,
+        hooks: {
+          preSendCheck: (_, state) => {
+            // Don't send this message if we're no longer a group member
+            return state?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE
+          }
+        }
+      }).catch(e => {
+        // We may no longer be a member of the group, so we ignore errors
+        // related to missing keys
+        if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+          throw e
+        }
       })
-    })).then(() => undefined)
+    }))
+
+    // This selector is called by rotateKeys, which will include the keys to
+    // share along with OP_KEY_UPDATE. In this case, we're sharing all keys
+    // to their respective contracts and there are no keys to include in
+    // the same event as OP_KEY_UPDATE. Therefore, we return undefined
+    return undefined
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),

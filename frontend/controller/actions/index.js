@@ -31,51 +31,57 @@ sbp('sbp/selectors/register', {
 
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
-    await sbp('chelonia/contract/sync', contractID)
-    const state = await sbp('chelonia/latestContractState', contractID)
+    try {
+      await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+      const state = await sbp('chelonia/latestContractState', contractID)
+      const rSState = sbp('state/vuex/state')[contractID]
+      console.log('@@@@ [gi.actions/out/shareVolatileKeys] state received', { state: window.structuredClone(state), rSState: window.structuredClone(rSState) })
 
-    const CEKid = findKeyIdByName(state, 'cek')
-    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
+      const CEKid = findKeyIdByName(state, 'cek')
+      const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
 
-    if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
-      throw new Error('Missing CEK; unable to proceed sharing keys')
-    }
+      if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
+        throw new Error('Missing CEK; unable to proceed sharing keys')
+      }
 
-    const secretKeys = sbp('state/vuex/state')['secretKeys']
+      const secretKeys = sbp('state/vuex/state')['secretKeys']
 
-    const keysToShare = Array.isArray(keyIds)
-      ? pick(secretKeys, keyIds)
-      : keyIds === '*'
-        ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
-          .filter(([, key]) => {
-            return !!((key: any): GIKey).meta?.private?.content
-          })
-          .map(([id]) => id)
-        )
-        : null
+      const keysToShare = Array.isArray(keyIds)
+        ? pick(secretKeys, keyIds)
+        : keyIds === '*'
+          ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
+            .filter(([, key]) => {
+              return !!((key: any): GIKey).meta?.private?.content
+            })
+            .map(([id]) => id)
+          )
+          : null
 
-    if (!keysToShare) {
-      throw new TypeError('Invalid parameter: keyIds')
-    }
+      if (!keysToShare) {
+        throw new TypeError('Invalid parameter: keyIds')
+      }
 
-    const payload = {
-      contractID: subjectContractID,
-      keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
-        id: keyId,
-        meta: {
-          private: {
-            content: encryptedOutgoingData(contractID, CEKid, key)
+      const payload = {
+        contractID: subjectContractID,
+        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+          id: keyId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(contractID, CEKid, key)
+            }
           }
-        }
-      }))
-    }
+        }))
+      }
 
-    await sbp('chelonia/out/keyShare', {
-      contractID,
-      contractName,
-      data: encryptedOutgoingData(contractID, CEKid, payload),
-      signingKeyId: signingKeyId
-    })
+      await sbp('chelonia/out/keyShare', {
+        contractID,
+        contractName,
+        data: encryptedOutgoingData(contractID, CEKid, payload),
+        signingKeyId
+      })
+    } finally {
+      await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+    }
   },
   // TODO: Move to chelonia
   'gi.actions/out/rotateKeys': async (

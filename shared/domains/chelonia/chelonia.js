@@ -573,6 +573,15 @@ export default (sbp('sbp/selectors/register', {
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
+  'chelonia/contract/cancelRemove': function (contractIDs: string | string[]): void {
+    const rootState = sbp(this.config.stateSelector)
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    listOfIds.forEach(contractID => {
+      if (rootState?.contracts?.[contractID]?.pendingRemove) {
+        rootState.contracts[contractID].pendingRemove = false
+      }
+    })
+  },
   'chelonia/contract/remove': function (contractIDs: string | string[], params?: { removeIfPending?: boolean}): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
