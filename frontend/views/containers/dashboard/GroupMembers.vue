@@ -68,9 +68,11 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentGroupState',
       'groupMembersCount',
       'groupMembersSorted',
       'groupShouldPropose',
+      'currentWelcomeInvite',
       'ourUsername',
       'userDisplayName'
     ]),
@@ -91,10 +93,11 @@ export default ({
     },
     headerButtonAction () {
       if (this.action === 'addMember') {
-        if (this.groupShouldPropose) {
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
-        } else {
+        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+        if (!this.groupShouldPropose && !isWelcomeInviteExpired) {
           this.openModal('InvitationLinkModal')
+        } else {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
         }
       }
     }
