@@ -153,8 +153,6 @@ export default ({
         this.pageStatus = 'SIGNING'
       } catch (e) {
         console.error(e)
-        // eslint-disable-next-line no-debugger
-        debugger
         this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
         this.pageStatus = 'INVALID'
       }
@@ -193,8 +191,6 @@ export default ({
         // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {
-        // eslint-disable-next-line no-debugger
-        debugger
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'

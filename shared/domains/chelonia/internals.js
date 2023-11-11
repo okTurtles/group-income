@@ -262,8 +262,6 @@ export default (sbp('sbp/selectors/register', {
     // https://github.com/okTurtles/group-income/issues/608
     hooks?.prepublish?.(entry)
 
-    console.log('jjjjjjj publish entry', { entry })
-
     while (true) {
       // Queued event to ensure that we send the event with whatever the
       // 'latest' state may be for that contract (in case we were receiving
@@ -294,8 +292,6 @@ export default (sbp('sbp/selectors/register', {
 
         return entry
       })
-
-      console.log('jjjjjjj publish entry updated', { entry })
 
       // If there is no event to send, return
       if (!entry) return

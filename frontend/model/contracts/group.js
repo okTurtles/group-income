@@ -263,14 +263,10 @@ function updateGroupStreaks ({ state, getters }) {
 }
 
 const removeGroupChatroomProfile = (state, chatRoomID, member) => {
-  console.log('jjjj removeGroupChatroomProfile', JSON.parse(JSON.stringify({ state, chatRoomID, member })))
   Vue.set(state.chatRooms[chatRoomID], 'users',
     Object.fromEntries(
       Object.entries(state.chatRooms[chatRoomID].users)
         .map(([memberKey, profile]) => {
-          console.log('jjjj removeGroupChatroomProfile ii', {
-            memberKey, member, profile, active: (profile: any)?.status === PROFILE_STATUS.ACTIVE
-          })
           if (memberKey === member && (profile: any)?.status === PROFILE_STATUS.ACTIVE) {
             return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }]
           }
@@ -324,7 +320,6 @@ const leaveChatRoomAction = (state, { chatRoomID, member }, meta, leavingGroup) 
       }
     }
   }).catch((e) => {
-    console.log('jjj action', { e })
     if (leavingGroup && e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIErrorMissingSigningKeyError') {
       // This is fine; it just means we were removed by someone else
       return
@@ -1050,6 +1045,12 @@ sbp('chelonia/defineContract', {
           const rootState = sbp('state/vuex/state')
           const rootGetters = sbp('state/vuex/getters')
           const state = rootState[contractID]
+
+          if (!state) {
+            console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`)
+            return
+          }
+
           const { profiles = {} } = state
 
           if (profiles[meta.username].status !== PROFILE_STATUS.ACTIVE) {
@@ -1573,7 +1574,6 @@ sbp('chelonia/defineContract', {
       const username = rootState.loggedIn.username
 
       if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomID]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
-        console.log('jjjjj early return some check not met')
         return
       }
 
@@ -1582,11 +1582,9 @@ sbp('chelonia/defineContract', {
       }
 
       if (!sbp('chelonia/contract/canPerformOperation', chatRoomID, '*')) {
-        console.log('jjjj cantperformpop')
         return
       }
 
-      console.log('jjjjj sedingjoin')
       await sbp('gi.actions/chatroom/join', {
         contractID: chatRoomID,
         data: { username: member },
@@ -1594,7 +1592,6 @@ sbp('chelonia/defineContract', {
           preSendCheck: (_, state) => {
             // Avoid sending a duplicate action if the person is already a
             // chatroom member
-            console.log('jjjjj AT PRE-SEND-CHECK')
             return !state?.users?.[member]
           }
         }
@@ -1611,14 +1608,13 @@ sbp('chelonia/defineContract', {
 
       if (!state) {
         console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`)
+        return
       }
 
       if (state.profiles?.[data.member]?.status !== PROFILE_STATUS.REMOVED || (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID))) {
         console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, JSON.parse(JSON.stringify(state.profiles)))
         return
       }
-
-      console.log('@@@@gi.contracts/group/leaveGroup', { contractID })
 
       if (data.member === username) {
         // NOTE: should remove archived data from IndexedStorage
@@ -1628,8 +1624,7 @@ sbp('chelonia/defineContract', {
 
         // grab the groupID of any group that we've successfully finished joining
         const groupIdToSwitch = Object.keys(contracts)
-          .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID)
-          .sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null
+          .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID && rootState[cID]?.profiles?.[username])[0] || null
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
         sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
         // we can't await on this in here, because it will cause a deadlock, since Chelonia processes

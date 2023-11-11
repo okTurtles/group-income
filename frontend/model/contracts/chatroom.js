@@ -185,22 +185,15 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash, id }, { state }) {
         const { username } = data
-        console.log('jjjj  1', { state: JSON.parse(JSON.stringify(state)) })
         if (!state.onlyRenderMessage && state.users[username]) {
           throw new Error(`Can not join the chatroom which ${username} is already part of`)
         }
 
-        console.log('jjjj  2', { state: JSON.parse(JSON.stringify(state)) })
-
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
-
-        console.log('jjjj 3', { state: JSON.parse(JSON.stringify(state)) })
 
         if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
-
-        console.log('jjjj 4', { state: JSON.parse(JSON.stringify(state)) })
 
         const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
         const notificationData = createNotificationData(
