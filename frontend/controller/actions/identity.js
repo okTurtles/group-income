@@ -441,12 +441,8 @@ export default (sbp('sbp/selectors/register', {
           await sbp('gi.actions/identity/updateLoginStateUponLogin')
 
           return sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
-          // contract sync might've triggered an async call to /remove, so wait before proceeding
+            // contract sync might've triggered an async call to /remove, so wait before proceeding
             await sbp('chelonia/contract/wait', contractIDs)
-            // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
-            // we must re-sync our identity contract again to ensure we don't rejoin a group we
-            // were just kicked out of
-            await sbp('chelonia/contract/sync', identityContractID, { force: true })
             await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
             // The state above might be null, so we re-grab it
