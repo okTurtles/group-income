@@ -172,7 +172,7 @@ export default ({
 
         const secretKey = deserializeKey(secret)
 
-        sbp('chelonia/storeSecretKeys', [{
+        sbp('chelonia/storeSecretKeys', () => [{
           key: secretKey, transient: true
         }])
 
