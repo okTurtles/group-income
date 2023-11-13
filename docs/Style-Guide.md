@@ -5,6 +5,7 @@ Please read all the sections below before writing a single line of code.
 - **[JavaScript Style Guide](#javascript-style-guide)**
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
+- **[User-facing Strings Guide](#user-facing-strings-guide)**
 - **[Accessibility Style Guide](#css-style-guide)**
 - **[Testing Style Guide](#testing-style-guide)**
 - **[Folder Structure Style Guide](#folder-structure-style-guide)**
@@ -20,11 +21,14 @@ If you notice any file not properly linted by `standard`, this means there's a b
 
 _It is still on you to ensure your code conforms to the `standard` spec, whether or not the linter catches everything._
 
-### A Note On Classes: Avoid Them
+### A Note On Classes: Avoid Them, Usually
 
 For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
 
-You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions. In the entire project there is only a single class that we have declared that acts as an exception to this rule, and that is `GIMessage`. If there is no way to avoid creating a class definition, it may be permitted, but a strong case must be made first that there is no other way to do it.
+You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions unless it makes sense when dealing with special types. Here are some examples of exceptions to the "avoid classes" rule:
+
+- `GIMessage`. This is an example of a very important type for wrapping and handling [`SPMessage`](https://shelterprotocol.net/en/spmessage/) types.
+- `GIErrorUIRuntimeError`. A special error type for dealing with exceptions containing user-facing error strings when attempting to perform an action.
 
 ### See Also: "Embrace the SBP way of doing things"
 
@@ -68,6 +72,69 @@ When writing the markup make sure its semantics are complete. For example, if th
     <h2 class="sr-only">Page details</h2>
 </template>
 ```
+
+## User-facing Strings Guide
+
+All user-facing strings must be wrapped in either an `L` function (in JavaScript), or using the `i18n` component (in HTML/Pug markup).
+
+It's OK to not wrap strings when writing `console.(debug|warn|error)` messages, because those are not user-facing. But anything the user sees in the UI must be wrapped in either an `L` function or `i18n` so that the [`strings`](https://github.com/okTurtles/group-income/blob/master/CONTRIBUTING.md#how-to-help-by-translating) utility can extract these strings and update related localization files.
+
+When creating these strings, we sometimes need to pass in a variable using braces (e.g. `{variable}`). Remember, translators are going to see these strings without any context, so it's important to provide them with context by using very clear names for variables that let the translator know what values the variable might take on.
+
+❌ Avoid choosing unclear variable names:
+
+```
+There was a problem with {nr} of your payments.
+```
+
+✅ Be clear what values the variable might take on:
+
+```
+There was a problem with {number} of your payments.
+```
+
+### Avoid building strings out of strings
+
+While sometimes it is safe to use variables (when inserting numbers or proper nouns like names), other times it is better to avoid them entirely.
+
+For example, a common mistake is to construct strings out of other strings that are individually translated. Say we have the following string:
+
+```
+Export your {sent_or_received} payment history to .csv
+```
+
+The variable name is good because it is very clear what values it might take on, however, it is still better to avoid constructing such strings entirely if possible and instead use two separate, fully-translated strings because we are not guaranteed that the final string will make sense when composed out of individually translated parts.
+
+In the above example, `{sent_or_received}` could be either the string `"sent"` or `"received"`, but translating these words individually might result in the wrong word when inserted into the parent string. Sometimes a foreign language will choose to use different words when the full context is known, or it might change the order of words. For example, Google Translate does the following translation from English to Russian:
+
+```
+Export your sent payment history to .csv => Экспортируйте историю отправленных платежей в .csv.
+Export your received payment history to .csv => Экспортируйте полученную историю платежей в .csv.
+sent => отправил
+received => полученный
+```
+
+Notice here:
+
+1. The words "отправленных" and "полученную" are in different positions relative to the other words.
+2. The full-context translation doesn't even include the individually translated words at all.
+
+❌ Avoid building sentences out of individually translated parts:
+
+```
+Export your {sent_or_received} payment history to .csv
+```
+
+✅ Use logic in a computed property to build complete sentences:
+
+```js
+exportInstructions () {
+  return this.paymentType === 'sent'
+    ? L('Export your sent payment history to .csv')
+    : L('Export your received payment history to .csv')
+}
+```
+
 ## Accessibility Style Guide
 
 We are committed to ensuring digital accessibility for all people, including those with low vision, blindness, hearing impairments, cognitive impairments, motor impairments or situational disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards.

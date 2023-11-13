@@ -7,6 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -43,7 +44,7 @@ Cypress.Commands.add('giSignup', (username, {
 
   if (bypassUI) {
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { username, email, password })
+      await sbp('gi.actions/identity/signupAndLogin', { username, email, passwordFn: () => password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -66,21 +67,35 @@ Cypress.Commands.add('giSignup', (username, {
   } else {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
   }
+
+  // wait for contracts to finish syncing
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+    cy.get(el).should('have.attr', 'data-sync', '')
+  })
 })
 
 Cypress.Commands.add('giLogin', (username, {
   password = defaultPassword,
   bypassUI,
-  firstLogin = false
+  // NOTE: the 'firstLoginAfterJoinGroup' attribute is true when user FIRST logs in after completes the joining group
+  firstLoginAfterJoinGroup = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      const ourUsername = sbp('state/vuex/getters').ourUsername
-      if (ourUsername === username) {
-        throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-      }
-      await sbp('gi.actions/identity/login', { username, password })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    cy.window().its('sbp').then(sbp => {
+      return new Promise(resolve => {
+        const ourUsername = sbp('state/vuex/getters').ourUsername
+        if (ourUsername === username) {
+          throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+        }
+        sbp('okTurtles.events/once', LOGIN, async ({ username: name }) => {
+          if (name === username) {
+            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+            resolve()
+          }
+        })
+        sbp('gi.actions/identity/login', { username, passwordFn: () => password })
+      })
     })
 
     cy.get('nav').within(() => {
@@ -93,6 +108,10 @@ Cypress.Commands.add('giLogin', (username, {
 
     cy.getByDT('loginSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
+
+    if (firstLoginAfterJoinGroup) {
+      cy.getByDT('toDashboardBtn').click()
+    }
   }
 
   // We changed pages (to dashboard or create group)
@@ -105,7 +124,7 @@ Cypress.Commands.add('giLogin', (username, {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
 
-  if (firstLogin) {
+  if (firstLoginAfterJoinGroup) {
     cy.giCheckIfJoinedGeneralChatroom()
   }
 })
@@ -122,9 +141,9 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
-Cypress.Commands.add('giSwitchUser', (user, firstLogin = false) => {
+Cypress.Commands.add('giSwitchUser', (user, firstLoginAfterJoinGroup = false) => {
   cy.giLogout()
-  cy.giLogin(user, { bypassUI: true, firstLogin })
+  cy.giLogin(user, { bypassUI: true, firstLoginAfterJoinGroup })
 })
 
 Cypress.Commands.add('closeModal', () => {
@@ -149,18 +168,28 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/createAndSwitch', {
-        data: {
-          name,
-          sharedValues,
-          mincomeAmount: mincome,
-          mincomeCurrency: 'USD',
-          ruleName,
-          ruleThreshold
-        }
+    cy.window().its('sbp').then(sbp => {
+      return new Promise(resolve => {
+        (async () => {
+          const message = await sbp('gi.actions/group/createAndSwitch', {
+            data: {
+              name,
+              sharedValues,
+              mincomeAmount: mincome,
+              mincomeCurrency: 'USD',
+              ruleName,
+              ruleThreshold
+            }
+          })
+
+          sbp('okTurtles.events/on', JOINED_GROUP, async ({ contractID }) => {
+            if (contractID === message.contractID()) {
+              await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+              resolve()
+            }
+          })
+        })()
       })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('groupName').should('contain', name)
@@ -222,12 +251,14 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  cy.url().should('eq', `${API_URL}/app/dashboard`)
+  cy.url().should('eq', `${API_URL}/app/pending-approval`)
+  cy.getByDT('toDashboardBtn').should('not.be.disabled').click()
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
+  cy.getByDT('groupName').should('contain', name)
 
-  cy.giCheckIfJoinedGeneralChatroom(name)
+  cy.giCheckIfJoinedGeneralChatroom()
 })
 
 function inviteUser (invitee, index) {
@@ -286,8 +317,9 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.giSignup(username, { bypassUI: true })
     }
 
-    cy.window().its('sbp').then(sbp => {
-      sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+    cy.window().its('sbp').then(async sbp => {
+      await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+      await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
     })
   } else {
     cy.visit(invitationLink)
@@ -303,20 +335,28 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
 
   cy.url().should('eq', `${API_URL}/app/pending-approval`)
-  // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
-  cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
-  // TODO: should remove the following cy.wait()
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(1000)
-  cy.giLogout()
 
-  cy.giLogin(existingMemberUsername, { bypassUI })
-  // TODO: should remove the following cy.wait()
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(2000)
-  cy.giLogout()
+  if (existingMemberUsername) {
+    // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
+    cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
+    // TODO: should remove the following cy.wait()
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+    cy.giLogout()
 
-  cy.giLogin(username, { bypassUI, firstLogin: true })
+    cy.giLogin(existingMemberUsername, { bypassUI })
+    // TODO: should remove the following cy.wait()
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(2000)
+    cy.giLogout()
+
+    cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
+  } else {
+    // NOTE: if existingMemberUsername doens't exist
+    //       it means the invitation link is unique for someone
+    //       or it means he uses the invitation link by the second time or more
+    cy.getByDT('toDashboardBtn').click()
+  }
 
   if (displayName) {
     cy.giSetDisplayName(displayName)
@@ -334,6 +374,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   usernames,
   existingMemberUsername,
+  displayNames,
+  actionBeforeLogout,
   groupName,
   bypassUI
 }) => {
@@ -341,8 +383,9 @@ Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   for (const username of usernames) {
     if (bypassUI) {
       cy.giSignup(username, { bypassUI })
-      cy.window().its('sbp').then(sbp => {
-        sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+      cy.window().its('sbp').then(async sbp => {
+        await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+        await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
       })
     } else {
       cy.visit(invitationLink)
@@ -363,6 +406,25 @@ Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
   // eslint-disable-next-line cypress/no-unnecessary-waiting
   cy.wait(2000)
   cy.giLogout()
+
+  const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
+  if (shouldSetDisplayName || actionBeforeLogout) {
+    for (let i = 0; i < usernames.length; i++) {
+      cy.giLogin(usernames[i], { bypassUI, firstLoginAfterJoinGroup: true })
+
+      if (shouldSetDisplayName) {
+        cy.giSetDisplayName(displayNames[i])
+      }
+
+      if (Array.isArray(actionBeforeLogout)) {
+        actionBeforeLogout[i]()
+      } else if (actionBeforeLogout) {
+        actionBeforeLogout()
+      }
+
+      cy.giLogout()
+    }
+  }
 })
 
 Cypress.Commands.add('giAddRandomIncome', () => {
@@ -446,11 +508,11 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
           prepublish: (message) => {
-            const thisOpValue = JSON.stringify(message.opValue())
+            const id = message.id()
             // Note: `opValue()` must be used here rather than the message hash:
             // https://github.com/okTurtles/group-income/issues/1487
             sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
-              if (thisOpValue === JSON.stringify(message.opValue())) {
+              if (id === message.id()) {
                 resolve()
               }
             })
@@ -461,14 +523,11 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
   })
 })
 
-Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (groupName) => {
+Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', () => {
   cy.giRedirectToGroupChat()
   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME)
   cy.getByDT('dashboard').click()
-  if (groupName) {
-    cy.getByDT('groupName').should('contain', groupName)
-  }
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (
@@ -499,12 +558,14 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
   cy.giWaitUntilMessagesLoaded()
 })
 
-Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
   cy.get('.c-initializing').should('not.exist')
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.infinite-status-prompt:first-child')
       .invoke('attr', 'style')
       .should('include', 'display: none')
   })
-  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  if (isGroupChannel) {
+    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  }
 })

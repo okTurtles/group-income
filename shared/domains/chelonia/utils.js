@@ -1,50 +1,181 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpAtomic, GIOpKeyUpdate } from './GIMessage.js'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
+import type { EncryptedData } from './encryptedData.js'
+import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
+import type { SignedData } from './signedData.js'
+import { isSignedData } from './signedData.js'
 
-export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight === undefined)?.id
+export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight == null)?.id
 
-export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight === undefined && k.foreignKey?.includes(contractID)).map(k => k.id)
+export const findForeignKeysByContractID = (state: Object, contractID: string): ?string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map(k => k.id)
 
-export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight !== undefined).map(k => k.id)
+export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name && k._notAfterHeight != null).map(k => k.id)
 
-export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string => {
+export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, allowedActions?: '*' | string[]): ?string => {
   return state._vm?.authorizedKeys &&
-    ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) =>
-      (k._notAfterHeight === undefined) &&
-      (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
-      sbp('chelonia/haveSecretKey', k.id) &&
-      (Array.isArray(permissions)
-        ? permissions.reduce((acc, permission) =>
-          acc && (k.permissions === '*' || k.permissions.includes(permission)), true
+    ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[])
+      .filter((k) => {
+        return k._notAfterHeight == null &&
+        (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
+        sbp('chelonia/haveSecretKey', k.id) &&
+        (Array.isArray(permissions)
+          ? permissions.reduce((acc, permission) =>
+            acc && (k.permissions === '*' || k.permissions.includes(permission)), true
+          )
+          : permissions === k.permissions
+        ) &&
+      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true) &&
+      (Array.isArray(allowedActions)
+        ? allowedActions.reduce((acc, action) =>
+          acc && (k.allowedActions === '*' || k.allowedActions?.includes(action)), true
         )
-        : permissions === k.permissions
-      ) &&
-      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.id
+        : allowedActions ? allowedActions === k.allowedActions : true
+      )
+      })
+      .sort((a, b) => b.ringLevel - a.ringLevel)[0]?.id
 }
 
 // TODO: Resolve inviteKey being added (doesn't have krs permission)
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys &&
     ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) =>
-      (k._notAfterHeight === undefined) &&
+      (k._notAfterHeight == null) &&
       (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) &&
       (Array.isArray(permissions)
         ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission)), true)
         : permissions === k.permissions
       ) &&
-      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.map((k) => k.id)
+      purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))
+      .sort((a, b) => b.ringLevel - a.ringLevel)
+      .map((k) => k.id)
 }
 
-export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
+const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string, opV: GIOpActionUnencrypted) => {
+  const data: ProtoGIOpActionUnencrypted = isSignedData(opV)
+    ? (opV: any).valueOf()
+    : (opV: any)
+
+  if (
+    signingKey.allowedActions !== '*' && (
+      !Array.isArray(signingKey.allowedActions) ||
+      !signingKey.allowedActions.includes(data.action)
+    )
+  ) {
+    console.error(`Signing key ${signingKey.id} is not allowed for action ${data.action}`)
+    return false
+  }
+
+  if (isSignedData(opV)) {
+    const s = ((opV: any): SignedData<void>)
+    const innerSigningKey = state._vm?.authorizedKeys?.[s.signingKeyId]
+
+    if (
+      !innerSigningKey ||
+      !Array.isArray(innerSigningKey.purpose) ||
+        !innerSigningKey.purpose.includes('sig') ||
+        (innerSigningKey.permissions !== '*' &&
+          (
+            !Array.isArray(innerSigningKey.permissions) ||
+            !innerSigningKey.permissions.includes(opT + '#inner')
+          )
+        )
+    ) {
+      console.error(`Signing key ${innerSigningKey.id} is missing permissions for operation ${opT}`)
+      return false
+    }
+
+    if (
+      innerSigningKey.allowedActions !== '*' && (
+        !Array.isArray(innerSigningKey.allowedActions) ||
+        !innerSigningKey.allowedActions.includes(data.action + '#inner')
+      )
+    ) {
+      console.error(`Signing key ${innerSigningKey.id} is not allowed for action ${data.action}`)
+      return false
+    }
+  }
+
+  return true
+}
+
+export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue): boolean => {
+  const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
+  if (
+    !signingKey ||
+    !Array.isArray(signingKey.purpose) ||
+      !signingKey.purpose.includes('sig') ||
+      (signingKey.permissions !== '*' &&
+        (
+          !Array.isArray(signingKey.permissions) ||
+          !signingKey.permissions.includes(opT)
+        )
+      )
+  ) {
+    console.error(`Signing key ${signingKey.id} is missing permissions for operation ${opT}`)
+    return false
+  }
+
+  if (opT === GIMessage.OP_ATOMIC) {
+    if (
+      ((opV: any): GIOpAtomic).reduce(
+        (acc, [opT, opV]) => {
+          if (!acc || !(signingKey: any).permissions.includes(opT)) return false
+          if (
+            opT === GIMessage.OP_ACTION_UNENCRYPTED &&
+            !validateActionPermissions(signingKey, state, opT, (opV: any))
+          ) {
+            return false
+          }
+
+          if (
+            opT === GIMessage.OP_ACTION_ENCRYPTED &&
+            !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
+          ) {
+            return false
+          }
+
+          return true
+        }, true)
+    ) {
+      console.error(`OP_ATOMIC: Signing key ${signingKey.id} is missing permissions for inner operation ${opT}`)
+      return false
+    }
+  }
+
+  if (
+    opT === GIMessage.OP_ACTION_UNENCRYPTED &&
+    !validateActionPermissions(signingKey, state, opT, (opV: any))
+  ) {
+    return false
+  }
+
+  if (
+    opT === GIMessage.OP_ACTION_ENCRYPTED &&
+    !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
+  ) {
+    return false
+  }
+
+  return true
+}
+
+export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKey | EncryptedData<GIKey>)[], skipPrivateCheck?: boolean) => {
   const signingKeyPermissions = Array.isArray(signingKey.permissions) ? new Set(signingKey.permissions) : signingKey.permissions
   const signingKeyAllowedActions = Array.isArray(signingKey.allowedActions) ? new Set(signingKey.allowedActions) : signingKey.allowedActions
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
-  v.forEach(k => {
+  v.forEach(wk => {
+    const data = unwrapMaybeEncryptedData(wk)
+    if (!data) return
+    const k = (data.data: GIKey)
+    if (!skipPrivateCheck && signingKey._private && !data.encryptionKeyId) {
+      throw new Error('Signing key is private but it tried adding a public key')
+    }
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
       throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to add or update a key with ringLevel ' + k.ringLevel)
     }
@@ -61,23 +192,44 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
   })
 }
 
-export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: string[]) => {
+export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey, state: Object, v: (string | EncryptedData<string>)[]) => {
   if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_DEL must exist in _vm.authorizedKeys. contractID=' + contractID + ' signingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
-  v.map(id => state._vm.authorizedKeys[id]).forEach((k, i) => {
-    if (!k) throw new Error('Nonexisting key ID ' + v[i])
-    if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
-      throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)
-    }
-  })
+  v
+    .forEach((wid) => {
+      const data = unwrapMaybeEncryptedData(wid)
+      if (!data) return
+      const id = data.data
+      const k = state._vm.authorizedKeys[id]
+      if (!k) {
+        console.log({ id, _vm: { ...state._vm } })
+        throw new Error('Nonexisting key ID ' + id)
+      }
+      if (signingKey._private) {
+        throw new Error('Signing key is private')
+      }
+      if (!k._private !== !data.encryptionKeyId) {
+        throw new Error('_private attribute must be preserved')
+      }
+      if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
+        throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)
+      }
+    })
 }
 
-export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIOpKeyUpdate): [GIKey[], string[]] => {
-  const keysToDelete: string[] = []
-  const keys = v.map((uk): GIKey => {
+export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]): [GIKey[], { [k: string]: string }] => {
+  const updatedMap = ((Object.create(null): any): { [k: string]: string })
+  const keys = v.map((wuk): GIKey | void => {
+    const data = unwrapMaybeEncryptedData(wuk)
+    if (!data) return undefined
+    const uk = (data.data: GIKeyUpdate)
+
     const existingKey = state._vm.authorizedKeys[uk.oldKeyId]
     if (!existingKey) {
       throw new Error('Missing old key ID ' + uk.oldKeyId)
+    }
+    if (!existingKey._private !== !data.encryptionKeyId) {
+      throw new Error('_private attribute must be preserved')
     }
     if (uk.name !== existingKey.name) {
       throw new Error('Name cannot be updated')
@@ -89,7 +241,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
       throw new Error('Missing private key. Old key ID: ' + uk.oldKeyId)
     }
     if (uk.id && uk.id !== uk.oldKeyId) {
-      keysToDelete.push(uk.oldKeyId)
+      updatedMap[uk.id] = uk.oldKeyId
     }
     const updatedKey = { ...existingKey }
     // Set the corresponding updated attributes
@@ -112,16 +264,19 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
       updatedKey.data = uk.data
     }
     return updatedKey
-  })
-  validateKeyAddPermissions(contractID, signingKey, state, keys)
-  return [keys, keysToDelete]
+  }).filter(Boolean)
+  validateKeyAddPermissions(contractID, signingKey, state, keys, true)
+  return [((keys: any): GIKey[]), updatedMap]
 }
 
-export const keyAdditionProcessor = function (keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
+export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
   console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
-  for (const key of keys) {
+  for (const wkey of keys) {
+    const data = unwrapMaybeEncryptedData(wkey)
+    if (!data) continue
+    const key = data.data
     let decryptedKey: ?string
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.content) {
@@ -133,7 +288,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
         try {
           decryptedKey = key.meta.private.content.valueOf()
           decryptedKeys.push([key.id, decryptedKey])
-          sbp('chelonia/storeSecretKeys', [{
+          sbp('chelonia/storeSecretKeys', () => [{
             key: deserializeKey(decryptedKey),
             transient: !!key.meta.private.transient
           }])
@@ -164,16 +319,16 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
 
     // Is this KEY operation the result of requesting keys for another contract?
     console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
-    if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
-      const { id, contractID: keyRequestContractID } = key.meta?.keyRequest
-
-      const rootState = sbp(this.config.stateSelector)
+    if (key.meta?.keyRequest?.contractID && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
+      const data = unwrapMaybeEncryptedData(key.meta.keyRequest.contractID)
 
       // Are we subscribed to this contract?
       // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
       // Setting pendingKeyRequests in these cases could result in issues
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
-      if (keyRequestContractID) {
+      if (data) {
+        const keyRequestContractID = data.data
+        const rootState = sbp(this.config.stateSelector)
         if (!rootState[keyRequestContractID]) {
           this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
         } else if (!rootState[keyRequestContractID]._volatile) {
@@ -183,8 +338,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
         }
 
         // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ id, name: signingKey.name })
-
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: key.name })
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }
     }
@@ -196,7 +350,7 @@ export const keyAdditionProcessor = function (keys: GIKey[], state: Object, cont
 export const subscribeToForeignKeyContracts = function (contractID: string, state: Object) {
   try {
     // $FlowFixMe[incompatible-call]
-    Object.values((state._vm.authorizedKeys: { [x: string]: GIKey })).filter((key) => !!((key: any): GIKey).foreignKey).forEach((key: GIKey) => {
+    Object.values((state._vm.authorizedKeys: { [x: string]: GIKey })).filter((key) => !!((key: any): GIKey).foreignKey && findKeyIdByName(state, ((key: any): GIKey).name) != null).forEach((key: GIKey) => {
       const foreignKey = String(key.foreignKey)
       const fkUrl = new URL(foreignKey)
       const foreignContract = fkUrl.pathname
@@ -222,7 +376,13 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
         )) return
       }
 
-      this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+      if (!has(state._vm, 'pendingWatch')) this.config.reactiveSet(state._vm, 'pendingWatch', Object.create(null))
+      if (!has(state._vm.pendingWatch, foreignContract)) this.config.reactiveSet(state._vm.pendingWatch, foreignContract, [])
+      if (!state._vm.pendingWatch[foreignContract].includes(foreignKeyName)) {
+        state._vm.pendingWatch[foreignContract].push([foreignKeyName, key.id])
+      }
+
+      this.setPostSyncOp(contractID, `watchForeignKeys-${contractID}`, ['chelonia/private/watchForeignKeys', contractID])
     })
   } catch (e) {
     console.warn('Error at subscribeToForeignKeyContracts: ' + (e.message || e))
@@ -239,7 +399,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = async (entry: GIMessage, rootState: Object, signatureFn?: Function): Promise<typeof undefined | GIMessage> => {
+export const recreateEvent = async (entry: GIMessage, rootState: Object): Promise<typeof undefined | GIMessage> => {
   const contractID = entry.contractID()
   // We sync the contract to ensure we have the correct local state
   // This way we can fetch new keys and correctly re-sign and re-encrypt
@@ -254,52 +414,95 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   // are used for signatures and for encryption.
   // When recreateEvent is called we may already be in a queued event, so we
   // call syncContract directly instead of sync
-  await sbp('chelonia/contract/sync', contractID)
-  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID)
+  await sbp('chelonia/contract/sync', contractID, { force: true })
+  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/queueInvocation', contractID, ['chelonia/db/latestHEADinfo', contractID]) || {}
+  if (!previousHEAD) {
+    throw new Error('recreateEvent: Giving up because the contract has been removed')
+  }
   const head = entry.head()
 
-  const [opT, opV] = entry.op()
+  const [opT, rawOpV] = entry.rawOp()
   const state = rootState[contractID]
 
-  const recreateOperation = (opT, opV) => {
-    if (opT === GIMessage.OP_KEY_ADD) {
-    // Has this key already been added? (i.e., present in authorizedKeys)
-      opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
-      if (opV.length === 0) {
-        console.info('Omitting empty OP_KEY_ADD', { head })
-        return
-      }
-    } else if (opT === GIMessage.OP_KEY_DEL) {
-    // Has this key already been removed? (i.e., no longer in authorizedKeys)
-      opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
-      if (opV.length === 0) {
-        console.info('Omitting empty OP_KEY_DEL', { head })
-        return
-      }
-    } else if (opT === GIMessage.OP_KEY_UPDATE) {
-    // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-      opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
-      if (opV.length === 0) {
-        console.info('Omitting empty OP_KEY_UPDATE', { head })
-        return
+  const recreateOperation = (opT: string, rawOpV: SignedData<GIOpValue>) => {
+    const opV = rawOpV.valueOf()
+    const recreateOperationInternal = (opT: string, opV: GIOpValue): GIOpValue | typeof undefined => {
+      let newOpV: GIOpValue
+      if (opT === GIMessage.OP_KEY_ADD) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        newOpV = ((opV: any): GIOpKeyAdd).filter((k) => {
+          const kId = (k.valueOf(): any).id
+          return !has(state._vm.authorizedKeys, kId) || state._vm.authorizedKeys[kId]._notAfterHeight != null
+        })
+        // Has this key already been added? (i.e., present in authorizedKeys)
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_ADD', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_KEY_DEL) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        // Has this key already been removed? (i.e., no longer in authorizedKeys)
+        newOpV = opV.filter((keyId) => {
+          const kId = (Object(keyId).valueOf(): any)
+          return has(state._vm.authorizedKeys, kId) && state._vm.authorizedKeys[kId]._notAfterHeight == null
+        })
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_DEL', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_KEY_UPDATE) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        // Has this key already been replaced? (i.e., no longer in authorizedKeys)
+        newOpV = ((opV: any): GIOpKeyUpdate).filter((k) => {
+          const oKId = (k.valueOf(): any).oldKeyId
+          const nKId = (k.valueOf(): any).id
+          return nKId == null || (has(state._vm.authorizedKeys, oKId) && state._vm.authorizedKeys[oKId]._notAfterHeight == null)
+        })
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_KEY_UPDATE', { head })
+        } else if (newOpV.length === opV.length) {
+          return opV
+        }
+      } else if (opT === GIMessage.OP_ATOMIC) {
+        if (!Array.isArray(opV)) throw new Error('Invalid message format')
+        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => recreateOperationInternal(t, v)).filter(Boolean): any): GIOpAtomic)
+        if (newOpV.length === 0) {
+          console.info('Omitting empty OP_ATOMIC', { head })
+        } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
+          return opV
+        }
+      } else {
+        return opV
       }
     }
 
-    return opV
+    const newOpV = recreateOperationInternal(opT, opV)
+
+    if (newOpV === opV) {
+      return rawOpV
+    } else if (newOpV === undefined) {
+      return
+    }
+
+    if (typeof rawOpV.recreate !== 'function') {
+      throw new Error('Unable to recreate operation')
+    }
+
+    return rawOpV.recreate(newOpV)
   }
 
-  let newOpV
+  const newRawOpV = recreateOperation(opT, rawOpV)
 
-  if (opT === GIMessage.OP_ATOMIC) {
-    newOpV = ((opV: any): GIOpAtomic).map((t, v) => recreateOperation(t, v)).filter(Boolean)
-    // TODO: Omit KS when not issuing op key update (key rotation)
-  } else {
-    newOpV = recreateOperation(opT, opV)
-  }
+  if (!newRawOpV) return
 
-  if (!newOpV) return
-
-  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD, height: previousHeight + 1 }, signatureFn)
+  entry = GIMessage.cloneWith(
+    head,
+    [
+      opT,
+      (newRawOpV: any)
+    ], { previousHEAD, height: previousHeight + 1 })
 
   return entry
 }

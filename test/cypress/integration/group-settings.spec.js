@@ -166,25 +166,27 @@ describe('Group Voting Rules', () => {
 
   it('4 new memebers joins the group via shared invitation link', () => {
     // temp test block while 'disagreement rule' is disabled
-    for (let i = 2; i <= 5; i++) {
-      cy.giAcceptGroupInvite(invitationLinkAnyone, {
-        username: `user${i}-${userId}`,
-        groupName: groupNamePerc40,
-        bypassUI: true
-      })
-    }
+    const usernames = [2, 3, 4, 5].map(i => `user${i}-${userId}`)
+    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+      usernames,
+      existingMemberUsername: `user1-${userId}`,
+      actionBeforeLogout: () => {},
+      groupName: groupNamePerc40,
+      bypassUI: true
+    })
 
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
   })
 
   it.skip('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
-    for (let i = 2; i <= 4; i++) {
-      cy.giAcceptGroupInvite(invitationLinkAnyone, {
-        username: `user${i}-${userId}`,
-        groupName: groupNamePerc40,
-        bypassUI: true
-      })
-    }
+    const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
+    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+      usernames,
+      existingMemberUsername: `user1-${userId}`,
+      actionBeforeLogout: () => {},
+      groupName: groupNamePerc40,
+      bypassUI: true
+    })
 
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
@@ -198,6 +200,7 @@ describe('Group Voting Rules', () => {
   it.skip('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: `user5-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNamePerc40,
       bypassUI: true
     })

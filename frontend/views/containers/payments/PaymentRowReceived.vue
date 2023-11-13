@@ -21,7 +21,7 @@
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
 
     template(slot='cellRelativeTo')
-      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
+      .c-relative-to.has-text-1 {{ humanDate(payment.period) }}
 
     template(slot='cellActions')
       payment-actions-menu
@@ -55,6 +55,7 @@ import { mapGetters } from 'vuex'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
@@ -71,6 +72,7 @@ export default ({
     PaymentNotReceivedTooltip,
     PaymentRow
   },
+  mixins: [PaymentsMixin],
   props: {
     payment: {
       type: Object,
@@ -79,8 +81,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'withGroupCurrency',
-      'periodStampGivenDate'
+      'withGroupCurrency'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED

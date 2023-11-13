@@ -5,7 +5,7 @@
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
@@ -300,11 +300,11 @@ sbp('chelonia/defineContract', {
         username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash, id, contractID }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
-          throw new Error(`Can not leave the chatroom which ${member} is not part of`)
+          throw new Error(`Can not leave the chatroom ${contractID} which ${member} is not part of`)
         }
         Vue.delete(state.users, member)
 
@@ -337,6 +337,12 @@ sbp('chelonia/defineContract', {
             sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
           }
         }
+
+        const rootGetters = sbp('state/vuex/getters')
+        const userID = rootGetters.ourContactProfiles[data.member]?.contractID
+        if (userID) {
+          sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
+        }
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -360,8 +366,15 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ direction, data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
+          return
+        }
+        // Called from the prepublish hook
+        if (direction === 'outgoing') {
+          // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
+          // when we don't get event after a certain period
+          state.messages.push({ ...createMessage({ meta, data, hash, id, state }), pending: true })
           return
         }
         // NOTE: id(GIMessage.id()) should be used as identifier for GIMessages, but not hash(GIMessage.hash())
@@ -687,6 +700,25 @@ sbp('chelonia/defineContract', {
 
       sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys']).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      })
+    },
+    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+      const keyIds = findForeignKeysByContractID(state, userID)
+
+      if (!keyIds?.length) return
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+
+      if (!CEKid) throw new Error('Missing encryption key')
+
+      sbp('chelonia/queueInvocation', contractID, ['chelonia/out/keyDel', {
+        contractID,
+        contractName: 'gi.contracts/chatroom',
+        data: keyIds,
+        signingKeyId: CSKid
+      }]).catch(e => {
+        console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     }
   }
