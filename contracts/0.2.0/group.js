@@ -18028,21 +18028,21 @@ ${this.getErrorInfo()}`;
           });
         }
       },
-      "gi.contracts/group/joinGroupChatrooms": async function(contractID, chatRoomID, member, loggedInUsername) {
+      "gi.contracts/group/joinGroupChatrooms": async function(contractID, chatRoomId, member, loggedInUsername) {
         const rootState = (0, import_sbp7.default)("state/vuex/state");
         const state = rootState[contractID];
         const username = rootState.loggedIn.username;
-        if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomID]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
+        if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomId]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
           return;
         }
         if (username === member) {
-          await (0, import_sbp7.default)("chelonia/contract/sync", chatRoomID);
+          await (0, import_sbp7.default)("chelonia/contract/sync", chatRoomId);
         }
-        if (!(0, import_sbp7.default)("chelonia/contract/canPerformOperation", chatRoomID, "*")) {
+        if (!(0, import_sbp7.default)("chelonia/contract/canPerformOperation", chatRoomId, "*")) {
           return;
         }
         await (0, import_sbp7.default)("gi.actions/chatroom/join", {
-          contractID: chatRoomID,
+          contractID: chatRoomId,
           data: { username: member },
           hooks: {
             preSendCheck: (_, state2) => {
@@ -18050,8 +18050,11 @@ ${this.getErrorInfo()}`;
             }
           }
         }).catch((e) => {
-          console.error(`Unable to join ${member} to chatroom ${chatRoomID} for group ${contractID}`, e);
+          console.error(`Unable to join ${member} to chatroom ${chatRoomId} for group ${contractID}`, e);
         });
+        if (username === member) {
+          (0, import_sbp7.default)("state/vuex/commit", "setCurrentChatRoomId", { groupId: contractID, chatRoomId });
+        }
       },
       "gi.contracts/group/leaveGroup": async ({ data, meta, contractID, getters }) => {
         const rootState = (0, import_sbp7.default)("state/vuex/state");

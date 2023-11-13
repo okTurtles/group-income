@@ -1577,25 +1577,25 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, member, loggedInUsername) {
+    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomId, member, loggedInUsername) {
       const rootState = sbp('state/vuex/state')
       const state = rootState[contractID]
       const username = rootState.loggedIn.username
 
-      if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomID]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
+      if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomId]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
         return
       }
 
       if (username === member) {
-        await sbp('chelonia/contract/sync', chatRoomID)
+        await sbp('chelonia/contract/sync', chatRoomId)
       }
 
-      if (!sbp('chelonia/contract/canPerformOperation', chatRoomID, '*')) {
+      if (!sbp('chelonia/contract/canPerformOperation', chatRoomId, '*')) {
         return
       }
 
       await sbp('gi.actions/chatroom/join', {
-        contractID: chatRoomID,
+        contractID: chatRoomId,
         data: { username: member },
         hooks: {
           preSendCheck: (_, state) => {
@@ -1605,8 +1605,12 @@ sbp('chelonia/defineContract', {
           }
         }
       }).catch(e => {
-        console.error(`Unable to join ${member} to chatroom ${chatRoomID} for group ${contractID}`, e)
+        console.error(`Unable to join ${member} to chatroom ${chatRoomId} for group ${contractID}`, e)
       })
+
+      if (username === member) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId: contractID, chatRoomId })
+      }
     },
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, getters }) => {
       const rootState = sbp('state/vuex/state')
