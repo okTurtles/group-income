@@ -15938,6 +15938,30 @@
     }
   });
 
+  // shared/domains/chelonia/errors.js
+  var ChelErrorGenerator = (name, base = Error) => class extends base {
+    constructor(...params) {
+      super(...params);
+      this.name = name;
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
+  };
+  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
+  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
+  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
+  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
+  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
+  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+
+  // frontend/common/errors.js
+  var GIErrorIgnoreAndBan = ChelErrorGenerator("GIErrorIgnoreAndBan");
+  var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
+  var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
+
   // frontend/model/contracts/chatroom.js
   var import_sbp7 = __toESM(__require("@sbp/sbp"));
 
@@ -16148,25 +16172,6 @@ ${this.getErrorInfo()}`;
 
   // shared/domains/chelonia/encryptedData.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
-
-  // shared/domains/chelonia/errors.js
-  var ChelErrorGenerator = (name, base = Error) => class extends base {
-    constructor(...params) {
-      super(...params);
-      this.name = name;
-      if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, this.constructor);
-      }
-    }
-  };
-  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
-  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
-  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
-  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
-  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
-  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
-  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
-  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
 
   // shared/domains/chelonia/signedData.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
@@ -16517,40 +16522,49 @@ ${this.getErrorInfo()}`;
           const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
           state.messages.push(newMessage);
         },
-        async sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
-          const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
-          const { username } = data;
-          const loggedIn = (0, import_sbp7.default)("state/vuex/state").loggedIn;
-          emitMessageEvent({ contractID, hash: hash2 });
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          if (username === loggedIn.username) {
-            if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-              (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
-                chatRoomId: contractID,
-                deletedDate: meta.createdDate
-              });
+        sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
+          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
+            const rootState = (0, import_sbp7.default)("state/vuex/state");
+            const state2 = rootState[contractID];
+            if (!state2?.users?.[data.username]) {
+              return;
             }
-            const lookupResult = await Promise.allSettled(Object.keys(state.users).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp7.default)("namespace/lookup", name).then((r) => {
-              if (!r)
-                throw new Error("Cannot lookup username: " + name);
-              return r;
-            })));
-            const errors = lookupResult.filter(({ status }) => status === "rejected").map((r) => r.reason);
-            await (0, import_sbp7.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
-            if (errors.length) {
-              const msg = `Encountered ${errors.length} errors while joining a chatroom`;
-              console.error(msg, errors);
-              throw new Error(msg);
-            }
-          } else {
-            if (!rootGetters.ourContactProfiles[username]) {
-              const contractID2 = await (0, import_sbp7.default)("namespace/lookup", username);
-              if (!contractID2) {
-                throw new Error("Cannot lookup username: " + username);
+            const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
+            const { username } = data;
+            const loggedIn = (0, import_sbp7.default)("state/vuex/state").loggedIn;
+            emitMessageEvent({ contractID, hash: hash2 });
+            setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
+            if (username === loggedIn.username) {
+              if (state2.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+                (0, import_sbp7.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
+                  chatRoomId: contractID,
+                  deletedDate: meta.createdDate
+                });
               }
-              await (0, import_sbp7.default)("chelonia/contract/sync", contractID2);
+              const lookupResult = await Promise.allSettled(Object.keys(state2.users).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp7.default)("namespace/lookup", name).then((r) => {
+                if (!r)
+                  throw new Error("Cannot lookup username: " + name);
+                return r;
+              })));
+              const errors = lookupResult.filter(({ status }) => status === "rejected").map((r) => r.reason);
+              await (0, import_sbp7.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
+              if (errors.length) {
+                const msg = `Encountered ${errors.length} errors while joining a chatroom`;
+                console.error(msg, errors);
+                throw new Error(msg);
+              }
+            } else {
+              if (!rootGetters.ourContactProfiles[username]) {
+                const contractID2 = await (0, import_sbp7.default)("namespace/lookup", username);
+                if (!contractID2) {
+                  throw new Error("Cannot lookup username: " + username);
+                }
+                await (0, import_sbp7.default)("chelonia/contract/sync", contractID2);
+              }
             }
-          }
+          }).catch((e) => {
+            console.error("[gi.contracts/chatroom/join/sideEffect] Error at sideEffect", e?.message || e);
+          });
         }
       },
       "gi.contracts/chatroom/rename": {
@@ -16616,23 +16630,31 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
-          if (data.member === (0, import_sbp7.default)("state/vuex/state").loggedIn.username) {
-            if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
+          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
+            const rootState = (0, import_sbp7.default)("state/vuex/state");
+            const state2 = rootState[contractID];
+            if (!state2 || !!state2.users?.[data.username]) {
               return;
             }
-            leaveChatRoom({ contractID });
-          } else {
-            emitMessageEvent({ contractID, hash: hash2 });
-            setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-            if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-              (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
+            if (data.member === rootState.loggedIn.username) {
+              if (!(0, import_sbp7.default)("okTurtles.data/get", "JOINING_CHATROOM-" + contractID)) {
+                await leaveChatRoom({ contractID });
+              }
+            } else {
+              emitMessageEvent({ contractID, hash: hash2 });
+              setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
+              if (state2.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+                (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state2);
+              }
             }
-          }
-          const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
-          const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
-          if (userID) {
-            (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state);
-          }
+            const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
+            const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
+            if (userID) {
+              (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state2);
+            }
+          }).catch((e) => {
+            console.error("[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect", e?.message || e);
+          });
         }
       },
       "gi.contracts/chatroom/delete": {
@@ -16647,11 +16669,11 @@ ${this.getErrorInfo()}`;
             vue_esm_default.delete(state.users, username);
           }
         },
-        sideEffect({ meta, contractID }, { state }) {
+        async sideEffect({ meta, contractID }, { state }) {
           if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
             return;
           }
-          leaveChatRoom({ contractID });
+          await leaveChatRoom({ contractID });
         }
       },
       "gi.contracts/chatroom/addMessage": {
@@ -16933,7 +16955,7 @@ ${this.getErrorInfo()}`;
         const CEKid = findKeyIdByName(state, "cek");
         vue_esm_default.set(state._volatile.pendingKeyRevocations, CSKid, true);
         vue_esm_default.set(state._volatile.pendingKeyRevocations, CEKid, true);
-        (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys"]).catch((e) => {
+        (0, import_sbp7.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys").catch((e) => {
           console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       },
@@ -16945,12 +16967,12 @@ ${this.getErrorInfo()}`;
         const CEKid = findKeyIdByName(state, "cek");
         if (!CEKid)
           throw new Error("Missing encryption key");
-        (0, import_sbp7.default)("chelonia/queueInvocation", contractID, ["chelonia/out/keyDel", {
+        (0, import_sbp7.default)("chelonia/out/keyDel", {
           contractID,
           contractName: "gi.contracts/chatroom",
           data: keyIds,
           signingKeyId: CSKid
-        }]).catch((e) => {
+        }).catch((e) => {
           console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       }

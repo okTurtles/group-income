@@ -85,7 +85,7 @@
         span(v-if='shouldPropose' v-safe-html='footerVotingExplanation')
         slot(v-else-if='shouldImmediateChange' name='shouldImmediateChangeFooter')
         i18n(
-          v-else
+          v-else-if='!groupShouldPropose'
           :args='LTags("strong")'
         ) Your group has less than 3 members, so {strong_}this change will be immediate{_strong} (no voting required).
 </template>

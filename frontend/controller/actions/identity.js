@@ -1,10 +1,7 @@
 'use strict'
 
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
-import {
-  CHATROOM_PRIVACY_LEVEL,
-  CHATROOM_TYPES
-} from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
@@ -266,13 +263,13 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
-  'gi.actions/identity/saveOurLoginState': function () {
+  'gi.actions/identity/saveOurLoginState': async function () {
     const getters = sbp('state/vuex/getters')
     const contractID = getters.ourIdentityContractId
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
     if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
-      return sbp('gi.actions/identity/setLoginState', {
+      return await sbp('gi.actions/identity/setLoginState', {
         contractID, data: ourLoginState
       })
     }
@@ -294,7 +291,7 @@ export default (sbp('sbp/selectors/register', {
         console.info('synchronizing login state:', { groupsJoined })
         for (const contractID of groupsJoined) {
           try {
-            await sbp('gi.actions/group/join', { contractID, options: { skipInviteAccept: true } })
+            await sbp('gi.actions/group/join', { contractID })
           } catch (e) {
             console.error(`updateLoginStateUponLogin: ${e.name} attempting to join group ${contractID}`, e)
             if (state.contracts[contractID] || state[contractID]) {
@@ -316,7 +313,6 @@ export default (sbp('sbp/selectors/register', {
       const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
         return getters.ourUsername !== username && !getters.ourContacts.includes(username)
       }).map(username => sbp('namespace/lookup', username)))
-
       await sbp('chelonia/contract/sync', additionalIdentityContractIDs)
 
       // NOTE: users could notice that they leave the group by someone else when they log in
@@ -370,6 +366,7 @@ export default (sbp('sbp/selectors/register', {
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
+
       const contractIDs = []
       const groupsToRejoin = []
       // login can be called when no settings are saved (e.g. from Signup.vue)
@@ -437,15 +434,12 @@ export default (sbp('sbp/selectors/register', {
           })
 
           throw new Error('Unable to sync identity contract')
-        }).then(() =>
-          sbp('chelonia/contract/sync', contractIDs).then(async function () {
-          // contract sync might've triggered an async call to /remove, so wait before proceeding
+        }).then(async () => {
+          await sbp('gi.actions/identity/updateLoginStateUponLogin')
+
+          return sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
+            // contract sync might've triggered an async call to /remove, so wait before proceeding
             await sbp('chelonia/contract/wait', contractIDs)
-            // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
-            // we must re-sync our identity contract again to ensure we don't rejoin a group we
-            // were just kicked out of
-            await sbp('chelonia/contract/sync', identityContractID, { force: true })
-            await sbp('gi.actions/identity/updateLoginStateUponLogin')
             await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
             // The state above might be null, so we re-grab it
@@ -454,15 +448,18 @@ export default (sbp('sbp/selectors/register', {
             // Call 'gi.actions/group/join' on all groups which may need re-joining
             await Promise.all(groupsToRejoin.map(groupId => {
               return (
-              // (1) Check whether the contract exists (may have been removed
-              //     after sync)
+                // (1) Check whether the contract exists (may have been removed
+                //     after sync)
                 state.contracts[groupId] &&
-            // (2) Check whether the join process is still incomplete
-            //     This needs to be re-checked because it may have changed after
-            //     sync
-            !state.profiles?.[username] &&
-            // (3) Call join
-            sbp('gi.actions/group/join', { contractID: groupId, contractName: 'gi.contracts/group' })
+                // (2) Check whether the join process is still incomplete
+                //     This needs to be re-checked because it may have changed after
+                //     sync
+                state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
+                // (3) Call join
+                sbp('gi.actions/group/join', {
+                  contractID: groupId,
+                  contractName: 'gi.contracts/group'
+                })
               )
             }))
 
@@ -472,14 +469,14 @@ export default (sbp('sbp/selectors/register', {
               .forEach(cId => {
                 // We send this action only for groups we have fully joined (i.e.,
                 // accepted an invite add added our profile)
-                if (state[cId]?.profiles?.[username]) {
-                  sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch(console.error)
+                if (state[cId]?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE) {
+                  sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
                 }
               })
           }).finally(() => {
             sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
           })
-        ).catch((err) => {
+        }).catch((err) => {
           console.error('Error during contract sync upon login', err)
         })
       return identityContractID
@@ -522,13 +519,44 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
-  'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
+  'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
+    const keyId = sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+
+    const rootState = sbp('state/vuex/state')
+    const foreignContractState = rootState[foreignContractID]
+
+    const existingForeignKeys = sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
+
+    if (existingForeignKeys?.includes(keyId)) {
+      return
+    }
+
+    return await sbp('chelonia/out/keyAdd', {
+      contractID,
+      contractName: 'gi.contracts/identity',
+      data: [encryptedOutgoingData(contractID, CEKid, {
+        foreignKey: `sp:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
+        id: keyId,
+        data: foreignContractState._vm.authorizedKeys[keyId].data,
+        // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+        // that a chatroom has just been created
+        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        name: `${foreignContractID}/${keyId}`
+      })],
+      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
+    })
+  },
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
+    const username = state.attributes.username
 
     // TODO: Also share PEK with DMs
-    return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
-      const groupState = rootState[groupID]
+    await Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
       const CSKid = findKeyIdByName(rootState[groupID], 'csk')
 
@@ -541,21 +569,39 @@ export default (sbp('sbp/selectors/register', {
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
-        data: encryptedOutgoingData(groupState, CEKid, {
+        data: encryptedOutgoingData(groupID, CEKid, {
           contractID: groupID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
             meta: {
               private: {
-                content: encryptedOutgoingData(groupState, CEKid, serializeKey(newKey, true))
+                content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
               }
             }
           }))
         }),
-        signingKeyId: CSKid
+        signingKeyId: CSKid,
+        hooks: {
+          preSendCheck: (_, state) => {
+            // Don't send this message if we're no longer a group member
+            return state?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE
+          }
+        }
+      }).catch(e => {
+        // We may no longer be a member of the group, so we ignore errors
+        // related to missing keys
+        if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+          throw e
+        }
       })
-    })).then(() => undefined)
+    }))
+
+    // This selector is called by rotateKeys, which will include the keys to
+    // share along with OP_KEY_UPDATE. In this case, we're sharing all keys
+    // to their respective contracts and there are no keys to include in
+    // the same event as OP_KEY_UPDATE. Therefore, we return undefined
+    return undefined
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
@@ -638,7 +684,7 @@ export default (sbp('sbp/selectors/register', {
         // For now, we assume that we're messaging someone which whom we
         // share a group
         signingKeyId: sbp('chelonia/contract/suitableSigningKey', profile.contractID, [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
-        innerSigningContractID: currentGroupId,
+        innerSigningContractID: rootState.currentGroupId,
         hooks
       })
     }

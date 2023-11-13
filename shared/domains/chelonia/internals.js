@@ -160,6 +160,7 @@ export default (sbp('sbp/selectors/register', {
       if (allowedSels[selector] || allowedDoms[domain]) {
         return sbp(selector, ...args)
       } else {
+        console.error('[chelonia] selector not on allowlist', { selector, allowedSels, allowedDoms })
         throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
     }
@@ -256,19 +257,44 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     let attempt = 1
+    let lastAttemptedHeight
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     hooks?.prepublish?.(entry)
+
     while (true) {
-      if (hooks?.preSendCheck) {
+      // Queued event to ensure that we send the event with whatever the
+      // 'latest' state may be for that contract (in case we were receiving
+      // something over the web socket)
+      // This also ensures that the state doesn't change while reading it
+      lastAttemptedHeight = entry.height()
+      entry = await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), () => {
         const rootState = sbp(this.config.stateSelector)
         const state = rootState[entry.contractID()]
 
-        if (!hooks.preSendCheck(entry, state)) {
-          console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
-          return
+        if (hooks?.preSendCheck) {
+          if (!hooks.preSendCheck(entry, state)) {
+            console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
+            return
+          }
         }
-      }
+
+        // if this isn't the first event (i.e., OP_CONTRACT), recreate and
+        // resend message
+        // This is mainly to set height and previousHEAD. For the first event,
+        // this doesn't need to be done because previousHEAD is always undefined
+        // and height is always 0.
+        // We always call recreateEvent because we may have received new events
+        // in the web socket
+        if (!entry.isFirstMessage()) {
+          return recreateEvent(entry, state)
+        }
+
+        return entry
+      })
+
+      // If there is no event to send, return
+      if (!entry) return
 
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
@@ -292,14 +318,12 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait randDelay ms before sending it again
-        // if this isn't OP_CONTRACT, recreate and resend message
-        if (!entry.isFirstMessage()) {
-          const rootState = sbp(this.config.stateSelector)
-          const newEntry = await recreateEvent(entry, rootState)
-          if (!newEntry) {
-            return
-          }
-          entry = newEntry
+
+        // TODO: The [pubsub] code seems to miss events that happened between
+        // a call to sync and the subscription time. This is a temporary measure
+        // to handle this until [pubsub] is updated.
+        if (entry.height() === lastAttemptedHeight) {
+          await sbp('chelonia/contract/sync', entry.contractID(), { force: true })
         }
       } else {
         const message = (await r.json())?.message
@@ -442,10 +466,10 @@ export default (sbp('sbp/selectors/register', {
                 }
               } catch (e) {
                 if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
-                  console.warn(`OP_KEY_SHARE missing secret key: ${e.message}`,
+                  console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e.message}`,
                     e)
                 } else {
-                  console.error(`OP_KEY_SHARE error '${e.message || e}':`,
+                  console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
                     e)
                 }
               }
@@ -771,7 +795,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
     return result
   },
-  'chelonia/private/in/syncContract': async function (contractID: string) {
+  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
@@ -779,10 +803,18 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-    } else if (!state.pending.includes(contractID)) {
+      if (params?.deferredRemove && !state.contracts[contractID].deferredRemove) {
+        state.contracts[contractID].deferredRemove = params.deferredRemove
+      }
+    } else {
+      const entry = state.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      state.pending.push(contractID)
+      if (!entry) {
+        state.pending.push({ contractID, deferredRemove: params?.deferredRemove })
+      } else if (params?.deferredRemove && !entry.deferredRemove) {
+        entry.deferredRemove = params.deferredRemove
+      }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
@@ -916,7 +948,15 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    await sbp('chelonia/private/in/syncContract', contractID)
+    // We check rootState.contracts[contractID] to see if we're already
+    // subscribed to the contract; if not, we call sync.
+    // If we're subscribed, we don't call sync because we should have the latest
+    // state
+    // Checking rootState[contractID] instead of rootState.contracts[contractID]
+    // could give us an incomplete state
+    if (!has(rootState.contracts, contractID)) {
+      await sbp('chelonia/private/in/syncContract', contractID)
+    }
 
     const contractState = rootState[contractID]
     const keysToDelete = []
@@ -926,8 +966,8 @@ export default (sbp('sbp/selectors/register', {
       // of waiting, we need to remove it ourselves
       const keyId = findKeyIdByName(contractState, keyName)
       if (!keyId) {
+        console.log('@@@@ pendingWatch --- pushed to keysToDelete', { contractID, externalContractID, keyName, state: cloneDeep(contractState) })
         keysToDelete.push(externalId)
-
         return
       }
 
@@ -967,15 +1007,17 @@ export default (sbp('sbp/selectors/register', {
     const keysToDelete = Object.entries(pendingKeyRevocations).filter(([, v]) => v === 'del').map(([id]) => id)
 
     // Aggregate the keys that we can delete to send them in a single operation
-    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, cv) => {
+    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, keyId) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
-      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId].ringLevel)
+      const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId]?.ringLevel ?? Number.POSITIVE_INFINITY)
       if (ringLevel >= currentRingLevel) {
-        return [currentRingLevel, currentSigningKeyId, (currentKeyIds: any).push(cv)]
+        (currentKeyIds: any).push(keyId)
+        return [currentRingLevel, currentSigningKeyId, currentKeyIds]
       } else if (Number.isFinite(ringLevel)) {
         const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
         if (signingKeyId) {
-          return [ringLevel, signingKeyId, (currentKeyIds: any).push(cv)]
+          (currentKeyIds: any).push(keyId)
+          return [ringLevel, signingKeyId, currentKeyIds]
         }
       }
       return acc
@@ -986,8 +1028,8 @@ export default (sbp('sbp/selectors/register', {
     const contractName = contractState._vm.type
 
     // This is safe to do without await because it's sending an operation
-    // Using await could deadlock when retying to send the message
-    sbp('chelonia/out/keyDel', { contractID, contractName: contractName, data: keyIds, signingKeyId })
+    // Using await could deadlock when retrying to send the message
+    sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIds, signingKeyId })
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -1076,7 +1118,7 @@ export default (sbp('sbp/selectors/register', {
           id: keyId,
           meta: {
             private: {
-              content: encryptedOutgoingData(originatingState, encryptionKeyId, key),
+              content: encryptedOutgoingData(originatingContractID, encryptionKeyId, key),
               shareable: true
             }
           }
@@ -1098,7 +1140,7 @@ export default (sbp('sbp/selectors/register', {
         contractName: originatingContractName,
         data: keyShareEncryption
           ? encryptedOutgoingData(
-            originatingState,
+            originatingContractID,
             findSuitablePublicKeyIds(originatingState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
             keySharePayload
           )
@@ -1114,7 +1156,7 @@ export default (sbp('sbp/selectors/register', {
               id: keyId(deserializedResponseKey),
               meta: {
                 private: {
-                  content: encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                  content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
                   shareable: true
                 }
               }
@@ -1135,7 +1177,7 @@ export default (sbp('sbp/selectors/register', {
                 data:
                 krsEncryption
                   ? encryptedOutgoingData(
-                    contractState,
+                    contractID,
                     findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
                     payload
                   )
@@ -1149,7 +1191,7 @@ export default (sbp('sbp/selectors/register', {
               {
                 data: keyShareEncryption
                   ? encryptedOutgoingData(
-                    contractState,
+                    contractID,
                     findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
                     connectionKeyPayload
                   )
@@ -1178,7 +1220,7 @@ export default (sbp('sbp/selectors/register', {
         contractName,
         signingKeyId,
         data: krsEncryption
-          ? encryptedOutgoingData(contractState, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+          ? encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
           : payload
       }).catch((e) => {
         console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)
@@ -1200,7 +1242,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
-      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
+      if (!state.pending.some((entry) => entry?.contractID === contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
         return
       }
@@ -1247,16 +1289,13 @@ export default (sbp('sbp/selectors/register', {
       if (!processingErrored && !state[contractID]?._volatile?.dirty) {
         // Gets run get when skipSideEffects is false
         if (Array.isArray(internalSideEffectStack) && internalSideEffectStack.length > 0) {
-          // We don't await on internal side-effects as it may cause deadlocks
-          internalSideEffectStack.forEach(fn => sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, fn).catch((e) => {
+          await Promise.all(internalSideEffectStack.map(fn => Promise.resolve(fn()).catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
-          }))
+          })))
         }
 
-        // We don't await on side-effects as it may deadlock if the side-effect
-        // ends up putting things in the queue
         if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-          Promise.resolve().then(() => handleEvent.processSideEffects.call(this, message, state[contractID])).catch((e) => {
+          await handleEvent.processSideEffects.call(this, message, state[contractID])?.catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
             // We used to revert the state and rethrow the error here, but we no longer do that
             // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
@@ -1329,74 +1368,85 @@ const handleEvent = {
       }
       console.debug(`contract ${type} registered for ${contractID}`)
       if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
-      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+      const entry = state.pending.find((entry) => entry?.contractID === contractID)
+      if (entry?.deferredRemove) {
+        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0, deferredRemove: true })
+      } else {
+        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+      }
       // we've successfully received it back, so remove it from expectation pending
-      const index = state.pending.indexOf(contractID)
-      index !== -1 && state.pending.splice(index, 1)
+      if (entry) {
+        const index = state.pending.indexOf(entry)
+        if (index !== -1) {
+          state.pending.splice(index, 1)
+        }
+      }
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
     await sbp('chelonia/private/in/processMessage', message, state[contractID], internalSideEffectStack)
   },
   processSideEffects (message: GIMessage, state: Object) {
     const opT = message.opType()
-    if ([GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
-      const contractID = message.contractID()
-      const manifestHash = message.manifest()
-      const hash = message.hash()
-      const id = message.id()
-      const signingKeyId = message.signingKeyId()
-
-      const callSideEffect = (field) => {
-        let v = field.valueOf()
-        let innerSigningKeyId: string | typeof undefined
-        if (isSignedData(v)) {
-          innerSigningKeyId = (v: any).signingKeyId
-          v = (v: any).valueOf()
-        }
-
-        const { action, data, meta } = (v: any)
-        const mutation = {
-          data,
-          meta,
-          hash,
-          id,
-          contractID,
-          description: message.description(),
-          direction: message.direction(),
-          signingKeyId,
-          get signingContractID () {
-            return getContractIDfromKeyId(contractID, signingKeyId, state)
-          },
-          innerSigningKeyId,
-          get innerSigningContractID () {
-            return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
-          }
-        }
-        return sbp('okTurtles.eventQueue/queueEvent', `sideEffect:${contractID}`, [`${manifestHash}/${action}/sideEffect`, mutation])
-      }
-      const msg = Object(message.message())
-
-      if (opT !== GIMessage.OP_ATOMIC) {
-        return callSideEffect(msg)
-      }
-
-      const reducer = (acc, [opT, opV]) => {
-        if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
-          acc.push(Object(opV))
-        }
-        return acc
-      }
-
-      const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
-
-      return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
-        const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
-        if (errors.length > 0) {
-          // $FlowFixMe[cannot-resolve-name]
-          throw new AggregateError(errors, `Error at side effects for ${contractID}`)
-        }
-      })
+    if (![GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+      return
     }
+
+    const contractID = message.contractID()
+    const manifestHash = message.manifest()
+    const hash = message.hash()
+    const id = message.id()
+    const signingKeyId = message.signingKeyId()
+
+    const callSideEffect = async (field) => {
+      let v = field.valueOf()
+      let innerSigningKeyId: string | typeof undefined
+      if (isSignedData(v)) {
+        innerSigningKeyId = (v: any).signingKeyId
+        v = (v: any).valueOf()
+      }
+
+      const { action, data, meta } = (v: any)
+      const mutation = {
+        data,
+        meta,
+        hash,
+        id,
+        contractID,
+        description: message.description(),
+        direction: message.direction(),
+        signingKeyId,
+        get signingContractID () {
+          return getContractIDfromKeyId(contractID, signingKeyId, state)
+        },
+        innerSigningKeyId,
+        get innerSigningContractID () {
+          return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
+        }
+      }
+      return await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
+    }
+    const msg = Object(message.message())
+
+    if (opT !== GIMessage.OP_ATOMIC) {
+      return callSideEffect(msg)
+    }
+
+    const reducer = (acc, [opT, opV]) => {
+      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+        acc.push(Object(opV))
+      }
+      return acc
+    }
+
+    const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+
+    return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
+      const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
+      if (errors.length > 0) {
+        // $FlowFixMe[cannot-resolve-name]
+        throw new AggregateError(errors, `Error at side effects for ${contractID}`)
+      }
+    })
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {
     console.warn(`[chelonia] reverting mutation ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)

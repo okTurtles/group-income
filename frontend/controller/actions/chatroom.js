@@ -208,7 +208,7 @@ export default (sbp('sbp/selectors/register', {
           id: newId,
           meta: {
             private: {
-              content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+              content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
             }
           }
         }))
@@ -228,32 +228,41 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
-    await sbp('chelonia/contract/sync', params.contractID)
+    const isCurrentUserJoining = rootState.loggedIn.identityContractID === userID
 
-    const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+    if (isCurrentUserJoining) {
+      sbp('chelonia/contract/cancelRemove', params.contractID)
+      sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, true)
+    }
 
-    const state = rootState[params.contractID]
+    try {
+      const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+      const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
 
-    // Add the user's CSK to the contract
-    await sbp('chelonia/out/keyAdd', {
-      contractID: params.contractID,
-      contractName: 'gi.contracts/chatroom',
-      // TODO: Find a way to have this wrapping be done by Chelonia directly
-      data: [encryptedOutgoingData(state, CEKid, {
-        foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-        id: userCSKid,
-        data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-        allowedActions: '*',
-        purpose: ['sig'],
-        ringLevel: Number.MAX_SAFE_INTEGER,
-        name: `${userID}/${userCSKid}`
-      })],
-      signingKeyId
-    })
+      // Add the user's CSK to the contract
+      await sbp('chelonia/out/keyAdd', {
+        contractID: params.contractID,
+        contractName: 'gi.contracts/chatroom',
+        // TODO: Find a way to have this wrapping be done by Chelonia directly
+        data: [encryptedOutgoingData(params.contractID, CEKid, {
+          foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+          id: userCSKid,
+          data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+          permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+          allowedActions: '*',
+          purpose: ['sig'],
+          ringLevel: Number.MAX_SAFE_INTEGER,
+          name: `${userID}/${userCSKid}`
+        })],
+        signingKeyId
+      })
 
-    return sendMessage(params)
+      return await sendMessage(params)
+    } finally {
+      if (isCurrentUserJoining) {
+        sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, false)
+      }
+    }
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),

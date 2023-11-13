@@ -9145,6 +9145,30 @@
     }
   });
 
+  // shared/domains/chelonia/errors.js
+  var ChelErrorGenerator = (name, base = Error) => class extends base {
+    constructor(...params) {
+      super(...params);
+      this.name = name;
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
+  };
+  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
+  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
+  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
+  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
+  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
+  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+
+  // frontend/common/errors.js
+  var GIErrorIgnoreAndBan = ChelErrorGenerator("GIErrorIgnoreAndBan");
+  var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
+  var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
+
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
@@ -9407,7 +9431,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           vue_esm_default.set(state, "loginState", data);
         },
-        sideEffect({ contractID }) {
+        sideEffect({ contractID }, { state }) {
           if (contractID === (0, import_sbp2.default)("state/vuex/getters").ourIdentityContractId) {
             (0, import_sbp2.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
               (0, import_sbp2.default)("gi.notifications/emit", "ERROR", {

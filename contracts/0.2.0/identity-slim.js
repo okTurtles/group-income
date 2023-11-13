@@ -310,7 +310,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           import_common.Vue.set(state, "loginState", data);
         },
-        sideEffect({ contractID }) {
+        sideEffect({ contractID }, { state }) {
           if (contractID === (0, import_sbp.default)("state/vuex/getters").ourIdentityContractId) {
             (0, import_sbp.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
               (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
