@@ -23,7 +23,7 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { LOGOUT, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { LOGOUT, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP, JOINED_GROUP } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -458,6 +458,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
+        sbp('okTurtles.events/emit', JOINED_GROUP, { contractID: params.contractID })
       // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
       // This means that we've been removed from the group
       } else if (!hasSecretKeys && !isWaitingForKeyShare) {
@@ -491,7 +492,7 @@ export default (sbp('sbp/selectors/register', {
 
     const secretKey = deserializeKey(secret)
 
-    sbp('chelonia/storeSecretKeys', [{
+    sbp('chelonia/storeSecretKeys', () => [{
       key: secretKey, transient: true
     }])
 
