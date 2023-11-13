@@ -36,26 +36,6 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-export async function leaveAllChatRooms (groupContractID: string, member: string) {
-  // let user leaves all the chatrooms before leaving group
-  const rootState = sbp('state/vuex/state')
-  const chatRooms = rootState[groupContractID].chatRooms
-  const chatRoomIDsToLeave = Object.keys(chatRooms)
-    .filter(cID => chatRooms[cID].users.includes(member))
-
-  try {
-    for (const chatRoomID of chatRoomIDsToLeave) {
-      await sbp('gi.actions/group/leaveChatRoom', {
-        contractID: groupContractID,
-        data: { chatRoomID, member, leavingGroup: true }
-      })
-    }
-  } catch (e) {
-    console.error(`leaveAllChatRooms: ${e.name}: ${e.message}`, e)
-    throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
-  }
-}
-
 async function saveLoginState (action: string, contractID: string) {
   try {
     await sbp('gi.actions/identity/saveOurLoginState')
@@ -132,7 +112,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK].map(key => ({ key, transient: true }))
+        () => [CEK, CSK].map(key => ({ key, transient: true }))
       )
 
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
@@ -234,10 +214,9 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
-        [CEK, CSK, inviteKey].map(key => ({ key }))
+        () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
 
       // Save the initial invite
@@ -518,6 +497,16 @@ export default (sbp('sbp/selectors/register', {
           await sbp('chelonia/contract/sync', chatRoomIds)
         }
 
+        // NOTE: sync identity contracts which are out of sync after joining group
+        const missingIDs = (await Promise.all(
+          Object.keys(state.profiles)
+            .map(username => sbp('namespace/lookup', username))
+        )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
+        if (missingIDs.length > 0) {
+          console.info('found unsynced identity contracts to sync:', missingIDs)
+          await sbp('chelonia/contract/sync', missingIDs)
+        }
+
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         // We have already sent a key request that hasn't been answered. We cannot
         // do much at this point, so we do nothing.
@@ -778,7 +767,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/removeMember',
     (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
     async function (sendMessage, params, signingKeyId) {
-      await leaveAllChatRooms(params.contractID, params.data.member)
       await sendMessage({
         ...omit(params, ['options', 'action'])
       })
@@ -786,9 +774,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/removeOurselves',
     (e) => L('Failed to leave group. {codeError}', { codeError: e.message }),
     async function (sendMessage, params) {
-      const rootState = sbp('state/vuex/state')
-      await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
-      return sendMessage({
+      await sendMessage({
         ...omit(params, ['options', 'action'])
       })
     }),

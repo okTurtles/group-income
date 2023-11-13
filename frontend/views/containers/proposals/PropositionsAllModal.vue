@@ -53,7 +53,7 @@ export default ({
     }
   }),
   async mounted () {
-    const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+    const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
     this.ephemeral.proposals = await sbp('gi.db/archive/load', key) || []
   },
   methods: {
@@ -63,7 +63,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentGroupState', 'ourUsername']),
+    ...mapGetters(['currentGroupState', 'ourUsername', 'ourIdentityContractId']),
     proposals () {
       const p = this.ephemeral.proposals
       return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()
