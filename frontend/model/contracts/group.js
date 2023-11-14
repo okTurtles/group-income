@@ -1321,10 +1321,17 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state }) {
         removeGroupChatroomProfile(state, data.chatroomID, data.member)
       },
-      async sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ meta, data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (meta.username !== rootState.loggedIn.username || !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-          await leaveChatRoomAction(state, data, meta)
+        if (meta.username !== rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+          sbp('chelonia/queueInvocation', contractID, () => {
+            const rootState = sbp('state/vuex/state')
+            if (rootState[contractID]?.profiles?.[meta.username]?.status === PROFILE_STATUS.ACTIVE) {
+              return leaveChatRoomAction(state, data, meta)
+            }
+          }).catch((e) => {
+            console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
+          })
         }
       }
     },

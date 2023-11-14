@@ -283,6 +283,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('state/vuex/state')
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
+    let groupsJoined
     try {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')
@@ -291,7 +292,7 @@ export default (sbp('sbp/selectors/register', {
         // we need to update ourselves to it
         // mainly we are only interested if the contractLoginState contains groupIds
         // that we don't have, and if so, join those groups
-        const groupsJoined = difference(contractLoginState.groupIds, ourLoginState.groupIds)
+        groupsJoined = difference(contractLoginState.groupIds, ourLoginState.groupIds)
         console.info('synchronizing login state:', { groupsJoined })
         for (const contractID of groupsJoined) {
           try {
@@ -339,6 +340,7 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)
     }
+    return groupsJoined
   },
   'gi.actions/identity/login': async function ({ username, passwordFn, identityContractID }: {
     username: ?string, passwordFn: ?() => string, identityContractID: ?string
@@ -438,7 +440,7 @@ export default (sbp('sbp/selectors/register', {
 
           throw new Error('Unable to sync identity contract')
         }).then(async () => {
-          await sbp('gi.actions/identity/updateLoginStateUponLogin')
+          const groupsJoined = await sbp('gi.actions/identity/updateLoginStateUponLogin')
 
           return sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
             // contract sync might've triggered an async call to /remove, so wait before proceeding
@@ -451,6 +453,8 @@ export default (sbp('sbp/selectors/register', {
             // Call 'gi.actions/group/join' on all groups which may need re-joining
             await Promise.all(groupsToRejoin.map(groupId => {
               return (
+                // (0) Avoid re-joining groups for which /join has been called
+                !groupsJoined?.includes(groupId) &&
                 // (1) Check whether the contract exists (may have been removed
                 //     after sync)
                 state.contracts[groupId] &&

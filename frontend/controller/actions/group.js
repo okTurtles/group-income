@@ -424,7 +424,10 @@ export default (sbp('sbp/selectors/register', {
             ...omit(params, ['options', 'action', 'hooks', 'signingKeyId']),
             hooks: {
               prepublish: params.hooks?.prepublish,
-              postpublish: null
+              postpublish: null,
+              preSendCheck: (_, state) => {
+                return state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE
+              }
             }
           })
 

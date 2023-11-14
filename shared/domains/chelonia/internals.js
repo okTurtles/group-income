@@ -803,17 +803,17 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-      if (params?.deferredRemove && !state.contracts[contractID].deferredRemove) {
-        state.contracts[contractID].deferredRemove = params.deferredRemove
+      if (params?.deferredRemove) {
+        this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
       }
     } else {
       const entry = state.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
       if (!entry) {
-        state.pending.push({ contractID, deferredRemove: params?.deferredRemove })
-      } else if (params?.deferredRemove && !entry.deferredRemove) {
-        entry.deferredRemove = params.deferredRemove
+        state.pending.push({ contractID, deferredRemove: params?.deferredRemove ? 1 : 0 })
+      } else {
+        entry.deferredRemove += 1
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
@@ -1145,7 +1145,7 @@ export default (sbp('sbp/selectors/register', {
             keySharePayload
           )
           : keySharePayload,
-        signingKey: deserializedResponseKey
+        signingKeyId: responseKeyId
       }).then(() => {
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
@@ -1153,7 +1153,7 @@ export default (sbp('sbp/selectors/register', {
           contractID: originatingContractID,
           keys: [
             {
-              id: keyId(deserializedResponseKey),
+              id: responseKeyId,
               meta: {
                 private: {
                   content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
@@ -1370,10 +1370,9 @@ const handleEvent = {
       if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
       const entry = state.pending.find((entry) => entry?.contractID === contractID)
       if (entry?.deferredRemove) {
-        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0, deferredRemove: true })
-      } else {
-        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+        this.removeCount[contractID] = entry?.deferredRemove
       }
+      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
       // we've successfully received it back, so remove it from expectation pending
       if (entry) {
         const index = state.pending.indexOf(entry)
