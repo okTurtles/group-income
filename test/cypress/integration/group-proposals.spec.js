@@ -70,12 +70,20 @@ describe('Proposals - Add members', () => {
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
     // Try to join with expired link
-    // cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
-    // cy.visit(invitationLinks.anyone)
-    // cy.getByDT('pageTitle')
-    //   .invoke('text')
-    //   .should('contain', 'Oh no! This invite is already expired')
-    // cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+    cy.visit(invitationLinks.anyone)
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! This invite is already expired')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    cy.clock().then((clock) => {
+      clock.restore()
+    })
+
+    cy.visit('/')
+    cy.url().should('eq', `${API_URL}/app/`)
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
@@ -311,11 +319,18 @@ describe('Proposals - Add members', () => {
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    cy.clock().then((clock) => {
+      clock.restore()
+    })
+
+    cy.visit('/')
+    cy.url().should('eq', `${API_URL}/app/`)
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
     // Expiry check in Group Settings page and Dashboard
-    cy.visit('/')
     cy.giLogin(`user1-${userId}`)
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
@@ -360,7 +375,7 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it.skip('an already used invitation link cannot be used again', () => {
+  it('an already used invitation link cannot be used again', () => {
     cy.visit(invitationLinks.user6) // already used on the previous test
     cy.getByDT('pageTitle')
       .invoke('text')
@@ -388,6 +403,7 @@ describe('Proposals - Add members', () => {
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases
     // https://docs.cypress.io/guides/tooling/visual-testing.html#Functional-vs-visual-testing#article
+    getProposalItems().should('have.length', 5)
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {

@@ -108,15 +108,12 @@ Cypress.Commands.add('giLogin', (username, {
 
     cy.getByDT('loginSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
-
-    if (firstLoginAfterJoinGroup) {
-      cy.getByDT('toDashboardBtn').click()
-    }
   }
 
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
+  cy.url().should('eq', `${API_URL}/app/dashboard`)
 
   // wait for contracts to finish syncing
   cy.getByDT('app').then(([el]) => {
@@ -251,8 +248,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  cy.url().should('eq', `${API_URL}/app/pending-approval`)
-  cy.getByDT('toDashboardBtn').should('not.be.disabled').click()
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })

@@ -113,19 +113,20 @@ export default ({
         const secretKey = deserializeKey(this.ephemeral.query.secret)
         const publicKey = keyId(secretKey)
         const invite = state._vm.invites[publicKey]
+        const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
         if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.ephemeral.errorMsg = messageToAskAnother
           this.pageStatus = 'EXPIRED'
           return
         } else if (invite?.initialQuantity > 0 && !invite.quantity) {
-          console.log('Join.vue error: Link is already expired.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-          this.pageStatus = 'EXPIRED'
+          console.log('Join.vue error: Link is already used.')
+          this.ephemeral.errorMsg = messageToAskAnother
+          this.pageStatus = 'INVALID'
           return
         } if (invite?.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.ephemeral.errorMsg = messageToAskAnother
           this.pageStatus = 'INVALID'
           return
         }

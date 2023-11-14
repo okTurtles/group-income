@@ -79,6 +79,7 @@ describe('Group - Removing a member', () => {
     assertMembersCount(2)
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
+    assertMembersCount(1)
     cy.giLogout()
   })
 
