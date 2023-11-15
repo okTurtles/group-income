@@ -496,6 +496,9 @@ export default (sbp('sbp/selectors/register', {
 
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
+            // Note: The following may be problematic when several tabs are open
+            // sharing the same state. This is more of a general issue in this
+            // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
               ['chelonia/contract/removeImmediately', v.contractID],
@@ -1306,6 +1309,7 @@ export default (sbp('sbp/selectors/register', {
         try {
           postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
+          sbp('okTurtles.events/emit', message.id(), contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
           console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} in event post-handling: ${e.message}`, e, { message: message.serialize() })

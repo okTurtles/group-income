@@ -625,13 +625,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
-    return await sendMessage({
-      ...omit(params, ['options', 'action', 'hooks']),
-      hooks: {
-        prepublish: null,
-        postpublish: params.hooks?.postpublish
-      }
-    })
+    return await sendMessage(omit(params, ['options', 'action']))
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
@@ -642,15 +636,17 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
+    const chatRoomID = message.contractID()
+
     await sbp('gi.actions/group/joinChatRoom', {
       ...omit(params, ['options', 'data', 'hooks']),
       data: {
-        chatRoomID: message.contractID()
+        chatRoomID
       },
       hooks: {
         prepublish: (msg) => {
-          sbp('okTurtles.events/once', msg.hash(), (cId, m) => {
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: cId })
+          sbp('okTurtles.events/once', msg.id(), (cId) => {
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: cId })
           })
         },
         postpublish: params.hooks?.postpublish
