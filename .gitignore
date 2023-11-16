@@ -35,6 +35,7 @@
 /ignored
 /data/*
 !/data/.gitkeep
+giconf.json
 
 # Cypress
 /test/cypress/videos

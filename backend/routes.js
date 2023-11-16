@@ -10,9 +10,10 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-import { VAPID_PUBLIC_KEY, pushInstance, pushSubscriptions } from './push.js'
+import { pushInstance, pushSubscriptions } from './push.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
+const giConfig = require('../giconf.json')
 
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
 const staticServeConfig = {
@@ -373,7 +374,7 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
 // PWA push notification
 
 route.GET('/push/publickey', {}, function (req, h) {
-  return h.response(VAPID_PUBLIC_KEY).type('text/plain')
+  return h.response(process.env.VAPID_PUBLIC_KEY || giConfig.VAPID_PUBLIC_KEY).type('text/plain')
 })
 
 route.POST('/push/subscribe', {
