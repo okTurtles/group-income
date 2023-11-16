@@ -334,8 +334,8 @@ sbp('chelonia/defineContract', {
         })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, hash, contractID, meta }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, async () => {
+      sideEffect ({ data, hash, contractID, meta }) {
+        sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
@@ -345,7 +345,12 @@ sbp('chelonia/defineContract', {
 
           if (data.member === rootState.loggedIn.username) {
             if (!sbp('okTurtles.data/get', 'JOINING_CHATROOM-' + contractID)) {
-              await leaveChatRoom({ contractID })
+              // NOTE: make sure *not* to await on this, since that can cause
+              //       a potential deadlock. See same warning in sideEffect for
+              //       'gi.contracts/group/removeMember'
+              sbp('chelonia/contract/remove', contractID).catch(e => {
+                console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
+              })
             }
           } else {
             emitMessageEvent({ contractID, hash })
@@ -378,11 +383,16 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.users, username)
         }
       },
-      async sideEffect ({ meta, contractID }, { state }) {
+      sideEffect ({ meta, contractID }, { state }) {
         if (sbp('chelonia/contract/isSyncing', contractID)) {
           return
         }
-        await leaveChatRoom({ contractID })
+        // NOTE: make sure *not* to await on this, since that can cause
+        //       a potential deadlock. See same warning in sideEffect for
+        //       'gi.contracts/group/removeMember'
+        sbp('chelonia/contract/remove', contractID).catch(e => {
+          console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
+        })
       }
     },
     'gi.contracts/chatroom/addMessage': {
@@ -709,6 +719,11 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    'gi.contracts/chatroom/_cleanup': ({ contractID }) => {
+      leaveChatRoom({ contractID }).catch((e) => {
+        console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e)
+      })
+    },
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))

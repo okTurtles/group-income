@@ -618,6 +618,26 @@ export default (sbp('sbp/selectors/register', {
   // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
   'chelonia/contract/removeImmediately': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
+    const contractName = state.contracts[contractID]?.type
+    if (!contractName) {
+      console.error('[chelonia/contract/removeImmediately] Called on non-existing contract', { contractID })
+      return
+    }
+
+    const manifestHash = this.config.contracts.manifests[contractName]
+    if (manifestHash) {
+      const destructor = `${manifestHash}/${contractName}/_cleanup`
+      // Check if a destructor is defined
+      if (sbp('sbp/selectors/fn', destructor)) {
+        // And call it
+        try {
+          sbp(destructor, { contractID })
+        } catch (e) {
+          console.error(`[chelonia/contract/removeImmediately] Error at destructor for ${contractID}`, e)
+        }
+      }
+    }
+
     this.config.reactiveDel(state.contracts, contractID)
     this.config.reactiveDel(state, contractID)
     delete this.removeCount[contractID]
