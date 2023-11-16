@@ -131,16 +131,16 @@ export default ({
     ]),
     paymentsList () {
       return this.todoItems.map(item => {
-        return item.data && item.data.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
+        return item.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
           ? {
               hash: item.hash,
               data: item.data,
               meta: item.meta,
-              username: item.data.toUser,
-              displayName: this.userDisplayName(item.data.toUser),
+              username: item.toUser,
+              displayName: this.userDisplayName(item.toUser),
               date: item.meta.createdDate,
-              monthstamp: dateToMonthstamp(item.meta.createdDate),
-              amount: item.data.amount
+              monthstamp: dateToMonthstamp(item.createdDate),
+              amount: item.amount
             }
           : item
       })
@@ -172,7 +172,6 @@ export default ({
 
       for (const pRecord of paymentsToRecord) {
         const payment = this.paymentsList[pRecord.index]
-        const isStatusNotReceived = payment.data && payment.data.status === PAYMENT_NOT_RECEIVED
 
         if (pRecord.amount > payment.amount) {
           // TODO/REVIEW - Should we show a warning?
@@ -200,36 +199,20 @@ export default ({
             paymentType: PAYMENT_TYPE_MANUAL,
             ...(memo ? { memo } : {}) // TODO/BUG with flowTyper validation. Empty string '' fails.
           }
-
-          if (isStatusNotReceived) {
-            // If it's re-sending the payment that has been marked as 'not-recieved' by the receiver,
-            // only update the details of the existing payment item so that it doesn't lead to duplication bug in the payment UI.
-            await sbp('gi.actions/group/paymentUpdate', {
-              contractID: this.currentGroupId,
-              data: {
-                paymentHash: payment.hash,
-                updatedProperties: {
-                  ...paymentInfo,
-                  status: PAYMENT_COMPLETED
-                }
+          const msg = await sbp('gi.actions/group/payment', {
+            contractID: this.currentGroupId, data: paymentInfo
+          })
+          // TODO: hack until /payment supports sending completed payment
+          //       (and "uncompleting" a payment)
+          await sbp('gi.actions/group/paymentUpdate', {
+            contractID: this.currentGroupId,
+            data: {
+              paymentHash: msg.hash(),
+              updatedProperties: {
+                status: PAYMENT_COMPLETED
               }
-            })
-          } else {
-            const msg = await sbp('gi.actions/group/payment', {
-              contractID: this.currentGroupId, data: paymentInfo
-            })
-            // TODO: hack until /payment supports sending completed payment
-            //       (and "uncompleting" a payment)
-            await sbp('gi.actions/group/paymentUpdate', {
-              contractID: this.currentGroupId,
-              data: {
-                paymentHash: msg.hash(),
-                updatedProperties: {
-                  status: PAYMENT_COMPLETED
-                }
-              }
-            })
-          }
+            }
+          })
         } catch (e) {
           hasError = true
           console.error('RecordPayment submit() error:', e)
