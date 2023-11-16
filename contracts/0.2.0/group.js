@@ -16982,6 +16982,7 @@ ${this.getErrorInfo()}`;
     }
   }
   var removeGroupChatroomProfile = (state, chatRoomID, member) => {
+    console.log(JSON.parse(JSON.stringify({ state, chatRoomID, scr: state.chatRooms[chatRoomID] })));
     vue_esm_default.set(state.chatRooms[chatRoomID], "users", Object.fromEntries(Object.entries(state.chatRooms[chatRoomID].users).map(([memberKey, profile]) => {
       if (memberKey === member && profile?.status === PROFILE_STATUS.ACTIVE) {
         return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }];
@@ -17822,12 +17823,19 @@ ${this.getErrorInfo()}`;
           leavingGroup: boolean
         }),
         process({ data, meta }, { state }) {
-          removeGroupChatroomProfile(state, data.chatroomID, data.member);
+          removeGroupChatroomProfile(state, data.chatRoomID, data.member);
         },
-        async sideEffect({ meta, data, contractID }, { state }) {
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
           const rootState = (0, import_sbp7.default)("state/vuex/state");
-          if (meta.username !== rootState.loggedIn.username || !(0, import_sbp7.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
-            await leaveChatRoomAction(state, data, meta);
+          if (innerSigningContractID === rootState.loggedIn.identityContractID && !(0, import_sbp7.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+            (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp7.default)("state/vuex/state");
+              if (rootState2[contractID]?.profiles?.[meta.username]?.status === PROFILE_STATUS.ACTIVE) {
+                return leaveChatRoomAction(state, data, meta);
+              }
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e });
+            });
           }
         }
       },
@@ -17843,10 +17851,10 @@ ${this.getErrorInfo()}`;
           }
           vue_esm_default.set(state.chatRooms[data.chatRoomID].users, username, { status: PROFILE_STATUS.ACTIVE });
         },
-        sideEffect({ meta, data, contractID }, { state }) {
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
           const rootState = (0, import_sbp7.default)("state/vuex/state");
-          const username = data.username || meta.username;
-          if (username === rootState.loggedIn.username) {
+          if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+            const username = data.username || meta.username;
             (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp7.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
               console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
             });

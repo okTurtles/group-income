@@ -496,6 +496,9 @@ export default (sbp('sbp/selectors/register', {
 
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
+            // Note: The following may be problematic when several tabs are open
+            // sharing the same state. This is more of a general issue in this
+            // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
               ['chelonia/contract/removeImmediately', v.contractID],
@@ -803,17 +806,17 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-      if (params?.deferredRemove && !state.contracts[contractID].deferredRemove) {
-        state.contracts[contractID].deferredRemove = params.deferredRemove
+      if (params?.deferredRemove) {
+        this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
       }
     } else {
       const entry = state.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
       if (!entry) {
-        state.pending.push({ contractID, deferredRemove: params?.deferredRemove })
-      } else if (params?.deferredRemove && !entry.deferredRemove) {
-        entry.deferredRemove = params.deferredRemove
+        state.pending.push({ contractID, deferredRemove: params?.deferredRemove ? 1 : 0 })
+      } else {
+        entry.deferredRemove += 1
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
@@ -1145,7 +1148,7 @@ export default (sbp('sbp/selectors/register', {
             keySharePayload
           )
           : keySharePayload,
-        signingKey: deserializedResponseKey
+        signingKeyId: responseKeyId
       }).then(() => {
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, success: true }
@@ -1153,7 +1156,7 @@ export default (sbp('sbp/selectors/register', {
           contractID: originatingContractID,
           keys: [
             {
-              id: keyId(deserializedResponseKey),
+              id: responseKeyId,
               meta: {
                 private: {
                   content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
@@ -1306,6 +1309,7 @@ export default (sbp('sbp/selectors/register', {
         try {
           postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
+          sbp('okTurtles.events/emit', message.id(), contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
           console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} in event post-handling: ${e.message}`, e, { message: message.serialize() })
@@ -1370,10 +1374,9 @@ const handleEvent = {
       if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
       const entry = state.pending.find((entry) => entry?.contractID === contractID)
       if (entry?.deferredRemove) {
-        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0, deferredRemove: true })
-      } else {
-        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
+        this.removeCount[contractID] = entry?.deferredRemove
       }
+      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID, height: 0 })
       // we've successfully received it back, so remove it from expectation pending
       if (entry) {
         const index = state.pending.indexOf(entry)

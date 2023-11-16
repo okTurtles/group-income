@@ -263,6 +263,7 @@ function updateGroupStreaks ({ state, getters }) {
 }
 
 const removeGroupChatroomProfile = (state, chatRoomID, member) => {
+  console.log(JSON.parse(JSON.stringify({ state, chatRoomID, scr: state.chatRooms[chatRoomID] })))
   Vue.set(state.chatRooms[chatRoomID], 'users',
     Object.fromEntries(
       Object.entries(state.chatRooms[chatRoomID].users)
@@ -1328,12 +1329,19 @@ sbp('chelonia/defineContract', {
         leavingGroup: boolean // leave chatroom by leaving group
       }),
       process ({ data, meta }, { state }) {
-        removeGroupChatroomProfile(state, data.chatroomID, data.member)
+        removeGroupChatroomProfile(state, data.chatRoomID, data.member)
       },
-      async sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (meta.username !== rootState.loggedIn.username || !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-          await leaveChatRoomAction(state, data, meta)
+        if (innerSigningContractID === rootState.loggedIn.identityContractID && !sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+          sbp('chelonia/queueInvocation', contractID, () => {
+            const rootState = sbp('state/vuex/state')
+            if (rootState[contractID]?.profiles?.[meta.username]?.status === PROFILE_STATUS.ACTIVE) {
+              return leaveChatRoomAction(state, data, meta)
+            }
+          }).catch((e) => {
+            console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
+          })
         }
       }
     },
@@ -1349,10 +1357,11 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(state.chatRooms[data.chatRoomID].users, username, { status: PROFILE_STATUS.ACTIVE })
       },
-      sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        const username = data.username || meta.username
-        if (username === rootState.loggedIn.username) {
+
+        if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+          const username = data.username || meta.username
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
             console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
           })

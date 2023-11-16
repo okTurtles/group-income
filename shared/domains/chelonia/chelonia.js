@@ -180,6 +180,9 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
+  'chelonia/xx': function () {
+    return this.removeCount
+  },
   'chelonia/_init': function () {
     this.config = {
       // TODO: handle connecting to multiple servers for federation
@@ -264,6 +267,7 @@ export default (sbp('sbp/selectors/register', {
       get: secretKeyGetter,
       ownKeys: secretKeyList
     })
+    this.removeCount = Object.create(null)
   },
   'chelonia/config': function () {
     return cloneDeep(this.config)
@@ -547,8 +551,8 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     return Promise.all(listOfIds.map(contractID => {
       if (!forcedSync && has(rootState.contracts, contractID)) {
-        if (params?.deferredRemove && !rootState.contracts[contractID].deferredRemove) {
-          rootState.contracts[contractID].deferredRemove = params.deferredRemove
+        if (params?.deferredRemove) {
+          this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
         }
         return undefined
       }
@@ -592,10 +596,16 @@ export default (sbp('sbp/selectors/register', {
 
       if (params?.removeIfPending) {
         if (!rootState.contracts[contractID].pendingRemove) {
-          rootState.contracts[contractID].deferredRemove = false
+          if (has(this.removeCount, contractID)) {
+            if (this.removeCount[contractID] > 1) {
+              this.removeCount[contractID] -= 1
+            } else {
+              delete this.removeCount[contractID]
+            }
+          }
           return undefined
         }
-      } else if (rootState.contracts[contractID].deferredRemove) {
+      } else if (this.removeCount[contractID] >= 1) {
         rootState.contracts[contractID].pendingRemove = true
         return undefined
       }
@@ -610,6 +620,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     this.config.reactiveDel(state.contracts, contractID)
     this.config.reactiveDel(state, contractID)
+    delete this.removeCount[contractID]
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
