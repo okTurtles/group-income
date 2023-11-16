@@ -616,7 +616,7 @@ export default (sbp('sbp/selectors/register', {
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
-    if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
+    if (username !== me && rootState[params.data.chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: rootGetters.ourContactProfiles[username].contractID,
         contractName: 'gi.contracts/identity',

@@ -1346,15 +1346,41 @@ sbp('chelonia/defineContract', {
         if (state.profiles[username]?.status !== PROFILE_STATUS.ACTIVE) {
           throw new Error('Cannot join a chatroom for a group you\'re not a member of')
         }
+        // Here, we could use a list of active members or we could use a
+        // dictionary with an explicit status (as is being done). The reason
+        // to choose the explicit approach is to avoid syncing all the chatroom
+        // contracts in the event that a member leaves the group (in which case
+        // they are removed from all chatrooms).
+        // This leaving process is done in two steps, with the process function
+        // setting the status and the side-effect issuing the relevant action
+        // in the chatroom contract. If we didn't have a way of checking for
+        // removed members, we would need to possibly fetch every chatroom
+        // contract to account for chatrooms for which the removed member is
+        // a part of.
         Vue.set(state.chatRooms[data.chatRoomID].users, username, { status: PROFILE_STATUS.ACTIVE })
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
         const rootState = sbp('state/vuex/state')
+        const username = data.username || meta.username
 
+        // If we added someone to the chatroom (including ourselves), we issue
+        // the relevant action to the chatroom contract
         if (innerSigningContractID === rootState.loggedIn.identityContractID) {
-          const username = data.username || meta.username
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
-            console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
+            console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
+          })
+        } else if (username === rootState.loggedIn.username) {
+          // If we were the ones added to the chatroom, we sync the chatroom.
+          // This is an `else` block because joinGroupChatrooms already calls
+          // sync
+          sbp('chelonia/queueInvocation', contractID, () => {
+            const rootState = sbp('state/vuex/state')
+
+            if (rootState[contractID]?.chatRooms[data.chatRoomID]?.users[username]?.status === PROFILE_STATUS.ACTIVE) {
+              sbp('chelonia/contract/sync', data.chatRoomID).catch((e) => {
+                console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
+              })
+            }
           })
         }
       }
