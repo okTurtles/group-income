@@ -132,10 +132,8 @@ export default ({
         }
         if (this.ourUsername) {
           if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourUsername])) {
-            console.log('Join.vue, pushing /dashboard')
             this.$router.push({ path: '/dashboard' })
           } else {
-            console.log('Join.vue, calling this.accept()')
             await this.accept()
           }
           return

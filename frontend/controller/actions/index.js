@@ -34,8 +34,6 @@ sbp('sbp/selectors/register', {
     try {
       await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
       const state = await sbp('chelonia/latestContractState', contractID)
-      const rSState = sbp('state/vuex/state')[contractID]
-      console.log('@@@@ [gi.actions/out/shareVolatileKeys] state received', { state: window.structuredClone(state), rSState: window.structuredClone(rSState) })
 
       const CEKid = findKeyIdByName(state, 'cek')
       const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
