@@ -16935,6 +16935,9 @@ ${this.getErrorInfo()}`;
     state.profiles[username].status = PROFILE_STATUS.REMOVED;
     state.profiles[username].departedDate = dateLeft;
     updateCurrentDistribution({ contractID, meta, state, getters });
+    Object.keys(state.chatRooms).forEach((chatroomID) => {
+      removeGroupChatroomProfile(state, chatroomID, username);
+    });
   }
   function isActionYoungerThanUser(actionMeta, userProfile) {
     if (!userProfile) {
@@ -16982,7 +16985,6 @@ ${this.getErrorInfo()}`;
     }
   }
   var removeGroupChatroomProfile = (state, chatRoomID, member) => {
-    console.log(JSON.parse(JSON.stringify({ state, chatRoomID, scr: state.chatRooms[chatRoomID] })));
     vue_esm_default.set(state.chatRooms[chatRoomID], "users", Object.fromEntries(Object.entries(state.chatRooms[chatRoomID].users).map(([memberKey, profile]) => {
       if (memberKey === member && profile?.status === PROFILE_STATUS.ACTIVE) {
         return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }];
@@ -17559,9 +17561,6 @@ ${this.getErrorInfo()}`;
         },
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
-          Object.keys(state.chatRooms).forEach((chatroomID) => {
-            removeGroupChatroomProfile(state, chatroomID, data.member);
-          });
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
           (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp7.default)("gi.contracts/group/leaveGroup", { data, meta, contractID, getters })).catch((e) => {

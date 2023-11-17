@@ -16634,11 +16634,9 @@ ${this.getErrorInfo()}`;
               return;
             }
             if (data.member === rootState.loggedIn.username) {
-              if (!(0, import_sbp7.default)("okTurtles.data/get", "JOINING_CHATROOM-" + contractID)) {
-                (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
-                  console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
-                });
-              }
+              (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
+                console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
+              });
             } else {
               emitMessageEvent({ contractID, hash: hash2 });
               setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });

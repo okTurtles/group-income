@@ -156,6 +156,10 @@ function memberLeaves ({ username, dateLeft }, { contractID, meta, state, getter
   state.profiles[username].departedDate = dateLeft
   // remove any todos for this member from the adjusted distribution
   updateCurrentDistribution({ contractID, meta, state, getters })
+
+  Object.keys(state.chatRooms).forEach((chatroomID) => {
+    removeGroupChatroomProfile(state, chatroomID, username)
+  })
 }
 
 function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
@@ -263,7 +267,6 @@ function updateGroupStreaks ({ state, getters }) {
 }
 
 const removeGroupChatroomProfile = (state, chatRoomID, member) => {
-  console.log(JSON.parse(JSON.stringify({ state, chatRoomID, scr: state.chatRooms[chatRoomID] })))
   Vue.set(state.chatRooms[chatRoomID], 'users',
     Object.fromEntries(
       Object.entries(state.chatRooms[chatRoomID].users)
@@ -984,10 +987,6 @@ sbp('chelonia/defineContract', {
           { username: data.member, dateLeft: meta.createdDate },
           { contractID, meta, state, getters }
         )
-
-        Object.keys(state.chatRooms).forEach((chatroomID) => {
-          removeGroupChatroomProfile(state, chatroomID, data.member)
-        })
       },
       sideEffect ({ data, meta, contractID }, { state, getters }) {
         // Put this invocation at the end of a sync to ensure that leaving and
