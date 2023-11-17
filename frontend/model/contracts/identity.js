@@ -100,7 +100,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.set(state, 'loginState', data)
       },
-      sideEffect ({ contractID }) {
+      sideEffect ({ contractID }, { state }) {
         // it only makes sense to call updateLoginStateUponLogin for ourselves
         if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
           // makes sure that updateLoginStateUponLogin gets run after the entire identity

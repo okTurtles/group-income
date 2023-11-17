@@ -208,7 +208,7 @@ export default (sbp('sbp/selectors/register', {
           id: newId,
           meta: {
             private: {
-              content: encryptedOutgoingData(rootState[pContractID], CEKid, serializeKey(newKey, true))
+              content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
             }
           }
         }))
@@ -228,19 +228,26 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
-    await sbp('chelonia/contract/sync', params.contractID)
+    const isCurrentUserJoining = rootState.loggedIn.identityContractID === userID
+
+    if (isCurrentUserJoining) {
+      // Cancel remove when sending this (join) action. This is because if we're
+      // trying to join a chatroom that we've previously left, it'll be removed
+      // by its side-effects. Calling 'chelonia/contract/cancelRemove' clears
+      // the pendingRemove flag in the contract, preventing it from being
+      // removed (which is the intent here, as we're re-joining)
+      sbp('chelonia/contract/cancelRemove', params.contractID)
+    }
 
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
     const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-
-    const state = rootState[params.contractID]
 
     // Add the user's CSK to the contract
     await sbp('chelonia/out/keyAdd', {
       contractID: params.contractID,
       contractName: 'gi.contracts/chatroom',
       // TODO: Find a way to have this wrapping be done by Chelonia directly
-      data: [encryptedOutgoingData(state, CEKid, {
+      data: [encryptedOutgoingData(params.contractID, CEKid, {
         foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
         id: userCSKid,
         data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
@@ -253,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId
     })
 
-    return sendMessage(params)
+    return await sendMessage(params)
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
