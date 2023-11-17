@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
-import { merge } from './shared/giLodash.js'
+import { has, merge } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
@@ -13,7 +13,7 @@ import {
 } from './shared/validators.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
-import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS, PROFILE_STATUS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -62,7 +62,8 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           settings: {},
           attributes: {},
-          chatRooms: {}
+          chatRooms: {},
+          groups: {}
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -90,30 +91,6 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
-        }
-      }
-    },
-    'gi.contracts/identity/setLoginState': {
-      validate: objectOf({
-        groupIds: arrayOf(string)
-      }),
-      process ({ data }, { state }) {
-        Vue.set(state, 'loginState', data)
-      },
-      sideEffect ({ contractID }, { state }) {
-        // it only makes sense to call updateLoginStateUponLogin for ourselves
-        if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
-          // makes sure that updateLoginStateUponLogin gets run after the entire identity
-          // state has been synced, this way we don't end up joining groups we've left, etc.
-          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])
-            .catch((e) => {
-              sbp('gi.notifications/emit', 'ERROR', {
-                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-                  errName: e.name,
-                  errMsg: e.message || '?'
-                })
-              })
-            })
         }
       }
     },
@@ -164,6 +141,112 @@ sbp('chelonia/defineContract', {
         if (getters.ourDirectMessages[data.contractID].visible) {
           await sbp('chelonia/contract/sync', data.contractID)
         }
+      }
+    },
+    'gi.contracts/identity/joinGroup': {
+      validate: objectMaybeOf({
+        groupContractID: string,
+        inviteSecret: string
+      }),
+      process ({ data, meta }, { state }) {
+        const { groupContractID, inviteSecret } = data
+        if (has(state.groups, groupContractID)) {
+          throw new Error(`Cannot join already joined group ${groupContractID}`)
+        }
+
+        const inviteSecretId = sbp('chelonia/crypto/keyId', inviteSecret)
+
+        Vue.set(state.groups, groupContractID, { inviteSecretId })
+      },
+      sideEffect ({ data, contractID }, { state }) {
+        const { groupContractID, inviteSecret } = data
+
+        sbp('chelonia/storeSecretKeys', () => [{
+          key: inviteSecret, transient: true
+        }])
+
+        sbp('chelonia/queueInvocation', contractID, () => {
+          const rootState = sbp('state/vuex/state')
+          const state = rootState[contractID]
+
+          // If we've logged out, return
+          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+            return
+          }
+
+          // If we've left the group, return
+          if (!has(state.groups, groupContractID)) {
+            return
+          }
+
+          const inviteSecretId = sbp('chelonia/crypto/keyId', inviteSecret)
+
+          // If the inviteSecretId doesn't match (could happen after re-joining),
+          // return
+          if (state.groups[groupContractID].inviteSecretId !== inviteSecretId) {
+            return
+          }
+
+          return sbp('gi.actions/group/join', {
+            originatingContractID: contractID,
+            originatingContractName: 'gi.contracts/identity',
+            contractID: data.groupContractID,
+            contractName: 'gi.contracts/group',
+            signingKeyId: inviteSecretId,
+            innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+          })
+        }).catch(e => {
+          console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
+        })
+      }
+    },
+    'gi.contracts/identity/leaveGroup': {
+      validate: objectOf({
+        groupContractID: string
+      }),
+      process ({ data, meta }, { state }) {
+        const { groupContractID } = data
+
+        if (!has(state.groups, groupContractID)) {
+          throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
+        }
+
+        Vue.delete(state.groups, groupContractID)
+      },
+      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const rootState = sbp('state/vuex/state')
+          const state = rootState[contractID]
+
+          // If we've logged out, return
+          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+            return
+          }
+
+          const { groupContractID } = data
+
+          // If we've re-joined since, return
+          if (has(state.groups, groupContractID)) {
+            return
+          }
+
+          if (has(rootState.contracts, groupContractID)) {
+            await sbp('gi.actions/group/removeOurselves', {
+              contractID: groupContractID,
+              data: {},
+              hooks: {
+                preSendCheck: (_, state) => {
+                  return state?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE
+                }
+              }
+            })
+          }
+
+          // TODO disconnect, key rotations (PEK), etc.
+        }).catch(e => {
+          console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e)
+        })
       }
     },
     'gi.contracts/identity/setDirectMessageVisibility': {

@@ -292,9 +292,12 @@ export default (sbp('sbp/selectors/register', {
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
     let keys = keysFn?.()
     if (!keys) return
-    if (!Array.isArray(keys) && typeof keys === 'object') keys = [keys]
+    if (!Array.isArray(keys)) keys = [keys]
     keys.forEach(({ key, transient }) => {
       if (!key) return
+      if (typeof key === 'string') {
+        key = deserializeKey(key)
+      }
       const id = keyId(key)
       // Store transient keys transientSecretKeys
       if (!has(this.transientSecretKeys, id)) {
@@ -372,6 +375,11 @@ export default (sbp('sbp/selectors/register', {
     }
     const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel, allowedActions)
     return keyId
+  },
+  // The purpose of the 'chelonia/crypto/*' selectors is so that they can be called
+  // from contracts without including the crypto code (i.e., importing crypto.js)
+  'chelonia/crypto/keyId': (inKey: Key | string) => {
+    return keyId(inKey)
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {

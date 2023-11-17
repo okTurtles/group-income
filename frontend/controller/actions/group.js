@@ -37,14 +37,6 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-async function saveLoginState (action: string, contractID: string) {
-  try {
-    await sbp('gi.actions/identity/saveOurLoginState')
-  } catch (e) {
-    console.error(`${e.name} trying to save our login state when ${action} group: ${contractID}: ${e.message}`, e)
-  }
-}
-
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -218,8 +210,6 @@ export default (sbp('sbp/selectors/register', {
         () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      saveLoginState('creating', contractID)
-
       // Save the initial invite
       await sbp('gi.actions/group/invite', {
         contractID,
@@ -250,20 +240,11 @@ export default (sbp('sbp/selectors/register', {
         innerSigningContractID: null
       })
 
-      await sbp('gi.actions/group/joinAndSwitch', {
-        originatingContractID: userID,
-        originatingContractName: 'gi.contracts/identity',
-        contractID: contractID,
-        contractName: 'gi.contracts/group',
-        signingKeyId: CSKid,
-        innerSigningKeyId: userCSKid,
-        encryptionKeyId: userCEKid,
-        options: {
-          // Normally, calling join will require receiving the group's keys
-          // in an OP_KEY_SHARE for joining. However, as the group creator,
-          // we already have those keys. This option allows to to call join
-          // as though we didn't have the group keys
-          skipUsableKeysCheck: true
+      await sbp('gi.actions/identity/joinGroup', {
+        contractID: userID,
+        data: {
+          groupContractID: contractID,
+          inviteSecret: serializeKey(inviteKey, true)
         }
       })
 
@@ -482,8 +463,6 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
-    } finally {
-      saveLoginState('joining', params.contractID)
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; } }) {

@@ -15,7 +15,7 @@ import {
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
-import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
+import { cloneDeep, deepEqualJSONType, has, omit, merge } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate, plusOnePeriodLength } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
@@ -1638,7 +1638,7 @@ sbp('chelonia/defineContract', {
       const rootGetters = sbp('state/vuex/getters')
       const state = rootState[contractID]
       const contracts = rootState.contracts || {}
-      const { username } = rootState.loggedIn
+      const { username, identityContractID } = rootState.loggedIn
 
       if (!state) {
         console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`)
@@ -1665,14 +1665,27 @@ sbp('chelonia/defineContract', {
         // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
+        }).then(() => {
+          sbp('gi.contracts/identity/leaveGroup', {
+            contractID: identityContractID,
+            data: {
+              groupContractID: contractID
+            },
+            hooks: {
+              preSendCheck: (_, state) => {
+                return state && has(state.groups, contractID)
+              }
+            }
+          })
+        }).catch(e => {
+          console.error(`sideEffect(removeMember): ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
         })
         // this looks crazy, but doing this was necessary to fix a race condition in the
         // group-member-removal Cypress tests where due to the ordering of asynchronous events
         // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
         // We add it to the same queue as '/remove' above gets run on so that it is run after
         // contractID is removed. See also comments in 'gi.actions/identity/login'.
-        sbp('gi.actions/identity/saveOurLoginState')
-          .then(function () {
+          .then(() => {
             const router = sbp('controller/router')
             const switchFrom = router.currentRoute.path
             const switchTo = groupIdToSwitch ? '/dashboard' : '/'
@@ -1681,7 +1694,7 @@ sbp('chelonia/defineContract', {
             }
           })
           .catch(e => {
-            console.error(`sideEffect(removeMember): ${e.name} thrown by saveOurLoginState:`, e)
+            console.error(`sideEffect(removeMember): ${e.name} thrown updating routes:`, e)
           })
           .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
           .catch(e => {

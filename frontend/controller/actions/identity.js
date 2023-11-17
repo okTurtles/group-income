@@ -6,7 +6,7 @@ import {
   CHATROOM_TYPES,
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
-import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
+import { has, omit } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
@@ -20,22 +20,6 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassw
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction } from './utils.js'
-
-function generatedLoginState () {
-  const { contracts } = sbp('state/vuex/state')
-  return {
-    groupIds: Object.keys(pickWhere(contracts, ({ type }) => {
-      return type === 'gi.contracts/group'
-    }))
-  }
-}
-
-function diffLoginStates (s1: ?Object, s2: ?Object) {
-  if (typeof s1 !== 'object' || typeof s2 !== 'object') return true
-  const [g1, g2] = [(s1: Object).groupIds, (s2: Object).groupIds]
-  if (!g1 || !g2) return true
-  return (g1.length > g2.length ? difference(g1, g2) : difference(g2, g1)).length > 0
-}
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
@@ -267,81 +251,6 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
-  'gi.actions/identity/saveOurLoginState': async function () {
-    const getters = sbp('state/vuex/getters')
-    const contractID = getters.ourIdentityContractId
-    const ourLoginState = generatedLoginState()
-    const contractLoginState = getters.loginState
-    if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
-      return await sbp('gi.actions/identity/setLoginState', {
-        contractID, data: ourLoginState
-      })
-    }
-  },
-  'gi.actions/identity/updateLoginStateUponLogin': async function () {
-    const getters = sbp('state/vuex/getters')
-    const state = sbp('state/vuex/state')
-    const ourLoginState = generatedLoginState()
-    const contractLoginState = getters.loginState
-    let groupsJoined
-    try {
-      if (!contractLoginState) {
-        console.info('no login state detected in identity contract, will set it')
-        await sbp('gi.actions/identity/saveOurLoginState')
-      } else if (diffLoginStates(ourLoginState, contractLoginState)) {
-        // we need to update ourselves to it
-        // mainly we are only interested if the contractLoginState contains groupIds
-        // that we don't have, and if so, join those groups
-        groupsJoined = difference(contractLoginState.groupIds, ourLoginState.groupIds)
-        console.info('synchronizing login state:', { groupsJoined })
-        for (const contractID of groupsJoined) {
-          try {
-            await sbp('gi.actions/group/join', { contractID })
-          } catch (e) {
-            console.error(`updateLoginStateUponLogin: ${e.name} attempting to join group ${contractID}`, e)
-            if (state.contracts[contractID] || state[contractID]) {
-              console.warn(`updateLoginStateUponLogin: removing ${contractID} b/c of failed join`)
-              try {
-                await sbp('chelonia/contract/remove', contractID)
-              } catch (e2) {
-                console.error(`failed to remove ${contractID} too!`, e2)
-              }
-            }
-          }
-        }
-      }
-      // NOTE: should sync all the identity contracts which are not part of same group
-      // but from the direct messages invited by another
-      const chatRoomUsers = uniq(Object.keys(
-        pickWhere(state.contracts, ({ type }) => type === 'gi.contracts/chatroom')
-      ).map(cID => Object.keys(state[cID].users || {})).flat())
-      const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
-        return getters.ourUsername !== username && !getters.ourContacts.includes(username)
-      }).map(username => sbp('namespace/lookup', username)))
-      await sbp('chelonia/contract/sync', additionalIdentityContractIDs)
-
-      // NOTE: users could notice that they leave the group by someone else when they log in
-      if (!state.currentGroupId) {
-        const { contracts } = state
-        // grab the groupID of any group that we've successfully finished joining
-        const gId = Object.keys(contracts)
-          .filter(cID => contracts[cID].type === 'gi.contracts/group')
-          .sort((cID1, cID2) => state[cID1].profiles?.[state.loggedIn.username] ? -1 : 1)[0]
-        if (gId) {
-          sbp('gi.actions/group/switch', gId)
-          const router = sbp('controller/router')
-          // redirect us to the dashboard upon login if there's nothing else going on, no modals up, etc.
-          // only update the URL if it's empty and we're stuck at the homepage, as can sometimes happen
-          if (router.currentRoute.path === '/' && Object.keys(router.currentRoute.query).length === 0) {
-            router.push({ path: '/dashboard' }).catch(console.warn)
-          }
-        }
-      }
-    } catch (e) {
-      console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)
-    }
-    return groupsJoined
-  },
   'gi.actions/identity/login': async function ({ username, passwordFn, identityContractID }: {
     username: ?string, passwordFn: ?() => string, identityContractID: ?string
   }) {
@@ -439,13 +348,10 @@ export default (sbp('sbp/selectors/register', {
           })
 
           throw new Error('Unable to sync identity contract')
-        }).then(async () => {
-          const groupsJoined = await sbp('gi.actions/identity/updateLoginStateUponLogin')
-
+        }).then(() => {
           return sbp('chelonia/contract/sync', contractIDs, { force: true }).then(async function () {
             // contract sync might've triggered an async call to /remove, so wait before proceeding
             await sbp('chelonia/contract/wait', contractIDs)
-            await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
 
             // The state above might be null, so we re-grab it
             const state = sbp('state/vuex/state')
@@ -453,19 +359,23 @@ export default (sbp('sbp/selectors/register', {
             // Call 'gi.actions/group/join' on all groups which may need re-joining
             await Promise.all(groupsToRejoin.map(groupId => {
               return (
-                // (0) Avoid re-joining groups for which /join has been called
-                !groupsJoined?.includes(groupId) &&
                 // (1) Check whether the contract exists (may have been removed
                 //     after sync)
-                state.contracts[groupId] &&
+                has(state.contracts, groupId) &&
+                has(state[identityContractID].groups, groupId) &&
                 // (2) Check whether the join process is still incomplete
                 //     This needs to be re-checked because it may have changed after
                 //     sync
                 state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
                 // (3) Call join
                 sbp('gi.actions/group/join', {
+                  originatingContractID: identityContractID,
+                  originatingContractName: 'gi.contracts/identity',
                   contractID: groupId,
-                  contractName: 'gi.contracts/group'
+                  contractName: 'gi.contracts/group',
+                  signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
+                  innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+                  encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
                 })
               )
             }))
@@ -612,7 +522,6 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.')),
   ...encryptedAction('gi.actions/identity/createDirectMessage', L('Failed to create a new direct message channel.'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
@@ -697,5 +606,7 @@ export default (sbp('sbp/selectors/register', {
     }
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
+  ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
+  ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.'))
 }): string[])

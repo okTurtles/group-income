@@ -57,10 +57,9 @@ import SvgBrokenLink from '@svgs/broken-link.svg'
 import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
+import { keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
@@ -111,9 +110,8 @@ export default ({
     async initialize () {
       try {
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-        const secretKey = deserializeKey(this.ephemeral.query.secret)
-        const publicKey = keyId(secretKey)
-        const invite = state._vm.invites[publicKey]
+        const publicKeyId = keyId(this.ephemeral.query.secret)
+        const invite = state._vm.invites[publicKeyId]
         if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
@@ -168,23 +166,17 @@ export default ({
         return this.$router.push({ path: '/dashboard' })
       }
       try {
-        const originatingContractID = this.$store.state.loggedIn.identityContractID
-        const userState = this.$store.state[originatingContractID]
+        const identityContractID = this.$store.state.loggedIn.identityContractID
 
-        const secretKey = deserializeKey(secret)
-
-        sbp('chelonia/storeSecretKeys', () => [{
-          key: secretKey, transient: true
-        }])
-
-        await sbp('gi.actions/group/joinAndSwitch', {
-          originatingContractID,
-          originatingContractName: 'gi.contracts/identity',
-          contractID: groupId,
-          contractName: 'gi.contracts/group',
-          signingKeyId: keyId(secretKey),
-          innerSigningKeyId: findKeyIdByName(userState, 'csk'),
-          encryptionKeyId: findKeyIdByName(userState, 'cek')
+        await sbp('gi.actions/identity/joinGroup', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          data: {
+            groupContractID: groupId,
+            inviteSecret: secret
+          }
+        }).then(() => {
+          return sbp('gi.actions/group/switch', groupId)
         })
         // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
