@@ -327,11 +327,11 @@ const defaultClientEventHandlers = {
         client.socket?.close()
       }, options.pingTimeout)
     }
-    // We only need to handle contract resynchronization here when reconnecting.
-    // Not on initial connection, since the login code already does it.
-    if (!client.isNew) {
-      client.pendingSyncSet = new Set(client.pendingSubscriptionSet)
-    }
+    // Handle contract resynchronization after subscribing to a contract
+    // We need this to process events that may have happened in between our
+    // latest state and the time the subscription was set up (since only new
+    // events are sent over the web socket)
+    client.pendingSyncSet = new Set(client.pendingSubscriptionSet)
     // Send any pending subscription request.
     client.pendingSubscriptionSet.forEach((contractID) => {
       client.socket?.send(createRequest(REQUEST_TYPE.SUB, { contractID }, true))
@@ -425,7 +425,11 @@ const defaultMessageHandlers = {
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
         if (client.pendingSyncSet.has(contractID)) {
-          sbp('chelonia/contract/sync', contractID)
+          // We call sync to fetch events that we may have missed while the
+          // subscription was being set up
+          // The sync must be forced because we've subscribed to the contract,
+          // and if it's not forced sync will not fetch the latest events
+          sbp('chelonia/contract/sync', contractID, { force: true })
           client.pendingSyncSet.delete(contractID)
         }
         break

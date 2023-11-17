@@ -118,13 +118,6 @@ export async function leaveChatRoom ({ contractID }: {
 
   sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
   sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
-
-  // NOTE: make sure *not* to await on this, since that can cause
-  //       a potential deadlock. See same warning in sideEffect for
-  //       'gi.contracts/group/removeMember'
-  sbp('chelonia/contract/remove', contractID).catch(e => {
-    console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e)
-  })
 }
 
 export function findMessageIdx (hash: string, messages: Array<Object>): number {

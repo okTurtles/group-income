@@ -31,51 +31,55 @@ sbp('sbp/selectors/register', {
 
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
-    await sbp('chelonia/contract/sync', contractID)
-    const state = await sbp('chelonia/latestContractState', contractID)
+    try {
+      await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+      const state = await sbp('chelonia/latestContractState', contractID)
 
-    const CEKid = findKeyIdByName(state, 'cek')
-    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
+      const CEKid = findKeyIdByName(state, 'cek')
+      const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
 
-    if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
-      throw new Error('Missing CEK; unable to proceed sharing keys')
-    }
+      if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
+        throw new Error('Missing CEK; unable to proceed sharing keys')
+      }
 
-    const secretKeys = sbp('state/vuex/state')['secretKeys']
+      const secretKeys = sbp('state/vuex/state')['secretKeys']
 
-    const keysToShare = Array.isArray(keyIds)
-      ? pick(secretKeys, keyIds)
-      : keyIds === '*'
-        ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
-          .filter(([, key]) => {
-            return !!((key: any): GIKey).meta?.private?.content
-          })
-          .map(([id]) => id)
-        )
-        : null
+      const keysToShare = Array.isArray(keyIds)
+        ? pick(secretKeys, keyIds)
+        : keyIds === '*'
+          ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
+            .filter(([, key]) => {
+              return !!((key: any): GIKey).meta?.private?.content
+            })
+            .map(([id]) => id)
+          )
+          : null
 
-    if (!keysToShare) {
-      throw new TypeError('Invalid parameter: keyIds')
-    }
+      if (!keysToShare) {
+        throw new TypeError('Invalid parameter: keyIds')
+      }
 
-    const payload = {
-      contractID: subjectContractID,
-      keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
-        id: keyId,
-        meta: {
-          private: {
-            content: encryptedOutgoingData(state, CEKid, key)
+      const payload = {
+        contractID: subjectContractID,
+        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+          id: keyId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(contractID, CEKid, key)
+            }
           }
-        }
-      }))
-    }
+        }))
+      }
 
-    await sbp('chelonia/out/keyShare', {
-      contractID,
-      contractName,
-      data: encryptedOutgoingData(state, CEKid, payload),
-      signingKeyId: signingKeyId
-    })
+      await sbp('chelonia/out/keyShare', {
+        contractID,
+        contractName,
+        data: encryptedOutgoingData(contractID, CEKid, payload),
+        signingKeyId
+      })
+    } finally {
+      await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+    }
   },
   // TODO: Move to chelonia
   'gi.actions/out/rotateKeys': async (
@@ -140,7 +144,7 @@ sbp('sbp/selectors/register', {
               // is already present in _vm.authorizedKeys and because it may
               // be rotated between the time we issue this operation and the
               // time it is written to the contract
-              : encryptedOutgoingData(state, keyId(encryptionKey), serializeKey(newKey, true)),
+              : encryptedOutgoingData(contractID, keyId(encryptionKey), serializeKey(newKey, true)),
             shareable: state._vm.authorizedKeys[id].meta.private.shareable
           }
         }
@@ -160,16 +164,30 @@ sbp('sbp/selectors/register', {
     // Share new keys with other contracts
     const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
 
+    const preSendCheck = (msg, state) => {
+      const updatedKeysRemaining = updatedKeys.filter((key) => {
+        return state._vm.authorizedKeys[key.oldKeyId]._notAfterHeight == null
+      })
+
+      if (updatedKeysRemaining.length === 0) return false
+
+      // TODO: Update msg to remove unnecessary keys
+      return true
+    }
+
     if (Array.isArray(keyShares) && keyShares.length > 0) {
       // Issue OP_ATOMIC
       await sbp('chelonia/out/atomic', {
         contractID,
         contractName,
         data: [
-          ...keyShares.map((data) => ['chelonia/out/keyShare', { data }]),
+          ...keyShares.map((data) => ['chelonia/out/keyShare', { data: encryptedOutgoingData(contractID, CEKid, data) }]),
           ['chelonia/out/keyUpdate', { data: updatedKeys }]
         ],
-        signingKeyId
+        signingKeyId,
+        hooks: {
+          preSendCheck
+        }
       })
     } else {
       // Issue OP_KEY_UPDATE
@@ -177,8 +195,16 @@ sbp('sbp/selectors/register', {
         contractID,
         contractName,
         data: updatedKeys,
-        signingKeyId
+        signingKeyId,
+        hooks: {
+          preSendCheck
+        }
       })
     }
+
+    // TODO: Temporary sync until the server does signature validation
+    // This prevents us from sending messages signed with just-revoked keys
+    // Once the server enforces signatures, this can be removed
+    await sbp('chelonia/contract/sync', contractID, { force: true })
   }
 })

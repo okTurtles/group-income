@@ -55,7 +55,7 @@ const groupGuard = {
 }
 
 const pendingApprovalGuard = {
-  guard: (to, from) => store.state.currentGroupId && !store.getters.ourGroupProfile,
+  guard: (to, from) => store.state.currentGroupId && store.getters.ourPendingAccept,
   redirect: (to, from) => ({ path: '/pending-approval' })
 }
 

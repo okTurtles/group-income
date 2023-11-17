@@ -400,30 +400,15 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = async (entry: GIMessage, rootState: Object): Promise<typeof undefined | GIMessage> => {
+export const recreateEvent = async (entry: GIMessage, state: Object): Promise<typeof undefined | GIMessage> => {
   const contractID = entry.contractID()
-  // We sync the contract to ensure we have the correct local state
-  // This way we can fetch new keys and correctly re-sign and re-encrypt
-  // messages as needed. This also ensures that we can rewrite (or omit) the
-  // payload to remove irrelevant parts.
-  // Note that in cases of high contention sync may fail to retrieve the latest
-  // state. In such cases, the operation (publishEvent) will fail after the
-  // maximum number of attempts is exhausted.
-  // Note also that this assumes (and requires) that we are subscribed to a
-  // contract before being able to write to it. This is because we rely on the
-  // contract state to identify the current keys (in _vm.authorizedKeys) which
-  // are used for signatures and for encryption.
-  // When recreateEvent is called we may already be in a queued event, so we
-  // call syncContract directly instead of sync
-  await sbp('chelonia/contract/sync', contractID, { force: true })
-  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/queueInvocation', contractID, ['chelonia/db/latestHEADinfo', contractID]) || {}
+  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID) || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')
   }
   const head = entry.head()
 
   const [opT, rawOpV] = entry.rawOp()
-  const state = rootState[contractID]
 
   const recreateOperation = (opT: string, rawOpV: SignedData<GIOpValue>) => {
     const opV = rawOpV.valueOf()
@@ -468,11 +453,13 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
         }
       } else if (opT === GIMessage.OP_ATOMIC) {
         if (!Array.isArray(opV)) throw new Error('Invalid message format')
-        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => recreateOperationInternal(t, v)).filter(Boolean): any): GIOpAtomic)
+        newOpV = ((((opV: any): GIOpAtomic).map(([t, v]) => [t, recreateOperationInternal(t, v)]).filter(([, v]) => !!v): any): GIOpAtomic)
         if (newOpV.length === 0) {
           console.info('Omitting empty OP_ATOMIC', { head })
         } else if (newOpV.length === opV.length && newOpV.reduce((acc, cv, i) => acc && cv === opV[i], true)) {
           return opV
+        } else {
+          return newOpV
         }
       } else {
         return opV
@@ -498,12 +485,11 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object): Promis
 
   if (!newRawOpV) return
 
+  const newOp = [opT, newRawOpV]
+
   entry = GIMessage.cloneWith(
-    head,
-    [
-      opT,
-      (newRawOpV: any)
-    ], { previousHEAD, height: previousHeight + 1 })
+    head, newOp, { previousHEAD, height: previousHeight + 1 }
+  )
 
   return entry
 }
