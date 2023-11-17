@@ -18,6 +18,7 @@ div(:class='isReady ? "" : "c-ready"')
 import { mapGetters } from 'vuex'
 import { comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { L } from '@common/common.js'
@@ -57,14 +58,17 @@ export default ({
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPaymentPeriod(period)
+
         const doneCount = getLen(paymentDetails)
+        const markedAsNotReceivedCount = Object.values(paymentDetails)
+          .filter(({ data }) => data.status === PAYMENT_NOT_RECEIVED).length
         const missedCount = getLen(lastAdjustedDistribution || {})
         this.history.unshift({
-          total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
+          total: doneCount === 0 ? 0 : (doneCount - markedAsNotReceivedCount) / (doneCount + missedCount),
           title: this.getPeriodFromStartToDueDate(period),
           tooltipContent: [
             L('Total: {total}', { total: doneCount + missedCount }),
-            L('Completed: {completed}', { completed: doneCount })
+            L('Completed: {completed}', { completed: doneCount - markedAsNotReceivedCount })
           ]
         })
       }

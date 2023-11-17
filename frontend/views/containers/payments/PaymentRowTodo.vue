@@ -31,32 +31,20 @@
 
     template(slot='cellActions')
       .cpr-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
-      payment-actions-menu
-        menu-item(
-          tag='button'
-          item-id='message'
-          icon='times'
-          @click='cancelPayment'
-        )
-          i18n Dismiss this payment
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MenuItem } from '@components/menu/index.js'
-import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { L } from '@common/common.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
-import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 
 export default ({
   name: 'PaymentRowTodo',
   components: {
     MenuItem,
-    PaymentActionsMenu,
     PaymentNotReceivedTooltip,
     PaymentRow
   },
@@ -80,34 +68,11 @@ export default ({
     wasNotReceived () {
       const { data } = this.payment
       return data && data.status === PAYMENT_NOT_RECEIVED
-    },
-    hash () {
-      return this.payment?.hash
     }
   },
   methods: {
     humanDate,
     // TODO: make multiple payments
-    async cancelPayment () {
-      try {
-        if (this.hash) {
-          await sbp('gi.actions/group/paymentUpdate', {
-            contractID: this.$store.state.currentGroupId,
-            data: {
-              paymentHash: this.hash,
-              updatedProperties: {
-                status: PAYMENT_CANCELLED
-              }
-            }
-          })
-        } else {
-          alert(L("Cannot dismiss a payment that hasn't been sent yet."))
-        }
-      } catch (e) {
-        console.error(e)
-        alert(e.message)
-      }
-    },
     select () {
       this.form.checked = true
     },
@@ -118,7 +83,7 @@ export default ({
   watch: {
     'form.checked' (checked) {
       this.$emit('change', {
-        hash: this.hash,
+        hash: this.payment?.hash,
         checked
       })
     }

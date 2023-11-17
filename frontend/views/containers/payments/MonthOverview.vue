@@ -19,8 +19,8 @@
         :secValue='item.hasPartials ? item.value + 0.5 : 0'
         :hasMarks='item.hasMarks'
       )
-      p(:class='{"has-text-success": item.max === item.value}')
-        i.icon-check.is-prefix(v-if='item.max === item.value')
+      p(:class='{ "has-text-success": item.max && (item.max === item.value) }')
+        i.icon-check.is-prefix(v-if='item.max && (item.max === item.value)')
         span.has-text-1 {{ item.label }}
 
     li.c-summary-item(v-if='notReceivedPayments')
