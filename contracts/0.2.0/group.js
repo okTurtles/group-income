@@ -17853,10 +17853,19 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
           const rootState = (0, import_sbp7.default)("state/vuex/state");
+          const username = data.username || meta.username;
           if (innerSigningContractID === rootState.loggedIn.identityContractID) {
-            const username = data.username || meta.username;
             (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp7.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
-              console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
+              console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
+            });
+          } else if (username === rootState.loggedIn.username) {
+            (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp7.default)("state/vuex/state");
+              if (rootState2[contractID]?.chatRooms[data.chatRoomID]?.users[username]?.status === PROFILE_STATUS.ACTIVE) {
+                (0, import_sbp7.default)("chelonia/contract/sync", data.chatRoomID).catch((e) => {
+                  console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
+                });
+              }
             });
           }
         }

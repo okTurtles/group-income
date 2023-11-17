@@ -113,7 +113,6 @@ Cypress.Commands.add('giLogin', (username, {
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
-  cy.url().should('eq', `${API_URL}/app/dashboard`)
 
   // wait for contracts to finish syncing
   cy.getByDT('app').then(([el]) => {

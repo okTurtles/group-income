@@ -139,12 +139,6 @@ const mutations = {
       messages: state.chatRoomUnread[chatRoomId].messages
         ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
     })
-    // eslint-disable-next-line no-lone-blocks
-    {
-      // hack: delete me after upgrade to 0.2.x!
-      Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', [])
-      Vue.set(state.chatRoomUnread[chatRoomId], 'others', [])
-    }
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
     if (state.chatRoomUnread[chatRoomId].readUntil) {

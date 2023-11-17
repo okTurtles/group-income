@@ -16306,9 +16306,6 @@ ${this.getErrorInfo()}`;
     }
     (0, import_sbp5.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
     (0, import_sbp5.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp5.default)("chelonia/contract/remove", contractID).catch((e) => {
-      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
-    });
   }
   function findMessageIdx(hash2, messages) {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -16629,28 +16626,30 @@ ${this.getErrorInfo()}`;
           });
           state.messages.push(newMessage);
         },
-        sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
-          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
+        sideEffect({ data, hash: hash2, contractID, meta }) {
+          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => {
             const rootState = (0, import_sbp7.default)("state/vuex/state");
-            const state2 = rootState[contractID];
-            if (!state2 || !!state2.users?.[data.username]) {
+            const state = rootState[contractID];
+            if (!state || !!state.users?.[data.username]) {
               return;
             }
             if (data.member === rootState.loggedIn.username) {
               if (!(0, import_sbp7.default)("okTurtles.data/get", "JOINING_CHATROOM-" + contractID)) {
-                await leaveChatRoom({ contractID });
+                (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
+                  console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
+                });
               }
             } else {
               emitMessageEvent({ contractID, hash: hash2 });
               setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-              if (state2.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-                (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state2);
+              if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+                (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
               }
             }
             const rootGetters = (0, import_sbp7.default)("state/vuex/getters");
             const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
             if (userID) {
-              (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state2);
+              (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, userID, state);
             }
           }).catch((e) => {
             console.error("[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect", e?.message || e);
@@ -16669,11 +16668,13 @@ ${this.getErrorInfo()}`;
             vue_esm_default.delete(state.users, username);
           }
         },
-        async sideEffect({ meta, contractID }, { state }) {
+        sideEffect({ meta, contractID }, { state }) {
           if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
             return;
           }
-          await leaveChatRoom({ contractID });
+          (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
+            console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
+          });
         }
       },
       "gi.contracts/chatroom/addMessage": {
@@ -16946,6 +16947,11 @@ ${this.getErrorInfo()}`;
       }
     },
     methods: {
+      "gi.contracts/chatroom/_cleanup": ({ contractID }) => {
+        leaveChatRoom({ contractID }).catch((e) => {
+          console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e);
+        });
+      },
       "gi.contracts/chatroom/rotateKeys": (contractID, state) => {
         if (!state._volatile)
           vue_esm_default.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
