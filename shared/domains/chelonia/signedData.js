@@ -37,22 +37,23 @@ export const isSignedData = (o: any): boolean => {
 
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
-const signData = function (sKeyId: string, data: any, extraFields: Object, additionalKeys: Object, additionalData: string) {
+const signData = function (stateOrContractID: string | Object, sKeyId: string, data: any, extraFields: Object, additionalKeys: Object, additionalData: string) {
+  const rootState = sbp('chelonia/rootState')
+  const state = typeof stateOrContractID === 'string' ? rootState[stateOrContractID] : stateOrContractID
   if (!additionalData) {
     throw new ChelErrorSignatureError('Signature additional data must be provided')
   }
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
-  const designatedKey = this._vm?.authorizedKeys?.[sKeyId]
+  const designatedKey = state?._vm?.authorizedKeys?.[sKeyId]
   if (!designatedKey?.purpose.includes(
     'sig'
   )) {
     throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} is missing or is missing signing purpose`)
   }
-  if (designatedKey._notAfterHeight !== undefined) {
-    const name = (this._vm: any).authorizedKeys[sKeyId].name
-    console.log({ state: this })
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('sig')): any)?.id
+  if (designatedKey._notAfterHeight != null) {
+    const name = (state._vm: any).authorizedKeys[sKeyId].name
+    const newKeyId = (Object.values(state._vm?.authorizedKeys).find((v: any) => v._notAfterHeight == null && v.name === name && v.purpose.includes('sig')): any)?.id
 
     if (!newKeyId) {
       throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} has been revoked and no new key exists by the same name (${name})`)
@@ -134,8 +135,8 @@ const verifySignatureData = function (height: number, data: any, additionalData:
   }
 }
 
-export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, additionalKeys?: Object): SignedData<T> => {
-  if (!state || data === undefined || !sKeyId) throw new TypeError('Invalid invocation')
+export const signedOutgoingData = <T>(stateOrContractID: string | Object, sKeyId: string, data: T, additionalKeys?: Object): SignedData<T> => {
+  if (!stateOrContractID || data === undefined || !sKeyId) throw new TypeError('Invalid invocation')
   const rootState = sbp('chelonia/rootState')
 
   if (!additionalKeys) {
@@ -144,7 +145,7 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
 
   const extraFields = Object.create(null)
 
-  const boundStringValueFn = signData.bind(state, sKeyId, data, extraFields, additionalKeys)
+  const boundStringValueFn = signData.bind(null, stateOrContractID, sKeyId, data, extraFields, additionalKeys)
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
   return wrapper({
@@ -161,7 +162,7 @@ export const signedOutgoingData = <T>(state: Object, sKeyId: string, data: T, ad
       return () => data
     },
     get recreate () {
-      return (data: T) => signedOutgoingData(state, sKeyId, data, additionalKeys)
+      return (data: T) => signedOutgoingData(stateOrContractID, sKeyId, data, additionalKeys)
     },
     get get () {
       return (k: string) => extraFields[k]
@@ -192,7 +193,7 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
 
   const extraFields = Object.create(null)
 
-  const boundStringValueFn = signData.bind(state, sKeyId, data, extraFields, { [sKeyId]: key })
+  const boundStringValueFn = signData.bind(null, state, sKeyId, data, extraFields, { [sKeyId]: key })
   const serializefn = (additionalData: ?string) => boundStringValueFn(additionalData || '')
 
   return wrapper({

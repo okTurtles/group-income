@@ -33,18 +33,21 @@ export const isEncryptedData = (o: any): boolean => {
 
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
-const encryptData = function (eKeyId: string, data: any, additionalData: string) {
+const encryptData = function (stateOrContractID: string | Object, eKeyId: string, data: any, additionalData: string) {
+  const rootState = sbp('chelonia/rootState')
+  const state = typeof stateOrContractID === 'string' ? rootState[stateOrContractID] : stateOrContractID
+
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
-  const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
+  const designatedKey = state?._vm?.authorizedKeys?.[eKeyId]
   if (!designatedKey?.purpose.includes(
     'enc'
   )) {
     throw new Error(`Encryption key ID ${eKeyId} is missing or is missing encryption purpose`)
   }
-  if (designatedKey._notAfterHeight !== undefined) {
-    const name = (this._vm: any).authorizedKeys[eKeyId].name
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v._notAfterHeight === undefined && v.name === name && v.purpose.includes('enc')): any)?.id
+  if (designatedKey._notAfterHeight != null) {
+    const name = (state._vm: any).authorizedKeys[eKeyId].name
+    const newKeyId = (Object.values(state._vm?.authorizedKeys).find((v: any) => v._notAfterHeight == null && v.name === name && v.purpose.includes('enc')): any)?.id
 
     if (!newKeyId) {
       throw new Error(`Encryption key ID ${eKeyId} has been revoked and no new key exists by the same name (${name})`)
@@ -53,7 +56,7 @@ const encryptData = function (eKeyId: string, data: any, additionalData: string)
     eKeyId = newKeyId
   }
 
-  const key = this._vm?.authorizedKeys?.[eKeyId].data
+  const key = state._vm?.authorizedKeys?.[eKeyId].data
 
   if (!key) {
     throw new Error(`Missing encryption key ${eKeyId}`)
@@ -91,6 +94,12 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   }
 
   const [eKeyId, message] = data
+  const key = additionalKeys[eKeyId]
+
+  if (!key) {
+    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
+  }
+
   // height as NaN is used to allow checking for revokedKeys as well as
   // authorizedKeys when decrypting data. This is normally inappropriate because
   // revoked keys should be considered compromised and not used for encrypting
@@ -116,19 +125,12 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   // any new attack vectors or venues that were not already available using
   // different means.
   const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
-
   if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'enc'
   )) {
     throw new ChelErrorUnexpected(
       `Key ${eKeyId} is unauthorized or expired for the current contract`
     )
-  }
-
-  const key = additionalKeys[eKeyId]
-
-  if (!key) {
-    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
   }
 
   const deserializedKey = typeof key === 'string' ? deserializeKey(key) : key
@@ -142,10 +144,10 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   }
 }
 
-export const encryptedOutgoingData = <T>(state: Object, eKeyId: string, data: T): EncryptedData<T> => {
-  if (!state || data === undefined || !eKeyId) throw new TypeError('Invalid invocation')
+export const encryptedOutgoingData = <T>(stateOrContractID: string | Object, eKeyId: string, data: T): EncryptedData<T> => {
+  if (!stateOrContractID || data === undefined || !eKeyId) throw new TypeError('Invalid invocation')
 
-  const boundStringValueFn = encryptData.bind(state, eKeyId, data)
+  const boundStringValueFn = encryptData.bind(null, stateOrContractID, eKeyId, data)
 
   return wrapper({
     get encryptionKeyId () {
@@ -180,7 +182,7 @@ export const encryptedOutgoingDataWithRawKey = <T>(key: Key, data: T): Encrypted
       }
     }
   }
-  const boundStringValueFn = encryptData.bind(state, eKeyId, data)
+  const boundStringValueFn = encryptData.bind(null, state, eKeyId, data)
 
   return wrapper({
     get encryptionKeyId () {

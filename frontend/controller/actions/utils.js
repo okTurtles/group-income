@@ -5,7 +5,7 @@ import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
-import { GIErrorUIRuntimeError, LError } from '@common/common.js'
+import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
@@ -38,13 +38,14 @@ export const encryptedAction = (
   }
   return {
     [action]: async function (params: GIActionParams) {
+      const contractID = params.contractID
+      if (!contractID) {
+        throw new Error('Missing contract ID')
+      }
+
       try {
-        const contractID = params.contractID
-        if (!contractID) {
-          throw new Error('Missing contract ID')
-        }
         // Writing to a contract requires being subscribed to it
-        await sbp('chelonia/contract/sync', contractID)
+        await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
@@ -90,12 +91,12 @@ export const encryptedAction = (
 
         if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
           console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
-          throw new Error(`No key found to send ${action} for contract ${contractID}`)
+          throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
         if (innerSigningContractID && (!innerSigningKeyId || !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
           console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
-          throw new Error(`No key found to send ${action} for contract ${contractID}`)
+          throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
         const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId || null, encryptionKeyId, params.originatingContractID)
@@ -111,7 +112,9 @@ export const encryptedAction = (
         const userFacingErrStr = typeof humanError === 'string'
           ? `${humanError} ${LError(e).reportError}`
           : humanError(params, e)
-        throw new GIErrorUIRuntimeError(userFacingErrStr)
+        throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
+      } finally {
+        await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
       }
     }
   }

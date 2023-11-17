@@ -113,10 +113,15 @@ async function startApp () {
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
+          'gi.actions/group/joinChatRoom',
+          'gi.actions/identity/addJoinDirectMessageKey',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
-          'chelonia/contract/disconnect'
+          'chelonia/contract/disconnect',
+          'gi.actions/identity/saveOurLoginState',
+          'gi.actions/chatroom/join',
+          'chelonia/contract/canPerformOperation'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,

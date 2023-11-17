@@ -13,9 +13,10 @@ div
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex'
 import GroupWelcome from '@components/GroupWelcome.vue'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
+import { mapGetters, mapState } from 'vuex'
 
 export default ({
   name: 'PendingApproval',
@@ -34,17 +35,17 @@ export default ({
   computed: {
     ...mapGetters(['groupSettings', 'ourUsername']),
     ...mapState(['currentGroupId']),
-    ourGroupProfile () {
+    haveActiveGroupProfile () {
       if (!this.ephemeral.groupIdWhenMounted) return
-      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE
     }
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    this.ephemeral.groupJoined = !!this.ourGroupProfile
+    this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
   },
   watch: {
-    ourGroupProfile (to) {
+    haveActiveGroupProfile (to) {
       // if our group profile appears in the group state, it means we've joined the group
       if (to) {
         this.ephemeral.groupJoined = true
