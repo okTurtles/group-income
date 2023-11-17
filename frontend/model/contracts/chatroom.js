@@ -344,14 +344,12 @@ sbp('chelonia/defineContract', {
           }
 
           if (data.member === rootState.loggedIn.username) {
-            if (!sbp('okTurtles.data/get', 'JOINING_CHATROOM-' + contractID)) {
-              // NOTE: make sure *not* to await on this, since that can cause
-              //       a potential deadlock. See same warning in sideEffect for
-              //       'gi.contracts/group/removeMember'
-              sbp('chelonia/contract/remove', contractID).catch(e => {
-                console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
-              })
-            }
+            // NOTE: make sure *not* to await on this, since that can cause
+            //       a potential deadlock. See same warning in sideEffect for
+            //       'gi.contracts/group/removeMember'
+            sbp('chelonia/contract/remove', contractID).catch(e => {
+              console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
+            })
           } else {
             emitMessageEvent({ contractID, hash })
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })

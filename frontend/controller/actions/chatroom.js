@@ -237,37 +237,30 @@ export default (sbp('sbp/selectors/register', {
       // the pendingRemove flag in the contract, preventing it from being
       // removed (which is the intent here, as we're re-joining)
       sbp('chelonia/contract/cancelRemove', params.contractID)
-      sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, true)
     }
 
-    try {
-      const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-      const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
 
-      // Add the user's CSK to the contract
-      await sbp('chelonia/out/keyAdd', {
-        contractID: params.contractID,
-        contractName: 'gi.contracts/chatroom',
-        // TODO: Find a way to have this wrapping be done by Chelonia directly
-        data: [encryptedOutgoingData(params.contractID, CEKid, {
-          foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-          id: userCSKid,
-          data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-          permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-          allowedActions: '*',
-          purpose: ['sig'],
-          ringLevel: Number.MAX_SAFE_INTEGER,
-          name: `${userID}/${userCSKid}`
-        })],
-        signingKeyId
-      })
+    // Add the user's CSK to the contract
+    await sbp('chelonia/out/keyAdd', {
+      contractID: params.contractID,
+      contractName: 'gi.contracts/chatroom',
+      // TODO: Find a way to have this wrapping be done by Chelonia directly
+      data: [encryptedOutgoingData(params.contractID, CEKid, {
+        foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+        id: userCSKid,
+        data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
+        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        allowedActions: '*',
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        name: `${userID}/${userCSKid}`
+      })],
+      signingKeyId
+    })
 
-      return await sendMessage(params)
-    } finally {
-      if (isCurrentUserJoining) {
-        sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, false)
-      }
-    }
+    return await sendMessage(params)
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
