@@ -231,6 +231,11 @@ export default (sbp('sbp/selectors/register', {
     const isCurrentUserJoining = rootState.loggedIn.identityContractID === userID
 
     if (isCurrentUserJoining) {
+      // Cancel remove when sending this (join) action. This is because if we're
+      // trying to join a chatroom that we've previously left, it'll be removed
+      // by its side-effects. Calling 'chelonia/contract/cancelRemove' clears
+      // the pendingRemove flag in the contract, preventing it from being
+      // removed (which is the intent here, as we're re-joining)
       sbp('chelonia/contract/cancelRemove', params.contractID)
       sbp('okTurtles.data/set', 'JOINING_CHATROOM-' + params.contractID, true)
     }
