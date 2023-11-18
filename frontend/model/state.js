@@ -12,6 +12,7 @@ import {
   MESSAGE_TYPES,
   INVITE_INITIAL_CREATOR
 } from '@model/contracts/shared/constants.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
