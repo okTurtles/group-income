@@ -87,6 +87,7 @@ class PersistentAction {
       ? new Date(Date.now() + options.retrySeconds * 1e3).toISOString()
       : ''
     // Perform any optional SBP invocation.
+    // The event has to be fired first for the action to be immediately removed from the list.
     sbp('okTurtles.events/emit', PERSISTENT_ACTION_FAILURE, { error, id })
     await this.trySBP(options.errorInvocation)
     if (!anyAttemptLeft) {
