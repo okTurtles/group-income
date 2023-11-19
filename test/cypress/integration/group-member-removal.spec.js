@@ -80,6 +80,11 @@ describe('Group - Removing a member', () => {
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
     assertMembersCount(1)
+
+    cy.giRedirectToGroupChat()
+    cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', `user2-${userId}`)
+    cy.get('div.c-message:last-child .c-notification').should('contain', 'Left General')
+
     cy.giLogout()
   })
 

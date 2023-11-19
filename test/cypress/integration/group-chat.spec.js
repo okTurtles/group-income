@@ -468,9 +468,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
     cy.giLogin(user3)
     me = user3
+
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
-      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       isLoggedIn: true
@@ -480,16 +481,16 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
     cy.getByDT('channelMembers').should('contain', '2 members')
+    cy.giLogout()
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
-    cy.giLogout()
     cy.giLogin(user2)
     me = user2
 
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
-      existingMemberUsername: user1,
       groupName: groupName1,
       shouldLogoutAfter: false,
       isLoggedIn: true
