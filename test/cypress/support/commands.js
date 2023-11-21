@@ -178,12 +178,14 @@ Cypress.Commands.add('giCreateGroup', (name, {
             }
           })
 
-          sbp('okTurtles.events/on', JOINED_GROUP, async ({ contractID }) => {
+          const eventHandler = async ({ contractID }) => {
             if (contractID === message.contractID()) {
               await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+              sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
               resolve()
             }
-          })
+          }
+          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
         })()
       })
     })

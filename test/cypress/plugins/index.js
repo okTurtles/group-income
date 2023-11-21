@@ -13,9 +13,6 @@
 
 const browserify = require('@cypress/browserify-preprocessor')
 
-const options = browserify.defaultOptions
-options.browserifyOptions.transform[1][1].babelrc = true
-
 // This flag is used to avoid running further test specs in case a spec failed.
 // Note that just returning a rejection from 'after:spec' would prevent the spec
 // video from being processed, so we have to do it in the next 'before:spec'
@@ -25,6 +22,9 @@ let lastSpecFailed = false
 module.exports = (on, config) => {
   // Make cypress share the same babelrc config as the rest of the project
   // https://github.com/cypress-io/cypress-browserify-preprocessor#modifying-default-options
+  const options = browserify.defaultOptions
+  options.browserifyOptions.transform[1][1].babelrc = true
+
   on('file:preprocessor', browserify(options))
 
   on('after:spec', (spec, results) => {
