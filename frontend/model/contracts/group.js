@@ -379,6 +379,12 @@ sbp('chelonia/defineContract', {
     groupSettings (state, getters) {
       return getters.currentGroupState.settings || {}
     },
+    profileActive (state, getters) {
+      return username => {
+        const profiles = getters.currentGroupState.profiles
+        return profiles?.[username]?.status === PROFILE_STATUS.ACTIVE
+      }
+    },
     pendingAccept (state, getters) {
       return username => {
         const profiles = getters.currentGroupState.profiles
@@ -1124,6 +1130,13 @@ sbp('chelonia/defineContract', {
               console.error(msg, errors)
               throw new Error(msg)
             }
+
+            // If we don't have a current group ID, select the group we've just
+            // joined
+            if (!rootState.currentGroupId) {
+              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+              sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+            }
           } else {
             // we're an existing member of the group getting notified that a
             // new member has joined, so subscribe to their identity contract
@@ -1656,11 +1669,20 @@ sbp('chelonia/defineContract', {
         await sbp('gi.contracts/group/removeArchivedProposals', contractID)
         await sbp('gi.contracts/group/removeArchivedPayments', contractID)
 
-        // grab the groupID of any group that we've successfully finished joining
-        const groupIdToSwitch = Object.keys(contracts)
-          .filter(cID => contracts[cID].type === 'gi.contracts/group' && cID !== contractID && rootState[cID]?.profiles?.[username])[0] || null
-        sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
-        sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+        // grab the groupID of any group that we're a part of
+        if (!rootState.currentGroupId || rootState.currentGroupId === contractID) {
+          const groupIdToSwitch = Object.keys(contracts)
+            .filter(cID =>
+              contracts[cID].type === 'gi.contracts/group' &&
+              cID !== contractID
+            ).sort(cID =>
+              // prefer successfully joined groups
+              rootState[cID]?.profiles?.[username] ? -1 : 1
+            )[0] || null
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+        }
+
         // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
         // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
         sbp('chelonia/contract/remove', contractID).catch(e => {
@@ -1688,7 +1710,7 @@ sbp('chelonia/defineContract', {
           .then(() => {
             const router = sbp('controller/router')
             const switchFrom = router.currentRoute.path
-            const switchTo = groupIdToSwitch ? '/dashboard' : '/'
+            const switchTo = rootState.currentGroupId ? '/dashboard' : '/'
             if (switchFrom !== '/join' && switchFrom !== switchTo) {
               router.push({ path: switchTo }).catch(console.warn)
             }

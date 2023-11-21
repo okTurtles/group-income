@@ -244,7 +244,8 @@ export default (sbp('sbp/selectors/register', {
         contractID: userID,
         data: {
           groupContractID: contractID,
-          inviteSecret: serializeKey(inviteKey, true)
+          inviteSecret: serializeKey(CSK, true),
+          creator: true
         }
       })
 

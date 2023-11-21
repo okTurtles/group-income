@@ -146,7 +146,8 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/joinGroup': {
       validate: objectMaybeOf({
         groupContractID: string,
-        inviteSecret: string
+        inviteSecret: string,
+        creator: optional(boolean)
       }),
       process ({ data, meta }, { state }) {
         const { groupContractID, inviteSecret } = data
@@ -194,7 +195,10 @@ sbp('chelonia/defineContract', {
             contractName: 'gi.contracts/group',
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+            options: {
+              skipUsableKeysCheck: data.creator
+            }
           })
         }).catch(e => {
           console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)

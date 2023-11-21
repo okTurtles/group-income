@@ -222,8 +222,11 @@ const getters = {
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
   },
+  ourProfileActive (state, getters) {
+    return getters.profileActive(getters.ourUsername)
+  },
   ourPendingAccept (state, getters) {
-    getters.pendingAccept(getters.ourUsername)
+    return getters.pendingAccept(getters.ourUsername)
   },
   ourGroupProfile (state, getters) {
     return getters.groupProfile(getters.ourUsername)
