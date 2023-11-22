@@ -333,7 +333,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return !!contractIDOrState._volatile?.pendingKeyRequests?.length
   },
-  'chelonia/contract/canPerformOperation': function (contractIDOrState: string | Object, operation: string) {
+  'chelonia/contract/hasKeysToPerformOperation': function (contractIDOrState: string | Object, operation: string) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
       contractIDOrState = rootState[contractIDOrState]

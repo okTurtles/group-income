@@ -1721,7 +1721,7 @@ sbp('chelonia/defineContract', {
         await sbp('chelonia/contract/sync', chatRoomID)
       }
 
-      if (!sbp('chelonia/contract/canPerformOperation', chatRoomID, '*')) {
+      if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, '*')) {
         return
       }
 

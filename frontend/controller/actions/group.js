@@ -288,6 +288,9 @@ export default (sbp('sbp/selectors/register', {
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
+      // We need to read values from both the group and the identity contracts'
+      // state, so we call wait to run the rest of this function after all
+      // operations in those contracts have completed
       await sbp('chelonia/contract/wait', [params.contractID, userID])
 
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
@@ -361,12 +364,12 @@ export default (sbp('sbp/selectors/register', {
         })
         // Nothing left to do until the keys are received
 
-        // Called after logging in or during an existing session from the event
-        // handler above. It handles the tasks related to joining the group for
-        // the first time (if that's the case) or just sets this group as the
-        // current group.
-        // This block must be run after having received the group's secret keys
-        // (i.e., the CSK and the CEK) that were requested earlier.
+      // Called after logging in or during an existing session from the event
+      // handler above. It handles the tasks related to joining the group for
+      // the first time (if that's the case) or just sets this group as the
+      // current group.
+      // This block must be run after having received the group's secret keys
+      // (i.e., the CSK and the CEK) that were requested earlier.
       } else if (hasSecretKeys && !isWaitingForKeyShare) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID, 'prfileStatus', state.profiles?.[username]?.status, JSON.parse(JSON.stringify(state.profiles)))
 
@@ -374,6 +377,10 @@ export default (sbp('sbp/selectors/register', {
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
         if (state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
+          // All reads are done here at the top to ensure that they happen
+          // synchronously, before any await calls.
+          // If reading after an asynchronous operation, we might get inconsistent
+          // values, as new operations could have been received on the contract
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
           const PEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
           const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
@@ -427,8 +434,8 @@ export default (sbp('sbp/selectors/register', {
             throw e
           }
 
-          // We are already a member of the group and have already called
-          // inviteAccept
+        // We are already a member of the group and have already called
+        // inviteAccept
         } else {
           // Sync chatroom contracts he already joined
           // if he tries to login in another device, he should skip to make any
@@ -440,7 +447,6 @@ export default (sbp('sbp/selectors/register', {
             .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users?.[username].status === PROFILE_STATUS.ACTIVE))
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
-          // Can't await because the outgoing action uses the same queue
           await sbp('chelonia/contract/sync', chatRoomIds).catch((e) => {
             console.error(`[gi.actions/group/join] Error while syncing already-joined chatrooms for ${params.contractID}:`, e)
             throw e
@@ -464,8 +470,8 @@ export default (sbp('sbp/selectors/register', {
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         console.error(`lllll @@@@@ AT join for ${params.contractID} -- setting JOINING_GROUP to false (1)`)
-        // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
-        // This means that we've been removed from the group
+      // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
+      // This means that we've been removed from the group
       } else if (!hasSecretKeys && !isWaitingForKeyShare) {
         // We have already sent a key request that hasn't been answered. We cannot
         // do much at this point, so we do nothing.

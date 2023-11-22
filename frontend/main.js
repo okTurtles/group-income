@@ -122,7 +122,7 @@ async function startApp () {
           'chelonia/out/keyDel',
           'chelonia/contract/disconnect',
           'gi.actions/chatroom/join',
-          'chelonia/contract/canPerformOperation'
+          'chelonia/contract/hasKeysToPerformOperation'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,

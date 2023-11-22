@@ -417,8 +417,8 @@ export default (sbp('sbp/selectors/register', {
     return contractIDs
   },
   'gi.actions/identity/logout': async function () {
-    const state = sbp('state/vuex/state')
     try {
+      const state = sbp('state/vuex/state')
       // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
       await sbp('chelonia/contract/wait')
