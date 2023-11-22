@@ -31,10 +31,9 @@ Vue.use(Router)
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
-  redirect: (to, from) => {
-    return store.getters.ourGroupProfile ? { path: '/dashboard' } : { path: '/pending-approval' }
-  }
+  redirect: (to, from) => ({ path: store.getters.ourProfileActive ? '/dashboard' : '/pending-approval' })
 }
+
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/', query: { ...to.query, next: to.path } })
@@ -56,7 +55,10 @@ const groupGuard = {
 
 const pendingApprovalGuard = {
   guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
-  redirect: (to, from) => ({ path: '/pending-approval' })
+  redirect: (to, from) => {
+    console.error('@pAG', { to, from })
+    return ({ path: '/pending-approval' })
+  }
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary

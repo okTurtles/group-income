@@ -149,17 +149,17 @@ sbp('chelonia/defineContract', {
         inviteSecret: string,
         creator: optional(boolean)
       }),
-      process ({ data, meta }, { state }) {
+      process ({ hash, data, meta }, { state }) {
         const { groupContractID, inviteSecret } = data
         if (has(state.groups, groupContractID)) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
         }
 
-        const inviteSecretId = sbp('chelonia/crypto/keyId', inviteSecret)
+        const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
 
-        Vue.set(state.groups, groupContractID, { inviteSecretId })
+        Vue.set(state.groups, groupContractID, { hash, inviteSecretId })
       },
-      sideEffect ({ data, contractID }, { state }) {
+      sideEffect ({ hash, data, contractID }, { state }) {
         const { groupContractID, inviteSecret } = data
 
         sbp('chelonia/storeSecretKeys', () => [{
@@ -180,28 +180,26 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const inviteSecretId = sbp('chelonia/crypto/keyId', inviteSecret)
+          const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
 
-          // If the inviteSecretId doesn't match (could happen after re-joining),
-          // return
-          if (state.groups[groupContractID].inviteSecretId !== inviteSecretId) {
+          // If the hash doesn't match (could happen after re-joining), return
+          if (state.groups[groupContractID].hash !== hash) {
             return
           }
 
-          return sbp('gi.actions/group/join', {
+          sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,
             contractName: 'gi.contracts/group',
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
-            options: {
-              skipUsableKeysCheck: data.creator
-            }
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+          }).catch(e => {
+            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
           })
         }).catch(e => {
-          console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
+          console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)
         })
       }
     },

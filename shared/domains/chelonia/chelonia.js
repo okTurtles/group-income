@@ -341,6 +341,21 @@ export default (sbp('sbp/selectors/register', {
     const op = (operation !== '*') ? [operation] : operation
     return !!findSuitableSecretKeyId(contractIDOrState, op, ['sig'])
   },
+  // Did sourceContractIDOrState receive an OP_KEY_SHARE to perform the given
+  // operation on contractIDOrState?
+  'chelonia/contract/receivedKeysToPerformOperation': function (sourceContractIDOrState: string | Object, contractIDOrState: string | Object, operation: string) {
+    const rootState = sbp(this.config.stateSelector)
+    if (typeof sourceContractIDOrState === 'string') {
+      sourceContractIDOrState = rootState[sourceContractIDOrState]
+    }
+    if (typeof contractIDOrState === 'string') {
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const op = (operation !== '*') ? [operation] : operation
+    const keyId = findSuitableSecretKeyId(contractIDOrState, op, ['sig'])
+
+    return sourceContractIDOrState?._vm?.sharedKeyIds?.includes(keyId)
+  },
   'chelonia/contract/currentKeyIdByName': function (contractIDOrState: string | Object, name: string, requireSecretKey?: boolean) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
@@ -378,8 +393,8 @@ export default (sbp('sbp/selectors/register', {
   },
   // The purpose of the 'chelonia/crypto/*' selectors is so that they can be called
   // from contracts without including the crypto code (i.e., importing crypto.js)
-  'chelonia/crypto/keyId': (inKey: Key | string) => {
-    return keyId(inKey)
+  'chelonia/crypto/keyId': (inKeyFn: () => Key | string) => {
+    return keyId(inKeyFn())
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
@@ -443,7 +458,7 @@ export default (sbp('sbp/selectors/register', {
         // if this version of the contract is pushing a sideEffect to a function defined by the
         // contract itself, make sure that it calls the same version of the sideEffect
         const [sel] = asyncSbpCall
-        if (sel.startsWith(contract.name)) {
+        if (sel.startsWith(contract.name + '/')) {
           asyncSbpCall[0] = `${contract.manifest}/${sel}`
         }
         this.sideEffectStack(contractID).push(asyncSbpCall)
@@ -624,7 +639,7 @@ export default (sbp('sbp/selectors/register', {
     }))
   },
   // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
-  'chelonia/contract/removeImmediately': function (contractID: string) {
+  'chelonia/contract/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
     const state = sbp(this.config.stateSelector)
     const contractName = state.contracts[contractID]?.type
     if (!contractName) {
@@ -639,7 +654,7 @@ export default (sbp('sbp/selectors/register', {
       if (sbp('sbp/selectors/fn', destructor)) {
         // And call it
         try {
-          sbp(destructor, { contractID })
+          sbp(destructor, { contractID, resync: !!params?.resync })
         } catch (e) {
           console.error(`[chelonia/contract/removeImmediately] Error at destructor for ${contractID}`, e)
         }

@@ -154,7 +154,7 @@ export default (sbp('sbp/selectors/register', {
     let contractName: string // eslint-disable-line prefer-const
     const contractSBP = (selector: string, ...args) => {
       const domain = domainFromSelector(selector)
-      if (selector.startsWith(contractName)) {
+      if (selector.startsWith(contractName + '/')) {
         selector = `${manifestHash}/${selector}`
       }
       if (allowedSels[selector] || allowedDoms[domain]) {
@@ -445,10 +445,10 @@ export default (sbp('sbp/selectors/register', {
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
-          if (key.meta?.private) {
+          if (key.id && key.meta?.private?.content) {
+            if (!has(state._vm, 'sharedKeyIds')) self.config.reactiveSet(state._vm, 'sharedKeyIds', [])
+            if (!state._vm.sharedKeyIds.includes(key.id)) state._vm.sharedKeyIds.push(key.id)
             if (
-              key.id &&
-              key.meta.private.content &&
               !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
             ) {
               try {
@@ -501,7 +501,7 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
-              ['chelonia/contract/removeImmediately', v.contractID],
+              ['chelonia/contract/removeImmediately', v.contractID, { resync: true }],
               ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
