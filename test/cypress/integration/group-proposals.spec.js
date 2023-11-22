@@ -291,9 +291,10 @@ describe('Proposals - Add members', () => {
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
     cy.giSignup(`user4-${userId}`, { bypassUI: true })
-    // NOTE: need to wait until to save user settings to indexedStorage
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+    cy.window().its('sbp').then(async sbp => {
+      // NOTE: need to wait until to save user settings to indexedStorage
+      await sbp('state/vuex/save')
+    })
     cy.giAcceptGroupInvite(invitationLinks.user4, {
       username: `user4-${userId}`,
       isLoggedIn: true,
