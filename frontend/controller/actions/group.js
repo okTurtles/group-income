@@ -279,7 +279,6 @@ export default (sbp('sbp/selectors/register', {
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
-    console.error(`lllll @@@@@ AT join for ${params.contractID} -- setting JOINING_GROUP to true`)
     try {
       const rootState = sbp('state/vuex/state')
       const username = rootState.loggedIn.username
@@ -469,7 +468,6 @@ export default (sbp('sbp/selectors/register', {
         })
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
-        console.error(`lllll @@@@@ AT join for ${params.contractID} -- setting JOINING_GROUP to false (1)`)
       // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
       // This means that we've been removed from the group
       } else if (!hasSecretKeys && !isWaitingForKeyShare) {
@@ -478,7 +476,6 @@ export default (sbp('sbp/selectors/register', {
         // This could happen, for example, after logging in if we still haven't
         // received a response to the key request.
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
-        console.error(`lllll @@@@@ AT join for ${params.contractID} -- setting JOINING_GROUP to false (2)`)
         console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
       } else if (isWaitingForKeyShare) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)

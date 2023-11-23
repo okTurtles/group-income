@@ -326,6 +326,13 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     return !!rootState?.secretKeys && has(rootState.secretKeys, keyId)
   },
+  'chelonia/contract/isResyncing': function (contractIDOrState: string | Object) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    return !!contractIDOrState?._volatile?.dirty || !!contractIDOrState?._volatile?.resyncing
+  },
   'chelonia/contract/isWaitingForKeyShare': function (contractIDOrState: string | Object) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)

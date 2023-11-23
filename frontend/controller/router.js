@@ -55,10 +55,7 @@ const groupGuard = {
 
 const pendingApprovalGuard = {
   guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
-  redirect: (to, from) => {
-    console.error('@pAG', { to, from })
-    return ({ path: '/pending-approval' })
-  }
+  redirect: (to, from) => ({ path: '/pending-approval' })
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary

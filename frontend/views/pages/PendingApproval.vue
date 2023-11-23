@@ -13,6 +13,7 @@ div
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
@@ -37,7 +38,16 @@ export default ({
     ...mapState(['currentGroupId']),
     haveActiveGroupProfile () {
       if (!this.ephemeral.groupIdWhenMounted) return
-      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE
+      const state = this.$store.state[this.ephemeral.groupIdWhenMounted]
+      return (
+        // We want the group state to be active
+        state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
+        // And we don't want to be in the process of re-syncing (i.e., re-building
+        // the state after receiving new private keys)
+        !sbp('chelonia/contract/isResyncing', state) &&
+        // And finally, we want the join process to be complete
+        !sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+      )
     }
   },
   mounted () {

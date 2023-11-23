@@ -6,7 +6,6 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
       :key='index'
       :class='[currentStep === index ? "active" : "", currentStep < index ? "next" : ""]'
       @click='redirect(step)'
-      v-if='step != "GroupWelcome"'
     ) {{ index + 1 }}
 
   .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
@@ -61,7 +60,6 @@ import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import GroupWelcome from '@components/GroupWelcome.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -89,8 +87,7 @@ export default ({
     GroupPurpose,
     GroupMincome,
     GroupRules,
-    GroupPrivacy,
-    GroupWelcome
+    GroupPrivacy
   },
   methods: {
     focusRef (ref) {
@@ -122,7 +119,7 @@ export default ({
             distributionDate: this.form.distributionDate
           }
         })
-        this.next()
+        this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
@@ -152,8 +149,7 @@ export default ({
           'GroupName',
           'GroupPurpose',
           'GroupMincome',
-          'GroupRules',
-          'GroupWelcome'
+          'GroupRules'
         ]
       }
     }

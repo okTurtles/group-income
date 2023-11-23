@@ -31,8 +31,6 @@ div
         | &nbsp;
         i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
-    group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
-
     .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
@@ -48,7 +46,6 @@ div
 <script>
 import { L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
-import GroupWelcome from '@components/GroupWelcome.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
@@ -71,7 +68,6 @@ export default ({
     LoginForm,
     SignupForm,
     Avatar,
-    GroupWelcome,
     SvgBrokenLink
   },
   data () {
@@ -89,7 +85,7 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const possibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
+        const possibleStatus = ['LOADING', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
         if (!possibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${possibleStatus.join(', ')}`)
         }
@@ -178,7 +174,6 @@ export default ({
         }).then(() => {
           return sbp('gi.actions/group/switch', groupId)
         })
-        // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('Join.vue accept() error:', e)

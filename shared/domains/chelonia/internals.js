@@ -501,8 +501,7 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
-              ['chelonia/contract/removeImmediately', v.contractID, { resync: true }],
-              ['chelonia/private/in/syncContract', v.contractID],
+              ['chelonia/private/in/syncContract', v.contractID, { resync: true }],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
@@ -798,8 +797,16 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
     return result
   },
-  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
+  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    if (params?.resync) {
+      const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+      delete currentVolatileState.dirty
+      currentVolatileState.resyncing = true
+      sbp('chelonia/contract/removeImmediately', contractID, { resync: true })
+      this.config.reactiveSet(state, contractID, Object.create(null))
+      this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
+    }
     const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
@@ -859,6 +866,9 @@ export default (sbp('sbp/selectors/register', {
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     } finally {
+      if (params?.resync && state[contractID]?._volatile) {
+        this.config.reactiveDel(state[contractID]._volatile, 'resyncing')
+      }
       delete this.currentSyncs[contractID]
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }

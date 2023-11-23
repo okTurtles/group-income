@@ -192,7 +192,12 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const userID = rootGetters.ourContactProfiles[params.data.username]?.contractID
 
-    if (!userID || !has(rootState, userID)) {
+    // We need to read values from both the chatroom and the identity contracts'
+    // state, so we call wait to run the rest of this function after all
+    // operations in those contracts have completed
+    await sbp('chelonia/contract/wait', [params.contractID, userID])
+
+    if (!userID || !has(rootState.contracts, userID)) {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 

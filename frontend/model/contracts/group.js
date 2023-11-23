@@ -1773,8 +1773,6 @@ sbp('chelonia/defineContract', {
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
         })
-
-        console.error(`lllll Called 'chelonia/contract/remove' from leaveGroup for ${contractID}`, { member: username })
       } else {
         const myProfile = getters.groupProfile(username)
 
