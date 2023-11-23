@@ -87,7 +87,7 @@ export const encryptedAction = (
           innerSigningContractID &&
           findKeyIdByName(state[innerSigningContractID], innerSigningKeyName ?? 'csk')
         )
-        const encryptionKeyId = findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
+        const encryptionKeyId = params.encryptionKeyId || findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
 
         if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
           console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })

@@ -37,14 +37,6 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, ser
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
-async function saveLoginState (action: string, contractID: string) {
-  try {
-    await sbp('gi.actions/identity/saveOurLoginState')
-  } catch (e) {
-    console.error(`${e.name} trying to save our login state when ${action} group: ${contractID}: ${e.message}`, e)
-  }
-}
-
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -218,8 +210,6 @@ export default (sbp('sbp/selectors/register', {
         () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      saveLoginState('creating', contractID)
-
       // Save the initial invite
       await sbp('gi.actions/group/invite', {
         contractID,
@@ -250,20 +240,12 @@ export default (sbp('sbp/selectors/register', {
         innerSigningContractID: null
       })
 
-      await sbp('gi.actions/group/joinAndSwitch', {
-        originatingContractID: userID,
-        originatingContractName: 'gi.contracts/identity',
-        contractID: contractID,
-        contractName: 'gi.contracts/group',
-        signingKeyId: CSKid,
-        innerSigningKeyId: userCSKid,
-        encryptionKeyId: userCEKid,
-        options: {
-          // Normally, calling join will require receiving the group's keys
-          // in an OP_KEY_SHARE for joining. However, as the group creator,
-          // we already have those keys. This option allows to to call join
-          // as though we didn't have the group keys
-          skipUsableKeysCheck: true
+      await sbp('gi.actions/identity/joinGroup', {
+        contractID: userID,
+        data: {
+          groupContractID: contractID,
+          inviteSecret: serializeKey(CSK, true),
+          creator: true
         }
       })
 
@@ -295,7 +277,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; } }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -305,6 +287,11 @@ export default (sbp('sbp/selectors/register', {
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
+      // We need to read values from both the group and the identity contracts'
+      // state, so we call wait to run the rest of this function after all
+      // operations in those contracts have completed
+      await sbp('chelonia/contract/wait', [params.contractID, userID])
+
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
@@ -315,7 +302,7 @@ export default (sbp('sbp/selectors/register', {
       // perform all operations in the group? If we haven't, we are not
       // able to participate in the group yet and may need to send a key
       // request.
-      const hasSecretKeys = !params.options?.skipUsableKeysCheck && sbp('chelonia/contract/canPerformOperation', state, '*')
+      const hasSecretKeys = sbp('chelonia/contract/receivedKeysToPerformOperation', userID, state, '*')
 
       // Do we need to send a key request?
       // If we don't have the group contract in our state and
@@ -345,7 +332,7 @@ export default (sbp('sbp/selectors/register', {
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
-          sbp('gi.actions/group/join', { ...params, options: { ...params.options, skipUsableKeysCheck: false } })
+          sbp('gi.actions/group/join', params)
         }
         const logoutHandler = () => {
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
@@ -370,6 +357,9 @@ export default (sbp('sbp/selectors/register', {
             prepublish: params.hooks?.prepublish,
             postpublish: null
           }
+        }).catch((e) => {
+          console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
+          throw e
         })
         // Nothing left to do until the keys are received
 
@@ -386,53 +376,61 @@ export default (sbp('sbp/selectors/register', {
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
         if (state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
+          // All reads are done here at the top to ensure that they happen
+          // synchronously, before any await calls.
+          // If reading after an asynchronous operation, we might get inconsistent
+          // values, as new operations could have been received on the contract
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-
-          // Share our PEK with the group so that group members can see
-          // our name and profile information
           const PEKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
-
-          PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-            contractID: params.contractID,
-            contractName: 'gi.contracts/group',
-            subjectContractID: userID,
-            keyIds: [PEKid]
-          })
-
           const CSKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
           const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+          const userCSKdata = rootState[userID]._vm.authorizedKeys[userCSKid].data
 
-          await sbp('chelonia/out/keyAdd', {
-            contractID: params.contractID,
-            contractName: 'gi.contracts/group',
-            data: [encryptedOutgoingData(params.contractID, CEKid, {
-              foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-              id: userCSKid,
-              data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-              permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-              allowedActions: '*',
-              purpose: ['sig'],
-              ringLevel: Number.MAX_SAFE_INTEGER,
-              name: `${userID}/${userCSKid}`
-            })],
-            signingKeyId: CSKid
-          })
+          try {
+            // Share our PEK with the group so that group members can see
+            // our name and profile information
+            PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
+              contractID: params.contractID,
+              contractName: 'gi.contracts/group',
+              subjectContractID: userID,
+              keyIds: [PEKid]
+            })
 
-          // Send inviteAccept action to the group to add ourselves to the
-          // members list
-          await sbp('gi.actions/group/inviteAccept', {
-            ...omit(params, ['options', 'action', 'hooks', 'signingKeyId']),
-            hooks: {
-              prepublish: params.hooks?.prepublish,
-              postpublish: null,
-              preSendCheck: (_, state) => {
-                return state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE
+            await sbp('chelonia/out/keyAdd', {
+              contractID: params.contractID,
+              contractName: 'gi.contracts/group',
+              data: [encryptedOutgoingData(params.contractID, CEKid, {
+                foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                id: userCSKid,
+                data: userCSKdata,
+                permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                allowedActions: '*',
+                purpose: ['sig'],
+                ringLevel: Number.MAX_SAFE_INTEGER,
+                name: `${userID}/${userCSKid}`
+              })],
+              signingKeyId: CSKid
+            })
+
+            // Send inviteAccept action to the group to add ourselves to the
+            // members list
+            await sbp('gi.actions/group/inviteAccept', {
+              ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+              hooks: {
+                prepublish: params.hooks?.prepublish,
+                postpublish: null,
+                preSendCheck: (_, state) => {
+                  return state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE
+                }
               }
-            }
-          })
+            })
 
-          if (rootState.currentGroupId === params.contractID) {
-            await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
+            if (rootState.currentGroupId === params.contractID) {
+              await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
+            }
+          } catch (e) {
+            console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
+            throw e
           }
 
         // We are already a member of the group and have already called
@@ -446,32 +444,37 @@ export default (sbp('sbp/selectors/register', {
           // We've already joined
           const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
             .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users?.[username].status === PROFILE_STATUS.ACTIVE))
+          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
-          await sbp('chelonia/contract/sync', chatRoomIds)
+          await sbp('chelonia/contract/sync', chatRoomIds).catch((e) => {
+            console.error(`[gi.actions/group/join] Error while syncing already-joined chatrooms for ${params.contractID}:`, e)
+            throw e
+          })
+
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             groupId: params.contractID,
-            chatRoomId: rootState[params.contractID].generalChatRoomId
+            chatRoomId: generalChatRoomId
           })
         }
 
         // NOTE: sync identity contracts which are out of sync after joining group
-        const missingIDs = (await Promise.all(
+        await Promise.all(
           Object.keys(state.profiles)
             .map(username => sbp('namespace/lookup', username))
-        )).filter(id => !rootState[id] && !sbp('chelonia/contract/isSyncing', id))
-        if (missingIDs.length > 0) {
-          console.info('found unsynced identity contracts to sync:', missingIDs)
-          await sbp('chelonia/contract/sync', missingIDs)
-        }
+        ).then(profileIds => {
+          return sbp('chelonia/contract/sync', profileIds.filter(Boolean))
+        }).catch((e) => {
+          console.error(`[gi.actions/group/join] Error while subscribing to members' identity contracts ${params.contractID}:`, e)
+        })
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
       // This means that we've been removed from the group
       } else if (!hasSecretKeys && !isWaitingForKeyShare) {
-      // We have already sent a key request that hasn't been answered. We cannot
-      // do much at this point, so we do nothing.
-      // This could happen, for example, after logging in if we still haven't
-      // received a response to the key request.
+        // We have already sent a key request that hasn't been answered. We cannot
+        // do much at this point, so we do nothing.
+        // This could happen, for example, after logging in if we still haven't
+        // received a response to the key request.
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
       } else if (isWaitingForKeyShare) {
@@ -482,11 +485,9 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
-    } finally {
-      saveLoginState('joining', params.contractID)
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipUsableKeysCheck?: boolean; } }) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
@@ -535,8 +536,6 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let cek
-
     const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
     const csk = {
       id: cskId,
@@ -544,16 +543,15 @@ export default (sbp('sbp/selectors/register', {
       data: contractState._vm.authorizedKeys[cskId].data
     }
 
-    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
-    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
-
-      cek = {
-        id: cekId,
-        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
-        data: contractState._vm.authorizedKeys[cekId].data
-      }
+    const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
+    const cek = {
+      id: cekId,
+      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+      data: contractState._vm.authorizedKeys[cekId].data
     }
+
+    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
+    const privateChatroom = ![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
@@ -565,11 +563,16 @@ export default (sbp('sbp/selectors/register', {
       },
       options: {
         ...params.options,
-        // The CSK is the CSK for non-private chatrooms
-        csk: cek ? csk : undefined,
-        cek,
-        // The groupKey is the CSK for private chatrooms
-        groupKey: !cek ? csk : undefined
+        // The CSK and the CEK are the group's for non-private chatrooms
+        // Otherwise, these are different from the group's, but they're still
+        // passed as groupKeys, so that membership operations can be mirrored
+        ...(!privateChatroom
+          ? {
+              csk, cek
+            }
+          : {
+              groupKeys: [csk, cek]
+            })
       },
       hooks: {
         prepublish: params.hooks?.prepublish,
@@ -581,7 +584,7 @@ export default (sbp('sbp/selectors/register', {
     // with the group (i.e., they are literally the same keys, using the
     // foreignKey functionality). However, private chatrooms keep separate keys
     // which must be shared using OP_KEY_SHARE
-    if (![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
+    if (privateChatroom) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: userID,
         contractName: 'gi.contracts/identity',

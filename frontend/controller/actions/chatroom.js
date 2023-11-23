@@ -64,51 +64,6 @@ export default (sbp('sbp/selectors/register', {
         }
       }
 
-      console.log('Chatroom create', {
-        ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
-        signingKeyId: cskOpts.id,
-        actionSigningKeyId: cskOpts.id,
-        actionEncryptionKeyId: cekOpts.id,
-        keys: [
-          {
-            id: cskOpts.id,
-            name: 'csk',
-            purpose: ['sig'],
-            ringLevel: 1,
-            permissions: '*',
-            allowedActions: '*',
-            foreignKey: cskOpts.foreignKey,
-            meta: cskOpts.meta,
-            data: cskOpts.data
-          },
-          {
-            id: cekOpts.id,
-            name: 'cek',
-            purpose: ['enc'],
-            ringLevel: 1,
-            permissions: '*',
-            allowedActions: '*',
-            foreignKey: cekOpts.foreignKey,
-            meta: cekOpts.meta,
-            data: cekOpts.data
-          },
-          ...(params.options?.groupKey
-            ? [{
-                id: params.options.groupKey.id,
-                name: 'groupKey',
-                purpose: ['sig'],
-                ringLevel: 2,
-                permissions: [GIMessage.OP_ACTION_ENCRYPTED],
-                allowedActions: ['gi.contracts/chatroom/leave'],
-                foreignKey: params.options.groupKey.foreignKey,
-                meta: params.options.groupKey.meta,
-                data: params.options.groupKey.data
-              }]
-            : [])
-        ],
-        contractName: 'gi.contracts/chatroom'
-      })
-
       // Before creating the contract, put all keys into transient store
       sbp('chelonia/storeSecretKeys',
         // $FlowFixMe[incompatible-use]
@@ -146,18 +101,31 @@ export default (sbp('sbp/selectors/register', {
             meta: cekOpts.meta,
             data: cekOpts.data
           },
-          ...(params.options?.groupKey
-            ? [{
-                id: params.options.groupKey.id,
-                name: 'groupKey',
-                purpose: ['sig'],
-                ringLevel: 2,
-                permissions: [GIMessage.OP_ACTION_ENCRYPTED],
-                allowedActions: ['gi.contracts/chatroom/leave'],
-                foreignKey: params.options.groupKey.foreignKey,
-                meta: params.options.groupKey.meta,
-                data: params.options.groupKey.data
-              }]
+          ...(params.options?.groupKeys
+            ? [
+                {
+                  id: params.options.groupKeys[0].id,
+                  name: 'group-csk',
+                  purpose: ['sig'],
+                  ringLevel: 2,
+                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  allowedActions: ['gi.contracts/chatroom/leave'],
+                  foreignKey: params.options.groupKeys[0].foreignKey,
+                  meta: params.options.groupKeys[0].meta,
+                  data: params.options.groupKeys[0].data
+                },
+                {
+                  id: params.options.groupKeys[1].id,
+                  name: 'group-cek',
+                  purpose: ['enc'],
+                  ringLevel: 2,
+                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  allowedActions: ['gi.contracts/chatroom/join', 'gi.contracts/chatroom/leave'],
+                  foreignKey: params.options.groupKeys[1].foreignKey,
+                  meta: params.options.groupKeys[1].meta,
+                  data: params.options.groupKeys[1].data
+                }
+              ]
             : []),
           // TODO: Find a way to have this wrapping be done by Chelonia directly
           encryptedOutgoingDataWithRawKey(CEK, {
@@ -224,7 +192,12 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const userID = rootGetters.ourContactProfiles[params.data.username]?.contractID
 
-    if (!userID || !has(rootState, userID)) {
+    // We need to read values from both the chatroom and the identity contracts'
+    // state, so we call wait to run the rest of this function after all
+    // operations in those contracts have completed
+    await sbp('chelonia/contract/wait', [params.contractID, userID])
+
+    if (!userID || !has(rootState.contracts, userID)) {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
