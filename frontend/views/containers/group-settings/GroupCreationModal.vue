@@ -23,14 +23,14 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 
       banner-scoped(ref='formMsg')
 
-      .buttons(v-if='currentStep + 1 < config.steps.length')
+      .buttons(v-if='currentStep < config.steps.length')
         button.is-outlined(
           @click='prev'
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
         button.is-primary(
-          v-if='currentStep + 2 < config.steps.length'
+          v-if='currentStep + 1 < config.steps.length'
           ref='next'
           @click='next'
           :disabled='$v.steps[content] && $v.steps[content].$invalid'
