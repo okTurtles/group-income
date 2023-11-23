@@ -19,8 +19,10 @@
       id="app"
       data-test="app"
       :class="appClasses"
-      :data-sync='ephemeral.syncs'
-      :data-logged-in='ephemeral.finishedLogin'
+      :data-sync="ephemeral.syncs"
+      :data-key-requested="ephemeral.keyRequestedGroupIDs.join(',')"
+      :data-pending-key-shares="pendingGroupKeyShares"
+      :data-logged-in="ephemeral.finishedLogin"
     >
       <app-styles></app-styles>
       <banner-general ref="bannerGeneral"></banner-general>

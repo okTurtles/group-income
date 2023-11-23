@@ -78,7 +78,7 @@ Cypress.Commands.add('giSignup', (username, {
 Cypress.Commands.add('giLogin', (username, {
   password = defaultPassword,
   bypassUI,
-  // NOTE: the 'firstLoginAfterJoinGroup' attribute is true when user FIRST logs in after completes the joining group
+  // NOTE: the 'firstLoginAfterJoinGroup' attribute is true only when it's the FIRST login after joining group
   firstLoginAfterJoinGroup = false
 } = {}) => {
   if (bypassUI) {
@@ -121,7 +121,7 @@ Cypress.Commands.add('giLogin', (username, {
   })
 
   if (firstLoginAfterJoinGroup) {
-    cy.giCheckIfJoinedGeneralChatroom()
+    cy.giCheckIfJoinedGeneralChatroom(username)
   }
 })
 
@@ -194,6 +194,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+
+    cy.giCheckIfJoinedGeneralChatroom()
 
     return
   }
@@ -335,15 +337,19 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   if (existingMemberUsername) {
     // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
-    // TODO: should remove the following cy.wait()
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+    // NOTE: should wait until KEY_REQUEST event is published
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
+    })
+
     cy.giLogout()
 
     cy.giLogin(existingMemberUsername, { bypassUI })
-    // TODO: should remove the following cy.wait()
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(2000)
+
+    // NOTE: should wait until all pendingKeyShares are removed
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-pending-key-shares', '')
+    })
     cy.giLogout()
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
@@ -387,20 +393,21 @@ Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
       cy.visit(invitationLink)
       cy.giSignup(username, { isInvitation: true, groupName })
     }
-
     // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
-    // TODO: should remove the following cy.wait()
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+
+    // NOTE: should wait until KEY_REQUEST event is published
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
+    })
 
     cy.giLogout()
   }
 
   cy.giLogin(existingMemberUsername, { bypassUI })
-  // TODO: should remove the following cy.wait()
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(2000)
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-pending-key-shares', '')
+  })
   cy.giLogout()
 
   const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
@@ -519,16 +526,19 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
   })
 })
 
-Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', () => {
+Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   cy.giRedirectToGroupChat()
-  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-  cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME)
+  cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username)
   cy.getByDT('dashboard').click()
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (
   channelName, me, inviter, invitee
 ) => {
+  cy.getByDT('channelName').should('contain', channelName)
+  cy.getByDT(`channel-${channelName}-in`).within(() => {
+    cy.get('i.icon-hashtag').should('exist')
+  })
   // NOTE: need to check just after joined, not after making other activities
   inviter = inviter || me
   invitee = invitee || me

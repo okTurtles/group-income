@@ -23,7 +23,14 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { LOGOUT, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP, JOINED_GROUP } from '@utils/events.js'
+import {
+  LOGOUT,
+  OPEN_MODAL,
+  REPLACE_MODAL,
+  SWITCH_GROUP,
+  JOINED_GROUP,
+  CYPRESS_FINISHED_KEY_REQUEST_EVENT
+} from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -371,6 +378,11 @@ export default (sbp('sbp/selectors/register', {
             postpublish: null
           }
         })
+
+        if (process.env.NODE_ENV === 'development' || window.Cypress) {
+          sbp('okTurtles.events/emit', CYPRESS_FINISHED_KEY_REQUEST_EVENT, { contractID: params.contractID })
+        }
+
         // Nothing left to do until the keys are received
 
       // Called after logging in or during an existing session from the event

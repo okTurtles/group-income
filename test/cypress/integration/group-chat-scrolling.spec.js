@@ -121,9 +121,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giAddNewChatroom(additionalChannelName, '', false)
     cy.giCheckIfJoinedChatroom(additionalChannelName, me)
 
-    // TODO: need to remove this cy.wait
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
     switchChannel(CHATROOM_GENERAL_NAME)
 
     cy.getByDT('conversationWrapper').within(() => {

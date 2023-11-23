@@ -52,7 +52,6 @@ export default ({
           sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
         }
       }
-
       sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
     } else {
       this.ephemeral.groupJoined = true

@@ -9,6 +9,7 @@ export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGOUT = 'logout'
 
+export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
 
 export const REPLACED_STATE = 'replaced-state'
@@ -32,4 +33,4 @@ export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
 
-export const SWITCH_GROUP = 'switch-group'
+export const CYPRESS_FINISHED_KEY_REQUEST_EVENT = 'cypress-finished-key-request-event'
