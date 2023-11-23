@@ -800,6 +800,10 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+    // If the dirty flag is set (indicating that new encryption keys were received),
+    // we remove the current state before syncing (this has the effect of syncing
+    // from the beginning, recreating the entire state). When this is the case,
+    // the _volatile state is preserved
     if (currentVolatileState?.dirty) {
       delete currentVolatileState.dirty
       currentVolatileState.resyncing = true

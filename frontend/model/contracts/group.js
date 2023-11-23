@@ -161,6 +161,13 @@ function memberLeaves ({ username, dateLeft }, { contractID, meta, state, getter
     removeGroupChatroomProfile(state, chatroomID, username)
   })
 
+  // When a member is leaving, we need to mark the CSK and the CEK as needing
+  // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
+  // (to actually perform the rotation) and Chelonia (to unset the flag if
+  // they are rotated by somebody else)
+  // TODO: Improve this API. Developers should not modify state that is managed
+  // by Chelonia.
+  // Example: sbp('chelonia/contract/markKeyForRevocation', contractID, 'csk')
   if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
   if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
 
