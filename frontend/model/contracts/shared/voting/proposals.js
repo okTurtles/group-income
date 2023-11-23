@@ -53,7 +53,10 @@ export function oneVoteToPass (proposalHash: string): boolean {
   const newResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
   console.debug(`oneVoteToPass currentResult(${currentResult}) newResult(${newResult})`)
 
-  return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
+  // If a member was removed, currentResult could also be VOTE_FOR
+  // TODO: Re-process active proposals to handle this case
+  // return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
+  return newResult === VOTE_FOR
 }
 
 function voteAgainst (state: any, { meta, data, contractID }: any) {

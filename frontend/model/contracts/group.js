@@ -981,6 +981,7 @@ sbp('chelonia/defineContract', {
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
+          // TODO: Figure out error happening here
           proposalPayload: optional(objectOf({
             secret: string // NOTE: simulate the OP_KEY_* stuff for now
           }))
