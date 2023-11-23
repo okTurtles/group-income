@@ -416,7 +416,7 @@ export default (sbp('sbp/selectors/register', {
             // Send inviteAccept action to the group to add ourselves to the
             // members list
             await sbp('gi.actions/group/inviteAccept', {
-              ...omit(params, ['options', 'action', 'hooks', 'signingKeyId']),
+              ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
               hooks: {
                 prepublish: params.hooks?.prepublish,
                 postpublish: null,
@@ -539,8 +539,6 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let cek
-
     const cskId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
     const csk = {
       id: cskId,
@@ -548,16 +546,15 @@ export default (sbp('sbp/selectors/register', {
       data: contractState._vm.authorizedKeys[cskId].data
     }
 
-    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
-    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
-
-      cek = {
-        id: cekId,
-        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
-        data: contractState._vm.authorizedKeys[cekId].data
-      }
+    const cekId = sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
+    const cek = {
+      id: cekId,
+      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+      data: contractState._vm.authorizedKeys[cekId].data
     }
+
+    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
+    const privateChatroom = ![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
@@ -569,11 +566,16 @@ export default (sbp('sbp/selectors/register', {
       },
       options: {
         ...params.options,
-        // The CSK is the CSK for non-private chatrooms
-        csk: cek ? csk : undefined,
-        cek,
-        // The groupKey is the CSK for private chatrooms
-        groupKey: !cek ? csk : undefined
+        // The CSK and the CEK are the group's for non-private chatrooms
+        // Otherwise, these are different from the group's, but they're still
+        // passed as groupKeys, so that membership operations can be mirrored
+        ...(!privateChatroom
+          ? {
+              csk, cek
+            }
+          : {
+              groupKeys: [csk, cek]
+            })
       },
       hooks: {
         prepublish: params.hooks?.prepublish,
@@ -585,7 +587,7 @@ export default (sbp('sbp/selectors/register', {
     // with the group (i.e., they are literally the same keys, using the
     // foreignKey functionality). However, private chatrooms keep separate keys
     // which must be shared using OP_KEY_SHARE
-    if (![CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
+    if (privateChatroom) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: userID,
         contractName: 'gi.contracts/identity',

@@ -112,6 +112,7 @@ async function startApp () {
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation',
+          'chelonia/contract/isWaitingForKeyShare',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves',
           'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',

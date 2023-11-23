@@ -306,6 +306,7 @@ const leaveChatRoomAction = (state, { chatRoomID, member }, meta, leavingGroup) 
   // unconditionally in this situation, which should be a key in the
   // chatroom (either the CSK or the groupKey)
   if (leavingGroup) {
+    const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const signingKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
     // If we don't have a CSK, it is because we've already been removed.
@@ -314,7 +315,11 @@ const leaveChatRoomAction = (state, { chatRoomID, member }, meta, leavingGroup) 
       return
     }
 
-    // Set signing key to the CSK
+    // Set signing key to the CEK; this allows for managing joining and leaving
+    // the chatroom transparently to group members
+    extraParams.encryptionKeyId = encryptionKeyId
+    // Set signing key to the CSK; this allows group members to remove members
+    // from chatrooms they're not part of (e.g., when a group member is removed)
     extraParams.signingKeyId = signingKeyId
     // Explicitly opt out of inner signatures. By default, actions will be signed
     // by the currently logged in user.
@@ -1044,7 +1049,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/inviteAccept': {
       validate: Boolean,
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, innerSigningKeyId }, { state }) {
         // TODO: ensure `meta.username` is unique for the lifetime of the username
         //       since we are making it possible for the same username to leave and
         //       rejoin the group. All of their past posts will be re-associated with
@@ -1721,13 +1726,19 @@ sbp('chelonia/defineContract', {
         await sbp('chelonia/contract/sync', chatRoomID)
       }
 
-      if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, '*')) {
+      if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
         return
       }
+
+      // Using the group's CEK allows for everyone to have an overview of the
+      // membership (which is also part of the group contract). This way,
+      // non-members can remove members when they leave the group
+      const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
 
       await sbp('gi.actions/chatroom/join', {
         contractID: chatRoomID,
         data: { username: member },
+        encryptionKeyId,
         hooks: {
           preSendCheck: (_, state) => {
             // Avoid sending a duplicate action if the person is already a
