@@ -6,7 +6,7 @@ div
 
     i18n.is-title-1(
       tag='h2'
-      :args='{ groupName: groupSettings.groupName }'
+      :args='{ groupName: ephemeral.settings.groupName }'
     ) Waiting for approval to join {groupName}!
 
     i18n.has-text-1.c-text(tag='p') You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.
@@ -29,16 +29,20 @@ export default ({
     return {
       ephemeral: {
         groupIdWhenMounted: null,
-        groupJoined: false
+        groupJoined: false,
+        settings: {}
       }
     }
   },
   computed: {
-    ...mapGetters(['groupSettings', 'ourUsername']),
+    ...mapGetters(['ourUsername']),
     ...mapState(['currentGroupId']),
-    haveActiveGroupProfile () {
+    groupState () {
       if (!this.ephemeral.groupIdWhenMounted) return
-      const state = this.$store.state[this.ephemeral.groupIdWhenMounted]
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]
+    },
+    haveActiveGroupProfile () {
+      const state = this.groupState
       return (
         // We want the group state to be active
         state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
@@ -55,6 +59,11 @@ export default ({
     this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
   },
   watch: {
+    groupState (to) {
+      if (to?.settings && this.ephemeral.settings !== to.settings) {
+        this.ephemeral.settings = to.settings
+      }
+    },
     haveActiveGroupProfile (to) {
       // if our group profile appears in the group state, it means we've joined the group
       if (to) {

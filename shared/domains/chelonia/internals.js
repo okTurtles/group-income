@@ -501,7 +501,7 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
-              ['chelonia/private/in/syncContract', v.contractID, { resync: true }],
+              ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
 
@@ -797,10 +797,10 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
     return result
   },
-  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean, resync?: boolean }) {
+  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)
-    if (params?.resync) {
-      const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+    const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+    if (currentVolatileState?.dirty) {
       delete currentVolatileState.dirty
       currentVolatileState.resyncing = true
       sbp('chelonia/contract/removeImmediately', contractID, { resync: true })
@@ -866,7 +866,7 @@ export default (sbp('sbp/selectors/register', {
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     } finally {
-      if (params?.resync && state[contractID]?._volatile) {
+      if (state[contractID]?._volatile?.resyncing) {
         this.config.reactiveDel(state[contractID]._volatile, 'resyncing')
       }
       delete this.currentSyncs[contractID]
