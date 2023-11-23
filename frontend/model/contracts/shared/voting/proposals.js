@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { DAYS_MILLIS } from '../time.js'
-import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
+import rules, { ruleType, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
 import {
   PROPOSAL_RESULT,
   PROPOSAL_INVITE_MEMBER,
