@@ -7,7 +7,7 @@ import initDB from './database.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { createMessage, createNotification, createServer, NOTIFICATION_TYPE } from './pubsub.js'
+import { createMessage, createNotification, createServer, NOTIFICATION_TYPE, PUSH_NOTIFICATION_TYPE } from './pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -90,6 +90,11 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     connection (socket: Object, request: Object) {
       const versionInfo = { GI_VERSION, CONTRACTS_VERSION }
       socket.send(createNotification(NOTIFICATION_TYPE.VERSION_INFO, versionInfo))
+    }
+  },
+  messageHandlers: {
+    [PUSH_NOTIFICATION_TYPE.TO_SERVER] (message) {
+      console.log('PUSH_NOTIFICATION_TYPE.TO_SERVER handler: ', message)
     }
   }
 }))

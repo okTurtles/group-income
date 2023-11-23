@@ -3,6 +3,8 @@
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from './utils/misc.js'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
+import { PUSH_NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
 
 // NOTE: this file is currently unused. I messed around with it just enough
 // to get it working at the most primitive level and decide that I need to
@@ -29,7 +31,16 @@ sbp('sbp/selectors/register', {
       }
 
       const API_URL = sbp('okTurtles.data/get', 'API_URL')
+      const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       const existingSubscription = await registration.pushManager.getSubscription()
+
+      sbp('okTurtles.events/once', PUSH_NOTIFICATION_TYPE.FROM_SERVER, ({ data }) => {
+        console.log('message from the push server!!: ', data)
+      })
+      pubsub.socket.send(createMessage(
+        PUSH_NOTIFICATION_TYPE.TO_SERVER,
+        { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+      ))
 
       if (existingSubscription) {
         // If there is an existing subscription, no need to create a new one.

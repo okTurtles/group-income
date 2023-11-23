@@ -91,7 +91,20 @@ export const REQUEST_TYPE = Object.freeze({
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
-  SUCCESS: 'success'
+  SUCCESS: 'success',
+  PUSH_SERVER_MESSAGE: 'push-server-message'
+})
+
+export const PUSH_NOTIFICATION_TYPE = Object.freeze({
+  FROM_SERVER: 'from-server',
+  TO_SERVER: 'to-server'
+})
+
+export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
+  SEND_PUBLIC_KEY: 'send-public-key',
+  STORE_SUBSCRIPTION: 'store-subscription',
+  DELETE_SUBSCRIPTION: 'delete-subscription',
+  SEND_PUSH_NOTIFICATION: 'send-push-notification'
 })
 
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
