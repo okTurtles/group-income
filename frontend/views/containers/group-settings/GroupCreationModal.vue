@@ -1,6 +1,6 @@
 <template lang='pug'>
 modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle='L("Create Group")')
-  .steps(v-if='currentStep + 1 < config.steps.length')
+  .steps(v-if='currentStep < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
       :key='index'
@@ -8,8 +8,8 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
       @click='redirect(step)'
     ) {{ index + 1 }}
 
-  .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
-    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
+  .wrapper.mobile-steps.subtitle(v-if='currentStep < config.steps.length')
+    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length }') Step {current} of {max}
 
   transition(name='fade' mode='out-in')
     component(
