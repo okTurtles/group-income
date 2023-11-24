@@ -409,6 +409,7 @@ export default (sbp('sbp/selectors/register', {
           }
         },
         [PUSH_NOTIFICATION_TYPE.FROM_SERVER] (msg) {
+          console.log('@@@ chelonia.js received PUSH_NOTIFICATION_TYPE.FROM_SERVER: ', msg)
           sbp('okTurtles.events/emit', PUSH_NOTIFICATION_TYPE.FROM_SERVER, { data: msg.data })
         }
       }

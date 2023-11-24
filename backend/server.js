@@ -7,7 +7,15 @@ import initDB from './database.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { createMessage, createNotification, createServer, NOTIFICATION_TYPE, PUSH_NOTIFICATION_TYPE } from './pubsub.js'
+import {
+  createMessage,
+  createPushErrorResponse,
+  createNotification,
+  createServer,
+  NOTIFICATION_TYPE,
+  PUSH_NOTIFICATION_TYPE
+} from './pubsub.js'
+import { pushActionhandlers } from './push.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -93,8 +101,25 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     }
   },
   messageHandlers: {
-    [PUSH_NOTIFICATION_TYPE.TO_SERVER] (message) {
-      console.log('PUSH_NOTIFICATION_TYPE.TO_SERVER handler: ', message)
+    [PUSH_NOTIFICATION_TYPE.TO_SERVER]: async function ({ data }) {
+      const socket = this
+      const { action, payload } = data
+
+      if (!action) {
+        socket.send(createPushErrorResponse({ message: "[Push server] 'action' field is required" }))
+      }
+
+      const handler = pushActionhandlers[action]
+
+      if (handler) {
+        try {
+          await handler.call(socket, payload)
+        } catch (error) {
+          socket.send(createPushErrorResponse({ message: `[Push server] could not perform [${action}] action due to following error : ${error?.message}` }))
+        }
+      } else {
+        socket.send(createPushErrorResponse({ message: `[Push server] No handler for the '${action}' action` }))
+      }
     }
   }
 }))

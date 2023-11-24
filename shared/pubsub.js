@@ -92,7 +92,7 @@ export const REQUEST_TYPE = Object.freeze({
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
   SUCCESS: 'success',
-  PUSH_SERVER_MESSAGE: 'push-server-message'
+  PUSH_ERROR: 'push-error'
 })
 
 export const PUSH_NOTIFICATION_TYPE = Object.freeze({
@@ -427,6 +427,10 @@ const defaultMessageHandlers = {
         console.error(`[pubsub] Malformed response: invalid request type ${type}`)
       }
     }
+  },
+
+  [RESPONSE_TYPE.PUSH_ERROR] ({ data: { message } }) {
+    console.warn(`[pubsub] Received PUSH_ERROR response with the following message: ${message}`)
   },
 
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {

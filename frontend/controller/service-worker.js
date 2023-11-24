@@ -35,7 +35,7 @@ sbp('sbp/selectors/register', {
       const existingSubscription = await registration.pushManager.getSubscription()
 
       sbp('okTurtles.events/once', PUSH_NOTIFICATION_TYPE.FROM_SERVER, ({ data }) => {
-        console.log('message from the push server!!: ', data)
+        console.log('@@@ message from the push server!!: ', data)
       })
       pubsub.socket.send(createMessage(
         PUSH_NOTIFICATION_TYPE.TO_SERVER,
