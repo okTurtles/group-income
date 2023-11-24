@@ -18189,7 +18189,7 @@ ${this.getErrorInfo()}`;
         if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) {
           return;
         }
-        return (0, import_sbp7.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys").catch((e) => {
+        (0, import_sbp7.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys").catch((e) => {
           console.warn(`rotateKeys: ${e.name} thrown:`, e);
         });
       },
@@ -18224,7 +18224,7 @@ ${this.getErrorInfo()}`;
             console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
-        return (0, import_sbp7.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+        (0, import_sbp7.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
           console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },
