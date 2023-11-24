@@ -52,6 +52,7 @@ sbp('sbp/selectors/register', {
 
           // 2. Send the subscription details to the server. (server needs it to send the push notification)
           await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+          console.log('@@@ here!!!!')
 
           // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
           const testNotification = {

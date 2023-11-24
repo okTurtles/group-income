@@ -13,8 +13,6 @@ import { registrationKey, register, getChallenge, getContractSalt, updateContrac
 import { pushInstance, pushSubscriptions } from './push.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
-const giConfig = require('../giconf.json')
-
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
 const staticServeConfig = {
   routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',
