@@ -128,7 +128,7 @@ describe('Group Payments', () => {
     const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
     const actionsBeforeLogout = [[false, 900], [false, 750], [true, 100]]
       .map(([doesPledge, incomeAmount]) => () => setIncomeDetails(doesPledge, incomeAmount))
-    cy.giAcceptUsersGroupInvite(invitationLinks.anyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
       usernames,
       actionBeforeLogout: actionsBeforeLogout,
       existingMemberUsername: `user1-${userId}`,

@@ -31,7 +31,7 @@ describe('Large group', () => {
       }
     })
 
-    cy.giAcceptUsersGroupInvite(invitationLinks.anyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
       usernames,
       actionBeforeLogout: actionsBeforeLogout,
       existingMemberUsername: `user1-${userId}`,

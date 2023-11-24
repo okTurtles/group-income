@@ -92,7 +92,7 @@ describe('Contributions', () => {
   it('user2, user3 and user4 join the group', () => {
     const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
     const displayNames = [2, 3, 4].map(i => usersDisplayName[i])
-    cy.giAcceptUsersGroupInvite(invitationLinks.anyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
       usernames,
       displayNames,
       existingMemberUsername: `user1-${userId}`,

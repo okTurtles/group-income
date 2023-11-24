@@ -92,7 +92,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it('user2, user3, user4 join the group', () => {
-    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinkAnyone, {
       usernames: [user2, user3, user4],
       existingMemberUsername: user1,
       groupName,

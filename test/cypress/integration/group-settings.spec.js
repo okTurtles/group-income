@@ -167,7 +167,7 @@ describe('Group Voting Rules', () => {
   it('4 new memebers joins the group via shared invitation link', () => {
     // temp test block while 'disagreement rule' is disabled
     const usernames = [2, 3, 4, 5].map(i => `user${i}-${userId}`)
-    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinkAnyone, {
       usernames,
       existingMemberUsername: `user1-${userId}`,
       actionBeforeLogout: () => {},
@@ -180,7 +180,7 @@ describe('Group Voting Rules', () => {
 
   it.skip('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
     const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
-    cy.giAcceptUsersGroupInvite(invitationLinkAnyone, {
+    cy.giAcceptMultipleGroupInvites(invitationLinkAnyone, {
       usernames,
       existingMemberUsername: `user1-${userId}`,
       actionBeforeLogout: () => {},

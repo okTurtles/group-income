@@ -305,6 +305,8 @@ Cypress.Commands.add('giInviteMember', (
   cy.getByDT('closeModal').should('not.exist')
 })
 
+// NOTE: this helper function should be used when a SINGLE user is joining the group
+//       if the `existingMemberUsername` is passed undefined, it means it's not the first time joining group
 Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   username,
   existingMemberUsername,
@@ -380,7 +382,13 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
 })
 
-Cypress.Commands.add('giAcceptUsersGroupInvite', (invitationLink, {
+// NOTE: this helper function should be used when SEVERAL members are joining the group
+//       it works similar to the giAcceptGroupInvite`.
+//       but it is slightly different, and has optimized workflow to speed up the test
+//       also it doesn't have parameters like `inviteCreator`, `shouldLogoutAfter`, `isLoggedIn`
+//       because they can be only useful in `giAcceptGroupInvite` which we use to let a single user join group
+//       if a test scenario needs SEVERAL group members, we can use this function and speed up the test
+Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
   usernames,
   existingMemberUsername,
   displayNames,
