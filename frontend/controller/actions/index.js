@@ -88,8 +88,6 @@ sbp('sbp/selectors/register', {
     keysToRotate: string[] | '*' | 'pending',
     shareNewKeysSelector?: string
   ) => {
-    await sbp('chelonia/contract/wait', contractID)
-
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
 
