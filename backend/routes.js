@@ -10,7 +10,6 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-import { pushInstance, pushSubscriptions } from './push.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
@@ -364,62 +363,6 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
   } catch (e) {
     const ip = req.info.remoteAddress
     console.error('Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
-  }
-
-  return Boom.internal('internal error')
-})
-
-// PWA push notification (TO BE REPLACED WITH PUBSUB SOON!)
-
-route.POST('/push/subscribe', {
-  validate: { payload: Joi.string().required() }
-}, function (req, h) {
-  const subscription = JSON.parse(req.payload)
-  // Reference: is it safe to use 'endpoint' as a unique identifier of a push subscription
-  // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
-  pushSubscriptions.set(subscription.endpoint, subscription)
-
-  return { subscriptionId: subscription.endpoint }
-})
-
-route.DELETE('/push/unsubscribe/{subscriptionId}', {
-  validate: {
-    params: Joi.object({
-      subscriptionId: Joi.string().required()
-    })
-  }
-}, function (req, h) {
-  const { subscriptionId } = req.params
-
-  pushSubscriptions.delete(subscriptionId)
-  return { deletedId: subscriptionId }
-})
-
-route.POST('/push/send', {
-  validate: { payload: Joi.string().required() }
-}, async function (req) {
-  // This route has the ability to send push notification to either a specific subscription or all stored subscriptions.
-  // To send to a particular subscription, payload must have an 'endpoint' field along with notification data(title, body).
-
-  const payload = JSON.parse(req.payload)
-  const sendPush = (sub) => pushInstance.sendNotification(
-    sub, JSON.stringify({ title: payload.title, body: payload.body })
-  )
-
-  try {
-    if (payload.endpoint) {
-      const subscription = pushSubscriptions.get(payload.endpoint)
-      await sendPush(subscription)
-    } else {
-      for (const subscription of pushSubscriptions.values()) {
-        await sendPush(subscription)
-      }
-    }
-
-    return 'Push sent successfully'
-  } catch (e) {
-    const ip = req.info.remoteAddress
-    console.error('Error at POST /push/send: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')

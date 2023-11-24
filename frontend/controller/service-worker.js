@@ -29,14 +29,19 @@ sbp('sbp/selectors/register', {
         await requestNotificationPermission(true)
       }
 
-      const API_URL = sbp('okTurtles.data/get', 'API_URL')
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       const existingSubscription = await registration.pushManager.getSubscription()
 
       if (existingSubscription) {
         // If there is an existing subscription, no need to create a new one.
         // But make sure server knows the subscription details too.
-        await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(existingSubscription.toJSON()) })
+        pubsub.socket.send(createMessage(
+          PUSH_NOTIFICATION_TYPE.TO_SERVER,
+          {
+            action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+            payload: JSON.stringify(existingSubscription.toJSON())
+          }
+        ))
         return
       } else {
         // Create a new push subscription
@@ -51,8 +56,13 @@ sbp('sbp/selectors/register', {
           })
 
           // 2. Send the subscription details to the server. (server needs it to send the push notification)
-          await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
-          console.log('@@@ here!!!!')
+          pubsub.socket.send(createMessage(
+            PUSH_NOTIFICATION_TYPE.TO_SERVER,
+            {
+              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+              payload: JSON.stringify(subscription.toJSON())
+            }
+          ))
 
           // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
           const testNotification = {
@@ -61,7 +71,13 @@ sbp('sbp/selectors/register', {
             endpoint: subscription.endpoint
           }
 
-          await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
+          pubsub.socket.send(createMessage(
+            PUSH_NOTIFICATION_TYPE.TO_SERVER,
+            {
+              action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
+              payload: JSON.stringify(testNotification)
+            }
+          ))
         })
 
         pubsub.socket.send(createMessage(
@@ -84,14 +100,16 @@ sbp('sbp/selectors/register', {
     }
 
     const pushSubscription = await swRegistration.pushManager.getSubscription()
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
 
     if (pushSubscription) {
-      const API_URL = sbp('okTurtles.data/get', 'API_URL')
-
-      await fetch(
-        `${API_URL}/push/send`,
-        { method: 'POST', body: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint }) }
-      )
+      pubsub.socket.send(createMessage(
+        PUSH_NOTIFICATION_TYPE.TO_SERVER,
+        {
+          action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
+          payload: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint })
+        }
+      ))
     } else {
       console.error('No existing subscription found!')
     }

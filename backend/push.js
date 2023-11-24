@@ -1,6 +1,5 @@
 const pushInstance = require('web-push')
 const pushSubscriptions: Map<string, any> = new Map()
-const pushSubscriptionsTest: Map<string, any> = new Map()
 const giConfig = require('../giconf.json')
 const { PUSH_SERVER_ACTION_TYPE, PUSH_NOTIFICATION_TYPE, createMessage } = require('../shared/pubsub.js')
 
@@ -24,14 +23,30 @@ const pushActionhandlers: any = {
 
     // Reference: is it safe to use 'endpoint' as a unique identifier of a push subscription
     // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
-    pushSubscriptionsTest.set(subscription.endpoint, subscription)
-    console.log('@@@ subscription stored: ', pushSubscriptionsTest.keys())
+    pushSubscriptions.set(subscription.endpoint, subscription)
   },
-  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
-    console.log('@@@ push action handler for ', PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION)
+  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] (payload) {
+    const subscriptionId = JSON.parse(payload)
+
+    pushSubscriptions.delete(subscriptionId)
   },
-  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
-    console.log('@@@ push action handler for ', PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION)
+  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION]: async function (payload) {
+    const data = JSON.parse(payload)
+    const sendPush = (sub) => pushInstance.sendNotification(
+      sub, JSON.stringify({ title: data.title, body: data.body })
+    )
+
+    // NOTE: if the payload contains 'endpoint' field, send push-notification to that particular subscription.
+    //       otherwise, iterate all existing subscriptions and broadcast the push-notification to all.
+
+    if (data.endpoint) {
+      const subscription = pushSubscriptions.get(data.endpoint)
+      await sendPush(subscription)
+    } else {
+      for (const subscription of pushSubscriptions.values()) {
+        await sendPush(subscription)
+      }
+    }
   }
 }
 
