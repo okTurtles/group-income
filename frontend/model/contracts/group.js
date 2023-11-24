@@ -1826,7 +1826,7 @@ sbp('chelonia/defineContract', {
         // Don't rotate keys for removed contracts
         return
       }
-      return sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys').catch(e => {
+      sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/group', 'pending', 'gi.actions/group/shareNewKeys').catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown:`, e)
       })
     },
