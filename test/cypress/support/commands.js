@@ -388,6 +388,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 //       also it doesn't have parameters like `inviteCreator`, `shouldLogoutAfter`, `isLoggedIn`
 //       because they can be only useful in `giAcceptGroupInvite` which we use to let a single user join group
 //       if a test scenario needs SEVERAL group members, we can use this function and speed up the test
+//       https://github.com/okTurtles/group-income/pull/1787#discussion_r1403156999
 Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
   usernames,
   existingMemberUsername,
