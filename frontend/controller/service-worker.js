@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { handleFetchResult } from './utils/misc.js'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { PUSH_NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
@@ -34,14 +33,6 @@ sbp('sbp/selectors/register', {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       const existingSubscription = await registration.pushManager.getSubscription()
 
-      sbp('okTurtles.events/once', PUSH_NOTIFICATION_TYPE.FROM_SERVER, ({ data }) => {
-        console.log('@@@ message from the push server!!: ', data)
-      })
-      pubsub.socket.send(createMessage(
-        PUSH_NOTIFICATION_TYPE.TO_SERVER,
-        { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-      ))
-
       if (existingSubscription) {
         // If there is an existing subscription, no need to create a new one.
         // But make sure server knows the subscription details too.
@@ -50,27 +41,32 @@ sbp('sbp/selectors/register', {
       } else {
         // Create a new push subscription
 
-        // 1. Get the public key from the server
-        const PUBLIC_VAPID_KEY = await fetch(`${API_URL}/push/publickey`)
-          .then(handleFetchResult('text'))
+        sbp('okTurtles.events/once', PUSH_NOTIFICATION_TYPE.FROM_SERVER, async ({ data }) => {
+          const PUBLIC_VAPID_KEY = data
 
-        // 2. Add a new subscription to pushManager using it.
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+          // 1. Add a new subscription to pushManager using it.
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+          })
+
+          // 2. Send the subscription details to the server. (server needs it to send the push notification)
+          await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+
+          // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
+          const testNotification = {
+            title: 'Service worker installed.',
+            body: 'You can now receive various push notifications from the Group Income app!',
+            endpoint: subscription.endpoint
+          }
+
+          await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
         })
 
-        // 3. Send the subscription details to the server. (server needs it to send the push notification)
-        await fetch(`${API_URL}/push/subscribe`, { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
-
-        // 4. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
-        const testNotification = {
-          title: 'Service worker installed.',
-          body: 'You can now receive various push notifications from the Group Income app!',
-          endpoint: subscription.endpoint
-        }
-
-        await fetch(`${API_URL}/push/send`, { method: 'POST', body: JSON.stringify(testNotification) })
+        pubsub.socket.send(createMessage(
+          PUSH_NOTIFICATION_TYPE.TO_SERVER,
+          { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+        ))
       }
     } catch (e) {
       console.error('error setting up service worker:', e)

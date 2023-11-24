@@ -371,11 +371,7 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
   return Boom.internal('internal error')
 })
 
-// PWA push notification
-
-route.GET('/push/publickey', {}, function (req, h) {
-  return h.response(process.env.VAPID_PUBLIC_KEY || giConfig.VAPID_PUBLIC_KEY).type('text/plain')
-})
+// PWA push notification (TO BE REPLACED WITH PUBSUB SOON!)
 
 route.POST('/push/subscribe', {
   validate: { payload: Joi.string().required() }
