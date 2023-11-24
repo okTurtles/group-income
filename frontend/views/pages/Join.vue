@@ -31,8 +31,6 @@ div
         | &nbsp;
         i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
-    group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
-
     .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
@@ -48,7 +46,6 @@ div
 <script>
 import { L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
-import GroupWelcome from '@components/GroupWelcome.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
@@ -59,7 +56,7 @@ import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
+import { keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
@@ -71,7 +68,6 @@ export default ({
     LoginForm,
     SignupForm,
     Avatar,
-    GroupWelcome,
     SvgBrokenLink
   },
   data () {
@@ -89,7 +85,7 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const possibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
+        const possibleStatus = ['LOADING', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
         if (!possibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${possibleStatus.join(', ')}`)
         }
@@ -110,9 +106,8 @@ export default ({
     async initialize () {
       try {
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-        const secretKey = deserializeKey(this.ephemeral.query.secret)
-        const publicKey = keyId(secretKey)
-        const invite = state._vm.invites[publicKey]
+        const publicKeyId = keyId(this.ephemeral.query.secret)
+        const invite = state._vm.invites[publicKeyId]
         const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
         if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')

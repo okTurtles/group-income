@@ -121,6 +121,9 @@ Cypress.Commands.add('giLogin', (username, {
   })
 
   if (firstLoginAfterJoinGroup) {
+    if (!bypassUI) {
+      cy.getByDT('toDashboardBtn').click()
+    }
     cy.giCheckIfJoinedGeneralChatroom(username)
   }
 })
@@ -137,9 +140,12 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
-Cypress.Commands.add('giSwitchUser', (user, firstLoginAfterJoinGroup = false) => {
+Cypress.Commands.add('giSwitchUser', (user, {
+  bypassUI = true,
+  firstLoginAfterJoinGroup = false
+} = {}) => {
   cy.giLogout()
-  cy.giLogin(user, { bypassUI: true, firstLoginAfterJoinGroup })
+  cy.giLogin(user, { bypassUI, firstLoginAfterJoinGroup })
 })
 
 Cypress.Commands.add('closeModal', () => {
@@ -247,10 +253,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
       cy.get(`input[type='range']#range${ruleName}`).should('have.value', threshold.toString())
     })
     cy.getByDT('finishBtn').click()
-
-    cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
-    cy.getByDT('toDashboardBtn').click()
   })
+
+  cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
+  cy.getByDT('toDashboardBtn').click()
+
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
@@ -537,7 +544,7 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
 ) => {
   cy.getByDT('channelName').should('contain', channelName)
   cy.getByDT(`channel-${channelName}-in`).within(() => {
-    cy.get('i.icon-hashtag').should('exist')
+    cy.get('i').invoke('attr', 'class').should('be.oneOf', ['icon-lock', 'icon-hashtag', 'icon-unlock-alt'])
   })
   // NOTE: need to check just after joined, not after making other activities
   inviter = inviter || me

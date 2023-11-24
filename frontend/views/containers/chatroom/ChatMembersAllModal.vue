@@ -277,8 +277,7 @@ export default ({
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
-            member: username,
-            leavingGroup: false
+            member: username
           }
         })
         if (undoing) {

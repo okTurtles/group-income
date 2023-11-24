@@ -11,7 +11,7 @@ let me
 
 describe('Create/Join direct messages and orders of direct message channels', () => {
   function switchUser (username, firstLoginAfterJoinGroup = false) {
-    cy.giSwitchUser(username, firstLoginAfterJoinGroup)
+    cy.giSwitchUser(username, { firstLoginAfterJoinGroup })
     me = username
   }
 
@@ -100,8 +100,8 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
   })
 
-  it(`user2 joins "${groupName}" group and create a direct message channel with user1 and sends two messages`, () => {
-    cy.giLogin(user2, true)
+  it('user2 creates a direct message channel with user1 and sends two messages', () => {
+    cy.giLogin(user2, { firstLoginAfterJoinGroup: true })
     me = user2
 
     cy.giRedirectToGroupChat()

@@ -8,7 +8,7 @@ div
       data-test='pendingApprovalTitle'
       :data-groupId='ephemeral.groupIdWhenMounted'
       tag='h2'
-      :args='{ groupName: groupSettings.groupName }'
+      :args='{ groupName: ephemeral.settings.groupName }'
     ) Waiting for approval to join {groupName}!
 
     i18n.has-text-1.c-text(tag='p') You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.
@@ -16,10 +16,10 @@ div
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
-import { JOINED_GROUP } from '@utils/events.js'
 import GroupWelcome from '@components/GroupWelcome.vue'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
+import { mapGetters, mapState } from 'vuex'
 
 export default ({
   name: 'PendingApproval',
@@ -31,30 +31,46 @@ export default ({
     return {
       ephemeral: {
         groupIdWhenMounted: null,
-        groupJoined: false
+        groupJoined: false,
+        settings: {}
       }
     }
   },
   computed: {
-    ...mapGetters(['groupSettings', 'ourUsername']),
-    ourGroupProfile () {
+    ...mapGetters(['ourUsername']),
+    ...mapState(['currentGroupId']),
+    groupState () {
       if (!this.ephemeral.groupIdWhenMounted) return
-      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]
+    },
+    haveActiveGroupProfile () {
+      const state = this.groupState
+      return (
+        // We want the group state to be active
+        state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
+        // And we don't want to be in the process of re-syncing (i.e., re-building
+        // the state after receiving new private keys)
+        !sbp('chelonia/contract/isResyncing', state) &&
+        // And finally, we want the join process to be complete
+        !sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+      )
     }
   },
   mounted () {
-    this.ephemeral.groupIdWhenMounted = this.$store.state.currentGroupId
-    const isSyncing = sbp('chelonia/contract/isSyncing', this.ephemeral.groupIdWhenMounted)
-    if (isSyncing || !this.ourGroupProfile) {
-      const eventHandler = ({ contractID }) => {
-        if (contractID === this.ephemeral.groupIdWhenMounted) {
-          this.ephemeral.groupJoined = true
-          sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-        }
+    this.ephemeral.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
+  },
+  watch: {
+    groupState (to) {
+      if (to?.settings && this.ephemeral.settings !== to.settings) {
+        this.ephemeral.settings = to.settings
       }
-      sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
-    } else {
-      this.ephemeral.groupJoined = true
+    },
+    haveActiveGroupProfile (to) {
+      // if our group profile appears in the group state, it means we've joined the group
+      if (to) {
+        this.ephemeral.groupJoined = true
+      }
     }
   }
 }: Object)

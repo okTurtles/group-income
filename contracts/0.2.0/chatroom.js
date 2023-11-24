@@ -16945,7 +16945,9 @@ ${this.getErrorInfo()}`;
       }
     },
     methods: {
-      "gi.contracts/chatroom/_cleanup": ({ contractID }) => {
+      "gi.contracts/chatroom/_cleanup": ({ contractID, resync }) => {
+        if (resync)
+          return;
         leaveChatRoom({ contractID }).catch((e) => {
           console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e);
         });
