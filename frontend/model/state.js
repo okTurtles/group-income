@@ -8,12 +8,9 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import {
-  MESSAGE_NOTIFY_SETTINGS,
-  MESSAGE_TYPES,
-  INVITE_INITIAL_CREATOR
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
