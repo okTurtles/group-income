@@ -25,6 +25,12 @@ type PersistentActionStatus = {|
   resolved: boolean
 |}
 
+const coerceToError = (arg: any): Error => {
+  if (arg && arg instanceof Error) return arg
+  console.warn(tag, 'Please use Error objects when throwing or rejecting')
+  return new Error((typeof arg === 'string' ? arg : JSON.stringify(arg)) ?? 'undefined')
+}
+
 const defaultOptions = {
   maxAttempts: Number.POSITIVE_INFINITY,
   retrySeconds: 30
@@ -54,11 +60,11 @@ class PersistentAction {
 
   async attempt (): Promise<void> {
     // Bail out if the action is already attempting or resolved.
+    // TODO: should we also check whether the skipCondition call is pending?
     if (this.status.attempting || this.status.resolved) return
-    if (await this.trySBP(this.options.skipCondition)) {
-      this.cancel()
-      return
-    }
+    if (await this.trySBP(this.options.skipCondition)) this.cancel()
+    // We need to check this again because cancel() could have been called while awaiting the trySBP call.
+    if (this.status.resolved) return
     try {
       this.status.attempting = true
       const result = await sbp(...this.invocation)
@@ -66,7 +72,7 @@ class PersistentAction {
       this.handleSuccess(result)
     } catch (error) {
       this.status.attempting = false
-      this.handleError(error)
+      await this.handleError(coerceToError(error))
     }
   }
 
@@ -113,7 +119,7 @@ class PersistentAction {
     try {
       return invocation ? await sbp(...invocation) : undefined
     } catch (error) {
-      console.error(tag, error.message)
+      console.error(tag, coerceToError(error).message)
     }
   }
 }
@@ -172,8 +178,10 @@ sbp('sbp/selectors/register', {
     return ids
   },
 
-  // Forces retrying an existing persisted action given its ID.
-  // Note: 'failedAttemptsSoFar' will still be increased upon failure.
+  // Forces retrying a given persisted action immediately, rather than waiting for the scheduled retry.
+  // - 'status.failedAttemptsSoFar' will still be increased upon failure.
+  // - Does nothing if a retry is already running.
+  // - Does nothing if the action has already been resolved, rejected or cancelled.
   'chelonia.persistentActions/forceRetry' (id: UUIDV4): void {
     if (id in this.actionsByID) {
       this.actionsByID[id].attempt()
