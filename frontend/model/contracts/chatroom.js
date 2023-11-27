@@ -204,6 +204,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ data, contractID, hash, meta }, { state }) {
+        if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, async () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
@@ -334,7 +335,8 @@ sbp('chelonia/defineContract', {
         })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, hash, contractID, meta }) {
+      sideEffect ({ data, hash, contractID, meta }, { state }) {
+        if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
@@ -362,7 +364,7 @@ sbp('chelonia/defineContract', {
           const rootGetters = sbp('state/vuex/getters')
           const userID = rootGetters.ourContactProfiles[data.member]?.contractID
           if (userID) {
-            sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, state)
+            sbp('gi.contracts/chatroom/removeForeignKeys', contractID, userID, data.member, state)
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect', e?.message || e)
@@ -740,7 +742,7 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, state) => {
+    'gi.contracts/chatroom/removeForeignKeys': (contractID, userID, member, state) => {
       const keyIds = findForeignKeysByContractID(state, userID)
 
       if (!keyIds?.length) return
@@ -754,7 +756,13 @@ sbp('chelonia/defineContract', {
         contractID,
         contractName: 'gi.contracts/chatroom',
         data: keyIds,
-        signingKeyId: CSKid
+        signingKeyId: CSKid,
+        hooks: {
+          preSendCheck: (_, state) => {
+            // Only issue OP_KEY_DEL for non-members
+            return !!state?.users?.[member]
+          }
+        }
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
