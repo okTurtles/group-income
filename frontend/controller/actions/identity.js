@@ -421,6 +421,7 @@ export default (sbp('sbp/selectors/register', {
       const state = sbp('state/vuex/state')
       // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
+      await sbp('chelonia/contract/waitPublish')
       await sbp('chelonia/contract/wait')
       // See comment below for 'gi.db/settings/delete'
       await sbp('state/vuex/save')
@@ -430,10 +431,8 @@ export default (sbp('sbp/selectors/register', {
       if (encryptionParams) {
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
       }
-
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
-      await sbp('chelonia/contract/remove', Object.keys(state.contracts))
-      sbp('chelonia/clearTransientSecretKeys')
+      sbp('chelonia/reset')
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

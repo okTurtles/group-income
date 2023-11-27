@@ -363,6 +363,11 @@ async function startApp () {
           .filter(contractID => this.$store.state.contracts[contractID].type === 'gi.contracts/group')
           .filter(contractID => Object.keys(this.$store.state[contractID]._vm?.pendingKeyShares || {}).length)
           .join(', ')
+      },
+      pendingPublishEvents () {
+        return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+          .filter(([q]) => typeof q === 'string' && q.startsWith('publish:'))
+          .flatMap(([, list]) => list).length
       }
     },
     methods: {

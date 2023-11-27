@@ -255,82 +255,93 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
-    let attempt = 1
-    let lastAttemptedHeight
-    // auto resend after short random delay
-    // https://github.com/okTurtles/group-income/issues/608
-    hooks?.prepublish?.(entry)
+  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
+    const instance = this._instance
+    const contractID = entry.contractID()
 
-    while (true) {
+    return sbp('okTurtles.eventQueue/queueEvent', `publish:${contractID}`, async () => {
+      let attempt = 1
+      let lastAttemptedHeight
+      // auto resend after short random delay
+      // https://github.com/okTurtles/group-income/issues/608
+      hooks?.prepublish?.(entry)
+
+      while (true) {
       // Queued event to ensure that we send the event with whatever the
       // 'latest' state may be for that contract (in case we were receiving
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
-      lastAttemptedHeight = entry.height()
-      entry = await sbp('okTurtles.eventQueue/queueEvent', entry.contractID(), () => {
-        const rootState = sbp(this.config.stateSelector)
-        const state = rootState[entry.contractID()]
-
-        if (hooks?.preSendCheck) {
-          if (!hooks.preSendCheck(entry, state)) {
-            console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
+        lastAttemptedHeight = entry.height()
+        entry = await sbp('okTurtles.eventQueue/queueEvent', contractID, () => {
+          // If this._instance !== instance (i.e., chelonia/reset was called)
+          if (this._instance !== instance) {
+            console.info(`[chelonia] Not sending message as /reset was called ${entry.description()}`)
             return
           }
+
+          const rootState = sbp(this.config.stateSelector)
+          const state = rootState[contractID]
+
+          if (hooks?.preSendCheck) {
+            if (!hooks.preSendCheck(entry, state)) {
+              console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
+              return
+            }
+          }
+
+          // if this isn't the first event (i.e., OP_CONTRACT), recreate and
+          // resend message
+          // This is mainly to set height and previousHEAD. For the first event,
+          // this doesn't need to be done because previousHEAD is always undefined
+          // and height is always 0.
+          // We always call recreateEvent because we may have received new events
+          // in the web socket
+          if (!entry.isFirstMessage()) {
+            return recreateEvent(entry, state)
+          }
+
+          return entry
+        })
+
+        // If there is no event to send, return
+        if (!entry) return
+
+        const r = await fetch(`${this.config.connectionURL}/event`, {
+          method: 'POST',
+          body: entry.serialize(),
+          headers: {
+            'Content-Type': 'text/plain',
+            'Authorization': 'gi TODO - signature - if needed here - goes here'
+          }
+        })
+        if (r.ok) {
+          hooks?.postpublish?.(entry)
+          return entry
         }
+        if (r.status === 409) {
+          if (attempt + 1 > maxAttempts) {
+            console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
+            throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
+          }
+          // create new entry
+          const randDelay = randomIntFromRange(0, 1500)
+          console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
+          attempt += 1
+          await delay(randDelay) // wait randDelay ms before sending it again
 
-        // if this isn't the first event (i.e., OP_CONTRACT), recreate and
-        // resend message
-        // This is mainly to set height and previousHEAD. For the first event,
-        // this doesn't need to be done because previousHEAD is always undefined
-        // and height is always 0.
-        // We always call recreateEvent because we may have received new events
-        // in the web socket
-        if (!entry.isFirstMessage()) {
-          return recreateEvent(entry, state)
+          // TODO: The [pubsub] code seems to miss events that happened between
+          // a call to sync and the subscription time. This is a temporary measure
+          // to handle this until [pubsub] is updated.
+          if (entry.height() === lastAttemptedHeight) {
+            await sbp('chelonia/contract/sync', contractID, { force: true })
+          }
+        } else {
+          const message = (await r.json())?.message
+          console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
+          throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
         }
-
-        return entry
-      })
-
-      // If there is no event to send, return
-      if (!entry) return
-
-      const r = await fetch(`${this.config.connectionURL}/event`, {
-        method: 'POST',
-        body: entry.serialize(),
-        headers: {
-          'Content-Type': 'text/plain',
-          'Authorization': 'gi TODO - signature - if needed here - goes here'
-        }
-      })
-      if (r.ok) {
-        hooks?.postpublish?.(entry)
-        return entry
       }
-      if (r.status === 409) {
-        if (attempt + 1 > maxAttempts) {
-          console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
-          throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
-        }
-        // create new entry
-        const randDelay = randomIntFromRange(0, 1500)
-        console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
-        attempt += 1
-        await delay(randDelay) // wait randDelay ms before sending it again
-
-        // TODO: The [pubsub] code seems to miss events that happened between
-        // a call to sync and the subscription time. This is a temporary measure
-        // to handle this until [pubsub] is updated.
-        if (entry.height() === lastAttemptedHeight) {
-          await sbp('chelonia/contract/sync', entry.contractID(), { force: true })
-        }
-      } else {
-        const message = (await r.json())?.message
-        console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
-        throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
-      }
-    }
+    })
   },
   'chelonia/private/out/latestHEADinfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {

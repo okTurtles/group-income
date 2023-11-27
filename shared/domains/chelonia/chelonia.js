@@ -180,9 +180,6 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
-  'chelonia/xx': function () {
-    return this.removeCount
-  },
   'chelonia/_init': function () {
     this.config = {
       // TODO: handle connecting to multiple servers for federation
@@ -219,6 +216,8 @@ export default (sbp('sbp/selectors/register', {
         pubsubError: null // (e:Error, socket: Socket)
       }
     }
+    // Used in publishEvent to cancel sending events after reset (logout)
+    this._instance = Object.create(null)
     this.state = {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
@@ -286,6 +285,14 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/private/loadManifest', manifests[contractName])
       }
     }
+  },
+  'chelonia/reset': function () {
+    const rootState = sbp(this.config.stateSelector)
+    this.config.reactiveSet(rootState, 'contracts', Object.create(null))
+    this.config.reactiveSet(rootState, 'pending', [])
+    sbp('chelonia/clearTransientSecretKeys')
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, rootState.contracts)
+    this._instance = Object.create(null)
   },
   'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
@@ -569,8 +576,17 @@ export default (sbp('sbp/selectors/register', {
     const listOfIds = contractIDs
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
-    return Promise.all(listOfIds.map(cID => {
+    return Promise.all(listOfIds.flatMap(cID => {
       return sbp('chelonia/queueInvocation', cID, ['chelonia/private/noop'])
+    }))
+  },
+  // resolves when all pending *writes* for these contractID(s) finish
+  'chelonia/contract/waitPublish': function (contractIDs?: string | string[]): Promise<*> {
+    const listOfIds = contractIDs
+      ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
+      : Object.keys(sbp(this.config.stateSelector).contracts)
+    return Promise.all(listOfIds.flatMap(cID => {
+      return sbp('okTurtles.eventQueue/queueEvent', `publish:${cID}`, ['chelonia/private/noop'])
     }))
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts

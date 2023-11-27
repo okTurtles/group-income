@@ -349,6 +349,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     // NOTE: should wait until KEY_REQUEST event is published
     cy.getByDT('app').then(([el]) => {
       cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
+      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
     })
 
     cy.giLogout()
@@ -358,6 +359,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     // NOTE: should wait until all pendingKeyShares are removed
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-pending-key-shares', '')
+      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
     })
     cy.giLogout()
 
@@ -415,6 +417,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     // NOTE: should wait until KEY_REQUEST event is published
     cy.getByDT('app').then(([el]) => {
       cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
+      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
     })
 
     cy.giLogout()
@@ -423,6 +426,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
   cy.giLogin(existingMemberUsername, { bypassUI })
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-pending-key-shares', '')
+    cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
   })
   cy.giLogout()
 
