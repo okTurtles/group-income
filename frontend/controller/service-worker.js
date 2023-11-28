@@ -111,7 +111,7 @@ sbp('sbp/selectors/register', {
         }
       ))
     } else {
-      console.error('No existing subscription found!')
+      console.error('No existing push subscription found!')
     }
   }
 })
