@@ -51,6 +51,12 @@ self.addEventListener('message', function (event) {
 })
 
 self.addEventListener('push', function (event) {
+  // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
+
+  if (!(self.Notification && self.Notification.permission === 'granted')) {
+    return
+  }
+
   const data = event.data.json()
   console.debug('[sw] push received: ', data)
 
