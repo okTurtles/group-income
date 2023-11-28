@@ -40,6 +40,12 @@ export const pushActionhandlers: any = {
     // NOTE: if the payload contains 'endpoint' field, send push-notification to that particular subscription.
     //       otherwise, iterate all existing subscriptions and broadcast the push-notification to all.
 
+    // TODO: Add error handling logic below
+    //       if pushController.sendNotification() (within sendPush method below) fails for any possible reason,
+    //       (for example, VAPID_PUBLIC_KEY has been changed on the server side but the front-end is still using the old one)
+    //       currently there is no logic that catches it and notify the front-end to take a proper action. 
+    //       (e.g. Unregister the old subscription and regenerate the push-subscription)
+
     if (data.endpoint) {
       const subscription = pushSubscriptions.get(data.endpoint)
       await sendPush(subscription)
