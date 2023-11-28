@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { PUSH_NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
 
 // NOTE: this file is currently unused. I messed around with it just enough
 // to get it working at the most primitive level and decide that I need to
@@ -36,7 +36,7 @@ sbp('sbp/selectors/register', {
         // If there is an existing subscription, no need to create a new one.
         // But make sure server knows the subscription details too.
         pubsub.socket.send(createMessage(
-          PUSH_NOTIFICATION_TYPE.TO_SERVER,
+          NOTIFICATION_TYPE.PUSH_ACTION,
           {
             action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
             payload: JSON.stringify(existingSubscription.toJSON())
@@ -46,7 +46,7 @@ sbp('sbp/selectors/register', {
       } else {
         // Create a new push subscription
 
-        sbp('okTurtles.events/once', PUSH_NOTIFICATION_TYPE.FROM_SERVER, async ({ data }) => {
+        sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
           const PUBLIC_VAPID_KEY = data
 
           // 1. Add a new subscription to pushManager using it.
@@ -57,7 +57,7 @@ sbp('sbp/selectors/register', {
 
           // 2. Send the subscription details to the server. (server needs it to send the push notification)
           pubsub.socket.send(createMessage(
-            PUSH_NOTIFICATION_TYPE.TO_SERVER,
+            NOTIFICATION_TYPE.PUSH_ACTION,
             {
               action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
               payload: JSON.stringify(subscription.toJSON())
@@ -72,7 +72,7 @@ sbp('sbp/selectors/register', {
           }
 
           pubsub.socket.send(createMessage(
-            PUSH_NOTIFICATION_TYPE.TO_SERVER,
+            NOTIFICATION_TYPE.PUSH_ACTION,
             {
               action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
               payload: JSON.stringify(testNotification)
@@ -81,7 +81,7 @@ sbp('sbp/selectors/register', {
         })
 
         pubsub.socket.send(createMessage(
-          PUSH_NOTIFICATION_TYPE.TO_SERVER,
+          NOTIFICATION_TYPE.PUSH_ACTION,
           { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
         ))
       }
@@ -104,7 +104,7 @@ sbp('sbp/selectors/register', {
 
     if (pushSubscription) {
       pubsub.socket.send(createMessage(
-        PUSH_NOTIFICATION_TYPE.TO_SERVER,
+        NOTIFICATION_TYPE.PUSH_ACTION,
         {
           action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
           payload: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint })

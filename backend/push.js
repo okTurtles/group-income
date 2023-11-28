@@ -1,6 +1,6 @@
 const pushController = require('web-push')
 const giConfig = require('../giconf.json')
-const { PUSH_SERVER_ACTION_TYPE, PUSH_NOTIFICATION_TYPE, createMessage } = require('../shared/pubsub.js')
+const { PUSH_SERVER_ACTION_TYPE, NOTIFICATION_TYPE, createMessage } = require('../shared/pubsub.js')
 
 // NOTE: VAPID public/private keys can be generated via 'npx web-push generate-vapid-keys' command.
 const publicKey = process.env.VAPID_PUBLIC_KEY || giConfig.VAPID_PUBLIC_KEY
@@ -14,7 +14,7 @@ pushController.setVapidDetails(
 export const pushActionhandlers: any = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
     const socket = this
-    socket.send(createMessage(PUSH_NOTIFICATION_TYPE.FROM_SERVER, publicKey))
+    socket.send(createMessage(NOTIFICATION_TYPE.PUSH_ACTION, publicKey))
   },
   [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this

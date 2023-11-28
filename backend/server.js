@@ -12,8 +12,7 @@ import {
   createPushErrorResponse,
   createNotification,
   createServer,
-  NOTIFICATION_TYPE,
-  PUSH_NOTIFICATION_TYPE
+  NOTIFICATION_TYPE
 } from './pubsub.js'
 import { pushActionhandlers } from './push.js'
 import chalk from 'chalk'
@@ -101,7 +100,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     }
   },
   messageHandlers: {
-    [PUSH_NOTIFICATION_TYPE.TO_SERVER]: async function ({ data }) {
+    [NOTIFICATION_TYPE.PUSH_ACTION]: async function ({ data }) {
       const socket = this
       const { action, payload } = data
 

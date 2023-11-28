@@ -8,7 +8,6 @@
 
 import {
   NOTIFICATION_TYPE,
-  PUSH_NOTIFICATION_TYPE,
   REQUEST_TYPE,
   RESPONSE_TYPE,
   createClient,
@@ -48,7 +47,7 @@ log.error = (...args) => console.error(bold.red(tag, ...args))
 // ====== API ====== //
 
 // Re-export some useful things from the shared module.
-export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE, PUSH_NOTIFICATION_TYPE }
+export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
 
 export function createErrorResponse (data: JSONType): string {
   return JSON.stringify({ type: ERROR, data })

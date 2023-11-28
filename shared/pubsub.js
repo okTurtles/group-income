@@ -80,7 +80,8 @@ export const NOTIFICATION_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
   UNSUB: 'unsub',
-  VERSION_INFO: 'version_info'
+  VERSION_INFO: 'version_info',
+  PUSH_ACTION: 'push_action'
 })
 
 export const REQUEST_TYPE = Object.freeze({
@@ -93,11 +94,6 @@ export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
   SUCCESS: 'success',
   PUSH_ERROR: 'push-error'
-})
-
-export const PUSH_NOTIFICATION_TYPE = Object.freeze({
-  FROM_SERVER: 'from-server',
-  TO_SERVER: 'to-server'
 })
 
 export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
