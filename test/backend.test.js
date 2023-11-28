@@ -99,7 +99,7 @@ describe('Full walkthrough', function () {
           allowedSelectors: [
             'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
             'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
-            'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
+            'chelonia/queueInvocation',
             'gi.actions/chatroom/leave', 'gi.notifications/emit'
           ],
           allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],

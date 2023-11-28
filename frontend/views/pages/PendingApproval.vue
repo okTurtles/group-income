@@ -6,13 +6,14 @@ div
 
     i18n.is-title-1(
       tag='h2'
-      :args='{ groupName: groupSettings.groupName }'
+      :args='{ groupName: ephemeral.settings.groupName }'
     ) Waiting for approval to join {groupName}!
 
     i18n.has-text-1.c-text(tag='p') You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
@@ -28,16 +29,29 @@ export default ({
     return {
       ephemeral: {
         groupIdWhenMounted: null,
-        groupJoined: false
+        groupJoined: false,
+        settings: {}
       }
     }
   },
   computed: {
-    ...mapGetters(['groupSettings', 'ourUsername']),
+    ...mapGetters(['ourUsername']),
     ...mapState(['currentGroupId']),
-    haveActiveGroupProfile () {
+    groupState () {
       if (!this.ephemeral.groupIdWhenMounted) return
-      return this.$store.state[this.ephemeral.groupIdWhenMounted]?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]
+    },
+    haveActiveGroupProfile () {
+      const state = this.groupState
+      return (
+        // We want the group state to be active
+        state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
+        // And we don't want to be in the process of re-syncing (i.e., re-building
+        // the state after receiving new private keys)
+        !sbp('chelonia/contract/isResyncing', state) &&
+        // And finally, we want the join process to be complete
+        !sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+      )
     }
   },
   mounted () {
@@ -45,6 +59,11 @@ export default ({
     this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
   },
   watch: {
+    groupState (to) {
+      if (to?.settings && this.ephemeral.settings !== to.settings) {
+        this.ephemeral.settings = to.settings
+      }
+    },
     haveActiveGroupProfile (to) {
       // if our group profile appears in the group state, it means we've joined the group
       if (to) {

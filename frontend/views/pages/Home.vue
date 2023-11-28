@@ -60,6 +60,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters, mapState } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SvgCreateGroup from '@svgs/create-group.svg'
@@ -73,18 +74,36 @@ export default ({
     BannerSimple
   },
   computed: {
+    ...mapGetters([
+      'ourGroupProfile'
+    ]),
+    ...mapState([
+      'currentGroupId'
+    ]),
     isLoggedIn () {
       return this.$store.state.loggedIn
     }
   },
   mounted () {
-    if (this.$route.query.next) {
+    if (this.currentGroupId) {
+      this.navigateToGroupPage()
+    } else if (this.$route.query.next) {
       this.openModal('LoginModal')
     }
   },
   methods: {
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    },
+    navigateToGroupPage () {
+      this.$router.push({ path: this.ourGroupProfile ? '/dashboard' : '/pending-approval' }).catch(console.warn)
+    }
+  },
+  watch: {
+    currentGroupId (to) {
+      if (to) {
+        this.navigateToGroupPage()
+      }
     }
   }
 }: Object)

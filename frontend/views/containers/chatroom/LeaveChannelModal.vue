@@ -62,8 +62,7 @@ export default ({
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
-            member: this.loggedIn.username,
-            leavingGroup: false
+            member: this.loggedIn.username
           }
         })
       } catch (e) {
