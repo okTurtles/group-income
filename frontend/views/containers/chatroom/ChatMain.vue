@@ -843,10 +843,11 @@ export default ({
         const initMessagesAfterSynced = (contractID, isSyncing) => {
           if (contractID === toChatRoomId && isSyncing === false) {
             this.setInitMessages()
+            sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
           }
         }
 
-        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
+        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
       }
 
       if (toChatRoomId !== fromChatRoomId) {
