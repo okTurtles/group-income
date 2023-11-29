@@ -14,7 +14,7 @@ import {
   createServer,
   NOTIFICATION_TYPE
 } from './pubsub.js'
-import { pushActionhandlers } from './push.js'
+import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -105,19 +105,22 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const { action, payload } = data
 
       if (!action) {
-        socket.send(createPushErrorResponse({ message: "[Push server] 'action' field is required" }))
+        socket.send(createPushErrorResponse({ message: "'action' field is required" }))
       }
 
-      const handler = pushActionhandlers[action]
+      const handler = pushServerActionhandlers[action]
 
       if (handler) {
         try {
           await handler.call(socket, payload)
         } catch (error) {
-          socket.send(createPushErrorResponse({ message: `[Push server] could not perform [${action}] action due to following error : ${error?.message}` }))
+          socket.send(createPushErrorResponse({
+            actionType: action,
+            message: error?.message || `push server failed to perform [${action}] action`
+          }))
         }
       } else {
-        socket.send(createPushErrorResponse({ message: `[Push server] No handler for the '${action}' action` }))
+        socket.send(createPushErrorResponse({ message: `No handler for the '${action}' action` }))
       }
     }
   }

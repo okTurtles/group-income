@@ -425,8 +425,15 @@ const defaultMessageHandlers = {
     }
   },
 
-  [RESPONSE_TYPE.PUSH_ERROR] ({ data: { message } }) {
-    console.warn(`[pubsub] Received PUSH_ERROR response with the following message: ${message}`)
+  [RESPONSE_TYPE.PUSH_ERROR]: async function ({ data: { message, actionType } }) {
+    const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
+
+    console.warn(`[pubsub] Received PUSH_ERROR response for action type '${actionType}' with the following message: ${message}`)
+    if (errorHandler) {
+      await errorHandler()
+    } else {
+      pushClientErrorHandler.default(actionType)
+    }
   },
 
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
@@ -658,6 +665,16 @@ const publicMethods = {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
       }
     }
+  }
+}
+
+const pushClientErrorHandler = {
+  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
+    // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
+    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
+  },
+  default (actionType) {
+    console.error(`[push-error] Invalid request for the action type '${actionType}'`)
   }
 }
 
