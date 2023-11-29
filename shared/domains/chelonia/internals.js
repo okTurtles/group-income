@@ -198,6 +198,9 @@ export default (sbp('sbp/selectors/register', {
         // $FlowFixMe
         getRandomValues: (v) => globalThis.crypto.getRandomValues(v)
       },
+      alert,
+      confirm,
+      prompt,
       console,
       Object,
       Error,
@@ -262,10 +265,12 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', `publish:${contractID}`, async () => {
       let attempt = 1
       let lastAttemptedHeight
+      // prepublish is asynchronous to allow for cleanly sending messages to
+      // different contracts
+      await hooks?.prepublish?.(entry)
+
       // auto resend after short random delay
       // https://github.com/okTurtles/group-income/issues/608
-      hooks?.prepublish?.(entry)
-
       while (true) {
       // Queued event to ensure that we send the event with whatever the
       // 'latest' state may be for that contract (in case we were receiving
@@ -621,6 +626,18 @@ export default (sbp('sbp/selectors/register', {
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
+
+          if (!has(state._vm, 'keyshares')) self.config.reactiveSet(state._vm, 'keyshares', Object.create(null))
+
+          const success = v.success
+
+          self.config.reactiveSet(state._vm.keyshares, hash, {
+            contractID: originatingContractID,
+            success,
+            ...(success && {
+              hash: v.keyShareHash
+            })
+          })
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -1174,9 +1191,9 @@ export default (sbp('sbp/selectors/register', {
           )
           : keySharePayload,
         signingKeyId: responseKeyId
-      }).then(() => {
+      }).then((msg) => {
         // 4(i). Remove originating contract and update current contract with information
-        const payload = { keyRequestHash: hash, success: true }
+        const payload = { keyRequestHash: hash, keyShareHash: msg.hash(), success: true }
         const connectionKeyPayload = {
           contractID: originatingContractID,
           keys: [

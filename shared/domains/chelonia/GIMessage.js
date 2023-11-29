@@ -51,7 +51,7 @@ export type ProtoGIOpKeyRequest = {
   }>
 }
 export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
-export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
 export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
 export type GIKeyUpdate = {
   name: string;

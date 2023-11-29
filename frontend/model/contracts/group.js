@@ -1114,13 +1114,18 @@ sbp('chelonia/defineContract', {
                   hooks: {
                     preSendCheck: (_, state) => {
                       return state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE
+                    },
+                    postpublish: () => {
+                      sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+                        groupId: contractID,
+                        chatRoomId: generalChatRoomId
+                      })
                     }
                   }
                 }).catch((e) => {
                   console.error('Error while joining the #General chatroom', e)
                   // setTimeout to avoid blocking the main thread
                   setTimeout(() => {
-                    // TODO: Replace alert()
                     alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
                   }, 0)
                 })
@@ -1128,13 +1133,12 @@ sbp('chelonia/defineContract', {
             } else {
               // setTimeout to avoid blocking the main thread
               setTimeout(() => {
-                // TODO: Replace alert()
                 alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
               }, 0)
             }
 
             // subscribe to founder's IdentityContract & everyone else's
-            const lookupResult = await Promise.allSettled(
+            Promise.allSettled(
               Object.keys(profiles)
                 .filter((name) =>
                   !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
@@ -1142,22 +1146,25 @@ sbp('chelonia/defineContract', {
                   if (!r) throw new Error('Cannot lookup username: ' + name)
                   return r
                 }))
-            )
-            const errors = lookupResult
-              .filter(({ status }) => status === 'rejected')
-              .map((r) => (r: any).reason)
+            ).then(lookupResult => {
+              const errors = lookupResult
+                .filter(({ status }) => status === 'rejected')
+                .map((r) => (r: any).reason)
 
-            await sbp('chelonia/contract/sync',
-              lookupResult
-                .filter(({ status }) => status === 'fulfilled')
-                .map((r) => (r: any).value)
-            ).catch(e => errors.push(e))
-
-            if (errors.length) {
-              const msg = `Encountered ${errors.length} errors while accepting invites`
-              console.error(msg, errors)
-              throw new Error(msg)
-            }
+              return sbp('chelonia/contract/sync',
+                lookupResult
+                  .filter(({ status }) => status === 'fulfilled')
+                  .map((r) => (r: any).value)
+              )
+                .catch(e => {
+                  errors.push(e)
+                }).then(() => errors)
+            }).then((errors) => {
+              if (errors.length) {
+                const msg = `Encountered ${errors.length} errors while accepting invites`
+                console.error(msg, errors)
+              }
+            })
 
             // If we don't have a current group ID, select the group we've just
             // joined
@@ -1168,7 +1175,11 @@ sbp('chelonia/defineContract', {
           } else {
             // we're an existing member of the group getting notified that a
             // new member has joined, so subscribe to their identity contract
-            await sbp('chelonia/contract/sync', meta.identityContractID)
+            // TODO: Check if member is active; will be easier once profiles
+            // are indexed by contract ID
+            sbp('chelonia/contract/sync', meta.identityContractID).catch(() => {
+              console.error(`Error subscribing to identity contract ${meta.identityContractID} of group member for group ${contractID}`)
+            })
           }
         }).catch(e => {
           console.error('[gi.contracts/group/inviteAccept/sideEffect]: An error occurred', e)

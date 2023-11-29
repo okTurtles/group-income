@@ -600,7 +600,7 @@ export default (sbp('sbp/selectors/register', {
         if (params?.deferredRemove) {
           this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
         }
-        return undefined
+        return sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/noop'])
       }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
@@ -1016,7 +1016,7 @@ export default (sbp('sbp/selectors/register', {
       if (!signingKeyId) {
         throw ChelErrorUnexpected(`Unable to send key request. Originating contract is missing a key with OP_KEY_ADD permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
       }
-      await sbp('chelonia/out/keyAdd', {
+      const keyAddOp = () => sbp('chelonia/out/keyAdd', {
         contractID: originatingContractID,
         contractName: originatingContractName,
         data: [{
@@ -1063,7 +1063,13 @@ export default (sbp('sbp/selectors/register', {
         ],
         manifest: manifestHash
       })
-      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, hooks)
+      msg = await sbp('chelonia/private/out/publishEvent', msg, publishOptions, {
+        ...hooks,
+        // We ensure that both messages are placed into the publish queue
+        prepublish: (...args) => {
+          return keyAddOp().then(() => hooks?.prepublish?.(...args))
+        }
+      })
       return msg
     } finally {
       await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })

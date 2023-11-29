@@ -187,7 +187,7 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          sbp('gi.actions/group/join', {
+          return sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,

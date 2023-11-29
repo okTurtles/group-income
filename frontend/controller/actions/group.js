@@ -294,10 +294,6 @@ export default (sbp('sbp/selectors/register', {
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
-      // We need to read values from both the group and the identity contracts'
-      // state, so we call wait to run the rest of this function after all
-      // operations in those contracts have completed
-      await sbp('chelonia/contract/wait', [params.contractID, userID])
 
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
@@ -444,40 +440,7 @@ export default (sbp('sbp/selectors/register', {
             console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
             throw e
           }
-
-        // We are already a member of the group and have already called
-        // inviteAccept
-        } else {
-          // Sync chatroom contracts he already joined
-          // if he tries to login in another device, he should skip to make any
-          // actions but he should sync all the contracts he was syncing in the
-          // previous device
-          console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
-          // We've already joined
-          const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
-            .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users?.[username].status === PROFILE_STATUS.ACTIVE))
-          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-
-          await sbp('chelonia/contract/sync', chatRoomIds).catch((e) => {
-            console.error(`[gi.actions/group/join] Error while syncing already-joined chatrooms for ${params.contractID}:`, e)
-            throw e
-          })
-
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: params.contractID,
-            chatRoomId: generalChatRoomId
-          })
         }
-
-        // NOTE: sync identity contracts which are out of sync after joining group
-        await Promise.all(
-          Object.keys(state.profiles)
-            .map(username => sbp('namespace/lookup', username))
-        ).then(profileIds => {
-          return sbp('chelonia/contract/sync', profileIds.filter(Boolean))
-        }).catch((e) => {
-          console.error(`[gi.actions/group/join] Error while subscribing to members' identity contracts ${params.contractID}:`, e)
-        })
 
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         sbp('okTurtles.events/emit', JOINED_GROUP, { contractID: params.contractID })
