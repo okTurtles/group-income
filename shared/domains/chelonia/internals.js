@@ -1270,9 +1270,6 @@ export default (sbp('sbp/selectors/register', {
       }).catch((e) => {
         console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)
       })
-    }).finally(() => {
-      const state = sbp(this.config.stateSelector)
-      delete state[contractID]?._vm?.pendingKeyshares?.[hash]
     })
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
