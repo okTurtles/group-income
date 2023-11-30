@@ -22,13 +22,13 @@ export const pushServerActionhandlers: any = {
 
     // Reference: is it safe to use 'endpoint' as a unique identifier of a push subscription
     // (https://stackoverflow.com/questions/63767889/is-it-safe-to-use-the-p256dh-or-endpoint-keys-values-of-the-push-notificatio)
-    socket.server.pushSubscriptions.set(subscription.endpoint, subscription)
+    socket.server.pushSubscriptions[subscription.endpoint] = subscription
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] (payload) {
     const socket = this
     const subscriptionId = JSON.parse(payload)
 
-    socket.server.pushSubscriptions.delete(subscriptionId)
+    delete socket.server.pushSubscriptions[subscriptionId]
   },
   [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION]: async function (payload) {
     const pushSubscriptions = this.server.pushSubscriptions
@@ -41,10 +41,10 @@ export const pushServerActionhandlers: any = {
     //       otherwise, iterate all existing subscriptions and broadcast the push-notification to all.
 
     if (data.endpoint) {
-      const subscription = pushSubscriptions.get(data.endpoint)
+      const subscription = pushSubscriptions[data.endpoint]
       await sendPush(subscription)
     } else {
-      for (const subscription of pushSubscriptions.values()) {
+      for (const subscription of Object.values(pushSubscriptions)) {
         await sendPush(subscription)
       }
     }

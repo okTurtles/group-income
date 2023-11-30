@@ -54,6 +54,7 @@ self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
 
   if (!(self.Notification && self.Notification.permission === 'granted')) {
+    console.debug("[sw] received a push notification but aren't displaying it due to the permission not granted")
     return
   }
 

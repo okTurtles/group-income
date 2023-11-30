@@ -95,7 +95,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByContractID = Object.create(null)
-  server.pushSubscriptions = new Map()
+  server.pushSubscriptions = Object.create(null)
 
   // Add listeners for server events, i.e. events emitted on the server object.
   Object.keys(defaultServerHandlers).forEach((name) => {
