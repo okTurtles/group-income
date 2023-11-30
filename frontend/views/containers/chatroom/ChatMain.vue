@@ -250,6 +250,14 @@ export default ({
   },
   methods: {
     proximityDate,
+    checkEventSourceConsistency (contractID) {
+      if (contractID !== this.summary.chatRoomId) {
+        console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomId}; avoiding any further processing`)
+        return false
+      }
+
+      return true
+    },
     messageType (message) {
       return {
         [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
@@ -584,7 +592,7 @@ export default ({
         })
       }
     },
-    async listenChatRoomActions (contractID: string, message: GIMessage) {
+    listenChatRoomActions (contractID: string, message: GIMessage) {
       // We must check this.summary.chatRoomId and not this.currentChatRoomId
       // because they might be different, as this.summary is computed from
       // this.currentChatRoomId.
@@ -623,43 +631,50 @@ export default ({
       // NOTE: while syncing the chatroom contract, we should ignore all the events
       const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
 
-      if (addedOrDeleted === 'DELETED') {
-        // NOTE: Message will be deleted in processMessage function
-        //       but need to make animation to delete it, probably here
-        const messageHash = value.data.hash
-        const msgIndex = findMessageIdx(messageHash, this.messages)
-        document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
+      // This ensures that `this.latestEvents.push(message.serialize())` below
+      // happens in order
+      sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        if (!this.checkEventSourceConsistency(contractID)) return
+        if (addedOrDeleted === 'DELETED') {
+          // NOTE: Message will be deleted in processMessage function
+          //       but need to make animation to delete it, probably here
+          const messageHash = value.data.hash
+          const msgIndex = findMessageIdx(messageHash, this.messages)
+          if (msgIndex !== -1) {
+            document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
-        // NOTE: waiting for the animation is done
-        //       it's duration is 500ms described in MessageBase.vue
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-
-      if (contractID !== this.summary.chatRoomId) {
-        console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomId}; avoiding any further processing`)
-        return
-      }
-      this.messageState.contract = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
-
-      this.latestEvents.push(message.serialize())
-
-      this.$forceUpdate()
-
-      if (this.ephemeral.scrolledDistance < 50) {
-        if (addedOrDeleted === 'ADDED') {
-          const isScrollable = this.$refs.conversation &&
-            this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-          if (!self && isScrollable) {
-            this.updateScroll()
-          } else if (!isScrollable && this.messages.length) {
-            const msg = this.messages[this.messages.length - 1]
-            this.updateUnreadMessageHash({
-              messageHash: msg.hash,
-              createdDate: msg.datetime
-            })
+            // NOTE: waiting for the animation is done
+            //       it's duration is 500ms described in MessageBase.vue
+            await new Promise(resolve => setTimeout(resolve, 500))
           }
         }
-      }
+
+        if (!this.checkEventSourceConsistency(contractID)) return
+        const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
+
+        if (!this.checkEventSourceConsistency(contractID)) return
+        this.messageState.contract = newContractState
+
+        this.latestEvents.push(message.serialize())
+
+        this.$forceUpdate()
+
+        if (this.ephemeral.scrolledDistance < 50) {
+          if (addedOrDeleted === 'ADDED') {
+            const isScrollable = this.$refs.conversation &&
+              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+            if (!self && isScrollable) {
+              this.updateScroll()
+            } else if (!isScrollable && this.messages.length) {
+              const msg = this.messages[this.messages.length - 1]
+              this.updateUnreadMessageHash({
+                messageHash: msg.hash,
+                createdDate: msg.datetime
+              })
+            }
+          }
+        }
+      })
     },
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
