@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
 
@@ -23,12 +22,6 @@ sbp('sbp/selectors/register', {
         scope: '/'
       })
 
-      if (Notification.permission !== 'granted') {
-        // To be able to receive a notification, this setting must be turned on.
-        // But user can customise this setting later via 'user-settings' page.
-        await requestNotificationPermission(true)
-      }
-
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       const existingSubscription = await registration.pushManager.getSubscription()
 
@@ -45,6 +38,13 @@ sbp('sbp/selectors/register', {
         return
       } else {
         // Create a new push subscription
+
+        const getVapidPublicKeyFromServer = () => {
+          pubsub.socket.send(createMessage(
+            NOTIFICATION_TYPE.PUSH_ACTION,
+            { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+          ))
+        }
 
         sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
           const PUBLIC_VAPID_KEY = data
@@ -80,10 +80,13 @@ sbp('sbp/selectors/register', {
           ))
         })
 
-        pubsub.socket.send(createMessage(
-          NOTIFICATION_TYPE.PUSH_ACTION,
-          { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-        ))
+        if (pubsub.socket.readyState === WebSocket.OPEN) {
+          getVapidPublicKeyFromServer()
+        } else {
+          pubsub.socket.addEventListener('open', () => {
+            getVapidPublicKeyFromServer()
+          })
+        }
       }
     } catch (e) {
       console.error('error setting up service worker:', e)
