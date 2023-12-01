@@ -330,7 +330,7 @@ export default ({
           // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
           // message has been received. This is intentional to mark yet-unsent
           // messages as pending in the UI
-          beforeRequest: (message) => {
+          prepublish: (message) => {
             if (!this.checkEventSourceConsistency(message.contractID())) return
             const messageStateContract = this.messageState.contract
 
@@ -347,16 +347,13 @@ export default ({
             this.stopReplying()
             this.updateScroll()
           },
-          onerrored: (message) => {
-            const messageId = message.id()
-            if (!messageId) return
-
+          beforeRequest: (message, oldMessage) => {
+            if (!this.checkEventSourceConsistency(message.contractID())) return
+            const messageStateContract = this.messageState.contract
             sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
-              if (!this.checkEventSourceConsistency(message.contractID())) return
-              const messageStateContract = this.messageState.contract
-
-              if (messageStateContract?.pendingMessages) {
-                delete messageStateContract.pendingMessages[messageId]
+              const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+              if (msg) {
+                msg.hash = message.hash()
               }
             })
           }

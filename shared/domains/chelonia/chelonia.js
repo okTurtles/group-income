@@ -34,11 +34,10 @@ export type ChelRegParams = {
     prepublishContract?: (GIMessage) => void;
     postpublishContract?: (GIMessage) => void;
     preSendCheck?: (GIMessage, Object) => void;
-    beforeRequest?: (GIMessage) => void;
+    beforeRequest?: (GIMessage, GIMessage) => void;
     prepublish?: (GIMessage) => void;
     postpublish?: (GIMessage) => void;
     onprocessed?: (GIMessage, string) => void;
-    onerrored?: (GIMessage, Object) => void;
   };
   publishOptions?: { maxAttempts: number };
 }

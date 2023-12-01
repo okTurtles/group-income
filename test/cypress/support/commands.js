@@ -8,7 +8,6 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
-import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -530,9 +529,7 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         contractID: sbp('state/vuex/state').currentGroupId,
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
-          onprocessed: (message) => {
-            resolve()
-          }
+          onprocessed: resolve()
         }
       })
     })

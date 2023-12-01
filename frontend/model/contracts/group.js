@@ -1115,7 +1115,7 @@ sbp('chelonia/defineContract', {
                     preSendCheck: (_, state) => {
                       return state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE
                     },
-                    postpublish: () => {
+                    onprocessed: () => {
                       sbp('state/vuex/commit', 'setCurrentChatRoomId', {
                         groupId: contractID,
                         chatRoomId: generalChatRoomId

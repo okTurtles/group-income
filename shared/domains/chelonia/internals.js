@@ -270,6 +270,7 @@ export default (sbp('sbp/selectors/register', {
       await hooks?.prepublish?.(entry)
 
       const onreceivedHandler = (contractID: string, message: GIMessage) => {
+        sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
         if (entry.hash() !== message.contractID()) {
           hooks.onprocessed(entry, entry.id())
         }
@@ -287,7 +288,7 @@ export default (sbp('sbp/selectors/register', {
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
         lastAttemptedHeight = entry.height()
-        entry = await sbp('okTurtles.eventQueue/queueEvent', contractID, () => {
+        const newEntry = await sbp('okTurtles.eventQueue/queueEvent', contractID, () => {
           // If this._instance !== instance (i.e., chelonia/reset was called)
           if (this._instance !== instance) {
             console.info(`[chelonia] Not sending message as /reset was called ${entry.description()}`)
@@ -319,9 +320,10 @@ export default (sbp('sbp/selectors/register', {
         })
 
         // If there is no event to send, return
-        if (!entry) return
+        if (!newEntry) return
 
-        hooks?.beforeRequest?.(entry)
+        hooks?.beforeRequest?.(newEntry, entry)
+        entry = newEntry
 
         const r = await fetch(`${this.config.connectionURL}/event`, {
           method: 'POST',
@@ -360,13 +362,7 @@ export default (sbp('sbp/selectors/register', {
           }
         } catch (e) {
           sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
-          if (typeof hooks?.onerrored === 'function') {
-            try {
-              hooks.onerrored(entry)
-            } catch (e) {
-              console.error(`[chelonia] ERROR: Failed to run onerror hook for ${entry.description()}`, entry)
-            }
-          }
+
           throw e
         }
       }

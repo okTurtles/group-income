@@ -166,8 +166,7 @@ sbp('chelonia/defineContract', {
             deletedDate: null
           },
           users: {},
-          messages: [],
-          pendingMessages: Object.create(null)
+          messages: []
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -401,46 +400,21 @@ sbp('chelonia/defineContract', {
       // for the same message and state. The `direction` attributes handles
       // these situations especially, and it's meant to mark sent-by-the-user
       // but not-yet-received-over-the-network messages.
-      process ({ direction, data, meta, hash, id }, { state }) {
+      process ({ direction, data, meta, hash }, { state }) {
         // Exit early if we're only supposed to render messages.
         if (!state.onlyRenderMessage) {
           return
         }
 
-        // Check if the message is an outgoing one that hasn't been confirmed
-        // received.
-        // This supports the re-entrant nature of the function, as it gets
-        // called from hooks (indirectly via processMessage).
-        const pendingOutoingMessage = (direction === 'outgoing')
+        const existingMsg = state.messages.find(msg => (msg.hash === hash))
 
-        // Search for an existing message in the state. It checks two conditions:
-        //   1. If the message ID is in the list of pending messages.
-        //   2. If the hash of the incoming message matches any in the pending messages.
-        const existingMsg = state.messages.find(msg => (
-          (id && state.pendingMessages[id] && msg.id === id) ||
-          (msg.hash === hash && Object.entries(state.pendingMessages).find(([, h]) => msg.hash === h))
-        ))
-
-        // Handling of outgoing messages.
-        if (pendingOutoingMessage) {
-          if (!existingMsg) {
-            // If no existing message, add it to pending and messages array.
-            state.pendingMessages[id] = hash
-            state.messages.push(createMessage({ meta, data, hash, id, state, pending: true }))
-          } else if (state.pendingMessages[id]) {
-            // If message already exists, update its hash.
-            state.pendingMessages[id] = hash
-            existingMsg.hash = hash
-          }
-        } else { // Handling of incoming (i.e., regular) messages
-          if (!existingMsg) {
-            // If no existing message, simply add it to the messages array.
-            state.messages.push(createMessage({ meta, data, hash, id: hash, state }))
-          } else {
-            // If an existing message is found, it's no longer pending.
-            delete existingMsg.pending
-            delete state.pendingMessages[existingMsg.id]
-          }
+        if (!existingMsg) {
+          // If no existing message, simply add it to the messages array.
+          const pending = direction === 'outgoing'
+          state.messages.push(createMessage({ meta, data, hash, state, pending }))
+        } else if (direction !== 'outgoing') {
+          // If an existing message is found, it's no longer pending.
+          delete existingMsg.pending
         }
       },
       sideEffect ({ contractID, hash, meta, data }, { state, getters }) {

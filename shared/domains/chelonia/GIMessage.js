@@ -426,7 +426,7 @@ export class GIMessage {
   id (): string {
     // NOTE: nonce can be used as GIMessage identifier for outgoing messages
     // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-    return this.head()[KSymbolNonce] || this.hash()
+    return this.head()[KSymbolNonce]
   }
 
   direction (): 'incoming' | 'outgoing' {
