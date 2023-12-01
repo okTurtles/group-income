@@ -272,7 +272,7 @@ export default (sbp('sbp/selectors/register', {
       const onreceivedHandler = (contractID: string, message: GIMessage) => {
         sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
         if (entry.hash() !== message.contractID()) {
-          hooks.onprocessed(entry, entry.id())
+          hooks.onprocessed(entry)
         }
       }
 
@@ -386,7 +386,6 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
     const [opT, opV] = message.op()
     const hash = message.hash()
-    const id = message.id()
     const height = message.height()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
@@ -445,7 +444,6 @@ export default (sbp('sbp/selectors/register', {
               data,
               meta,
               hash,
-              id,
               contractID,
               direction: message.direction(),
               signingKeyId,
@@ -1455,7 +1453,6 @@ const handleEvent = {
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const hash = message.hash()
-    const id = message.id()
     const signingKeyId = message.signingKeyId()
 
     const callSideEffect = async (field) => {
@@ -1471,7 +1468,6 @@ const handleEvent = {
         data,
         meta,
         hash,
-        id,
         contractID,
         description: message.description(),
         direction: message.direction(),

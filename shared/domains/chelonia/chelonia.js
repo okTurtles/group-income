@@ -37,7 +37,7 @@ export type ChelRegParams = {
     beforeRequest?: (GIMessage, GIMessage) => void;
     prepublish?: (GIMessage) => void;
     postpublish?: (GIMessage) => void;
-    onprocessed?: (GIMessage, string) => void;
+    onprocessed?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }

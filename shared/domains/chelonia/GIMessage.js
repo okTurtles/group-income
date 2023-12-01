@@ -2,7 +2,6 @@
 
 // TODO: rename GIMessage to ChelMessage
 
-import { v4 as uuidv4 } from 'uuid'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
@@ -11,8 +10,6 @@ import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
-
-const KSymbolNonce = Symbol('')
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -424,9 +421,8 @@ export class GIMessage {
   height (): number { return this._head.height }
 
   id (): string {
-    // NOTE: nonce can be used as GIMessage identifier for outgoing messages
-    // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-    return this.head()[KSymbolNonce]
+    // TODO: Schedule for later removal
+    throw new Error('GIMessage.id() was called but it has been removed')
   }
 
   direction (): 'incoming' | 'outgoing' {
