@@ -166,7 +166,8 @@ sbp('chelonia/defineContract', {
             deletedDate: null
           },
           users: {},
-          messages: []
+          messages: [],
+          pendingMessages: Object.create(null)
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -183,7 +184,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         username: string // username of joining member
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           throw new Error(`Can not join the chatroom which ${username} is already part of`)
@@ -200,7 +201,7 @@ sbp('chelonia/defineContract', {
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
         )
-        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ data, contractID, hash, meta }, { state }) {
@@ -269,7 +270,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         name: string
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
         if (!state.onlyRenderMessage) {
@@ -277,7 +278,7 @@ sbp('chelonia/defineContract', {
         }
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
-        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -289,7 +290,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         description: string
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
         if (!state.onlyRenderMessage) {
@@ -299,7 +300,7 @@ sbp('chelonia/defineContract', {
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
-        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -312,7 +313,7 @@ sbp('chelonia/defineContract', {
         username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
-      process ({ data, meta, hash, id, contractID }, { state }) {
+      process ({ data, meta, hash, contractID }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
@@ -329,7 +330,6 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({
           meta: isKicked ? meta : { ...meta, username: member },
           hash,
-          id,
           data: notificationData,
           state
         })
@@ -397,28 +397,53 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
+      // NOTE: This function is 'reentrant' and may be called multiple times
+      // for the same message and state. The `direction` attributes handles
+      // these situations especially, and it's meant to mark sent-by-the-user
+      // but not-yet-received-over-the-network messages.
       process ({ direction, data, meta, hash, id }, { state }) {
+        // Exit early if we're only supposed to render messages.
         if (!state.onlyRenderMessage) {
           return
         }
-        // Called from the prepublish hook
-        if (direction === 'outgoing') {
-          // NOTE: pending is useful to turn the message gray meaning failed (just like Slack)
-          // when we don't get event after a certain period
-          state.messages.push({ ...createMessage({ meta, data, hash, id, state }), pending: true })
-          return
-        }
-        // NOTE: id(GIMessage.id()) should be used as identifier for GIMessages, but not hash(GIMessage.hash())
-        //       https://github.com/okTurtles/group-income/issues/1503
-        const pendingMsg = state.messages.find(msg => msg.id === id && msg.pending)
-        if (pendingMsg) {
-          delete pendingMsg.pending
-          pendingMsg.hash = hash // NOTE: hash could be different from the one before publishEvent
-        } else {
-          state.messages.push(createMessage({ meta, data, hash, id, state }))
+
+        // Check if the message is an outgoing one that hasn't been confirmed
+        // received.
+        // This supports the re-entrant nature of the function, as it gets
+        // called from hooks (indirectly via processMessage).
+        const pendingOutoingMessage = (direction === 'outgoing')
+
+        // Search for an existing message in the state. It checks two conditions:
+        //   1. If the message ID is in the list of pending messages.
+        //   2. If the hash of the incoming message matches any in the pending messages.
+        const existingMsg = state.messages.find(msg => (
+          (id && state.pendingMessages[id] && msg.id === id) ||
+          (msg.hash === hash && Object.entries(state.pendingMessages).find(([, h]) => msg.hash === h))
+        ))
+
+        // Handling of outgoing messages.
+        if (pendingOutoingMessage) {
+          if (!existingMsg) {
+            // If no existing message, add it to pending and messages array.
+            state.pendingMessages[id] = hash
+            state.messages.push(createMessage({ meta, data, hash, id, state, pending: true }))
+          } else if (state.pendingMessages[id]) {
+            // If message already exists, update its hash.
+            state.pendingMessages[id] = hash
+            existingMsg.hash = hash
+          }
+        } else { // Handling of incoming (i.e., regular) messages
+          if (!existingMsg) {
+            // If no existing message, simply add it to the messages array.
+            state.messages.push(createMessage({ meta, data, hash, id: hash, state }))
+          } else {
+            // If an existing message is found, it's no longer pending.
+            delete existingMsg.pending
+            delete state.pendingMessages[existingMsg.id]
+          }
         }
       },
-      sideEffect ({ contractID, hash, id, meta, data }, { state, getters }) {
+      sideEffect ({ contractID, hash, meta, data }, { state, getters }) {
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
@@ -427,7 +452,7 @@ sbp('chelonia/defineContract', {
         if (me === meta.username && data.type !== MESSAGE_TYPES.INTERACTIVE) {
           return
         }
-        const newMessage = createMessage({ meta, data, hash, id, state })
+        const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
@@ -602,7 +627,7 @@ sbp('chelonia/defineContract', {
         votes: arrayOf(string),
         votesAsString: string
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
@@ -635,7 +660,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -688,7 +713,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {

@@ -12,6 +12,8 @@ import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedInco
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
+const KSymbolNonce = Symbol('')
+
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
 export type GIKeyPurpose = 'enc' | 'sig'
@@ -254,7 +256,8 @@ export class GIMessage {
       // when using the same data, and also makes it possible to identify
       // same-content/different-previousHEAD messages that are
       // cloned using the cloneWith method
-      nonce: uuidv4()
+      // $FlowFixMe
+      [KSymbolNonce]: uuidv4()
     }
     console.log('createV1_0', { op, head })
     return new this(messageToParams(head, op[1]))
@@ -421,9 +424,9 @@ export class GIMessage {
   height (): number { return this._head.height }
 
   id (): string {
-    // NOTE: nonce can be used as GIMessage identifier
+    // NOTE: nonce can be used as GIMessage identifier for outgoing messages
     // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-    return this.head().nonce
+    return this.head()[KSymbolNonce] || this.hash()
   }
 
   direction (): 'incoming' | 'outgoing' {

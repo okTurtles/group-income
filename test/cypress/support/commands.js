@@ -530,15 +530,8 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         contractID: sbp('state/vuex/state').currentGroupId,
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
-          prepublish: (message) => {
-            const id = message.id()
-            // Note: `opValue()` must be used here rather than the message hash:
-            // https://github.com/okTurtles/group-income/issues/1487
-            sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
-              if (id === message.id()) {
-                resolve()
-              }
-            })
+          onprocessed: (message) => {
+            resolve()
           }
         }
       })

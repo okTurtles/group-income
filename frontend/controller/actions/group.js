@@ -637,10 +637,8 @@ export default (sbp('sbp/selectors/register', {
         chatRoomID
       },
       hooks: {
-        prepublish: (msg) => {
-          sbp('okTurtles.events/once', msg.id(), (cId) => {
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: cId })
-          })
+        onprocessed: (msg) => {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: msg.contractID() })
         },
         postpublish: params.hooks?.postpublish
       }

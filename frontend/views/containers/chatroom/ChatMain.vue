@@ -57,7 +57,7 @@
         component(
           :is='messageType(message)'
           :ref='message.hash'
-          :key='message.id'
+          :key='message.hash'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
@@ -316,21 +316,53 @@ export default ({
       // TODO: implement other types of messages later
       const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
+      // Call 'gi.actions/chatroom/addMessage' action with necessary data
+      // to send the message
       sbp('gi.actions/chatroom/addMessage', {
-        contractID: this.currentChatRoomId,
+        contractID,
+        // If not replying to a message, use original data; otherwise, append
+        // replyingMessage to data.
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
-          prepublish: (message) => {
-            sbp('chelonia/in/processMessage', message, this.messageState.contract).then((state) => {
-              this.messageState.contract = state
-            }).catch((e) => {
-              console.error('Error sending message during pre-publish: ' + e.message)
-            })
+          // Define a 'beforeRequest' hook for additional processing before the
+          // request is made.
+          // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
+          // message has been received. This is intentional to mark yet-unsent
+          // messages as pending in the UI
+          beforeRequest: (message) => {
+            if (!this.checkEventSourceConsistency(message.contractID())) return
+            const messageStateContract = this.messageState.contract
+
+            // IMPORTANT: This is executed *BEFORE* the message is received over
+            // the network
+            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', ['chelonia/in/processMessage', message, messageStateContract])
+              .then((messageStateContract) => {
+                if (!this.checkEventSourceConsistency(message.contractID())) return
+                this.messageState.contract = messageStateContract
+              }).catch((e) => {
+                console.error('Error sending message during pre-publish: ' + e.message)
+              })
+
             this.stopReplying()
             this.updateScroll()
+          },
+          onerrored: (message) => {
+            const messageId = message.id()
+            if (!messageId) return
+
+            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+              if (!this.checkEventSourceConsistency(message.contractID())) return
+              const messageStateContract = this.messageState.contract
+
+              if (messageStateContract?.pendingMessages) {
+                delete messageStateContract.pendingMessages[messageId]
+              }
+            })
           }
         }
+      }).catch((e) => {
+        console.error(`Error while publishing message for ${contractID}`, e)
       })
     },
     async scrollToMessage (messageHash, effect = true) {
@@ -509,7 +541,12 @@ export default ({
         }
         if (newEvents.length) {
           for (const event of newEvents) {
-            this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
+            const newMessage = GIMessage.deserialize(event, undefined, this.messageState.contract)
+            const newState = await sbp('chelonia/in/processMessage', newMessage, this.messageState.contract)
+            if (!this.checkEventSourceConsistency(chatRoomId)) {
+              break
+            }
+            this.messageState.contract = newState
             this.latestEvents.push(event)
           }
           this.$forceUpdate()

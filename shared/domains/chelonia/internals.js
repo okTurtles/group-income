@@ -269,6 +269,16 @@ export default (sbp('sbp/selectors/register', {
       // different contracts
       await hooks?.prepublish?.(entry)
 
+      const onreceivedHandler = (contractID: string, message: GIMessage) => {
+        if (entry.hash() !== message.contractID()) {
+          hooks.onprocessed(entry, entry.id())
+        }
+      }
+
+      if (typeof hooks?.onprocessed === 'function') {
+        sbp('okTurtles.events/on', EVENT_HANDLED, onreceivedHandler)
+      }
+
       // auto resend after short random delay
       // https://github.com/okTurtles/group-income/issues/608
       while (true) {
@@ -311,6 +321,8 @@ export default (sbp('sbp/selectors/register', {
         // If there is no event to send, return
         if (!entry) return
 
+        hooks?.beforeRequest?.(entry)
+
         const r = await fetch(`${this.config.connectionURL}/event`, {
           method: 'POST',
           body: entry.serialize(),
@@ -323,27 +335,39 @@ export default (sbp('sbp/selectors/register', {
           hooks?.postpublish?.(entry)
           return entry
         }
-        if (r.status === 409) {
-          if (attempt + 1 > maxAttempts) {
-            console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
-            throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
-          }
-          // create new entry
-          const randDelay = randomIntFromRange(0, 1500)
-          console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
-          attempt += 1
-          await delay(randDelay) // wait randDelay ms before sending it again
+        try {
+          if (r.status === 409) {
+            if (attempt + 1 > maxAttempts) {
+              console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
+              throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
+            }
+            // create new entry
+            const randDelay = randomIntFromRange(0, 1500)
+            console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
+            attempt += 1
+            await delay(randDelay) // wait randDelay ms before sending it again
 
-          // TODO: The [pubsub] code seems to miss events that happened between
-          // a call to sync and the subscription time. This is a temporary measure
-          // to handle this until [pubsub] is updated.
-          if (entry.height() === lastAttemptedHeight) {
-            await sbp('chelonia/contract/sync', contractID, { force: true })
+            // TODO: The [pubsub] code seems to miss events that happened between
+            // a call to sync and the subscription time. This is a temporary measure
+            // to handle this until [pubsub] is updated.
+            if (entry.height() === lastAttemptedHeight) {
+              await sbp('chelonia/contract/sync', contractID, { force: true })
+            }
+          } else {
+            const message = (await r.json())?.message
+            console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
+            throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
           }
-        } else {
-          const message = (await r.json())?.message
-          console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
-          throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
+        } catch (e) {
+          sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
+          if (typeof hooks?.onerrored === 'function') {
+            try {
+              hooks.onerrored(entry)
+            } catch (e) {
+              console.error(`[chelonia] ERROR: Failed to run onerror hook for ${entry.description()}`, entry)
+            }
+          }
+          throw e
         }
       }
     })
@@ -1348,7 +1372,6 @@ export default (sbp('sbp/selectors/register', {
         try {
           postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
-          sbp('okTurtles.events/emit', message.id(), contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
           console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} in event post-handling: ${e.message}`, e, { message: message.serialize() })
