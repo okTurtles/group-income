@@ -248,13 +248,7 @@ export class GIMessage {
       originatingContractID,
       originatingContractHeight,
       op: op[0],
-      manifest,
-      // the nonce makes it easier to prevent conflicts during development
-      // when using the same data, and also makes it possible to identify
-      // same-content/different-previousHEAD messages that are
-      // cloned using the cloneWith method
-      // $FlowFixMe
-      [KSymbolNonce]: uuidv4()
+      manifest
     }
     console.log('createV1_0', { op, head })
     return new this(messageToParams(head, op[1]))
