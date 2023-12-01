@@ -270,8 +270,8 @@ export default (sbp('sbp/selectors/register', {
       await hooks?.prepublish?.(entry)
 
       const onreceivedHandler = (contractID: string, message: GIMessage) => {
-        sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
-        if (entry.hash() !== message.contractID()) {
+        if (entry.hash() === message.hash()) {
+          sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
           hooks.onprocessed(entry)
         }
       }
