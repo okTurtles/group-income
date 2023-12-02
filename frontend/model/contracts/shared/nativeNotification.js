@@ -16,6 +16,8 @@ export async function requestNotificationPermission (force: boolean = false): Pr
       return null
     }
   }
+
+  console.log('@@@ Notification.permission: ', Notification.permission)
   return Notification.permission
 }
 

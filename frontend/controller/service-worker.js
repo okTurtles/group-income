@@ -15,66 +15,80 @@ sbp('sbp/selectors/register', {
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
     // NOTE: user should still be able to use app even if all the SW stuff fails
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
+    if (!('serviceWorker' in navigator)) { return }
 
     try {
-      const registration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', {
-        scope: '/'
-      })
+      await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
+    } catch (e) {
+      console.error('error setting up service worker:', e)
+    }
+  },
+  'service-worker/setup-push-subscription': async function (testNotification: Object) {
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
 
-      const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-      const existingSubscription = await registration.pushManager.getSubscription()
+    // Get the installed service-worker registration
+    const registration = await navigator.serviceWorker.ready
 
-      if (existingSubscription) {
-        // If there is an existing subscription, no need to create a new one.
-        // But make sure server knows the subscription details too.
+    if (!registration) {
+      console.error('No service-worker registration found!')
+      return
+    }
+
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const existingSubscription = await registration.pushManager.getSubscription()
+
+    if (existingSubscription) {
+      // If there is an existing subscription, no need to create a new one.
+      // But make sure server knows the subscription details too.
+      pubsub.socket.send(createMessage(
+        NOTIFICATION_TYPE.PUSH_ACTION,
+        {
+          action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+          payload: JSON.stringify(existingSubscription.toJSON())
+        }
+      ))
+    } else {
+      // Generate a new push subscription
+      sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
+        const PUBLIC_VAPID_KEY = data
+
+        // 1. Add a new subscription to pushManager using it.
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+        })
+
+        // 2. Send the subscription details to the server. (server needs it to send the push notification)
         pubsub.socket.send(createMessage(
           NOTIFICATION_TYPE.PUSH_ACTION,
           {
             action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-            payload: JSON.stringify(existingSubscription.toJSON())
+            payload: JSON.stringify(subscription.toJSON())
           }
         ))
-        return
-      } else {
-        // Create a new push subscription
 
-        const getVapidPublicKeyFromServer = () => {
-          pubsub.socket.send(createMessage(
-            NOTIFICATION_TYPE.PUSH_ACTION,
-            { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-          ))
+        // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
+        const notificationPayload = {
+          ...(testNotification || {
+            title: 'Service worker installed.',
+            body: 'You can now receive various push notifications from the Group Income app!'
+          }),
+          endpoint: subscription.endpoint
         }
 
-        sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
-          const PUBLIC_VAPID_KEY = data
+        pubsub.socket.send(createMessage(
+          NOTIFICATION_TYPE.PUSH_ACTION,
+          {
+            action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
+            payload: JSON.stringify(notificationPayload)
+          }
+        ))
+      })
 
-          // 1. Add a new subscription to pushManager using it.
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
-          })
-
-          // 2. Send the subscription details to the server. (server needs it to send the push notification)
-          pubsub.socket.send(createMessage(
-            NOTIFICATION_TYPE.PUSH_ACTION,
-            {
-              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-              payload: JSON.stringify(subscription.toJSON())
-            }
-          ))
-        })
-
-        if (pubsub.socket.readyState === WebSocket.OPEN) {
-          getVapidPublicKeyFromServer()
-        } else {
-          pubsub.socket.addEventListener('open', () => {
-            getVapidPublicKeyFromServer()
-          })
-        }
-      }
-    } catch (e) {
-      console.error('error setting up service worker:', e)
+      pubsub.socket.send(createMessage(
+        NOTIFICATION_TYPE.PUSH_ACTION,
+        { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+      ))
     }
   },
   'service-worker/send-push': async function (payload) {
