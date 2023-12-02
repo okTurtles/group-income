@@ -226,9 +226,9 @@ export default (sbp('sbp/selectors/register', {
     }
     this.manifestToContract = {}
     this.whitelistedActions = {}
-    this.currentSyncs = {}
-    this.postSyncOperations = {}
-    this.sideEffectStacks = {} // [contractID]: Array<*>
+    this.currentSyncs = Object.create(null)
+    this.postSyncOperations = Object.create(null)
+    this.sideEffectStacks = Object.create(null) // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
       if (!stack) {
@@ -288,13 +288,27 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/reset': function () {
+  'chelonia/reset': async function (postCleanupFn) {
+    // wait for any pending sync operations to finish before saving
+    await sbp('chelonia/contract/waitPublish')
+    await sbp('chelonia/contract/wait')
+    await postCleanupFn?.()
+    sbp('chelonia/resetImmediately')
+  },
+  'chelonia/resetImmediately': function () {
     const rootState = sbp(this.config.stateSelector)
+    const contracts = rootState.contracts
+    // Cancel all outgoing messages by replacing this._instance
+    this._instance = Object.create(null)
+    // Remove all contracts, including all contracts from pending
     this.config.reactiveSet(rootState, 'contracts', Object.create(null))
     this.config.reactiveSet(rootState, 'pending', [])
+    Object.keys(contracts).forEach((contractID) => this.config.reactiveDel(rootState, contractID))
+    this.currentSyncs = Object.create(null)
+    this.postSyncOperations = Object.create(null)
+    this.sideEffectStacks = Object.create(null) // [contractID]: Array<*>
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, rootState.contracts)
-    this._instance = Object.create(null)
   },
   'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
@@ -542,7 +556,7 @@ export default (sbp('sbp/selectors/register', {
     // and then pushes the operation requested into the public queue
     // This ensures that all internal operations have finished before these
     // other selectors are called
-    return sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('okTurtles.eventQueue/queueEvent', 'public:' + contractID, sbpInvocation))
+    return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('chelonia/private/queueEvent', 'public:' + contractID, sbpInvocation))
   },
   'chelonia/begin': async (...invocations) => {
     for (const invocation of invocations) {
@@ -588,7 +602,7 @@ export default (sbp('sbp/selectors/register', {
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
     return Promise.all(listOfIds.flatMap(cID => {
-      return sbp('okTurtles.eventQueue/queueEvent', `publish:${cID}`, ['chelonia/private/noop'])
+      return sbp('chelonia/private/queueEvent', `publish:${cID}`, ['chelonia/private/noop'])
     }))
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
@@ -602,14 +616,14 @@ export default (sbp('sbp/selectors/register', {
         if (params?.deferredRemove) {
           this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
         }
-        return sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/noop'])
+        return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
       }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with
       // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+      return sbp('chelonia/private/queueEvent', contractID, [
         'chelonia/private/in/syncContract', contractID, params
       ]).catch((err) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
@@ -658,7 +672,7 @@ export default (sbp('sbp/selectors/register', {
         return undefined
       }
 
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+      return sbp('chelonia/private/queueEvent', contractID, [
         'chelonia/contract/removeImmediately', contractID
       ])
     }))

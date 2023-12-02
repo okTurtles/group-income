@@ -73,6 +73,7 @@ async function startApp () {
       'chelonia/rootState',
       'chelonia/haveSecretKey',
       'chelonia/private/enqueuePostSyncOps',
+      'chelonia/private/invoke',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',

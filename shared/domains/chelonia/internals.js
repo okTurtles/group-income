@@ -129,6 +129,23 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
+  'chelonia/private/invoke': function (instance, invocation) {
+    // If this._instance !== instance (i.e., chelonia/reset was called)
+    if (this._instance !== instance) {
+      console.info('[\'chelonia/private/invoke] Not proceeding with invocation as Chelonia was restarted', { invocation })
+      return
+    }
+    if (Array.isArray(invocation)) {
+      return sbp(...invocation)
+    } else if (typeof invocation === 'function') {
+      return invocation()
+    } else {
+      throw new TypeError(`[chelonia/private/invoke] Expected invocation to be an array or a function. Saw ${typeof invocation} instead.`)
+    }
+  },
+  'chelonia/private/queueEvent': function (queueName, invocation) {
+    return sbp('okTurtles.eventQueue/queueEvent', queueName, ['chelonia/private/invoke', this._instance, invocation])
+  },
   'chelonia/private/loadManifest': async function (manifestHash: string) {
     if (this.manifestToContract[manifestHash]) {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
@@ -259,10 +276,9 @@ export default (sbp('sbp/selectors/register', {
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
-    const instance = this._instance
     const contractID = entry.contractID()
 
-    return sbp('okTurtles.eventQueue/queueEvent', `publish:${contractID}`, async () => {
+    return sbp('chelonia/private/queueEvent', `publish:${contractID}`, async () => {
       let attempt = 1
       let lastAttemptedHeight
       // prepublish is asynchronous to allow for cleanly sending messages to
@@ -288,13 +304,7 @@ export default (sbp('sbp/selectors/register', {
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
         lastAttemptedHeight = entry.height()
-        const newEntry = await sbp('okTurtles.eventQueue/queueEvent', contractID, () => {
-          // If this._instance !== instance (i.e., chelonia/reset was called)
-          if (this._instance !== instance) {
-            console.info(`[chelonia] Not sending message as /reset was called ${entry.description()}`)
-            return
-          }
-
+        const newEntry = await sbp('chelonia/private/queueEvent', contractID, () => {
           const rootState = sbp(this.config.stateSelector)
           const state = rootState[contractID]
 
@@ -533,7 +543,7 @@ export default (sbp('sbp/selectors/register', {
             // Note: The following may be problematic when several tabs are open
             // sharing the same state. This is more of a general issue in this
             // situation, not limited to the following sequence of events
-            await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
+            await sbp('chelonia/private/queueEvent', v.contractID, [
               'chelonia/begin',
               ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
@@ -837,7 +847,7 @@ export default (sbp('sbp/selectors/register', {
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
     const contractID = event.contractID()
-    const result = await sbp('okTurtles.eventQueue/queueEvent', contractID, [
+    const result = await sbp('chelonia/private/queueEvent', contractID, [
       'chelonia/private/in/handleEvent', event
     ])
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
@@ -935,7 +945,7 @@ export default (sbp('sbp/selectors/register', {
       // Queue the current operation for execution.
       // Note that we do _not_ await because it could be unsafe to do so.
       // If the operation fails for some reason, just log the error.
-      sbp('okTurtles.eventQueue/queueEvent', contractID, op).catch((e) => {
+      sbp('chelonia/private/queueEvent', contractID, op).catch((e) => {
         console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e })
       })
     })
@@ -981,7 +991,7 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      sbp('okTurtles.eventQueue/queueEvent', contractID, ['chelonia/private/in/syncContractAndWatchKeys', contractID, externalContractID]).catch((e) => {
+      sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/in/syncContractAndWatchKeys', contractID, externalContractID]).catch((e) => {
         console.error(`Error at syncContractAndWatchKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
       })
     })
@@ -1055,7 +1065,7 @@ export default (sbp('sbp/selectors/register', {
       }
       keysToDelete.forEach((id) => this.config.reactiveSet(externalContractState._volatile.pendingKeyRevocations, id, 'del'))
 
-      sbp('okTurtles.eventQueue/queueEvent', externalContractID, ['chelonia/private/deleteRevokedKeys', externalContractID]).catch((e) => {
+      sbp('chelonia/private/queueEvent', externalContractID, ['chelonia/private/deleteRevokedKeys', externalContractID]).catch((e) => {
         console.error(`Error at deleteRevokedKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
       })
     }
@@ -1117,7 +1127,7 @@ export default (sbp('sbp/selectors/register', {
 
       const [,,, [originatingContractID]] = ((entry: any): [boolean, number, string, [string, Object, number, string]])
 
-      return sbp('okTurtles.eventQueue/queueEvent', originatingContractID, ['chelonia/private/respondToKeyRequest', contractID, signingKeyId, hash]).catch((e) => {
+      return sbp('chelonia/private/queueEvent', originatingContractID, ['chelonia/private/respondToKeyRequest', contractID, signingKeyId, hash]).catch((e) => {
         console.error(`respondToAllKeyRequests: Error responding to key request ${hash} from ${originatingContractID} to ${contractID}`, e)
       })
     })
