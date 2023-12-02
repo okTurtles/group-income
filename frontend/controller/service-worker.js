@@ -63,13 +63,6 @@ sbp('sbp/selectors/register', {
               payload: JSON.stringify(subscription.toJSON())
             }
           ))
-
-          // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
-          const testNotification = {
-            title: 'Service worker installed.',
-            body: 'You can now receive various push notifications from the Group Income app!',
-            endpoint: subscription.endpoint
-          }
         })
 
         if (pubsub.socket.readyState === WebSocket.OPEN) {
