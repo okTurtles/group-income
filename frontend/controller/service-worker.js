@@ -70,14 +70,6 @@ sbp('sbp/selectors/register', {
             body: 'You can now receive various push notifications from the Group Income app!',
             endpoint: subscription.endpoint
           }
-
-          pubsub.socket.send(createMessage(
-            NOTIFICATION_TYPE.PUSH_ACTION,
-            {
-              action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
-              payload: JSON.stringify(testNotification)
-            }
-          ))
         })
 
         if (pubsub.socket.readyState === WebSocket.OPEN) {
