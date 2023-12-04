@@ -133,13 +133,13 @@ export default ({
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        const permission = await requestNotificationPermission()
-        if (permission === 'granted') {
-          await sbp('service-worker/setup-push-subscription', {
-            title: 'Signed up',
-            body: 'Welcome! your first time logging in the app.'
-          })
-        }
+        await requestNotificationPermission()
+
+        // TODO: remove it once the test is done
+        await sbp('service-worker/send-push', {
+          title: 'Welcome to Group Income!',
+          body: 'Congratulations on signing up on the app.'
+        })
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

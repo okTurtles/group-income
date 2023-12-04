@@ -23,7 +23,7 @@ sbp('sbp/selectors/register', {
       console.error('error setting up service worker:', e)
     }
   },
-  'service-worker/setup-push-subscription': async function (testNotification: Object) {
+  'service-worker/setup-push-subscription': async function () {
     if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
 
     // Get the installed service-worker registration
@@ -66,23 +66,6 @@ sbp('sbp/selectors/register', {
             payload: JSON.stringify(subscription.toJSON())
           }
         ))
-
-        // 3. Send the test notification to confirm it works as expected. (Just a demo for now, but can be removed after development)
-        const notificationPayload = {
-          ...(testNotification || {
-            title: 'Service worker installed.',
-            body: 'You can now receive various push notifications from the Group Income app!'
-          }),
-          endpoint: subscription.endpoint
-        }
-
-        pubsub.socket.send(createMessage(
-          NOTIFICATION_TYPE.PUSH_ACTION,
-          {
-            action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
-            payload: JSON.stringify(notificationPayload)
-          }
-        ))
       })
 
       pubsub.socket.send(createMessage(
@@ -92,7 +75,12 @@ sbp('sbp/selectors/register', {
     }
   },
   'service-worker/send-push': async function (payload) {
-    if (!('serviceWorker' in navigator)) { return }
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
+
+    if (Notification.permission !== 'granted') {
+      console.debug('[sw] stopped sending a push-notification data to the server because of the permission not granted.')
+      return
+    }
 
     const swRegistration = await navigator.serviceWorker.ready
 

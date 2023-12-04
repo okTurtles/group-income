@@ -124,7 +124,7 @@ export default ({
         await finishedLoggingIn
         await this.postSubmit()
         this.$emit('submit-succeeded')
-        requestNotificationPermission()
+        await requestNotificationPermission()
 
         // TODO: remove it once the test is done
         await sbp('service-worker/send-push', {
