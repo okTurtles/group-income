@@ -124,12 +124,12 @@ export default ({
         await finishedLoggingIn
         await this.postSubmit()
         this.$emit('submit-succeeded')
-        await requestNotificationPermission()
-
-        // TODO: remove it once the test is done
-        await sbp('service-worker/send-push', {
-          title: 'Logged in',
-          body: 'Welcome again!'
+        requestNotificationPermission().then(() => {
+          // TODO: remove it once the test is done
+          await sbp('service-worker/send-push', {
+            title: 'Logged in',
+            body: 'Welcome again!'
+          })
         })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
