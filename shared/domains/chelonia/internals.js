@@ -273,6 +273,35 @@ export default (sbp('sbp/selectors/register', {
       contract: this.defContract
     }
   },
+  // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
+  'chelonia/private/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
+    const state = sbp(this.config.stateSelector)
+    const contractName = state.contracts[contractID]?.type
+    if (!contractName) {
+      console.error('[chelonia/private/removeImmediately] Called on non-existing contract', { contractID })
+      return
+    }
+
+    const manifestHash = this.config.contracts.manifests[contractName]
+    if (manifestHash) {
+      const destructor = `${manifestHash}/${contractName}/_cleanup`
+      // Check if a destructor is defined
+      if (sbp('sbp/selectors/fn', destructor)) {
+        // And call it
+        try {
+          sbp(destructor, { contractID, resync: !!params?.resync })
+        } catch (e) {
+          console.error(`[chelonia/private/removeImmediately] Error at destructor for ${contractID}`, e)
+        }
+      }
+    }
+
+    this.config.reactiveDel(state.contracts, contractID)
+    this.config.reactiveDel(state, contractID)
+    delete this.removeCount[contractID]
+    // calling this will make pubsub unsubscribe for events on `contractID`
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+  },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
@@ -866,7 +895,7 @@ export default (sbp('sbp/selectors/register', {
     if (currentVolatileState?.dirty) {
       delete currentVolatileState.dirty
       currentVolatileState.resyncing = true
-      sbp('chelonia/contract/removeImmediately', contractID, { resync: true })
+      sbp('chelonia/private/removeImmediately', contractID, { resync: true })
       this.config.reactiveSet(state, contractID, Object.create(null))
       this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
     }

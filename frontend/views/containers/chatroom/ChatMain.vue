@@ -707,6 +707,19 @@ export default ({
         // happens in order
         sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
           if (!this.checkEventSourceConsistency(contractID)) return
+
+          // Messages are processed twice: before sending (outgoing direction,
+          // pending status) and then again when received from the server
+          // (incoming direction)
+          if (message.direction() === 'incoming') {
+            // For incoming messages that aren't pending, we skip them
+            const msgIndex = findMessageIdx(message.hash(), this.messages)
+            if (msgIndex !== -1 && !this.messages[msgIndex].pending) {
+              // Message was already processed
+              return
+            }
+          }
+
           if (addedOrDeleted === 'DELETED') {
           // NOTE: Message will be deleted in processMessage function
           //       but need to make animation to delete it, probably here

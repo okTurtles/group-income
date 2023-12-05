@@ -294,9 +294,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
     await postCleanupFn?.()
-    sbp('chelonia/resetImmediately')
-  },
-  'chelonia/resetImmediately': function () {
+    // The following are all synchronous operations
     const rootState = sbp(this.config.stateSelector)
     const contracts = rootState.contracts
     // Cancel all outgoing messages by replacing this._instance
@@ -676,38 +674,9 @@ export default (sbp('sbp/selectors/register', {
       }
 
       return sbp('chelonia/private/queueEvent', contractID, [
-        'chelonia/contract/removeImmediately', contractID
+        'chelonia/private/removeImmediately', contractID
       ])
     }))
-  },
-  // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
-  'chelonia/contract/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
-    const state = sbp(this.config.stateSelector)
-    const contractName = state.contracts[contractID]?.type
-    if (!contractName) {
-      console.error('[chelonia/contract/removeImmediately] Called on non-existing contract', { contractID })
-      return
-    }
-
-    const manifestHash = this.config.contracts.manifests[contractName]
-    if (manifestHash) {
-      const destructor = `${manifestHash}/${contractName}/_cleanup`
-      // Check if a destructor is defined
-      if (sbp('sbp/selectors/fn', destructor)) {
-        // And call it
-        try {
-          sbp(destructor, { contractID, resync: !!params?.resync })
-        } catch (e) {
-          console.error(`[chelonia/contract/removeImmediately] Error at destructor for ${contractID}`, e)
-        }
-      }
-    }
-
-    this.config.reactiveDel(state.contracts, contractID)
-    this.config.reactiveDel(state, contractID)
-    delete this.removeCount[contractID]
-    // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)
