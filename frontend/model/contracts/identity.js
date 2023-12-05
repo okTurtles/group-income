@@ -194,7 +194,8 @@ sbp('chelonia/defineContract', {
             contractName: 'gi.contracts/group',
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+            blockOriginatingContract: false
           }).catch(e => {
             console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
           })

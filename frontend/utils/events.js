@@ -32,5 +32,3 @@ export const INCOME_DETAILS_UPDATE = 'income-details-update'
 export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
-
-export const CYPRESS_FINISHED_KEY_REQUEST_EVENT = 'cypress-finished-key-request-event'

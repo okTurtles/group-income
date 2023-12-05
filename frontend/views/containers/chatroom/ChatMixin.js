@@ -98,7 +98,7 @@ const ChatMixin: Object = {
         const { creator, name, description, type, privacyLevel, users } = summarizedAttr
         const activeUsers = Object
           .entries(users)
-          .filter((profile) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
+          .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
           .map(([username]) => {
             const { displayName, picture, email } = this.globalProfile(username) || {}
             return [username, { displayName, picture, email }]

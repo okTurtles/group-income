@@ -50,8 +50,8 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
 
 // chatroom.js related
 
-export function createMessage ({ meta, data, hash, state, pending }: {
-  meta: Object, data: Object, hash: string, state?: Object, pending?: boolean
+export function createMessage ({ meta, data, hash, height, state, pending }: {
+  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
@@ -59,6 +59,7 @@ export function createMessage ({ meta, data, hash, state, pending }: {
   let newMessage = {
     type,
     hash,
+    height,
     from: meta.username,
     datetime: new Date(createdDate).toISOString(),
     pending

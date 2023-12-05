@@ -152,11 +152,11 @@ export default (sbp('sbp/selectors/register', {
       return
     }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
-    const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
+    const manifest = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('json'))
     const body = JSON.parse(manifest.body)
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
-    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
+    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
       .then(handleFetchResult('text'))
     const sourceHash = blake32Hash(source)
     if (sourceHash !== contractInfo.hash) {
@@ -262,7 +262,7 @@ export default (sbp('sbp/selectors/register', {
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict
         // with other client's clocks.
         // See: https://github.com/okTurtles/group-income/issues/531
-        return fetch(`${this.config.connectionURL}/time`).then(handleFetchResult('text'))
+        return fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
       }
     })
     contractName = this.defContract.name
@@ -341,7 +341,8 @@ export default (sbp('sbp/selectors/register', {
           headers: {
             'Content-Type': 'text/plain',
             'Authorization': 'gi TODO - signature - if needed here - goes here'
-          }
+          },
+          signal: this.abortController.signal
         })
         if (r.ok) {
           hooks?.postpublish?.(entry)
@@ -380,14 +381,15 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/out/latestHEADinfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
   'chelonia/private/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
+    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`, { signal: this.abortController.signal })
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -454,6 +456,7 @@ export default (sbp('sbp/selectors/register', {
               data,
               meta,
               hash,
+              height,
               contractID,
               direction: message.direction(),
               signingKeyId,
@@ -1463,6 +1466,7 @@ const handleEvent = {
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const hash = message.hash()
+    const height = message.height()
     const signingKeyId = message.signingKeyId()
 
     const callSideEffect = async (field) => {
@@ -1478,6 +1482,7 @@ const handleEvent = {
         data,
         meta,
         hash,
+        height,
         contractID,
         description: message.description(),
         direction: message.direction(),

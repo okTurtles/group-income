@@ -183,7 +183,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         username: string // username of joining member
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, height }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           throw new Error(`Can not join the chatroom which ${username} is already part of`)
@@ -200,7 +200,7 @@ sbp('chelonia/defineContract', {
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, height, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ data, contractID, hash, meta }, { state }) {
@@ -269,7 +269,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         name: string
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, height }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
         if (!state.onlyRenderMessage) {
@@ -277,7 +277,7 @@ sbp('chelonia/defineContract', {
         }
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, height, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -289,7 +289,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         description: string
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, height }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
         if (!state.onlyRenderMessage) {
@@ -299,7 +299,7 @@ sbp('chelonia/defineContract', {
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, height, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -312,7 +312,7 @@ sbp('chelonia/defineContract', {
         username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
-      process ({ data, meta, hash, contractID }, { state }) {
+      process ({ data, meta, hash, height, contractID }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
@@ -329,6 +329,7 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({
           meta: isKicked ? meta : { ...meta, username: member },
           hash,
+          height,
           data: notificationData,
           state
         })
@@ -400,7 +401,7 @@ sbp('chelonia/defineContract', {
       // for the same message and state. The `direction` attributes handles
       // these situations especially, and it's meant to mark sent-by-the-user
       // but not-yet-received-over-the-network messages.
-      process ({ direction, data, meta, hash }, { state }) {
+      process ({ direction, data, meta, hash, height }, { state }) {
         // Exit early if we're only supposed to render messages.
         if (!state.onlyRenderMessage) {
           return
@@ -411,13 +412,13 @@ sbp('chelonia/defineContract', {
         if (!existingMsg) {
           // If no existing message, simply add it to the messages array.
           const pending = direction === 'outgoing'
-          state.messages.push(createMessage({ meta, data, hash, state, pending }))
+          state.messages.push(createMessage({ meta, data, hash, height, state, pending }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
           delete existingMsg.pending
         }
       },
-      sideEffect ({ contractID, hash, meta, data }, { state, getters }) {
+      sideEffect ({ contractID, hash, height, meta, data }, { state, getters }) {
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
@@ -426,7 +427,7 @@ sbp('chelonia/defineContract', {
         if (me === meta.username && data.type !== MESSAGE_TYPES.INTERACTIVE) {
           return
         }
-        const newMessage = createMessage({ meta, data, hash, state })
+        const newMessage = createMessage({ meta, data, hash, height, state })
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
@@ -601,7 +602,7 @@ sbp('chelonia/defineContract', {
         votes: arrayOf(string),
         votesAsString: string
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, height }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
@@ -634,7 +635,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, height, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {

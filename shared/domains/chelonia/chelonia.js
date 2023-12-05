@@ -220,6 +220,7 @@ export default (sbp('sbp/selectors/register', {
     }
     // Used in publishEvent to cancel sending events after reset (logout)
     this._instance = Object.create(null)
+    this.abortController = new AbortController()
     this.state = {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
@@ -300,6 +301,8 @@ export default (sbp('sbp/selectors/register', {
     const contracts = rootState.contracts
     // Cancel all outgoing messages by replacing this._instance
     this._instance = Object.create(null)
+    this.abortController.abort()
+    this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
     this.config.reactiveSet(rootState, 'contracts', Object.create(null))
     this.config.reactiveSet(rootState, 'pending', [])
@@ -735,7 +738,7 @@ export default (sbp('sbp/selectors/register', {
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
   'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
+    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`, { signal: this.abortController.signal })
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -743,7 +746,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
   'chelonia/out/eventsBefore': async function (before: string, limit: number) {
@@ -752,7 +756,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`)
+    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`, { signal: this.abortController.signal })
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -764,7 +768,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`)
+    const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`, { signal: this.abortController.signal })
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)

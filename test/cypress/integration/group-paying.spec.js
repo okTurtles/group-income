@@ -156,6 +156,7 @@ describe('Group Payments', () => {
       const waitingPeriod = groupSortedPeriodKeys[0]
       /* eslint-disable no-unused-expressions */
       // The provided integers are there to help identify a failed assertion.
+      // TODO: THE FOLLOWING ASSERTION (THE ONE WITH CURRENT DATE) *SOMETIMES* FAILS
       expect(periodStampGivenDate(new Date()) === distributionDate, 1).to.be.true
       expect(periodStampGivenDate(distributionDate) === distributionDate, 2).to.be.true
       expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead, 3).to.be.true

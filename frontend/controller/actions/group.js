@@ -28,8 +28,7 @@ import {
   OPEN_MODAL,
   REPLACE_MODAL,
   SWITCH_GROUP,
-  JOINED_GROUP,
-  CYPRESS_FINISHED_KEY_REQUEST_EVENT
+  JOINED_GROUP
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -284,7 +283,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { blockOriginatingContract?: boolean }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -350,7 +349,10 @@ export default (sbp('sbp/selectors/register', {
       // After syncing the group contract, we send a key request
       if (sendKeyRequest) {
         // Send the key request
-        await sbp('chelonia/out/keyRequest', {
+        // We cannot await because this may be called from a section that is
+        // already waiting on the identity contract. Calls to keyRequest require
+        // simultaneously waiting on the group and the identity contract.
+        const keyRequestPromise = sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
           permissions: [GIMessage.OP_ACTION_ENCRYPTED],
@@ -365,8 +367,8 @@ export default (sbp('sbp/selectors/register', {
           throw e
         })
 
-        if (process.env.NODE_ENV === 'development' || window.Cypress) {
-          sbp('okTurtles.events/emit', CYPRESS_FINISHED_KEY_REQUEST_EVENT, { contractID: params.contractID })
+        if (params.blockOriginatingContract !== false) {
+          await keyRequestPromise
         }
 
         // Nothing left to do until the keys are received

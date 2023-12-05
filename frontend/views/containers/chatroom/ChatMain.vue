@@ -180,7 +180,8 @@ export default ({
         renderingChatRoomId: null,
         replyingMessage: null,
         replyingMessageHash: null,
-        replyingTo: null
+        replyingTo: null,
+        unprocessedEvents: []
       },
       messageState: {
         contract: {},
@@ -331,14 +332,14 @@ export default ({
           // message has been received. This is intentional to mark yet-unsent
           // messages as pending in the UI
           prepublish: (message) => {
-            if (!this.checkEventSourceConsistency(message.contractID())) return
+            if (!this.checkEventSourceConsistency(contractID)) return
             const messageStateContract = this.messageState.contract
 
             // IMPORTANT: This is executed *BEFORE* the message is received over
             // the network
             sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', ['chelonia/in/processMessage', message, messageStateContract])
               .then((messageStateContract) => {
-                if (!this.checkEventSourceConsistency(message.contractID())) return
+                if (!this.checkEventSourceConsistency(contractID)) return
                 this.messageState.contract = messageStateContract
               }).catch((e) => {
                 console.error('Error sending message during pre-publish: ' + e.message)
@@ -348,13 +349,13 @@ export default ({
             this.updateScroll()
           },
           beforeRequest: (message, oldMessage) => {
-            if (!this.checkEventSourceConsistency(message.contractID())) return
+            if (!this.checkEventSourceConsistency(contractID)) return
             const messageStateContract = this.messageState.contract
             sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
               const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
-              if (msg) {
-                msg.hash = message.hash()
-              }
+              if (!msg) return
+              msg.hash = message.hash()
+              msg.height = message.height()
             })
           }
         }
@@ -388,18 +389,21 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
+        const contractID = this.summary.chatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events = await sbp('chelonia/out/eventsBetween', messageHash, this.messages[0].hash, limit / 2)
+        if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events, false)
 
+          if (!this.checkEventSourceConsistency(contractID)) return
           const msgIndex = findMessageIdx(messageHash, this.messages)
           if (msgIndex >= 0) {
             scrollAndHighlight(msgIndex)
           } else {
             // this is when the target message is deleted after reply message
             // should let user know the target message is deleted
-            console.debug('Message is removed')
+            console.debug(`Message ${messageHash} is removed from ${contractID}`)
           }
         }
       }
@@ -502,6 +506,7 @@ export default ({
       //       it's true when user gets entered channel page or switches to another channel
       if (shouldInitiate) {
         await this.loadMessagesFromStorage(chatRoomId)
+        if (!this.checkEventSourceConsistency(chatRoomId)) return
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
@@ -536,33 +541,38 @@ export default ({
           newEvents = await sbp('chelonia/out/eventsBetween', prevLastEventHash, latestHash, 0)
           newEvents.shift() // NOTE: already exists in this.latestEvents
         }
-        if (newEvents.length) {
-          for (const event of newEvents) {
-            const newMessage = GIMessage.deserialize(event, undefined, this.messageState.contract)
-            const newState = await sbp('chelonia/in/processMessage', newMessage, this.messageState.contract)
-            if (!this.checkEventSourceConsistency(chatRoomId)) {
-              break
+        if (newEvents.length > 0) {
+          // This ensures that `this.latestEvents.push(message.serialize())`
+          // below happens in order
+          await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+            if (!this.checkEventSourceConsistency(chatRoomId)) return
+
+            for (const event of newEvents) {
+              const state = this.messageState.contract
+              const newMessage = GIMessage.deserialize(event, undefined, state)
+              const newState = await sbp('chelonia/in/processMessage', newMessage, state)
+
+              if (!this.checkEventSourceConsistency(chatRoomId)) return
+
+              this.messageState.contract = newState
+              this.latestEvents.push(event)
             }
-            this.messageState.contract = newState
-            this.latestEvents.push(event)
-          }
-          this.$forceUpdate()
+
+            this.$forceUpdate()
+          })
         }
       } else if (shouldInitiate && messageHashToScroll) {
         events = await sbp('chelonia/out/eventsBetween', messageHashToScroll, latestHash, limit)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-      if (chatRoomId !== this.renderingChatRoomId) {
-        // NOTE: This is to avoid rendering the incorrect events for the current chatroom
-        //       while getting the events from the backend, this.renderingChatRoomId could be changed
-        //       In this case, we should avoid the previous events because they are for another channel, not for the current one
-        return
-      }
+
+      if (!this.checkEventSourceConsistency(chatRoomId)) return
 
       if (!isLoadedFromStorage) {
         // NOTE: already rendered above in this function
         await this.rerenderEvents(events, shouldInitiate)
+        if (!this.checkEventSourceConsistency(chatRoomId)) return
       }
 
       if (shouldInitiate) {
@@ -573,24 +583,42 @@ export default ({
 
       return events.length < limit
     },
-    async rerenderEvents (events, shouldInitiate) {
+    rerenderEvents (events, shouldInitiate) {
+      const contractID = this.summary.chatRoomId
+
       if (shouldInitiate) {
         this.latestEvents = events
       } else if (events.length > 1) {
         events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
         this.latestEvents.unshift(...events)
-      } else {
-        return
       }
 
       this.initializeState()
-      for (const event of this.latestEvents) {
-        this.messageState.contract = await sbp('chelonia/in/processMessage', GIMessage.deserialize(event, undefined, this.messageState.contract), this.messageState.contract)
-      }
-      this.$forceUpdate()
+
+      // This ensures that `this.latestEvents.push(message.serialize())` below
+      // happens in order
+      return sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        if (!this.checkEventSourceConsistency(contractID)) return
+
+        const latestEvents = this.latestEvents
+        if (latestEvents.length > 0) {
+          for (const event of latestEvents) {
+            const state = this.messageState.contract
+            const newMessage = GIMessage.deserialize(event, undefined, state)
+            const newState = await sbp('chelonia/in/processMessage', newMessage, state)
+
+            if (!this.checkEventSourceConsistency(contractID)) return
+
+            this.messageState.contract = newState
+          }
+          this.$forceUpdate()
+        }
+      })
     },
     async loadMessagesFromStorage (chatRoomId) {
       const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId(chatRoomId))
+      if (!this.checkEventSourceConsistency(chatRoomId)) return
+
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -602,6 +630,7 @@ export default ({
     setInitMessages () {
       this.initializeState()
       this.ephemeral.messagesInitiated = false
+      this.ephemeral.unprocessedEvents = []
       this.renderingChatRoomId = this.currentChatRoomId
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
@@ -626,7 +655,7 @@ export default ({
         })
       }
     },
-    listenChatRoomActions (contractID: string, message: GIMessage) {
+    listenChatRoomActions (contractID: string, message?: GIMessage) {
       // We must check this.summary.chatRoomId and not this.currentChatRoomId
       // because they might be different, as this.summary is computed from
       // this.currentChatRoomId.
@@ -639,75 +668,85 @@ export default ({
         return
       }
 
+      if (message) {
+        this.ephemeral.unprocessedEvents.push(message)
+      }
+
+      if (!this.ephemeral.messagesInitiated) {
+        return
+      }
+
+      this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
       // TODO: The next line will _not_ get information about any inner signatures,
       // which is used for determininng the sender of a message. Update with
       // another call to GIMessage to get signature information
-      const value = message.decryptedValue()
-      if (!value) throw new Error('Unable to decrypt message')
+        const value = message.decryptedValue()
+        if (!value) throw new Error('Unable to decrypt message')
 
-      const isMessageAddedOrDeleted = (message: GIMessage) => {
-        if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
+        const isMessageAddedOrDeleted = (message: GIMessage) => {
+          if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-        const { action, meta } = value
-        const rootState = sbp('state/vuex/state')
-        let addedOrDeleted = 'NONE'
+          const { action, meta } = value
+          const rootState = sbp('state/vuex/state')
+          let addedOrDeleted = 'NONE'
 
-        if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
+          if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
           // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
-          addedOrDeleted = 'ADDED'
-        } else if (/(deleteMessage)$/.test(action)) {
-          addedOrDeleted = 'DELETED'
+            addedOrDeleted = 'ADDED'
+          } else if (/(deleteMessage)$/.test(action)) {
+            addedOrDeleted = 'DELETED'
+          }
+
+          return { addedOrDeleted, self: rootState.loggedIn.username === meta.username }
         }
 
-        return { addedOrDeleted, self: rootState.loggedIn.username === meta.username }
-      }
+        // NOTE: while syncing the chatroom contract, we should ignore all the events
+        const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
 
-      // NOTE: while syncing the chatroom contract, we should ignore all the events
-      const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
-
-      // This ensures that `this.latestEvents.push(message.serialize())` below
-      // happens in order
-      sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
-        if (!this.checkEventSourceConsistency(contractID)) return
-        if (addedOrDeleted === 'DELETED') {
+        // This ensures that `this.latestEvents.push(message.serialize())` below
+        // happens in order
+        sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+          if (!this.checkEventSourceConsistency(contractID)) return
+          if (addedOrDeleted === 'DELETED') {
           // NOTE: Message will be deleted in processMessage function
           //       but need to make animation to delete it, probably here
-          const messageHash = value.data.hash
-          const msgIndex = findMessageIdx(messageHash, this.messages)
-          if (msgIndex !== -1) {
-            document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
+            const messageHash = value.data.hash
+            const msgIndex = findMessageIdx(messageHash, this.messages)
+            if (msgIndex !== -1) {
+              document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
-            // NOTE: waiting for the animation is done
-            //       it's duration is 500ms described in MessageBase.vue
-            await new Promise(resolve => setTimeout(resolve, 500))
-          }
-        }
-
-        if (!this.checkEventSourceConsistency(contractID)) return
-        const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
-
-        if (!this.checkEventSourceConsistency(contractID)) return
-        this.messageState.contract = newContractState
-
-        this.latestEvents.push(message.serialize())
-
-        this.$forceUpdate()
-
-        if (this.ephemeral.scrolledDistance < 50) {
-          if (addedOrDeleted === 'ADDED') {
-            const isScrollable = this.$refs.conversation &&
-              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-            if (!self && isScrollable) {
-              this.updateScroll()
-            } else if (!isScrollable && this.messages.length) {
-              const msg = this.messages[this.messages.length - 1]
-              this.updateUnreadMessageHash({
-                messageHash: msg.hash,
-                createdDate: msg.datetime
-              })
+              // NOTE: waiting for the animation is done
+              //       it's duration is 500ms described in MessageBase.vue
+              await new Promise(resolve => setTimeout(resolve, 500))
+              if (!this.checkEventSourceConsistency(contractID)) return
             }
           }
-        }
+
+          const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
+
+          if (!this.checkEventSourceConsistency(contractID)) return
+          this.messageState.contract = newContractState
+
+          this.latestEvents.push(message.serialize())
+
+          this.$forceUpdate()
+
+          if (this.ephemeral.scrolledDistance < 50) {
+            if (addedOrDeleted === 'ADDED') {
+              const isScrollable = this.$refs.conversation &&
+              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+              if (!self && isScrollable) {
+                this.updateScroll()
+              } else if (!isScrollable && this.messages.length) {
+                const msg = this.messages[this.messages.length - 1]
+                this.updateUnreadMessageHash({
+                  messageHash: msg.hash,
+                  createdDate: msg.datetime
+                })
+              }
+            }
+          }
+        })
       })
     },
     resizeEventHandler () {
@@ -735,7 +774,10 @@ export default ({
         // NOTE: should ignore to render messages before chatroom state is initiated
         return
       }
+      const chatRoomId = this.currentChatRoomId
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
+        if (!this.checkEventSourceConsistency(chatRoomId)) return
+
         if (completed === true) {
           $state.complete()
           if (!this.$refs.conversation ||
@@ -754,6 +796,7 @@ export default ({
         if (completed !== undefined) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
           this.ephemeral.messagesInitiated = true
+          this.listenChatRoomActions(chatRoomId)
         }
       }).catch(e => {
         console.error('ChatMain infiniteHandler() error:', e)
@@ -890,9 +933,13 @@ export default ({
 
       const initAfterSynced = (toChatRoomId, fromChatRoomId) => {
         const initMessagesAfterSynced = (contractID, isSyncing) => {
-          if (contractID === toChatRoomId && isSyncing === false) {
-            this.setInitMessages()
+          if (isSyncing) return
+          if (contractID === toChatRoomId) {
             sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
+          }
+          // We don't init messages if the current chatroom has changed
+          if (toChatRoomId === this.currentChatRoomId) {
+            this.setInitMessages()
           }
         }
 

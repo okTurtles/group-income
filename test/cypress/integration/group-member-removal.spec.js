@@ -94,6 +94,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       isLoggedIn: true,
       shouldLogoutAfter: false

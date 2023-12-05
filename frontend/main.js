@@ -13,7 +13,7 @@ import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP, CYPRESS_FINISHED_KEY_REQUEST_EVENT } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -177,7 +177,7 @@ async function startApp () {
   }
 
   // this is definitely very hacky, but we put it here since two events
-  // (CONTRACT_IS_SYNCING, CYPRESS_FINISHED_KEY_REQUEST_EVENT)
+  // (CONTRACT_IS_SYNCING)
   // can be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
   const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
@@ -242,7 +242,6 @@ async function startApp () {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
-          keyRequestedGroupIDs: [],
           debouncedSyncBanner: null,
           isCorrupted: false // TODO #761
         }
@@ -273,11 +272,6 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
 
-      const keyRequestedFn = ({ contractID }) => {
-        this.ephemeral.keyRequestedGroupIDs.push(contractID)
-      }
-      sbp('okTurtles.events/on', CYPRESS_FINISHED_KEY_REQUEST_EVENT, keyRequestedFn)
-
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
 
@@ -288,7 +282,6 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
-        sbp('okTurtles.events/off', CYPRESS_FINISHED_KEY_REQUEST_EVENT)
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       })
@@ -369,6 +362,31 @@ async function startApp () {
         return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
           .filter(([q]) => typeof q === 'string' && q.startsWith('publish:'))
           .flatMap(([, list]) => list).length
+      },
+      keyRequestedGroupIDs () {
+        const state = this.$store.state
+        const identityContractID = state.loggedIn?.identityContractID
+        const authorizedKeys = (
+          identityContractID &&
+          state[identityContractID]?._vm?.authorizedKeys
+        )
+        const contracts = state.contracts
+
+        if (!authorizedKeys || !contracts) return []
+
+        return Object.keys(contracts).filter((contractID) =>
+          contractID !== identityContractID &&
+          state[contractID]?._volatile?.pendingKeyRequests?.some((kr) =>
+            (
+              kr &&
+              kr.name &&
+              Object.values(authorizedKeys).some((key) => {
+                // $FlowFixMe[incompatible-use]
+                return key?.name === kr.name
+              })
+            )
+          )
+        ).join(', ')
       }
     },
     methods: {

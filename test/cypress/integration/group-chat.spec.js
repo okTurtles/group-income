@@ -473,6 +473,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       groupName: groupName1,
+      existingMemberUsername: user1,
       shouldLogoutAfter: false,
       isLoggedIn: true
     })
@@ -492,6 +493,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName: groupName1,
+      existingMemberUsername: user3,
       shouldLogoutAfter: false,
       isLoggedIn: true
     })
