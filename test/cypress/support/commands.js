@@ -529,7 +529,7 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         contractID: sbp('state/vuex/state').currentGroupId,
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
-          onprocessed: resolve()
+          onprocessed: () => resolve()
         }
       })
     })
