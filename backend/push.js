@@ -40,11 +40,9 @@ export const pushServerActionhandlers: any = {
     // NOTE: if the payload contains 'endpoint' field, send push-notification to that particular subscription.
     //       otherwise, iterate all existing subscriptions and broadcast the push-notification to all.
 
-    console.log('\r\n\r\n@@@ push notification data: ', data)
     if (data.endpoint) {
       const subscription = pushSubscriptions[data.endpoint]
 
-      console.log('\r\n\r\n@@@ here??: ', subscription)
       await sendPush(subscription)
     } else {
       for (const subscription of Object.values(pushSubscriptions)) {
