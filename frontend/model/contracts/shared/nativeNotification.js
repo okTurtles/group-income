@@ -4,7 +4,10 @@ import sbp from '@sbp/sbp'
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.
 
-export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
+export async function requestNotificationPermission ({
+  force = false,
+  notificationPayload = null
+}: any = {}): Promise<null | string> {
   if (typeof Notification === 'undefined') {
     return null
   }
@@ -18,8 +21,14 @@ export async function requestNotificationPermission (force: boolean = false): Pr
     }
   }
 
-  if (Notification.permission === 'granted') {
-    await sbp('service-worker/setup-push-subscription')
+  if (Notification.permission === 'granted' && notificationPayload) {
+    const isPushReady = await sbp('service-worker/check-push-subscription-ready')
+
+    if (isPushReady) {
+      sbp('service-worker/send-push', notificationPayload)
+    } else {
+      sbp('service-worker/setup-push-subscription', notificationPayload)
+    }
   }
 
   return Notification.permission

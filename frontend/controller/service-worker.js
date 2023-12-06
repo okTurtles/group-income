@@ -23,7 +23,7 @@ sbp('sbp/selectors/register', {
       console.error('error setting up service worker:', e)
     }
   },
-  'service-worker/setup-push-subscription': async function () {
+  'service-worker/setup-push-subscription': async function (followingNotification = null) {
     if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
 
     // Get the installed service-worker registration
@@ -47,6 +47,10 @@ sbp('sbp/selectors/register', {
           payload: JSON.stringify(existingSubscription.toJSON())
         }
       ))
+
+      if (followingNotification) {
+        sbp('service-worker/send-push', followingNotification)
+      }
     } else {
       // Generate a new push subscription
       sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
@@ -58,7 +62,7 @@ sbp('sbp/selectors/register', {
           applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
         })
 
-        // 2. Send the subscription details to the server. (server needs it to send the push notification)
+        // 2. Store the subscription details to the server. (server needs it to send the push notification)
         pubsub.socket.send(createMessage(
           NOTIFICATION_TYPE.PUSH_ACTION,
           {
@@ -66,6 +70,11 @@ sbp('sbp/selectors/register', {
             payload: JSON.stringify(subscription.toJSON())
           }
         ))
+
+        // 3. Send a following notifciation if it's passed
+        if (followingNotification) {
+          sbp('service-worker/send-push', followingNotification)
+        }
       })
 
       pubsub.socket.send(createMessage(
@@ -103,6 +112,16 @@ sbp('sbp/selectors/register', {
     } else {
       console.error('No existing push subscription found!')
     }
+  },
+  'service-worker/check-push-subscription-ready': async function () {
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return false }
+
+    const swRegistration = await navigator.serviceWorker.ready
+    if (swRegistration) {
+      const pushSubscription = await swRegistration.pushManager.getSubscription()
+
+      return !!pushSubscription
+    } else { return false }
   }
 })
 
