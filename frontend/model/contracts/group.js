@@ -989,6 +989,7 @@ sbp('chelonia/defineContract', {
 
         const memberToRemove = data.member
         const membersCount = getters.groupMembersCount
+        const isGroupCreator = meta.username === state.settings.groupCreator
 
         if (!state.profiles[memberToRemove]) {
           throw new TypeError(L('Not part of the group.'))
@@ -997,12 +998,12 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Cannot remove yourself.'))
         }
 
-        if (membersCount < 3) {
+        if (isGroupCreator) {
+          return true
+        } else if (membersCount < 3) {
           // In a small group only the creator can remove someone
           // TODO: check whether meta.username has required admin permissions
-          if (meta.username !== state.settings.groupCreator) {
-            throw new TypeError(L('Only the group creator can remove members.'))
-          }
+          throw new TypeError(L('Only the group creator can remove members.'))
         } else {
           // In a big group a removal can only happen through a proposal
           const proposal = state.proposals[data.proposalHash]
