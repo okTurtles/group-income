@@ -25,6 +25,17 @@ self.addEventListener('fetch', function (event) {
 // the cache instead, or just localstorage. Investigate whether the service worker
 // has the ability to access and clear the localstorage periodically.
 const store = {}
+const sendMessageToClient = async function (payload) {
+  if (!store.clientId) {
+    console.error('[sw] Cannot send a message to a client, because no client id is found')
+    return
+  }
+
+  const client = await self.clients.get(store.clientId)
+  if (client) {
+    client.postMessage(payload)
+  }
+}
 
 self.addEventListener('message', function (event) {
   console.debug(`[sw] message from ${event.source.id}. Current store:`, store)
@@ -40,6 +51,9 @@ self.addEventListener('message', function (event) {
         event.source.postMessage({
           response: store[event.data.key]
         })
+        break
+      case 'store-client-id':
+        store.clientId = event.source.id
         break
       default:
         console.error('[sw] unknown message type:', event.data)
@@ -71,11 +85,13 @@ self.addEventListener('push', function (event) {
 })
 
 self.addEventListener('pushsubscriptionchange', async function (event) {
-  // if a subscription is expired for some reason, re-subscribe it, so it doesn't lead to crashing the server in /push/send route.
   // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
   // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
   const subscription = await self.registration.pushManger.subscribe(event.oldSubscription.options)
 
-  // send the re-newed subscription details to the server
-  await fetch('/push/subscribe', { method: 'POST', body: JSON.stringify(subscription.toJSON()) })
+  // Sending the client a message letting it know of the subscription change.
+  await sendMessageToClient({
+    type: 'pushsubscriptionchange',
+    subscription
+  })
 })

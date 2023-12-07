@@ -18,7 +18,28 @@ sbp('sbp/selectors/register', {
     if (!('serviceWorker' in navigator)) { return }
 
     try {
-      await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
+      const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
+
+      if (swRegistration) {
+        swRegistration?.active.postMessage({ type: 'store-client-id' })
+      }
+
+      navigator.serviceWorker.addEventListener('message', event => {
+        console.debug('[sw] Received a message from the service worker :', event)
+        const data = event.data
+
+        if (typeof data === 'object' && data.type) {
+          switch (data.type) {
+            case 'pushsubscriptionchange': {
+              sbp('service-worker/resubscribe-push', data.subscription)
+              break
+            }
+            default:
+              console.error('[sw] Received unknown message type from the service worker:', data)
+              break
+          }
+        }
+      })
     } catch (e) {
       console.error('error setting up service worker:', e)
     }
@@ -34,6 +55,7 @@ sbp('sbp/selectors/register', {
       return
     }
 
+    console.log('@@@ registration.active: ', registration.active)
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const existingSubscription = await registration.pushManager.getSubscription()
 
@@ -122,6 +144,17 @@ sbp('sbp/selectors/register', {
 
       return !!pushSubscription
     } else { return false }
+  },
+  'service-worker/resubscribe-push': function (subscription) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+
+    pubsub.socket.send(createMessage(
+      NOTIFICATION_TYPE.PUSH_ACTION,
+      {
+        action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+        payload: JSON.stringify(subscription.toJSON())
+      }
+    ))
   }
 })
 
