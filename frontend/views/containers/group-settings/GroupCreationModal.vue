@@ -1,16 +1,15 @@
 <template lang='pug'>
 modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle='L("Create Group")')
-  .steps(v-if='currentStep + 1 < config.steps.length')
+  .steps(v-if='currentStep < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
       :key='index'
       :class='[currentStep === index ? "active" : "", currentStep < index ? "next" : ""]'
       @click='redirect(step)'
-      v-if='step != "GroupWelcome"'
     ) {{ index + 1 }}
 
-  .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
-    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
+  .wrapper.mobile-steps.subtitle(v-if='currentStep < config.steps.length')
+    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length }') Step {current} of {max}
 
   transition(name='fade' mode='out-in')
     component(
@@ -24,14 +23,14 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 
       banner-scoped(ref='formMsg')
 
-      .buttons(v-if='currentStep + 1 < config.steps.length')
+      .buttons(v-if='currentStep < config.steps.length')
         button.is-outlined(
           @click='prev'
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
         button.is-primary(
-          v-if='currentStep + 2 < config.steps.length'
+          v-if='currentStep + 1 < config.steps.length'
           ref='next'
           @click='next'
           :disabled='$v.steps[content] && $v.steps[content].$invalid'
@@ -61,7 +60,6 @@ import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import GroupWelcome from '@components/GroupWelcome.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -89,8 +87,7 @@ export default ({
     GroupPurpose,
     GroupMincome,
     GroupRules,
-    GroupPrivacy,
-    GroupWelcome
+    GroupPrivacy
   },
   methods: {
     focusRef (ref) {
@@ -122,7 +119,7 @@ export default ({
             distributionDate: this.form.distributionDate
           }
         })
-        this.next()
+        this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
@@ -152,8 +149,7 @@ export default ({
           'GroupName',
           'GroupPurpose',
           'GroupMincome',
-          'GroupRules',
-          'GroupWelcome'
+          'GroupRules'
         ]
       }
     }

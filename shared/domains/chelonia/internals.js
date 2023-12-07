@@ -154,7 +154,7 @@ export default (sbp('sbp/selectors/register', {
     let contractName: string // eslint-disable-line prefer-const
     const contractSBP = (selector: string, ...args) => {
       const domain = domainFromSelector(selector)
-      if (selector.startsWith(contractName)) {
+      if (selector.startsWith(contractName + '/')) {
         selector = `${manifestHash}/${selector}`
       }
       if (allowedSels[selector] || allowedDoms[domain]) {
@@ -445,10 +445,10 @@ export default (sbp('sbp/selectors/register', {
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
-          if (key.meta?.private) {
+          if (key.id && key.meta?.private?.content) {
+            if (!has(state._vm, 'sharedKeyIds')) self.config.reactiveSet(state._vm, 'sharedKeyIds', [])
+            if (!state._vm.sharedKeyIds.includes(key.id)) state._vm.sharedKeyIds.push(key.id)
             if (
-              key.id &&
-              key.meta.private.content &&
               !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
             ) {
               try {
@@ -501,7 +501,6 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             await sbp('okTurtles.eventQueue/queueEvent', v.contractID, [
               'chelonia/begin',
-              ['chelonia/contract/removeImmediately', v.contractID],
               ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ])
@@ -800,6 +799,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+    // If the dirty flag is set (indicating that new encryption keys were received),
+    // we remove the current state before syncing (this has the effect of syncing
+    // from the beginning, recreating the entire state). When this is the case,
+    // the _volatile state is preserved
+    if (currentVolatileState?.dirty) {
+      delete currentVolatileState.dirty
+      currentVolatileState.resyncing = true
+      sbp('chelonia/contract/removeImmediately', contractID, { resync: true })
+      this.config.reactiveSet(state, contractID, Object.create(null))
+      this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
+    }
     const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
@@ -859,6 +870,9 @@ export default (sbp('sbp/selectors/register', {
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     } finally {
+      if (state[contractID]?._volatile?.resyncing) {
+        this.config.reactiveDel(state[contractID]._volatile, 'resyncing')
+      }
       delete this.currentSyncs[contractID]
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }

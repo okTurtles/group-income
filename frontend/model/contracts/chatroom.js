@@ -717,7 +717,11 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
-    'gi.contracts/chatroom/_cleanup': ({ contractID }) => {
+    'gi.contracts/chatroom/_cleanup': ({ contractID, resync }) => {
+      // If we're resyncing after having received new keys, we're not actually
+      // leaving the chatroom, and there are no cleanup actions
+      if (resync) return
+
       leaveChatRoom({ contractID }).catch((e) => {
         console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e)
       })

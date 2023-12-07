@@ -91,6 +91,10 @@ sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
 
+    if (!state) {
+      throw new Error(`[gi.actions/out/rotateKeys] Cannot rotate keys for ${contractID}: No state exists`)
+    }
+
     let ringLevel = Number.MAX_SAFE_INTEGER
 
     // $FlowFixMe

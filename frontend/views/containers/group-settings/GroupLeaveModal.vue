@@ -89,7 +89,8 @@ export default ({
     ]),
     ...mapGetters([
       'groupSettings',
-      'ourUsername'
+      'ourUsername',
+      'ourIdentityContractId'
     ]),
     code () {
       // NOTE: this.groupSettings.groupName could be undefined while leaving the group
@@ -106,7 +107,10 @@ export default ({
     async submit () {
       if (this.$v.form.$invalid) { return }
       try {
-        await sbp('gi.actions/group/removeOurselves', { contractID: this.currentGroupId, data: {} })
+        await sbp('gi.actions/identity/leaveGroup', {
+          contractID: this.ourIdentityContractId,
+          data: { groupContractID: this.currentGroupId }
+        })
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

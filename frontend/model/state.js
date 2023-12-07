@@ -6,14 +6,11 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import {
-  MESSAGE_NOTIFY_SETTINGS,
-  MESSAGE_TYPES,
-  INVITE_INITIAL_CREATOR
-} from '@model/contracts/shared/constants.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -223,8 +220,11 @@ const getters = {
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
   },
+  ourProfileActive (state, getters) {
+    return getters.profileActive(getters.ourUsername)
+  },
   ourPendingAccept (state, getters) {
-    getters.pendingAccept(getters.ourUsername)
+    return getters.pendingAccept(getters.ourUsername)
   },
   ourGroupProfile (state, getters) {
     return getters.groupProfile(getters.ourUsername)
@@ -707,7 +707,8 @@ store.watch(function (state, getters) {
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
-const debouncedSave = debounce(() => sbp('state/vuex/save'), 500)
+let logoutInProgress = false
+const debouncedSave = debounce(() => !logoutInProgress && sbp('state/vuex/save'), 500)
 store.subscribe((commit) => {
   if (commit.type !== 'noop') {
     debouncedSave()
@@ -717,8 +718,10 @@ store.subscribe((commit) => {
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 // logout will call 'state/vuex/save', so we clear any debounced calls to it before it gets run
 sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
+  logoutInProgress = true
   debouncedSave.clear()
 })
+sbp('okTurtles.events/on', LOGOUT, () => { logoutInProgress = false })
 // Since Chelonia directly modifies contract state without using 'commit', we
 // need this hack to tell the vuex developer tool it needs to refresh the state
 if (process.env.NODE_ENV === 'development') {
