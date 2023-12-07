@@ -6,10 +6,15 @@ import { blake32Hash, bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.
 
 import scrypt from 'scrypt-async'
 
+// ENULL and SNULL are 'null' algorithms for asymmetric encryption and
+// signatures, respectively. They are useful for development and testing because
+// their values can easily be inspected by hand but they offer ABSOLUTELY NO
+// PROTECTION and should *NEVER* be used in production.
 export const ENULL = 'eNULL'
+export const SNULL = 'sNULL'
+
 export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
 export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
-export const SNULL = 'sNULL'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
@@ -26,7 +31,7 @@ export type Key = {
 }
 
 export const keygen = (type: string): Key => {
-  if (type === ENULL || type === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && (type === ENULL || type === SNULL)) {
     const res: Key = {
       type,
       publicKey: bytesOrObjectToB64(nacl.randomBytes(18))
@@ -74,7 +79,7 @@ export const generateSalt = (): string => {
   return bytesOrObjectToB64(nacl.randomBytes(18))
 }
 export const deriveKeyFromPassword = (type: string, password: string, salt: string): Promise<Key> => {
-  if (type === ENULL || type === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && (type === ENULL || type === SNULL)) {
     const v = blake32Hash(blake32Hash(salt) + blake32Hash(password))
     return Promise.resolve({
       type,
@@ -125,7 +130,7 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
 // Using an array instead of an object ensures that the object is serialized in order since the JSON specification does not define the order for object keys
 // and therefore different it could vary across implementations
 export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
-  if (key.type === ENULL || key.type === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && (key.type === ENULL || key.type === SNULL)) {
     return JSON.stringify([
       key.type,
       saveSecretKey ? null : key.publicKey,
@@ -180,7 +185,7 @@ export const deserializeKey = (data: string): Key => {
     throw new Error('Invalid key object')
   }
 
-  if (keyData[0] === ENULL || keyData[0] === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && (keyData[0] === ENULL || keyData[0] === SNULL)) {
     const res: Key = {
       type: keyData[0]
     }
@@ -265,7 +270,7 @@ export const keyId = (inKey: Key | string): string => {
 export const sign = (inKey: Key | string, data: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && key.type === SNULL) {
     if (!key.secretKey) {
       throw new Error('Secret key missing')
     }
@@ -290,7 +295,7 @@ export const sign = (inKey: Key | string, data: string): string => {
 export const verifySignature = (inKey: Key | string, data: string, signature: string): void => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === SNULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && key.type === SNULL) {
     if (!key.publicKey) {
       throw new Error('Public key missing')
     }
@@ -326,7 +331,7 @@ export const verifySignature = (inKey: Key | string, data: string, signature: st
 export const encrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === ENULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && key.type === ENULL) {
     if (!key.publicKey) {
       throw new Error('Public key missing')
     }
@@ -405,7 +410,7 @@ export const encrypt = (inKey: Key | string, data: string, ad?: string): string 
 export const decrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === ENULL) {
+  if (process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true' && key.type === ENULL) {
     if (!key.secretKey) {
       throw new Error('Secret key missing')
     }
