@@ -5,7 +5,7 @@ import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
 import { isRawSignedData, signedIncomingData } from './signedData.js'
 
-const rootStateFn = () => sbp('chelonia/rootStateFn')
+const rootStateFn = () => sbp('chelonia/rootState')
 
 export interface EncryptedData<T> {
   encryptionKeyId: string,
