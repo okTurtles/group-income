@@ -589,7 +589,7 @@ export default ({
       if (shouldInitiate) {
         this.latestEvents = events
       } else if (events.length > 1) {
-        // events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
+        events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
         this.latestEvents.unshift(...events)
       }
 
