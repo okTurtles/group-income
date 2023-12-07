@@ -649,7 +649,7 @@ sbp('chelonia/defineContract', {
         votes: arrayOf(string),
         votesAsString: string
       }),
-      process ({ data, meta, hash, id }, { state }) {
+      process ({ data, meta, hash, height }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
@@ -688,7 +688,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, height, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
