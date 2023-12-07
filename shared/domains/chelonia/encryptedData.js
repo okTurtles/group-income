@@ -5,7 +5,7 @@ import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
 import { isRawSignedData, signedIncomingData } from './signedData.js'
 
-const rootState = () => sbp('chelonia/rootState')
+const rootStateFn = () => sbp('chelonia/rootStateFn')
 
 export interface EncryptedData<T> {
   encryptionKeyId: string,
@@ -36,7 +36,7 @@ export const isEncryptedData = (o: any): boolean => {
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const encryptData = function (stateOrContractID: string | Object, eKeyId: string, data: any, additionalData: string) {
-  const state = typeof stateOrContractID === 'string' ? rootState()[stateOrContractID] : stateOrContractID
+  const state = typeof stateOrContractID === 'string' ? rootStateFn()[stateOrContractID] : stateOrContractID
 
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
@@ -207,7 +207,12 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     if (decryptedValue) {
       return decryptedValue
     }
-    decryptedValue = decryptData.call(state || rootState()?.[contractID], height, data, additionalKeys ?? rootState().secretKeys, additionalData || '', validatorFn)
+    if (!state || !additionalKeys) {
+      const rootState = rootStateFn()
+      state = state || rootState[contractID]
+      additionalKeys = additionalKeys ?? rootState.secretKeys
+    }
+    decryptedValue = decryptData.call(state, height, data, additionalKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || '')
@@ -241,8 +246,9 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     if (decryptedValue) {
       return decryptedValue
     }
-    const state = rootState()?.[contractID]
-    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState().secretKeys, additionalData || '', validatorFn)
+    const rootState = rootStateFn()
+    const state = rootState[contractID]
+    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       // TODO: Specify height
