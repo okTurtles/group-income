@@ -786,6 +786,7 @@ export default (sbp('sbp/selectors/register', {
     const contractInfo = this.manifestToContract[manifestHash]
     if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
     const signingKey = this.transientSecretKeys[signingKeyId]
+    if (!signingKey) throw new Error(`Signing key ${signingKeyId} is not defined`)
     const payload = ({
       type: contractName,
       keys: keys
@@ -816,11 +817,13 @@ export default (sbp('sbp/selectors/register', {
       }
     })
     await sbp('chelonia/contract/sync', contractID)
-    const msg = await sbp('chelonia/out/actionEncrypted', {
+    const msg = await sbp(actionEncryptionKeyId
+      ? 'chelonia/out/actionEncrypted'
+      : 'chelonia/out/actionUnencrypted', {
       action: contractName,
       contractID,
       data: params.data,
-      signingKeyId: actionSigningKeyId,
+      signingKeyId: actionSigningKeyId ?? signingKeyId,
       encryptionKeyId: actionEncryptionKeyId,
       hooks,
       publishOptions

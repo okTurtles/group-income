@@ -329,6 +329,7 @@ export class GIMessage {
         case GIMessage.OP_KEY_REQUEST:
         case GIMessage.OP_KEY_REQUEST_SEEN:
         case GIMessage.OP_ACTION_ENCRYPTED:
+        case GIMessage.OP_ACTION_UNENCRYPTED:
         // nothing for now
           break
         default:

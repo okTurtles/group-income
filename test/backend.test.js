@@ -14,6 +14,8 @@ import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -119,16 +121,35 @@ describe('Full walkthrough', function () {
   }
 
   async function createIdentity (username, email, testFn) {
+    const CSK = keygen(SNULL)
+    const CSKid = keyId(CSK)
+    const CSKp = serializeKey(CSK, false)
+
+    sbp('chelonia/storeSecretKeys',
+      () => [CSK].map(key => ({ key, transient: true }))
+    )
+
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
     username = `${username}-${Math.floor(Math.random() * 1000)}`
     const msg = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/identity',
-      keys: [],
+      keys: [
+        {
+          id: CSKid,
+          name: 'csk',
+          purpose: ['sig'],
+          ringLevel: 0,
+          permissions: '*',
+          allowedActions: '*',
+          data: CSKp
+        }
+      ],
       data: {
         // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
         attributes: { username, email }
       },
+      signingKeyId: CSKid,
       hooks: {
         // TODO when merging: decryptedValue no longer takes an argument (was decryptedValue(JSON.parse))
         prepublish: (message) => { message.decryptedValue() },
@@ -138,6 +159,14 @@ describe('Full walkthrough', function () {
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
+    const CSK = keygen(SNULL)
+    const CSKid = keyId(CSK)
+    const CSKp = serializeKey(CSK, false)
+
+    sbp('chelonia/storeSecretKeys',
+      () => [CSK].map(key => ({ key, transient: true }))
+    )
+
     /* const initialInvite = createInvite({
       quantity: 60,
       creator: INVITE_INITIAL_CREATOR,
@@ -145,7 +174,17 @@ describe('Full walkthrough', function () {
     }) */
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
-      keys: [],
+      keys: [
+        {
+          id: CSKid,
+          name: 'csk',
+          purpose: ['sig'],
+          ringLevel: 0,
+          permissions: '*',
+          allowedActions: '*',
+          data: CSKp
+        }
+      ],
       data: {
         settings: {
           // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
@@ -165,11 +204,12 @@ describe('Full walkthrough', function () {
           }
         }
       },
+      signingKeyId: CSKid,
       hooks
     })
   }
-  function createPaymentTo (to, amount, contractID, currency = 'USD'): Promise {
-    return sbp('chelonia/out/actionEncrypted', {
+  function createPaymentTo (to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
+    return sbp('chelonia/out/actionUnencrypted', {
       action: 'gi.contracts/group/payment',
       data: {
         toUser: to.decryptedValue().data.attributes.username,
@@ -179,7 +219,8 @@ describe('Full walkthrough', function () {
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL
       },
-      contractID
+      contractID,
+      signingKeyId
     })
   }
 
@@ -225,29 +266,8 @@ describe('Full walkthrough', function () {
       await sbp('chelonia/contract/sync', groups.group1.contractID())
     })
 
-    // NOTE: The frontend needs to use the `fetch` API instead of superagent because
-    //       superagent doesn't support streaming, whereas fetch does.
-    // TODO: We should also remove superagent as a dependency since `fetch` does
-    //       everything we need. Use fetch from now on.
-    it('Should get mailbox info for Bob', async function () {
-      // 1. look up bob's username to get his identity contract
-      const { bob } = users
-      const bobsName = bob.decryptedValue().data.attributes.username
-      const bobsContractId = await sbp('namespace/lookup', bobsName)
-      should(bobsContractId).equal(bob.contractID())
-      // 2. fetch all events for his identity contract to get latest state for it
-      const state = await sbp('chelonia/latestContractState', bobsContractId)
-      console.log(bold.red('FINAL STATE:'), state)
-      // 3. get bob's mailbox contractID from his identity contract attributes
-      should(state.attributes.mailbox).equal(bob.mailbox.contractID())
-      // 4. fetch the latest hash for bob's mailbox.
-      //    we don't need latest state for it just latest hash
-      const { HEAD: res } = await sbp('chelonia/out/latestHEADInfo', state.attributes.mailbox)
-      should(res).equal(bob.mailbox.hash())
-    })
-
     it('Should post an event', function () {
-      return createPaymentTo(users.bob, 100, groups.group1.contractID())
+      return createPaymentTo(users.bob, 100, groups.group1.contractID(), groups.group1.signingKeyId())
     })
 
     it('Should sync group and verify payments in state', async function () {

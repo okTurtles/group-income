@@ -215,9 +215,11 @@ export default (sbp('sbp/selectors/register', {
         // $FlowFixMe
         getRandomValues: (v) => globalThis.crypto.getRandomValues(v)
       },
-      alert,
-      confirm,
-      prompt,
+      ...(typeof window === 'object' && window && {
+        alert: window.alert,
+        confirm: window.confirm,
+        prompt: window.prompt
+      }),
       console,
       Object,
       Error,

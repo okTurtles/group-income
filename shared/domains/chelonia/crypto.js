@@ -6,8 +6,10 @@ import { blake32Hash, bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.
 
 import scrypt from 'scrypt-async'
 
+export const ENULL = 'eNULL'
 export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
 export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
+export const SNULL = 'sNULL'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
@@ -24,6 +26,16 @@ export type Key = {
 }
 
 export const keygen = (type: string): Key => {
+  if (type === ENULL || type === SNULL) {
+    const res: Key = {
+      type,
+      publicKey: bytesOrObjectToB64(nacl.randomBytes(18))
+    }
+    Object.defineProperty(res, 'secretKey', { value: res.publicKey })
+
+    return res
+  }
+
   if (type === EDWARDS25519SHA512BATCH) {
     const key = nacl.sign.keyPair()
 
@@ -62,6 +74,15 @@ export const generateSalt = (): string => {
   return bytesOrObjectToB64(nacl.randomBytes(18))
 }
 export const deriveKeyFromPassword = (type: string, password: string, salt: string): Promise<Key> => {
+  if (type === ENULL || type === SNULL) {
+    const v = blake32Hash(blake32Hash(salt) + blake32Hash(password))
+    return Promise.resolve({
+      type,
+      secretKey: v,
+      publicKey: v
+    })
+  }
+
   if (![EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305].includes(type)) {
     return Promise.reject(new Error('Unsupported type'))
   }
@@ -104,6 +125,14 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
 // Using an array instead of an object ensures that the object is serialized in order since the JSON specification does not define the order for object keys
 // and therefore different it could vary across implementations
 export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
+  if (key.type === ENULL || key.type === SNULL) {
+    return JSON.stringify([
+      key.type,
+      saveSecretKey ? null : key.publicKey,
+      saveSecretKey ? key.secretKey : null
+    ], undefined, 0)
+  }
+
   if (key.type === EDWARDS25519SHA512BATCH || key.type === CURVE25519XSALSA20POLY1305) {
     if (!saveSecretKey) {
       if (!key.publicKey) {
@@ -149,6 +178,21 @@ export const deserializeKey = (data: string): Key => {
 
   if (!keyData || keyData.length !== 3) {
     throw new Error('Invalid key object')
+  }
+
+  if (keyData[0] === ENULL || keyData[0] === SNULL) {
+    const res: Key = {
+      type: keyData[0]
+    }
+
+    if (keyData[2]) {
+      Object.defineProperty(res, 'secretKey', { value: keyData[2] })
+      res.publicKey = keyData[2]
+    } else {
+      res.publicKey = keyData[1]
+    }
+
+    return res
   }
 
   if (keyData[0] === EDWARDS25519SHA512BATCH) {
@@ -221,6 +265,14 @@ export const keyId = (inKey: Key | string): string => {
 export const sign = (inKey: Key | string, data: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
+  if (key.type === SNULL) {
+    if (!key.secretKey) {
+      throw new Error('Secret key missing')
+    }
+
+    return key.secretKey + ';' + blake32Hash(data)
+  }
+
   if (key.type !== EDWARDS25519SHA512BATCH) {
     throw new Error('Unsupported algorithm')
   }
@@ -237,6 +289,16 @@ export const sign = (inKey: Key | string, data: string): string => {
 }
 export const verifySignature = (inKey: Key | string, data: string, signature: string): void => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
+
+  if (key.type === SNULL) {
+    if (!key.publicKey) {
+      throw new Error('Public key missing')
+    }
+    if ((key.publicKey + ';' + blake32Hash(data)) !== signature) {
+      throw new Error('Invalid signature')
+    }
+    return
+  }
 
   if (key.type !== EDWARDS25519SHA512BATCH) {
     throw new Error('Unsupported algorithm')
@@ -263,6 +325,14 @@ export const verifySignature = (inKey: Key | string, data: string, signature: st
  */
 export const encrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
+
+  if (key.type === ENULL) {
+    if (!key.publicKey) {
+      throw new Error('Public key missing')
+    }
+
+    return `${key.publicKey};${data};${ad ?? ''}`
+  }
 
   if (key.type === XSALSA20POLY1305) {
     if (!key.secretKey) {
@@ -334,6 +404,17 @@ export const encrypt = (inKey: Key | string, data: string, ad?: string): string 
 }
 export const decrypt = (inKey: Key | string, data: string, ad?: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
+
+  if (key.type === ENULL) {
+    if (!key.secretKey) {
+      throw new Error('Secret key missing')
+    }
+
+    if (!data.startsWith(key.secretKey + ';') || !data.endsWith(';' + (ad ?? ''))) {
+      throw new Error('Additional data mismatch')
+    }
+    return data.slice(String(key.secretKey).length + 1, data.length - 1 - (ad ?? '').length)
+  }
 
   if (key.type === XSALSA20POLY1305) {
     if (!key.secretKey) {
