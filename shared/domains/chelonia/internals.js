@@ -582,7 +582,7 @@ export default (sbp('sbp/selectors/register', {
               ['chelonia/private/in/syncContract', v.contractID],
               ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
             ]).then(() => {
-              const cheloniaState = sbp(this.config.stateSelector)
+              const cheloniaState = sbp(config.stateSelector)
               targetState = cheloniaState[v.contractID]
 
               if (previousVolatileState && has(previousVolatileState, 'watch')) {
