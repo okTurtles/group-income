@@ -1366,10 +1366,12 @@ export default (sbp('sbp/selectors/register', {
       // object if the state doesn't exist. This copy will be used to apply
       // any changes from processing the current event as well as when calling
       // side-effects and, once everything is processed, it will be applied
-      // to the global state. Important note: if a side-effect needs to access
-      // the contract state from the global state, it must then call
-      // queueInvocation to do so, because retrieving the state this way will
-      // *not* have the results from calling process
+      // to the global state. Important note: because the state change is
+      // applied to the Vuex state only if process is successful (and after both
+      // process and the sideEffect finish), any sideEffects that need to the
+      // access the state should do so only through the state that is passed in
+      // to the call to the sideEffect, or through a call though queueInvocation
+      // (so that the side effect runs after the changes are applied)
       const contractStateCopy = state[contractID] ? cloneDeep(state[contractID]) : Object.create(null)
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
