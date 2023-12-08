@@ -5,13 +5,19 @@ proposal-template(
   :title='L("Remove Member")'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
+  :shouldImmediateChange='form.useAdminPermission'
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
+
     p.is-title-4.c-descr(data-test='description')
       i18n(:args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from the group
       i18n(:args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from the group?
+
+    label.checkbox.c-use-admin-permissions(v-if='groupShouldPropose && isGroupCreator')
+      input.input(type='checkbox' v-model='form.useAdminPermission')
+      i18n Use admin permissions to remove immediately
 
   banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
@@ -37,6 +43,9 @@ export default ({
       username: null,
       ephemeral: {
         currentStep: 0
+      },
+      form: {
+        useAdminPermission: false
       },
       config: {
         steps: [
@@ -75,6 +84,9 @@ export default ({
     ]),
     memberGlobalProfile () {
       return this.globalProfile(this.username) || {}
+    },
+    isGroupCreator () {
+      return this.ourUsername === this.groupSettings.groupCreator
     }
   },
   methods: {
@@ -82,7 +94,7 @@ export default ({
       this.$refs.formMsg.clean()
       const member = this.username
 
-      if (this.groupShouldPropose) {
+      if (this.groupShouldPropose && !this.form.useAdminPermission) {
         try {
           await sbp('gi.actions/group/proposal', {
             contractID: this.currentGroupId,
@@ -137,5 +149,11 @@ export default ({
 
 .c-descr {
   text-align: center;
+}
+
+.c-use-admin-permissions {
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  margin-right: 0;
 }
 </style>
