@@ -21,7 +21,7 @@ sbp('sbp/selectors/register', {
       const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
 
       if (swRegistration) {
-        swRegistration?.active.postMessage({ type: 'store-client-id' })
+        swRegistration.active?.postMessage({ type: 'store-client-id' })
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
@@ -55,7 +55,6 @@ sbp('sbp/selectors/register', {
       return
     }
 
-    console.log('@@@ registration.active: ', registration.active)
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const existingSubscription = await registration.pushManager.getSubscription()
 
@@ -74,35 +73,44 @@ sbp('sbp/selectors/register', {
         sbp('service-worker/send-push', followingNotification)
       }
     } else {
-      // Generate a new push subscription
-      sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
-        const PUBLIC_VAPID_KEY = data
+      return new Promise((resolve) => {
+        try {
+          // Generate a new push subscription
+          sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
+            const PUBLIC_VAPID_KEY = data
 
-        // 1. Add a new subscription to pushManager using it.
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
-        })
+            // 1. Add a new subscription to pushManager using it.
+            const subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+            })
 
-        // 2. Store the subscription details to the server. (server needs it to send the push notification)
-        pubsub.socket.send(createMessage(
-          NOTIFICATION_TYPE.PUSH_ACTION,
-          {
-            action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-            payload: JSON.stringify(subscription.toJSON())
-          }
-        ))
+            // 2. Store the subscription details to the server. (server needs it to send the push notification)
+            pubsub.socket.send(createMessage(
+              NOTIFICATION_TYPE.PUSH_ACTION,
+              {
+                action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+                payload: JSON.stringify(subscription.toJSON())
+              }
+            ))
 
-        // 3. Send a following notifciation if it's passed
-        if (followingNotification) {
-          sbp('service-worker/send-push', followingNotification)
+            // 3. Send a following notifciation if it's passed
+            if (followingNotification) {
+              sbp('service-worker/send-push', followingNotification)
+            }
+
+            resolve()
+          })
+
+          pubsub.socket.send(createMessage(
+            NOTIFICATION_TYPE.PUSH_ACTION,
+            { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+          ))
+        } catch (err) {
+          console.error('[sw] service-worker/setup-push-subscription failed with the following error: ', err)
+          resolve()
         }
       })
-
-      pubsub.socket.send(createMessage(
-        NOTIFICATION_TYPE.PUSH_ACTION,
-        { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-      ))
     }
   },
   'service-worker/send-push': async function (payload) {
