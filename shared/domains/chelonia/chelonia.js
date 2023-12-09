@@ -448,8 +448,8 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          const deserializedMessage = GIMessage.deserialize(msg.data)
-          sbp('chelonia/private/in/enqueueHandleEvent', deserializedMessage.contractID(), msg.data)
+          const { contractID } = GIMessage.deserializeHEAD(msg.data)
+          sbp('chelonia/private/in/enqueueHandleEvent', contractID, msg.data)
         },
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION

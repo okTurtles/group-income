@@ -50,7 +50,7 @@ export const encryptedAction = (
       }
     ]
 
-    if (params.atomic) {
+    if (params.returnInvocation) {
       return invocation
     } else {
       return sbp(...invocation)

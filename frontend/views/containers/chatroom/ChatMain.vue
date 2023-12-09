@@ -562,7 +562,7 @@ export default ({
           const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
           events = await sbp('chelonia/out/eventsBefore', latestHash, limit)
         } else {
-          const before = GIMessage.deserialize(this.latestEvents[0]).hash()
+          const before = GIMessage.deserializeHEAD(this.latestEvents[0]).hash
           events = await sbp('chelonia/out/eventsBefore', before, limit)
         }
       }
@@ -619,9 +619,9 @@ export default ({
       if (!this.checkEventSourceConsistency(chatRoomId)) return
 
       const latestEvents = prevState ? JSON.parse(prevState) : []
-      this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
+      this.messageState.prevFrom = latestEvents.length ? GIMessage.deserializeHEAD(latestEvents[0]).hash : null
       this.messageState.prevTo = latestEvents.length
-        ? GIMessage.deserialize(latestEvents[latestEvents.length - 1]).hash()
+        ? GIMessage.deserializeHEAD(latestEvents[latestEvents.length - 1]).hash
         : null
 
       await this.rerenderEvents(latestEvents)
@@ -881,17 +881,17 @@ export default ({
         return
       }
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const fromEvent = GIMessage.deserialize(latestEvents[0])
-      const toEvent = GIMessage.deserialize(latestEvents[latestEvents.length - 1])
+      const fromEvent = GIMessage.deserializeHEAD(latestEvents[0])
+      const toEvent = GIMessage.deserializeHEAD(latestEvents[latestEvents.length - 1])
 
       // Get the chatroom ID from the event to ensure that it's consistent with
       // what will be stored
-      const chatRoomId = fromEvent.contractID()
+      const chatRoomId = fromEvent.contractID
 
       if (!this.isJoinedChatRoom(chatRoomId)) return
 
-      const from = fromEvent.hash()
-      const to = toEvent.hash()
+      const from = fromEvent.hash
+      const to = toEvent.hash
 
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
       if (latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {

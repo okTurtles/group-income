@@ -235,7 +235,7 @@ export default (sbp('sbp/selectors/register', {
             })]
           }
         ],
-        sendMessage({ ...params, atomic: true })
+        sendMessage({ ...params, returnInvocation: true })
       ],
       signingKeyId
     })

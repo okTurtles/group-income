@@ -939,7 +939,7 @@ export default (sbp('sbp/selectors/register', {
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
         for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserialize(events[i], this.transientSecretKeys).hash() === latest) {
+          if (GIMessage.deserializeHEAD(events[i]).hash === latest) {
             latestHashFound = true
             break
           }
@@ -1364,6 +1364,23 @@ export default (sbp('sbp/selectors/register', {
       // (so that the side effect runs after the changes are applied)
       const contractStateCopy = state[contractID] ? cloneDeep(state[contractID]) : Object.create(null)
       // Now, deserialize the messsage
+      // The message is deserialized *here* and not earlier because deserialize
+      // constructs objects of signedIncomingData and encryptedIncomingData
+      // which are bound to the state. For some opcodes (such as OP_ATOMIC), the
+      // state could change in ways that are significant for further processing,
+      // so those objects need to be bound to the state copy (which is mutated)
+      // as opposed to the the root state (which is mutated only after
+      // processing is done).
+      // For instance, let's say the message contains an OP_ATOMIC comprising
+      // two operations: OP_KEY_ADD (adding a signing key) and OP_ACTION_ENCRYPTED
+      // (with an inner signature using this key in OP_KEY_ADD). If the state
+      // is bound to the copy (as below), then by the time OP_ACTION_ENCRYPTED
+      // is processed, the result of OP_KEY_ADD has been applied to the state
+      // copy. If we didn't specify a state or instead grabbed it from the root
+      // state, then we wouldn't be able to process OP_ACTION_ENCRYPTED correctly,
+      // as we wouldn't know that the key is valid from that state, and the
+      // state copy (contractStateCopy) is only written to the root state after
+      // all processing has completed.
       message = GIMessage.deserialize(rawMessage, this.transientSecretKeys, contractStateCopy)
       if (message.contractID() !== contractID) {
         throw new Error(`[chelonia] Wrong contract ID. Expected ${contractID} but got ${message.contractID()}`)

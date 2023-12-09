@@ -28,5 +28,5 @@ export type GIActionParams = {
     onprocessed?: null | (Object) => void;
   };
   publishOptions?: { maxAttempts: number };
-  atomic?: boolean;
+  returnInvocation?: boolean;
 }

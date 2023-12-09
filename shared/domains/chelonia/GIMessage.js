@@ -296,6 +296,29 @@ export class GIMessage {
     })
   }
 
+  static deserializeHEAD (value: string) {
+    if (!value) throw new Error(`deserialize bad value: ${value}`)
+    let head, hash
+    const result = {
+      get head () {
+        if (!head) {
+          head = JSON.parse(value).head || {}
+        }
+        return head
+      },
+      get hash () {
+        if (!hash) {
+          hash = blake32Hash(value)
+        }
+        return hash
+      },
+      get contractID () {
+        return result.head.contractID ?? result.hash
+      }
+    }
+    return result
+  }
+
   constructor (params: GIMsgParams) {
     this._direction = params.direction
     this._mapping = params.mapping
