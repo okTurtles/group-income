@@ -31,7 +31,7 @@ const enqueueDeferredPromise = (queue) => {
 export const encryptedAction = (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string

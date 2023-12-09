@@ -296,7 +296,7 @@ export class GIMessage {
     })
   }
 
-  static deserializeHEAD (value: string) {
+  static deserializeHEAD (value: string): { head: Object; hash: string; contractID: string } {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     let head, hash
     const result = {
