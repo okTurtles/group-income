@@ -51,22 +51,22 @@ export type PubSubClient = {
   clearAllTimers(): void,
   connect(): void,
   destroy(): void,
-  pub(contractID: string, data: JSONType): void,
+  pub(channelID: string, data: JSONType): void,
   scheduleConnectionAttempt(): void,
-  sub(contractID: string): void,
-  unsub(contractID: string): void
+  sub(channelID: string): void,
+  unsub(channelID: string): void
 }
 
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
-  +contractID: string
+  +channelID: string
 }
 
 export type UnsubMessage = {
   [key: string]: JSONType,
   +type: 'unsub',
-  +contractID: string
+  +channelID: string
 }
 
 // ====== Enums ====== //
@@ -217,10 +217,10 @@ const defaultClientEventHandlers = {
     // If we should reconnect then consider our current subscriptions as pending again,
     // waiting to be restored upon reconnection.
     if (client.shouldReconnect) {
-      client.subscriptionSet.forEach((contractID) => {
+      client.subscriptionSet.forEach((channelID) => {
         // Skip contracts from which we had to unsubscribe anyway.
-        if (!client.pendingUnsubscriptionSet.has(contractID)) {
-          client.pendingSubscriptionSet.add(contractID)
+        if (!client.pendingUnsubscriptionSet.has(channelID)) {
+          client.pendingSubscriptionSet.add(channelID)
         }
       })
     }
@@ -331,8 +331,8 @@ const defaultClientEventHandlers = {
     // events are sent over the web socket)
     client.pendingSyncSet = new Set(client.pendingSubscriptionSet)
     // Send any pending subscription request.
-    client.pendingSubscriptionSet.forEach((contractID) => {
-      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+    client.pendingSubscriptionSet.forEach((channelID) => {
+      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
     })
     // There should be no pending unsubscription since we just got connected.
   },
@@ -392,20 +392,20 @@ const defaultMessageHandlers = {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
-    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+  [RESPONSE_TYPE.ERROR] ({ data: { type, channelID } }) {
+    console.warn(`[pubsub] Received ERROR response for ${type} request to ${channelID}`)
     const client = this
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.warn(`[pubsub] Could not subscribe to ${contractID}`)
-        client.pendingSubscriptionSet.delete(contractID)
-        client.pendingSyncSet.delete(contractID)
+        console.warn(`[pubsub] Could not subscribe to ${channelID}`)
+        client.pendingSubscriptionSet.delete(channelID)
+        client.pendingSyncSet.delete(channelID)
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.warn(`[pubsub] Could not unsubscribe from ${contractID}`)
-        client.pendingUnsubscriptionSet.delete(contractID)
+        console.warn(`[pubsub] Could not unsubscribe from ${channelID}`)
+        client.pendingUnsubscriptionSet.delete(channelID)
         break
       }
       default: {
@@ -414,28 +414,28 @@ const defaultMessageHandlers = {
     }
   },
 
-  [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
+  [RESPONSE_TYPE.SUCCESS] ({ data: { type, channelID } }) {
     const client = this
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.debug(`[pubsub] Subscribed to ${contractID}`)
-        client.pendingSubscriptionSet.delete(contractID)
-        client.subscriptionSet.add(contractID)
-        if (client.pendingSyncSet.has(contractID)) {
+        console.debug(`[pubsub] Subscribed to ${channelID}`)
+        client.pendingSubscriptionSet.delete(channelID)
+        client.subscriptionSet.add(channelID)
+        if (client.pendingSyncSet.has(channelID)) {
           // We call sync to fetch events that we may have missed while the
           // subscription was being set up
           // The sync must be forced because we've subscribed to the contract,
           // and if it's not forced sync will not fetch the latest events
-          sbp('chelonia/contract/sync', contractID, { force: true })
-          client.pendingSyncSet.delete(contractID)
+          sbp('chelonia/contract/sync', channelID, { force: true })
+          client.pendingSyncSet.delete(channelID)
         }
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.debug(`[pubsub] Unsubscribed from ${contractID}`)
-        client.pendingUnsubscriptionSet.delete(contractID)
-        client.subscriptionSet.delete(contractID)
+        console.debug(`[pubsub] Unsubscribed from ${channelID}`)
+        client.pendingUnsubscriptionSet.delete(channelID)
+        client.subscriptionSet.delete(channelID)
         break
       }
       default: {
@@ -596,7 +596,7 @@ const publicMethods = {
   },
 
   // Unused for now.
-  pub (contractID: string, data: JSONType) {
+  pub (channelID: string, data: JSONType) {
   },
 
   /**
@@ -606,18 +606,18 @@ const publicMethods = {
    * response, allowing us to resend the same request if necessary.
    * - Any identical UNSUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to subscribe to.
+   * @param channelID - The ID of the contract whose updates we want to subscribe to.
    */
-  sub (contractID: string) {
+  sub (channelID: string) {
     const client = this
     const { socket } = this
 
-    if (!client.pendingSubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.add(contractID)
-      client.pendingUnsubscriptionSet.delete(contractID)
+    if (!client.pendingSubscriptionSet.has(channelID)) {
+      client.pendingSubscriptionSet.add(channelID)
+      client.pendingUnsubscriptionSet.delete(channelID)
 
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+        socket.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
       }
     }
   },
@@ -629,18 +629,18 @@ const publicMethods = {
    * response, allowing us to resend the same request if necessary.
    * - Any identical SUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
+   * @param channelID - The ID of the contract whose updates we want to unsubscribe from.
    */
-  unsub (contractID: string) {
+  unsub (channelID: string) {
     const client = this
     const { socket } = this
 
-    if (!client.pendingUnsubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.delete(contractID)
-      client.pendingUnsubscriptionSet.add(contractID)
+    if (!client.pendingUnsubscriptionSet.has(channelID)) {
+      client.pendingSubscriptionSet.delete(channelID)
+      client.pendingUnsubscriptionSet.add(channelID)
 
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+        socket.send(createRequest(REQUEST_TYPE.UNSUB, { channelID }))
       }
     }
   }

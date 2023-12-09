@@ -196,11 +196,11 @@ const defaultSocketEventHandlers = {
     const { server, id: socketID } = this
 
     // Notify other client sockets that this one has left any room they shared.
-    for (const contractID of socket.subscriptions) {
-      const subscribers = server.subscribersByChannelID[contractID]
+    for (const channelID of socket.subscriptions) {
+      const subscribers = server.subscribersByChannelID[channelID]
       // Remove this socket from the subscribers of the given contract.
       subscribers.delete(socket)
-      const notification = createNotification(UNSUB, { contractID, socketID })
+      const notification = createNotification(UNSUB, { channelID, socketID })
       server.broadcast(notification, { to: subscribers })
     }
     socket.subscriptions.clear()
@@ -255,38 +255,38 @@ const defaultMessageHandlers = {
     // Currently unused.
   },
 
-  [SUB] ({ contractID }: SubMessage) {
+  [SUB] ({ channelID }: SubMessage) {
     const socket = this
     const { server } = this
 
-    if (!socket.subscriptions.has(contractID)) {
-      log('Already subscribed to', contractID)
+    if (!socket.subscriptions.has(channelID)) {
+      log('Already subscribed to', channelID)
       // Add the given contract ID to our subscriptions.
-      socket.subscriptions.add(contractID)
-      if (!server.subscribersByChannelID[contractID]) {
-        server.subscribersByChannelID[contractID] = new Set()
+      socket.subscriptions.add(channelID)
+      if (!server.subscribersByChannelID[channelID]) {
+        server.subscribersByChannelID[channelID] = new Set()
       }
-      const subscribers = server.subscribersByChannelID[contractID]
+      const subscribers = server.subscribersByChannelID[channelID]
       // Add this socket to the subscribers of the given contract.
       subscribers.add(socket)
     }
-    socket.send(createResponse(SUCCESS, { type: SUB, contractID }))
+    socket.send(createResponse(SUCCESS, { type: SUB, channelID }))
   },
 
-  [UNSUB] ({ contractID }: UnsubMessage) {
+  [UNSUB] ({ channelID }: UnsubMessage) {
     const socket = this
     const { server } = this
 
-    if (socket.subscriptions.has(contractID)) {
+    if (socket.subscriptions.has(channelID)) {
       // Remove the given contract ID from our subscriptions.
-      socket.subscriptions.delete(contractID)
-      if (server.subscribersByChannelID[contractID]) {
-        const subscribers = server.subscribersByChannelID[contractID]
+      socket.subscriptions.delete(channelID)
+      if (server.subscribersByChannelID[channelID]) {
+        const subscribers = server.subscribersByChannelID[channelID]
         // Remove this socket from the subscribers of the given contract.
         subscribers.delete(socket)
       }
     }
-    socket.send(createResponse(SUCCESS, { type: UNSUB, contractID }))
+    socket.send(createResponse(SUCCESS, { type: UNSUB, channelID }))
   }
 }
 
@@ -312,11 +312,11 @@ const publicMethods = {
   },
 
   // Enumerates the subscribers of a given contract.
-  * enumerateSubscribers (contractID: string): Iterable<Object> {
+  * enumerateSubscribers (channelID: string): Iterable<Object> {
     const server = this
 
-    if (contractID in server.subscribersByChannelID) {
-      yield * server.subscribersByChannelID[contractID]
+    if (channelID in server.subscribersByChannelID) {
+      yield * server.subscribersByChannelID[channelID]
     }
   },
 
