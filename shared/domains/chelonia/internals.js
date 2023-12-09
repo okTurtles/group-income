@@ -11,7 +11,7 @@ import { deserializeKey, keyId } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnrecoverable, ChelErrorWarning } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
 import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -460,7 +460,7 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](message.opValue().valueOf())
+          opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
           console.log('OP_ACTION_ENCRYPTED: decrypted')
         }
         console.log('OP_ACTION_ENCRYPTED: skipped action processing')
@@ -718,7 +718,7 @@ export default (sbp('sbp/selectors/register', {
         const keysArray = ((Object.values(v): any): GIKey[])
         keysArray.forEach((k) => {
           if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
-            throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
+            throw new ChelErrorWarning('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
           }
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
@@ -882,13 +882,12 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': async function (event: GIMessage) {
+  'chelonia/private/in/enqueueHandleEvent': async function (contractID: string, event: string) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
-    const contractID = event.contractID()
     const result = await sbp('chelonia/private/queueEvent', contractID, [
-      'chelonia/private/in/handleEvent', event
+      'chelonia/private/in/handleEvent', contractID, event
     ])
     sbp('chelonia/private/enqueuePostSyncOps', contractID)
     return result
@@ -952,7 +951,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], this.transientSecretKeys))
+          await sbp('chelonia/private/in/handleEvent', contractID, events[i])
         }
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
@@ -1340,23 +1339,39 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'chelonia/private/in/handleEvent': async function (message: GIMessage) {
+  'chelonia/private/in/handleEvent': async function (contractID: string, rawMessage: string) {
     const state = sbp(this.config.stateSelector)
-    const contractID = message.contractID()
     const { preHandleEvent, postHandleEvent, handleEventError } = this.config.hooks
     let processingErrored = false
+    let message
     // Errors in mutations result in ignored messages
     // Errors in side effects result in dropped messages to be reprocessed
     try {
-      preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
       if (!state.pending.some((entry) => entry?.contractID === contractID) && !has(state.contracts, contractID)) {
-        console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
+        console.warn(`[chelonia] WARN: ignoring unexpected event for ${contractID}:`, rawMessage)
         return
+      }
+      // contractStateCopy has a copy of the current contract state, or an empty
+      // object if the state doesn't exist. This copy will be used to apply
+      // any changes from processing the current event as well as when calling
+      // side-effects and, once everything is processed, it will be applied
+      // to the global state. Important note: because the state change is
+      // applied to the Vuex state only if process is successful (and after both
+      // process and the sideEffect finish), any sideEffects that need to the
+      // access the state should do so only through the state that is passed in
+      // to the call to the sideEffect, or through a call though queueInvocation
+      // (so that the side effect runs after the changes are applied)
+      const contractStateCopy = state[contractID] ? cloneDeep(state[contractID]) : Object.create(null)
+      // Now, deserialize the messsage
+      message = GIMessage.deserialize(rawMessage, this.transientSecretKeys, contractStateCopy)
+      if (message.contractID() !== contractID) {
+        throw new Error(`[chelonia] Wrong contract ID. Expected ${contractID} but got ${message.contractID()}`)
       }
       if (!message.isFirstMessage() && (!has(state.contracts, contractID) || !has(state, contractID))) {
         throw new Error('The event is not for a first message but the contract state is missing')
       }
+      preHandleEvent?.(message)
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db
       // if an exception is thrown here we do not need to revert the state
@@ -1377,17 +1392,6 @@ export default (sbp('sbp/selectors/register', {
 
       const internalSideEffectStack = !this.config.skipSideEffects ? [] : undefined
 
-      // contractStateCopy has a copy of the current contract state, or an empty
-      // object if the state doesn't exist. This copy will be used to apply
-      // any changes from processing the current event as well as when calling
-      // side-effects and, once everything is processed, it will be applied
-      // to the global state. Important note: because the state change is
-      // applied to the Vuex state only if process is successful (and after both
-      // process and the sideEffect finish), any sideEffects that need to the
-      // access the state should do so only through the state that is passed in
-      // to the call to the sideEffect, or through a call though queueInvocation
-      // (so that the side effect runs after the changes are applied)
-      const contractStateCopy = state[contractID] ? cloneDeep(state[contractID]) : Object.create(null)
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
       //            contract's 'process' function must be synchronous! The only
@@ -1403,7 +1407,7 @@ export default (sbp('sbp/selectors/register', {
         }
         // we revert any changes to the contract state that occurred, ignoring this mutation
         console.warn(`[chelonia] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
-        processingErrored = true
+        processingErrored = e?.name !== 'ChelErrorWarning'
         this.config.hooks.processError?.(e, message)
         // special error that prevents the head from being updated, effectively killing the contract
         if (e.name === 'ChelErrorUnrecoverable') throw e
@@ -1531,7 +1535,7 @@ const handleEvent = {
           return getContractIDfromKeyId(contractID, innerSigningKeyId, state)
         }
       }
-      return await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
+      return await sbp(`${manifestHash}/${action}/sideEffect`, mutation, state)
     }
     const msg = Object(message.message())
 

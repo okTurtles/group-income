@@ -11,7 +11,6 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase
 } from './shared/validators.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS, PROFILE_STATUS } from './shared/constants.js'
 
@@ -112,12 +111,6 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ contractID, data }) {
         await sbp('chelonia/contract/sync', data.contractID)
-
-        if (!sbp('chelonia/contract/isSyncing', contractID)) {
-          await sbp('controller/router')
-            .push({ name: 'GroupChatConversation', params: { chatRoomId: data.contractID } })
-            .catch(logExceptNavigationDuplicated)
-        }
       }
     },
     'gi.contracts/identity/joinDirectMessage': {

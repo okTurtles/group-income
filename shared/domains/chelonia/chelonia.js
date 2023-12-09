@@ -440,7 +440,6 @@ export default (sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
-    const transientSecretKeys = this.transientSecretKeys
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
@@ -449,8 +448,8 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          const deserializedMessage = GIMessage.deserialize(msg.data, transientSecretKeys)
-          sbp('chelonia/private/in/enqueueHandleEvent', deserializedMessage)
+          const deserializedMessage = GIMessage.deserialize(msg.data)
+          sbp('chelonia/private/in/enqueueHandleEvent', deserializedMessage.contractID(), msg.data)
         },
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION
@@ -696,8 +695,9 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId: findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'])
     })
   },
-  'chelonia/in/processMessage': (message: GIMessage, state: Object) => {
+  'chelonia/in/processMessage': function (messageOrRawMessage: GIMessage | string, state: Object) {
     const stateCopy = cloneDeep(state)
+    const message = typeof messageOrRawMessage === 'string' ? GIMessage.deserialize(messageOrRawMessage, this.transientSecretKeys, stateCopy) : messageOrRawMessage
     return sbp('chelonia/private/in/processMessage', message, stateCopy).then(() => stateCopy).catch((e) => {
       console.warn(`chelonia/in/processMessage: reverting mutation ${message.description()}: ${message.serialize()}`, e)
       return state
@@ -1147,9 +1147,9 @@ async function outEncryptedOrUnencryptedAction (
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const signedMessage = params.innerSigningKeyId
-    ? state._vm.authorizedKeys[params.innerSigningKeyId]
-      ? signedOutgoingData(contractID, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)
-      : signedOutgoingDataWithRawKey(this.transientSecretKeys[params.innerSigningKeyId], (unencMessage: any), this.transientSecretKeys)
+    ? (state._vm.authorizedKeys[params.innerSigningKeyId] && state._vm.authorizedKeys[params.innerSigningKeyId]?._notAfterHeight == null)
+        ? signedOutgoingData(contractID, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)
+        : signedOutgoingDataWithRawKey(this.transientSecretKeys[params.innerSigningKeyId], (unencMessage: any), this.transientSecretKeys)
     : unencMessage
   if (opType === GIMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
     throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')

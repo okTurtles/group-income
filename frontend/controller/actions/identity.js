@@ -578,6 +578,9 @@ export default (sbp('sbp/selectors/register', {
       data: {
         groupContractID: currentGroupId,
         contractID: message.contractID()
+      },
+      hooks: {
+        onprocessed: params.hooks?.onprocessed
       }
     })
 

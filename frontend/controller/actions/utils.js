@@ -36,15 +36,25 @@ export const encryptedAction = (
   signingKeyName?: string,
   innerSigningKeyName?: string
 ): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
-    return sbp('chelonia/out/actionEncrypted', {
-      ...(innerParams ?? outerParams),
-      signingKeyId,
-      innerSigningKeyId,
-      encryptionKeyId,
-      action: action.replace('gi.actions', 'gi.contracts'),
-      originatingContractID
-    })
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+    const params = innerParams ?? outerParams
+    const invocation = [
+      'chelonia/out/actionEncrypted',
+      {
+        ...params,
+        signingKeyId,
+        innerSigningKeyId,
+        encryptionKeyId,
+        action: action.replace('gi.actions', 'gi.contracts'),
+        originatingContractID
+      }
+    ]
+
+    if (params.atomic) {
+      return invocation
+    } else {
+      return sbp(...invocation)
+    }
   }
   return {
     [action]: async function (params: GIActionParams) {
