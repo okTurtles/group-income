@@ -27,6 +27,7 @@ export const PUBSUB_RECONNECTION_ATTEMPT = 'pubsub-reconnection-attempt'
 export const PUBSUB_RECONNECTION_FAILED = 'pubsub-reconnection-failed'
 export const PUBSUB_RECONNECTION_SCHEDULED = 'pubsub-reconnection-scheduled'
 export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
+export const PUBSUB_SUBSCRIPTION_SUCCEEDED = 'pubsub-subscription-succeeded'
 
 // ====== Types ====== //
 
@@ -371,6 +372,11 @@ const defaultClientEventHandlers = {
   'reconnection-scheduled' (event: CustomEvent) {
     const { delay, nth } = event.detail
     console.info(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
+  },
+
+  'subscription-succeded' (event: CustomEvent) {
+    const { channelID } = event.detail
+    console.debug(`[pubsub] Subscribed to channel ${channelID}`)
   }
 }
 
@@ -435,9 +441,10 @@ const defaultMessageHandlers = {
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.debug(`[pubsub] Subscribed to ${channelID}`)
         client.pendingSubscriptionSet.delete(channelID)
         client.subscriptionSet.add(channelID)
+        sbp('okTurtles.events/emit', PUBSUB_SUBSCRIPTION_SUCCEEDED, client, { channelID })
+
         if (client.pendingSyncSet.has(channelID)) {
           // We call sync to fetch events that we may have missed while the
           // subscription was being set up
