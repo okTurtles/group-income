@@ -63,8 +63,8 @@ export function createNotification (type: NotificationTypeEnum, data: JSONType):
   return JSON.stringify({ type, data })
 }
 
-export function createResponse (type: ResponseTypeEnum, data: JSONType): string {
-  return JSON.stringify({ type, data })
+export function createOkResponse (data: JSONType): string {
+  return JSON.stringify({ type: OK, data })
 }
 
 /**
@@ -270,7 +270,7 @@ const defaultMessageHandlers = {
     } else {
       log('Already subscribed to', channelID)
     }
-    socket.send(createResponse(OK, { type: SUB, channelID }))
+    socket.send(createOkResponse({ type: SUB, channelID }))
   },
 
   [UNSUB] ({ channelID }: UnsubMessage) {
@@ -286,7 +286,7 @@ const defaultMessageHandlers = {
         subscribers.delete(socket)
       }
     }
-    socket.send(createResponse(OK, { type: UNSUB, channelID }))
+    socket.send(createOkResponse({ type: UNSUB, channelID }))
   }
 }
 
