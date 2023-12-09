@@ -551,13 +551,12 @@ export default (sbp('sbp/selectors/register', {
     const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
     const toSubscribe = difference(currentIDs, leaveSubscribed)
     // There is currently no need to tell other clients about our sub/unsubscriptions.
-    const dontBroadcast = true
     try {
       for (const contractID of toUnsubscribe) {
-        client.unsub(contractID, dontBroadcast)
+        client.unsub(contractID)
       }
       for (const contractID of toSubscribe) {
-        client.sub(contractID, dontBroadcast)
+        client.sub(contractID)
       }
     } catch (e) {
       console.error(`[chelonia] pubsub/update: error ${e.name}: ${e.message}`, { toUnsubscribe, toSubscribe }, e)

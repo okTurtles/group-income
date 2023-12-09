@@ -255,9 +255,9 @@ const defaultMessageHandlers = {
     // Currently unused.
   },
 
-  [SUB] ({ contractID, dontBroadcast }: SubMessage) {
+  [SUB] ({ contractID }: SubMessage) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
     if (!socket.subscriptions.has(contractID)) {
       log('Already subscribed to', contractID)
@@ -269,18 +269,13 @@ const defaultMessageHandlers = {
       const subscribers = server.subscribersByContractID[contractID]
       // Add this socket to the subscribers of the given contract.
       subscribers.add(socket)
-      if (!dontBroadcast) {
-        // Broadcast a notification to every other open subscriber.
-        const notification = createNotification(SUB, { contractID, socketID })
-        server.broadcast(notification, { to: subscribers, except: socket })
-      }
     }
     socket.send(createResponse(SUCCESS, { type: SUB, contractID }))
   },
 
-  [UNSUB] ({ contractID, dontBroadcast }: UnsubMessage) {
+  [UNSUB] ({ contractID }: UnsubMessage) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
     if (socket.subscriptions.has(contractID)) {
       // Remove the given contract ID from our subscriptions.
@@ -289,11 +284,6 @@ const defaultMessageHandlers = {
         const subscribers = server.subscribersByContractID[contractID]
         // Remove this socket from the subscribers of the given contract.
         subscribers.delete(socket)
-        if (!dontBroadcast) {
-          const notification = createNotification(UNSUB, { contractID, socketID })
-          // Broadcast a notification to every other open subscriber.
-          server.broadcast(notification, { to: subscribers, except: socket })
-        }
       }
     }
     socket.send(createResponse(SUCCESS, { type: UNSUB, contractID }))
