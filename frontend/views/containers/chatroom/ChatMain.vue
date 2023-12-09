@@ -134,7 +134,7 @@ import {
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
-import { CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const ignorableScrollDistanceInPixel = 500
 
