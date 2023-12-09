@@ -301,8 +301,8 @@ export class GIMessage {
     let head, hash
     const result = {
       get head () {
-        if (!head) {
-          head = JSON.parse(value).head || {}
+        if (head === undefined) {
+          head = JSON.parse(JSON.parse(value).head)
         }
         return head
       },
@@ -313,7 +313,7 @@ export class GIMessage {
         return hash
       },
       get contractID () {
-        return result.head.contractID ?? result.hash
+        return result.head?.contractID ?? result.hash
       }
     }
     return result
