@@ -259,7 +259,6 @@ const defaultMessageHandlers = {
     const { server } = this
 
     if (!socket.subscriptions.has(channelID)) {
-      log('Already subscribed to', channelID)
       // Add the given contract ID to our subscriptions.
       socket.subscriptions.add(channelID)
       if (!server.subscribersByChannelID[channelID]) {
@@ -268,6 +267,8 @@ const defaultMessageHandlers = {
       const subscribers = server.subscribersByChannelID[channelID]
       // Add this socket to the subscribers of the given contract.
       subscribers.add(socket)
+    } else {
+      log('Already subscribed to', channelID)
     }
     socket.send(createResponse(SUCCESS, { type: SUB, channelID }))
   },
