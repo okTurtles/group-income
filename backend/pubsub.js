@@ -90,7 +90,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   server.customSocketEventHandlers = { ...options.socketHandlers }
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
-  server.subscribersByContractID = Object.create(null)
+  server.subscribersByChannelID = Object.create(null)
 
   // Add listeners for server events, i.e. events emitted on the server object.
   Object.keys(defaultServerHandlers).forEach((name) => {
@@ -197,7 +197,7 @@ const defaultSocketEventHandlers = {
 
     // Notify other client sockets that this one has left any room they shared.
     for (const contractID of socket.subscriptions) {
-      const subscribers = server.subscribersByContractID[contractID]
+      const subscribers = server.subscribersByChannelID[contractID]
       // Remove this socket from the subscribers of the given contract.
       subscribers.delete(socket)
       const notification = createNotification(UNSUB, { contractID, socketID })
@@ -263,10 +263,10 @@ const defaultMessageHandlers = {
       log('Already subscribed to', contractID)
       // Add the given contract ID to our subscriptions.
       socket.subscriptions.add(contractID)
-      if (!server.subscribersByContractID[contractID]) {
-        server.subscribersByContractID[contractID] = new Set()
+      if (!server.subscribersByChannelID[contractID]) {
+        server.subscribersByChannelID[contractID] = new Set()
       }
-      const subscribers = server.subscribersByContractID[contractID]
+      const subscribers = server.subscribersByChannelID[contractID]
       // Add this socket to the subscribers of the given contract.
       subscribers.add(socket)
     }
@@ -280,8 +280,8 @@ const defaultMessageHandlers = {
     if (socket.subscriptions.has(contractID)) {
       // Remove the given contract ID from our subscriptions.
       socket.subscriptions.delete(contractID)
-      if (server.subscribersByContractID[contractID]) {
-        const subscribers = server.subscribersByContractID[contractID]
+      if (server.subscribersByChannelID[contractID]) {
+        const subscribers = server.subscribersByChannelID[contractID]
         // Remove this socket from the subscribers of the given contract.
         subscribers.delete(socket)
       }
@@ -315,8 +315,8 @@ const publicMethods = {
   * enumerateSubscribers (contractID: string): Iterable<Object> {
     const server = this
 
-    if (contractID in server.subscribersByContractID) {
-      yield * server.subscribersByContractID[contractID]
+    if (contractID in server.subscribersByChannelID) {
+      yield * server.subscribersByChannelID[contractID]
     }
   },
 
