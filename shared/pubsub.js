@@ -4,6 +4,22 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
+// TODO: verify these are good defaults
+const defaultOptions = {
+  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
+  pingTimeout: 45000,
+  maxReconnectionDelay: 60000,
+  maxRetries: 10,
+  minReconnectionDelay: 500,
+  reconnectOnDisconnection: true,
+  reconnectOnOnline: true,
+  // Defaults to false to avoid reconnection attempts in case the server doesn't
+  // respond because of a failed authentication.
+  reconnectOnTimeout: false,
+  reconnectionDelayGrowFactor: 2,
+  timeout: 5000
+}
+
 // ====== Event name constants ====== //
 
 export const PUBSUB_ERROR = 'pubsub-error'
@@ -443,22 +459,6 @@ const defaultMessageHandlers = {
       }
     }
   }
-}
-
-// TODO: verify these are good defaults
-const defaultOptions = {
-  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
-  pingTimeout: 45000,
-  maxReconnectionDelay: 60000,
-  maxRetries: 10,
-  minReconnectionDelay: 500,
-  reconnectOnDisconnection: true,
-  reconnectOnOnline: true,
-  // Defaults to false to avoid reconnection attempts in case the server doesn't
-  // respond because of a failed authentication.
-  reconnectOnTimeout: false,
-  reconnectionDelayGrowFactor: 2,
-  timeout: 5000
 }
 
 const globalEventNames = ['offline', 'online']

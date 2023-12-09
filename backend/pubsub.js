@@ -28,6 +28,12 @@ const WebSocket = require('ws')
 const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
 const { ERROR, SUCCESS } = RESPONSE_TYPE
 
+const defaultOptions = {
+  logPingRounds: process.env.NODE_ENV !== 'production' && !process.env.CI,
+  logPongMessages: false,
+  maxPayload: 6 * 1024 * 1024,
+  pingInterval: 30000
+}
 // Used to tag console output.
 const tag = '[pubsub]'
 
@@ -125,13 +131,6 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     }, server.options.pingInterval)
   }
   return Object.assign(server, publicMethods)
-}
-
-const defaultOptions = {
-  logPingRounds: process.env.NODE_ENV !== 'production' && !process.env.CI,
-  logPongMessages: false,
-  maxPayload: 6 * 1024 * 1024,
-  pingInterval: 30000
 }
 
 // Default handlers for server events.
