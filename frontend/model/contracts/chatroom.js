@@ -9,7 +9,6 @@ import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/c
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_MESSAGE_ACTION,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
@@ -35,15 +34,6 @@ function createNotificationData (
       type: notificationType,
       ...moreParams
     }
-  }
-}
-
-function emitMessageEvent ({ contractID, hash }: {
-  contractID: string,
-  hash: string
-}): void {
-  if (!sbp('chelonia/contract/isSyncing', contractID)) {
-    sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
   }
 }
 
@@ -209,7 +199,7 @@ sbp('chelonia/defineContract', {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
-          if (!state?.users?.[data.username]) {
+          if (!state?.users?.[data.member]) {
             return
           }
 
@@ -217,7 +207,6 @@ sbp('chelonia/defineContract', {
           const { username } = data
           const loggedIn = sbp('state/vuex/state').loggedIn
 
-          emitMessageEvent({ contractID, hash })
           setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
           if (username === loggedIn.username) {
@@ -281,7 +270,6 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
-        emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
@@ -303,7 +291,6 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
-        emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
@@ -341,7 +328,9 @@ sbp('chelonia/defineContract', {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
-          if (!state || !!state.users?.[data.username]) {
+          console.error('[CSE] ' + contractID, { contractID, data, state: JSON.parse(JSON.stringify(state || {})) })
+
+          if (!state || !!state.users?.[data.member]) {
             return
           }
 
@@ -353,7 +342,6 @@ sbp('chelonia/defineContract', {
               console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
             })
           } else {
-            emitMessageEvent({ contractID, hash })
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
             if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
@@ -419,7 +407,6 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, hash, height, meta, data }, { state, getters }) {
-        emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
         const me = sbp('state/vuex/state').loggedIn.username
@@ -465,8 +452,6 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, hash, meta, data }, { getters }) {
-        emitMessageEvent({ contractID, hash })
-
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
         if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -524,8 +509,6 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ data, contractID, hash, meta }) {
-        emitMessageEvent({ contractID, hash })
-
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
 
@@ -591,9 +574,6 @@ sbp('chelonia/defineContract', {
             Vue.delete(state.messages[msgIndex], 'emoticons')
           }
         }
-      },
-      sideEffect ({ contractID, hash }) {
-        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/voteOnPoll': {
@@ -639,7 +619,6 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
-        emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
@@ -692,7 +671,6 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
-        emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
@@ -712,9 +690,6 @@ sbp('chelonia/defineContract', {
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, status: POLL_STATUS.CLOSED })
         }
-      },
-      sideEffect ({ contractID, hash }) {
-        emitMessageEvent({ contractID, hash })
       }
     }
   },
