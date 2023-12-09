@@ -760,7 +760,7 @@ sbp('chelonia/defineContract', {
         hooks: {
           preSendCheck: (_, state) => {
             // Only issue OP_KEY_DEL for non-members
-            return !!state?.users?.[member]
+            return !state?.users?.[member]
           }
         }
       }).catch(e => {
