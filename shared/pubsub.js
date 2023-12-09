@@ -105,7 +105,7 @@ export const REQUEST_TYPE = Object.freeze({
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
-  SUCCESS: 'success'
+  OK: 'ok'
 })
 
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
@@ -428,7 +428,7 @@ const defaultMessageHandlers = {
     }
   },
 
-  [RESPONSE_TYPE.SUCCESS] ({ data: { type, channelID } }) {
+  [RESPONSE_TYPE.OK] ({ data: { type, channelID } }) {
     const client = this
 
     switch (type) {
