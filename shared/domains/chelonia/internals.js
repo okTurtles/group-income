@@ -618,7 +618,7 @@ export default (sbp('sbp/selectors/register', {
             // 'chelonia/contract/waitingForKeyShareTo' will give correct results
             // (i.e., the event is processed after the state is written)
               sbp('chelonia/private/queueEvent', contractID, () => {
-                sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID, signingKeyId, get signingKeyName () { return state._vm?.authorizedKeys?.[signingKeyId]?.name } })
+                sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID, sharedWithContractID: contractID, signingKeyId, get signingKeyName () { return state._vm?.authorizedKeys?.[signingKeyId]?.name } })
               }).catch(e => {
                 console.error(`[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
               })

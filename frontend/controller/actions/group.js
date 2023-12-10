@@ -323,8 +323,8 @@ export default (sbp('sbp/selectors/register', {
 
         // Event handler for continuing the join process if the keys are
         // shared with us during the current session
-        const eventHandler = ({ contractID, signingKeyName }) => {
-          if (contractID !== params.contractID || pendingKeyShares?.includes(signingKeyName)) {
+        const eventHandler = ({ contractID, sharedWithContractID, signingKeyName }) => {
+          if (contractID !== params.contractID || sharedWithContractID !== userID || (pendingKeyShares && !pendingKeyShares.includes(signingKeyName))) {
             return
           }
 
