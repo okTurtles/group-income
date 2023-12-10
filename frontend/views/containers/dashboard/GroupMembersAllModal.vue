@@ -112,7 +112,7 @@ modal-base-template.has-background(
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
                 :args='LTags("span")'
-              ) Add {span_} to channel{_span}
+              ) Add {span_}to channel{_span}
 
               group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
 </template>

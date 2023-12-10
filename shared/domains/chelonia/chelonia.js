@@ -357,12 +357,19 @@ export default (sbp('sbp/selectors/register', {
     }
     return !!contractIDOrState?._volatile?.dirty || !!contractIDOrState?._volatile?.resyncing
   },
-  'chelonia/contract/isWaitingForKeyShare': function (contractIDOrState: string | Object) {
+  'chelonia/contract/waitingForKeyShareTo': function (contractIDOrState: string | Object, requestingContractID?: string): null | string[] {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
       contractIDOrState = rootState[contractIDOrState]
     }
-    return !!contractIDOrState._volatile?.pendingKeyRequests?.length
+    const result = contractIDOrState._volatile?.pendingKeyRequests
+      ?.filter((r) => {
+        return r && (!requestingContractID || r.contractID === requestingContractID)
+      })
+      ?.map(({ name }) => name)
+
+    if (!result?.length) return null
+    return result
   },
   'chelonia/contract/hasKeysToPerformOperation': function (contractIDOrState: string | Object, operation: string) {
     if (typeof contractIDOrState === 'string') {

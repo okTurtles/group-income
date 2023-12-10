@@ -426,6 +426,28 @@ export default (sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
+  'chelonia/private/postKeyShare': function (contractID, previousVolatileState, signingKey) {
+    const cheloniaState = sbp(this.config.stateSelector)
+    const targetState = cheloniaState[contractID]
+
+    if (previousVolatileState && has(previousVolatileState, 'watch')) {
+      if (!targetState._volatile) this.config.reactiveSet(targetState, '_volatile', Object.create(null))
+      if (!targetState._volatile.watch) {
+        this.config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
+      } else {
+        targetState._volatile.watch.push(...previousVolatileState.watch)
+      }
+    }
+
+    if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
+
+    this.config.reactiveSet(
+      targetState._volatile, 'pendingKeyRequests',
+      targetState._volatile.pendingKeyRequests.filter((pkr) =>
+        pkr?.name !== signingKey.name
+      )
+    )
+  },
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
     const [opT, opV] = message.op()
     const hash = message.hash()
@@ -519,7 +541,7 @@ export default (sbp('sbp/selectors/register', {
         if (!cheloniaState[v.contractID]) {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
-        let targetState = cheloniaState[v.contractID]
+        const targetState = cheloniaState[v.contractID]
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
@@ -562,7 +584,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         internalSideEffectStack?.push(async () => {
-          console.log('Processing OP_KEY_SHARE (inside promise)')
+          console.log('Processing OP_KEY_SHARE (inside promise)', { newestEncryptionKeyHeight, currentHeight: cheloniaState.contracts[v.contractID]?.height })
           // If an encryption key has been shared with _notBefore lower than the
           // current height, then the contract must be resynced.
           if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
@@ -570,7 +592,6 @@ export default (sbp('sbp/selectors/register', {
               // If the contract only has _volatile state, we don't force sync it
               return
             }
-            const previousVolatileState = targetState._volatile
 
             console.log('Inside pendingKeyRequests if')
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
@@ -579,38 +600,29 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             const resync = sbp('chelonia/private/queueEvent', v.contractID, [
               'chelonia/begin',
-              ['chelonia/private/in/syncContract', v.contractID],
-              ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
-            ]).then(() => {
-              const cheloniaState = sbp(config.stateSelector)
-              targetState = cheloniaState[v.contractID]
+              ['chelonia/private/in/syncContract', v.contractID]
+            ])
 
-              if (previousVolatileState && has(previousVolatileState, 'watch')) {
-                if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
-                if (!targetState._volatile.watch) {
-                  config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
-                } else {
-                  targetState._volatile.watch.push(...previousVolatileState.watch)
-                }
-              }
-            })
             // If the keys received were for the current contract, we can't
             // use queueEvent as we're already on that same queue
             if (v.contractID !== contractID) {
               await resync
             }
-          } else {
-            sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID })
           }
 
-          if (!Array.isArray(targetState._volatile?.pendingKeyRequests)) return
-
-          config.reactiveSet(
-            targetState._volatile, 'pendingKeyRequests',
-            targetState._volatile.pendingKeyRequests.filter((pkr) =>
-              pkr?.name !== signingKey.name
-            )
-          )
+          const previousVolatileState = targetState._volatile
+          sbp('chelonia/private/queueEvent', v.contractID, ['chelonia/private/postKeyShare', v.contractID, previousVolatileState, signingKey])
+            .then(() => {
+            // The CONTRACT_HAS_RECEIVED_KEYS event is placed on the queue for
+            // the current contract so that calling
+            // 'chelonia/contract/waitingForKeyShareTo' will give correct results
+            // (i.e., the event is processed after the state is written)
+              sbp('chelonia/private/queueEvent', contractID, () => {
+                sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID, signingKeyId, get signingKeyName () { return state._vm?.authorizedKeys?.[signingKeyId]?.name } })
+              }).catch(e => {
+                console.error(`[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
+              })
+            })
         })
       },
       [GIMessage.OP_KEY_REQUEST] (wv: GIOpKeyRequest) {
@@ -1234,7 +1246,8 @@ export default (sbp('sbp/selectors/register', {
               shareable: true
             }
           }
-        }))
+        })),
+        keyRequestHash: hash
       }
 
       // 3. Send OP_KEY_SHARE to identity contract

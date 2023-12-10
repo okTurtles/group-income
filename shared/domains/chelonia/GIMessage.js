@@ -38,7 +38,7 @@ export type GIOpActionEncrypted = EncryptedData<GIOpActionUnencrypted> // encryp
 export type GIOpKeyAdd = (GIKey | EncryptedData<GIKey>)[]
 export type GIOpKeyDel = (string | EncryptedData<string>)[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
+export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestHash?: string }
 export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
 // TODO encrypted GIOpKeyRequest
 export type ProtoGIOpKeyRequest = {

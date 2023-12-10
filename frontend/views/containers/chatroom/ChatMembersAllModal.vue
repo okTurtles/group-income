@@ -101,7 +101,7 @@ modal-base-template.has-background(
                 @click.stop='addToChannel(username)'
                 :data-test='"addToChannel-" + username'
               )
-                i18n(:args='LTags("span")') Add {span_} to channel{_span}
+                i18n(:args='LTags("span")') Add {span_}to channel{_span}
 
               .has-text-success(v-else)
                 i.icon-check
