@@ -606,11 +606,11 @@ const publicMethods = {
   /**
    * Sends a SUB request to the server as soon as possible.
    *
-   * - The given contract ID will be cached until we get a relevant server
+   * - The given channel ID will be cached until we get a relevant server
    * response, allowing us to resend the same request if necessary.
    * - Any identical UNSUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param channelID - The ID of the contract whose updates we want to subscribe to.
+   * @param channelID - The ID of the channel whose updates we want to subscribe to.
    */
   sub (channelID: string) {
     const client = this
@@ -629,11 +629,11 @@ const publicMethods = {
   /**
    * Sends an UNSUB request to the server as soon as possible.
    *
-   * - The given contract ID will be cached until we get a relevant server
+   * - The given channel ID will be cached until we get a relevant server
    * response, allowing us to resend the same request if necessary.
    * - Any identical SUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param channelID - The ID of the contract whose updates we want to unsubscribe from.
+   * @param channelID - The ID of the channel whose updates we want to unsubscribe from.
    */
   unsub (channelID: string) {
     const client = this

@@ -257,10 +257,10 @@ const defaultMessageHandlers = {
     const { server } = this
 
     if (!socket.subscriptions.has(channelID)) {
-      // Add the given contract ID to our subscriptions.
+      // Add the given channel ID to our subscriptions.
       socket.subscriptions.add(channelID)
       server.subscribersByChannelID[channelID] ??= new Set()
-      // Add this socket to the subscribers of the given contract.
+      // Add this socket to the channel subscribers.
       server.subscribersByChannelID[channelID].add(socket)
     } else {
       log('Already subscribed to', channelID)
@@ -273,10 +273,10 @@ const defaultMessageHandlers = {
     const { server } = this
 
     if (socket.subscriptions.has(channelID)) {
-      // Remove the given contract ID from our subscriptions.
+      // Remove the given channel ID from our subscriptions.
       socket.subscriptions.delete(channelID)
       if (server.subscribersByChannelID[channelID]) {
-        // Remove this socket from the subscribers of the given contract.
+        // Remove this socket from the channel subscribers.
         server.subscribersByChannelID[channelID].delete(socket)
       }
     }
@@ -305,7 +305,7 @@ const publicMethods = {
     }
   },
 
-  // Enumerates the subscribers of a given contract.
+  // Enumerates the subscribers of a given channel.
   * enumerateSubscribers (channelID: string): Iterable<Object> {
     const server = this
 
