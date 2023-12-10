@@ -73,6 +73,12 @@ export type PubSubClient = {
   unsub(channelID: string): void
 }
 
+export type PubMessage = {
+  +type: 'pub',
+  +channelID: string,
+  +data: JSONType
+}
+
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
@@ -191,6 +197,10 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
 
 export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
+}
+
+export function createPubMessage (channelID: string, data: JSONType): string {
+  return JSON.stringify({ type: 'pub', channelID, data })
 }
 
 export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
@@ -394,9 +404,9 @@ const defaultMessageHandlers = {
     }, client.options.pingTimeout)
   },
 
-  // PUB can be used to send ephemeral messages outside of any contract log.
-  [NOTIFICATION_TYPE.PUB] (msg) {
-    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+  [NOTIFICATION_TYPE.PUB] ({ channelID, data }) {
+    console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+    // No need to reply.
   },
 
   [NOTIFICATION_TYPE.SUB] (msg) {
@@ -585,8 +595,12 @@ const publicMethods = {
     sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
   },
 
-  // Unused for now.
+  // Can be used to send ephemeral messages outside of any contract log.
+  // Does nothing if the socket is not in the OPEN state.
   pub (channelID: string, data: JSONType) {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(createPubMessage(channelID, data))
+    }
   },
 
   /**

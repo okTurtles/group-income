@@ -16,8 +16,8 @@ import {
 } from '~/shared/pubsub.js'
 
 import type {
-  Message, SubMessage, UnsubMessage,
-  NotificationTypeEnum, ResponseTypeEnum
+  Message, PubMessage, SubMessage, UnsubMessage,
+  NotificationTypeEnum
 } from '~/shared/pubsub.js'
 
 import type { JSONType } from '~/shared/types.js'
@@ -250,8 +250,10 @@ const defaultMessageHandlers = {
     socket.activeSinceLastPing = true
   },
 
-  [PUB] (msg: Message) {
-    // Currently unused.
+  [PUB] (msg: PubMessage) {
+    const { server } = this
+    const subscribers = server.subscribersByChannelID[msg.channelID]
+    server.broadcast(msg, { to: subscribers ?? [] })
   },
 
   [SUB] ({ channelID }: SubMessage) {
@@ -261,12 +263,9 @@ const defaultMessageHandlers = {
     if (!socket.subscriptions.has(channelID)) {
       // Add the given contract ID to our subscriptions.
       socket.subscriptions.add(channelID)
-      if (!server.subscribersByChannelID[channelID]) {
-        server.subscribersByChannelID[channelID] = new Set()
-      }
-      const subscribers = server.subscribersByChannelID[channelID]
+      server.subscribersByChannelID[channelID] ??= new Set()
       // Add this socket to the subscribers of the given contract.
-      subscribers.add(socket)
+      server.subscribersByChannelID[channelID].add(socket)
     } else {
       log('Already subscribed to', channelID)
     }
@@ -281,9 +280,8 @@ const defaultMessageHandlers = {
       // Remove the given contract ID from our subscriptions.
       socket.subscriptions.delete(channelID)
       if (server.subscribersByChannelID[channelID]) {
-        const subscribers = server.subscribersByChannelID[channelID]
         // Remove this socket from the subscribers of the given contract.
-        subscribers.delete(socket)
+        server.subscribersByChannelID[channelID].delete(socket)
       }
     }
     socket.send(createOkResponse({ type: UNSUB, channelID }))
@@ -299,14 +297,14 @@ const publicMethods = {
    * @param except - A recipient to exclude. Optional.
    */
   broadcast (
-    message: Message,
+    message: Message | string,
     { to, except }: { to?: Iterable<Object>, except?: Object }
   ) {
     const server = this
 
     for (const client of to || server.clients) {
       if (client.readyState === WebSocket.OPEN && client !== except) {
-        client.send(message)
+        client.send(typeof message === 'string' ? message : JSON.stringify(message))
       }
     }
   },
