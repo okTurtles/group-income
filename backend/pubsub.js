@@ -192,15 +192,11 @@ const defaultServerHandlers = {
 const defaultSocketEventHandlers = {
   close (code: string, reason: string) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
-    // Notify other client sockets that this one has left any room they shared.
     for (const channelID of socket.subscriptions) {
-      const subscribers = server.subscribersByChannelID[channelID]
-      // Remove this socket from the subscribers of the given contract.
-      subscribers.delete(socket)
-      const notification = createNotification(UNSUB, { channelID, socketID })
-      server.broadcast(notification, { to: subscribers })
+      // Remove this socket from the channel subscribers.
+      server.subscribersByChannelID[channelID].delete(socket)
     }
     socket.subscriptions.clear()
   },
