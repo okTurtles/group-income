@@ -210,6 +210,12 @@ sbp('chelonia/defineContract', {
           setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
           if (username === loggedIn.username) {
+            // The join process is now complete, so we can remove this key if
+            // it was set. This key is used to prevent us from calling `/remove`
+            // when the join process is incomplete. See the comment on group.js
+            // (joinChatRoom sideEffect) for a more detailed explanation of
+            // what this does.
+            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             // NOTE: To ignore scroll to the message of this hash
             //       since we don't create notification when join the direct message
@@ -335,12 +341,18 @@ sbp('chelonia/defineContract', {
           }
 
           if (data.member === rootState.loggedIn.username) {
+            // If we're in the process of joining this chatroom, don't call
+            // /remove, as we're still waiting to be added to the chatroom.
+            // See group.js (joinChatRoom sideEffect) for a more detailed
+            // explanation of why we need this
+            if (!sbp('okTurtles.data/get', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)) {
             // NOTE: make sure *not* to await on this, since that can cause
             //       a potential deadlock. See same warning in sideEffect for
             //       'gi.contracts/group/removeMember'
-            sbp('chelonia/contract/remove', contractID).catch(e => {
-              console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
-            })
+              sbp('chelonia/contract/remove', contractID).catch(e => {
+                console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
+              })
+            }
           } else {
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 

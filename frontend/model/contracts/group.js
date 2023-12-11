@@ -1392,6 +1392,14 @@ sbp('chelonia/defineContract', {
           }).catch((e) => {
             console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
           })
+        } else if (data.member === rootState.loggedIn.username) {
+          // Abort the joining action if it's been initiated. This way, calling /remove on the leave action will work
+          if (sbp('okTurtles.data/get', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)) {
+            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)
+            sbp('chelonia/contract/remove', data.chatRoomID).catch((e) => {
+              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error calling remove for ${contractID} on chatroom ${data.chatRoomID}`, e)
+            })
+          }
         }
       }
     },
@@ -1436,6 +1444,19 @@ sbp('chelonia/defineContract', {
             const rootState = sbp('state/vuex/state')
 
             if (rootState[contractID]?.chatRooms[data.chatRoomID]?.users[username]?.status === PROFILE_STATUS.ACTIVE) {
+              // If we were added by someone else, we might sync the chatroom
+              // contract before the corresponding `/join` action is issued.
+              // If we were previously a member of the chatroom, we would have
+              // a `/leave` action for ourselves, causing us to remove the
+              // chatroom contract. To handle this situation, we use
+              // `okTurtles.data/set` to define a special key that will be
+              // checked by the chatroom contract to tell it not to remove the
+              // contract if we're in the process of joining.
+              // This is a temporary measure until reference counting is
+              // implemented in Chelonia. With reference counting, we'd keep
+              // track of the 'reason' we're subscribing to a contract, and
+              // we won't need this special key.
+              sbp('okTurtles.data/set', `JOINING_CHATROOM-${data.chatRoomID}-${username}`, true)
               sbp('chelonia/contract/sync', data.chatRoomID).catch((e) => {
                 console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
               })
