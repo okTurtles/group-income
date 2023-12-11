@@ -5,6 +5,8 @@ div
     svg-invitation.c-svg
 
     i18n.is-title-1(
+      data-test='pendingApprovalTitle'
+      :data-groupId='ephemeral.groupIdWhenMounted'
       tag='h2'
       :args='{ groupName: ephemeral.settings.groupName }'
     ) Waiting for approval to join {groupName}!

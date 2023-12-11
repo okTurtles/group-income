@@ -5,6 +5,8 @@ import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'
 import { isRawSignedData, signedIncomingData } from './signedData.js'
 
+const rootStateFn = () => sbp('chelonia/rootState')
+
 export interface EncryptedData<T> {
   encryptionKeyId: string,
   valueOf: () => T,
@@ -34,8 +36,7 @@ export const isEncryptedData = (o: any): boolean => {
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const encryptData = function (stateOrContractID: string | Object, eKeyId: string, data: any, additionalData: string) {
-  const rootState = sbp('chelonia/rootState')
-  const state = typeof stateOrContractID === 'string' ? rootState[stateOrContractID] : stateOrContractID
+  const state = typeof stateOrContractID === 'string' ? rootStateFn()[stateOrContractID] : stateOrContractID
 
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
@@ -206,8 +207,12 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
     if (decryptedValue) {
       return decryptedValue
     }
-    const rootState = sbp('chelonia/rootState')
-    decryptedValue = decryptData.call(state || rootState?.[contractID], height, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
+    if (!state || !additionalKeys) {
+      const rootState = rootStateFn()
+      state = state || rootState[contractID]
+      additionalKeys = additionalKeys ?? rootState.secretKeys
+    }
+    decryptedValue = decryptData.call(state, height, data, additionalKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || '')
@@ -241,8 +246,8 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     if (decryptedValue) {
       return decryptedValue
     }
-    const rootState = sbp('chelonia/rootState')
-    const state = rootState?.[contractID]
+    const rootState = rootStateFn()
+    const state = rootState[contractID]
     decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {

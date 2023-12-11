@@ -21,19 +21,18 @@
       .profile-wrapper(v-if='partners.length === 1')
         profile-card(:username='partners[0]' deactivated)
           avatar-user(:username='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(data-test='partners[0]') {{ title }}
+          span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0]') {{ title }}
 
       .group-wrapper(v-else)
         .picture-wrapper
           avatar(:src='picture' :alt='title' size='xs')
           .c-badge {{ partners.length }}
-        span.is-unstyled.c-name.has-ellipsis(data-test='title') {{ title }}
+        span.is-unstyled.c-name.has-ellipsis(:data-test='title') {{ title }}
 
       .c-unreadcount-wrapper
         .pill.is-danger(
           v-if='getUnreadMsgCount(chatRoomId)'
         ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomId))}}
-    span {{ ourGroupDirectMessages.length }}
 </template>
 
 <script>

@@ -21,12 +21,12 @@ component(
   ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
-      :key='hash'
+      :key='`proposal-${hash}`'
       :proposalHash='hash'
     )
     proposal-item(
       v-for='[hash, obj] of ephemeral.archivedProposals'
-      :key='hash'
+      :key='`archived-proposal-${hash}`'
       :proposalHash='hash'
       :proposalObject='obj'
     )

@@ -144,7 +144,7 @@ export default ({
         .sort((former, latter) => {
           if (former.lastMessageDate > latter.lastMessageDate) {
             return -1
-          } else if (former.lastMessageDate > latter.lastMessageDate) {
+          } else if (former.lastMessageDate < latter.lastMessageDate) {
             return 1
           }
           return former.title > latter.title ? 1 : -1
@@ -152,10 +152,10 @@ export default ({
     },
     filteredRecents () {
       return this.ourRecentConversations.filter(({ title, partners }) => {
-        const upperCasedSearchText = String(this.searchText).toUpperCase()
+        const upperCasedSearchText = String(this.searchText).toUpperCase().normalize()
         if (!difference(partners, this.selections).length) {
           return false
-        } else if (String(title).toUpperCase().indexOf(upperCasedSearchText) > -1) {
+        } else if (String(title).toUpperCase().normalize().indexOf(upperCasedSearchText) > -1) {
           return true
         } else if (String(partners.join(', ')).toUpperCase().indexOf(upperCasedSearchText) > -1) {
           return true

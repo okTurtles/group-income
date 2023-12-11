@@ -7,6 +7,7 @@ import { deserializeKey } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
+import { ChelErrorWarning } from './errors.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
@@ -226,7 +227,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
 
     const existingKey = state._vm.authorizedKeys[uk.oldKeyId]
     if (!existingKey) {
-      throw new Error('Missing old key ID ' + uk.oldKeyId)
+      throw new ChelErrorWarning('Missing old key ID ' + uk.oldKeyId)
     }
     if (!existingKey._private !== !data.encryptionKeyId) {
       throw new Error('_private attribute must be preserved')
@@ -338,7 +339,7 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
         }
 
         // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ name: key.name })
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ contractID, name: key.name })
 
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }

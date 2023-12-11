@@ -5,6 +5,8 @@ import type { Key } from './crypto.js'
 import { deserializeKey, keyId, serializeKey, sign, verifySignature } from './crypto.js'
 import { ChelErrorSignatureError, ChelErrorSignatureKeyNotFound, ChelErrorUnexpected } from './errors.js'
 
+const rootStateFn = () => sbp('chelonia/rootState')
+
 export interface SignedData<T> {
   signingKeyId: string,
   valueOf: () => T,
@@ -38,8 +40,7 @@ export const isSignedData = (o: any): boolean => {
 // TODO: Check for permissions and allowedActions; this requires passing some
 // additional context
 const signData = function (stateOrContractID: string | Object, sKeyId: string, data: any, extraFields: Object, additionalKeys: Object, additionalData: string) {
-  const rootState = sbp('chelonia/rootState')
-  const state = typeof stateOrContractID === 'string' ? rootState[stateOrContractID] : stateOrContractID
+  const state = typeof stateOrContractID === 'string' ? rootStateFn()[stateOrContractID] : stateOrContractID
   if (!additionalData) {
     throw new ChelErrorSignatureError('Signature additional data must be provided')
   }
@@ -137,10 +138,9 @@ const verifySignatureData = function (height: number, data: any, additionalData:
 
 export const signedOutgoingData = <T>(stateOrContractID: string | Object, sKeyId: string, data: T, additionalKeys?: Object): SignedData<T> => {
   if (!stateOrContractID || data === undefined || !sKeyId) throw new TypeError('Invalid invocation')
-  const rootState = sbp('chelonia/rootState')
 
   if (!additionalKeys) {
-    additionalKeys = rootState.secretKeys
+    additionalKeys = rootStateFn().secretKeys
   }
 
   const extraFields = Object.create(null)
@@ -232,8 +232,7 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
         if (verifySignedValue) {
           return verifySignedValue[1]
         }
-        const rootState = sbp('chelonia/rootState')
-        verifySignedValue = verifySignatureData.call(state || rootState?.[contractID], height, data, additionalData)
+        verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData)
         if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
         return verifySignedValue[1]
       }

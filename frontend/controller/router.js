@@ -150,7 +150,7 @@ const router: any = new Router({
       component: lazyPendingApproval,
       name: 'PendingApproval',
       meta: { title: L('Pending Approval') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     ...(process.env.NODE_ENV === 'development'
       ? [{

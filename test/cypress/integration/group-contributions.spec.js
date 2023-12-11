@@ -90,14 +90,15 @@ describe('Contributions', () => {
   })
 
   it('user2, user3 and user4 join the group', () => {
-    for (let i = 2; i <= 4; i++) {
-      cy.giAcceptGroupInvite(invitationLinks.anyone, {
-        username: `user${i}-${userId}`,
-        groupName,
-        displayName: usersDisplayName[i],
-        bypassUI: true
-      })
-    }
+    const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
+    const displayNames = [2, 3, 4].map(i => usersDisplayName[i])
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
+      usernames,
+      displayNames,
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      bypassUI: true
+    })
 
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
   })

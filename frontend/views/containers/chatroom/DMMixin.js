@@ -23,7 +23,12 @@ const DMMixin: Object = {
       try {
         await sbp('gi.actions/identity/createDirectMessage', {
           contractID: this.ourIdentityContractId,
-          data: { usernames }
+          data: { usernames },
+          hooks: {
+            onprocessed: (message) => {
+              this.redirect(message.decryptedValue().data.contractID)
+            }
+          }
         })
       } catch (err) {
         alert(err.message)

@@ -2,7 +2,6 @@
 
 // TODO: rename GIMessage to ChelMessage
 
-import { v4 as uuidv4 } from 'uuid'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
@@ -39,7 +38,7 @@ export type GIOpActionEncrypted = EncryptedData<GIOpActionUnencrypted> // encryp
 export type GIOpKeyAdd = (GIKey | EncryptedData<GIKey>)[]
 export type GIOpKeyDel = (string | EncryptedData<string>)[]
 export type GIOpPropSet = { key: string; value: JSONType }
-export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestId?: string }
+export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestHash?: string }
 export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
 // TODO encrypted GIOpKeyRequest
 export type ProtoGIOpKeyRequest = {
@@ -51,7 +50,7 @@ export type ProtoGIOpKeyRequest = {
   }>
 }
 export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
-export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
 export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
 export type GIKeyUpdate = {
   name: string;
@@ -249,12 +248,7 @@ export class GIMessage {
       originatingContractID,
       originatingContractHeight,
       op: op[0],
-      manifest,
-      // the nonce makes it easier to prevent conflicts during development
-      // when using the same data, and also makes it possible to identify
-      // same-content/different-previousHEAD messages that are
-      // cloned using the cloneWith method
-      nonce: uuidv4()
+      manifest
     }
     console.log('createV1_0', { op, head })
     return new this(messageToParams(head, op[1]))
@@ -302,6 +296,29 @@ export class GIMessage {
     })
   }
 
+  static deserializeHEAD (value: string): { head: Object; hash: string; contractID: string } {
+    if (!value) throw new Error(`deserialize bad value: ${value}`)
+    let head, hash
+    const result = {
+      get head () {
+        if (head === undefined) {
+          head = JSON.parse(JSON.parse(value).head)
+        }
+        return head
+      },
+      get hash () {
+        if (!hash) {
+          hash = blake32Hash(value)
+        }
+        return hash
+      },
+      get contractID () {
+        return result.head?.contractID ?? result.hash
+      }
+    }
+    return result
+  }
+
   constructor (params: GIMsgParams) {
     this._direction = params.direction
     this._mapping = params.mapping
@@ -335,6 +352,7 @@ export class GIMessage {
         case GIMessage.OP_KEY_REQUEST:
         case GIMessage.OP_KEY_REQUEST_SEEN:
         case GIMessage.OP_ACTION_ENCRYPTED:
+        case GIMessage.OP_ACTION_UNENCRYPTED:
         // nothing for now
           break
         default:
@@ -421,9 +439,8 @@ export class GIMessage {
   height (): number { return this._head.height }
 
   id (): string {
-    // NOTE: nonce can be used as GIMessage identifier
-    // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-    return this.head().nonce
+    // TODO: Schedule for later removal
+    throw new Error('GIMessage.id() was called but it has been removed')
   }
 
   direction (): 'incoming' | 'outgoing' {
