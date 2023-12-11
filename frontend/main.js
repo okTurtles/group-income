@@ -73,6 +73,7 @@ async function startApp () {
       'chelonia/rootState',
       'chelonia/haveSecretKey',
       'chelonia/private/enqueuePostSyncOps',
+      'chelonia/private/invoke',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
@@ -113,7 +114,7 @@ async function startApp () {
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation',
-          'chelonia/contract/isWaitingForKeyShare',
+          'chelonia/contract/waitingForKeyShareTo',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves',
           'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
@@ -175,8 +176,9 @@ async function startApp () {
     window.sbp = sbp
   }
 
-  // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
-  // be called before the main App component is loaded (just after we call login)
+  // this is definitely very hacky, but we put it here since two events
+  // (CONTRACT_IS_SYNCING)
+  // can be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
   const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
   const syncFn = function (contractID, isSyncing) {
@@ -188,6 +190,7 @@ async function startApp () {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
   }
+
   const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
@@ -268,6 +271,7 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
+
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
 
@@ -347,6 +351,42 @@ async function startApp () {
       },
       isInCypress () {
         return !!window.Cypress
+      },
+      pendingGroupKeyShares () {
+        return Object.keys(this.$store.state.contracts || {})
+          .filter(contractID => this.$store.state.contracts[contractID].type === 'gi.contracts/group')
+          .filter(contractID => Object.keys(this.$store.state[contractID]._vm?.pendingKeyShares || {}).length)
+          .join(', ')
+      },
+      pendingPublishEvents () {
+        return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+          .filter(([q]) => typeof q === 'string' && q.startsWith('publish:'))
+          .flatMap(([, list]) => list).length
+      },
+      keyRequestedGroupIDs () {
+        const state = this.$store.state
+        const identityContractID = state.loggedIn?.identityContractID
+        const authorizedKeys = (
+          identityContractID &&
+          state[identityContractID]?._vm?.authorizedKeys
+        )
+        const contracts = state.contracts
+
+        if (!authorizedKeys || !contracts) return []
+
+        return Object.keys(contracts).filter((contractID) =>
+          contractID !== identityContractID &&
+          state[contractID]?._volatile?.pendingKeyRequests?.some((kr) =>
+            (
+              kr &&
+              kr.name &&
+              Object.values(authorizedKeys).some((key) => {
+                // $FlowFixMe[incompatible-use]
+                return key?.name === kr.name
+              })
+            )
+          )
+        ).join(', ')
       }
     },
     methods: {

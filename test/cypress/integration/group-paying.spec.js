@@ -125,21 +125,20 @@ describe('Group Payments', () => {
   })
 
   it('Three users join the group and add their income details', () => {
-    const options = { groupName, bypassUI: true, shouldLogoutAfter: false }
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, ...options })
-    setIncomeDetails(false, 900)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, ...options })
-    setIncomeDetails(false, 750)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user4-${userId}`, ...options })
-    setIncomeDetails(true, 100)
+    const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
+    const actionsBeforeLogout = [[false, 900], [false, 750], [true, 100]]
+      .map(([doesPledge, incomeAmount]) => () => setIncomeDetails(doesPledge, incomeAmount))
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
+      usernames,
+      actionBeforeLogout: actionsBeforeLogout,
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      bypassUI: true
+    })
   })
 
   it('user1 sends $250 to user3 (total)', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
     //       REFERENCE IN CASE WE RUN INTO MORE!
@@ -263,7 +262,7 @@ describe('Group Payments', () => {
     cy.closeModal()
 
     cy.log('user3 confirms the received payment')
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user3-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
@@ -313,7 +312,7 @@ describe('Group Payments', () => {
     })
 
     cy.log('user1 receives a notification for a thank you note')
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
     openNotificationCard({
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
@@ -327,7 +326,7 @@ describe('Group Payments', () => {
   })
 
   it('user4 sends $50 to user2 (partial)', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user4-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('todoCheck').click()
@@ -363,7 +362,7 @@ describe('Group Payments', () => {
     })
 
     cy.log('user2 confirms the received payment')
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user2-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
@@ -375,7 +374,7 @@ describe('Group Payments', () => {
   })
 
   it('user1 sends $250 to user3 (again)', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
 
     cy.giForceDistributionDateToNow()
 
@@ -439,7 +438,7 @@ describe('Group Payments', () => {
     cy.closeModal()
 
     cy.log('user3 confirms the received payment again')
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user3-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('payList').find('tbody').children().should('have.length', 2)
@@ -466,7 +465,7 @@ describe('Group Payments', () => {
   })
 
   it('user1 changes their income details to "needing" and sees the correct UI', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
 
     setIncomeDetails(false, 950)
 
@@ -496,7 +495,7 @@ describe('Group Payments', () => {
     cy.visit('/')
     cy.tick(timeOneMonth)
 
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
 

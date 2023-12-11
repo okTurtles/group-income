@@ -10,6 +10,16 @@ import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@c
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 
+const enqueueDeferredPromise = (queue) => {
+  let finished: () => any = Boolean // asssigned to keep Flow happy
+  const onFinishPromise = new Promise<any>((resolve) => {
+    finished = resolve
+  })
+  sbp('okTurtles.eventQueue/queueEvent', queue, () => onFinishPromise)
+
+  return finished
+}
+
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
 // This function covers the common case of sending an encrypted action that is
 // both encrypted with that same contract's CEK and signed with that contract's
@@ -21,20 +31,30 @@ import type { GIActionParams } from './types.js'
 export const encryptedAction = (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
 ): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
-    return sbp('chelonia/out/actionEncrypted', {
-      ...(innerParams ?? outerParams),
-      signingKeyId,
-      innerSigningKeyId,
-      encryptionKeyId,
-      action: action.replace('gi.actions', 'gi.contracts'),
-      originatingContractID
-    })
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+    const params = innerParams ?? outerParams
+    const invocation = [
+      'chelonia/out/actionEncrypted',
+      {
+        ...params,
+        signingKeyId,
+        innerSigningKeyId,
+        encryptionKeyId,
+        action: action.replace('gi.actions', 'gi.contracts'),
+        originatingContractID
+      }
+    ]
+
+    if (params.returnInvocation) {
+      return invocation
+    } else {
+      return sbp(...invocation)
+    }
   }
   return {
     [action]: async function (params: GIActionParams) {
@@ -42,6 +62,10 @@ export const encryptedAction = (
       if (!contractID) {
         throw new Error('Missing contract ID')
       }
+
+      // The following ensures that logging out waits until all pending actions
+      // are written
+      const finished = enqueueDeferredPromise('encrypted-action')
 
       try {
         // Writing to a contract requires being subscribed to it
@@ -114,6 +138,7 @@ export const encryptedAction = (
           : humanError(params, e)
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
+        finished()
         await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
       }
     }

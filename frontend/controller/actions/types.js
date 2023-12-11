@@ -25,6 +25,8 @@ export type GIActionParams = {
     prepublishContract?: null | (Object) => void;
     prepublish?: null | (Object) => void;
     postpublish?: null | (Object) => void;
+    onprocessed?: null | (Object) => void;
   };
   publishOptions?: { maxAttempts: number };
+  returnInvocation?: boolean;
 }

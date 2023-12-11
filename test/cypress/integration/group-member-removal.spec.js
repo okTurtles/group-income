@@ -59,6 +59,7 @@ describe('Group - Removing a member', () => {
   it('user2 joins groupA and cannot remove user1', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       bypassUI: true,
       actionBeforeLogout: () => {
@@ -78,6 +79,12 @@ describe('Group - Removing a member', () => {
     assertMembersCount(2)
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
+    assertMembersCount(1)
+
+    cy.giRedirectToGroupChat()
+    cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', `user2-${userId}`)
+    cy.get('div.c-message:last-child .c-notification').should('contain', 'Left General')
+
     cy.giLogout()
   })
 
@@ -87,6 +94,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       isLoggedIn: true,
       shouldLogoutAfter: false
@@ -107,10 +115,12 @@ describe('Group - Removing a member', () => {
   })
 
   it('user1 joins groupB - has now 2 groups', () => {
-    cy.giSwitchUser(`user1-${userId}`)
+    cy.giLogout()
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
       username: `user1-${userId}`,
+      existingMemberUsername: `user2-${userId}`,
       groupName: groupNameB,
       isLoggedIn: true,
       bypassUI: true
@@ -136,6 +146,7 @@ describe('Group - Removing a member', () => {
   it('userBot joins groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `userbot-${userId}`,
+      existingMemberUsername: `user2-${userId}`,
       groupName: groupNameA,
       bypassUI: true
     })
@@ -246,6 +257,7 @@ describe('Group - Removing a member', () => {
   it('user2 rejoins the groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       isLoggedIn: true,
       shouldLogoutAfter: false

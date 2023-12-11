@@ -96,19 +96,20 @@ const ChatMixin: Object = {
       const summarizedAttr = this.getGroupChatRooms[chatRoomId]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, users } = summarizedAttr
+        const activeUsers = Object
+          .entries(users)
+          .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
+          .map(([username]) => {
+            const { displayName, picture, email } = this.globalProfile(username) || {}
+            return [username, { displayName, picture, email }]
+          })
         this.loadedSummary = {
           ...initSummary,
           chatRoomId,
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
-          users: Object
-            .entries(users)
-            .filter((profile) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
-            .map(([username]) => {
-              const { displayName, picture, email } = this.globalProfile(username) || {}
-              return [username, { displayName, picture, email }]
-            }),
-          numberOfUsers: users.length,
+          users: activeUsers,
+          numberOfUsers: activeUsers.length,
           participants: this.ourContactProfiles // TODO: return only historical contributors
         }
         this.refreshTitle(name)

@@ -76,11 +76,26 @@ describe('Proposals - Add members', () => {
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    cy.clock().then((clock) => {
+      clock.restore()
+    })
+
+    cy.visit('/')
+    cy.url().should('eq', `${API_URL}/app/`)
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, groupName })
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, groupName })
+    const options = {
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      actionBeforeLogout: () => {},
+      shouldLogoutAfter: true,
+      bypassUI: true
+    }
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { ...options, username: `user2-${userId}` })
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { ...options, username: `user3-${userId}` })
   })
 
   it('user1 proposes to add user4, user5, user6 together to the group', () => {
@@ -276,8 +291,14 @@ describe('Proposals - Add members', () => {
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
     cy.giSignup(`user4-${userId}`, { bypassUI: true })
+    cy.window().its('sbp').then(async sbp => {
+      // NOTE: need to wait until to save user settings to indexedStorage
+      await sbp('state/vuex/save')
+    })
     cy.giAcceptGroupInvite(invitationLinks.user4, {
+      username: `user4-${userId}`,
       isLoggedIn: true,
+      existingMemberUsername: `user1-${userId}`,
       groupName,
       actionBeforeLogout: () => {
         cy.log('"New" tag does not appear for previous members')
@@ -299,12 +320,19 @@ describe('Proposals - Add members', () => {
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    cy.clock().then((clock) => {
+      clock.restore()
+    })
+
+    cy.visit('/')
+    cy.url().should('eq', `${API_URL}/app/`)
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
     // Expiry check in Group Settings page and Dashboard
-    cy.visit('/')
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
 
@@ -340,8 +368,11 @@ describe('Proposals - Add members', () => {
   it('user6 registers through a unique invitation link to join a group', () => {
     cy.giAcceptGroupInvite(invitationLinks.user6, {
       groupName,
+      existingMemberUsername: `user1-${userId}`,
+      actionBeforeLogout: () => {},
       username: `user6-${userId}`,
-      inviteCreator: `user1-${userId}`
+      inviteCreator: `user1-${userId}`,
+      shouldLogoutAfter: true
     })
   })
 
@@ -373,6 +404,7 @@ describe('Proposals - Add members', () => {
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases
     // https://docs.cypress.io/guides/tooling/visual-testing.html#Functional-vs-visual-testing#article
+    getProposalItems().should('have.length', 5)
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
@@ -433,7 +465,10 @@ describe('Proposals - Add members', () => {
   it('user1 creates a new group and checks that all the proposals are per group', () => {
     cy.giCreateGroup(anotherGroupName, { mincome: groupMincome, bypassUI: true })
 
-    getProposalItems().should('have.length', 0)
+    // getProposalItems().should('have.length', 0)
+    cy.getByDT('proposalsSection').within(() => {
+      cy.getByDT('proposalsWidget').should('not.exist')
+    })
 
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')

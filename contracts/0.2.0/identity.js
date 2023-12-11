@@ -9145,6 +9145,30 @@
     }
   });
 
+  // shared/domains/chelonia/errors.js
+  var ChelErrorGenerator = (name, base = Error) => class extends base {
+    constructor(...params) {
+      super(...params);
+      this.name = name;
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
+  };
+  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
+  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
+  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
+  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
+  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
+  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+
+  // frontend/common/errors.js
+  var GIErrorIgnoreAndBan = ChelErrorGenerator("GIErrorIgnoreAndBan");
+  var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
+  var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
+
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
@@ -9320,6 +9344,11 @@ ${this.getErrorInfo()}`;
 
   // frontend/model/contracts/shared/constants.js
   var IDENTITY_USERNAME_MAX_CHARS = 80;
+  var PROFILE_STATUS = {
+    ACTIVE: "active",
+    PENDING: "pending",
+    REMOVED: "removed"
+  };
 
   // frontend/model/contracts/identity.js
   (0, import_sbp2.default)("chelonia/defineContract", {
@@ -9369,7 +9398,8 @@ ${this.getErrorInfo()}`;
           const initialState = merge({
             settings: {},
             attributes: {},
-            chatRooms: {}
+            chatRooms: {},
+            groups: {}
           }, data);
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
@@ -9397,26 +9427,6 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           for (const key in data) {
             vue_esm_default.set(state.settings, key, data[key]);
-          }
-        }
-      },
-      "gi.contracts/identity/setLoginState": {
-        validate: objectOf({
-          groupIds: arrayOf(string)
-        }),
-        process({ data }, { state }) {
-          vue_esm_default.set(state, "loginState", data);
-        },
-        sideEffect({ contractID }) {
-          if (contractID === (0, import_sbp2.default)("state/vuex/getters").ourIdentityContractId) {
-            (0, import_sbp2.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
-              (0, import_sbp2.default)("gi.notifications/emit", "ERROR", {
-                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-                  errName: e.name,
-                  errMsg: e.message || "?"
-                })
-              });
-            });
           }
         }
       },
@@ -9460,6 +9470,93 @@ ${this.getErrorInfo()}`;
           if (getters.ourDirectMessages[data.contractID].visible) {
             await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
           }
+        }
+      },
+      "gi.contracts/identity/joinGroup": {
+        validate: objectMaybeOf({
+          groupContractID: string,
+          inviteSecret: string,
+          creator: optional(boolean)
+        }),
+        process({ hash: hash2, data, meta }, { state }) {
+          const { groupContractID, inviteSecret } = data;
+          if (has2(state.groups, groupContractID)) {
+            throw new Error(`Cannot join already joined group ${groupContractID}`);
+          }
+          const inviteSecretId = (0, import_sbp2.default)("chelonia/crypto/keyId", () => inviteSecret);
+          vue_esm_default.set(state.groups, groupContractID, { hash: hash2, inviteSecretId });
+        },
+        sideEffect({ hash: hash2, data, contractID }, { state }) {
+          const { groupContractID, inviteSecret } = data;
+          (0, import_sbp2.default)("chelonia/storeSecretKeys", () => [{
+            key: inviteSecret,
+            transient: true
+          }]);
+          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, () => {
+            const rootState = (0, import_sbp2.default)("state/vuex/state");
+            const state2 = rootState[contractID];
+            if (!state2 || contractID !== rootState.loggedIn.identityContractID) {
+              return;
+            }
+            if (!has2(state2.groups, groupContractID)) {
+              return;
+            }
+            const inviteSecretId = (0, import_sbp2.default)("chelonia/crypto/keyId", () => inviteSecret);
+            if (state2.groups[groupContractID].hash !== hash2) {
+              return;
+            }
+            (0, import_sbp2.default)("gi.actions/group/join", {
+              originatingContractID: contractID,
+              originatingContractName: "gi.contracts/identity",
+              contractID: data.groupContractID,
+              contractName: "gi.contracts/group",
+              signingKeyId: inviteSecretId,
+              innerSigningKeyId: (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state2, "csk"),
+              encryptionKeyId: (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state2, "cek")
+            }).catch((e) => {
+              console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e);
+            });
+          }).catch((e) => {
+            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e);
+          });
+        }
+      },
+      "gi.contracts/identity/leaveGroup": {
+        validate: objectOf({
+          groupContractID: string
+        }),
+        process({ data, meta }, { state }) {
+          const { groupContractID } = data;
+          if (!has2(state.groups, groupContractID)) {
+            throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`);
+          }
+          vue_esm_default.delete(state.groups, groupContractID);
+        },
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
+          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
+            const rootState = (0, import_sbp2.default)("state/vuex/state");
+            const state2 = rootState[contractID];
+            if (!state2 || contractID !== rootState.loggedIn.identityContractID) {
+              return;
+            }
+            const { groupContractID } = data;
+            if (has2(state2.groups, groupContractID)) {
+              return;
+            }
+            if (has2(rootState.contracts, groupContractID)) {
+              await (0, import_sbp2.default)("gi.actions/group/removeOurselves", {
+                contractID: groupContractID,
+                data: {},
+                hooks: {
+                  preSendCheck: (_, state3) => {
+                    return state3?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE;
+                  }
+                }
+              });
+            }
+          }).catch((e) => {
+            console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e);
+          });
         }
       },
       "gi.contracts/identity/setDirectMessageVisibility": {

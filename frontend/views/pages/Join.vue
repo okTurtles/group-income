@@ -108,19 +108,20 @@ export default ({
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
         const publicKeyId = keyId(this.ephemeral.query.secret)
         const invite = state._vm.invites[publicKeyId]
+        const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
         if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.ephemeral.errorMsg = messageToAskAnother
           this.pageStatus = 'EXPIRED'
           return
         } else if (invite?.initialQuantity > 0 && !invite.quantity) {
-          console.log('Join.vue error: Link is already expired.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-          this.pageStatus = 'EXPIRED'
+          console.log('Join.vue error: Link is already used.')
+          this.ephemeral.errorMsg = messageToAskAnother
+          this.pageStatus = 'INVALID'
           return
         } if (invite?.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.ephemeral.errorMsg = messageToAskAnother
           this.pageStatus = 'INVALID'
           return
         }
@@ -158,22 +159,13 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
-      if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[groupId]?.profiles?.[this.ourUsername]?.status)) {
+      const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourUsername]?.status
+      if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(profileStatus)) {
         return this.$router.push({ path: '/dashboard' })
       }
       try {
-        const identityContractID = this.$store.state.loggedIn.identityContractID
-
-        await sbp('gi.actions/identity/joinGroup', {
-          contractID: identityContractID,
-          contractName: 'gi.contracts/identity',
-          data: {
-            groupContractID: groupId,
-            inviteSecret: secret
-          }
-        }).then(() => {
-          return sbp('gi.actions/group/switch', groupId)
-        })
+        await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
+        // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('Join.vue accept() error:', e)

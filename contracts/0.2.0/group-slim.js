@@ -7063,6 +7063,7 @@ ${this.getErrorInfo()}`;
   var STATUS_FAILED = "failed";
   var STATUS_EXPIRED = "expired";
   var STATUS_CANCELLED = "cancelled";
+  var CHATROOM_GENERAL_NAME = "General";
   var CHATROOM_TYPES = {
     DIRECT_MESSAGE: "direct-message",
     GROUP: "group"
@@ -7825,6 +7826,17 @@ ${this.getErrorInfo()}`;
     state.profiles[username].status = PROFILE_STATUS.REMOVED;
     state.profiles[username].departedDate = dateLeft;
     updateCurrentDistribution({ contractID, meta, state, getters });
+    Object.keys(state.chatRooms).forEach((chatroomID) => {
+      removeGroupChatroomProfile(state, chatroomID, username);
+    });
+    if (!state._volatile)
+      import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
+    if (!state._volatile.pendingKeyRevocations)
+      import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
+    const CSKid = findKeyIdByName(state, "csk");
+    const CEKid = findKeyIdByName(state, "cek");
+    import_common3.Vue.set(state._volatile.pendingKeyRevocations, CSKid, true);
+    import_common3.Vue.set(state._volatile.pendingKeyRevocations, CEKid, true);
   }
   function isActionYoungerThanUser(actionMeta, userProfile) {
     if (!userProfile) {
@@ -7871,6 +7883,53 @@ ${this.getErrorInfo()}`;
       import_common3.Vue.set(streaks.missedPayments, username, noPaymentsAtAll ? myMissedPaymentsStreak + 1 : myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
     }
   }
+  var removeGroupChatroomProfile = (state, chatRoomID, member) => {
+    import_common3.Vue.set(state.chatRooms[chatRoomID], "users", Object.fromEntries(Object.entries(state.chatRooms[chatRoomID].users).map(([memberKey, profile]) => {
+      if (memberKey === member && profile?.status === PROFILE_STATUS.ACTIVE) {
+        return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }];
+      }
+      return [memberKey, profile];
+    })));
+  };
+  var leaveChatRoomAction = (state, { chatRoomID, member }, meta, leavingGroup) => {
+    const sendingData = leavingGroup ? { member } : { member, username: meta.username };
+    if (state?.chatRooms?.[chatRoomID]?.users?.[member]?.status !== PROFILE_STATUS.REMOVED) {
+      return;
+    }
+    const extraParams = {};
+    if (leavingGroup) {
+      const encryptionKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "cek", true);
+      const signingKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
+      if (!signingKeyId) {
+        return;
+      }
+      extraParams.encryptionKeyId = encryptionKeyId;
+      extraParams.signingKeyId = signingKeyId;
+      extraParams.innerSigningContractID = null;
+    }
+    return (0, import_sbp6.default)("gi.actions/chatroom/leave", {
+      contractID: chatRoomID,
+      data: sendingData,
+      ...extraParams,
+      hooks: {
+        preSendCheck: (_, state2) => {
+          return state2 && !!state2.users?.[member];
+        }
+      }
+    }).catch((e) => {
+      if (leavingGroup && (e?.name === "ChelErrorSignatureKeyNotFound" || e?.name === "GIErrorUIRuntimeError" && ["ChelErrorSignatureKeyNotFound", "GIErrorMissingSigningKeyError"].includes(e?.cause?.name))) {
+        return;
+      }
+      throw e;
+    });
+  };
+  var leaveAllChatRoomsUponLeaving = (state, member, meta) => {
+    const chatRooms = state.chatRooms;
+    return Promise.all(Object.keys(chatRooms).filter((cID) => chatRooms[cID].users?.[member]?.status === PROFILE_STATUS.REMOVED).map((chatRoomID) => leaveChatRoomAction(state, {
+      chatRoomID,
+      member
+    }, meta, true)));
+  };
   (0, import_sbp6.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
     metadata: {
@@ -7894,6 +7953,18 @@ ${this.getErrorInfo()}`;
       },
       groupSettings(state, getters) {
         return getters.currentGroupState.settings || {};
+      },
+      profileActive(state, getters) {
+        return (username) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles?.[username]?.status === PROFILE_STATUS.ACTIVE;
+        };
+      },
+      pendingAccept(state, getters) {
+        return (username) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles?.[username]?.status === PROFILE_STATUS.PENDING;
+        };
       },
       groupProfile(state, getters) {
         return (username) => {
@@ -8398,59 +8469,10 @@ ${this.getErrorInfo()}`;
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
-        async sideEffect({ data, meta, contractID }, { state, getters }) {
-          const rootState = (0, import_sbp6.default)("state/vuex/state");
-          const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
-          const contracts = rootState.contracts || {};
-          const { username } = rootState.loggedIn;
-          if (data.member === username) {
-            if ((0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
-              return;
-            }
-            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID);
-            await (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID);
-            const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID1, cID2) => rootState[cID1].profiles?.[username] ? -1 : 1)[0] || null;
-            (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
-            (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
-            (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
-            });
-            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
-              const router = (0, import_sbp6.default)("controller/router");
-              const switchFrom = router.currentRoute.path;
-              const switchTo = groupIdToSwitch ? "/dashboard" : "/";
-              if (switchFrom !== "/join" && switchFrom !== switchTo) {
-                router.push({ path: switchTo }).catch(console.warn);
-              }
-            }).catch((e) => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
-            }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
-              console.error(`sideEffect(removeMember): ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
-            });
-            for (const notification of rootGetters.notificationsByGroup(contractID)) {
-              (0, import_sbp6.default)("state/vuex/commit", REMOVE_NOTIFICATION, notification);
-            }
-          } else {
-            const myProfile = getters.groupProfile(username);
-            if (isActionYoungerThanUser(meta, myProfile)) {
-              const memberRemovedThemselves = data.member === meta.username;
-              (0, import_sbp6.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                username: memberRemovedThemselves ? meta.username : data.member
-              });
-              (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID, state).then(() => {
-                return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
-              }).catch((e) => {
-                console.error("Error rotating group keys or our PEK", e);
-              });
-              const rootGetters2 = (0, import_sbp6.default)("state/vuex/getters");
-              const userID = rootGetters2.ourContactProfiles[data.member]?.contractID;
-              if (userID) {
-                (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, userID, state);
-              }
-            }
-          }
+        sideEffect({ data, meta, contractID }, { state, getters }) {
+          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp6.default)("gi.contracts/group/leaveGroup", { data, meta, contractID, getters })).catch((e) => {
+            console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e);
+          });
         }
       },
       "gi.contracts/group/removeOurselves": {
@@ -8474,29 +8496,76 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/inviteAccept": {
         validate: Boolean,
-        process({ data, meta }, { state }) {
+        process({ data, meta, innerSigningKeyId }, { state }) {
           import_common3.Vue.set(state.profiles, meta.username, initGroupProfile(meta.createdDate));
         },
-        async sideEffect({ meta, contractID }, { state }) {
-          const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+        sideEffect({ meta, contractID }, { state }) {
           const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
-          const { profiles = {} } = state;
-          if (meta.username === loggedIn.username) {
-            const lookupResult = await Promise.allSettled(Object.keys(profiles).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp6.default)("namespace/lookup", name).then((r) => {
-              if (!r)
-                throw new Error("Cannot lookup username: " + name);
-              return r;
-            })));
-            const errors = lookupResult.filter(({ status }) => status === "rejected").map((r) => r.reason);
-            await (0, import_sbp6.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
-            if (errors.length) {
-              const msg = `Encountered ${errors.length} errors while accepting invites`;
-              console.error(msg, errors);
-              throw new Error(msg);
+          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
+            const rootState = (0, import_sbp6.default)("state/vuex/state");
+            const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+            const state2 = rootState[contractID];
+            if (!state2) {
+              console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`);
+              return;
             }
-          } else {
+            const { profiles = {} } = state2;
+            if (profiles[meta.username].status !== PROFILE_STATUS.ACTIVE) {
+              return;
+            }
+            if (meta.username === loggedIn.username) {
+              const userID = loggedIn.identityContractID;
+              await (0, import_sbp6.default)("gi.actions/identity/addJoinDirectMessageKey", userID, contractID, "csk");
+              const generalChatRoomId = state2.generalChatRoomId;
+              if (generalChatRoomId) {
+                if (state2.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE) {
+                  (0, import_sbp6.default)("gi.actions/group/joinChatRoom", {
+                    contractID,
+                    data: {
+                      chatRoomID: generalChatRoomId
+                    },
+                    hooks: {
+                      preSendCheck: (_, state3) => {
+                        return state3.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE;
+                      }
+                    }
+                  }).catch((e) => {
+                    console.error("Error while joining the #General chatroom", e);
+                    setTimeout(() => {
+                      alert((0, import_common3.L)("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }));
+                    }, 0);
+                  });
+                }
+              } else {
+                setTimeout(() => {
+                  alert((0, import_common3.L)("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }));
+                }, 0);
+              }
+              const lookupResult = await Promise.allSettled(Object.keys(profiles).filter((name) => !rootGetters.ourContactProfiles[name] && name !== loggedIn.username).map(async (name) => await (0, import_sbp6.default)("namespace/lookup", name).then((r) => {
+                if (!r)
+                  throw new Error("Cannot lookup username: " + name);
+                return r;
+              })));
+              const errors = lookupResult.filter(({ status }) => status === "rejected").map((r) => r.reason);
+              await (0, import_sbp6.default)("chelonia/contract/sync", lookupResult.filter(({ status }) => status === "fulfilled").map((r) => r.value)).catch((e) => errors.push(e));
+              if (errors.length) {
+                const msg = `Encountered ${errors.length} errors while accepting invites`;
+                console.error(msg, errors);
+                throw new Error(msg);
+              }
+              if (!rootState.currentGroupId) {
+                (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+                (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", contractID);
+              }
+            } else {
+              await (0, import_sbp6.default)("chelonia/contract/sync", meta.identityContractID);
+            }
+          }).catch((e) => {
+            console.error("[gi.contracts/group/inviteAccept/sideEffect]: An error occurred", e);
+          });
+          if (meta.username !== loggedIn.username) {
+            const { profiles = {} } = state;
             const myProfile = profiles[loggedIn.username];
-            await (0, import_sbp6.default)("chelonia/contract/sync", meta.identityContractID);
             if (isActionYoungerThanUser(meta, myProfile)) {
               (0, import_sbp6.default)("gi.notifications/emit", "MEMBER_ADDED", {
                 createdDate: meta.createdDate,
@@ -8631,10 +8700,18 @@ ${this.getErrorInfo()}`;
             type,
             privacyLevel,
             deletedDate: null,
-            users: []
+            users: {}
           });
           if (!state.generalChatRoomId) {
             import_common3.Vue.set(state, "generalChatRoomId", data.chatRoomID);
+          }
+        },
+        sideEffect({ contractID }, { state }) {
+          if (Object.keys(state.chatRooms).length === 1) {
+            (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {
+              groupId: contractID,
+              chatRoomId: state.generalChatRoomId
+            });
           }
         }
       },
@@ -8652,23 +8729,21 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/leaveChatRoom": {
         validate: objectOf({
           chatRoomID: string,
-          member: string,
-          leavingGroup: boolean
+          member: string
         }),
         process({ data, meta }, { state }) {
-          import_common3.Vue.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.member));
+          removeGroupChatroomProfile(state, data.chatRoomID, data.member);
         },
-        async sideEffect({ meta, data, contractID }, { state }) {
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
           const rootState = (0, import_sbp6.default)("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username && !(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
-            const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp6.default)("gi.actions/chatroom/leave", {
-              contractID: data.chatRoomID,
-              data: sendingData,
-              ...data.leavingGroup && {
-                signingKeyId: (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
-                innerSigningContractID: null
+          if (innerSigningContractID === rootState.loggedIn.identityContractID && !(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp6.default)("state/vuex/state");
+              if (rootState2[contractID]?.profiles?.[meta.username]?.status === PROFILE_STATUS.ACTIVE) {
+                return leaveChatRoomAction(state, data, meta);
               }
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e });
             });
           }
         }
@@ -8680,16 +8755,27 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta }, { state }) {
           const username = data.username || meta.username;
-          state.chatRooms[data.chatRoomID].users.push(username);
+          if (state.profiles[username]?.status !== PROFILE_STATUS.ACTIVE) {
+            throw new Error("Cannot join a chatroom for a group you're not a member of");
+          }
+          import_common3.Vue.set(state.chatRooms[data.chatRoomID].users, username, { status: PROFILE_STATUS.ACTIVE });
         },
-        async sideEffect({ meta, data, contractID }, { state }) {
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
           const rootState = (0, import_sbp6.default)("state/vuex/state");
           const username = data.username || meta.username;
-          if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID) || (0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
-              await (0, import_sbp6.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp6.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
-            }
+          if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp6.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, username, rootState.loggedIn.username)).catch((e) => {
+              console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
+            });
+          } else if (username === rootState.loggedIn.username) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp6.default)("state/vuex/state");
+              if (rootState2[contractID]?.chatRooms[data.chatRoomID]?.users[username]?.status === PROFILE_STATUS.ACTIVE) {
+                (0, import_sbp6.default)("chelonia/contract/sync", data.chatRoomID).catch((e) => {
+                  console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
+                });
+              }
+            });
           }
         }
       },
@@ -8763,10 +8849,59 @@ ${this.getErrorInfo()}`;
       }
     },
     methods: {
+      "gi.contracts/group/_cleanup": ({ contractID, resync }) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+        const contracts = rootState.contracts || {};
+        const { username, identityContractID } = rootState.loggedIn;
+        Promise.all([
+          () => (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID),
+          () => (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID)
+        ]).catch((e) => {
+          console.error(`[gi.contracts/group/_cleanup] Error removing entries for archive for ${contractID}`, e);
+        });
+        if (resync)
+          return;
+        if (!rootState.currentGroupId || rootState.currentGroupId === contractID) {
+          const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID) => rootState[cID]?.profiles?.[username] ? -1 : 1)[0] || null;
+          (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+          (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
+        }
+        (0, import_sbp6.default)("gi.actions/identity/leaveGroup", {
+          contractID: identityContractID,
+          data: {
+            groupContractID: contractID
+          },
+          hooks: {
+            preSendCheck: (_, state) => {
+              return state && has(state.groups, contractID);
+            }
+          }
+        }).catch((e) => {
+          console.error(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e);
+        }).then(() => {
+          const router = (0, import_sbp6.default)("controller/router");
+          const switchFrom = router.currentRoute.path;
+          const switchTo = rootState.currentGroupId ? "/dashboard" : "/";
+          if (switchFrom !== "/join" && switchFrom !== switchTo) {
+            router.push({ path: switchTo }).catch(console.warn);
+          }
+        }).catch((e) => {
+          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown updating routes:`, e);
+        }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
+          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
+        });
+        for (const notification of rootGetters.notificationsByGroup(contractID)) {
+          (0, import_sbp6.default)("state/vuex/commit", REMOVE_NOTIFICATION, notification);
+        }
+      },
       "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
         const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
         const key = `proposals/${identityContractID}/${contractID}`;
         const proposals2 = await (0, import_sbp6.default)("gi.db/archive/load", key) || [];
+        if (proposals2.some(([archivedProposalHash]) => archivedProposalHash === proposalHash)) {
+          return;
+        }
         proposals2.unshift([proposalHash, proposal]);
         while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
           proposals2.pop();
@@ -8868,23 +9003,93 @@ ${this.getErrorInfo()}`;
           });
         }
       },
-      "gi.contracts/group/rotateKeys": (contractID, state) => {
-        if (!state._volatile)
-          import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
-        if (!state._volatile.pendingKeyRevocations)
-          import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
-        const CSKid = findKeyIdByName(state, "csk");
-        const CEKid = findKeyIdByName(state, "cek");
-        import_common3.Vue.set(state._volatile.pendingKeyRevocations, CSKid, true);
-        import_common3.Vue.set(state._volatile.pendingKeyRevocations, CEKid, true);
-        return (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys"]).catch((e) => {
-          console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
+      "gi.contracts/group/joinGroupChatrooms": async function(contractID, chatRoomId, member, loggedInUsername) {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const state = rootState[contractID];
+        const username = rootState.loggedIn.username;
+        if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomId]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
+          return;
+        }
+        if (username === member) {
+          await (0, import_sbp6.default)("chelonia/contract/sync", chatRoomId);
+        }
+        if (!(0, import_sbp6.default)("chelonia/contract/hasKeysToPerformOperation", chatRoomId, "gi.contracts/chatroom/join")) {
+          return;
+        }
+        const encryptionKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "cek", true);
+        await (0, import_sbp6.default)("gi.actions/chatroom/join", {
+          contractID: chatRoomId,
+          data: { username: member },
+          encryptionKeyId,
+          hooks: {
+            preSendCheck: (_, state2) => {
+              return !state2?.users?.[member];
+            }
+          }
+        }).catch((e) => {
+          console.error(`Unable to join ${member} to chatroom ${chatRoomId} for group ${contractID}`, e);
+        });
+        if (username === member) {
+          (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", { groupId: contractID, chatRoomId });
+        }
+      },
+      "gi.contracts/group/leaveGroup": async ({ data, meta, contractID, getters }) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+        const state = rootState[contractID];
+        const { username } = rootState.loggedIn;
+        if (!state) {
+          console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`);
+          return;
+        }
+        if (state.profiles?.[data.member]?.status !== PROFILE_STATUS.REMOVED || data.member === username && (0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+          console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, JSON.parse(JSON.stringify(state.profiles)));
+          return;
+        }
+        if (data.member === username) {
+          (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
+          });
+        } else {
+          const myProfile = getters.groupProfile(username);
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            const memberRemovedThemselves = data.member === meta.username;
+            (0, import_sbp6.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              username: memberRemovedThemselves ? meta.username : data.member
+            });
+            Promise.resolve().then(() => (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID)).then(() => {
+              return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e);
+            });
+            const userID = rootGetters.ourContactProfiles[data.member]?.contractID;
+            if (userID) {
+              (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, userID, state);
+            }
+          }
+        }
+        leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
+          console.error("[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms", e);
+        });
+      },
+      "gi.contracts/group/rotateKeys": (contractID) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const pendingKeyRevocations = rootState[contractID]?._volatile?.pendingKeyRevocations;
+        if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) {
+          return;
+        }
+        (0, import_sbp6.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys").catch((e) => {
+          console.warn(`rotateKeys: ${e.name} thrown:`, e);
         });
       },
       "gi.contracts/group/revokeGroupKeyAndRotateOurPEK": (groupContractID, disconnectGroup) => {
         const rootState = (0, import_sbp6.default)("state/vuex/state");
         const { identityContractID } = rootState.loggedIn;
         const state = rootState[identityContractID];
+        if (!state._volatile)
+          import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)
           import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
         const CSKid = findKeyIdByName(state, "csk");
@@ -8910,7 +9115,7 @@ ${this.getErrorInfo()}`;
             console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
-        return (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
           console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },
@@ -8919,16 +9124,13 @@ ${this.getErrorInfo()}`;
         if (!keyIds?.length)
           return;
         const CSKid = findKeyIdByName(state, "csk");
-        const CEKid = findKeyIdByName(state, "cek");
-        if (!CEKid)
-          throw new Error("Missing encryption key");
-        (0, import_sbp6.default)("chelonia/queueInvocation", contractID, ["chelonia/out/keyDel", {
+        (0, import_sbp6.default)("chelonia/out/keyDel", {
           contractID,
           contractName: "gi.contracts/group",
           data: keyIds,
           signingKeyId: CSKid
-        }]).catch((e) => {
-          console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
+        }).catch((e) => {
+          console.warn(`removeForeignKeys: ${e.name} error thrown:`, e);
         });
       }
     }

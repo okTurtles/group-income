@@ -9,6 +9,9 @@ export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGOUT = 'logout'
 
+export const SWITCH_GROUP = 'switch-group'
+export const JOINED_GROUP = 'joined-group'
+
 export const REPLACED_STATE = 'replaced-state'
 
 export const OPEN_MODAL = 'open-modal'
@@ -29,5 +32,3 @@ export const INCOME_DETAILS_UPDATE = 'income-details-update'
 export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
-
-export const SWITCH_GROUP = 'switch-group'

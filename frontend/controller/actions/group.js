@@ -23,7 +23,13 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { LOGOUT, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import {
+  LOGOUT,
+  OPEN_MODAL,
+  REPLACE_MODAL,
+  SWITCH_GROUP,
+  JOINED_GROUP
+} from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -277,7 +283,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { blockOriginatingContract?: boolean }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -287,10 +293,6 @@ export default (sbp('sbp/selectors/register', {
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
-      // We need to read values from both the group and the identity contracts'
-      // state, so we call wait to run the rest of this function after all
-      // operations in those contracts have completed
-      await sbp('chelonia/contract/wait', [params.contractID, userID])
 
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
@@ -310,19 +312,19 @@ export default (sbp('sbp/selectors/register', {
       // through an invite link, and we must send a key request to complete
       // the joining process.
       const sendKeyRequest = (!hasSecretKeys && params.originatingContractID)
-      const isWaitingForKeyShare = sbp('chelonia/contract/isWaitingForKeyShare', state)
+      const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, userID)
 
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
       //   (a) we are about to send a key request; or
       //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
-      if (sendKeyRequest || isWaitingForKeyShare) {
+      if (sendKeyRequest || pendingKeyShares) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
         // shared with us during the current session
-        const eventHandler = ({ contractID }) => {
-          if (contractID !== params.contractID) {
+        const eventHandler = ({ contractID, sharedWithContractID, signingKeyName }) => {
+          if (contractID !== params.contractID || sharedWithContractID !== userID || (pendingKeyShares && !pendingKeyShares.includes(signingKeyName))) {
             return
           }
 
@@ -347,7 +349,10 @@ export default (sbp('sbp/selectors/register', {
       // After syncing the group contract, we send a key request
       if (sendKeyRequest) {
         // Send the key request
-        await sbp('chelonia/out/keyRequest', {
+        // We cannot await because this may be called from a section that is
+        // already waiting on the identity contract. Calls to keyRequest require
+        // simultaneously waiting on the group and the identity contract.
+        const keyRequestPromise = sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
           permissions: [GIMessage.OP_ACTION_ENCRYPTED],
@@ -361,6 +366,11 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
           throw e
         })
+
+        if (params.blockOriginatingContract !== false) {
+          await keyRequestPromise
+        }
+
         // Nothing left to do until the keys are received
 
       // Called after logging in or during an existing session from the event
@@ -369,7 +379,7 @@ export default (sbp('sbp/selectors/register', {
       // current group.
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasSecretKeys && !isWaitingForKeyShare) {
+      } else if (hasSecretKeys && !pendingKeyShares) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID, 'prfileStatus', state.profiles?.[username]?.status, JSON.parse(JSON.stringify(state.profiles)))
 
         // We're joining for the first time
@@ -432,55 +442,23 @@ export default (sbp('sbp/selectors/register', {
             console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
             throw e
           }
-
-        // We are already a member of the group and have already called
-        // inviteAccept
-        } else {
-          // Sync chatroom contracts he already joined
-          // if he tries to login in another device, he should skip to make any
-          // actions but he should sync all the contracts he was syncing in the
-          // previous device
-          console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
-          // We've already joined
-          const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
-            .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users?.[username].status === PROFILE_STATUS.ACTIVE))
-          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-
-          await sbp('chelonia/contract/sync', chatRoomIds).catch((e) => {
-            console.error(`[gi.actions/group/join] Error while syncing already-joined chatrooms for ${params.contractID}:`, e)
-            throw e
-          })
-
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: params.contractID,
-            chatRoomId: generalChatRoomId
-          })
         }
 
-        // NOTE: sync identity contracts which are out of sync after joining group
-        await Promise.all(
-          Object.keys(state.profiles)
-            .map(username => sbp('namespace/lookup', username))
-        ).then(profileIds => {
-          return sbp('chelonia/contract/sync', profileIds.filter(Boolean))
-        }).catch((e) => {
-          console.error(`[gi.actions/group/join] Error while subscribing to members' identity contracts ${params.contractID}:`, e)
-        })
-
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
+        sbp('okTurtles.events/emit', JOINED_GROUP, { contractID: params.contractID })
       // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
       // This means that we've been removed from the group
-      } else if (!hasSecretKeys && !isWaitingForKeyShare) {
+      } else if (!hasSecretKeys && !pendingKeyShares) {
         // We have already sent a key request that hasn't been answered. We cannot
         // do much at this point, so we do nothing.
         // This could happen, for example, after logging in if we still haven't
         // received a response to the key request.
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
-      } else if (isWaitingForKeyShare) {
+      } else if (pendingKeyShares) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
       } else {
-        console.warn('Requested to join group but the state appears invalid. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, isWaitingForKeyShare })
+        console.warn('Requested to join group but the state appears invalid. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
@@ -491,6 +469,20 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
+  },
+  'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+
+    await sbp('gi.actions/identity/joinGroup', {
+      contractID: identityContractID,
+      contractName: 'gi.contracts/identity',
+      data: {
+        groupContractID: groupId,
+        inviteSecret: secret
+      }
+    }).then(() => {
+      return sbp('gi.actions/group/switch', groupId)
+    })
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
@@ -647,10 +639,8 @@ export default (sbp('sbp/selectors/register', {
         chatRoomID
       },
       hooks: {
-        prepublish: (msg) => {
-          sbp('okTurtles.events/once', msg.id(), (cId) => {
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: cId })
-          })
+        onprocessed: (msg) => {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: msg.contractID() })
         },
         postpublish: params.hooks?.postpublish
       }

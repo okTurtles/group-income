@@ -1115,13 +1115,18 @@ sbp('chelonia/defineContract', {
                   hooks: {
                     preSendCheck: (_, state) => {
                       return state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE
+                    },
+                    onprocessed: () => {
+                      sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+                        groupId: contractID,
+                        chatRoomId: generalChatRoomId
+                      })
                     }
                   }
                 }).catch((e) => {
                   console.error('Error while joining the #General chatroom', e)
                   // setTimeout to avoid blocking the main thread
                   setTimeout(() => {
-                    // TODO: Replace alert()
                     alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
                   }, 0)
                 })
@@ -1129,13 +1134,12 @@ sbp('chelonia/defineContract', {
             } else {
               // setTimeout to avoid blocking the main thread
               setTimeout(() => {
-                // TODO: Replace alert()
                 alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
               }, 0)
             }
 
             // subscribe to founder's IdentityContract & everyone else's
-            const lookupResult = await Promise.allSettled(
+            Promise.allSettled(
               Object.keys(profiles)
                 .filter((name) =>
                   !rootGetters.ourContactProfiles[name] && name !== loggedIn.username)
@@ -1143,22 +1147,25 @@ sbp('chelonia/defineContract', {
                   if (!r) throw new Error('Cannot lookup username: ' + name)
                   return r
                 }))
-            )
-            const errors = lookupResult
-              .filter(({ status }) => status === 'rejected')
-              .map((r) => (r: any).reason)
+            ).then(lookupResult => {
+              const errors = lookupResult
+                .filter(({ status }) => status === 'rejected')
+                .map((r) => (r: any).reason)
 
-            await sbp('chelonia/contract/sync',
-              lookupResult
-                .filter(({ status }) => status === 'fulfilled')
-                .map((r) => (r: any).value)
-            ).catch(e => errors.push(e))
-
-            if (errors.length) {
-              const msg = `Encountered ${errors.length} errors while accepting invites`
-              console.error(msg, errors)
-              throw new Error(msg)
-            }
+              return sbp('chelonia/contract/sync',
+                lookupResult
+                  .filter(({ status }) => status === 'fulfilled')
+                  .map((r) => (r: any).value)
+              )
+                .catch(e => {
+                  errors.push(e)
+                }).then(() => errors)
+            }).then((errors) => {
+              if (errors.length) {
+                const msg = `Encountered ${errors.length} errors while accepting invites`
+                console.error(msg, errors)
+              }
+            })
 
             // If we don't have a current group ID, select the group we've just
             // joined
@@ -1169,7 +1176,11 @@ sbp('chelonia/defineContract', {
           } else {
             // we're an existing member of the group getting notified that a
             // new member has joined, so subscribe to their identity contract
-            await sbp('chelonia/contract/sync', meta.identityContractID)
+            // TODO: Check if member is active; will be easier once profiles
+            // are indexed by contract ID
+            sbp('chelonia/contract/sync', meta.identityContractID).catch(() => {
+              console.error(`Error subscribing to identity contract ${meta.identityContractID} of group member for group ${contractID}`)
+            })
           }
         }).catch(e => {
           console.error('[gi.contracts/group/inviteAccept/sideEffect]: An error occurred', e)
@@ -1340,6 +1351,15 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
+      },
+      sideEffect ({ contractID }, { state }) {
+        if (Object.keys(state.chatRooms).length === 1) {
+          // NOTE: only general chatroom exists, meaning group has just been created
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            groupId: contractID,
+            chatRoomId: state.generalChatRoomId
+          })
+        }
       }
     },
     'gi.contracts/group/deleteChatRoom': {
@@ -1373,6 +1393,14 @@ sbp('chelonia/defineContract', {
           }).catch((e) => {
             console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
           })
+        } else if (data.member === rootState.loggedIn.username) {
+          // Abort the joining action if it's been initiated. This way, calling /remove on the leave action will work
+          if (sbp('okTurtles.data/get', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)) {
+            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)
+            sbp('chelonia/contract/remove', data.chatRoomID).catch((e) => {
+              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error calling remove for ${contractID} on chatroom ${data.chatRoomID}`, e)
+            })
+          }
         }
       }
     },
@@ -1417,6 +1445,19 @@ sbp('chelonia/defineContract', {
             const rootState = sbp('state/vuex/state')
 
             if (rootState[contractID]?.chatRooms[data.chatRoomID]?.users[username]?.status === PROFILE_STATUS.ACTIVE) {
+              // If we were added by someone else, we might sync the chatroom
+              // contract before the corresponding `/join` action is issued.
+              // If we were previously a member of the chatroom, we would have
+              // a `/leave` action for ourselves, causing us to remove the
+              // chatroom contract. To handle this situation, we use
+              // `okTurtles.data/set` to define a special key that will be
+              // checked by the chatroom contract to tell it not to remove the
+              // contract if we're in the process of joining.
+              // This is a temporary measure until reference counting is
+              // implemented in Chelonia. With reference counting, we'd keep
+              // track of the 'reason' we're subscribing to a contract, and
+              // we won't need this special key.
+              sbp('okTurtles.data/set', `JOINING_CHATROOM-${data.chatRoomID}-${username}`, true)
               sbp('chelonia/contract/sync', data.chatRoomID).catch((e) => {
                 console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
               })
@@ -1722,20 +1763,20 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, member, loggedInUsername) {
+    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomId, member, loggedInUsername) {
       const rootState = sbp('state/vuex/state')
       const state = rootState[contractID]
       const username = rootState.loggedIn.username
 
-      if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomID]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
+      if (loggedInUsername !== username || state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE || state?.chatRooms?.[chatRoomId]?.users[member]?.status !== PROFILE_STATUS.ACTIVE) {
         return
       }
 
       if (username === member) {
-        await sbp('chelonia/contract/sync', chatRoomID)
+        await sbp('chelonia/contract/sync', chatRoomId)
       }
 
-      if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
+      if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomId, 'gi.contracts/chatroom/join')) {
         return
       }
 
@@ -1745,7 +1786,7 @@ sbp('chelonia/defineContract', {
       const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
 
       await sbp('gi.actions/chatroom/join', {
-        contractID: chatRoomID,
+        contractID: chatRoomId,
         data: { username: member },
         encryptionKeyId,
         hooks: {
@@ -1756,8 +1797,12 @@ sbp('chelonia/defineContract', {
           }
         }
       }).catch(e => {
-        console.error(`Unable to join ${member} to chatroom ${chatRoomID} for group ${contractID}`, e)
+        console.error(`Unable to join ${member} to chatroom ${chatRoomId} for group ${contractID}`, e)
       })
+
+      if (username === member) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId: contractID, chatRoomId })
+      }
     },
     // eslint-disable-next-line require-await
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, getters }) => {

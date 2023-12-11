@@ -11,7 +11,6 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase
 } from './shared/validators.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS, PROFILE_STATUS } from './shared/constants.js'
 
@@ -112,12 +111,6 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ contractID, data }) {
         await sbp('chelonia/contract/sync', data.contractID)
-
-        if (!sbp('chelonia/contract/isSyncing', contractID)) {
-          await sbp('controller/router')
-            .push({ name: 'GroupChatConversation', params: { chatRoomId: data.contractID } })
-            .catch(logExceptNavigationDuplicated)
-        }
       }
     },
     'gi.contracts/identity/joinDirectMessage': {
@@ -187,14 +180,15 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          sbp('gi.actions/group/join', {
+          return sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,
             contractName: 'gi.contracts/group',
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+            blockOriginatingContract: false
           }).catch(e => {
             console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
           })

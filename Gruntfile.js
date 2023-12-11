@@ -41,7 +41,8 @@ const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
   NODE_ENV = 'development',
-  EXPOSE_SBP = ''
+  EXPOSE_SBP = '',
+  ENABLE_UNSAFE_NULL_CRYPTO = 'false'
 } = process.env
 
 if (!['development', 'production'].includes(NODE_ENV)) {
@@ -207,7 +208,8 @@ module.exports = (grunt) => {
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`
+        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
@@ -377,7 +379,7 @@ module.exports = (grunt) => {
       // The `--require` flag ensures custom Babel support in our test files.
       test: {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: process.env }
+        options: { env: { ...process.env, ENABLE_UNSAFE_NULL_CRYPTO: 'true' } }
       },
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
@@ -650,6 +652,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'exec:chelDeployAll', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
