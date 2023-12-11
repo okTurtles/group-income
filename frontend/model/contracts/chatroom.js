@@ -215,7 +215,6 @@ sbp('chelonia/defineContract', {
             // when the join process is incomplete. See the comment on group.js
             // (joinChatRoom sideEffect) for a more detailed explanation of
             // what this does.
-            console.error(`@@@chatroomJ deleting JOINING_CHATROOM-${contractID}-${username}`)
             sbp('okTurtles.data/delete', `JOINING_CHATROOM-${contractID}-${username}`)
 
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -349,7 +348,6 @@ sbp('chelonia/defineContract', {
             // NOTE: make sure *not* to await on this, since that can cause
             //       a potential deadlock. See same warning in sideEffect for
             //       'gi.contracts/group/removeMember'
-              console.error(`@@@chatroom JOINING_CHATROOM-${contractID}-${data.member} was false: calling remove`)
               sbp('chelonia/contract/remove', contractID).catch(e => {
                 console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
               })

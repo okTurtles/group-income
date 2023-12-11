@@ -1395,7 +1395,6 @@ sbp('chelonia/defineContract', {
         } else if (data.member === rootState.loggedIn.username) {
           // Abort the joining action if it's been initiated. This way, calling /remove on the leave action will work
           if (sbp('okTurtles.data/get', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)) {
-            console.error(`@@@groupLC deleting JOINING_CHATROOM-${data.chatRoomID}-${data.member} and calling remove`)
             sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)
             sbp('chelonia/contract/remove', data.chatRoomID).catch((e) => {
               console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error calling remove for ${contractID} on chatroom ${data.chatRoomID}`, e)
@@ -1457,7 +1456,6 @@ sbp('chelonia/defineContract', {
               // implemented in Chelonia. With reference counting, we'd keep
               // track of the 'reason' we're subscribing to a contract, and
               // we won't need this special key.
-              console.error(`@@@groupJC setting JOINING_CHATROOM-${data.chatRoomID}-${username} and calling sync`)
               sbp('okTurtles.data/set', `JOINING_CHATROOM-${data.chatRoomID}-${username}`, true)
               sbp('chelonia/contract/sync', data.chatRoomID).catch((e) => {
                 console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
