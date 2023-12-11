@@ -434,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
       if (!targetState._volatile) this.config.reactiveSet(targetState, '_volatile', Object.create(null))
       if (!targetState._volatile.watch) {
         this.config.reactiveSet(targetState._volatile, 'watch', previousVolatileState.watch)
-      } else if (targetState._volatile !== previousVolatileState.watch) {
+      } else if (targetState._volatile.watch !== previousVolatileState.watch) {
         previousVolatileState.watch.forEach((pWatch) => {
           if (!targetState._volatile.watch.some((tWatch) => {
             return (tWatch[0] === pWatch[0]) && (tWatch[1] === pWatch[1])
@@ -593,7 +593,8 @@ export default (sbp('sbp/selectors/register', {
           console.log('Processing OP_KEY_SHARE (inside promise)', { newestEncryptionKeyHeight, currentHeight: cheloniaState.contracts[v.contractID]?.height })
           // If an encryption key has been shared with _notBefore lower than the
           // current height, then the contract must be resynced.
-          if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
+          const mustResync = !!(newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height)
+          if (mustResync) {
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
               return
@@ -617,7 +618,7 @@ export default (sbp('sbp/selectors/register', {
           }
 
           const previousVolatileState = targetState._volatile
-          sbp('chelonia/private/queueEvent', v.contractID, ['chelonia/private/postKeyShare', v.contractID, newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height ? previousVolatileState : null, signingKey])
+          sbp('chelonia/private/queueEvent', v.contractID, ['chelonia/private/postKeyShare', v.contractID, mustResync ? previousVolatileState : null, signingKey])
             .then(() => {
             // The CONTRACT_HAS_RECEIVED_KEYS event is placed on the queue for
             // the current contract so that calling
