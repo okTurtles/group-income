@@ -334,8 +334,6 @@ sbp('chelonia/defineContract', {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
-          console.error('[CSE] ' + contractID, { contractID, data, state: JSON.parse(JSON.stringify(state || {})) })
-
           if (!state || !!state.users?.[data.member]) {
             return
           }
