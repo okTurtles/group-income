@@ -199,7 +199,7 @@ sbp('chelonia/defineContract', {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
-          if (!state?.users?.[data.member]) {
+          if (!state?.users?.[data.username]) {
             return
           }
 
@@ -215,7 +215,9 @@ sbp('chelonia/defineContract', {
             // when the join process is incomplete. See the comment on group.js
             // (joinChatRoom sideEffect) for a more detailed explanation of
             // what this does.
-            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)
+            console.error(`@@@chatroomJ deleting JOINING_CHATROOM-${contractID}-${username}`)
+            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${contractID}-${username}`)
+
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             // NOTE: To ignore scroll to the message of this hash
             //       since we don't create notification when join the direct message
@@ -343,10 +345,11 @@ sbp('chelonia/defineContract', {
             // /remove, as we're still waiting to be added to the chatroom.
             // See group.js (joinChatRoom sideEffect) for a more detailed
             // explanation of why we need this
-            if (!sbp('okTurtles.data/get', `JOINING_CHATROOM-${data.chatRoomID}-${data.member}`)) {
+            if (!sbp('okTurtles.data/get', `JOINING_CHATROOM-${contractID}-${data.member}`)) {
             // NOTE: make sure *not* to await on this, since that can cause
             //       a potential deadlock. See same warning in sideEffect for
             //       'gi.contracts/group/removeMember'
+              console.error(`@@@chatroom JOINING_CHATROOM-${contractID}-${data.member} was false: calling remove`)
               sbp('chelonia/contract/remove', contractID).catch(e => {
                 console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
               })

@@ -606,8 +606,7 @@ export default (sbp('sbp/selectors/register', {
             // sharing the same state. This is more of a general issue in this
             // situation, not limited to the following sequence of events
             const resync = sbp('chelonia/private/queueEvent', v.contractID, [
-              'chelonia/begin',
-              ['chelonia/private/in/syncContract', v.contractID]
+              'chelonia/private/in/syncContract', v.contractID
             ])
 
             // If the keys received were for the current contract, we can't
