@@ -311,11 +311,15 @@ export default ({
   }
 }
 
-::v-deep .c-actions span {
-  margin-left: 0.3rem;
+::v-deep .c-actions {
+  span {
+    @include phone {
+      display: none;
+    }
+  }
 
-  @include phone {
-    display: none;
+  i + span {
+    margin-left: 0.3rem;
   }
 }
 
