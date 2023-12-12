@@ -12,7 +12,7 @@ import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnrecoverable, ChelErrorWarning } from './errors.js'
-import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
+import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
@@ -308,6 +308,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/noop': function () {},
   'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
     const contractID = entry.contractID()
+    const originalEntry = entry
 
     return sbp('chelonia/private/queueEvent', `publish:${contractID}`, async () => {
       let attempt = 1
@@ -338,6 +339,12 @@ export default (sbp('sbp/selectors/register', {
         const newEntry = await sbp('chelonia/private/queueEvent', contractID, () => {
           const rootState = sbp(this.config.stateSelector)
           const state = rootState[contractID]
+          const isFirstMessage = entry.isFirstMessage()
+
+          if (!state && !isFirstMessage) {
+            console.info(`[chelonia] Not sending message as contract state has been removed: ${entry.description()}`)
+            return
+          }
 
           if (hooks?.preSendCheck) {
             if (!hooks.preSendCheck(entry, state)) {
@@ -353,7 +360,7 @@ export default (sbp('sbp/selectors/register', {
           // and height is always 0.
           // We always call recreateEvent because we may have received new events
           // in the web socket
-          if (!entry.isFirstMessage()) {
+          if (!isFirstMessage) {
             return recreateEvent(entry, state)
           }
 
@@ -408,6 +415,12 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
       }
+    }).then((entry) => {
+      sbp('okTurtles.events/emit', EVENT_PUBLISHED, { contractID, message: entry, originalMessage: originalEntry })
+      return entry
+    }).catch((e) => {
+      sbp('okTurtles.events/emit', EVENT_PUBLISHING_ERROR, { contractID, message: entry, originalMessage: originalEntry, error: e })
+      throw e
     })
   },
   'chelonia/private/out/latestHEADinfo': function (contractID: string) {
@@ -429,6 +442,8 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/postKeyShare': function (contractID, previousVolatileState, signingKey) {
     const cheloniaState = sbp(this.config.stateSelector)
     const targetState = cheloniaState[contractID]
+
+    if (!targetState) return
 
     if (previousVolatileState && has(previousVolatileState, 'watch')) {
       if (!targetState._volatile) this.config.reactiveSet(targetState, '_volatile', Object.create(null))

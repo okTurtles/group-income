@@ -237,7 +237,14 @@ export default (sbp('sbp/selectors/register', {
         ],
         sendMessage({ ...params, returnInvocation: true })
       ],
-      signingKeyId
+      signingKeyId,
+      hooks: {
+        ...params?.hooks,
+        preSendCheck (msg, state) {
+          if (state?.users?.[params.data.username]) return false
+          return params?.hooks?.preSendCheck?.(msg, state)
+        }
+      }
     })
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),

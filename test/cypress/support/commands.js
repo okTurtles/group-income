@@ -8,6 +8,7 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
+import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -21,6 +22,46 @@ const getParamsFromInvitationLink = invitationLink => {
   }
 }
 
+// Util function to perform checks using SBP
+// The function takes a name (to register it as a Cypress command) and custom
+// check function that takes SBP as its first parameter. It registers event
+// handlers for various events that may change the Chelonia state and returns
+// a Promise that resolves once the check passes.
+const cySbpCheckCommand = (name, customCheckFn) => {
+  Cypress.Commands.add(name, (...params) => {
+    cy.window().its('sbp').then(sbp => {
+      return new Promise((resolve) => {
+        let resolved = false
+
+        const check = () => {
+          if (resolved) return
+          if (!customCheckFn(sbp, ...params)) {
+            console.warn(`[cypress] SBP Check ${name} failed!`)
+            return
+          }
+          resolved = true
+          resolve()
+          // Un-register event listeners once the check has succeeded
+          sbp('okTurtles.events/off', EVENT_HANDLED, check)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED, check)
+          sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
+          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
+        }
+
+        // Register event listeners. The following events could change the
+        // state and affect the result of customCheckFn
+        sbp('okTurtles.events/on', EVENT_HANDLED, check)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED, check)
+        sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
+        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
+
+        // We also run the test manually in case there are no events
+        check()
+      })
+    })
+  })
+}
+
 const defaultPassword = '123456789'
 
 /* Get element by data-test attribute and other attributes
@@ -31,6 +72,55 @@ const defaultPassword = '123456789'
 */
 Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
+})
+
+cySbpCheckCommand('giNoPendingGroupKeyShares', (sbp) => {
+  const state = sbp('state/vuex/state')
+  const pending = Object.keys(state.contracts)
+    .filter(contractID => state[contractID]._vm.type === 'gi.contracts/group')
+    .filter(contractID => Object.keys(state[contractID]._vm?.pendingKeyShares || {}).length)
+
+  console.info('giNoPendingGroupKeyShares', pending, pending.length === 0)
+  return pending.length === 0
+})
+
+cySbpCheckCommand('giEmptyInvocationQueue', (sbp) => {
+  const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+    .filter(([q]) => typeof q === 'string')
+    .flatMap(([, list]) => list)
+
+  console.info('giEmptyInvocationQueue', pending, pending.length === 0)
+  return pending.length === 0
+})
+
+cySbpCheckCommand('giKeyRequestedGroupIDs', (sbp, groupId) => {
+  const state = sbp('state/vuex/state')
+  const identityContractID = state.loggedIn?.identityContractID
+  const authorizedKeys = (
+    identityContractID &&
+    state[identityContractID]?._vm?.authorizedKeys
+  )
+  const contracts = state.contracts
+
+  if (!authorizedKeys || !contracts) return false
+
+  const pending = Object.keys(contracts).filter((contractID) =>
+    contractID !== identityContractID &&
+    state[contractID]?._volatile?.pendingKeyRequests?.some((kr) =>
+      (
+        kr &&
+        kr.contractID === identityContractID &&
+        kr.name &&
+        Object.values(authorizedKeys).some((key) => {
+          // $FlowFixMe[incompatible-use]
+          return key?.name === kr.name
+        })
+      )
+    )
+  )
+
+  console.info('giKeyRequestedGroupIDs', pending, groupId, pending.includes(groupId))
+  return pending.includes(groupId)
 })
 
 Cypress.Commands.add('giSignup', (username, {
@@ -346,20 +436,15 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
-    cy.getByDT('app').then(([el]) => {
-      cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
-      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
-    })
+    cy.giKeyRequestedGroupIDs(groupId)
+    cy.giEmptyInvocationQueue()
 
     cy.giLogout()
 
     cy.giLogin(existingMemberUsername, { bypassUI })
 
     // NOTE: should wait until all pendingKeyShares are removed
-    cy.getByDT('app').then(([el]) => {
-      cy.get(el).should('have.attr', 'data-pending-key-shares', '')
-      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
-    })
+    cy.giNoPendingGroupKeyShares()
     cy.giLogout()
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
@@ -414,19 +499,15 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
 
     // NOTE: should wait until KEY_REQUEST event is published
-    cy.getByDT('app').then(([el]) => {
-      cy.get(el).invoke('attr', 'data-key-requested').should('contain', groupId)
-      cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
-    })
+    cy.giKeyRequestedGroupIDs(groupId)
+    cy.giEmptyInvocationQueue()
 
     cy.giLogout()
   }
 
   cy.giLogin(existingMemberUsername, { bypassUI })
-  cy.getByDT('app').then(([el]) => {
-    cy.get(el).should('have.attr', 'data-pending-key-shares', '')
-    cy.get(el).should('have.attr', 'data-pending-publish-events', '0')
-  })
+  cy.giNoPendingGroupKeyShares()
+  cy.giEmptyInvocationQueue()
   cy.giLogout()
 
   const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
