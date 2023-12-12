@@ -441,11 +441,13 @@ export default ({
 
 ::v-deep .c-actions {
   span {
-    margin-left: 0.3rem;
-
     @include phone {
       display: none;
     }
+  }
+
+  i + span {
+    margin-left: 0.3rem;
   }
 
   .c-action-undo {
