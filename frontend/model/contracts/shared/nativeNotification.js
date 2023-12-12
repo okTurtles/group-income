@@ -8,6 +8,7 @@ export async function requestNotificationPermission (force: boolean = false): Pr
   if (typeof Notification === 'undefined') {
     return null
   }
+
   if (force || Notification.permission === 'default') {
     try {
       sbp('state/vuex/commit', 'setNotificationEnabled', await Notification.requestPermission() === 'granted')
@@ -16,6 +17,11 @@ export async function requestNotificationPermission (force: boolean = false): Pr
       return null
     }
   }
+
+  if (Notification.permission === 'granted') {
+    await sbp('service-worker/setup-push-subscription')
+  }
+
   return Notification.permission
 }
 

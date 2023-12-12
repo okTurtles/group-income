@@ -86,12 +86,20 @@ export const NOTIFICATION_TYPE = Object.freeze({
 export const REQUEST_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
-  UNSUB: 'unsub'
+  UNSUB: 'unsub',
+  PUSH_ACTION: 'push_action'
 })
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
   SUCCESS: 'success'
+})
+
+export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
+  SEND_PUBLIC_KEY: 'send-public-key',
+  STORE_SUBSCRIPTION: 'store-subscription',
+  DELETE_SUBSCRIPTION: 'delete-subscription',
+  SEND_PUSH_NOTIFICATION: 'send-push-notification'
 })
 
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
@@ -394,9 +402,10 @@ const defaultMessageHandlers = {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
-    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+  [RESPONSE_TYPE.ERROR] ({ data }) {
     const client = this
+    const { type, contractID } = data
+    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
@@ -408,6 +417,18 @@ const defaultMessageHandlers = {
       case REQUEST_TYPE.UNSUB: {
         console.warn(`[pubsub] Could not unsubscribe from ${contractID}`)
         client.pendingUnsubscriptionSet.delete(contractID)
+        break
+      }
+      case REQUEST_TYPE.PUSH_ACTION: {
+        const { actionType, message } = data
+        const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
+
+        console.warn(`[pubsub] Received ERROR for PUSH_ACTION request with the action type '${actionType}' and the following message: ${message}`)
+        if (errorHandler) {
+          errorHandler()
+        } else {
+          pushClientErrorHandler.default(actionType)
+        }
         break
       }
       default: {
@@ -645,6 +666,16 @@ const publicMethods = {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
       }
     }
+  }
+}
+
+const pushClientErrorHandler = {
+  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
+    // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
+    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
+  },
+  default (actionType) {
+    console.error(`[push-error] Invalid request for the action type '${actionType}'`)
   }
 }
 
