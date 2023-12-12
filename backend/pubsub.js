@@ -20,13 +20,13 @@ import type {
   NotificationTypeEnum, ResponseTypeEnum
 } from '~/shared/pubsub.js'
 
-import type { JSONType } from '~/shared/types.js'
+import type { JSONType, JSONObject } from '~/shared/types.js'
 
 const { bold } = require('chalk')
 const WebSocket = require('ws')
 
 const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
-const { ERROR, SUCCESS, PUSH_ERROR } = RESPONSE_TYPE
+const { ERROR, SUCCESS } = RESPONSE_TYPE
 
 // Used to tag console output.
 const tag = '[pubsub]'
@@ -53,8 +53,14 @@ export function createErrorResponse (data: JSONType): string {
   return JSON.stringify({ type: ERROR, data })
 }
 
-export function createPushErrorResponse (data: JSONType): string {
-  return JSON.stringify({ type: PUSH_ERROR, data })
+export function createPushErrorResponse (data: JSONObject): string {
+  return JSON.stringify({
+    type: ERROR,
+    data: {
+      ...data,
+      type: REQUEST_TYPE.PUSH_ACTION
+    }
+  })
 }
 
 export function createNotification (type: NotificationTypeEnum, data: JSONType): string {

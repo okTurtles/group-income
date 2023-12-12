@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
-import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE, REQUEST_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
@@ -438,8 +438,8 @@ export default (sbp('sbp/selectors/register', {
             sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         },
-        [NOTIFICATION_TYPE.PUSH_ACTION] (msg) {
-          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.PUSH_ACTION, { data: msg.data })
+        [REQUEST_TYPE.PUSH_ACTION] (msg) {
+          sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
         }
       }
     })

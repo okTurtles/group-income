@@ -80,20 +80,19 @@ export const NOTIFICATION_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
   UNSUB: 'unsub',
-  VERSION_INFO: 'version_info',
-  PUSH_ACTION: 'push_action'
+  VERSION_INFO: 'version_info'
 })
 
 export const REQUEST_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
-  UNSUB: 'unsub'
+  UNSUB: 'unsub',
+  PUSH_ACTION: 'push_action'
 })
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
-  SUCCESS: 'success',
-  PUSH_ERROR: 'push-error'
+  SUCCESS: 'success'
 })
 
 export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
@@ -403,9 +402,10 @@ const defaultMessageHandlers = {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
-    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+  [RESPONSE_TYPE.ERROR] ({ data }) {
     const client = this
+    const { type, contractID } = data
+    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
@@ -419,20 +419,21 @@ const defaultMessageHandlers = {
         client.pendingUnsubscriptionSet.delete(contractID)
         break
       }
+      case REQUEST_TYPE.PUSH_ACTION: {
+        const { actionType, message } = data
+        const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
+
+        console.warn(`[pubsub] Received ERROR for PUSH_ACTION request with the action type '${actionType}' and the following message: ${message}`)
+        if (errorHandler) {
+          errorHandler()
+        } else {
+          pushClientErrorHandler.default(actionType)
+        }
+        break
+      }
       default: {
         console.error(`[pubsub] Malformed response: invalid request type ${type}`)
       }
-    }
-  },
-
-  [RESPONSE_TYPE.PUSH_ERROR]: async function ({ data: { message, actionType } }) {
-    const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
-
-    console.warn(`[pubsub] Received PUSH_ERROR response for action type '${actionType}' with the following message: ${message}`)
-    if (errorHandler) {
-      await errorHandler()
-    } else {
-      pushClientErrorHandler.default(actionType)
     }
   },
 

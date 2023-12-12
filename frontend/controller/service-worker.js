@@ -2,12 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
-
-// NOTE: this file is currently unused. I messed around with it just enough
-// to get it working at the most primitive level and decide that I need to
-// move on before returning to it. Once it's ready to be added to the app,
-// we'll import this file in main.js and call the setup selector there.
+import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
@@ -44,7 +39,7 @@ sbp('sbp/selectors/register', {
       console.error('error setting up service worker:', e)
     }
   },
-  'service-worker/setup-push-subscription': async function (followingNotification = null) {
+  'service-worker/setup-push-subscription': async function () {
     if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
 
     // Get the installed service-worker registration
@@ -62,21 +57,17 @@ sbp('sbp/selectors/register', {
       // If there is an existing subscription, no need to create a new one.
       // But make sure server knows the subscription details too.
       pubsub.socket.send(createMessage(
-        NOTIFICATION_TYPE.PUSH_ACTION,
+        REQUEST_TYPE.PUSH_ACTION,
         {
           action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
           payload: JSON.stringify(existingSubscription.toJSON())
         }
       ))
-
-      if (followingNotification) {
-        sbp('service-worker/send-push', followingNotification)
-      }
     } else {
       return new Promise((resolve) => {
         try {
           // Generate a new push subscription
-          sbp('okTurtles.events/once', NOTIFICATION_TYPE.PUSH_ACTION, async ({ data }) => {
+          sbp('okTurtles.events/once', REQUEST_TYPE.PUSH_ACTION, async ({ data }) => {
             const PUBLIC_VAPID_KEY = data
 
             // 1. Add a new subscription to pushManager using it.
@@ -87,23 +78,18 @@ sbp('sbp/selectors/register', {
 
             // 2. Store the subscription details to the server. (server needs it to send the push notification)
             pubsub.socket.send(createMessage(
-              NOTIFICATION_TYPE.PUSH_ACTION,
+              REQUEST_TYPE.PUSH_ACTION,
               {
                 action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
                 payload: JSON.stringify(subscription.toJSON())
               }
             ))
 
-            // 3. Send a following notifciation if it's passed
-            if (followingNotification) {
-              sbp('service-worker/send-push', followingNotification)
-            }
-
             resolve()
           })
 
           pubsub.socket.send(createMessage(
-            NOTIFICATION_TYPE.PUSH_ACTION,
+            REQUEST_TYPE.PUSH_ACTION,
             { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
           ))
         } catch (err) {
@@ -133,7 +119,7 @@ sbp('sbp/selectors/register', {
 
     if (pushSubscription) {
       pubsub.socket.send(createMessage(
-        NOTIFICATION_TYPE.PUSH_ACTION,
+        REQUEST_TYPE.PUSH_ACTION,
         {
           action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
           payload: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint })
@@ -157,7 +143,7 @@ sbp('sbp/selectors/register', {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
 
     pubsub.socket.send(createMessage(
-      NOTIFICATION_TYPE.PUSH_ACTION,
+      REQUEST_TYPE.PUSH_ACTION,
       {
         action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
         payload: JSON.stringify(subscription.toJSON())
