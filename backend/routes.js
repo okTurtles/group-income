@@ -10,10 +10,8 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
-
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
 const staticServeConfig = {
   routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',

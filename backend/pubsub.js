@@ -20,7 +20,7 @@ import type {
   NotificationTypeEnum
 } from '~/shared/pubsub.js'
 
-import type { JSONType } from '~/shared/types.js'
+import type { JSONType, JSONObject } from '~/shared/types.js'
 
 const { bold } = require('chalk')
 const WebSocket = require('ws')
@@ -57,6 +57,16 @@ export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_
 
 export function createErrorResponse (data: JSONType): string {
   return JSON.stringify({ type: ERROR, data })
+}
+
+export function createPushErrorResponse (data: JSONObject): string {
+  return JSON.stringify({
+    type: ERROR,
+    data: {
+      ...data,
+      type: REQUEST_TYPE.PUSH_ACTION
+    }
+  })
 }
 
 export function createNotification (type: NotificationTypeEnum, data: JSONType): string {
@@ -97,6 +107,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByChannelID = Object.create(null)
+  server.pushSubscriptions = Object.create(null)
 
   // Add listeners for server events, i.e. events emitted on the server object.
   Object.keys(defaultServerHandlers).forEach((name) => {

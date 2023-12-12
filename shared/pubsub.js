@@ -106,12 +106,20 @@ export const NOTIFICATION_TYPE = Object.freeze({
 export const REQUEST_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
-  UNSUB: 'unsub'
+  UNSUB: 'unsub',
+  PUSH_ACTION: 'push_action'
 })
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
   OK: 'ok'
+})
+
+export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
+  SEND_PUBLIC_KEY: 'send-public-key',
+  STORE_SUBSCRIPTION: 'store-subscription',
+  DELETE_SUBSCRIPTION: 'delete-subscription',
+  SEND_PUSH_NOTIFICATION: 'send-push-notification'
 })
 
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
@@ -417,7 +425,8 @@ const defaultMessageHandlers = {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [RESPONSE_TYPE.ERROR] ({ data: { type, channelID } }) {
+  [RESPONSE_TYPE.ERROR] ({ data }) {
+    const { type, channelID } = data
     console.warn(`[pubsub] Received ERROR response for ${type} request to ${channelID}`)
     const client = this
 
@@ -430,6 +439,18 @@ const defaultMessageHandlers = {
       case REQUEST_TYPE.UNSUB: {
         console.warn(`[pubsub] Could not unsubscribe from ${channelID}`)
         client.pendingUnsubscriptionSet.delete(channelID)
+        break
+      }
+      case REQUEST_TYPE.PUSH_ACTION: {
+        const { actionType, message } = data
+        const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
+
+        console.warn(`[pubsub] Received ERROR for PUSH_ACTION request with the action type '${actionType}' and the following message: ${message}`)
+        if (errorHandler) {
+          errorHandler()
+        } else {
+          pushClientErrorHandler.default(actionType)
+        }
         break
       }
       default: {
@@ -647,6 +668,16 @@ const publicMethods = {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { channelID }))
       }
     }
+  }
+}
+
+const pushClientErrorHandler = {
+  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
+    // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
+    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
+  },
+  default (actionType) {
+    console.error(`[push-error] Invalid request for the action type '${actionType}'`)
   }
 }
 
