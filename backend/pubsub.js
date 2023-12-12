@@ -259,7 +259,9 @@ const defaultMessageHandlers = {
     if (!socket.subscriptions.has(channelID)) {
       // Add the given channel ID to our subscriptions.
       socket.subscriptions.add(channelID)
-      server.subscribersByChannelID[channelID] ??= new Set()
+      if (!server.subscribersByChannelID[channelID]) {
+        server.subscribersByChannelID[channelID] = new Set()
+      }
       // Add this socket to the channel subscribers.
       server.subscribersByChannelID[channelID].add(socket)
     } else {
