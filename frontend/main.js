@@ -317,7 +317,7 @@ async function startApp () {
           'subscription-succeeded' (event) {
             const { channelID } = event.detail
             if (channelID in sbp('state/vuex/state').contracts) {
-              sbp('chelonia/contract/sync', channelID).catch(err => {
+              sbp('chelonia/contract/sync', channelID, { force: true }).catch(err => {
                 console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
               })
             }
