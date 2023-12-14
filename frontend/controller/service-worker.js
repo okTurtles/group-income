@@ -149,6 +149,26 @@ sbp('sbp/selectors/register', {
         payload: JSON.stringify(subscription.toJSON())
       }
     ))
+  },
+  'service-worker/update': async function () {
+    // This function manually checks for the service worker updates and trigger them if there are.
+    // reference-1: https://web.dev/articles/service-worker-lifecycle#manual_updates
+    // reference-2: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/update
+    if ('serviceWorker' in navigator) {
+      try {
+        const swRegistration = await navigator.serviceWorker.ready
+
+        if (swRegistration) {
+          const newRegistration = await swRegistration.update()
+          return newRegistration
+        } else {
+          console.debug('[sw] No active service-worker was found while checking for the updates.')
+          return
+        }
+      } catch (err) {
+        console.error(`[sw] Failed to update the service-worker! - ${err.message}`)
+      }
+    }
   }
 })
 
