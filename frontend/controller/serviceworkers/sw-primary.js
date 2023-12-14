@@ -14,6 +14,8 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
+
+  // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
   event.waitUntil(self.clients.claim())
 })
 

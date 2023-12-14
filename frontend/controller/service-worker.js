@@ -3,9 +3,11 @@
 import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
+    console.log('%%% service-workers/setup is called!!!')
     // setup service worker
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
@@ -17,6 +19,15 @@ sbp('sbp/selectors/register', {
 
       if (swRegistration) {
         swRegistration.active?.postMessage({ type: 'store-client-id' })
+
+        // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
+        await swRegistration.update()
+
+        const recursiveUpdate = async () => {
+          await sbp('service-worker/update')
+          setTimeout(recursiveUpdate, HOURS_MILLIS)
+        }
+        setTimeout(recursiveUpdate, HOURS_MILLIS)
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
