@@ -465,7 +465,16 @@ module.exports = (grunt) => {
       }
     }[command]
     grunt.log.writeln(`cypress: running in "${command}" mode...`)
-    cypress[command]({ config: { baseUrl: process.env.API_URL }, ...options })
+    cypress[command]({
+      config: { baseUrl: process.env.API_URL },
+      // Exclude some spec files for CI runs
+      // group-chat|group-large|group-proposals are excluded because they take
+      // comparatively long
+      // signup-and-login is pretty fast but is already covered by other
+      // tests
+      ...process.env.CI && { spec: 'test/cypress/integration/!(group-chat|group-large|group-proposals|signup-and-login).spec.js' },
+      ...options
+    })
       .then(r => done(r.totalFailed === 0)).catch(done)
   })
 

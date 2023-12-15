@@ -3,7 +3,7 @@
 // causing the bypassUI to fail in the middle (because it changed pages)
 
 describe('Group - Removing a member', () => {
-  const userId = Math.floor(Math.random() * 10000)
+  const userId = performance.now().toFixed(20).replace('.', '')
   const groupNameA = 'Dreamers'
   const groupNameB = 'Donuts'
 

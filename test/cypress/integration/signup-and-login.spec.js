@@ -2,7 +2,7 @@ describe('Signup, Profile and Login', () => {
   // NOTE: Create a uniqueId to avoid duplicated users during crypress tests
   // OPTIMIZE: We need to find a cleaner way to handle multiple
   // users and groups that are created during test...
-  const userId = Math.floor(Math.random() * 10000)
+  const userId = performance.now().toFixed(20).replace('.', '')
   const username = `user1-${userId}`
 
   it('user1 signups and creates a group', () => {

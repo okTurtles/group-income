@@ -131,7 +131,7 @@ describe('Full walkthrough', function () {
 
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
-    username = `${username}-${Math.floor(Math.random() * 1000)}`
+    username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
     const msg = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/identity',
       keys: [

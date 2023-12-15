@@ -46,6 +46,7 @@ const cySbpCheckCommand = (name, customCheckFn) => {
           sbp('okTurtles.events/off', CONTRACTS_MODIFIED, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
+          clearInterval(x)
         }
 
         // Register event listeners. The following events could change the
@@ -57,6 +58,7 @@ const cySbpCheckCommand = (name, customCheckFn) => {
 
         // We also run the test manually in case there are no events
         check()
+        const x = setInterval(check, 1000)
       })
     })
   })
@@ -618,6 +620,15 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
 })
 
 Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
+  // TODO: Temporary. If we're in the process of joining, some messages in the
+  // chatroom are dropped. We should fix the issue in ChatMain by investigating
+  // the cause for this, but in the meantime we can address the issue by waiting
+  // for all ongoing operations to complete.
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-sync', '')
+  })
+  cy.giEmptyInvocationQueue()
+
   cy.giRedirectToGroupChat()
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username)
   cy.getByDT('dashboard').click()

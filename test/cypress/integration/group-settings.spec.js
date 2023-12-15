@@ -1,4 +1,4 @@
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const groupName = 'Dreamers'
 const groupNamePerc40 = 'groupPerc_40'
 const groupMincome = 750

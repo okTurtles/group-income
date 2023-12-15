@@ -242,7 +242,10 @@ export default (sbp('sbp/selectors/register', {
         ...params?.hooks,
         preSendCheck (msg, state) {
           if (state?.users?.[params.data.username]) return false
-          return params?.hooks?.preSendCheck?.(msg, state)
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
         }
       }
     })

@@ -2,7 +2,7 @@ import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/
 
 const groupName = 'Dreamers'
 const additionalChannelName = 'Bulgaria Hackathon'
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
 let invitationLinkAnyone
