@@ -1,6 +1,7 @@
 'use strict'
 
-if (process.env['CI']) process.exit(1)
+// TODO: REMOVEME. This prevents tests from running
+// if (process.env['CI']) process.exit(1)
 
 // =======================
 // Entry point.
