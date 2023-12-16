@@ -7,7 +7,6 @@ import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
-    console.log('%%% service-workers/setup is called!!!')
     // setup service worker
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
