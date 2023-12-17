@@ -469,11 +469,9 @@ module.exports = (grunt) => {
     cypress[command]({
       config: { baseUrl: process.env.API_URL },
       // Exclude some spec files for CI runs
-      // group-chat|group-large|group-proposals are excluded because they take
+      // group-large|group-proposals are excluded because they take
       // comparatively long
-      // signup-and-login is pretty fast but is already covered by other
-      // tests
-      ...process.env.CI && { spec: 'test/cypress/integration/!(group-large|signup-and-login).spec.js' },
+      ...process.env.CI && { spec: 'test/cypress/integration/!(group-large|group-proposals).spec.js' },
       ...options
     })
       .then(r => done(r.totalFailed === 0)).catch(done)
