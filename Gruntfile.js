@@ -473,7 +473,7 @@ module.exports = (grunt) => {
       // comparatively long
       // signup-and-login is pretty fast but is already covered by other
       // tests
-      ...process.env.CI && { spec: 'test/cypress/integration/!(group-chat|group-large|group-proposals|signup-and-login).spec.js' },
+      ...process.env.CI && { spec: 'test/cypress/integration/!(group-large|signup-and-login).spec.js' },
       ...options
     })
       .then(r => done(r.totalFailed === 0)).catch(done)
