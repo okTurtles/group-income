@@ -12,6 +12,10 @@
 
   emoticons
 
+  template(v-for='x in latestEvents')
+    div
+      pre(style='overflow-wrap: anywhere; white-space: pre-wrap; font-size: 0.8em') {{ JSON.stringify({...GIMessage.deserializeHEAD(x).head, version: void 0, manifest: void 0 }) }}
+
   .c-body
     .c-body-conversation(
       ref='conversation'
@@ -162,6 +166,8 @@ export default ({
   },
   data () {
     return {
+      GIMessage,
+      JSON,
       config: {
         isPhone: null
       },

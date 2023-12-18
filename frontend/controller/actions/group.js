@@ -252,11 +252,6 @@ export default (sbp('sbp/selectors/register', {
           groupContractID: contractID,
           inviteSecret: serializeKey(CSK, true),
           creator: true
-        },
-        hooks: {
-          preSendCheck: (_, state) => {
-            return !state.groups?.[contractID]
-          }
         }
       })
 
@@ -433,10 +428,7 @@ export default (sbp('sbp/selectors/register', {
               ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
               hooks: {
                 prepublish: params.hooks?.prepublish,
-                postpublish: null,
-                preSendCheck: (_, state) => {
-                  return state?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE
-                }
+                postpublish: null
               }
             })
 
@@ -625,7 +617,21 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
-    return await sendMessage(omit(params, ['options', 'action']))
+    return await sendMessage({
+      ...omit(params, ['options', 'action']),
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          console.error('gJC', params.data.chatRoomID, username, state.chatRooms[params.data.chatRoomID]?.users?.[username]?.status)
+          // Don't send if the member has already been added
+          if (state.chatRooms[params.data.chatRoomID]?.users?.[username]?.status === PROFILE_STATUS.ACTIVE) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
@@ -678,14 +684,37 @@ export default (sbp('sbp/selectors/register', {
     (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
     async function (sendMessage, params, signingKeyId) {
       await sendMessage({
-        ...omit(params, ['options', 'action'])
+        ...omit(params, ['options', 'action']),
+        hooks: {
+          ...params.hooks,
+          preSendCheck (msg, state) {
+            // Don't send if the member has already been removed
+            if (state?.profiles?.[params.data.member]?.status !== PROFILE_STATUS.ACTIVE) return false
+            if (params?.hooks?.preSendCheck) {
+              return params?.hooks?.preSendCheck(msg, state)
+            }
+            return true
+          }
+        }
       })
     }),
   ...encryptedAction('gi.actions/group/removeOurselves',
     (e) => L('Failed to leave group. {codeError}', { codeError: e.message }),
     async function (sendMessage, params) {
+      const rootState = sbp('state/vuex/state')
       await sendMessage({
-        ...omit(params, ['options', 'action'])
+        ...omit(params, ['options', 'action']),
+        hooks: {
+          ...params.hooks,
+          preSendCheck (msg, state) {
+            // Don't send if we've already been removed
+            if (state?.profiles?.[rootState.loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE) return false
+            if (params?.hooks?.preSendCheck) {
+              return params?.hooks?.preSendCheck(msg, state)
+            }
+            return true
+          }
+        }
       })
     }),
   ...encryptedAction('gi.actions/group/changeChatRoomDescription',
@@ -877,10 +906,41 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
-  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
+    return await sendMessage({
+      ...params,
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          // Don't send if the member isn't an active chatroom member
+          console.error('gLC', params.data.chatRoomID, params.data.member, state.chatRooms[params.data.chatRoomID]?.users?.[params.data.member]?.status)
+          if (state.chatRooms[params.data.chatRoomID]?.users?.[params.data.member]?.status !== PROFILE_STATUS.ACTIVE) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
-  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
+  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), async function (sendMessage, params) {
+    const rootState = sbp('state/vuex/state')
+    await sendMessage({
+      ...omit(params, ['options', 'action']),
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          if (state?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
     await sbp('chelonia/out/keyDel', {
       contractID: params.contractID,

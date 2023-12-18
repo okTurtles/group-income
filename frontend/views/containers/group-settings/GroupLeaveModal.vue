@@ -110,12 +110,7 @@ export default ({
         const groupContractID = this.currentGroupId
         await sbp('gi.actions/identity/leaveGroup', {
           contractID: this.ourIdentityContractId,
-          data: { groupContractID },
-          hooks: {
-            preSendCheck: (_, state) => {
-              return !!state.groups?.[this.currentGroupId]
-            }
-          }
+          data: { groupContractID }
         })
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)

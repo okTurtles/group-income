@@ -241,7 +241,10 @@ export default (sbp('sbp/selectors/register', {
       hooks: {
         ...params?.hooks,
         preSendCheck (msg, state) {
-          if (state?.users?.[params.data.username]) return false
+          console.error('cJ', params.contractID, params.data.username, state.users?.[params.data.username])
+          // Avoid sending a duplicate action if the person is already a
+          // chatroom member
+          if (state.users?.[params.data.username]) return false
           if (params?.hooks?.preSendCheck) {
             return params?.hooks?.preSendCheck(msg, state)
           }
@@ -252,7 +255,46 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
-  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
+    const hooks = {
+      ...params?.hooks,
+      preSendCheck (msg, state) {
+        console.error('cL', params.contractID, params.data.member, state.users?.[params.data.member])
+        // Avoid sending a duplicate action if the person isn't a
+        // chatroom member
+        if (!state.users?.[params.data.member]) return false
+        if (params?.hooks?.preSendCheck) {
+          return params?.hooks?.preSendCheck(msg, state)
+        }
+        return true
+      }
+    }
+
+    const rootGetters = sbp('state/vuex/getters')
+    const userID = rootGetters.ourContactProfiles[params.data.member]?.contractID
+
+    const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+
+    if (keyIds?.length) {
+      return await sbp('chelonia/out/atomic', {
+        ...params,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          sendMessage({ ...params, returnInvocation: true }),
+          // Remove the user's CSK from the contract
+          [
+            'chelonia/out/keyDel', {
+              data: keyIds
+            }
+          ]
+        ],
+        signingKeyId,
+        hooks
+      })
+    }
+
+    return await sendMessage({ ...params, hooks })
+  }),
   ...encryptedAction('gi.actions/chatroom/delete', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
   ...encryptedAction('gi.actions/chatroom/changeVoteOnPoll', L('Failed to change vote on a poll.')),

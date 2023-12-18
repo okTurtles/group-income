@@ -12,7 +12,7 @@ import {
   noUppercase
 } from './shared/validators.js'
 
-import { IDENTITY_USERNAME_MAX_CHARS, PROFILE_STATUS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -230,12 +230,7 @@ sbp('chelonia/defineContract', {
           if (has(rootState.contracts, groupContractID)) {
             await sbp('gi.actions/group/removeOurselves', {
               contractID: groupContractID,
-              data: {},
-              hooks: {
-                preSendCheck: (_, state) => {
-                  return state?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE
-                }
-              }
+              data: {}
             })
           }
 

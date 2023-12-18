@@ -614,8 +614,50 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   }),
-  ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
-  ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
-  ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
+  ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.'), async (sendMessage, params) => {
+    return await sendMessage({
+      ...params,
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          if (has(state.chatRooms, params.data.contractID)) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
+  }),
+  ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.'), async (sendMessage, params) => {
+    return await sendMessage({
+      ...params,
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          if (has(state.groups, params.data.groupContractID)) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
+  }),
+  ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.'), async (sendMessage, params) => {
+    return await sendMessage({
+      ...params,
+      hooks: {
+        ...params.hooks,
+        preSendCheck (msg, state) {
+          if (!has(state.groups, params.data.groupContractID)) return false
+          if (params?.hooks?.preSendCheck) {
+            return params?.hooks?.preSendCheck(msg, state)
+          }
+          return true
+        }
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.'))
 }): string[])
