@@ -50,14 +50,14 @@ const signData = function (stateOrContractID: string | Object, sKeyId: string, d
   if (!designatedKey?.purpose.includes(
     'sig'
   )) {
-    throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} is missing or is missing signing purpose`)
+    throw new ChelErrorSignatureKeyNotFound(`Signing key ID ${sKeyId} is missing or is missing signing purpose`)
   }
   if (designatedKey._notAfterHeight != null) {
     const name = (state._vm: any).authorizedKeys[sKeyId].name
     const newKeyId = (Object.values(state._vm?.authorizedKeys).find((v: any) => v._notAfterHeight == null && v.name === name && v.purpose.includes('sig')): any)?.id
 
     if (!newKeyId) {
-      throw new ChelErrorSignatureError(`Signing key ID ${sKeyId} has been revoked and no new key exists by the same name (${name})`)
+      throw new ChelErrorSignatureKeyNotFound(`Signing key ID ${sKeyId} has been revoked and no new key exists by the same name (${name})`)
     }
 
     sKeyId = newKeyId

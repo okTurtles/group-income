@@ -252,6 +252,11 @@ export default (sbp('sbp/selectors/register', {
           groupContractID: contractID,
           inviteSecret: serializeKey(CSK, true),
           creator: true
+        },
+        hooks: {
+          preSendCheck: (_, state) => {
+            return !state.groups?.[contractID]
+          }
         }
       })
 

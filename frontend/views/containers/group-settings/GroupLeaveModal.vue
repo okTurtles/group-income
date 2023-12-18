@@ -107,9 +107,15 @@ export default ({
     async submit () {
       if (this.$v.form.$invalid) { return }
       try {
+        const groupContractID = this.currentGroupId
         await sbp('gi.actions/identity/leaveGroup', {
           contractID: this.ourIdentityContractId,
-          data: { groupContractID: this.currentGroupId }
+          data: { groupContractID },
+          hooks: {
+            preSendCheck: (_, state) => {
+              return !!state.groups?.[this.currentGroupId]
+            }
+          }
         })
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)
