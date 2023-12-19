@@ -13,7 +13,7 @@ import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -331,6 +331,7 @@ async function startApp () {
         )
       }
 
+      sbp('okTurtles.events/emit', THEME_CHANGE, this.$store.state.settings.themeColor)
       this.setBadgeOnTab()
     },
     computed: {
