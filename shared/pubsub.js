@@ -426,18 +426,18 @@ const defaultMessageHandlers = {
   },
 
   [RESPONSE_TYPE.ERROR] ({ data }) {
-    const { type, channelID } = data
+    const { type, channelID, reason } = data
     console.warn(`[pubsub] Received ERROR response for ${type} request to ${channelID}`)
     const client = this
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.warn(`[pubsub] Could not subscribe to ${channelID}`)
+        console.warn(`[pubsub] Could not subscribe to ${channelID}: ${reason}`)
         client.pendingSubscriptionSet.delete(channelID)
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.warn(`[pubsub] Could not unsubscribe from ${channelID}`)
+        console.warn(`[pubsub] Could not unsubscribe from ${channelID}: ${reason}`)
         client.pendingUnsubscriptionSet.delete(channelID)
         break
       }

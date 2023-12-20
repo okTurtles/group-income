@@ -1,6 +1,5 @@
 /* globals logger */
 'use strict'
-
 /*
  * Pub/Sub server implementation using the `ws` library.
  * See https://github.com/websockets/ws#api-docs
@@ -102,6 +101,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...{ clientTracking: true },
     server: httpServer
   })
+  server.channels = new Set()
   server.customServerEventHandlers = { ...options.serverHandlers }
   server.customSocketEventHandlers = { ...options.socketHandlers }
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
@@ -267,6 +267,12 @@ const defaultMessageHandlers = {
     const socket = this
     const { server } = this
 
+    if (!server.channels.has(channelID)) {
+      socket.send(createErrorResponse(
+        { type: SUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+      return
+    }
     if (!socket.subscriptions.has(channelID)) {
       // Add the given channel ID to our subscriptions.
       socket.subscriptions.add(channelID)
@@ -285,6 +291,11 @@ const defaultMessageHandlers = {
     const socket = this
     const { server } = this
 
+    if (!server.channels.has(channelID)) {
+      socket.send(createErrorResponse(
+        { type: UNSUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+    }
     if (socket.subscriptions.has(channelID)) {
       // Remove the given channel ID from our subscriptions.
       socket.subscriptions.delete(channelID)
