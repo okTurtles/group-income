@@ -108,7 +108,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-csk',
                   purpose: ['sig'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[0].foreignKey,
                   meta: params.options.groupKeys[0].meta,
@@ -119,7 +119,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-cek',
                   purpose: ['enc'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/join', 'gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[1].foreignKey,
                   meta: params.options.groupKeys[1].meta,
@@ -259,6 +259,25 @@ export default (sbp('sbp/selectors/register', {
     const hooks = {
       ...params?.hooks,
       preSendCheck (msg, state) {
+        const x = document.createElement('pre')
+        x.innerText = JSON.stringify({
+          c: params.contractID,
+          m: params.data.member,
+          s: state.users?.[params.data.member] ?? '---',
+          sx: state.users,
+          db: sbp('state/vuex/state').contracts[params.contractID]
+        }, undefined, 2)
+        Object.assign(x.style, {
+          position: 'absolute',
+          color: '#fff',
+          background: '#000',
+          padding: '2px',
+          border: '1px solid red',
+          top: '0',
+          left: '0',
+          pointerEvents: 'none'
+        })
+        document.body?.appendChild(x)
         console.error('cL', params.contractID, params.data.member, state.users?.[params.data.member])
         // Avoid sending a duplicate action if the person isn't a
         // chatroom member

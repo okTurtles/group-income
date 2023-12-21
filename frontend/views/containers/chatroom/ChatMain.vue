@@ -12,9 +12,9 @@
 
   emoticons
 
-  template(v-for='x in latestEvents')
-    div
-      pre(style='overflow-wrap: anywhere; white-space: pre-wrap; font-size: 0.8em') {{ JSON.stringify({...GIMessage.deserializeHEAD(x).head, version: void 0, manifest: void 0 }) }}
+  div(style='height: 0; overflow: visible')
+    div(v-for='x in latestEvents')
+      pre(style='background: #000; color: #fff; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 0.9em') {{ JSON.stringify({...GIMessage.deserializeHEAD(x).head, version: void 0, manifest: void 0 }) }}
 
   .c-body
     .c-body-conversation(

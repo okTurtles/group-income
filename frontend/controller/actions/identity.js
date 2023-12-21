@@ -281,7 +281,7 @@ export default (sbp('sbp/selectors/register', {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
 
-      const contractIDs = []
+      const contractIDs = Object.create(null)
       // login can be called when no settings are saved (e.g. from Signup.vue)
       if (state) {
         // The retrieved local data might need to be completed in case it was originally saved
@@ -289,7 +289,12 @@ export default (sbp('sbp/selectors/register', {
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
-        contractIDs.push(...Object.keys(state.contracts))
+        Object.entries(state.contracts).forEach(([id, { type }]) => {
+          if (!contractIDs[type]) {
+            contractIDs[type] = []
+          }
+          contractIDs[type].push(id)
+        })
       }
 
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
@@ -334,7 +339,19 @@ export default (sbp('sbp/selectors/register', {
 
           throw new Error('Unable to sync identity contract')
         }).then(() => {
-          return sbp('chelonia/contract/sync', contractIDs, { force: true })
+          // $FlowFixMe[incompatible-call]
+          return Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
+            if (a === b) return 0
+            if (a === 'gi.contracts/identity') return -1
+            if (b === 'gi.contracts/identity') return 1
+            if (a === 'gi.contracts/group') return -1
+            if (b === 'gi.contracts/group') return 1
+            if (a === 'gi.contracts/chatroom') return -1
+            if (b === 'gi.contracts/chatroom') return 1
+            return 0
+          }).map(([, ids]) => {
+            return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+          }))
             .catch((err) => {
               console.error('Error during contract sync upon login (syncing all contractIDs)', err)
             })
@@ -347,7 +364,8 @@ export default (sbp('sbp/selectors/register', {
 
               // contract sync might've triggered an async call to /remove, so
               // wait before proceeding
-              await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...contractIDs])))
+              // $FlowFixMe[incompatible-call]
+              await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
 
               // Call 'gi.actions/group/join' on all groups which may need re-joining
               await Promise.allSettled(

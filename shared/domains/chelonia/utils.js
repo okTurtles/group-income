@@ -121,33 +121,6 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
     return false
   }
 
-  if (opT === GIMessage.OP_ATOMIC) {
-    if (
-      ((opV: any): GIOpAtomic).reduce(
-        (acc, [opT, opV]) => {
-          if (!acc || !(signingKey: any).permissions.includes(opT)) return false
-          if (
-            opT === GIMessage.OP_ACTION_UNENCRYPTED &&
-            !validateActionPermissions(signingKey, state, opT, (opV: any))
-          ) {
-            return false
-          }
-
-          if (
-            opT === GIMessage.OP_ACTION_ENCRYPTED &&
-            !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
-          ) {
-            return false
-          }
-
-          return true
-        }, true)
-    ) {
-      console.error(`OP_ATOMIC: Signing key ${signingKey.id} is missing permissions for inner operation ${opT}`)
-      return false
-    }
-  }
-
   if (
     opT === GIMessage.OP_ACTION_UNENCRYPTED &&
     !validateActionPermissions(signingKey, state, opT, (opV: any))
@@ -401,9 +374,8 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = async (entry: GIMessage, state: Object): Promise<typeof undefined | GIMessage> => {
-  const contractID = entry.contractID()
-  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID) || {}
+export const recreateEvent = (entry: GIMessage, state: Object, contractsState: Object): Promise<typeof undefined | GIMessage> => {
+  const { HEAD: previousHEAD, height: previousHeight } = contractsState || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')
   }
