@@ -492,7 +492,6 @@ export default (sbp('sbp/selectors/register', {
           if (!validateKeyPermissions(state, signingKeyId, u[0], u[1])) {
             throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
           }
-          console.error('@@@OP_ATOMIC', u, state)
           opFns[u[0]](u[1])
         })
       },
@@ -1458,23 +1457,6 @@ export default (sbp('sbp/selectors/register', {
       try {
         await handleEvent.processMutation.call(this, message, contractStateCopy, internalSideEffectStack)
       } catch (e) {
-        if (document && state.contracts[contractID]?.type === 'gi.contracts/chatroom') {
-          const x = document.createElement('pre')
-          x.innerText = JSON.stringify({ c: contractID, cs: state.contracts[contractID], s: state[contractID].users, en: e?.name, d: e?.message }, undefined, 2)
-          Object.assign(x.style, {
-            position: 'absolute',
-            color: '#00f',
-            background: '#fff',
-            padding: '2px',
-            border: '1px solid red',
-            top: '0',
-            right: '0',
-            pointerEvents: 'none',
-            zIndex: '9999'
-          })
-          document.body?.appendChild(x)
-        }
-
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
         } else {
@@ -1513,69 +1495,11 @@ export default (sbp('sbp/selectors/register', {
       // is executing. In particular, everything in between should be synchronous.
       try {
         const state = sbp(this.config.stateSelector)
-        if (document && state.contracts[contractID]?.type === 'gi.contracts/chatroom') {
-          const x = document.createElement('pre')
-          x.innerText = JSON.stringify({ c: contractID, cs: state.contracts[contractID], s: state[contractID].users }, undefined, 2)
-          Object.assign(x.style, {
-            position: 'absolute',
-            color: '#0f0',
-            background: '#000',
-            padding: '2px',
-            border: '1px solid red',
-            top: '0',
-            right: '0',
-            pointerEvents: 'none',
-            zIndex: '9999'
-          })
-          document.body?.appendChild(x)
-        }
-
         handleEvent.applyProccessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
       } catch (e) {
-        const x = document.createElement('pre')
-        x.innerText = JSON.stringify({
-          m: JSON.parse(JSON.parse(rawMessage).head),
-          s: e.stack,
-          e: e.message,
-          c: contractID,
-          db: sbp('state/vuex/state').contracts[contractID]
-        }, undefined, 2)
-        Object.assign(x.style, {
-          position: 'absolute',
-          color: '#000',
-          background: '#fff',
-          padding: '2px',
-          border: '1px solid red',
-          top: '0',
-          right: '0',
-          pointerEvents: 'none',
-          zIndex: '9999'
-        })
-        document.body?.appendChild(x)
-
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
     } catch (e) {
-      const x = document.createElement('pre')
-      x.innerText = JSON.stringify({
-        m: rawMessage,
-        s: e.stack,
-        e: e.message,
-        c: contractID,
-        db: sbp('state/vuex/state').contracts[contractID]
-      }, undefined, 2)
-      Object.assign(x.style, {
-        position: 'absolute',
-        color: '#fff',
-        background: '#000',
-        padding: '2px',
-        border: '1px solid red',
-        top: '0',
-        right: '0',
-        pointerEvents: 'none'
-      })
-      document.body?.appendChild(x)
-
       console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
       try {
         handleEventError?.(e, message)

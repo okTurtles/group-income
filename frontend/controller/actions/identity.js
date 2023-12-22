@@ -313,6 +313,22 @@ export default (sbp('sbp/selectors/register', {
       sbp('state/vuex/commit', 'login', loginAttributes)
       await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
 
+      // We need to sync contracts in this order to ensure that we have all the
+      // corresponding secret keys. Group chatrooms use group keys but there's
+      // no OP_KEY_SHARE, which will result in the keys not being available when
+      // the group keys are rotated.
+      // TODO: This functionality could be moved into Chelonia by keeping track
+      // of when secret keys without OP_KEY_SHARE become available.
+      const contractSyncPriorityList = [
+        'gi.contracts/identity',
+        'gi.contracts/group',
+        'gi.contracts/chatroom'
+      ]
+      const getContractSyncPriority = (key) => {
+        const index = contractSyncPriorityList.indexOf(key)
+        return index === -1 ? contractSyncPriorityList.length : index
+      }
+
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited
@@ -341,14 +357,8 @@ export default (sbp('sbp/selectors/register', {
         }).then(() => {
           // $FlowFixMe[incompatible-call]
           return Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
-            if (a === b) return 0
-            if (a === 'gi.contracts/identity') return -1
-            if (b === 'gi.contracts/identity') return 1
-            if (a === 'gi.contracts/group') return -1
-            if (b === 'gi.contracts/group') return 1
-            if (a === 'gi.contracts/chatroom') return -1
-            if (b === 'gi.contracts/chatroom') return 1
-            return 0
+            // Sync contracts in order based on type
+            return getContractSyncPriority(a) - getContractSyncPriority(b)
           }).map(([, ids]) => {
             return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
           }))

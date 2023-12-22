@@ -622,7 +622,6 @@ export default (sbp('sbp/selectors/register', {
       hooks: {
         ...params.hooks,
         preSendCheck (msg, state) {
-          console.error('gJC', params.data.chatRoomID, username, state.chatRooms[params.data.chatRoomID]?.users?.[username]?.status)
           // Don't send if the member has already been added
           if (state.chatRooms[params.data.chatRoomID]?.users?.[username]?.status === PROFILE_STATUS.ACTIVE) return false
           if (params?.hooks?.preSendCheck) {
@@ -913,7 +912,6 @@ export default (sbp('sbp/selectors/register', {
         ...params.hooks,
         preSendCheck (msg, state) {
           // Don't send if the member isn't an active chatroom member
-          console.error('gLC', params.data.chatRoomID, params.data.member, state.chatRooms[params.data.chatRoomID]?.users?.[params.data.member]?.status)
           if (state.chatRooms[params.data.chatRoomID]?.users?.[params.data.member]?.status !== PROFILE_STATUS.ACTIVE) return false
           if (params?.hooks?.preSendCheck) {
             return params?.hooks?.preSendCheck(msg, state)

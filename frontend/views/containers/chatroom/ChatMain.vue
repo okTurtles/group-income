@@ -12,10 +12,6 @@
 
   emoticons
 
-  div(style='height: 0; overflow: visible')
-    div(v-for='x in latestEvents')
-      pre(style='background: #000; color: #fff; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 0.9em') {{ JSON.stringify({...GIMessage.deserializeHEAD(x).head, version: void 0, manifest: void 0 }) }}
-
   .c-body
     .c-body-conversation(
       ref='conversation'
@@ -340,25 +336,24 @@ export default ({
           // messages as pending in the UI
           prepublish: (message) => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
 
             // IMPORTANT: This is executed *BEFORE* the message is received over
             // the network
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', ['chelonia/in/processMessage', message, messageStateContract])
-              .then((messageStateContract) => {
-                if (!this.checkEventSourceConsistency(contractID)) return
-                Vue.set(this.messageState, 'contract', messageStateContract)
-              }).catch((e) => {
-                console.error('Error sending message during pre-publish: ' + e.message)
-              })
+            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+              if (!this.checkEventSourceConsistency(contractID)) return
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+            }).catch((e) => {
+              console.error('Error sending message during pre-publish: ' + e.message)
+            })
 
             this.stopReplying()
             this.updateScroll()
           },
           beforeRequest: (message, oldMessage) => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
             sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+              if (!this.checkEventSourceConsistency(contractID)) return
+              const messageStateContract = this.messageState.contract
               const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
               if (!msg) return
               msg.hash = message.hash()

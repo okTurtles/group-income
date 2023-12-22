@@ -1068,7 +1068,6 @@ sbp('chelonia/defineContract', {
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       sideEffect ({ meta, contractID, innerSigningContractID }, { state }) {
         const { loggedIn } = sbp('state/vuex/state')
-        console.error('@@@AT inviteAccept for', { contractID, innerSigningContractID, meta })
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const rootState = sbp('state/vuex/state')
@@ -1083,7 +1082,6 @@ sbp('chelonia/defineContract', {
           const { profiles = {} } = state
 
           if (profiles[meta.username].status !== PROFILE_STATUS.ACTIVE) {
-            console.error('@@@RETURNING AS PROFILE_STATUS.ACTIVE IS FALSE', { contractID, innerSigningContractID, meta })
             return
           }
 
@@ -1098,7 +1096,6 @@ sbp('chelonia/defineContract', {
             await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
 
             const generalChatRoomId = state.generalChatRoomId
-            console.error('@@@WILL JOIN GC', { contractID, innerSigningContractID, meta, generalChatRoomId })
             if (generalChatRoomId) {
               // Join the general chatroom
               if (state.chatRooms[generalChatRoomId]?.users?.[loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE) {
@@ -1122,8 +1119,6 @@ sbp('chelonia/defineContract', {
                     alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
                   }, 0)
                 })
-              } else {
-                console.error('@@@ALREADY JOINED JC', { contractID, innerSigningContractID, meta, generalChatRoomId })
               }
             } else {
               // setTimeout to avoid blocking the main thread
