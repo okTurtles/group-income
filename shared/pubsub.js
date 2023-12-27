@@ -57,6 +57,12 @@ export type PubSubClient = {
   unsub(contractID: string): void
 }
 
+export type PubMessage = {
+  +type: 'pub',
+  +contractID: string,
+  +data: JSONType
+}
+
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',

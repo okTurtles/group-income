@@ -16,7 +16,7 @@ import {
 } from '~/shared/pubsub.js'
 
 import type {
-  Message, SubMessage, UnsubMessage,
+  Message, PubMessage, SubMessage, UnsubMessage,
   NotificationTypeEnum, ResponseTypeEnum
 } from '~/shared/pubsub.js'
 
@@ -262,8 +262,10 @@ const defaultMessageHandlers = {
     socket.activeSinceLastPing = true
   },
 
-  [PUB] (msg: Message) {
-    // Currently unused.
+  [PUB] (msg: PubMessage) {
+    const { server } = this
+    const subscribers = server.subscribersByContractID[msg.contractID]
+    server.broadcast(msg, { to: subscribers ?? [] })
   },
 
   [SUB] ({ contractID, dontBroadcast }: SubMessage) {
