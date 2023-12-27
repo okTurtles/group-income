@@ -194,6 +194,10 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
+export function createPubMessage (contractID: string, data: JSONType): string {
+  return JSON.stringify({ type: 'pub', contractID, data })
+}
+
 export function createRequest (type: RequestTypeEnum, data: JSONObject, dontBroadcast: boolean = false): string {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
   return JSON.stringify(Object.assign({ type, dontBroadcast }, data))
@@ -397,7 +401,17 @@ const defaultMessageHandlers = {
 
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
-    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    const { type: messageType, data } = msg
+  
+    switch (data.type) {
+      case 'chatroom-user-typing': {
+        sbp('okTurtles.events/emit', 'chatroom-user-typing', { username: data.username }) // @@@
+        break
+      }
+      default: {
+        console.debug(`[pubsub] Ignoring ${messageType} message:`, data)
+      }
+    }
   },
 
   [NOTIFICATION_TYPE.SUB] (msg) {
@@ -624,10 +638,11 @@ const publicMethods = {
     sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
   },
 
-  // Unused for now.
-  pub (contractID: string, data: JSONType, dontBroadcast = false) {
+  pub (contractID: string, data: JSONType) {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(createPubMessage(contractID, data))
+    }
   },
-
   /**
    * Sends a SUB request to the server as soon as possible.
    *

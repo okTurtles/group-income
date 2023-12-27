@@ -10,6 +10,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction } from './utils.js'
+import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
@@ -182,6 +183,18 @@ export default (sbp('sbp/selectors/register', {
         }))
       }
     }))
+  },
+  'gi.actions/chatroom/pubsub/sub': (chatroomContractID: string) => {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    pubsub.sub(chatroomContractID, true)
+  },
+  'gi.actions/chatroom/pubsub/unsub': (chatroomContractID: string) => {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    pubsub.unsub(chatroomContractID, true)
+  },
+  'gi.actions/chatroom/emit-user-typing-event': (chatroomContractID: string, username: string) => {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    pubsub.pub(chatroomContractID, { type: 'chatroom-user-typing', username })
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
