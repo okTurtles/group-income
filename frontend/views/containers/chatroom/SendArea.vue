@@ -2,6 +2,8 @@
 .c-send-wrapper(
   :class='{"is-public": isPublicChannel}'
 )
+  .c-typing-indicator(v-if='typingIndicatorSentence' v-safe-html='typingIndicatorSentence')
+
   .c-public-helper(v-if='isPublicChannel')
     i.icon-exclamation-triangle.is-prefix
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
@@ -145,6 +147,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
@@ -155,6 +158,8 @@ import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { PUBSUB_EVENT_TYPE } from '~/shared/pubsub.js'
+import { uniq } from '@model/contracts/shared/giLodash.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -211,8 +216,10 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [] // [ { url: instace of URL.createObjectURL , name: string }, ... ]
-      }
+        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        typingUsers: []
+      },
+      typingUserTimeoutIds: {}
     }
   },
   watch: {
@@ -242,9 +249,11 @@ export default ({
     this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/on', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/off', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
   },
   computed: {
     ...mapGetters([
@@ -252,6 +261,7 @@ export default ({
       'currentChatRoomId',
       'chatRoomAttributes',
       'ourContactProfiles',
+      'globalProfile',
       'ourUsername'
     ]),
     users () {
@@ -278,6 +288,21 @@ export default ({
     },
     supportedFileExtensions () {
       return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
+    },
+    typingIndicatorSentence () {
+      const userArr = this.ephemeral.typingUsers
+
+      if (userArr.length) {
+        const getDisplayName = (username) => (this.globalProfile(username).displayName || username)
+        const isMultiple = userArr.length > 1
+        const usernameCombined = userArr.map(u => getDisplayName(u)).join(', ')
+
+        return isMultiple
+          ? L('{strong_}{users}{_strong} are typing', { users: usernameCombined, ...LTags('strong') })
+          : L('{strong_}{user}{_strong} is typing', { user: usernameCombined, ...LTags('strong') })
+      } else {
+        return null
+      }
     }
   },
   methods: {
@@ -537,6 +562,29 @@ export default ({
       const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
       if (!element) {
         this.endMention()
+      }
+    },
+    getDisplayName (username) {
+      return this.globalProfile(username).displayName || username
+    },
+    onUserTyping (data) {
+      const typingUser = data.username
+
+      if (typingUser !== this.ourUsername) {
+        const addToList = username => {
+          this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
+        }
+        const removeFromList = username => {
+          this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
+
+          if (this.typingUserTimeoutIds[username]) {
+            delete this.typingUserTimeoutIds[username]
+          }
+        }
+
+        addToList(typingUser)
+        clearTimeout(this.typingUserTimeoutIds[typingUser])
+        this.typingUserTimeoutIds[typingUser] = setTimeout(() => removeFromList(typingUser), 1000)
       }
     }
   }
@@ -799,5 +847,12 @@ export default ({
   &.isActive {
     background: $primary_0;
   }
+}
+
+.c-typing-indicator {
+  position: relative;
+  display: block;
+  font-size: 0.675rem;
+  padding: 0.25rem 0.25rem;
 }
 </style>

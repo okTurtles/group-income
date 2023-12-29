@@ -1,6 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 
+import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { has, omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -10,15 +11,13 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction } from './utils.js'
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
+import { PUBSUB_EVENT_TYPE } from '~/shared/pubsub.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
     try {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
-
-      // console.log('@@@@gi.actions/chatroom/create', { cskOpts, cekOpts, params })
 
       const rootState = sbp('state/vuex/state')
       const userID = rootState.loggedIn.identityContractID
@@ -194,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/chatroom/emit-user-typing-event': (chatroomContractID: string, username: string) => {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomContractID, { type: 'chatroom-user-typing', username })
+    pubsub.pub(chatroomContractID, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, username })
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),

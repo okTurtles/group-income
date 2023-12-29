@@ -263,7 +263,6 @@ const defaultMessageHandlers = {
   },
 
   [PUB] (msg: PubMessage) {
-    console.log('\r\n\r\n@@@ [pubsub] pubsub server received a PUB message and broasting it! : ', msg)
     const { server } = this
     const subscribers = server.subscribersByContractID[msg.contractID]
     server.broadcast(msg, { to: subscribers ?? [] })
