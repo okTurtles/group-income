@@ -564,9 +564,6 @@ export default ({
         this.endMention()
       }
     },
-    getDisplayName (username) {
-      return this.globalProfile(username).displayName || username
-    },
     onUserTyping (data) {
       const typingUser = data.username
 
