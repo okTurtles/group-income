@@ -402,9 +402,10 @@ const defaultMessageHandlers = {
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
     const { type: messageType, data } = msg
-  
+
     switch (data.type) {
       case 'chatroom-user-typing': {
+        console.log('@@@@ recevied chatroom-user-typing pub message!!!')
         sbp('okTurtles.events/emit', 'chatroom-user-typing', { username: data.username }) // @@@
         break
       }
@@ -640,6 +641,7 @@ const publicMethods = {
 
   pub (contractID: string, data: JSONType) {
     if (this.socket?.readyState === WebSocket.OPEN) {
+      console.log('[pubsub] Publishing a data: ', data)
       this.socket.send(createPubMessage(contractID, data))
     }
   },

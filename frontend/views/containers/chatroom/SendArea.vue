@@ -251,7 +251,8 @@ export default ({
       'chatRoomUsers',
       'currentChatRoomId',
       'chatRoomAttributes',
-      'ourContactProfiles'
+      'ourContactProfiles',
+      'ourUsername'
     ]),
     users () {
       return Object.keys(this.chatRoomUsers)
@@ -355,8 +356,15 @@ export default ({
       }
     },
     handleKeyup (e) {
-      if (e.keyCode === 13) e.preventDefault()
-      else this.updateTextArea()
+      if (e.keyCode === 13) {
+        e.preventDefault()
+      } else {
+        this.updateTextArea()
+        sbp('gi.actions/chatroom/emit-user-typing-event',
+          this.currentChatRoomId,
+          this.ourUsername
+        )
+      }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()

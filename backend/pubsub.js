@@ -263,6 +263,7 @@ const defaultMessageHandlers = {
   },
 
   [PUB] (msg: PubMessage) {
+    console.log('\r\n\r\n@@@ [pubsub] pubsub server received a PUB message and broasting it! : ', msg)
     const { server } = this
     const subscribers = server.subscribersByContractID[msg.contractID]
     server.broadcast(msg, { to: subscribers ?? [] })
@@ -322,14 +323,14 @@ const publicMethods = {
    * @param except - A recipient to exclude. Optional.
    */
   broadcast (
-    message: Message,
+    message: Message | string,
     { to, except }: { to?: Iterable<Object>, except?: Object }
   ) {
     const server = this
 
     for (const client of to || server.clients) {
       if (client.readyState === WebSocket.OPEN && client !== except) {
-        client.send(message)
+        client.send(typeof message === 'string' ? message : JSON.stringify(message))
       }
     }
   },
