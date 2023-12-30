@@ -224,7 +224,8 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
 
   if (interval >= DAYS_MILLIS * 2) {
     // Make sure to replace any ordinary space character by a non-breaking one.
-    return humanDate(datems).replace(/\x32/g, '\xa0')
+    // TODO: use .replaceAll when migrating to TS.
+    return humanDate(datems).replace(/\x20/g, '\xa0')
   }
   if (interval >= DAYS_MILLIS) {
     return L('1d')
