@@ -159,7 +159,7 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { PUBSUB_EVENT_TYPE } from '~/shared/pubsub.js'
-import { uniq } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -219,7 +219,8 @@ export default ({
         attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         typingUsers: []
       },
-      typingUserTimeoutIds: {}
+      typingUserTimeoutIds: {},
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 200)
     }
   },
   watch: {
@@ -385,10 +386,7 @@ export default ({
         e.preventDefault()
       } else {
         this.updateTextArea()
-        sbp('gi.actions/chatroom/emit-user-typing-event',
-          this.currentChatRoomId,
-          this.ourUsername
-        )
+        this.throttledEmitUserTypingEvent()
       }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
@@ -583,6 +581,12 @@ export default ({
         clearTimeout(this.typingUserTimeoutIds[typingUser])
         this.typingUserTimeoutIds[typingUser] = setTimeout(() => removeFromList(typingUser), 1000)
       }
+    },
+    emitUserTypingEvent () {
+      sbp('gi.actions/chatroom/emit-user-typing-event',
+        this.currentChatRoomId,
+        this.ourUsername
+      )
     }
   }
 }: Object)
