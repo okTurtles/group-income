@@ -1,6 +1,5 @@
 /* globals logger */
 'use strict'
-
 /*
  * Pub/Sub server implementation using the `ws` library.
  * See https://github.com/websockets/ws#api-docs
@@ -16,8 +15,8 @@ import {
 } from '~/shared/pubsub.js'
 
 import type {
-  Message, SubMessage, UnsubMessage,
-  NotificationTypeEnum, ResponseTypeEnum
+  Message, PubMessage, SubMessage, UnsubMessage,
+  NotificationTypeEnum
 } from '~/shared/pubsub.js'
 
 import type { JSONType, JSONObject } from '~/shared/types.js'
@@ -26,8 +25,14 @@ const { bold } = require('chalk')
 const WebSocket = require('ws')
 
 const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
-const { ERROR, SUCCESS } = RESPONSE_TYPE
+const { ERROR, OK } = RESPONSE_TYPE
 
+const defaultOptions = {
+  logPingRounds: process.env.NODE_ENV !== 'production' && !process.env.CI,
+  logPongMessages: false,
+  maxPayload: 6 * 1024 * 1024,
+  pingInterval: 30000
+}
 // Used to tag console output.
 const tag = '[pubsub]'
 
@@ -67,8 +72,8 @@ export function createNotification (type: NotificationTypeEnum, data: JSONType):
   return JSON.stringify({ type, data })
 }
 
-export function createResponse (type: ResponseTypeEnum, data: JSONType): string {
-  return JSON.stringify({ type, data })
+export function createOkResponse (data: JSONType): string {
+  return JSON.stringify({ type: OK, data })
 }
 
 /**
@@ -96,11 +101,12 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...{ clientTracking: true },
     server: httpServer
   })
+  server.channels = new Set()
   server.customServerEventHandlers = { ...options.serverHandlers }
   server.customSocketEventHandlers = { ...options.socketHandlers }
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
-  server.subscribersByContractID = Object.create(null)
+  server.subscribersByChannelID = Object.create(null)
   server.pushSubscriptions = Object.create(null)
 
   // Add listeners for server events, i.e. events emitted on the server object.
@@ -136,13 +142,6 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     }, server.options.pingInterval)
   }
   return Object.assign(server, publicMethods)
-}
-
-const defaultOptions = {
-  logPingRounds: process.env.NODE_ENV !== 'production' && !process.env.CI,
-  logPongMessages: false,
-  maxPayload: 6 * 1024 * 1024,
-  pingInterval: 30000
 }
 
 // Default handlers for server events.
@@ -204,15 +203,11 @@ const defaultServerHandlers = {
 const defaultSocketEventHandlers = {
   close (code: string, reason: string) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
-    // Notify other client sockets that this one has left any room they shared.
-    for (const contractID of socket.subscriptions) {
-      const subscribers = server.subscribersByContractID[contractID]
-      // Remove this socket from the subscribers of the given contract.
-      subscribers.delete(socket)
-      const notification = createNotification(UNSUB, { contractID, socketID })
-      server.broadcast(notification, { to: subscribers })
+    for (const channelID of socket.subscriptions) {
+      // Remove this socket from the channel subscribers.
+      server.subscribersByChannelID[channelID].delete(socket)
     }
     socket.subscriptions.clear()
   },
@@ -262,52 +257,54 @@ const defaultMessageHandlers = {
     socket.activeSinceLastPing = true
   },
 
-  [PUB] (msg: Message) {
-    // Currently unused.
+  [PUB] (msg: PubMessage) {
+    const { server } = this
+    const subscribers = server.subscribersByChannelID[msg.channelID]
+    server.broadcast(msg, { to: subscribers ?? [] })
   },
 
-  [SUB] ({ contractID, dontBroadcast }: SubMessage) {
+  [SUB] ({ channelID }: SubMessage) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
-    if (!socket.subscriptions.has(contractID)) {
-      log('Already subscribed to', contractID)
-      // Add the given contract ID to our subscriptions.
-      socket.subscriptions.add(contractID)
-      if (!server.subscribersByContractID[contractID]) {
-        server.subscribersByContractID[contractID] = new Set()
-      }
-      const subscribers = server.subscribersByContractID[contractID]
-      // Add this socket to the subscribers of the given contract.
-      subscribers.add(socket)
-      if (!dontBroadcast) {
-        // Broadcast a notification to every other open subscriber.
-        const notification = createNotification(SUB, { contractID, socketID })
-        server.broadcast(notification, { to: subscribers, except: socket })
-      }
+    if (!server.channels.has(channelID)) {
+      socket.send(createErrorResponse(
+        { type: SUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+      return
     }
-    socket.send(createResponse(SUCCESS, { type: SUB, contractID }))
+    if (!socket.subscriptions.has(channelID)) {
+      // Add the given channel ID to our subscriptions.
+      socket.subscriptions.add(channelID)
+      if (!server.subscribersByChannelID[channelID]) {
+        server.subscribersByChannelID[channelID] = new Set()
+      }
+      // Add this socket to the channel subscribers.
+      server.subscribersByChannelID[channelID].add(socket)
+    } else {
+      log('Already subscribed to', channelID)
+    }
+    socket.send(createOkResponse({ type: SUB, channelID }))
   },
 
-  [UNSUB] ({ contractID, dontBroadcast }: UnsubMessage) {
+  [UNSUB] ({ channelID }: UnsubMessage) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
 
-    if (socket.subscriptions.has(contractID)) {
-      // Remove the given contract ID from our subscriptions.
-      socket.subscriptions.delete(contractID)
-      if (server.subscribersByContractID[contractID]) {
-        const subscribers = server.subscribersByContractID[contractID]
-        // Remove this socket from the subscribers of the given contract.
-        subscribers.delete(socket)
-        if (!dontBroadcast) {
-          const notification = createNotification(UNSUB, { contractID, socketID })
-          // Broadcast a notification to every other open subscriber.
-          server.broadcast(notification, { to: subscribers, except: socket })
-        }
+    if (!server.channels.has(channelID)) {
+      socket.send(createErrorResponse(
+        { type: UNSUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+    }
+    if (socket.subscriptions.has(channelID)) {
+      // Remove the given channel ID from our subscriptions.
+      socket.subscriptions.delete(channelID)
+      if (server.subscribersByChannelID[channelID]) {
+        // Remove this socket from the channel subscribers.
+        server.subscribersByChannelID[channelID].delete(socket)
       }
     }
-    socket.send(createResponse(SUCCESS, { type: UNSUB, contractID }))
+    socket.send(createOkResponse({ type: UNSUB, channelID }))
   }
 }
 
@@ -320,24 +317,24 @@ const publicMethods = {
    * @param except - A recipient to exclude. Optional.
    */
   broadcast (
-    message: Message,
+    message: Message | string,
     { to, except }: { to?: Iterable<Object>, except?: Object }
   ) {
     const server = this
 
     for (const client of to || server.clients) {
       if (client.readyState === WebSocket.OPEN && client !== except) {
-        client.send(message)
+        client.send(typeof message === 'string' ? message : JSON.stringify(message))
       }
     }
   },
 
-  // Enumerates the subscribers of a given contract.
-  * enumerateSubscribers (contractID: string): Iterable<Object> {
+  // Enumerates the subscribers of a given channel.
+  * enumerateSubscribers (channelID: string): Iterable<Object> {
     const server = this
 
-    if (contractID in server.subscribersByContractID) {
-      yield * server.subscribersByContractID[contractID]
+    if (channelID in server.subscribersByChannelID) {
+      yield * server.subscribersByChannelID[channelID]
     }
   },
 
