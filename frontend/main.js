@@ -313,6 +313,14 @@ async function startApp () {
           },
           'reconnection-succeeded' () {
             sbp('gi.ui/clearBanner')
+          },
+          'subscription-succeeded' (event) {
+            const { channelID } = event.detail
+            if (channelID in sbp('state/vuex/state').contracts) {
+              sbp('chelonia/contract/sync', channelID, { force: true }).catch(err => {
+                console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
+              })
+            }
           }
         })
       })

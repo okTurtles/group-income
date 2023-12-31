@@ -4,6 +4,22 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
+// TODO: verify these are good defaults
+const defaultOptions = {
+  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
+  pingTimeout: 45000,
+  maxReconnectionDelay: 60000,
+  maxRetries: 10,
+  minReconnectionDelay: 500,
+  reconnectOnDisconnection: true,
+  reconnectOnOnline: true,
+  // Defaults to false to avoid reconnection attempts in case the server doesn't
+  // respond because of a failed authentication.
+  reconnectOnTimeout: false,
+  reconnectionDelayGrowFactor: 2,
+  timeout: 5000
+}
+
 // ====== Event name constants ====== //
 
 export const PUBSUB_ERROR = 'pubsub-error'
@@ -11,6 +27,7 @@ export const PUBSUB_RECONNECTION_ATTEMPT = 'pubsub-reconnection-attempt'
 export const PUBSUB_RECONNECTION_FAILED = 'pubsub-reconnection-failed'
 export const PUBSUB_RECONNECTION_SCHEDULED = 'pubsub-reconnection-scheduled'
 export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
+export const PUBSUB_SUBSCRIPTION_SUCCEEDED = 'pubsub-subscription-succeeded'
 
 // ====== Types ====== //
 
@@ -40,7 +57,6 @@ export type PubSubClient = {
   nextConnectionAttemptDelayID: TimeoutID | void,
   +options: Object,
   +pendingSubscriptionSet: Set<string>,
-  pendingSyncSet: Set<string>,
   +pendingUnsubscriptionSet: Set<string>,
   pingTimeoutID: TimeoutID | void,
   shouldReconnect: boolean,
@@ -51,30 +67,28 @@ export type PubSubClient = {
   clearAllTimers(): void,
   connect(): void,
   destroy(): void,
-  pub(contractID: string, data: JSONType): void,
+  pub(channelID: string, data: JSONType): void,
   scheduleConnectionAttempt(): void,
-  sub(contractID: string): void,
-  unsub(contractID: string): void
+  sub(channelID: string): void,
+  unsub(channelID: string): void
 }
 
 export type PubMessage = {
   +type: 'pub',
-  +contractID: string,
+  +channelID: string,
   +data: JSONType
 }
 
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
-  +contractID: string,
-  +dontBroadcast: boolean
+  +channelID: string
 }
 
 export type UnsubMessage = {
   [key: string]: JSONType,
   +type: 'unsub',
-  +contractID: string,
-  +dontBroadcast: boolean
+  +channelID: string
 }
 
 // ====== Enums ====== //
@@ -98,7 +112,7 @@ export const REQUEST_TYPE = Object.freeze({
 
 export const RESPONSE_TYPE = Object.freeze({
   ERROR: 'error',
-  SUCCESS: 'success'
+  OK: 'ok'
 })
 
 export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
@@ -151,7 +165,6 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     options: { ...defaultOptions, ...options },
     // Requested subscriptions for which we didn't receive a response yet.
     pendingSubscriptionSet: new Set(),
-    pendingSyncSet: new Set(),
     pendingUnsubscriptionSet: new Set(),
     pingTimeoutID: undefined,
     shouldReconnect: true,
@@ -198,13 +211,13 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createPubMessage (contractID: string, data: JSONType): string {
-  return JSON.stringify({ type: 'pub', contractID, data })
+export function createPubMessage (channelID: string, data: JSONType): string {
+  return JSON.stringify({ type: 'pub', channelID, data })
 }
 
-export function createRequest (type: RequestTypeEnum, data: JSONObject, dontBroadcast: boolean = false): string {
+export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
-  return JSON.stringify(Object.assign({ type, dontBroadcast }, data))
+  return JSON.stringify(Object.assign({ type }, data))
 }
 
 // These handlers receive the PubSubClient instance through the `this` binding.
@@ -241,10 +254,10 @@ const defaultClientEventHandlers = {
     // If we should reconnect then consider our current subscriptions as pending again,
     // waiting to be restored upon reconnection.
     if (client.shouldReconnect) {
-      client.subscriptionSet.forEach((contractID) => {
+      client.subscriptionSet.forEach((channelID) => {
         // Skip contracts from which we had to unsubscribe anyway.
-        if (!client.pendingUnsubscriptionSet.has(contractID)) {
-          client.pendingSubscriptionSet.add(contractID)
+        if (!client.pendingUnsubscriptionSet.has(channelID)) {
+          client.pendingSubscriptionSet.add(channelID)
         }
       })
     }
@@ -349,14 +362,9 @@ const defaultClientEventHandlers = {
         client.socket?.close()
       }, options.pingTimeout)
     }
-    // Handle contract resynchronization after subscribing to a contract
-    // We need this to process events that may have happened in between our
-    // latest state and the time the subscription was set up (since only new
-    // events are sent over the web socket)
-    client.pendingSyncSet = new Set(client.pendingSubscriptionSet)
     // Send any pending subscription request.
-    client.pendingSubscriptionSet.forEach((contractID) => {
-      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { contractID }, true))
+    client.pendingSubscriptionSet.forEach((channelID) => {
+      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
     })
     // There should be no pending unsubscription since we just got connected.
   },
@@ -379,6 +387,11 @@ const defaultClientEventHandlers = {
   'reconnection-scheduled' (event: CustomEvent) {
     const { delay, nth } = event.detail
     console.info(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
+  },
+
+  'subscription-succeeded' (event: CustomEvent) {
+    const { channelID } = event.detail
+    console.debug(`[pubsub] Subscribed to channel ${channelID}`)
   }
 }
 
@@ -403,9 +416,8 @@ const defaultMessageHandlers = {
     }, client.options.pingTimeout)
   },
 
-  // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
-    const { type: messageType, data } = msg
+    const { channelID, data } = msg
 
     switch (data.type) {
       case PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING: {
@@ -413,7 +425,7 @@ const defaultMessageHandlers = {
         break
       }
       default: {
-        console.debug(`[pubsub] Ignoring ${messageType} message:`, data)
+        console.log(`[pubsub] Received data from channel ${channelID}:`, data)
       }
     }
   },
@@ -427,20 +439,19 @@ const defaultMessageHandlers = {
   },
 
   [RESPONSE_TYPE.ERROR] ({ data }) {
+    const { type, channelID, reason } = data
+    console.warn(`[pubsub] Received ERROR response for ${type} request to ${channelID}`)
     const client = this
-    const { type, contractID } = data
-    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.warn(`[pubsub] Could not subscribe to ${contractID}`)
-        client.pendingSubscriptionSet.delete(contractID)
-        client.pendingSyncSet.delete(contractID)
+        console.warn(`[pubsub] Could not subscribe to ${channelID}: ${reason}`)
+        client.pendingSubscriptionSet.delete(channelID)
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.warn(`[pubsub] Could not unsubscribe from ${contractID}`)
-        client.pendingUnsubscriptionSet.delete(contractID)
+        console.warn(`[pubsub] Could not unsubscribe from ${channelID}: ${reason}`)
+        client.pendingUnsubscriptionSet.delete(channelID)
         break
       }
       case REQUEST_TYPE.PUSH_ACTION: {
@@ -461,28 +472,20 @@ const defaultMessageHandlers = {
     }
   },
 
-  [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
+  [RESPONSE_TYPE.OK] ({ data: { type, channelID } }) {
     const client = this
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.debug(`[pubsub] Subscribed to ${contractID}`)
-        client.pendingSubscriptionSet.delete(contractID)
-        client.subscriptionSet.add(contractID)
-        if (client.pendingSyncSet.has(contractID)) {
-          // We call sync to fetch events that we may have missed while the
-          // subscription was being set up
-          // The sync must be forced because we've subscribed to the contract,
-          // and if it's not forced sync will not fetch the latest events
-          sbp('chelonia/contract/sync', contractID, { force: true })
-          client.pendingSyncSet.delete(contractID)
-        }
+        client.pendingSubscriptionSet.delete(channelID)
+        client.subscriptionSet.add(channelID)
+        sbp('okTurtles.events/emit', PUBSUB_SUBSCRIPTION_SUCCEEDED, client, { channelID })
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.debug(`[pubsub] Unsubscribed from ${contractID}`)
-        client.pendingUnsubscriptionSet.delete(contractID)
-        client.subscriptionSet.delete(contractID)
+        console.debug(`[pubsub] Unsubscribed from ${channelID}`)
+        client.pendingUnsubscriptionSet.delete(channelID)
+        client.subscriptionSet.delete(channelID)
         break
       }
       default: {
@@ -490,22 +493,6 @@ const defaultMessageHandlers = {
       }
     }
   }
-}
-
-// TODO: verify these are good defaults
-const defaultOptions = {
-  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
-  pingTimeout: 45000,
-  maxReconnectionDelay: 60000,
-  maxRetries: 10,
-  minReconnectionDelay: 500,
-  reconnectOnDisconnection: true,
-  reconnectOnOnline: true,
-  // Defaults to false to avoid reconnection attempts in case the server doesn't
-  // respond because of a failed authentication.
-  reconnectOnTimeout: false,
-  reconnectionDelayGrowFactor: 2,
-  timeout: 5000
 }
 
 const globalEventNames = ['offline', 'online']
@@ -642,31 +629,32 @@ const publicMethods = {
     sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
   },
 
-  pub (contractID: string, data: JSONType) {
+  // Can be used to send ephemeral messages outside of any contract log.
+  // Does nothing if the socket is not in the OPEN state.
+  pub (channelID: string, data: JSONType) {
     if (this.socket?.readyState === WebSocket.OPEN) {
-      console.log('[pubsub] Publishing a data: ', data)
-      this.socket.send(createPubMessage(contractID, data))
+      this.socket.send(createPubMessage(channelID, data))
     }
   },
   /**
    * Sends a SUB request to the server as soon as possible.
    *
-   * - The given contract ID will be cached until we get a relevant server
+   * - The given channel ID will be cached until we get a relevant server
    * response, allowing us to resend the same request if necessary.
    * - Any identical UNSUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to subscribe to.
+   * @param channelID - The ID of the channel whose updates we want to subscribe to.
    */
-  sub (contractID: string, dontBroadcast = false) {
+  sub (channelID: string) {
     const client = this
     const { socket } = this
 
-    if (!client.pendingSubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.add(contractID)
-      client.pendingUnsubscriptionSet.delete(contractID)
+    if (!client.pendingSubscriptionSet.has(channelID)) {
+      client.pendingSubscriptionSet.add(channelID)
+      client.pendingUnsubscriptionSet.delete(channelID)
 
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, dontBroadcast))
+        socket.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
       }
     }
   },
@@ -674,22 +662,22 @@ const publicMethods = {
   /**
    * Sends an UNSUB request to the server as soon as possible.
    *
-   * - The given contract ID will be cached until we get a relevant server
+   * - The given channel ID will be cached until we get a relevant server
    * response, allowing us to resend the same request if necessary.
    * - Any identical SUB request that has not been sent yet will be cancelled.
    * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
+   * @param channelID - The ID of the channel whose updates we want to unsubscribe from.
    */
-  unsub (contractID: string, dontBroadcast = false) {
+  unsub (channelID: string) {
     const client = this
     const { socket } = this
 
-    if (!client.pendingUnsubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.delete(contractID)
-      client.pendingUnsubscriptionSet.add(contractID)
+    if (!client.pendingUnsubscriptionSet.has(channelID)) {
+      client.pendingSubscriptionSet.delete(channelID)
+      client.pendingUnsubscriptionSet.add(channelID)
 
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
+        socket.send(createRequest(REQUEST_TYPE.UNSUB, { channelID }))
       }
     }
   }
