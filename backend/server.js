@@ -79,6 +79,7 @@ sbp('sbp/selectors/register', {
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/handleEntry': async function (entry: GIMessage) {
+    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(entry.contractID())
     await sbp('chelonia/db/addEntry', entry)
     await sbp('backend/server/broadcastEntry', entry)
   },
