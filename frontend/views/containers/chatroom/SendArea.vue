@@ -579,7 +579,7 @@ export default ({
 
         addToList(typingUser)
         clearTimeout(this.typingUserTimeoutIds[typingUser])
-        this.typingUserTimeoutIds[typingUser] = setTimeout(() => removeFromList(typingUser), 1000)
+        this.typingUserTimeoutIds[typingUser] = setTimeout(() => removeFromList(typingUser), 2500)
       }
     },
     emitUserTypingEvent () {
@@ -596,7 +596,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-send-wrapper {
-  padding: 1rem;
+  position: relative;
+  padding: 1rem 1rem 1.6rem;
 
   @include tablet {
     padding: 0 1.25rem 1.25rem 1.25rem;
@@ -851,7 +852,9 @@ export default ({
 }
 
 .c-typing-indicator {
-  position: relative;
+  position: absolute;
+  bottom: 0.2rem;
+  left: 1rem;
   display: block;
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
