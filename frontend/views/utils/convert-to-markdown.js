@@ -1,11 +1,7 @@
-import Markdown from 'markdown-it'
-// import MarkdownSlack from 'slack-markdown-it'
-
-const md = Markdown()
-// md.use(MarkdownSlack)
+import { marked } from 'marked'
 
 export function convertToMarkdown (str: string): any {
-  let converted = md.render(str)
+  let converted = marked.parse(str)
 
   // remove line-breaks at the start/end of the converted string.
   converted = converted.replace(/^\s+|\s+$/g, '')
