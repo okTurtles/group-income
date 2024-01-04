@@ -6,6 +6,7 @@ message-base(
   @reply-message-clicked='scrollToReplyMessage'
   @message-edited='editMessage'
   @delete-message='deleteMessage'
+  :convertTextToMarkdown='true'
 )
 
 </template>

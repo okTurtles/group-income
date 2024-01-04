@@ -24,7 +24,10 @@
           @click='onReplyMessageClicked'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
-            span(v-if='isText(objReplyMessage)') {{ objReplyMessage.text }}
+            span(
+              v-if='isText(objReplyMessage)'
+              v-safe-html='objReplyMessage.text'
+            )
             span.c-mention(
               v-else-if='isMention(objReplyMessage)'
               :class='{"c-mention-to-me": objReplyMessage.toMe}'
@@ -39,7 +42,10 @@
 
         p.c-text(v-else-if='text')
           template(v-for='(objText, index) in textObjects')
-            span(v-if='isText(objText)') {{ objText.text }}
+            span(
+              v-if='isText(objText)'
+              v-safe-html='objText.text'
+            )
             span.c-mention(
               v-else-if='isMention(objText)'
               :class='{"c-mention-to-me": objText.toMe}'
@@ -74,6 +80,7 @@
 </template>
 
 <script>
+import markdownit from 'markdown-it'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
@@ -84,6 +91,9 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
+const md = markdownit()
+
+console.log('@@@ md.render example: ', md.renderInline('`asdfasd` aadfasdfs'))
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
   name: 'MessageBase',
@@ -119,7 +129,8 @@ export default ({
     },
     variant: String,
     isSameSender: Boolean,
-    isCurrentUser: Boolean
+    isCurrentUser: Boolean,
+    convertTextToMarkdown: Boolean
   },
   computed: {
     ...mapGetters(['chatRoomUsers', 'ourUsername']),
@@ -184,7 +195,12 @@ export default ({
       if (!text) {
         return []
       } else if (!text.includes('@')) {
-        return [{ type: TextObjectType.Text, text }]
+        return [
+          {
+            type: TextObjectType.Text,
+            text: this.convertTextToMarkdown ? md.renderInline(text) : text
+          }
+        ]
       }
       const possibleMentions = [
         ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
@@ -195,7 +211,10 @@ export default ({
         .split(new RegExp(`(${possibleMentions.join('|')})`))
         .map(t => possibleMentions.includes(t)
           ? { type: TextObjectType.Mention, text: t }
-          : { type: TextObjectType.Text, text: t }
+          : {
+              type: TextObjectType.Text,
+              text: this.convertTextToMarkdown ? md.renderInline(t) : t
+            }
         )
     }
   }
