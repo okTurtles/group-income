@@ -26,7 +26,7 @@
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
             span(
               v-if='isText(objReplyMessage)'
-              v-safe-html='objReplyMessage.text'
+              v-safe-html:a='objReplyMessage.text'
             )
             span.c-mention(
               v-else-if='isMention(objReplyMessage)'
@@ -44,7 +44,7 @@
           template(v-for='(objText, index) in textObjects')
             span(
               v-if='isText(objText)'
-              v-safe-html='objText.text'
+              v-safe-html:a='objText.text'
             )
             span.c-mention(
               v-else-if='isMention(objText)'
