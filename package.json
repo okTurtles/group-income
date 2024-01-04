@@ -116,6 +116,7 @@
     "multihashes": "0.4.15",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
+    "slack-markdown-it": "1.0.5",
     "sqlite3": "5.1.4",
     "three": "0.151.3",
     "tweetnacl": "1.0.3",

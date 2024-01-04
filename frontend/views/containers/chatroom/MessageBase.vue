@@ -80,7 +80,6 @@
 </template>
 
 <script>
-import markdownit from 'markdown-it'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
@@ -90,10 +89,8 @@ import SendArea from './SendArea.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
-const md = markdownit()
-
-console.log('@@@ md.render example: ', md.renderInline('`asdfasd` aadfasdfs'))
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
   name: 'MessageBase',
@@ -198,7 +195,7 @@ export default ({
         return [
           {
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? md.renderInline(text) : text
+            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
           }
         ]
       }
@@ -213,7 +210,7 @@ export default ({
           ? { type: TextObjectType.Mention, text: t }
           : {
               type: TextObjectType.Text,
-              text: this.convertTextToMarkdown ? md.renderInline(t) : t
+              text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
             }
         )
     }

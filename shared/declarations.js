@@ -68,6 +68,8 @@ declare module '@sbp/okturtles.events' { declare module.exports: any }
 declare module 'favico.js' { declare module.exports: any }
 declare module 'lru-cache' { declare module.exports: any }
 declare module 'uuid' { declare module.exports: any }
+declare module 'markdown-it' { declare module.exports: any }
+declare module 'slack-markdown-it' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }

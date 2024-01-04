@@ -23,7 +23,7 @@ import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 export const defaultConfig = {
   ALLOWED_ATTR: ['class'],
-  ALLOWED_TAGS: ['b', 'br', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u', 'code'],
+  ALLOWED_TAGS: ['b', 'br', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u', 's', 'code', 'ul', 'li'],
   // This option was in the original file.
   RETURN_DOM_FRAGMENT: true
 }
