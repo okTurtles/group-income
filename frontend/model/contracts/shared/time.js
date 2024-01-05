@@ -224,8 +224,8 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
 
   if (interval >= DAYS_MILLIS * 2) {
     // Make sure to replace any ordinary space character by a non-breaking one.
-    // TODO: use .replaceAll when migrating to TS.
-    return humanDate(datems).replace(/\x20/g, '\xa0')
+    // $FlowFixMe
+    return humanDate(datems).replaceAll(' ', '\xa0')
   }
   if (interval >= DAYS_MILLIS) {
     return L('1d')
