@@ -62,17 +62,31 @@ sbp('sbp/selectors/register', {
 
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const existingSubscription = await registration.pushManager.getSubscription()
+    const messageToPushServerIfSocketOpen = (msgPayload) => {
+      // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.
+      // (context: https://github.com/okTurtles/group-income/pull/1770#discussion_r1439005731)
+
+      const readyState = pubsub.socket.readyState
+      const sendMsg = () => pubsub.socket.send(createMessage(
+        REQUEST_TYPE.PUSH_ACTION,
+        msgPayload
+      ))
+
+      if (readyState === WebSocket.CLOSED || readyState === WebSocket.CLOSING) {
+        pubsub.socket.addEventListener('open', function openHandler () {
+          sendMsg()
+          pubsub.socket.removeEventLister('open', openHandler)
+        })
+      } else { sendMsg() }
+    }
 
     if (existingSubscription) {
       // If there is an existing subscription, no need to create a new one.
       // But make sure server knows the subscription details too.
-      pubsub.socket.send(createMessage(
-        REQUEST_TYPE.PUSH_ACTION,
-        {
-          action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-          payload: JSON.stringify(existingSubscription.toJSON())
-        }
-      ))
+      messageToPushServerIfSocketOpen({
+        action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+        payload: JSON.stringify(existingSubscription.toJSON())
+      })
     } else {
       return new Promise((resolve) => {
         // Generate a new push subscription
@@ -87,13 +101,10 @@ sbp('sbp/selectors/register', {
             })
 
             // 2. Store the subscription details to the server. (server needs it to send the push notification)
-            pubsub.socket.send(createMessage(
-              REQUEST_TYPE.PUSH_ACTION,
-              {
-                action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-                payload: JSON.stringify(subscription.toJSON())
-              }
-            ))
+            messageToPushServerIfSocketOpen({
+              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+              payload: JSON.stringify(subscription.toJSON())
+            })
 
             resolve()
           } catch (err) {
@@ -102,10 +113,7 @@ sbp('sbp/selectors/register', {
           }
         })
 
-        pubsub.socket.send(createMessage(
-          REQUEST_TYPE.PUSH_ACTION,
-          { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-        ))
+        messageToPushServerIfSocketOpen({ action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY })
       })
     }
   },
