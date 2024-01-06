@@ -1,7 +1,26 @@
 import { marked } from 'marked'
 
+marked.use({
+  extensions: [{
+    name: 'em',
+    level: 'inline',
+    renderer (token) {
+      // custom renderer that converts *content* into <strong>content</strong>.
+      // (reference: https://marked.js.org/using_pro#renderer)
+
+      const rawTxt = token.raw
+      const content = token.text
+      return /^\*.+\*$/.test(rawTxt)
+        ? `<strong>${content}</strong>`
+        : `<em>${content}</em>`
+    }
+  }]
+})
+
 export function convertToMarkdown (str: string): any {
-  let converted = marked.parse(str)
+  let converted = marked.parse(str, {
+
+  })
 
   // remove line-breaks at the start/end of the converted string.
   converted = converted.replace(/^\s+|\s+$/g, '')
