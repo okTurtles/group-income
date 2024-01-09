@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
+import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 
 sbp('sbp/selectors/register', {
@@ -62,28 +62,30 @@ sbp('sbp/selectors/register', {
 
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const existingSubscription = await registration.pushManager.getSubscription()
-    const messageToPushServerIfSocketOpen = (msgPayload) => {
+    const messageToPushServerIfSocketConnected = (msgPayload) => {
       // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.
+      // if it is, attach a event listener to PUBSUB_RECONNECTION_SUCCEEDED sbp event.
       // (context: https://github.com/okTurtles/group-income/pull/1770#discussion_r1439005731)
 
       const readyState = pubsub.socket.readyState
-      const sendMsg = () => pubsub.socket.send(createMessage(
-        REQUEST_TYPE.PUSH_ACTION,
-        msgPayload
-      ))
+      const sendMsg = (socket) => {
+        (socket || pubsub.socket).send(createMessage(
+          REQUEST_TYPE.PUSH_ACTION,
+          msgPayload
+        ))
+      }
 
       if (readyState === WebSocket.CLOSED || readyState === WebSocket.CLOSING) {
-        pubsub.socket.addEventListener('open', function openHandler () {
-          sendMsg()
-          pubsub.socket.removeEventLister('open', openHandler)
-        })
-      } else { sendMsg() }
+        sbp('okTurtles.events/once', PUBSUB_RECONNECTION_SUCCEEDED, sendMsg)
+      } else {
+        sendMsg()
+      }
     }
 
     if (existingSubscription) {
       // If there is an existing subscription, no need to create a new one.
       // But make sure server knows the subscription details too.
-      messageToPushServerIfSocketOpen({
+      messageToPushServerIfSocketConnected({
         action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
         payload: JSON.stringify(existingSubscription.toJSON())
       })
@@ -101,7 +103,7 @@ sbp('sbp/selectors/register', {
             })
 
             // 2. Store the subscription details to the server. (server needs it to send the push notification)
-            messageToPushServerIfSocketOpen({
+            messageToPushServerIfSocketConnected({
               action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
               payload: JSON.stringify(subscription.toJSON())
             })
@@ -113,7 +115,7 @@ sbp('sbp/selectors/register', {
           }
         })
 
-        messageToPushServerIfSocketOpen({ action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY })
+        messageToPushServerIfSocketConnected({ action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY })
       })
     }
   },
