@@ -24,7 +24,7 @@
           @click='onReplyMessageClicked'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
-            span(
+            span.custom-markdown-content(
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
@@ -42,7 +42,7 @@
 
         p.c-text(v-else-if='text')
           template(v-for='(objText, index) in textObjects')
-            span(
+            span.custom-markdown-content(
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )

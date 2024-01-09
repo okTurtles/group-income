@@ -18,15 +18,14 @@ marked.use({
 })
 
 export function convertToMarkdown (str: string): any {
-  let converted = marked.parse(str, {
+  let converted = marked.parse(str, {})
 
-  })
-
-  // remove line-breaks at the start/end of the converted string.
+  // remove unecessary line-breaks from the converted markdown outcome.
   converted = converted.replace(/^\s+|\s+$/g, '')
+    .replace(/>\s+</g, '><')
 
   // if the original string doesn't have a line-break within it,
-  // the converted outcome doesn't need to be wrapped with <p></p>
+  // the converted outcome doesn't need to be wrapped with <p></p>.
   if (!str.includes('\n')) {
     converted = converted.replace(/^<p>|<\/p>$/g, '')
   }

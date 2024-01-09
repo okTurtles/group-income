@@ -1,0 +1,23 @@
+.custom-markdown-content {
+  // style declarations for custom markdown html output content
+  code {
+    display: inline-block;
+    border-radius: $radius;
+    padding: 0.25rem;
+    line-height: 1;
+    font-size: $size_5;
+    background-color: $general_1;
+    color: $warning_0;
+  }
+
+  pre > code {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    background-color: $general_1;
+  }
+
+  * + pre {
+    margin-top: 0.25rem;
+  }
+}
