@@ -123,7 +123,8 @@ export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
 })
 
 export const PUBSUB_EVENT_TYPE = Object.freeze({
-  CHATROOM_USER_TYPING: 'chatroom-user-typing'
+  CHATROOM_USER_TYPING: 'chatroom-user-typing',
+  CHATROOM_USER_STOP_TYPING: 'chatroom-user-stop-typing'
 })
 
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
@@ -422,6 +423,11 @@ const defaultMessageHandlers = {
     switch (data.type) {
       case PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING: {
         sbp('okTurtles.events/emit', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, { username: data.username })
+        break
+      }
+      case PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING: {
+        console.log('$$$ Received PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING in the pub handler!!!')
+        sbp('okTurtles.events/emit', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, { username: data.username })
         break
       }
       default: {

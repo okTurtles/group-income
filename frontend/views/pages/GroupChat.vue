@@ -110,6 +110,7 @@ import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 
 export default ({
   name: 'GroupChat',
@@ -188,10 +189,16 @@ export default ({
         }
       }
 
+      // Unsubscribe from the CHATROOM_UI pubsub channel for the previous chatroom,
+      // and then subscribe to the one for the currently active chatroom.
+      const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+      const sub = chatroomId => pubsub.sub(`CHATROOM_UI-${chatroomId}`, true)
+      const unsub = chatroomId => pubsub.unsub(`CHATROOM_UI-${chatroomId}`, true)
+
       if (prevChatRoomId) {
-        sbp('gi.actions/chatroom/pubsub/unsub', prevChatRoomId)
+        unsub(prevChatRoomId)
       }
-      sbp('gi.actions/chatroom/pubsub/sub', chatRoomId)
+      sub(chatRoomId)
     }
   }
 }: Object)

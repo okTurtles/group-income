@@ -220,7 +220,7 @@ export default ({
         typingUsers: []
       },
       typingUserTimeoutIds: {},
-      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 200)
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
     }
   },
   watch: {
@@ -251,10 +251,12 @@ export default ({
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/on', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/off', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/off', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   computed: {
     ...mapGetters([
@@ -386,7 +388,6 @@ export default ({
         e.preventDefault()
       } else {
         this.updateTextArea()
-        this.throttledEmitUserTypingEvent()
       }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
@@ -409,6 +410,14 @@ export default ({
       const newValue = this.$refs.textarea.value
       if (this.ephemeral.textWithLines === newValue) {
         return false
+      }
+
+      if (!newValue) {
+        // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
+        sbp('gi.actions/chatroom/emit-user-stop-typing-event', this.currentChatRoomId, this.ourUsername)
+      } else if (this.ephemeral.textWithLines.length < newValue.length) {
+        // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
+        this.throttledEmitUserTypingEvent()
       }
 
       this.ephemeral.textWithLines = newValue
@@ -563,26 +572,35 @@ export default ({
       }
     },
     onUserTyping (data) {
+      console.log('$$$$ here!!! : ', data)
       const typingUser = data.username
 
       if (typingUser !== this.ourUsername) {
         const addToList = username => {
           this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
         }
-        const removeFromList = username => {
-          this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
-
-          if (this.typingUserTimeoutIds[username]) {
-            delete this.typingUserTimeoutIds[username]
-          }
-        }
 
         addToList(typingUser)
         clearTimeout(this.typingUserTimeoutIds[typingUser])
-        this.typingUserTimeoutIds[typingUser] = setTimeout(() => removeFromList(typingUser), 2500)
+        this.typingUserTimeoutIds[typingUser] = setTimeout(() => this.removeFromTypingUsersArray(typingUser), 30 * 1000)
+      }
+    },
+    onUserStopTyping (data) {
+      console.log('$$$ inside onUserStopTyping!! : ', data, this.ourUsername)
+      if (data.username !== this.ourUsername) {
+        this.removeFromTypingUsersArray(data.username)
+      }
+    },
+    removeFromTypingUsersArray (username) {
+      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
+
+      if (this.typingUserTimeoutIds[username]) {
+        clearTimeout(this.typingUserTimeoutIds[username])
+        delete this.typingUserTimeoutIds[username]
       }
     },
     emitUserTypingEvent () {
+      console.log('$$$$ emitting user-typing event ...')
       sbp('gi.actions/chatroom/emit-user-typing-event',
         this.currentChatRoomId,
         this.ourUsername

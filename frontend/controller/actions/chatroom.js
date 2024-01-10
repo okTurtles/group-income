@@ -183,17 +183,16 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/chatroom/pubsub/sub': (chatroomContractID: string) => {
+  'gi.actions/chatroom/emit-user-typing-event': (chatroomId: string, username: string) => {
+    // publish PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING event to every subscribers of CHATROOM_UI-chatroomContractID
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.sub(chatroomContractID, true)
+    pubsub.pub(`CHATROOM_UI-${chatroomId}`, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, username })
   },
-  'gi.actions/chatroom/pubsub/unsub': (chatroomContractID: string) => {
+  'gi.actions/chatroom/emit-user-stop-typing-event': (chatroomId: string, username: string) => {
+    console.log('$$$ Emitting user-stop-typing event!!!')
+    // publish PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING event to every subscribers of CHATROOM_UI-chatroomContractID
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.unsub(chatroomContractID, true)
-  },
-  'gi.actions/chatroom/emit-user-typing-event': (chatroomContractID: string, username: string) => {
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomContractID, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, username })
+    pubsub.pub(`CHATROOM_UI-${chatroomId}`, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, username })
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
