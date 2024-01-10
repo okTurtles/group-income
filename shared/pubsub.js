@@ -426,7 +426,6 @@ const defaultMessageHandlers = {
         break
       }
       case PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING: {
-        console.log('$$$ Received PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING in the pub handler!!!')
         sbp('okTurtles.events/emit', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, { username: data.username })
         break
       }

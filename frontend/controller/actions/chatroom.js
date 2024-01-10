@@ -189,7 +189,6 @@ export default (sbp('sbp/selectors/register', {
     pubsub.pub(chatroomId, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, username })
   },
   'gi.actions/chatroom/emit-user-stop-typing-event': (chatroomId: string, username: string) => {
-    console.log('$$$ Emitting user-stop-typing event!!!')
     // publish PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING event to every subscribers of the pubsub channel with chatroomId
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     pubsub.pub(chatroomId, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, username })

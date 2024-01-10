@@ -572,7 +572,6 @@ export default ({
       }
     },
     onUserTyping (data) {
-      console.log('$$$$ here!!! : ', data)
       const typingUser = data.username
 
       if (typingUser !== this.ourUsername) {
@@ -586,7 +585,6 @@ export default ({
       }
     },
     onUserStopTyping (data) {
-      console.log('$$$ inside onUserStopTyping!! : ', data, this.ourUsername)
       if (data.username !== this.ourUsername) {
         this.removeFromTypingUsersArray(data.username)
       }
@@ -600,7 +598,6 @@ export default ({
       }
     },
     emitUserTypingEvent () {
-      console.log('$$$$ emitting user-typing event ...')
       sbp('gi.actions/chatroom/emit-user-typing-event',
         this.currentChatRoomId,
         this.ourUsername
@@ -618,7 +615,7 @@ export default ({
   padding: 1rem 1rem 1.6rem;
 
   @include tablet {
-    padding: 0 1.25rem 1.25rem 1.25rem;
+    padding: 0 1.25rem 1.6rem 1.25rem;
   }
 
   &.is-public {
