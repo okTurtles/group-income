@@ -268,7 +268,10 @@ const defaultMessageHandlers = {
     const { server } = this
 
     if (!server.channels.has(channelID)) {
-      server.channels.add(channelID)
+      socket.send(createErrorResponse(
+        { type: SUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+      return
     }
 
     if (!socket.subscriptions.has(channelID)) {
