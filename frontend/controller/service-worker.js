@@ -69,7 +69,7 @@ sbp('sbp/selectors/register', {
 
       const readyState = pubsub.socket.readyState
       const sendMsg = (socket) => {
-        (socket || pubsub.socket).send(createMessage(
+        pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,
           msgPayload
         ))
