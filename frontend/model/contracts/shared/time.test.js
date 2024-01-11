@@ -63,10 +63,10 @@ describe('timeSince', function () {
     )).equal('1d')
   })
 
-  it('should return current day when +48h have passed', () => {
+  it('should return current day (with non-breaking space) when +48h have passed', () => {
     should(timeSince(
       currentDate - DAYS_MILLIS * 23,
       currentDate
-    )).equal('May 7')
+    )).equal('May\xa07')
   })
 })
