@@ -15,9 +15,50 @@
     width: 100%;
     padding: 0.5rem;
     background-color: $general_1;
+    line-height: 1.4;
   }
 
-  * + pre {
+  * + pre,
+  * + blockquote {
     margin-top: 0.25rem;
+  }
+
+  em {
+    color: $text_1;
+  }
+
+  ul li {
+    position: relative;
+    display: block;
+    padding: 0 0 0.2rem 1.25rem;
+
+    &::before {
+      content: "";
+      position: absolute;
+      display: block;
+      left: 0.2rem;
+      top: 0.5rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background-color: $text_0;
+    }
+  }
+
+  blockquote {
+    position: relative;
+    padding-left: 1rem;
+
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      left: 0;
+      width: 4px;
+      top: 0;
+      bottom: 0;
+      border-radius: 8px;
+      background-color: $general_0;
+    }
   }
 }
