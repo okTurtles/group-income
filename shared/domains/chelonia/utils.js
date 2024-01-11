@@ -374,7 +374,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = (entry: GIMessage, state: Object, contractsState: Object): Promise<typeof undefined | GIMessage> => {
+export const recreateEvent = (entry: GIMessage, state: Object, contractsState: Object): typeof undefined | GIMessage => {
   const { HEAD: previousHEAD, height: previousHeight } = contractsState || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')

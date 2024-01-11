@@ -289,6 +289,7 @@ export default (sbp('sbp/selectors/register', {
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
+        // $FlowFixMe[incompatible-use]
         Object.entries(state.contracts).forEach(([id, { type }]) => {
           if (!contractIDs[type]) {
             contractIDs[type] = []
