@@ -180,6 +180,19 @@ sbp('chelonia/defineContract', {
             return
           }
 
+          return inviteSecretId
+        }).then((inviteSecretId) => {
+          // Calling 'gi.actions/group/join' here _after_ queueInvoication
+          // and not inside of it.
+          // This is because 'gi.actions/group/join' might (depending on
+          // where we are at in the process of joining a group) call
+          // 'chelonia/out/keyRequest'. If this happens, it will block
+          // on the group contract queue (as normal and expected), but it
+          // will **ALSO** block on the current identity contract, which
+          // is already blocked by queueInvocation. This would result in
+          // a deadlock.
+          if (!inviteSecretId) return
+
           return sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
@@ -187,10 +200,7 @@ sbp('chelonia/defineContract', {
             contractName: 'gi.contracts/group',
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
-            blockOriginatingContract: false
-          }).catch(e => {
-            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
           })
         }).catch(e => {
           console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)

@@ -2,9 +2,7 @@
 
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
-  CHATROOM_GENERAL_NAME,
   CHATROOM_PRIVACY_LEVEL,
-  CHATROOM_TYPES,
   INVITE_EXPIRES_IN_DAYS,
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
@@ -174,6 +172,12 @@ export default (sbp('sbp/selectors/register', {
           }
         ],
         data: {
+          invites: {
+            [inviteKeyId]: {
+              creator: INVITE_INITIAL_CREATOR,
+              inviteKeyId
+            }
+          },
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: name,
@@ -216,44 +220,14 @@ export default (sbp('sbp/selectors/register', {
         () => [CEK, CSK, inviteKey].map(key => ({ key }))
       )
 
-      // Save the initial invite
-      await sbp('gi.actions/group/invite', {
-        contractID,
-        data: {
-          inviteKeyId,
-          creator: INVITE_INITIAL_CREATOR
-        },
-        // The initial invite does not have an inner signature as it's part
-        // of the group creation process
-        innerSigningContractID: null
-      })
-
-      // create a 'General' chatroom contract
-      await sbp('gi.actions/group/addChatRoom', {
-        contractID,
-        data: {
-          attributes: {
-            name: CHATROOM_GENERAL_NAME,
-            type: CHATROOM_TYPES.GROUP,
-            description: '',
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
-          }
-        },
-        signingKeyId: CSKid,
-        encryptionKeyId: CEKid,
-        // The #General chatroom does not have an inner signature as it's part
-        // of the group creation process
-        innerSigningContractID: null
-      })
-
-      await sbp('gi.actions/identity/joinGroup', {
+      await sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/joinGroup', {
         contractID: userID,
         data: {
           groupContractID: contractID,
           inviteSecret: serializeKey(CSK, true),
           creator: true
         }
-      })
+      }])
 
       return message
     } catch (e) {
@@ -283,7 +257,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { blockOriginatingContract?: boolean }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const rootState = sbp('state/vuex/state')
@@ -349,15 +323,26 @@ export default (sbp('sbp/selectors/register', {
       // After syncing the group contract, we send a key request
       if (sendKeyRequest) {
         // Send the key request
-        // We cannot await because this may be called from a section that is
-        // already waiting on the identity contract. Calls to keyRequest require
-        // simultaneously waiting on the group and the identity contract.
-        const keyRequestPromise = sbp('chelonia/out/keyRequest', {
+        // **IMPORTANT**: DO NOT AWAIT ON /join from a function that is
+        // already waiting on the identity contract. Details:
+        // The way that chelonia/out/keyRequest works is by sending two
+        // messages to connect both contracts together.
+        // The first step is adding a new key to the identity contract.
+        // This new key has OP_KEY_SHARE permissions, as well as the
+        // permissions specified in the parameters.
+        // The second stap is sending an OP_KEY_REQUEST message to the
+        // group contract.
+        // Note that this is a two-step process that involves writing to
+        // two contracts: the current group contract and the originating
+        // (identity) contract. Calls to keyRequest require
+        // simultaneously waiting on the group and the identity
+        // (originating) contract.
+        await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
           permissions: [GIMessage.OP_ACTION_ENCRYPTED],
           allowedActions: ['gi.contracts/identity/joinDirectMessage'],
-          fullEncryption: true,
+          encryptKeyRequestMetadata: true,
           hooks: {
             prepublish: params.hooks?.prepublish,
             postpublish: null
@@ -366,10 +351,6 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
           throw e
         })
-
-        if (params.blockOriginatingContract !== false) {
-          await keyRequestPromise
-        }
 
         // Nothing left to do until the keys are received
 
@@ -424,6 +405,7 @@ export default (sbp('sbp/selectors/register', {
 
             // Send inviteAccept action to the group to add ourselves to the
             // members list
+            await sbp('chelonia/contract/wait', params.contractID)
             await sbp('gi.actions/group/inviteAccept', {
               ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
               hooks: {

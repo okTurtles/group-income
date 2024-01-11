@@ -19,6 +19,7 @@ import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
+import { JOINED_GROUP } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 
 export default ({
@@ -32,6 +33,7 @@ export default ({
       ephemeral: {
         groupIdWhenMounted: null,
         groupJoined: false,
+        isJoining: false,
         settings: {}
       }
     }
@@ -43,6 +45,9 @@ export default ({
       if (!this.ephemeral.groupIdWhenMounted) return
       return this.$store.state[this.ephemeral.groupIdWhenMounted]
     },
+    isJoining () {
+      return this.ephemeral.isJoining && sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+    },
     haveActiveGroupProfile () {
       const state = this.groupState
       return (
@@ -52,13 +57,24 @@ export default ({
         // the state after receiving new private keys)
         !sbp('chelonia/contract/isResyncing', state) &&
         // And finally, we want the join process to be complete
-        !sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+        !this.isJoining
       )
     }
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
     this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
+    this.ephemeral.isJoining = sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+    if (this.ephemeral.isJoining) {
+      const handler = ({ contractID }) => {
+        if (contractID === this.ephemeral.groupIdWhenMounted) {
+          this.ephemeral.isJoining = false
+          // TODO: Remove when unmounted
+          sbp('okTurtles.events/off', handler)
+        }
+      }
+      sbp('okTurtles.events/on', JOINED_GROUP, handler)
+    }
   },
   watch: {
     groupState (to) {

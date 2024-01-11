@@ -220,6 +220,7 @@ export default (sbp('sbp/selectors/register', {
         confirm: window.confirm,
         prompt: window.prompt
       }),
+      isNaN,
       console,
       Object,
       Error,

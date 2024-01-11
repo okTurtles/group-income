@@ -120,7 +120,7 @@ async function startApp () {
           'chelonia/contract/waitingForKeyShareTo',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves',
-          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
+          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
           'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
           'gi.notifications/emit',

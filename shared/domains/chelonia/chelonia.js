@@ -127,7 +127,7 @@ export type ChelKeyRequestParams = {
   innerSigningKeyId: string;
   encryptionKeyId: string;
   innerEncryptionKeyId: string;
-  fullEncryption?: boolean;
+  encryptKeyRequestMetadata?: boolean;
   permissions?: '*' | string[];
   allowedActions?: '*' | string[];
   hooks?: {
@@ -431,7 +431,10 @@ export default (sbp('sbp/selectors/register', {
   },
   // The purpose of the 'chelonia/crypto/*' selectors is so that they can be called
   // from contracts without including the crypto code (i.e., importing crypto.js)
-  'chelonia/crypto/keyId': (inKeyFn: () => Key | string) => {
+  // This function takes a function as a parameter that returns a string
+  // It does not a string directly to prevent accidentally logging the value,
+  // which is a secret
+  'chelonia/crypto/keyId': (inKeyFn: { (): Key | string }) => {
     return keyId(inKeyFn())
   },
   // TODO: allow connecting to multiple servers at once
@@ -985,7 +988,7 @@ export default (sbp('sbp/selectors/register', {
     return msg
   },
   'chelonia/out/keyRequest': async function (params: ChelKeyRequestParams): Promise<?GIMessage> {
-    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, fullEncryption } = params
+    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, encryptKeyRequestMetadata } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const originatingManifestHash = this.config.contracts.manifests[originatingContractName]
     const contract = this.manifestToContract[manifestHash]?.contract
@@ -1038,7 +1041,7 @@ export default (sbp('sbp/selectors/register', {
               shareable: false
             },
             keyRequest: {
-              contractID: fullEncryption ? encryptedOutgoingData(originatingContractID, encryptionKeyId, contractID) : contractID
+              contractID: encryptKeyRequestMetadata ? encryptedOutgoingData(originatingContractID, encryptionKeyId, contractID) : contractID
             }
           },
           data: keyRequestReplyKeyP
@@ -1058,7 +1061,7 @@ export default (sbp('sbp/selectors/register', {
         op: [
           GIMessage.OP_KEY_REQUEST,
           signedOutgoingData(contractID, params.signingKeyId,
-            fullEncryption
+            encryptKeyRequestMetadata
               ? (encryptedOutgoingData(contractID, innerEncryptionKeyId, payload): any)
               : payload, this.transientSecretKeys
           )
