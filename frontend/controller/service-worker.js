@@ -65,11 +65,11 @@ sbp('sbp/selectors/register', {
       ))
     } else {
       return new Promise((resolve) => {
-        try {
-          // Generate a new push subscription
-          sbp('okTurtles.events/once', REQUEST_TYPE.PUSH_ACTION, async ({ data }) => {
-            const PUBLIC_VAPID_KEY = data
+        // Generate a new push subscription
+        sbp('okTurtles.events/once', REQUEST_TYPE.PUSH_ACTION, async ({ data }) => {
+          const PUBLIC_VAPID_KEY = data
 
+          try {
             // 1. Add a new subscription to pushManager using it.
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
@@ -86,16 +86,16 @@ sbp('sbp/selectors/register', {
             ))
 
             resolve()
-          })
+          } catch (err) {
+            console.error('[sw] service-worker/setup-push-subscription failed with the following error: ', err)
+            resolve()
+          }
+        })
 
-          pubsub.socket.send(createMessage(
-            REQUEST_TYPE.PUSH_ACTION,
-            { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-          ))
-        } catch (err) {
-          console.error('[sw] service-worker/setup-push-subscription failed with the following error: ', err)
-          resolve()
-        }
+        pubsub.socket.send(createMessage(
+          REQUEST_TYPE.PUSH_ACTION,
+          { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
+        ))
       })
     }
   },
