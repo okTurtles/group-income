@@ -21,12 +21,7 @@ sbp('sbp/selectors/register', {
 
         // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
         await swRegistration.update()
-
-        const recursiveUpdate = async () => {
-          await sbp('service-worker/update')
-          setTimeout(recursiveUpdate, HOURS_MILLIS)
-        }
-        setTimeout(recursiveUpdate, HOURS_MILLIS)
+        setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
@@ -68,7 +63,7 @@ sbp('sbp/selectors/register', {
       // (context: https://github.com/okTurtles/group-income/pull/1770#discussion_r1439005731)
 
       const readyState = pubsub.socket.readyState
-      const sendMsg = (socket) => {
+      const sendMsg = () => {
         pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,
           msgPayload
