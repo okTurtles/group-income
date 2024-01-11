@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 
 import Colors from './colors.js'
-import { LOGOUT, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from './themes.js'
 
@@ -11,6 +11,15 @@ const checkSystemColor = () => {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches
     ? THEME_DARK
     : THEME_LIGHT
+}
+
+const updateMetaThemeTag = (theme: string) => {
+  // update the content of <meta name='theme-color' /> according to the changed theme
+  const metaTag: any = document.querySelector('meta[name="theme-color"]')
+
+  if (metaTag) {
+    metaTag.content = theme === THEME_DARK ? '#2E3032' : '#F5F5F5'
+  }
 }
 
 const defaultTheme = 'system'
@@ -72,12 +81,18 @@ const mutations = {
   },
   setTheme (state, theme) {
     state.theme = theme
-    state.themeColor = theme === 'system' ? checkSystemColor() : theme
+
+    const themeColor = theme === 'system' ? checkSystemColor() : theme
+    state.themeColor = themeColor
+    sbp('okTurtles.events/emit', THEME_CHANGE, themeColor)
   }
 }
 
 // Default application settings must apply again when we're no longer logged in (#1344).
 sbp('okTurtles.events/on', LOGOUT, () => sbp('state/vuex/commit', 'resetSettings'))
+
+// make sure to set the status bar color according to the theme setting change.
+sbp('okTurtles.events/on', THEME_CHANGE, updateMetaThemeTag)
 
 export default ({
   state: () => cloneDeep(defaultSettings),
