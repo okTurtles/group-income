@@ -1,5 +1,7 @@
 'use strict'
 
+if (process.env.CI) process.exit(1)
+
 // =======================
 // Entry point.
 //
@@ -171,6 +173,7 @@ module.exports = (grunt) => {
       `${distCSS}/**/*`
     ],
     ghostMode: false,
+    logConnections: true,
     logLevel: grunt.option('debug') ? 'debug' : 'info',
     open: false,
     port: 3000,
@@ -381,19 +384,90 @@ module.exports = (grunt) => {
     }
   })
 
+  let child = null
+
+  // Task functions
+
+  const copyTo = (to) => (filepath) => copyFile(filepath, path.join(to, path.basename(filepath)))
+
+  const launch = () => {
+    console.log('backend: launching...')
+    // Provides Babel support for the backend files.
+    require('@babel/register')
+    return require(backendIndex)
+  }
+
+  // Schedules a backend restart.
+  // Warning: this function returns immediately. If any, the older instance
+  // won't have stopped yet, `child` will still refer to it, and the new backend
+  // won't be ready yet.
+  const relaunch = () => {
+    console.log('backend: relaunching...')
+    const fork2 = () => {
+      console.log('backend: forking...')
+      child = fork(backendIndex, process.argv, {
+        env: process.env,
+        execArgv: ['--require', '@babel/register']
+      })
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          console.error(`child exited with error code: ${c}`.bold)
+          // ^C can cause c to be null, which is an OK error.
+          process.exit(c || 0)
+        }
+      })
+    }
+    if (child) {
+      // Wait for successful shutdown to avoid EADDRINUSE errors.
+      stop().then(() => fork2())
+    } else {
+      fork2()
+    }
+  }
+
+  const stop = () => new Promise((resolve, reject) => {
+    console.log('backend: stopping...')
+    if (!child) {
+      return resolve()
+    }
+    child.on('message', () => {
+      child = null
+      resolve()
+    })
+    child.send({ shutdown: 1 })
+  })
+
+  // Wait for the server to be ready.
+  const waitUntilServerIsReady = () => {
+    const t0 = Date.now()
+    const timeout = 10000
+    return new Promise((resolve, reject) => {
+      (function ping () {
+        fetch(process.env.API_URL).then(resolve).catch(() => {
+          if (Date.now() > t0 + timeout) {
+            reject(new Error('Server startup timed out.'))
+          } else {
+            setTimeout(ping, 100)
+          }
+        })
+      })()
+    })
+  }
+
   // -------------------------------------------------------------------------
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  let child = null
-
   // Useful helper task for `grunt test`.
   grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async()
-    grunt.log.writeln('backend: launching...')
-    // Provides Babel support for the backend files.
-    require('@babel/register')
-    require(backendIndex).then(done).catch(done)
+    launch().then(done)
   })
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
@@ -503,10 +577,6 @@ module.exports = (grunt) => {
   grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
-  // --------------------
-  // - Our esbuild task
-  // --------------------
-
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
@@ -556,21 +626,21 @@ module.exports = (grunt) => {
     const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
     const puglint = require('./scripts/esbuild-plugins/utils.js').createPuglinter(puglintOptions)
     const stylelint = require('./scripts/esbuild-plugins/utils.js').createStylelinter(stylelintOptions)
+    const linters = [eslint, puglint, stylelint]
     const { chalkFileEvent, chalkLintingTime } = require('./scripts/esbuild-plugins/utils.js')
 
     // BrowserSync setup.
     const browserSync = require('browser-sync').create('esbuild')
-    browserSync.init(browserSyncOptions)
-
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
-      [['frontend/**/*.html'], ['copy']],
+      [['backend/**/*.js'], [eslint, relaunch]],
+      [['frontend/**/*.html'], [copyTo(distDir)]],
       [['frontend/**/*.js'], [eslint]],
-      [['frontend/assets/{fonts,images}/**/*'], ['copy']],
+      [['frontend/assets/{fonts,images}/**/*'], [copyTo(distAssets)]],
       [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/assets/svgs/**/*.svg'], []],
-      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
+      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
+      [['shared/**/*.js'], [eslint, relaunch, waitUntilServerIsReady]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (fileEventName, filePath) => {
@@ -580,15 +650,15 @@ module.exports = (grunt) => {
           if (fileEventName === 'add' || fileEventName === 'change') {
             // Read and lint the changed file.
             const code = await readFile(filePath, 'utf8')
-            const linters = tasks.filter(task => typeof task === 'object')
+            const lintersToRun = tasks.filter(task => linters.includes(task))
             const lintingStartMs = Date.now()
 
-            await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+            await Promise.all(lintersToRun.map(linter => linter.lintCode(code, filePath)))
               // Don't crash the Grunt process on lint errors.
               .catch(() => {})
 
             // Log the linting time, formatted with Chalk.
-            grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
+            grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, lintersToRun, [filePath]))
           }
 
           if (fileEventName === 'change' || fileEventName === 'unlink') {
@@ -605,6 +675,11 @@ module.exports = (grunt) => {
             if (['.sass', '.scss', '.svg'].includes(extension)) {
               vuePluginOptions.cache.clear()
             }
+          }
+          // We're done with linting new or changed files and updating plugin caches.
+          // Run remaining tasks to make sure everything is ready before rebuilding.
+          for (const task of tasks.filter(task => !linters.includes(task) && typeof task === 'function')) {
+            await task()
           }
           // Only rebuild the relevant entry point.
           try {
@@ -626,16 +701,16 @@ module.exports = (grunt) => {
           } catch (error) {
             grunt.log.error(error.message)
           }
-          grunt.task.run(tasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])
-
           // Allow the task queue to move forward.
           killKeepAlive && killKeepAlive()
         })
       })
     })
-    grunt.log.writeln(chalk`{green browsersync:} setup done!`)
-    done()
+    browserSync.init(browserSyncOptions, () => {
+      grunt.log.writeln(chalk`{green browsersync:} setup done!`)
+      done()
+    })
   })
 
   // eslint-disable-next-line no-unused-vars
