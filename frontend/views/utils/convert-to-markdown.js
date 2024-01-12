@@ -1,20 +1,30 @@
 import { marked } from 'marked'
 
 marked.use({
-  extensions: [{
-    name: 'em',
-    level: 'inline',
-    renderer (token) {
-      // custom renderer that converts *content* into <strong>content</strong>.
-      // (reference: https://marked.js.org/using_pro#renderer)
+  extensions: [
+    {
+      name: 'em',
+      level: 'inline',
+      renderer (token) {
+        // custom renderer that converts *content* into <strong>content</strong>.
+        // (reference: https://marked.js.org/using_pro#renderer)
 
-      const rawTxt = token.raw
-      const content = token.text
-      return /^\*.+\*$/.test(rawTxt)
-        ? `<strong>${content}</strong>`
-        : `<em>${content}</em>`
+        const rawTxt = token.raw
+        const content = token.text
+        return /^\*.+\*$/.test(rawTxt)
+          ? `<strong>${content}</strong>`
+          : `<em>${content}</em>`
+      }
+    },
+    {
+      name: 'link',
+      level: 'inline',
+      renderer (token) {
+        // custom renderer for <a> tag for setting target='_blank' to the output HTML
+        return `<a href='${token.href}' target='_blank'>${token.text}</a>`
+      }
     }
-  }]
+  ]
 })
 
 export function convertToMarkdown (str: string): any {
