@@ -14,11 +14,12 @@ import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
 import './controller/service-worker.js'
+import '~/shared/domains/chelonia/persistent-actions.js'
 import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -46,6 +47,7 @@ const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
@@ -309,19 +311,23 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
-
-      sbp('okTurtles.events/on', LOGIN, () => {
+      sbp('okTurtles.events/on', LOGIN, async () => {
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
+        const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
+        sbp('chelonia.persistentActions/configure', { databaseKey })
+        await sbp('chelonia.persistentActions/load')
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
+        // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+        sbp('chelonia.persistentActions/unload')
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
         this.initOrResetPeriodicNotifications()
@@ -373,6 +379,7 @@ async function startApp () {
         )
       }
 
+      sbp('okTurtles.events/emit', THEME_CHANGE, this.$store.state.settings.themeColor)
       this.setBadgeOnTab()
     },
     computed: {
