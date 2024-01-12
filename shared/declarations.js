@@ -91,3 +91,4 @@ declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
+declare module '@controller/instance-keys.js' { declare module.exports: any }

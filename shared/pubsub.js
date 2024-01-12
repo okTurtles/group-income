@@ -623,7 +623,6 @@ const publicMethods = {
       this.socket.send(createPubMessage(channelID, data))
     }
   },
-
   /**
    * Sends a SUB request to the server as soon as possible.
    *

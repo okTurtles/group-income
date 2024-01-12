@@ -2,6 +2,8 @@
 .c-send-wrapper(
   :class='{"is-public": isPublicChannel}'
 )
+  .c-typing-indicator(v-if='typingIndicatorSentence' v-safe-html='typingIndicatorSentence')
+
   .c-public-helper(v-if='isPublicChannel')
     i.icon-exclamation-triangle.is-prefix
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
@@ -145,6 +147,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
@@ -154,7 +157,8 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
+import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -211,8 +215,11 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [] // [ { url: instace of URL.createObjectURL , name: string }, ... ]
-      }
+        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        typingUsers: []
+      },
+      typingUserTimeoutIds: {},
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
     }
   },
   watch: {
@@ -242,16 +249,22 @@ export default ({
     this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/on', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   computed: {
     ...mapGetters([
       'chatRoomUsers',
       'currentChatRoomId',
       'chatRoomAttributes',
-      'ourContactProfiles'
+      'ourContactProfiles',
+      'globalProfile',
+      'ourUsername'
     ]),
     users () {
       return Object.keys(this.chatRoomUsers)
@@ -277,6 +290,21 @@ export default ({
     },
     supportedFileExtensions () {
       return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
+    },
+    typingIndicatorSentence () {
+      const userArr = this.ephemeral.typingUsers
+
+      if (userArr.length) {
+        const getDisplayName = (username) => (this.globalProfile(username).displayName || username)
+        const isMultiple = userArr.length > 1
+        const usernameCombined = userArr.map(u => getDisplayName(u)).join(', ')
+
+        return isMultiple
+          ? L('{strong_}{users}{_strong} are typing', { users: usernameCombined, ...LTags('strong') })
+          : L('{strong_}{user}{_strong} is typing', { user: usernameCombined, ...LTags('strong') })
+      } else {
+        return null
+      }
     }
   },
   methods: {
@@ -355,8 +383,11 @@ export default ({
       }
     },
     handleKeyup (e) {
-      if (e.keyCode === 13) e.preventDefault()
-      else this.updateTextArea()
+      if (e.keyCode === 13) {
+        e.preventDefault()
+      } else {
+        this.updateTextArea()
+      }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
@@ -378,6 +409,14 @@ export default ({
       const newValue = this.$refs.textarea.value
       if (this.ephemeral.textWithLines === newValue) {
         return false
+      }
+
+      if (!newValue) {
+        // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
+        sbp('gi.actions/chatroom/emit-user-stop-typing-event', this.currentChatRoomId, this.ourUsername)
+      } else if (this.ephemeral.textWithLines.length < newValue.length) {
+        // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
+        this.throttledEmitUserTypingEvent()
       }
 
       this.ephemeral.textWithLines = newValue
@@ -530,6 +569,38 @@ export default ({
       if (!element) {
         this.endMention()
       }
+    },
+    onUserTyping (data) {
+      const typingUser = data.username
+
+      if (typingUser !== this.ourUsername) {
+        const addToList = username => {
+          this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
+        }
+
+        addToList(typingUser)
+        clearTimeout(this.typingUserTimeoutIds[typingUser])
+        this.typingUserTimeoutIds[typingUser] = setTimeout(() => this.removeFromTypingUsersArray(typingUser), 30 * 1000)
+      }
+    },
+    onUserStopTyping (data) {
+      if (data.username !== this.ourUsername) {
+        this.removeFromTypingUsersArray(data.username)
+      }
+    },
+    removeFromTypingUsersArray (username) {
+      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
+
+      if (this.typingUserTimeoutIds[username]) {
+        clearTimeout(this.typingUserTimeoutIds[username])
+        delete this.typingUserTimeoutIds[username]
+      }
+    },
+    emitUserTypingEvent () {
+      sbp('gi.actions/chatroom/emit-user-typing-event',
+        this.currentChatRoomId,
+        this.ourUsername
+      )
     }
   }
 }: Object)
@@ -539,10 +610,11 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-send-wrapper {
-  padding: 1rem;
+  position: relative;
+  padding: 1rem 1rem 1.6rem;
 
   @include tablet {
-    padding: 0 1.25rem 1.25rem 1.25rem;
+    padding: 0 1.25rem 1.6rem 1.25rem;
   }
 
   &.is-public {
@@ -791,5 +863,14 @@ export default ({
   &.isActive {
     background: $primary_0;
   }
+}
+
+.c-typing-indicator {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 1rem;
+  display: block;
+  font-size: 0.675rem;
+  padding: 0.25rem 0.25rem;
 }
 </style>
