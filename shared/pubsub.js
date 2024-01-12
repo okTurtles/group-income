@@ -412,6 +412,11 @@ const defaultMessageHandlers = {
     }, client.options.pingTimeout)
   },
 
+  [NOTIFICATION_TYPE.PUB] ({ channelID, data }) {
+    console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+    // No need to reply.
+  },
+
   [NOTIFICATION_TYPE.SUB] (msg) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
