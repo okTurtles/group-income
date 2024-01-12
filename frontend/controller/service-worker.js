@@ -2,7 +2,8 @@
 
 import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, createMessage } from '~/shared/pubsub.js'
+import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
@@ -17,6 +18,10 @@ sbp('sbp/selectors/register', {
 
       if (swRegistration) {
         swRegistration.active?.postMessage({ type: 'store-client-id' })
+
+        // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
+        await swRegistration.update()
+        setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
@@ -52,17 +57,33 @@ sbp('sbp/selectors/register', {
 
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const existingSubscription = await registration.pushManager.getSubscription()
+    const messageToPushServerIfSocketConnected = (msgPayload) => {
+      // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.
+      // if it is, attach a event listener to PUBSUB_RECONNECTION_SUCCEEDED sbp event.
+      // (context: https://github.com/okTurtles/group-income/pull/1770#discussion_r1439005731)
+
+      const readyState = pubsub.socket.readyState
+      const sendMsg = () => {
+        pubsub.socket.send(createMessage(
+          REQUEST_TYPE.PUSH_ACTION,
+          msgPayload
+        ))
+      }
+
+      if (readyState === WebSocket.CLOSED || readyState === WebSocket.CLOSING) {
+        sbp('okTurtles.events/once', PUBSUB_RECONNECTION_SUCCEEDED, sendMsg)
+      } else {
+        sendMsg()
+      }
+    }
 
     if (existingSubscription) {
       // If there is an existing subscription, no need to create a new one.
       // But make sure server knows the subscription details too.
-      pubsub.socket.send(createMessage(
-        REQUEST_TYPE.PUSH_ACTION,
-        {
-          action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-          payload: JSON.stringify(existingSubscription.toJSON())
-        }
-      ))
+      messageToPushServerIfSocketConnected({
+        action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+        payload: JSON.stringify(existingSubscription.toJSON())
+      })
     } else {
       return new Promise((resolve) => {
         // Generate a new push subscription
@@ -77,13 +98,10 @@ sbp('sbp/selectors/register', {
             })
 
             // 2. Store the subscription details to the server. (server needs it to send the push notification)
-            pubsub.socket.send(createMessage(
-              REQUEST_TYPE.PUSH_ACTION,
-              {
-                action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-                payload: JSON.stringify(subscription.toJSON())
-              }
-            ))
+            messageToPushServerIfSocketConnected({
+              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+              payload: JSON.stringify(subscription.toJSON())
+            })
 
             resolve()
           } catch (err) {
@@ -92,10 +110,7 @@ sbp('sbp/selectors/register', {
           }
         })
 
-        pubsub.socket.send(createMessage(
-          REQUEST_TYPE.PUSH_ACTION,
-          { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
-        ))
+        messageToPushServerIfSocketConnected({ action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY })
       })
     }
   },
@@ -149,6 +164,26 @@ sbp('sbp/selectors/register', {
         payload: JSON.stringify(subscription.toJSON())
       }
     ))
+  },
+  'service-worker/update': async function () {
+    // This function manually checks for the service worker updates and trigger them if there are.
+    // reference-1: https://web.dev/articles/service-worker-lifecycle#manual_updates
+    // reference-2: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/update
+    if ('serviceWorker' in navigator) {
+      try {
+        const swRegistration = await navigator.serviceWorker.ready
+
+        if (swRegistration) {
+          const newRegistration = await swRegistration.update()
+          return newRegistration
+        } else {
+          console.debug('[sw] No active service-worker was found while checking for the updates.')
+          return
+        }
+      } catch (err) {
+        console.error(`[sw] Failed to update the service-worker! - ${err.message}`)
+      }
+    }
   }
 })
 
