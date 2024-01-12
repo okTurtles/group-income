@@ -395,6 +395,7 @@ export default (sbp('sbp/selectors/register', {
                     originatingContractName: 'gi.contracts/identity',
                     contractID: groupId,
                     contractName: 'gi.contracts/group',
+                    reference: state[identityContractID].groups[groupId].hash,
                     signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
                     innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
                     encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')

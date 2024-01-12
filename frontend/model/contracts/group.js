@@ -1846,8 +1846,12 @@ sbp('chelonia/defineContract', {
         return
       }
 
-      if (state.profiles?.[data.member]?.status !== PROFILE_STATUS.REMOVED || (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID))) {
-        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, JSON.parse(JSON.stringify(state.profiles)))
+      if (state.profiles?.[data.member]?.status !== PROFILE_STATUS.REMOVED) {
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, { contractID, member: data.member, status: state.profiles?.[data.member]?.status })
+        return
+      }
+      if (data.member === username && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member is currently joining`, { contractID, member: data.member, status: state.profiles?.[data.member]?.status })
         return
       }
 

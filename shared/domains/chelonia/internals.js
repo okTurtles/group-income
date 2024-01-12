@@ -506,7 +506,7 @@ export default (sbp('sbp/selectors/register', {
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, v.keys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
@@ -566,10 +566,23 @@ export default (sbp('sbp/selectors/register', {
 
         const cheloniaState = sbp(self.config.stateSelector)
 
+        // If this is a response to an OP_KEY_REQUEST (marked by the
+        // presence of the keyRequestHash attribute), then we'll mark the
+        // key request as completed
+        // TODO: Verify that the keyRequestHash is what we expect (on the
+        // other contact's state, we should have a matching structure in
+        // state._volatile.pendingKeyRequests = [
+        //    { contractID: "this", name: "name of this signingKeyId", reference: "this reference" }, ...
+        // ]
+        if (has(v, 'keyRequestHash') && state._vm.authorizedKeys[signingKeyId].meta?.keyRequest) {
+          self.config.reactiveSet(state._vm.authorizedKeys[signingKeyId].meta.keyRequest, 'responded', hash)
+        }
+
         if (!cheloniaState[v.contractID]) {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         const targetState = cheloniaState[v.contractID]
+
         let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
         console.log('@@@@@GIMessage.OP_KEY_SHARE', { keys: v.keys })
         for (const key of v.keys) {
@@ -763,7 +776,7 @@ export default (sbp('sbp/selectors/register', {
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
-        keyAdditionProcessor.call(self, v, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
@@ -854,7 +867,7 @@ export default (sbp('sbp/selectors/register', {
             config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
           }
         }
-        keyAdditionProcessor.call(self, (updatedKeys: any), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, (updatedKeys: any), state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation

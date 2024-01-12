@@ -258,19 +258,41 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
+    // We want to process any current events first, before setting
+    // JOINING_GROUP, so that we process leave actions and don't interfere
+    // with the leaving process (otherwise, the side-effects will prevent
+    // us from fully leaving).
+    await sbp('chelonia/contract/wait', params.contractID)
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
-      const rootState = sbp('state/vuex/state')
-      const username = rootState.loggedIn.username
-      const userID = rootState.loggedIn.identityContractID
+      const { loggedIn } = sbp('state/vuex/state')
+      if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
+
+      const { username, identityContractID: userID } = loggedIn
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
       await sbp('chelonia/contract/sync', params.contractID)
+      const rootState = sbp('state/vuex/state')
+      if (!rootState.contracts[params.contractID]) {
+        console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
+        return
+      }
 
-      if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
+      if (rootState.contracts[params.contractID].type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
+
+      // At this point, we do not know whether we should continue with the
+      // join process, because we don't know where we stand in the process.
+      // One edge case we need to handle is that according to our records
+      // (in the identity contract) we're members, and we have completed
+      // all of the steps for joining in the past, but we've then been removed
+      // while we were offline. In this case, we should *not* re-join
+      // automatically, even if we have a valid invitation secret and are
+      // technically able to. However, if the previous situation we *should*
+      // attempt to rejoin if the action was user-initiated.
+      const hasKeyShareBeenRespondedBy = sbp('chelonia/contract/hasKeyShareBeenRespondedBy', userID, params.contractID, params.reference)
 
       const state = rootState[params.contractID]
 
@@ -285,8 +307,8 @@ export default (sbp('sbp/selectors/register', {
       // params.originatingContractID is set, it means that we're joining
       // through an invite link, and we must send a key request to complete
       // the joining process.
-      const sendKeyRequest = (!hasSecretKeys && params.originatingContractID)
-      const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, userID)
+      const sendKeyRequest = (!hasKeyShareBeenRespondedBy && !hasSecretKeys && params.originatingContractID)
+      const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, userID, params.reference)
 
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
@@ -342,6 +364,7 @@ export default (sbp('sbp/selectors/register', {
           innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
           permissions: [GIMessage.OP_ACTION_ENCRYPTED],
           allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+          reference: params.reference,
           encryptKeyRequestMetadata: true,
           hooks: {
             prepublish: params.hooks?.prepublish,
@@ -434,6 +457,50 @@ export default (sbp('sbp/selectors/register', {
         // received a response to the key request.
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
+
+        // Now, we check to make sure that we were removed (could have
+        // happened while we were offline or on a different device)
+        sbp('chelonia/queueInvocation', params.contractID, () => {
+          const rootState = sbp('state/vuex/state')
+          const state = rootState[params.contractID]
+
+          // The contract has already been removed
+          if (!state) return
+
+          // We have indeed been removed
+          if (state.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
+            // We can't await as remove is using the same queue
+            console.info('[gi.actions/group/join] We appear to have left the group. Removing the contract.', {
+              contractID: params.contractID,
+              username,
+              userID,
+              hasSecretKeys,
+              pendingKeyShares,
+              status: state.profiles?.[username]?.status
+            })
+            sbp('chelonia/contract/remove', params.contractID).catch((e) => {
+              console.error('[gi.actions/group/join] An error occurred while trying to remove the group contract', e)
+            })
+          } else {
+            console.warn('[gi.actions/group/join] Invalid or inconsistent state. We would appear to have been removed but aren\'nt', {
+              contractID: params.contractID,
+              username,
+              userID,
+              hasSecretKeys,
+              pendingKeyShares,
+              status: state.profiles?.[username]?.status
+            })
+          }
+        }).catch((e) => {
+          console.error('[gi.actions/group/join] Error while completing the group removal process', {
+            contractID: params.contractID,
+            username,
+            userID,
+            hasSecretKeys,
+            pendingKeyShares,
+            status: state.profiles?.[username]?.status
+          }, e)
+        })
       } else if (pendingKeyShares) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
       } else {

@@ -130,6 +130,9 @@ export type ChelKeyRequestParams = {
   encryptKeyRequestMetadata?: boolean;
   permissions?: '*' | string[];
   allowedActions?: '*' | string[];
+  // Arbitrary data the requester can use as reference (e.g., the hash
+  // of the user-initiated action that triggered this key request)
+  reference?: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -357,14 +360,26 @@ export default (sbp('sbp/selectors/register', {
     }
     return !!contractIDOrState?._volatile?.dirty || !!contractIDOrState?._volatile?.resyncing
   },
-  'chelonia/contract/waitingForKeyShareTo': function (contractIDOrState: string | Object, requestingContractID?: string): null | string[] {
+  'chelonia/contract/hasKeyShareBeenRespondedBy': function (contractIDOrState?: string | Object, requestedToContractID: string, reference?: string): boolean {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const result = Object.values(contractIDOrState?._vm.authorizedKeys || {}).some((r) => {
+      // $FlowFixMe[incompatible-use]
+      return r?.meta?.keyRequest?.responded && r.meta.keyRequest.contractID === requestedToContractID && (!reference || r.meta.keyRequest.reference === reference)
+    })
+
+    return result
+  },
+  'chelonia/contract/waitingForKeyShareTo': function (contractIDOrState: string | Object, requestingContractID?: string, reference?: string): null | string[] {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
       contractIDOrState = rootState[contractIDOrState]
     }
     const result = contractIDOrState._volatile?.pendingKeyRequests
       ?.filter((r) => {
-        return r && (!requestingContractID || r.contractID === requestingContractID)
+        return r && (!requestingContractID || r.contractID === requestingContractID) && (!reference || r.reference === reference)
       })
       ?.map(({ name }) => name)
 
@@ -1007,7 +1022,7 @@ export default (sbp('sbp/selectors/register', {
     return msg
   },
   'chelonia/out/keyRequest': async function (params: ChelKeyRequestParams): Promise<?GIMessage> {
-    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, encryptKeyRequestMetadata } = params
+    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, encryptKeyRequestMetadata, reference } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const originatingManifestHash = this.config.contracts.manifests[originatingContractName]
     const contract = this.manifestToContract[manifestHash]?.contract
@@ -1060,6 +1075,7 @@ export default (sbp('sbp/selectors/register', {
               shareable: false
             },
             keyRequest: {
+              ...(reference && { reference: encryptKeyRequestMetadata ? encryptedOutgoingData(originatingContractID, encryptionKeyId, reference) : reference }),
               contractID: encryptKeyRequestMetadata ? encryptedOutgoingData(originatingContractID, encryptionKeyId, contractID) : contractID
             }
           },

@@ -198,6 +198,7 @@ sbp('chelonia/defineContract', {
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,
             contractName: 'gi.contracts/group',
+            reference: hash,
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
             encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')

@@ -243,7 +243,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
   return [((keys: any): GIKey[]), updatedMap]
 }
 
-export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
+export const keyAdditionProcessor = function (hash: string, keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
   console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
@@ -302,19 +302,48 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
       if (data) {
         const keyRequestContractID = data.data
-        const rootState = sbp(this.config.stateSelector)
-        if (!rootState[keyRequestContractID]) {
-          this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
-        } else if (!rootState[keyRequestContractID]._volatile) {
-          this.config.reactiveSet(rootState[keyRequestContractID], '_volatile', { pendingKeyRequests: [] })
-        } else if (!rootState[keyRequestContractID]._volatile.pendingKeyRequests) {
-          this.config.reactiveSet(rootState[keyRequestContractID]._volatile, 'pendingKeyRequests', [])
-        }
+        const reference = key.meta.keyRequest.reference && unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
 
-        // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ contractID, name: key.name })
+        // Since now we'll make changes to keyRequestContractID, we need to
+        // do this while no other operations are running for that
+        // contract
+        sbp('chelonia/private/queueEvent', keyRequestContractID, () => {
+          const rootState = sbp(this.config.stateSelector)
 
-        this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
+          const originatingContractState = rootState[contractID]
+          if (sbp('chelonia/contract/hasKeyShareBeenRespondedBy', originatingContractState, keyRequestContractID, reference)) {
+            // In the meantime, our key request has been responded, so we
+            // don't need to set pendingKeyRequests.
+            return
+          }
+
+          if (!has(rootState, keyRequestContractID)) this.config.reactiveSet(rootState, keyRequestContractID, Object.create(null))
+          const targetState = rootState[keyRequestContractID]
+
+          if (!targetState._volatile) {
+            this.config.reactiveSet(targetState, '_volatile', Object.create(null))
+          }
+          if (!targetState._volatile.pendingKeyRequests) {
+            this.config.reactiveSet(rootState[keyRequestContractID]._volatile, 'pendingKeyRequests', [])
+          }
+
+          if (targetState._volatile.pendingKeyRequests.some((pkr) => {
+            return pkr && pkr.contractID === contractID && pkr.hash === hash
+          })) {
+            // This pending key request has already been registered.
+            // Nothing left to do.
+            return
+          }
+
+          // Mark the contract for which keys were requested as pending keys
+          // The hash (of the current message) is added to this dictionary
+          // for cross-referencing puposes.
+          targetState._volatile.pendingKeyRequests.push({ contractID, name: key.name, hash, reference: reference?.data })
+
+          this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
+        }).catch((e) => {
+          console.error('Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
+        })
       }
     }
   }
