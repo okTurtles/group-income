@@ -32,3 +32,6 @@ export const INCOME_DETAILS_UPDATE = 'income-details-update'
 export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
+
+export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
+export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'

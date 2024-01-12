@@ -157,8 +157,7 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL } from '@utils/events.js'
-import { PUBSUB_EVENT_TYPE } from '~/shared/pubsub.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
 
 const caretKeyCodes = {
@@ -250,13 +249,13 @@ export default ({
     this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
-    sbp('okTurtles.events/on', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
-    sbp('okTurtles.events/on', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
+    sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/on', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
-    sbp('okTurtles.events/off', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, this.onUserTyping)
-    sbp('okTurtles.events/off', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
+    sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   computed: {
     ...mapGetters([

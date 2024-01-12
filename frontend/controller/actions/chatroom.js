@@ -11,7 +11,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction } from './utils.js'
-import { PUBSUB_EVENT_TYPE } from '~/shared/pubsub.js'
+import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
@@ -184,14 +184,14 @@ export default (sbp('sbp/selectors/register', {
     }))
   },
   'gi.actions/chatroom/emit-user-typing-event': (chatroomId: string, username: string) => {
-    // publish PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING event to every subscribers of the pubsub channel with chatroomId
+    // publish CHATROOM_USER_TYPING event to every subscribers of the pubsub channel with chatroomId
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomId, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, username })
+    pubsub.pub(chatroomId, { type: CHATROOM_USER_TYPING, username })
   },
   'gi.actions/chatroom/emit-user-stop-typing-event': (chatroomId: string, username: string) => {
-    // publish PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING event to every subscribers of the pubsub channel with chatroomId
+    // publish CHATROOM_USER_STOP_TYPING event to every subscribers of the pubsub channel with chatroomId
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomId, { type: PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, username })
+    pubsub.pub(chatroomId, { type: CHATROOM_USER_STOP_TYPING, username })
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),

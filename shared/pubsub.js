@@ -122,11 +122,6 @@ export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
   SEND_PUSH_NOTIFICATION: 'send-push-notification'
 })
 
-export const PUBSUB_EVENT_TYPE = Object.freeze({
-  CHATROOM_USER_TYPING: 'chatroom-user-typing',
-  CHATROOM_USER_STOP_TYPING: 'chatroom-user-stop-typing'
-})
-
 export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
 export type RequestTypeEnum = $Values<typeof REQUEST_TYPE>
 export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
@@ -415,24 +410,6 @@ const defaultMessageHandlers = {
     client.pingTimeoutID = setTimeout(() => {
       client.socket?.close()
     }, client.options.pingTimeout)
-  },
-
-  [NOTIFICATION_TYPE.PUB] (msg) {
-    const { channelID, data } = msg
-
-    switch (data.type) {
-      case PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING: {
-        sbp('okTurtles.events/emit', PUBSUB_EVENT_TYPE.CHATROOM_USER_TYPING, { username: data.username })
-        break
-      }
-      case PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING: {
-        sbp('okTurtles.events/emit', PUBSUB_EVENT_TYPE.CHATROOM_USER_STOP_TYPING, { username: data.username })
-        break
-      }
-      default: {
-        console.log(`[pubsub] Received data from channel ${channelID}:`, data)
-      }
-    }
   },
 
   [NOTIFICATION_TYPE.SUB] (msg) {

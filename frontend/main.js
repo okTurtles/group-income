@@ -12,8 +12,9 @@ import '@model/captureLogs.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -195,7 +196,40 @@ async function startApp () {
   const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
-    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
+    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
+      messageHandlers: {
+        [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
+          const ourVersion = process.env.GI_VERSION
+          const theirVersion = msg.data.GI_VERSION
+
+          const ourContractsVersion = process.env.CONTRACTS_VERSION
+          const theirContractsVersion = msg.data.CONTRACTS_VERSION
+          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
+          }
+        },
+        [REQUEST_TYPE.PUSH_ACTION] (msg) {
+          sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
+        },
+        [NOTIFICATION_TYPE.PUB] (msg) {
+          const { channelID, data } = msg
+
+          switch (data.type) {
+            case CHATROOM_USER_TYPING: {
+              sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { username: data.username })
+              break
+            }
+            case CHATROOM_USER_STOP_TYPING: {
+              sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { username: data.username })
+              break
+            }
+            default: {
+              console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+            }
+          }
+        }
+      }
+    }))
     await sbp('translations/init', navigator.language)
     // NOTE: important to do this before setting up Vue.js because a lot of that relies
     //       on the router stuff which has guards that expect the contracts to be loaded

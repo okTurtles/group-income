@@ -273,7 +273,6 @@ const defaultMessageHandlers = {
       ))
       return
     }
-
     if (!socket.subscriptions.has(channelID)) {
       // Add the given channel ID to our subscriptions.
       socket.subscriptions.add(channelID)
