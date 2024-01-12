@@ -651,7 +651,7 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck (msg, state) {
           if (has(state.chatRooms, params.data.contractID)) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }
@@ -666,7 +666,7 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck (msg, state) {
           if (has(state.groups, params.data.groupContractID)) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }
@@ -681,7 +681,7 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck (msg, state) {
           if (!has(state.groups, params.data.groupContractID)) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }

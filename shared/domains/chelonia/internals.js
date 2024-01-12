@@ -104,19 +104,19 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
       // Send output based on keyNamesToUpdate, signingKeyId
       const contractName = rootState.contracts[cID]?.type
 
-      internalSideEffectStack?.push(async () => {
-        try {
-          await sbp(outputSelector, {
-            contractID: cID,
-            contractName,
-            data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
-              return v
-            }),
-            signingKeyId
-          })
-        } catch (e) {
+      internalSideEffectStack?.push(() => {
+        // We can't await because it'll block on a different contract, which
+        // is possibly waiting on this current contract.
+        sbp(outputSelector, {
+          contractID: cID,
+          contractName,
+          data: keyNamesToUpdate.map(outputMapper).map((v, i) => {
+            return v
+          }),
+          signingKeyId
+        }).catch((e) => {
           console.warn(`Error mirroring key operation (${outputSelector}) from ${contractID} to ${cID}: ${e?.message || e}`)
-        }
+        })
       })
     })
   }

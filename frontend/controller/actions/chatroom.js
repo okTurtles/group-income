@@ -245,7 +245,7 @@ export default (sbp('sbp/selectors/register', {
           // chatroom member
           if (state.users?.[params.data.username]) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }
@@ -262,7 +262,7 @@ export default (sbp('sbp/selectors/register', {
         // chatroom member
         if (!state.users?.[params.data.member]) return false
         if (params?.hooks?.preSendCheck) {
-          return params?.hooks?.preSendCheck(msg, state)
+          return params.hooks.preSendCheck(msg, state)
         }
         return true
       }

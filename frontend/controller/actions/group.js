@@ -607,7 +607,7 @@ export default (sbp('sbp/selectors/register', {
           // Don't send if the member has already been added
           if (state.chatRooms[params.data.chatRoomID]?.users?.[username]?.status === PROFILE_STATUS.ACTIVE) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }
@@ -672,7 +672,7 @@ export default (sbp('sbp/selectors/register', {
             // Don't send if the member has already been removed
             if (state?.profiles?.[params.data.member]?.status !== PROFILE_STATUS.ACTIVE) return false
             if (params?.hooks?.preSendCheck) {
-              return params?.hooks?.preSendCheck(msg, state)
+              return params.hooks.preSendCheck(msg, state)
             }
             return true
           }
@@ -691,7 +691,7 @@ export default (sbp('sbp/selectors/register', {
             // Don't send if we've already been removed
             if (state?.profiles?.[rootState.loggedIn.username]?.status !== PROFILE_STATUS.ACTIVE) return false
             if (params?.hooks?.preSendCheck) {
-              return params?.hooks?.preSendCheck(msg, state)
+              return params.hooks.preSendCheck(msg, state)
             }
             return true
           }
@@ -896,7 +896,7 @@ export default (sbp('sbp/selectors/register', {
           // Don't send if the member isn't an active chatroom member
           if (state.chatRooms[params.data.chatRoomID]?.users?.[params.data.member]?.status !== PROFILE_STATUS.ACTIVE) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }
@@ -914,7 +914,7 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck (msg, state) {
           if (state?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE) return false
           if (params?.hooks?.preSendCheck) {
-            return params?.hooks?.preSendCheck(msg, state)
+            return params.hooks.preSendCheck(msg, state)
           }
           return true
         }

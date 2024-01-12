@@ -563,12 +563,32 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/queueInvocation': (contractID, sbpInvocation) => {
     // We maintain two queues, contractID, used for internal events (i.e.,
     // from chelonia) and public:contractID, used for operations that need to
-    // be done when no internal operations are running (e.g., calls from a
-    // contract that require to be done after a sync)
-    // The following waits for the internal (contractID) queue to be finished
-    // and then pushes the operation requested into the public queue
-    // This ensures that all internal operations have finished before these
-    // other selectors are called
+    // be done after all the current internal events (if any) have
+    // finished processing.
+    // Once all of the current internal events (in the contractID queue)
+    // have completed, the operation requested is put into the public queue.
+    // The reason for maintaining two different queues is to provide users
+    // a way to run operations after internal operations have been processed
+    // (for example, a side-effect might call queueInvocation to do work
+    // after the current and future events have been processed), without the
+    // work in these user-functions blocking Chelonia and prventing it from
+    // processing events.
+    // For example, a contract could have an action called
+    // 'example/setProfilePicture'. The side-effect could look like this:
+    //
+    //    sideEffect ({ data, contractID }, { state }) {
+    //      const profilePictureUrl = data.url
+    //
+    //      sbp('chelonia/queueInvocation', contractID, () => {
+    //        const rootState = sbp('state/vuex/state')
+    //        if  (rootState[contractID].profilePictureUrl !== profilePictureUrl)
+    //          return // The profile picture changed, so we do nothing
+    //
+    //        // The following could take a long time. We want Chelonia
+    //        // to still work and process events as normal.
+    //        return fetch(profilePictureUrl).then(doSomeWorkWithTheFile)
+    //      })
+    //    }
     return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('chelonia/private/queueEvent', 'public:' + contractID, sbpInvocation))
   },
   'chelonia/begin': async (...invocations) => {

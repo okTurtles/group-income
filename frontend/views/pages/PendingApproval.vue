@@ -69,11 +69,18 @@ export default ({
       const handler = ({ contractID }) => {
         if (contractID === this.ephemeral.groupIdWhenMounted) {
           this.ephemeral.isJoining = false
-          // TODO: Remove when unmounted
-          sbp('okTurtles.events/off', handler)
+          delete this.ephemeral.handler
+          sbp('okTurtles.events/off', JOINED_GROUP, handler)
         }
       }
+      this.ephemeral.handler = handler
       sbp('okTurtles.events/on', JOINED_GROUP, handler)
+    }
+  },
+  beforeDestroy () {
+    if (this.ephemeral.handler) {
+      sbp('okTurtles.events/off', JOINED_GROUP, this.ephemeral.handler)
+      delete this.ephemeral.handler
     }
   },
   watch: {
