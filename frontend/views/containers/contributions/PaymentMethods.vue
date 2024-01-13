@@ -56,6 +56,7 @@ export default ({
       options: {
         // key to store on state and corresponding translation (if needed)
         bitcoin: 'Bitcoin',
+        lightning: 'Lightning Address',
         paypal: 'Paypal',
         venmo: 'Venmo',
         other: L('Other')
