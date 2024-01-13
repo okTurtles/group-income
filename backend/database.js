@@ -38,6 +38,7 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
+// Streams stored contract log entries since the given entry hash (inclusive!), most recent first.
 sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
@@ -58,7 +59,7 @@ sbp('sbp/selectors/register', {
       const entries = circularList.toArray()
       let i = 0
       return new Readable({
-        read (): any {
+        read (): void {
           try {
             const entry = entries[i++]
             if (entry) {
@@ -80,12 +81,11 @@ sbp('sbp/selectors/register', {
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
-      async read (): any {
+      async read (): Promise<void> {
         try {
           const entry = await sbp('chelonia/db/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
           if (currentHEAD !== hash) {
-            const json = `"${strToB64(entry.serialize())}"`
             this.push(prefix + json)
             currentHEAD = entry.message().previousHEAD
             prefix = ','
