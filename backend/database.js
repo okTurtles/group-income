@@ -201,10 +201,10 @@ export default async () => {
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
   }
-  // TODO: Update this to only run when persistence is disabled when `¢hel deploy` can target SQLite.
+  // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== './data') {
-    const HASH_LENGTH = 50
     // Remember to keep these values up-to-date.
+    const HASH_LENGTH = 52
     const CONTRACT_MANIFEST_MAGIC = '{"head":{"manifestVersion"'
     const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
@@ -212,7 +212,7 @@ export default async () => {
     // has been used before. We won't load them here; that's the job of `chel migrate`.
     // Note: our target files are currently deployed with unprefixed hashes as file names.
     // We can take advantage of this to recognize them more easily.
-    // TODO: Update this code when `¢hel deploy` no longer generates unprefixed keys.
+    // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
       .filter(k => k.length === HASH_LENGTH)
