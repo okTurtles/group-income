@@ -176,7 +176,6 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
       const id = data.data
       const k = state._vm.authorizedKeys[id]
       if (!k) {
-        console.log({ id, _vm: { ...state._vm } })
         throw new Error('Nonexisting key ID ' + id)
       }
       if (signingKey._private) {
@@ -244,7 +243,6 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
 }
 
 export const keyAdditionProcessor = function (hash: string, keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
-  console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
   for (const wkey of keys) {
@@ -292,7 +290,6 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
     }
 
     // Is this KEY operation the result of requesting keys for another contract?
-    console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
     if (key.meta?.keyRequest?.contractID && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
       const data = unwrapMaybeEncryptedData(key.meta.keyRequest.contractID)
 

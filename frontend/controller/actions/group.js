@@ -270,8 +270,6 @@ export default (sbp('sbp/selectors/register', {
 
       const { username, identityContractID: userID } = loggedIn
 
-      console.log('@@@@@@@@ AT join for ' + params.contractID)
-
       await sbp('chelonia/contract/sync', params.contractID)
       const rootState = sbp('state/vuex/state')
       if (!rootState.contracts[params.contractID]) {
@@ -315,8 +313,6 @@ export default (sbp('sbp/selectors/register', {
       //   (a) we are about to send a key request; or
       //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
       if (sendKeyRequest || pendingKeyShares) {
-        console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
-
         // Event handler for continuing the join process if the keys are
         // shared with us during the current session
         const eventHandler = ({ contractID, sharedWithContractID, signingKeyName }) => {
@@ -384,8 +380,6 @@ export default (sbp('sbp/selectors/register', {
       // This block must be run after having received the group's secret keys
       // (i.e., the CSK and the CEK) that were requested earlier.
       } else if (hasSecretKeys && !pendingKeyShares) {
-        console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID, 'prfileStatus', state.profiles?.[username]?.status, JSON.parse(JSON.stringify(state.profiles)))
-
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
