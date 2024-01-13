@@ -7,7 +7,6 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
-
 import '@model/captureLogs.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'

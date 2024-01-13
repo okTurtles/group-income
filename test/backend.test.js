@@ -5,7 +5,7 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
@@ -321,7 +321,7 @@ describe('Full walkthrough', function () {
       // })
       // since we're just saving the buffer now, we might as well use the simpler readFileSync API
       const buffer = fs.readFileSync(filepath)
-      const hash = blake32Hash(buffer)
+      const hash = createCID(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
       form.append('data', new Blob([buffer]), path.basename(filepath))

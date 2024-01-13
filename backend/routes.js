@@ -4,7 +4,7 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
@@ -187,7 +187,7 @@ route.POST('/file', {
     const { hash, data } = request.payload
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
-    const ourHash = blake32Hash(data)
+    const ourHash = createCID(data)
     if (ourHash !== hash) {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
