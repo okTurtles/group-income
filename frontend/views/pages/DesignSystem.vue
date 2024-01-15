@@ -177,6 +177,7 @@ page(
               i.icon-check-circle icon-check-circle
               i.icon-chevron-left icon-chevron-left
               i.icon-chevron-right icon-chevron-right
+              i.icon-code icon-code
               i.icon-cog icon-cog
               i.icon-coins icon-coins
               i.icon-columns icon-columns
@@ -208,10 +209,10 @@ page(
               i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
-              i.icon-share-atl share-atl
               i.icon-search icon-search
               i.icon-sort-down sort-down
               i.icon-star icon-star
+              i.icon-strikethrough icon-strikethrough
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo

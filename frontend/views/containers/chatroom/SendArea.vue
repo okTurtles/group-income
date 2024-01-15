@@ -151,6 +151,24 @@
               @click='transformToMarkdown("link")'
             )
               i.icon-link
+          tooltip(
+            direction='top'
+            :text='L("Code")'
+          )
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @click='transformToMarkdown("code")'
+            )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @click='transformToMarkdown("strikethrough")'
+            )
+              i.icon-strikethrough
 
         .c-send-button(
           id='mobileSendButton'
