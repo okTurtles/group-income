@@ -1,7 +1,7 @@
 {
   "manifests": {
-    "gi.contracts/chatroom": "21XWnNFZqMsMxe1Gcvty2YKa7RA7ZoqNSQNNwnDSCvChAAyPiK",
-    "gi.contracts/group": "21XWnNMR1Nzexj5NR9JbXrR9DvAs5mZVJ1JDzpJzopmadZMt1Z",
-    "gi.contracts/identity": "21XWnNQvLELe27NTkApsMHVZqQHLaYYKuSySQCojWzWFpHv5Gd"
+    "gi.contracts/chatroom": "21XWnNUWeQhapvmxVTp8TWz1BNtkC8DG4Xh2jnvbTFYmSyPL9Q",
+    "gi.contracts/group": "21XWnNFkeAsRnBcADsCezbMimyMf4ZWFMByo5WdNZpARS2zwGY",
+    "gi.contracts/identity": "21XWnNFscpP268qTcu89fRRqrCxBAVzRX3nndxJfqwXqJm9CMm"
   }
 }

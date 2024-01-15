@@ -89,9 +89,8 @@
         ) Save changes
 
       .c-edit-action-wrapper(v-else)
-        .addons
+        .addons(v-if='ephemeral.showButtons')
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
             :text='L("Create poll")'
           )
@@ -101,7 +100,6 @@
             )
               i.icon-poll
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
             :text='L("Add reaction")'
           )
@@ -111,7 +109,6 @@
             )
               i.icon-smile-beam
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
             :text='L("Attach file")'
           )
@@ -127,6 +124,33 @@
                 :accept='supportedFileExtensions'
                 @change='fileAttachmentHandler($event.target.files)'
               )
+          tooltip(
+            direction='top'
+            :text='L("Bold")'
+          )
+            button.is-icon(
+              :aria-label='L("Bold style text")'
+              @click='transformToMarkdown("bold")'
+            )
+              i.icon-bold
+          tooltip(
+            direction='top'
+            :text='L("Italic")'
+          )
+            button.is-icon(
+              :aria-label='L("Italic style text")'
+              @click='transformToMarkdown("italic")'
+            )
+              i.icon-italic
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @click='transformToMarkdown("link")'
+            )
+              i.icon-link
 
         .c-send-button(
           id='mobileSendButton'
@@ -530,6 +554,9 @@ export default ({
       if (!element) {
         this.endMention()
       }
+    },
+    transformToMarkdown (type) {
+      alert(`TODO: transform the text selection to ${type} style`)
     }
   }
 }: Object)
