@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
-import { NOTIFICATION_TYPE, REQUEST_TYPE, createClient } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
@@ -435,7 +435,7 @@ export default (sbp('sbp/selectors/register', {
     return keyId(inKeyFn())
   },
   // TODO: allow connecting to multiple servers at once
-  'chelonia/connect': function (): Object {
+  'chelonia/connect': function (options = {}): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')
     if (this.pubsub) {
@@ -450,6 +450,7 @@ export default (sbp('sbp/selectors/register', {
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
+        ...(options.messageHandlers || {}),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
@@ -457,19 +458,6 @@ export default (sbp('sbp/selectors/register', {
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           const { contractID } = GIMessage.deserializeHEAD(msg.data)
           sbp('chelonia/private/in/enqueueHandleEvent', contractID, msg.data)
-        },
-        [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-          const ourVersion = process.env.GI_VERSION
-          const theirVersion = msg.data.GI_VERSION
-
-          const ourContractsVersion = process.env.CONTRACTS_VERSION
-          const theirContractsVersion = msg.data.CONTRACTS_VERSION
-          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
-            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
-          }
-        },
-        [REQUEST_TYPE.PUSH_ACTION] (msg) {
-          sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
         }
       }
     })

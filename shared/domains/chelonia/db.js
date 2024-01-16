@@ -86,7 +86,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
       // eslint-disable-next-line require-await
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<Error | void> {
         checkKey(key)
-        sbp('okTurtles.data/set', key, value)
+        return sbp('okTurtles.data/set', key, value)
       },
       // eslint-disable-next-line require-await
       'chelonia/db/delete': async function (key: string): Promise<boolean> {
