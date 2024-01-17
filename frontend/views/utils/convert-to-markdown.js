@@ -40,6 +40,44 @@ export function convertToMarkdown (str: string): any {
     converted = converted.replace(/^<p>|<\/p>$/g, '')
   }
 
-  console.log('$$$ converted outcome: ', converted)
   return converted
+}
+
+export function injectOrStripSpecialChar (
+  // This function either injects or removes special character(e.g. *, ~, _ etc) for a certain type of markdown to a selected segment within a string.
+  str: string, // A whole string to transform.
+  type: string, // type of markdown needed to inject.
+  startIndex: number, // start position of the target segment.
+  endIndex: number // end position of the target segment.
+): any {
+  const charMap = {
+    'bold': '*',
+    'italic': '_',
+    'code': '`',
+    'strikethrough': '~'
+  }
+  let segment = str.slice(startIndex, endIndex)
+  let before = str.slice(0, startIndex)
+  let after = str.slice(endIndex)
+  const specialChar = charMap[type]
+
+  if (!specialChar) {
+    return { output: str, focusIndex: str.length }
+  }
+
+  if (before.endsWith(specialChar) && after.startsWith(specialChar)) {
+    // Stripping condition No 1. - when the selected segment is already wrapped with the special character.
+    before = before.slice(0, before.length - 1)
+    after = after.slice(1)
+  } else if (segment.startsWith(specialChar) && segment.endsWith(specialChar)) {
+    // Stripping condition No 2. - when the selected segment itself contains the special character at both start/end of the string.
+    segment = segment.slice(1, segment.length - 1)
+  } else {
+    // Otherwise, let's wrap the selected segment with the speical character.
+    segment = `${specialChar}${segment}${specialChar}`
+  }
+
+  const output = before + segment + after
+  const focusIndex = (before + segment).length
+  return { output, focusIndex }
 }

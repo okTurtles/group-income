@@ -132,7 +132,8 @@
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
-              @click='transformTextSelectionToMarkdown("bold")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
             )
               i.icon-bold
           tooltip(
@@ -141,7 +142,7 @@
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
-              @click='transformTextSelectionToMarkdown("italic")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
             )
               i.icon-italic
           tooltip(
@@ -150,7 +151,7 @@
           )
             button.is-icon(
               :aria-label='L("Add link")'
-              @click='transformTextSelectionToMarkdown("link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
             )
               i.icon-link
           tooltip(
@@ -159,7 +160,7 @@
           )
             button.is-icon(
               :aria-label='L("Add code")'
-              @click='transformTextSelectionToMarkdown("code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
             )
               i.icon-code
           tooltip(
@@ -168,7 +169,7 @@
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
-              @click='transformTextSelectionToMarkdown("strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
             )
               i.icon-strikethrough
 
@@ -201,6 +202,7 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { injectOrStripSpecialChar } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -444,8 +446,11 @@ export default ({
          mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
       const selectionStart = this.ephemeral.mention.position + mention.length + 1
-      this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
+      this.moveCursorTo(selectionStart)
       this.endMention()
+    },
+    moveCursorTo (index) {
+      this.$refs.textarea.setSelectionRange(index, index)
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
@@ -612,52 +617,30 @@ export default ({
         this.endMention()
       }
     },
-    transformTextSelectionToMarkdown (type) {
-      const capturedString = window.getSelection().toString()
+    transformTextSelectionToMarkdown (e, type) {
+      e.preventDefault() // Calling e.preventDefault() in 'mousedown' event listener prevents the button from being focused upon click.
+
+      const prevFocusElement = document.activeElement // the captured activeElement inside 'mousedown' handler is still a previously focused element.
       const inputEl = this.$refs.textarea
       const selStart = inputEl.selectionStart
       const selEnd = inputEl.selectionEnd
       const inputValue = inputEl.value
 
-      console.log('!@# captured string: ', capturedString, inputValue.slice(selStart, selEnd))
-      console.log('!@# selStart: ', selStart)
-      console.log('!@# selEnd: ', selEnd)
-
       // Check if call-to-action buttons are clicked while a string segment of the input field is selected.
-      if (capturedString &&
-        (selStart !== selEnd) &&
-        capturedString === inputValue.slice(selStart, selEnd)
-      ) {
-        const specialCharMap = {
-          'bold': '*',
-          'italic': '_',
-          'code': '`',
-          'strikethrough': '~'
-        }
-        const before = inputValue.slice(0, selStart)
-        const after = inputValue.slice(selEnd)
-        const specialChar = specialCharMap[type]
-
-        // check if it's one of those reverting conditions.
-        if (before[before.length - 1] === after[0] && after[0] === specialChar) {
-          inputEl.value = before.slice(0, before.length - 1) + capturedString + after.slice(1)
-          return
-        }
-
-        if (capturedString[0] === capturedString[capturedString.length - 1] &&
-          capturedString[0] === specialChar) {
-          inputEl.value = before + capturedString.slice(1, capturedString.length - 1) + after
-          return
-        }
-
+      if (prevFocusElement === inputEl && (selStart !== selEnd)) {
         switch (type) {
           case 'bold':
           case 'italic':
           case 'code':
           case 'strikethrough': {
-            inputEl.value = before + `${specialChar}${capturedString}${specialChar}` + after
+            const result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
+            inputEl.value = result.output
+            this.moveCursorTo(result.focusIndex)
             break
           }
+          case 'link':
+            // TODO! injecting <a> tag equivalent of characters is handled differently.
+            console.log('TODO: Implement link injection!')
         }
       }
     },
@@ -692,6 +675,10 @@ export default ({
         this.currentChatRoomId,
         this.ourUsername
       )
+    },
+    onBtnClick (e) {
+      e.preventDefault()
+      console.log('!@# on btn click: ', e)
     }
   }
 }: Object)
