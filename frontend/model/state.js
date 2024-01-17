@@ -767,6 +767,9 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           const distributionStarted = store.getters.groupDistributionStarted(reactiveDate.date)
           if (oldPeriod && newPeriod && distributionStarted && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+              .catch((e) => {
+                console.error('okTurtles.events/on CONTRACT_REGISTERED Error calling updateDistributionDate', e)
+              })
           }
         }
       )

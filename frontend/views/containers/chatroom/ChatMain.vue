@@ -443,21 +443,25 @@ export default ({
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: {
           hash: message.hash,
           createdDate: message.datetime,
           text: newMessage
         }
+      }).catch((e) => {
+        console.error(`Error while editing message for ${contractID}`, e)
       })
     },
     deleteMessage (message) {
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
         data: { hash: message.hash }
+      }).catch((e) => {
+        console.error(`Error while deleting message for ${contractID}`, e)
       })
     },
     changeDay (index) {
@@ -472,10 +476,12 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID: this.currentChatRoomId,
         data: { hash: message.hash, emoticon }
+      }).catch((e) => {
+        console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
     initializeState () {

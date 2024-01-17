@@ -96,7 +96,10 @@ export default ({
         if (!this.groupShouldPropose && !isWelcomeInviteExpired) {
           this.openModal('InvitationLinkModal')
         } else {
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
+          const contractID = this.$store.state.currentGroupId
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+            console.error(`Error on action checkGroupSizeAndProposeMember (headerButtonAction) for ${contractID}`, e)
+          })
         }
       }
     }

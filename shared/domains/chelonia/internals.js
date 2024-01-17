@@ -337,7 +337,7 @@ export default (sbp('sbp/selectors/register', {
       // something over the web socket)
       // This also ensures that the state doesn't change while reading it
         lastAttemptedHeight = entry.height()
-        const newEntry = await sbp('chelonia/private/queueEvent', contractID, () => {
+        const newEntry = await sbp('chelonia/private/queueEvent', contractID, async () => {
           const rootState = sbp(this.config.stateSelector)
           const state = rootState[contractID]
           const isFirstMessage = entry.isFirstMessage()
@@ -353,6 +353,14 @@ export default (sbp('sbp/selectors/register', {
               return
             }
           }
+
+          // Process message to ensure that it is valid. Should this thow,
+          // we propagate the error.
+          // Because of this, 'chelonia/private/in/processMessage' SHOULD NOT
+          // change the global Chelonia state and it MUST NOT call any
+          // side-effects or change the global state in a way that affects
+          // the meaning of any future messages or successive invocations.
+          await sbp('chelonia/private/in/processMessage', entry, cloneDeep(state || {}))
 
           // if this isn't the first event (i.e., OP_CONTRACT), recreate and
           // resend message
@@ -477,6 +485,7 @@ export default (sbp('sbp/selectors/register', {
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const signingKeyId = message.signingKeyId()
+    const direction = message.direction()
     const config = this.config
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
@@ -490,7 +499,7 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
         v.forEach((u) => {
           if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
-          if (!validateKeyPermissions(state, signingKeyId, u[0], u[1])) {
+          if (!validateKeyPermissions(state, signingKeyId, u[0], u[1], direction)) {
             throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
           }
           opFns[u[0]](u[1])
@@ -506,12 +515,11 @@ export default (sbp('sbp/selectors/register', {
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
-          console.log('OP_ACTION_ENCRYPTED: decrypted')
         }
         console.log('OP_ACTION_ENCRYPTED: skipped action processing')
       },
@@ -599,14 +607,16 @@ export default (sbp('sbp/selectors/register', {
           let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
           for (const key of v.keys) {
             if (key.id && key.meta?.private?.content) {
+              // Outgoing messages' keys are always transient
+              const transient = direction === 'outgoing' || key.meta.private.transient
               if (
-                !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
+                !sbp('chelonia/haveSecretKey', key.id, !transient)
               ) {
                 try {
                   const decrypted = key.meta.private.content.valueOf()
                   sbp('chelonia/storeSecretKeys', () => [{
                     key: deserializeKey(decrypted),
-                    transient: !!key.meta.private.transient
+                    transient
                   }])
                   if (
                     targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
@@ -649,7 +659,12 @@ export default (sbp('sbp/selectors/register', {
             // situation, not limited to the following sequence of events
             const resync = sbp('chelonia/private/queueEvent', v.contractID, [
               'chelonia/private/in/syncContract', v.contractID
-            ])
+            ]).catch((e) => {
+              console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
+              if (v.contractID === contractID) {
+                throw e
+              }
+            })
 
             // If the keys received were for the current contract, we can't
             // use queueEvent as we're already on that same queue
@@ -729,7 +744,9 @@ export default (sbp('sbp/selectors/register', {
 
         // Call 'chelonia/private/respondToAllKeyRequests' after sync
         if (data) {
-          self.setPostSyncOp(contractID, 'respondToAllKeyRequests-' + message.contractID(), ['chelonia/private/respondToAllKeyRequests', contractID])
+          internalSideEffectStack?.push(() => {
+            self.setPostSyncOp(contractID, 'respondToAllKeyRequests-' + message.contractID(), ['chelonia/private/respondToAllKeyRequests', contractID])
+          })
         }
       },
       [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
@@ -783,7 +800,7 @@ export default (sbp('sbp/selectors/register', {
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
-        keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey, internalSideEffectStack)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
@@ -878,7 +895,7 @@ export default (sbp('sbp/selectors/register', {
             config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
           }
         }
-        keyAdditionProcessor.call(self, hash, (updatedKeys: any), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, hash, (updatedKeys: any), state, contractID, signingKey, internalSideEffectStack)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
@@ -930,7 +947,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
-      if (!validateKeyPermissions(stateForValidation, signingKeyId, opT, opV)) {
+      if (!validateKeyPermissions(stateForValidation, signingKeyId, opT, opV, direction)) {
         throw new Error('No matching signing key was defined')
       }
 
@@ -1204,7 +1221,9 @@ export default (sbp('sbp/selectors/register', {
 
     // This is safe to do without await because it's sending an operation
     // Using await could deadlock when retrying to send the message
-    sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIds, signingKeyId })
+    sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIds, signingKeyId }).catch(e => {
+      console.error(`[chelonia/private/deleteRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
+    })
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -1271,7 +1290,11 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`Unable to respond to key request for ${originatingContractID}. Key ${responseKeyId} is not valid.`)
       }
 
-      sbp('chelonia/storeSecretKeys', () => [{ key: deserializedResponseKey }])
+      // We don't need to worry about persistence (if it was an outgoing
+      // message) here as this is done from an internal side-effect.
+      sbp('chelonia/storeSecretKeys', () => [
+        { key: deserializedResponseKey }
+      ])
 
       const keys = pick(
         state['secretKeys'],
@@ -1534,7 +1557,9 @@ export default (sbp('sbp/selectors/register', {
 }): string[])
 
 const eventsToReinjest = []
-const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID, { force: true }), 1000)
+const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID, { force: true }).catch((e) => {
+  console.error(`[chelonia] Error at reprocessDebounced for ${contractID}`)
+}), 1000)
 
 const handleEvent = {
   async addMessageToDB (message: GIMessage) {

@@ -18,7 +18,7 @@ import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
-import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -852,16 +852,7 @@ export default (sbp('sbp/selectors/register', {
       postpublish: hooks.postpublishContract
     })
     console.log('Register contract, sending action', {
-      params,
-      xx: {
-        action: contractName,
-        contractID,
-        data: params.data,
-        signingKeyId: actionSigningKeyId,
-        encryptionKeyId: actionEncryptionKeyId,
-        hooks,
-        publishOptions
-      }
+      params
     })
     await sbp('chelonia/contract/sync', contractID)
     const msg = await sbp(actionEncryptionKeyId
@@ -934,8 +925,7 @@ export default (sbp('sbp/selectors/register', {
       const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): GIKey)
       if (has(state._vm.authorizedKeys, k.id)) {
         if (state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
-          // if (state._vm.authorizedKeys[k.id].permissions === '*')
-          // TODO: Check permissions, etc.
+          // Can't add a key that exists
           return false
         }
       }
@@ -943,7 +933,6 @@ export default (sbp('sbp/selectors/register', {
       return true
     })
     if (payload.length === 0) return
-    validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     let msg = GIMessage.createV1_0({
       contractID,
       op: [
@@ -975,7 +964,6 @@ export default (sbp('sbp/selectors/register', {
         return keyId
       }
     }).filter(Boolean)
-    validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, (payload: any))
     let msg = GIMessage.createV1_0({
       contractID,
       op: [
@@ -1007,7 +995,6 @@ export default (sbp('sbp/selectors/register', {
         return key
       }
     })
-    validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, (payload: any))
     let msg = GIMessage.createV1_0({
       contractID,
       op: [
@@ -1082,6 +1069,9 @@ export default (sbp('sbp/selectors/register', {
           data: keyRequestReplyKeyP
         }],
         signingKeyId
+      }).catch(e => {
+        console.error(`[chelonia] Error sending OP_KEY_ADD for ${originatingContractID} during key request to ${contractID}`, e)
+        throw e
       })
       const payload = ({
         contractID: originatingContractID,
@@ -1190,9 +1180,6 @@ async function outEncryptedOrUnencryptedAction (
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const meta = await contract.metadata.create()
-  const gProxy = gettersProxy(state, contract.getters)
-  contract.metadata.validate(meta, { state, ...gProxy, contractID })
-  contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const signedMessage = params.innerSigningKeyId
     ? (state._vm.authorizedKeys[params.innerSigningKeyId] && state._vm.authorizedKeys[params.innerSigningKeyId]?._notAfterHeight == null)

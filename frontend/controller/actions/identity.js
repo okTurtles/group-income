@@ -349,6 +349,9 @@ export default (sbp('sbp/selectors/register', {
           sbp('gi.ui/prompt', promptOptions).then((result) => {
             if (!result) {
               sbp('gi.actions/identity/logout')
+                .catch((e) => {
+                  console.error('[gi.actions/identity/login] Error calling logout', e)
+                })
             }
           }).catch((e) => {
             console.error('Error at gi.ui/prompt', e)
@@ -438,6 +441,9 @@ export default (sbp('sbp/selectors/register', {
       const humanErr = L('Failed to login: {reportError}', LError(e))
       alert(humanErr)
       sbp('gi.actions/identity/logout')
+        .catch((e) => {
+          console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
+        })
       throw new GIErrorUIRuntimeError(humanErr)
     }
   },

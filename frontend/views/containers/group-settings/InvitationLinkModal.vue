@@ -29,7 +29,6 @@ import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import { serializeKey } from '../../../../shared/domains/chelonia/crypto.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import SvgBrokenLink from '@svgs/broken-link.svg'
@@ -47,12 +46,12 @@ export default ({
       'currentGroupState'
     ]),
     welcomeInviteSecret () {
-      const key = this.$store.state.secretKeys[this.currentWelcomeInvite.inviteId]
+      const key = this.currentGroupState._vm.invites?.[this.currentWelcomeInvite.inviteId]?.inviteSecret
       if (!key) {
         console.error(`undefined key for welcomeInviteId: ${this.currentWelcomeInvite.inviteId}`)
         return undefined
       }
-      return typeof key !== 'string' ? serializeKey(key, true) : key
+      return key
     },
     link () {
       const key = this.welcomeInviteSecret

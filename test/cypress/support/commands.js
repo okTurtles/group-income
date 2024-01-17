@@ -125,6 +125,37 @@ cySbpCheckCommand('giKeyRequestedGroupIDs', (sbp, groupId) => {
   return pending.includes(groupId)
 })
 
+cySbpCheckCommand('giAssertKeyRotation', (sbp, contractID, height, keyName) => {
+  // cy.log('KR TOP')
+  const state = sbp('state/vuex/state')
+  const identityContractID = state.loggedIn?.identityContractID
+  const authorizedKeys = (
+    identityContractID &&
+    state[contractID]?._vm?.authorizedKeys
+  )
+  // cy.log(`KR z ${contractID} ${height} ${identityContractID} ${authorizedKeys}`)
+
+  if (!authorizedKeys) {
+    console.info('giAssertKeyRotation: contract not found', identityContractID, contractID, height, keyName)
+    return false
+  }
+
+  const keysWithName = Object.values(authorizedKeys).filter((key) => {
+    return key.name === keyName
+  }).map((key) => ({
+    id: key.id,
+    nbf: key._notBeforeHeight,
+    exp: key._notAfterHeight
+  }))
+
+  console.info('giAssertKeyRotation', contractID, height, keyName, keysWithName)
+  return (
+    keysWithName.some((key) => {
+      return key.nbf > height
+    })
+  )
+})
+
 Cypress.Commands.add('giSignup', (username, {
   password = defaultPassword,
   isInvitation = false,

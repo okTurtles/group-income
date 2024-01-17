@@ -326,7 +326,9 @@ export default (sbp('sbp/selectors/register', {
           // A different path should be taken, since te event handler
           // should be called after the key request has been answered
           // and processed
-          sbp('gi.actions/group/join', params)
+          sbp('gi.actions/group/join', params).catch((e) => {
+            console.error('[gi.actions/group/join] Error during join (inside CONTRACT_HAS_RECEIVED_KEYS event handler)', e)
+          })
         }
         const logoutHandler = () => {
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
@@ -508,7 +510,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
-    sbp('gi.actions/group/switch', params.contractID)
+    return sbp('gi.actions/group/switch', params.contractID)
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
@@ -791,6 +793,9 @@ export default (sbp('sbp/selectors/register', {
         // a random amount of time on the first call
         setTimeout(() => {
           sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+            .catch((e) => {
+              console.error('[gi.actions/group/autobanUser] Error from setTimeout callback (1st attempt)', e)
+            })
         }, randomIntFromRange(0, 5000))
         return
       }
@@ -848,6 +853,9 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${username}, retrying in ${randDelay} ms...`, e)
               setTimeout(() => {
                 sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+                  .catch((e) => {
+                    console.error('[gi.actions/group/autobanUser] Error from setTimeout callback (> 3rd attempt)', e)
+                  })
               }, randDelay)
             }
           }

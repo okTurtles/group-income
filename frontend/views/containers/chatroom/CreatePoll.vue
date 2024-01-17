@@ -9,7 +9,7 @@
       modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
     section.c-body
-      form.c-form(@submit.prevent='')
+      form.c-form(@submit.prevent='' :disabled='form.disabled')
         .field
           input.input.c-input(
             name='question'
@@ -125,6 +125,7 @@ export default {
         }
       },
       form: {
+        disabled: false,
         question: '',
         allowMultipleChoice: false,
         duration: 7,
@@ -147,7 +148,8 @@ export default {
     disableSubmit () {
       return this.$v.invalid ||
         this.form.options.length < 2 ||
-        this.form.options.some(opt => !opt.value)
+        this.form.options.some(opt => !opt.value) ||
+        this.form.disabled
     }
   },
   methods: {
@@ -201,8 +203,10 @@ export default {
       }
     },
     submit () {
+      this.form.disabled = true
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/addMessage', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: {
           type: MESSAGE_TYPES.POLL,
           pollData: {
@@ -214,17 +218,20 @@ export default {
               : POLL_TYPES.SINGLE_CHOICE
           }
         }
+      }).catch((e) => {
+        console.log(`Error adding message to create poll for ${contractID}`, e)
+      }).finally(() => {
+        this.form = {
+          question: '',
+          allowMultipleChoice: false,
+          options: [
+            { id: createRandomId(), value: '' }
+          ],
+          disabled: false
+        }
+        this.$v.form.$reset()
+        this.close()
       })
-
-      this.form = {
-        question: '',
-        allowMultipleChoice: false,
-        options: [
-          { id: createRandomId(), value: '' }
-        ]
-      }
-      this.$v.form.$reset()
-      this.close()
     }
   },
   created () {
