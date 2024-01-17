@@ -916,7 +916,7 @@ export default ({
       const items = e?.dataTransfer?.items
 
       if (Array.isArray(items) &&
-        items.some(entry => entry.kind === 'file')) {
+        items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
         if (!this.dndState.isActive) {
           this.dndState.isActive = true
         }
