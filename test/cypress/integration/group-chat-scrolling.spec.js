@@ -113,6 +113,10 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       // But cy.get('.c-replying').click() doesn't scroll to the target message
       // Because of this can not move forward to the next stages, so just used HACK
       cy.get('.c-message:nth-child(5)').should('contain', 'Text-3').scrollIntoView().should('be.visible')
+      // We wait in this instance because the scroll position is saved in a
+      // debounced function with a 500ms timeout
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(1000)
       cy.get('.c-replying').should('not.be.visible')
     })
   })
