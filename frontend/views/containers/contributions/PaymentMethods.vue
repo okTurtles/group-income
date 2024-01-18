@@ -54,11 +54,11 @@ export default ({
   data: () => ({
     config: {
       options: {
-        // key to store on state and corresponding translation (if needed)
-        bitcoin: 'Bitcoin',
-        lightning: 'Lightning Address',
-        paypal: 'Paypal',
-        venmo: 'Venmo',
+        // Key to store on the state and corresponding translation.
+        bitcoin: L('Bitcoin'),
+        lightning: L('Lightning'),
+        paypal: L('Paypal'),
+        venmo: L('Venmo'),
         other: L('Other')
       }
     },
