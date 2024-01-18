@@ -915,7 +915,6 @@ export default ({
       // handler function for 'dragstart', 'dragover' events
       const items = Array.from(e?.dataTransfer?.items) || []
 
-      console.log('@@@ items: ', items, Array.isArray(items))
       if (items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
         if (!this.dndState.isActive) {
           this.dndState.isActive = true
