@@ -913,10 +913,10 @@ export default ({
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
       // handler function for 'dragstart', 'dragover' events
-      const items = e?.dataTransfer?.items
+      const items = Array.from(e?.dataTransfer?.items) || []
 
-      if (Array.isArray(items) &&
-        items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
+      console.log('@@@ items: ', items, Array.isArray(items))
+      if (items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
         if (!this.dndState.isActive) {
           this.dndState.isActive = true
         }
