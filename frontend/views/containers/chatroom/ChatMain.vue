@@ -185,9 +185,7 @@ export default ({
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null,
-        unprocessedEvents: [],
-        // A default value for top offset
-        topOffset: 117
+        unprocessedEvents: []
       },
       messageState: {
         contract: {},
@@ -256,23 +254,6 @@ export default ({
     },
     messages () {
       return this.messageState.contract?.messages || []
-    },
-    // Because of infinite-scroll this is not calculated in scrollheight
-    // This computes the height of the `conversation-greetings` component
-    topOffset () {
-      try {
-        // Calculate top-offset from the height of the conversation-greetings
-        // components (which are in the $slots property of the infinite loading
-        // component)
-        const topOffset = Object.values(this.$refs['infinite-loading'].$slots)
-          .flatMap((v) => Object.values(v))
-          .map(n => n.elm?.clientHeight)
-          .reduce((acc, cv) => acc + (Number.isFinite(cv) ? cv : 0), 0)
-        this.ephemeral.topOffset = topOffset
-      } catch (e) {
-        console.warn('ChatMain.vue: Error computing topOffset', e)
-      }
-      return this.ephemeral.topOffset
     }
   },
   methods: {
@@ -857,15 +838,6 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
-      // Because of infinite-scroll scrollheight is missing the height
-      // of the `conversation-greetings` component
-      // Logic reverted to that of commit
-      // 765308597693ad225da9015d9b658ad8302a892c in commit
-      // 11c03a5d3920cc4da8acfff2146eb5baf60d8099 due to an issue with the
-      // group-chat-scrolling.spec.js test
-      // We can revisit later the logic to see if we can remove the need for
-      // topOffset.
-      const topOffset = this.topOffset
       const curScrollTop = this.$refs.conversation.scrollTop
       const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
 
@@ -883,8 +855,9 @@ export default ({
       for (let i = this.messages.length - 1; i >= 0; i--) {
         const msg = this.messages[i]
         const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-        const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+        // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
+        const height = this.$refs[msg.hash][0].$el.clientHeight
+        if (offsetTop + height <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
@@ -902,11 +875,11 @@ export default ({
         for (let i = 0; i < this.messages.length - 1; i++) {
           const msg = this.messages[i]
           const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-          const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
+          const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
+          if (offsetTop - scrollMarginTop > curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageHash: this.messages[i + 1].hash // Leave one(+1) message at the front by default for better seeing
+              messageHash: msg.hash
             })
             break
           }

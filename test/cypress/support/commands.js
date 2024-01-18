@@ -126,14 +126,12 @@ cySbpCheckCommand('giKeyRequestedGroupIDs', (sbp, groupId) => {
 })
 
 cySbpCheckCommand('giAssertKeyRotation', (sbp, contractID, height, keyName) => {
-  // cy.log('KR TOP')
   const state = sbp('state/vuex/state')
   const identityContractID = state.loggedIn?.identityContractID
   const authorizedKeys = (
     identityContractID &&
     state[contractID]?._vm?.authorizedKeys
   )
-  // cy.log(`KR z ${contractID} ${height} ${identityContractID} ${authorizedKeys}`)
 
   if (!authorizedKeys) {
     console.info('giAssertKeyRotation: contract not found', identityContractID, contractID, height, keyName)

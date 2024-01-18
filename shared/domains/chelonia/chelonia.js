@@ -851,9 +851,6 @@ export default (sbp('sbp/selectors/register', {
       prepublish: hooks.prepublishContract,
       postpublish: hooks.postpublishContract
     })
-    console.log('Register contract, sending action', {
-      params
-    })
     await sbp('chelonia/contract/sync', contractID)
     const msg = await sbp(actionEncryptionKeyId
       ? 'chelonia/out/actionEncrypted'
