@@ -216,7 +216,6 @@ export default ({
     }
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
-    console.log('ChatMain', this)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
@@ -253,7 +252,7 @@ export default ({
       if (!this.ephemeral.scrolledDistance) {
         return false
       }
-      return this.ephemeral.scrolledDistance > 500
+      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -858,8 +857,14 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
-      // Because of infinite-scroll this is not calculated in scrollheight
-      // 117 is the height of `conversation-greetings` component
+      // Because of infinite-scroll scrollheight is missing the height
+      // of the `conversation-greetings` component
+      // Logic reverted to that of commit
+      // 765308597693ad225da9015d9b658ad8302a892c in commit
+      // 11c03a5d3920cc4da8acfff2146eb5baf60d8099 due to an issue with the
+      // group-chat-scrolling.spec.js test
+      // We can revisit later the logic to see if we can remove the need for
+      // topOffset.
       const topOffset = this.topOffset
       const curScrollTop = this.$refs.conversation.scrollTop
       const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
