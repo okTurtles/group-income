@@ -45,7 +45,7 @@ export function convertToMarkdown (str: string): any {
 
 export function injectOrStripSpecialChar (
   // This function either injects or removes special character(e.g. *, ~, _ etc) for a certain type of markdown to a selected segment within a string.
-  str: string, // A whole string to transform.
+  str: string, // A target string.
   type: string, // type of markdown needed to inject.
   startIndex: number, // start position of the target segment.
   endIndex: number // end position of the target segment.
@@ -80,4 +80,43 @@ export function injectOrStripSpecialChar (
   const output = before + segment + after
   const focusIndex = (before + segment).length
   return { output, focusIndex }
+}
+
+export function injectOrStripLink (
+  str: string, // A target string.
+  startIndex: number, // start position of the target segment.
+  endIndex: number // end position of the target segment.
+): any {
+  let segment = str.slice(startIndex, endIndex)
+  let before = str.slice(0, startIndex)
+  let after = str.slice(endIndex)
+  let focusIndex
+
+  // Firstly, check if the selected segment is in the conditions to strip the link out.
+  // Stripping condition No 1.
+  if (before.endsWith('[') && /^\]\(.+\)/.test(after)) {
+    before = before.slice(0, before.length - 1)
+    after = after.replace(/^\]\(.+\)/, '')
+    focusIndex = {
+      start: (before + segment).length,
+      end: (before + segment).length
+    }
+  } else if (/^\[(.*)\]\(.+\)$/.test(segment)) {
+    segment = segment.replace(/^\[(.*)\]\(.+\)$/, '$1')
+    focusIndex = {
+      start: (before + segment).length,
+      end: (before + segment).length
+    }
+  } else {
+    // Otherwise, inject the link
+    segment = `[${segment}](url)`
+    focusIndex = {
+      start: (before + segment).length - 4,
+      end: (before + segment).length - 1
+    }
+  }
+
+  return {
+    output: before + segment + after, focusIndex
+  }
 }

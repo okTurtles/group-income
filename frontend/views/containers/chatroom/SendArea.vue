@@ -202,7 +202,7 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
-import { injectOrStripSpecialChar } from '@view-utils/convert-to-markdown.js'
+import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -628,19 +628,22 @@ export default ({
 
       // Check if call-to-action buttons are clicked while a string segment of the input field is selected.
       if (prevFocusElement === inputEl && (selStart !== selEnd)) {
+        let result
         switch (type) {
           case 'bold':
           case 'italic':
           case 'code':
           case 'strikethrough': {
-            const result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
+            result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
             inputEl.value = result.output
             this.moveCursorTo(result.focusIndex)
             break
           }
-          case 'link':
-            // TODO! injecting <a> tag equivalent of characters is handled differently.
-            console.log('TODO: Implement link injection!')
+          case 'link': {
+            result = injectOrStripLink(inputValue, selStart, selEnd)
+            inputEl.value = result.output
+            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
+          }
         }
       }
     },
