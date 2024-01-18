@@ -147,15 +147,6 @@
               i.icon-italic
           tooltip(
             direction='top'
-            :text='L("Link")'
-          )
-            button.is-icon(
-              :aria-label='L("Add link")'
-              @mousedown='transformTextSelectionToMarkdown($event, "link")'
-            )
-              i.icon-link
-          tooltip(
-            direction='top'
             :text='L("Code")'
           )
             button.is-icon(
@@ -172,6 +163,15 @@
               @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
             )
               i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
 
         .c-send-button(
           id='mobileSendButton'
