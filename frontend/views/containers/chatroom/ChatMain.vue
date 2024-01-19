@@ -915,7 +915,7 @@ export default ({
     },
     // We need this method wrapper to avoid ephemeral.onChatScroll being undefined
     onChatScroll () {
-      this.ephemeral?.onChatScroll()
+      this.ephemeral.onChatScroll()
     },
     archiveMessageState () {
       // Copy of a reference to this.latestEvents to ensure it doesn't change
