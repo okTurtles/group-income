@@ -715,10 +715,13 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        if (config.skipActionProcessing) {
+        // If skipping porocessing or if the message is outgoing, there isn't
+        // anything else to do
+        if (config.skipActionProcessing || direction === 'outgoing') {
           return
         }
 
+        // Outgoing messages don't have a context attribute
         if (!has(v.replyWith, 'context')) {
           console.error('Ignoring OP_KEY_REQUEST because it is missing the context attribute')
           return
