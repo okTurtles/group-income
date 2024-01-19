@@ -16,7 +16,7 @@
     .c-body-conversation(
       ref='conversation'
       data-test='conversationWrapper'
-      @scroll='ephemeral.onChatScroll'
+      @scroll='onChatScroll'
       :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
 
@@ -912,6 +912,10 @@ export default ({
           console.error('ChatMain infiniteHandler() error:', e)
         })
       })
+    },
+    // We need this method wrapper to avoid ephemeral.onChatScroll being undefined
+    onChatScroll () {
+      this.ephemeral?.onChatScroll()
     },
     archiveMessageState () {
       // Copy of a reference to this.latestEvents to ensure it doesn't change
