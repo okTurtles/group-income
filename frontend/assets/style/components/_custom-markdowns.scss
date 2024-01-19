@@ -1,5 +1,6 @@
 .custom-markdown-content {
   // style declarations for custom markdown html output content
+
   code {
     display: inline-block;
     border-radius: $radius;
@@ -8,6 +9,8 @@
     font-size: $size_5;
     background-color: $general_1;
     color: $warning_0;
+    margin-left: 1px;
+    margin-right: 1px;
   }
 
   pre > code {
@@ -16,6 +19,7 @@
     padding: 0.5rem;
     background-color: $general_1;
     line-height: 1.4;
+    margin: 0;
   }
 
   * + pre,
@@ -25,6 +29,8 @@
 
   em {
     color: $text_1;
+    margin-left: 1px;
+    margin-right: 1px;
   }
 
   ul li {

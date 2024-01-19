@@ -3,20 +3,6 @@ import { marked } from 'marked'
 marked.use({
   extensions: [
     {
-      name: 'em',
-      level: 'inline',
-      renderer (token) {
-        // custom renderer that converts *content* into <strong>content</strong>.
-        // (reference: https://marked.js.org/using_pro#renderer)
-
-        const rawTxt = token.raw
-        const content = token.text
-        return /^\*.+\*$/.test(rawTxt)
-          ? `<strong>${content}</strong>`
-          : `<em>${content}</em>`
-      }
-    },
-    {
       name: 'link',
       level: 'inline',
       renderer (token) {
@@ -28,11 +14,11 @@ marked.use({
 })
 
 export function convertToMarkdown (str: string): any {
-  let converted = marked.parse(str, {})
+  let converted = marked.parse(str, { gfm: true })
 
   // remove unecessary line-breaks from the converted markdown outcome.
   converted = converted.replace(/^\s+|\s+$/g, '')
-    .replace(/>\s+</g, '><')
+    .replace(/>(\r|\n)+</g, '><')
 
   // if the original string doesn't have a line-break within it,
   // the converted outcome doesn't need to be wrapped with <p></p>.
@@ -51,7 +37,7 @@ export function injectOrStripSpecialChar (
   endIndex: number // end position of the target segment.
 ): any {
   const charMap = {
-    'bold': '*',
+    'bold': '**',
     'italic': '_',
     'code': '`',
     'strikethrough': '~'
@@ -67,11 +53,13 @@ export function injectOrStripSpecialChar (
 
   if (before.endsWith(specialChar) && after.startsWith(specialChar)) {
     // Stripping condition No 1. - when the selected segment is already wrapped with the special character.
-    before = before.slice(0, before.length - 1)
-    after = after.slice(1)
+    const len = specialChar.length
+    before = before.slice(0, before.length - len)
+    after = after.slice(len)
   } else if (segment.startsWith(specialChar) && segment.endsWith(specialChar)) {
     // Stripping condition No 2. - when the selected segment itself contains the special character at both start/end of the string.
-    segment = segment.slice(1, segment.length - 1)
+    const len = specialChar.length
+    segment = segment.slice(len, segment.length - len)
   } else {
     // Otherwise, let's wrap the selected segment with the speical character.
     segment = `${specialChar}${segment}${specialChar}`
