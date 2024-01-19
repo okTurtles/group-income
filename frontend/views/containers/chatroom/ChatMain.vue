@@ -138,6 +138,12 @@ import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const ignorableScrollDistanceInPixel = 500
+
+// The following methods are wrapped inside `debounce`, which requires calling
+// flush before the references used go away, like when switching groups.
+// Vue.js binds methods, which means that properties like `.flush` become
+// inaccessible. So, instead we define these methods outside the component and
+// manually bind them in `mounted`.
 const onChatScroll = function () {
   if (!this.$refs.conversation) {
     return
@@ -264,6 +270,7 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
+    // Bind debounced methods
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
     if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
       // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
@@ -278,6 +285,13 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
+    try {
+      // Before destroying the component and its state, we save the current
+      // scroll position if there's something so save.
+      this.ephemeral.onChatScroll.flush()
+    } catch (e) {
+      console.error('ChatMain.vue: Error while flushing onChatScroll in beforeDestroy', e)
+    }
     this.archiveMessageState()
   },
   computed: {
@@ -549,7 +563,13 @@ export default ({
     initializeState () {
       // NOTE: this state is rendered using the chatroom contract functions
       // so should be CAREFUL of updating the fields
-      this.ephemeral.onChatScroll.flush()
+      try {
+        // Before initializing the state, we save the current scroll position
+        // if there's something so save.
+        this.ephemeral.onChatScroll.flush()
+      } catch (e) {
+        console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
+      }
       Vue.set(this.messageState, 'contract', {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
@@ -924,6 +944,9 @@ export default ({
     archiveKeyFromChatRoomId (chatRoomId) {
       return `messages/${this.ourIdentityContractId}/${chatRoomId}`
     },
+    // This debounced method is debounced precisely while switching groups
+    // to avoid unnecessary re-rendering, and therefore is fine as is and
+    // doesn't need to be flushed
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState()
