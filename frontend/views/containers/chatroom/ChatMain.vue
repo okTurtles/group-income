@@ -16,7 +16,7 @@
     .c-body-conversation(
       ref='conversation'
       data-test='conversationWrapper'
-      @scroll='onChatScroll'
+      @scroll='ephemeral.onChatScroll'
       :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
 
@@ -138,6 +138,63 @@ import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const ignorableScrollDistanceInPixel = 500
+const onChatScroll = function () {
+  if (!this.$refs.conversation) {
+    return
+  }
+  const curScrollTop = this.$refs.conversation.scrollTop
+  const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
+
+  if (!this.$refs.conversation) {
+    this.ephemeral.scrolledDistance = 0
+  } else {
+    const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+    this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+  }
+
+  if (!this.summary.isJoined) {
+    return
+  }
+
+  for (let i = this.messages.length - 1; i >= 0; i--) {
+    const msg = this.messages[i]
+    const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
+    // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
+    const height = this.$refs[msg.hash][0].$el.clientHeight
+    if (offsetTop + height <= curScrollBottom) {
+      const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
+      const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
+      if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
+        this.updateUnreadMessageHash({
+          messageHash: msg.hash,
+          createdDate: msg.datetime
+        })
+      }
+      break
+    }
+  }
+
+  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+    // Save the current scroll position per each chatroom
+    for (let i = 0; i < this.messages.length - 1; i++) {
+      const msg = this.messages[i]
+      const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
+      const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
+      if (offsetTop - scrollMarginTop > curScrollTop) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageHash: msg.hash
+        })
+        break
+      }
+    }
+  } else if (this.currentChatRoomScrollPosition) {
+    sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+      chatRoomId: this.currentChatRoomId,
+      messageHash: null
+    })
+  }
+}
 
 export default ({
   name: 'ChatMain',
@@ -207,6 +264,7 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
     if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
       // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
       //       after the first opening the Group Income application
@@ -491,6 +549,7 @@ export default ({
     initializeState () {
       // NOTE: this state is rendered using the chatroom contract functions
       // so should be CAREFUL of updating the fields
+      this.ephemeral.onChatScroll.flush()
       Vue.set(this.messageState, 'contract', {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
@@ -834,63 +893,6 @@ export default ({
         })
       })
     },
-    onChatScroll: debounce(function () {
-      if (!this.$refs.conversation) {
-        return
-      }
-      const curScrollTop = this.$refs.conversation.scrollTop
-      const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-
-      if (!this.$refs.conversation) {
-        this.ephemeral.scrolledDistance = 0
-      } else {
-        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
-      }
-
-      if (!this.summary.isJoined) {
-        return
-      }
-
-      for (let i = this.messages.length - 1; i >= 0; i--) {
-        const msg = this.messages[i]
-        const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-        // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-        const height = this.$refs[msg.hash][0].$el.clientHeight
-        if (offsetTop + height <= curScrollBottom) {
-          const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
-          if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
-            this.updateUnreadMessageHash({
-              messageHash: msg.hash,
-              createdDate: msg.datetime
-            })
-          }
-          break
-        }
-      }
-
-      if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
-        // Save the current scroll position per each chatroom
-        for (let i = 0; i < this.messages.length - 1; i++) {
-          const msg = this.messages[i]
-          const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-          const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
-          if (offsetTop - scrollMarginTop > curScrollTop) {
-            sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-              chatRoomId: this.currentChatRoomId,
-              messageHash: msg.hash
-            })
-            break
-          }
-        }
-      } else if (this.currentChatRoomScrollPosition) {
-        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-          chatRoomId: this.currentChatRoomId,
-          messageHash: null
-        })
-      }
-    }, 500),
     archiveMessageState () {
       // Copy of a reference to this.latestEvents to ensure it doesn't change
       const latestEvents = this.latestEvents

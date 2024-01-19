@@ -16,7 +16,7 @@ import './persistent-actions.js'
 import { PERSISTENT_ACTION_FAILURE, PERSISTENT_ACTION_TOTAL_FAILURE, PERSISTENT_ACTION_SUCCESS } from './events.js'
 
 // Provides the 'crypto' global in the Nodejs environment.
-globalThis.crypto = crypto
+Object.assign(globalThis, 'crypto', { value: crypto })
 // Necessary to avoid 'JSON.stringify' errors since Node timeouts are circular objects, whereas browser timeouts are just integers.
 setTimeout(() => {}).constructor.prototype.toJSON = () => undefined
 
