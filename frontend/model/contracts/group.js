@@ -1410,6 +1410,12 @@ sbp('chelonia/defineContract', {
         member: string
       }),
       process ({ data, meta }, { state }) {
+        if (!state.chatRooms[data.chatRoomID]) {
+          throw new Error('Cannot leave a chatroom which isn\'t part of the group')
+        }
+        if (state.chatRooms[data.chatRoomID].users[data.member]?.status !== PROFILE_STATUS.ACTIVE) {
+          throw new Error('Cannot leave a chatroom that you\'re not part of')
+        }
         removeGroupChatroomProfile(state, data.chatRoomID, data.member)
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
@@ -1450,6 +1456,12 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (state.profiles[username]?.status !== PROFILE_STATUS.ACTIVE) {
           throw new Error('Cannot join a chatroom for a group you\'re not a member of')
+        }
+        if (!state.chatRooms[data.chatRoomID]) {
+          throw new Error('Cannot join a chatroom which isn\'t part of the group')
+        }
+        if (state.chatRooms[data.chatRoomID].users[username]?.status === PROFILE_STATUS.ACTIVE) {
+          throw new Error('Cannot join a chatroom that you\'re already part of')
         }
         // Here, we could use a list of active members or we could use a
         // dictionary with an explicit status (as is being done). The reason

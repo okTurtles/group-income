@@ -235,37 +235,12 @@ export default (sbp('sbp/selectors/register', {
         ],
         sendMessage({ ...params, returnInvocation: true })
       ],
-      signingKeyId,
-      hooks: {
-        ...params?.hooks,
-        preSendCheck (msg, state) {
-          // Avoid sending a duplicate action if the person is already a
-          // chatroom member
-          if (state.users?.[params.data.username]) return false
-          if (params?.hooks?.preSendCheck) {
-            return params.hooks.preSendCheck(msg, state)
-          }
-          return true
-        }
-      }
+      signingKeyId
     })
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
-    const hooks = {
-      ...params?.hooks,
-      preSendCheck (msg, state) {
-        // Avoid sending a duplicate action if the person isn't a
-        // chatroom member
-        if (!state.users?.[params.data.member]) return false
-        if (params?.hooks?.preSendCheck) {
-          return params.hooks.preSendCheck(msg, state)
-        }
-        return true
-      }
-    }
-
     const rootGetters = sbp('state/vuex/getters')
     const userID = rootGetters.ourContactProfiles[params.data.member]?.contractID
 
@@ -284,12 +259,11 @@ export default (sbp('sbp/selectors/register', {
             }
           ]
         ],
-        signingKeyId,
-        hooks
+        signingKeyId
       })
     }
 
-    return await sendMessage({ ...params, hooks })
+    return await sendMessage(params)
   }),
   ...encryptedAction('gi.actions/chatroom/delete', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
