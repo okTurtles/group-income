@@ -78,54 +78,6 @@
               @click='openEmoticon'
             )
               i.icon-smile-beam
-
-      .c-edit-actions(v-if='isEditing')
-        i18n.is-small.is-outlined(
-          tag='button'
-          @click='$emit("cancelEdit")'
-        ) Cancel
-
-        i18n.button.is-small(
-          tag='button'
-          @click='sendMessage'
-        ) Save changes
-
-      .c-edit-action-wrapper(v-else)
-        .addons(v-if='ephemeral.showButtons')
-          tooltip(
-            direction='top'
-            :text='L("Create poll")'
-          )
-            button.is-icon(
-              :aria-label='L("Create poll")'
-              @click='openCreatePollModal'
-            )
-              i.icon-poll
-          tooltip(
-            direction='top'
-            :text='L("Add reaction")'
-          )
-            button.is-icon(
-              :aria-label='L("Add reaction")'
-              @click='openEmoticon'
-            )
-              i.icon-smile-beam
-          tooltip(
-            direction='top'
-            :text='L("Attach file")'
-          )
-            button.is-icon.c-file-attachment-btn(
-              :aria-label='L("Attach file")'
-              @click='openFileAttach'
-            )
-              i.icon-paper-clip
-              input(
-                ref='fileAttachmentInputEl'
-                type='file'
-                multiple
-                :accept='supportedFileExtensions'
-                @change='fileAttachmentHandler($event.target.files)'
-              )
           tooltip(
             direction='top'
             :text='L("Bold")'
@@ -173,13 +125,110 @@
             )
               i.icon-link
 
-        .c-send-button(
-          id='mobileSendButton'
+      .c-edit-actions(v-if='isEditing')
+        i18n.is-small.is-outlined(
           tag='button'
-          :class='{ isActive }'
+          @click='$emit("cancelEdit")'
+        ) Cancel
+
+        i18n.button.is-small(
+          tag='button'
           @click='sendMessage'
-        )
-          .icon-paper-plane
+        ) Save changes
+
+      .c-edit-action-wrapper(v-else)
+        .addons(v-if='ephemeral.showButtons')
+          tooltip(
+            direction='top'
+            :text='L("Bold")'
+          )
+            button.is-icon(
+              :aria-label='L("Bold style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
+            )
+              i.icon-bold
+          tooltip(
+            direction='top'
+            :text='L("Italic")'
+          )
+            button.is-icon(
+              :aria-label='L("Italic style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+            )
+              i.icon-italic
+          tooltip(
+            direction='top'
+            :text='L("Code")'
+          )
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+            )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+            )
+              i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
+
+        .primary-ctas
+          .addons(v-if='ephemeral.showButtons')
+            tooltip(
+              direction='top'
+              :text='L("Create poll")'
+            )
+              button.is-icon(
+                :aria-label='L("Create poll")'
+                @click='openCreatePollModal'
+              )
+                i.icon-poll
+            tooltip(
+              direction='top'
+              :text='L("Add reaction")'
+            )
+              button.is-icon(
+                :aria-label='L("Add reaction")'
+                @click='openEmoticon'
+              )
+                i.icon-smile-beam
+            tooltip(
+              direction='top'
+              :text='L("Attach file")'
+            )
+              button.is-icon.c-file-attachment-btn(
+                :aria-label='L("Attach file")'
+                @click='openFileAttach'
+              )
+                i.icon-paper-clip
+                input(
+                  ref='fileAttachmentInputEl'
+                  type='file'
+                  multiple
+                  :accept='supportedFileExtensions'
+                  @change='fileAttachmentHandler($event.target.files)'
+                )
+
+          .c-send-button(
+            id='mobileSendButton'
+            tag='button'
+            :class='{ isActive }'
+            @click='sendMessage'
+          )
+            .icon-paper-plane
 
     .textarea.c-send-mask(
       ref='mask'
@@ -516,7 +565,7 @@ export default ({
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
       this.$refs.poll.open({
-        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        right: `${window.innerWidth - bbox.right + 24}px`, // 24 -> 1.5rem padding-left
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
     },
@@ -786,8 +835,14 @@ export default ({
       display: flex;
       justify-content: space-between;
 
+      @include phone {
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
+      }
+
       .c-edit-actions {
         margin-right: 0.5rem;
+        margin-left: 0.5rem;
       }
     }
 
@@ -801,9 +856,23 @@ export default ({
   top: 0;
 }
 
+.primary-ctas {
+  display: flex;
+  align-items: center;
+
+  .addons {
+    margin-right: 0.5rem;
+  }
+}
+
 .inputgroup .addons {
   position: relative;
   margin-left: 0.25rem;
+
+  &.addons-editing {
+    display: flex;
+    width: 100%;
+  }
 
   button.is-icon:focus {
     box-shadow: none;
@@ -811,7 +880,7 @@ export default ({
   }
 
   button.is-icon:first-child:last-child {
-    width: 2rem;
+    width: 1.825rem;
   }
 }
 
