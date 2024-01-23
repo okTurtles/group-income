@@ -112,6 +112,7 @@
     "emoji-mart-vue-fast": "7.0.7",
     "localforage": "1.9.0",
     "lru-cache": "7.14.0",
+    "marked": "11.1.1",
     "multihashes": "0.4.15",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
