@@ -1,5 +1,6 @@
 .custom-markdown-content {
   // style declarations for custom markdown html output content
+  white-space: initial;
 
   code {
     display: inline-block;
@@ -33,10 +34,18 @@
     margin-right: 1px;
   }
 
+  ul {
+    margin: 0.75rem 0;
+  }
+
   ul li {
     position: relative;
     display: block;
     padding: 0 0 0.2rem 1.25rem;
+
+    &:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
 
     &::before {
       content: "";
