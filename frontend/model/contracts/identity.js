@@ -193,7 +193,7 @@ sbp('chelonia/defineContract', {
           // a deadlock.
           if (!inviteSecretId) return
 
-          return sbp('gi.actions/group/join', {
+          sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,
@@ -202,6 +202,8 @@ sbp('chelonia/defineContract', {
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
             encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+          }).catch(e => {
+            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
           })
         }).catch(e => {
           console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)
@@ -243,7 +245,7 @@ sbp('chelonia/defineContract', {
               contractID: groupContractID,
               data: {}
             }).catch(e => {
-              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselvs action to group ${data.groupContractID}`, e)
+              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselves action to group ${data.groupContractID}`, e)
             })
           }
 

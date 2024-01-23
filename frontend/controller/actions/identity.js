@@ -456,9 +456,26 @@ export default (sbp('sbp/selectors/register', {
     try {
       const state = sbp('state/vuex/state')
       console.info('logging out, waiting for any events to finish...')
+      // wait for any pending operations to finish before calling state/vuex/save
+      // This includes, in order:
+      //   1. Actions to be sent (in the `encrypted-action` queue)
+      //   2. (In reset) Actions that haven't been published yet (the
+      //      `publish:${contractID}` queues)
+      //   3. (In reset) Processing of any action (waiting on all the contract
+      //      queues), including their side-effects (the `${contractID}` queues)
+      //   4. (In reset handler) Outgoing actions from side-effects (again, in
+      //      the `encrypted-action` queue)
+      await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+      // reset will wait until we have processed any remaining actions
       await sbp('chelonia/reset', async () => {
-        // wait for any pending sync operations to finish before saving,
-        // including those that side-effects might have sent
+        // some of the actions that reset waited for might have side-effects
+        // that send actions
+        // we wait for those as well (the duplication in this case is
+        // intended) -- see 4. above
+        // The intent of this is to wait for all the current actions to be
+        // sent and then wait until any actions that are a side-effect are sent
+        // TODO: We might not need this second await and 1-3 could be fine (i.e.,
+        // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')

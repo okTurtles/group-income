@@ -123,7 +123,7 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
         )
       )
   ) {
-    console.error(`Signing key ${signingKey.id} is missing permissions for operation ${opT}`)
+    console.error(`Signing key ${signingKeyId} is missing permissions for operation ${opT}`)
     return false
   }
 

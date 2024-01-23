@@ -680,9 +680,8 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/contract/sync': function (contractIDs: string | string[], params?: { force?: boolean, deferredRemove?: boolean }): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     const forcedSync = !!params?.force
-    const rootState = sbp(this.config.stateSelector)
     return Promise.all(listOfIds.map(contractID => {
-      if (!forcedSync && has(rootState.contracts, contractID)) {
+      if (!forcedSync && this.subscriptionSet.has(contractID)) {
         if (params?.deferredRemove) {
           this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
         }

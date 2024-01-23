@@ -262,7 +262,10 @@ export default (sbp('sbp/selectors/register', {
     // JOINING_GROUP, so that we process leave actions and don't interfere
     // with the leaving process (otherwise, the side-effects will prevent
     // us from fully leaving).
-    await sbp('chelonia/contract/wait', params.contractID)
+    await Promise.all([
+      sbp('chelonia/contract/wait', params.originatingContractID),
+      sbp('chelonia/contract/wait', params.contractID)
+    ])
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const { loggedIn } = sbp('state/vuex/state')
@@ -369,7 +372,7 @@ export default (sbp('sbp/selectors/register', {
             postpublish: null
           }
         }).catch((e) => {
-          console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
+          console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
           throw e
         })
 
