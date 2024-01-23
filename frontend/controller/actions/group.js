@@ -288,7 +288,7 @@ export default (sbp('sbp/selectors/register', {
       // all of the steps for joining in the past, but we've then been removed
       // while we were offline. In this case, we should *not* re-join
       // automatically, even if we have a valid invitation secret and are
-      // technically able to. However, if the previous situation we *should*
+      // technically able to. However, in the previous situation we *should*
       // attempt to rejoin if the action was user-initiated.
       const hasKeyShareBeenRespondedBy = sbp('chelonia/contract/hasKeyShareBeenRespondedBy', userID, params.contractID, params.reference)
 

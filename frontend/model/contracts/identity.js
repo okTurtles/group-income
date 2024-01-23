@@ -222,7 +222,7 @@ sbp('chelonia/defineContract', {
         Vue.delete(state.groups, groupContractID)
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, async () => {
+        sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
@@ -239,9 +239,11 @@ sbp('chelonia/defineContract', {
           }
 
           if (has(rootState.contracts, groupContractID)) {
-            await sbp('gi.actions/group/removeOurselves', {
+            sbp('gi.actions/group/removeOurselves', {
               contractID: groupContractID,
               data: {}
+            }).catch(e => {
+              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselvs action to group ${data.groupContractID}`, e)
             })
           }
 

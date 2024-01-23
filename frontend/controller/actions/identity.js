@@ -455,10 +455,11 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/logout': async function () {
     try {
       const state = sbp('state/vuex/state')
-      // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
-      await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       await sbp('chelonia/reset', async () => {
+        // wait for any pending sync operations to finish before saving,
+        // including those that side-effects might have sent
+        await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
 
