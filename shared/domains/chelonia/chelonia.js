@@ -273,7 +273,28 @@ export default (sbp('sbp/selectors/register', {
       ownKeys: secretKeyList
     })
     this.removeCount = Object.create(null)
+    // subscriptionSet includes all the contracts in state.contracts for which
+    // we can process events (contracts for which we have called /sync)
+    // The reason we can't use, e.g., Object.keys(state.contracts), is that
+    // when resetting the state (calling /reset, e.g., after logging out) we may
+    // still receive events for old contracts that belong to the old session.
+    // Those events must be ignored or discarded until the new session is set up
+    // (i.e., login has finished running) because we don't necessarily have
+    // all the information needed to process events in those contracts, such as
+    // secret keys.
+    // A concrete example is:
+    //   1. user1 logs in to the group and rotates the group keys, then logs out
+    //   2. user2 logs in to the group.
+    //   3. If an event came over the web socket for the group, we must not
+    //      process it before we've processed the OP_KEY_SHARE containing the
+    //      new keys, or else we'll build an incorrect state.
+    // The example above is simplified, but this is even more of an issue
+    // when there is a third contract (for example, a group chatroom) using
+    // those rotated keys as foreign keys.
     this.subscriptionSet = new Set()
+    // pending includes contracts that are scheduled for syncing or in the
+    // process of syncing for the first time. After sync completes for the
+    // first time, they are removed from pending and added to subscriptionSet
     this.pending = []
   },
   'chelonia/config': function () {

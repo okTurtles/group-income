@@ -103,7 +103,7 @@ export default ({
     /**
      * Tab click listener change active tab.
      */
-    tabClick (tabItem) {
+    async tabClick (tabItem) {
       if (!tabItem.url) {
         return
       }
@@ -118,12 +118,14 @@ export default ({
         this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
       } else {
-        Promise.resolve(sbp(tabItem.action)).then(() => {
+        // The action could be asynchronous, so we wrap it in a try-catch block
+        try {
+          await sbp(tabItem.action)
           this.$emit('close')
-        }).catch((e) => {
+        } catch (e) {
           console.error(`Error on tabClick: [${e?.name}] ${e?.message || e}`, tabItem, e)
           alert(`An error occurred: ${e?.name}`)
-        })
+        }
       }
     }
   },
