@@ -118,8 +118,12 @@ export default ({
         this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
       } else {
-        sbp(tabItem.action)
-        this.$emit('close')
+        Promise.resolve(sbp(tabItem.action)).then(() => {
+          this.$emit('close')
+        }).catch((e) => {
+          console.error(`Error on tabClick: [${e?.name}] ${e?.message || e}`, tabItem, e)
+          alert(`An error occurred: ${e?.name}`)
+        })
       }
     }
   },

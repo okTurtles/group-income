@@ -20,6 +20,7 @@ export default ({
     MessageBase
   },
   props: {
+    height: Number,
     messageHash: String,
     type: String,
     text: String,

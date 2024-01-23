@@ -1867,6 +1867,10 @@ sbp('chelonia/defineContract', {
         return
       }
 
+      leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
+        console.error('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
+      })
+
       if (data.member === username) {
         // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
         // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
@@ -1906,9 +1910,6 @@ sbp('chelonia/defineContract', {
         // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
       }
 
-      leaveAllChatRoomsUponLeaving(state, data.member, meta).catch((e) => {
-        console.error('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
-      })
       // TODO - #850 verify open proposals and see if they need some re-adjustment.
     },
     'gi.contracts/group/rotateKeys': (contractID) => {

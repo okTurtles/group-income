@@ -100,6 +100,7 @@ export default ({
     }
   },
   props: {
+    height: Number,
     text: String,
     messageHash: String,
     replyingMessage: String,

@@ -273,6 +273,8 @@ export default (sbp('sbp/selectors/register', {
       ownKeys: secretKeyList
     })
     this.removeCount = Object.create(null)
+    this.subscriptionSet = new Set()
+    this.pending = []
   },
   'chelonia/config': function () {
     return cloneDeep(this.config)
@@ -306,13 +308,14 @@ export default (sbp('sbp/selectors/register', {
     this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
     this.config.reactiveSet(rootState, 'contracts', Object.create(null))
-    this.config.reactiveSet(rootState, 'pending', [])
+    this.pending.splice(0)
     Object.keys(contracts).forEach((contractID) => this.config.reactiveDel(rootState, contractID))
     this.currentSyncs = Object.create(null)
     this.postSyncOperations = Object.create(null)
     this.sideEffectStacks = Object.create(null) // [contractID]: Array<*>
+    this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, rootState.contracts)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
   },
   'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
@@ -614,10 +617,9 @@ export default (sbp('sbp/selectors/register', {
   // call this manually to resubscribe/unsubscribe from contracts as needed
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
   'chelonia/pubsub/update': function () {
-    const { contracts } = sbp(this.config.stateSelector)
     const client = this.pubsub
     const subscribedIDs = [...client.subscriptionSet]
-    const currentIDs = Object.keys(contracts)
+    const currentIDs = Array.from(this.subscriptionSet)
     const leaveSubscribed = intersection(subscribedIDs, currentIDs)
     const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
     const toSubscribe = difference(currentIDs, leaveSubscribed)

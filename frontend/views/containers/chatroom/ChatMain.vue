@@ -59,6 +59,7 @@
           :is='messageType(message)'
           :ref='message.hash'
           :key='message.hash'
+          :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'

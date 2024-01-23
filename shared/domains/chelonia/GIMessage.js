@@ -468,12 +468,24 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-  const headJSON = JSON.stringify(head)
-  const messageJSON = { ...message.serialize(headJSON), head: headJSON }
-  const value = JSON.stringify(messageJSON)
+  let mapping
   return {
     direction: has(message, 'recreate') ? 'outgoing' : 'incoming',
-    mapping: { key: blake32Hash(value), value },
+    // Lazy computation of mapping to prevent us from serializing outgoing
+    // atomic operations
+    get mapping () {
+      if (!mapping) {
+        const headJSON = JSON.stringify(head)
+        const messageJSON = { ...message.serialize(headJSON), head: headJSON }
+        const value = JSON.stringify(messageJSON)
+
+        mapping = {
+          key: blake32Hash(value),
+          value
+        }
+      }
+      return mapping
+    },
     head,
     signedMessageData: message
   }

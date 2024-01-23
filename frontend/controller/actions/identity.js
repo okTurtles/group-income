@@ -440,7 +440,7 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
       alert(humanErr)
-      sbp('gi.actions/identity/logout')
+      await sbp('gi.actions/identity/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })

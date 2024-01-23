@@ -175,13 +175,16 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash, height }, { state }) {
         const { username } = data
-        if (!state.onlyRenderMessage && state.users[username]) {
-          throw new Error(`Can not join the chatroom which ${username} is already part of`)
+        if (!state.onlyRenderMessage) {
+          if (state.users[username]) {
+            throw new Error(`Can not join the chatroom which ${username} is already part of`)
+          }
+
+          Vue.set(state.users, username, { joinedDate: meta.createdDate })
+          return
         }
 
-        Vue.set(state.users, username, { joinedDate: meta.createdDate })
-
-        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+        if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
@@ -309,12 +312,19 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, height, contractID }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.onlyRenderMessage && !state.users[member]) {
-          throw new Error(`Can not leave the chatroom ${contractID} which ${member} is not part of`)
-        }
-        Vue.delete(state.users, member)
+        if (!state.onlyRenderMessage) {
+          if (!state.users) {
+            console.error('Missing state.users: ' + JSON.stringify(state))
+          }
+          if (!state.users[member]) {
+            throw new Error(`Can not leave the chatroom ${contractID} which ${member} is not part of`)
+          }
 
-        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+          Vue.delete(state.users, member)
+          return
+        }
+
+        if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 

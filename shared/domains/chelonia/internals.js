@@ -302,8 +302,9 @@ export default (sbp('sbp/selectors/register', {
     this.config.reactiveDel(state.contracts, contractID)
     this.config.reactiveDel(state, contractID)
     delete this.removeCount[contractID]
+    this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -638,16 +639,15 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          // TODO: Handle foreign keys too
-          if (newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height) {
-            if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
-            config.reactiveSet(targetState._volatile, 'dirty', true)
-          }
-
           // If an encryption key has been shared with _notBefore lower than the
           // current height, then the contract must be resynced.
           const mustResync = !!(newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height)
+
+          // TODO: Handle foreign keys too
           if (mustResync) {
+            if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
+            config.reactiveSet(targetState._volatile, 'dirty', true)
+
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
               return
@@ -993,18 +993,18 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    let recent
-    if (state.contracts[contractID]) {
-      recent = state.contracts[contractID].HEAD
+    const recent = state.contracts[contractID]?.HEAD
+    const isSubcribed = this.subscriptionSet.has(contractID)
+    if (isSubcribed) {
       if (params?.deferredRemove) {
         this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
       }
     } else {
-      const entry = state.pending.find((entry) => entry?.contractID === contractID)
+      const entry = this.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
       if (!entry) {
-        state.pending.push({ contractID, deferredRemove: params?.deferredRemove ? 1 : 0 })
+        this.pending.push({ contractID, deferredRemove: params?.deferredRemove ? 1 : 0 })
       } else {
         entry.deferredRemove += 1
       }
@@ -1037,6 +1037,14 @@ export default (sbp('sbp/selectors/register', {
           // this must be called directly, instead of via enqueueHandleEvent
           await sbp('chelonia/private/in/handleEvent', contractID, events[i])
         }
+      } else if (!isSubcribed) {
+        this.subscriptionSet.add(contractID)
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+        const entryIndex = this.pending.findIndex((entry) => entry?.contractID === contractID)
+        if (entryIndex !== -1) {
+          this.pending.splice(entryIndex, 1)
+        }
+        console.debug(`[chelonia] added already synchronized ${contractID} to subscription set`)
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
@@ -1436,7 +1444,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in side effects result in dropped messages to be reprocessed
     try {
       // verify we're expecting to hear from this contract
-      if (!state.pending.some((entry) => entry?.contractID === contractID) && !has(state.contracts, contractID)) {
+      if (!this.pending.some((entry) => entry?.contractID === contractID) && !this.subscriptionSet.has(contractID)) {
         console.warn(`[chelonia] WARN: ignoring unexpected event for ${contractID}:`, rawMessage)
         return
       }
@@ -1543,7 +1551,7 @@ export default (sbp('sbp/selectors/register', {
       // is executing. In particular, everything in between should be synchronous.
       try {
         const state = sbp(this.config.stateSelector)
-        handleEvent.applyProccessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
+        handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
       } catch (e) {
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
@@ -1668,7 +1676,7 @@ const handleEvent = {
       }
     })
   },
-  applyProccessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
+  applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
@@ -1703,18 +1711,21 @@ const handleEvent = {
         type
       })
       console.debug(`contract ${type} registered for ${contractID}`)
-      const entry = state.pending.find((entry) => entry?.contractID === contractID)
+    }
+    if (!this.subscriptionSet.has(contractID)) {
+      const entry = this.pending.find((entry) => entry?.contractID === contractID)
       if (entry?.deferredRemove) {
         this.removeCount[contractID] = entry?.deferredRemove
       }
       // we've successfully received it back, so remove it from expectation pending
       if (entry) {
-        const index = state.pending.indexOf(entry)
+        const index = this.pending.indexOf(entry)
         if (index !== -1) {
-          state.pending.splice(index, 1)
+          this.pending.splice(index, 1)
         }
       }
-      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+      this.subscriptionSet.add(contractID)
+      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
     }
 
     if (!processingErrored) {
