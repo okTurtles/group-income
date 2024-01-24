@@ -29,7 +29,7 @@ export default ({
   data () {
     return {
       ephemeral: {
-        isOnline: null
+        isOnline: null // show 'Retry' button only when the browser is online
       }
     }
   },
