@@ -100,6 +100,16 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
           })
         }
         // key.meta?.keyRequest?.contractID could be optionally encrypted
+        if (key.meta?.keyRequest?.reference) {
+          try {
+            key.meta.keyRequest.reference = maybeEncryptedIncomingData(contractID, state, key.meta.keyRequest.reference, height, additionalKeys, headJSON)?.valueOf()
+          } catch {
+            // If we couldn't decrypt it, this value is of no use to us (we
+            // can't keep track of key requests and key shares), so we delete it
+            delete key.meta.keyRequest.reference
+          }
+        }
+        // key.meta?.keyRequest?.contractID could be optionally encrypted
         if (key.meta?.keyRequest?.contractID) {
           try {
             key.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf()
@@ -458,12 +468,24 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-  const headJSON = JSON.stringify(head)
-  const messageJSON = { ...message.serialize(headJSON), head: headJSON }
-  const value = JSON.stringify(messageJSON)
+  let mapping
   return {
     direction: has(message, 'recreate') ? 'outgoing' : 'incoming',
-    mapping: { key: createCID(value), value },
+    // Lazy computation of mapping to prevent us from serializing outgoing
+    // atomic operations
+    get mapping () {
+      if (!mapping) {
+        const headJSON = JSON.stringify(head)
+        const messageJSON = { ...message.serialize(headJSON), head: headJSON }
+        const value = JSON.stringify(messageJSON)
+
+        mapping = {
+          key: createCID(value),
+          value
+        }
+      }
+      return mapping
+    },
     head,
     signedMessageData: message
   }

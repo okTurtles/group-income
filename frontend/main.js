@@ -120,7 +120,7 @@ async function startApp () {
           'chelonia/contract/waitingForKeyShareTo',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves',
-          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
+          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
           'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
           'gi.notifications/emit',
@@ -403,42 +403,6 @@ async function startApp () {
       },
       isInCypress () {
         return !!window.Cypress
-      },
-      pendingGroupKeyShares () {
-        return Object.keys(this.$store.state.contracts || {})
-          .filter(contractID => this.$store.state.contracts[contractID].type === 'gi.contracts/group')
-          .filter(contractID => Object.keys(this.$store.state[contractID]._vm?.pendingKeyShares || {}).length)
-          .join(', ')
-      },
-      pendingPublishEvents () {
-        return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
-          .filter(([q]) => typeof q === 'string' && q.startsWith('publish:'))
-          .flatMap(([, list]) => list).length
-      },
-      keyRequestedGroupIDs () {
-        const state = this.$store.state
-        const identityContractID = state.loggedIn?.identityContractID
-        const authorizedKeys = (
-          identityContractID &&
-          state[identityContractID]?._vm?.authorizedKeys
-        )
-        const contracts = state.contracts
-
-        if (!authorizedKeys || !contracts) return []
-
-        return Object.keys(contracts).filter((contractID) =>
-          contractID !== identityContractID &&
-          state[contractID]?._volatile?.pendingKeyRequests?.some((kr) =>
-            (
-              kr &&
-              kr.name &&
-              Object.values(authorizedKeys).some((key) => {
-                // $FlowFixMe[incompatible-use]
-                return key?.name === kr.name
-              })
-            )
-          )
-        ).join(', ')
       }
     },
     methods: {

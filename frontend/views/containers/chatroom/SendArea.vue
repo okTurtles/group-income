@@ -78,6 +78,52 @@
               @click='openEmoticon'
             )
               i.icon-smile-beam
+          tooltip(
+            direction='top'
+            :text='L("Bold")'
+          )
+            button.is-icon(
+              :aria-label='L("Bold style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
+            )
+              i.icon-bold
+          tooltip(
+            direction='top'
+            :text='L("Italic")'
+          )
+            button.is-icon(
+              :aria-label='L("Italic style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+            )
+              i.icon-italic
+          tooltip(
+            direction='top'
+            :text='L("Code")'
+          )
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+            )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+            )
+              i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
 
       .c-edit-actions(v-if='isEditing')
         i18n.is-small.is-outlined(
@@ -91,52 +137,98 @@
         ) Save changes
 
       .c-edit-action-wrapper(v-else)
-        .addons
+        .addons(v-if='ephemeral.showButtons')
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Create poll")'
+            :text='L("Bold")'
           )
             button.is-icon(
-              :aria-label='L("Create poll")'
-              @click='openCreatePollModal'
+              :aria-label='L("Bold style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
             )
-              i.icon-poll
+              i.icon-bold
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Add reaction")'
+            :text='L("Italic")'
           )
             button.is-icon(
-              :aria-label='L("Add reaction")'
-              @click='openEmoticon'
+              :aria-label='L("Italic style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
             )
-              i.icon-smile-beam
+              i.icon-italic
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Attach file")'
+            :text='L("Code")'
           )
-            button.is-icon.c-file-attachment-btn(
-              :aria-label='L("Attach file")'
-              @click='openFileAttach'
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
             )
-              i.icon-paper-clip
-              input(
-                ref='fileAttachmentInputEl'
-                type='file'
-                multiple
-                :accept='supportedFileExtensions'
-                @change='fileAttachmentHandler($event.target.files)'
-              )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+            )
+              i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
 
-        .c-send-button(
-          id='mobileSendButton'
-          tag='button'
-          :class='{ isActive }'
-          @click='sendMessage'
-        )
-          .icon-paper-plane
+        .primary-ctas
+          .addons(v-if='ephemeral.showButtons')
+            tooltip(
+              direction='top'
+              :text='L("Create poll")'
+            )
+              button.is-icon(
+                :aria-label='L("Create poll")'
+                @click='openCreatePollModal'
+              )
+                i.icon-poll
+            tooltip(
+              direction='top'
+              :text='L("Add reaction")'
+            )
+              button.is-icon(
+                :aria-label='L("Add reaction")'
+                @click='openEmoticon'
+              )
+                i.icon-smile-beam
+            tooltip(
+              direction='top'
+              :text='L("Attach file")'
+            )
+              button.is-icon.c-file-attachment-btn(
+                :aria-label='L("Attach file")'
+                @click='openFileAttach'
+              )
+                i.icon-paper-clip
+                input(
+                  ref='fileAttachmentInputEl'
+                  type='file'
+                  multiple
+                  :accept='supportedFileExtensions'
+                  @change='fileAttachmentHandler($event.target.files)'
+                )
+
+          .c-send-button(
+            id='mobileSendButton'
+            tag='button'
+            :class='{ isActive }'
+            @click='sendMessage'
+          )
+            .icon-paper-plane
 
     .textarea.c-send-mask(
       ref='mask'
@@ -159,6 +251,7 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -402,8 +495,11 @@ export default ({
          mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
       const selectionStart = this.ephemeral.mention.position + mention.length + 1
-      this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
+      this.moveCursorTo(selectionStart)
       this.endMention()
+    },
+    moveCursorTo (index) {
+      this.$refs.textarea.setSelectionRange(index, index)
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
@@ -469,7 +565,7 @@ export default ({
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
       this.$refs.poll.open({
-        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        right: `${window.innerWidth - bbox.right + 24}px`, // 24 -> 1.5rem padding-left
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
     },
@@ -570,6 +666,36 @@ export default ({
         this.endMention()
       }
     },
+    transformTextSelectionToMarkdown (e, type) {
+      e.preventDefault() // Calling e.preventDefault() in 'mousedown' event listener prevents the button from being focused upon click.
+
+      const prevFocusElement = document.activeElement // the captured activeElement inside 'mousedown' handler is still a previously focused element.
+      const inputEl = this.$refs.textarea
+      const selStart = inputEl.selectionStart
+      const selEnd = inputEl.selectionEnd
+      const inputValue = inputEl.value
+
+      // Check if call-to-action buttons are clicked while a string segment of the input field is selected.
+      if (prevFocusElement === inputEl && (selStart !== selEnd)) {
+        let result
+        switch (type) {
+          case 'bold':
+          case 'italic':
+          case 'code':
+          case 'strikethrough': {
+            result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
+            inputEl.value = result.output
+            this.moveCursorTo(result.focusIndex)
+            break
+          }
+          case 'link': {
+            result = injectOrStripLink(inputValue, selStart, selEnd)
+            inputEl.value = result.output
+            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
+          }
+        }
+      }
+    },
     onUserTyping (data) {
       const typingUser = data.username
 
@@ -601,6 +727,10 @@ export default ({
         this.currentChatRoomId,
         this.ourUsername
       )
+    },
+    onBtnClick (e) {
+      e.preventDefault()
+      console.log('!@# on btn click: ', e)
     }
   }
 }: Object)
@@ -705,8 +835,14 @@ export default ({
       display: flex;
       justify-content: space-between;
 
+      @include phone {
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
+      }
+
       .c-edit-actions {
         margin-right: 0.5rem;
+        margin-left: 0.5rem;
       }
     }
 
@@ -720,9 +856,23 @@ export default ({
   top: 0;
 }
 
+.primary-ctas {
+  display: flex;
+  align-items: center;
+
+  .addons {
+    margin-right: 0.5rem;
+  }
+}
+
 .inputgroup .addons {
   position: relative;
   margin-left: 0.25rem;
+
+  &.addons-editing {
+    display: flex;
+    width: 100%;
+  }
 
   button.is-icon:focus {
     box-shadow: none;
@@ -730,7 +880,7 @@ export default ({
   }
 
   button.is-icon:first-child:last-child {
-    width: 2rem;
+    width: 1.825rem;
   }
 }
 

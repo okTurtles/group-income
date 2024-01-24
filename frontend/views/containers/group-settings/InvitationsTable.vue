@@ -297,7 +297,10 @@ export default ({
       if (e.target.classList.contains('js-btnInvite')) {
         const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
         if (this.groupShouldPropose || isWelcomeInviteExpired) {
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+          const contractID = this.currentGroupId
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+            console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)
+          })
         } else {
           sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
         }

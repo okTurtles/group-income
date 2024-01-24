@@ -1,7 +1,7 @@
 import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared/constants.js'
 
 const API_URL = Cypress.config('baseUrl')
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const groupName = 'Dreamers'
 const anotherGroupName = 'Donuts'
 const groupMincome = 250

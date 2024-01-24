@@ -25,6 +25,7 @@
         slot='append'
         @infinite='infiniteHandler'
         force-use-infinite-wrapper='.c-body-conversation'
+        ref='infinite-loading'
       )
         div(slot='no-more')
           conversation-greetings(
@@ -58,6 +59,7 @@
           :is='messageType(message)'
           :ref='message.hash'
           :key='message.hash'
+          :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
@@ -138,6 +140,69 @@ import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const ignorableScrollDistanceInPixel = 500
 
+// The following methods are wrapped inside `debounce`, which requires calling
+// flush before the references used go away, like when switching groups.
+// Vue.js binds methods, which means that properties like `.flush` become
+// inaccessible. So, instead we define these methods outside the component and
+// manually bind them in `mounted`.
+const onChatScroll = function () {
+  if (!this.$refs.conversation) {
+    return
+  }
+  const curScrollTop = this.$refs.conversation.scrollTop
+  const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
+
+  if (!this.$refs.conversation) {
+    this.ephemeral.scrolledDistance = 0
+  } else {
+    const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+    this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+  }
+
+  if (!this.summary.isJoined) {
+    return
+  }
+
+  for (let i = this.messages.length - 1; i >= 0; i--) {
+    const msg = this.messages[i]
+    const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
+    // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
+    const height = this.$refs[msg.hash][0].$el.clientHeight
+    if (offsetTop + height <= curScrollBottom) {
+      const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
+      const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
+      if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
+        this.updateUnreadMessageHash({
+          messageHash: msg.hash,
+          createdDate: msg.datetime
+        })
+      }
+      break
+    }
+  }
+
+  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+    // Save the current scroll position per each chatroom
+    for (let i = 0; i < this.messages.length - 1; i++) {
+      const msg = this.messages[i]
+      const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
+      const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
+      if (offsetTop - scrollMarginTop > curScrollTop) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageHash: msg.hash
+        })
+        break
+      }
+    }
+  } else if (this.currentChatRoomScrollPosition) {
+    sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+      chatRoomId: this.currentChatRoomId,
+      messageHash: null
+    })
+  }
+}
+
 export default ({
   name: 'ChatMain',
   components: {
@@ -162,6 +227,8 @@ export default ({
   },
   data () {
     return {
+      GIMessage,
+      JSON,
       config: {
         isPhone: null
       },
@@ -204,6 +271,8 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
+    // Bind debounced methods
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
     if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
       // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
       //       after the first opening the Group Income application
@@ -217,6 +286,13 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
+    try {
+      // Before destroying the component and its state, we save the current
+      // scroll position if there's something so save.
+      this.ephemeral.onChatScroll.flush()
+    } catch (e) {
+      console.error('ChatMain.vue: Error while flushing onChatScroll in beforeDestroy', e)
+    }
     this.archiveMessageState()
   },
   computed: {
@@ -244,6 +320,9 @@ export default ({
       }
     },
     isScrolledUp () {
+      if (!this.ephemeral.scrolledDistance) {
+        return false
+      }
       return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
     },
     messages () {
@@ -334,25 +413,24 @@ export default ({
           // messages as pending in the UI
           prepublish: (message) => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
 
             // IMPORTANT: This is executed *BEFORE* the message is received over
             // the network
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', ['chelonia/in/processMessage', message, messageStateContract])
-              .then((messageStateContract) => {
-                if (!this.checkEventSourceConsistency(contractID)) return
-                Vue.set(this.messageState, 'contract', messageStateContract)
-              }).catch((e) => {
-                console.error('Error sending message during pre-publish: ' + e.message)
-              })
+            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+              if (!this.checkEventSourceConsistency(contractID)) return
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+            }).catch((e) => {
+              console.error('Error sending message during pre-publish: ' + e.message)
+            })
 
             this.stopReplying()
             this.updateScroll()
           },
           beforeRequest: (message, oldMessage) => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
             sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+              if (!this.checkEventSourceConsistency(contractID)) return
+              const messageStateContract = this.messageState.contract
               const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
               if (!msg) return
               msg.hash = message.hash()
@@ -442,21 +520,25 @@ export default ({
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: {
           hash: message.hash,
           createdDate: message.datetime,
           text: newMessage
         }
+      }).catch((e) => {
+        console.error(`Error while editing message for ${contractID}`, e)
       })
     },
     deleteMessage (message) {
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
         data: { hash: message.hash }
+      }).catch((e) => {
+        console.error(`Error while deleting message for ${contractID}`, e)
       })
     },
     changeDay (index) {
@@ -471,15 +553,24 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      // TODO: Unhandled rejection
+      const contractID = this.currentChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID: this.currentChatRoomId,
         data: { hash: message.hash, emoticon }
+      }).catch((e) => {
+        console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
     initializeState () {
       // NOTE: this state is rendered using the chatroom contract functions
       // so should be CAREFUL of updating the fields
+      try {
+        // Before initializing the state, we save the current scroll position
+        // if there's something so save.
+        this.ephemeral.onChatScroll.flush()
+      } catch (e) {
+        console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
+      }
       Vue.set(this.messageState, 'contract', {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
@@ -823,57 +914,10 @@ export default ({
         })
       })
     },
-    onChatScroll: debounce(function () {
-      if (!this.$refs.conversation) {
-        return
-      }
-      const curScrollTop = this.$refs.conversation.scrollTop
-      const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-      const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-      this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
-
-      if (!this.summary.isJoined) {
-        return
-      }
-
-      for (let i = this.messages.length - 1; i >= 0; i--) {
-        const msg = this.messages[i]
-        const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-        const height = this.$refs[msg.hash][0].$el.clientHeight
-        if (offsetTop + height <= curScrollBottom) {
-          const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
-          if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
-            this.updateUnreadMessageHash({
-              messageHash: msg.hash,
-              createdDate: msg.datetime
-            })
-          }
-          break
-        }
-      }
-
-      if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
-        // Save the current scroll position per each chatroom
-        for (let i = 0; i < this.messages.length - 1; i++) {
-          const msg = this.messages[i]
-          const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-          const height = this.$refs[msg.hash][0].$el.clientHeight
-          if (offsetTop + height >= curScrollTop) {
-            sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-              chatRoomId: this.currentChatRoomId,
-              messageHash: this.messages[i + 1].hash // Leave one(+1) message at the front by default for better seeing
-            })
-            break
-          }
-        }
-      } else if (this.currentChatRoomScrollPosition) {
-        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-          chatRoomId: this.currentChatRoomId,
-          messageHash: null
-        })
-      }
-    }, 500),
+    // We need this method wrapper to avoid ephemeral.onChatScroll being undefined
+    onChatScroll () {
+      this.ephemeral.onChatScroll()
+    },
     archiveMessageState () {
       // Copy of a reference to this.latestEvents to ensure it doesn't change
       const latestEvents = this.latestEvents
@@ -905,6 +949,9 @@ export default ({
     archiveKeyFromChatRoomId (chatRoomId) {
       return `messages/${this.ourIdentityContractId}/${chatRoomId}`
     },
+    // This debounced method is debounced precisely while switching groups
+    // to avoid unnecessary re-rendering, and therefore is fine as is and
+    // doesn't need to be flushed
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState()
@@ -913,11 +960,13 @@ export default ({
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
       // handler function for 'dragstart', 'dragover' events
-      if (!this.dndState.isActive) {
-        this.dndState.isActive = true
-      }
+      const items = Array.from(e?.dataTransfer?.items) || []
 
-      if (e?.dataTransfer) {
+      if (items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
+        if (!this.dndState.isActive) {
+          this.dndState.isActive = true
+        }
+
         // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
         e.dataTransfer.dropEffect = 'copy'
       }

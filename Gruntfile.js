@@ -1,5 +1,6 @@
 'use strict'
 
+// TODO: REMOVEME. This prevents tests from running
 if (process.env['CI']) process.exit(1)
 
 // =======================
@@ -465,7 +466,14 @@ module.exports = (grunt) => {
       }
     }[command]
     grunt.log.writeln(`cypress: running in "${command}" mode...`)
-    cypress[command]({ config: { baseUrl: process.env.API_URL }, ...options })
+    cypress[command]({
+      config: { baseUrl: process.env.API_URL },
+      // Exclude some spec files for CI runs
+      // group-large|group-proposals are excluded because they take
+      // comparatively long
+      ...process.env.CI && { spec: 'test/cypress/integration/!(group-large|group-proposals).spec.js' },
+      ...options
+    })
       .then(r => done(r.totalFailed === 0)).catch(done)
   })
 

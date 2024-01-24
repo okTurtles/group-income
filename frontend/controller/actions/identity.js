@@ -281,7 +281,7 @@ export default (sbp('sbp/selectors/register', {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
 
-      const contractIDs = []
+      const contractIDs = Object.create(null)
       // login can be called when no settings are saved (e.g. from Signup.vue)
       if (state) {
         // The retrieved local data might need to be completed in case it was originally saved
@@ -289,7 +289,13 @@ export default (sbp('sbp/selectors/register', {
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
-        contractIDs.push(...Object.keys(state.contracts))
+        // $FlowFixMe[incompatible-use]
+        Object.entries(state.contracts).forEach(([id, { type }]) => {
+          if (!contractIDs[type]) {
+            contractIDs[type] = []
+          }
+          contractIDs[type].push(id)
+        })
       }
 
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
@@ -307,6 +313,22 @@ export default (sbp('sbp/selectors/register', {
 
       sbp('state/vuex/commit', 'login', loginAttributes)
       await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
+
+      // We need to sync contracts in this order to ensure that we have all the
+      // corresponding secret keys. Group chatrooms use group keys but there's
+      // no OP_KEY_SHARE, which will result in the keys not being available when
+      // the group keys are rotated.
+      // TODO: This functionality could be moved into Chelonia by keeping track
+      // of when secret keys without OP_KEY_SHARE become available.
+      const contractSyncPriorityList = [
+        'gi.contracts/identity',
+        'gi.contracts/group',
+        'gi.contracts/chatroom'
+      ]
+      const getContractSyncPriority = (key) => {
+        const index = contractSyncPriorityList.indexOf(key)
+        return index === -1 ? contractSyncPriorityList.length : index
+      }
 
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
@@ -327,6 +349,9 @@ export default (sbp('sbp/selectors/register', {
           sbp('gi.ui/prompt', promptOptions).then((result) => {
             if (!result) {
               sbp('gi.actions/identity/logout')
+                .catch((e) => {
+                  console.error('[gi.actions/identity/login] Error calling logout', e)
+                })
             }
           }).catch((e) => {
             console.error('Error at gi.ui/prompt', e)
@@ -334,7 +359,13 @@ export default (sbp('sbp/selectors/register', {
 
           throw new Error('Unable to sync identity contract')
         }).then(() => {
-          return sbp('chelonia/contract/sync', contractIDs, { force: true })
+          // $FlowFixMe[incompatible-call]
+          return Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
+            // Sync contracts in order based on type
+            return getContractSyncPriority(a) - getContractSyncPriority(b)
+          }).map(([, ids]) => {
+            return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+          }))
             .catch((err) => {
               console.error('Error during contract sync upon login (syncing all contractIDs)', err)
             })
@@ -347,7 +378,8 @@ export default (sbp('sbp/selectors/register', {
 
               // contract sync might've triggered an async call to /remove, so
               // wait before proceeding
-              await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...contractIDs])))
+              // $FlowFixMe[incompatible-call]
+              await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
 
               // Call 'gi.actions/group/join' on all groups which may need re-joining
               await Promise.allSettled(
@@ -366,6 +398,7 @@ export default (sbp('sbp/selectors/register', {
                     originatingContractName: 'gi.contracts/identity',
                     contractID: groupId,
                     contractName: 'gi.contracts/group',
+                    reference: state[identityContractID].groups[groupId].hash,
                     signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
                     innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
                     encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
@@ -407,7 +440,10 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
       alert(humanErr)
-      sbp('gi.actions/identity/logout')
+      await sbp('gi.actions/identity/logout')
+        .catch((e) => {
+          console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
+        })
       throw new GIErrorUIRuntimeError(humanErr)
     }
   },
@@ -419,10 +455,28 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/logout': async function () {
     try {
       const state = sbp('state/vuex/state')
-      // wait for any pending sync operations to finish before saving
       console.info('logging out, waiting for any events to finish...')
+      // wait for any pending operations to finish before calling state/vuex/save
+      // This includes, in order:
+      //   1. Actions to be sent (in the `encrypted-action` queue)
+      //   2. (In reset) Actions that haven't been published yet (the
+      //      `publish:${contractID}` queues)
+      //   3. (In reset) Processing of any action (waiting on all the contract
+      //      queues), including their side-effects (the `${contractID}` queues)
+      //   4. (In reset handler) Outgoing actions from side-effects (again, in
+      //      the `encrypted-action` queue)
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+      // reset will wait until we have processed any remaining actions
       await sbp('chelonia/reset', async () => {
+        // some of the actions that reset waited for might have side-effects
+        // that send actions
+        // we wait for those as well (the duplication in this case is
+        // intended) -- see 4. above
+        // The intent of this is to wait for all the current actions to be
+        // sent and then wait until any actions that are a side-effect are sent
+        // TODO: We might not need this second await and 1-3 could be fine (i.e.,
+        // we could avoid waiting on these 2nd layer of actions)
+        await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
 

@@ -6,6 +6,7 @@ message-base(
   @reply-message-clicked='scrollToReplyMessage'
   @message-edited='editMessage'
   @delete-message='deleteMessage'
+  :convertTextToMarkdown='true'
 )
 
 </template>
@@ -20,6 +21,7 @@ export default ({
     MessageBase
   },
   props: {
+    height: Number,
     messageHash: String,
     type: String,
     text: String,
