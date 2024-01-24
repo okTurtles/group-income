@@ -12,6 +12,7 @@
 .*/dist-dashboard/.*
 <PROJECT_ROOT>/contracts/.*
 .*/backend/dashboard/.*
+.*/shared/multiformats/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js

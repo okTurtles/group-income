@@ -3,7 +3,7 @@
 // TODO: rename GIMessage to ChelMessage
 
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
@@ -279,7 +279,7 @@ export class GIMessage {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
-    const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
+    const contractID = head.op === GIMessage.OP_CONTRACT ? createCID(value) : head.contractID
 
     // Special case for OP_CONTRACT, since the keys are not yet present in the
     // state
@@ -300,7 +300,7 @@ export class GIMessage {
 
     return new this({
       direction: 'incoming',
-      mapping: { key: blake32Hash(value), value },
+      mapping: { key: createCID(value), value },
       head,
       signedMessageData
     })
@@ -318,7 +318,7 @@ export class GIMessage {
       },
       get hash () {
         if (!hash) {
-          hash = blake32Hash(value)
+          hash = createCID(value)
         }
         return hash
       },
@@ -464,7 +464,7 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
   //       instead store it using serialize() and restore it using deserialize().
   //       The issue is that different implementations of JavaScript engines might generate different strings
   //       when serializing JS objects using JSON.stringify
-  //       and that would lead to different hashes resulting from blake32Hash.
+  //       and that would lead to different hashes resulting from createCID.
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
@@ -480,7 +480,7 @@ function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgPa
         const value = JSON.stringify(messageJSON)
 
         mapping = {
-          key: blake32Hash(value),
+          key: createCID(value),
           value
         }
       }

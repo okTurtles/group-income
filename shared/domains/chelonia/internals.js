@@ -3,7 +3,7 @@
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
-import { b64ToStr, blake32Hash } from '~/shared/functions.js'
+import { b64ToStr, createCID } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
@@ -158,7 +158,7 @@ export default (sbp('sbp/selectors/register', {
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
       .then(handleFetchResult('text'))
-    const sourceHash = blake32Hash(source)
+    const sourceHash = createCID(source)
     if (sourceHash !== contractInfo.hash) {
       throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
     }
@@ -252,6 +252,7 @@ export default (sbp('sbp/selectors/register', {
       Promise,
       Function,
       Map,
+      WeakMap,
       ...this.config.contracts.defaults.exposedGlobals,
       require: (dep) => {
         return dep === '@sbp/sbp'

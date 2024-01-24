@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 // dummy placeholder data to be used in various pages
-import { blake32Hash } from '@common/functions.js'
+import { createCID } from '@common/functions.js'
 import { addTimeToDate, MONTHS_MILLIS } from '@common/cdTimeUtils.js'
 import L from '@common/translations.js'
 
@@ -10,7 +10,7 @@ const fakeUsers = ['Flex Kubin', 'Attila Hun', 'Childish Gambino', 'Ken M', 'Mar
 const PAST_THREE_MONTHS = -3 * MONTHS_MILLIS
 const randomPastDate = () => addTimeToDate(new Date(), Math.floor(Math.random() * PAST_THREE_MONTHS))
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)]
-const randomHash = () => blake32Hash(Math.random().toString(16).slice(2))
+const randomHash = () => createCID(Math.random().toString(16).slice(2))
 
 // Contracts.vue //
 const contractDummyData = []
