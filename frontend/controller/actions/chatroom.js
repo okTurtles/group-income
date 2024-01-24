@@ -108,7 +108,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-csk',
                   purpose: ['sig'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[0].foreignKey,
                   meta: params.options.groupKeys[0].meta,
@@ -119,7 +119,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-cek',
                   purpose: ['enc'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/join', 'gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[1].foreignKey,
                   meta: params.options.groupKeys[1].meta,
@@ -252,7 +252,31 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
-  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const userID = rootGetters.ourContactProfiles[params.data.member]?.contractID
+
+    const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+
+    if (keyIds?.length) {
+      return await sbp('chelonia/out/atomic', {
+        ...params,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          sendMessage({ ...params, returnInvocation: true }),
+          // Remove the user's CSK from the contract
+          [
+            'chelonia/out/keyDel', {
+              data: keyIds
+            }
+          ]
+        ],
+        signingKeyId
+      })
+    }
+
+    return await sendMessage(params)
+  }),
   ...encryptedAction('gi.actions/chatroom/delete', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
   ...encryptedAction('gi.actions/chatroom/changeVoteOnPoll', L('Failed to change vote on a poll.')),

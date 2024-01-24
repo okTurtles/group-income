@@ -3,7 +3,7 @@ import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey } from './crypto.js'
+import { deserializeKey, serializeKey } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
@@ -56,7 +56,7 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
       .map((k) => k.id)
 }
 
-const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string, opV: GIOpActionUnencrypted) => {
+const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string, opV: GIOpActionUnencrypted, direction?: string) => {
   const data: ProtoGIOpActionUnencrypted = isSignedData(opV)
     ? (opV: any).valueOf()
     : (opV: any)
@@ -75,6 +75,12 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
     const s = ((opV: any): SignedData<void>)
     const innerSigningKey = state._vm?.authorizedKeys?.[s.signingKeyId]
 
+    // For outgoing messages, we may be using an inner signing key that isn't
+    // available for us to see. In this case, we ignore the missing key.
+    // For incoming messages, we must check permissions and a missing
+    // key means no permissions.
+    if (!innerSigningKey && direction === 'outgoing') return true
+
     if (
       !innerSigningKey ||
       !Array.isArray(innerSigningKey.purpose) ||
@@ -86,7 +92,7 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
           )
         )
     ) {
-      console.error(`Signing key ${innerSigningKey.id} is missing permissions for operation ${opT}`)
+      console.error(`Signing key ${s.signingKeyId} is missing permissions for operation ${opT}`)
       return false
     }
 
@@ -104,7 +110,7 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
   return true
 }
 
-export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue): boolean => {
+export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
   const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
   if (
     !signingKey ||
@@ -117,47 +123,20 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
         )
       )
   ) {
-    console.error(`Signing key ${signingKey.id} is missing permissions for operation ${opT}`)
+    console.error(`Signing key ${signingKeyId} is missing permissions for operation ${opT}`)
     return false
-  }
-
-  if (opT === GIMessage.OP_ATOMIC) {
-    if (
-      ((opV: any): GIOpAtomic).reduce(
-        (acc, [opT, opV]) => {
-          if (!acc || !(signingKey: any).permissions.includes(opT)) return false
-          if (
-            opT === GIMessage.OP_ACTION_UNENCRYPTED &&
-            !validateActionPermissions(signingKey, state, opT, (opV: any))
-          ) {
-            return false
-          }
-
-          if (
-            opT === GIMessage.OP_ACTION_ENCRYPTED &&
-            !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
-          ) {
-            return false
-          }
-
-          return true
-        }, true)
-    ) {
-      console.error(`OP_ATOMIC: Signing key ${signingKey.id} is missing permissions for inner operation ${opT}`)
-      return false
-    }
   }
 
   if (
     opT === GIMessage.OP_ACTION_UNENCRYPTED &&
-    !validateActionPermissions(signingKey, state, opT, (opV: any))
+    !validateActionPermissions(signingKey, state, opT, (opV: any), direction)
   ) {
     return false
   }
 
   if (
     opT === GIMessage.OP_ACTION_ENCRYPTED &&
-    !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf())
+    !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf(), direction)
   ) {
     return false
   }
@@ -203,7 +182,6 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
       const id = data.data
       const k = state._vm.authorizedKeys[id]
       if (!k) {
-        console.log({ id, _vm: { ...state._vm } })
         throw new Error('Nonexisting key ID ' + id)
       }
       if (signingKey._private) {
@@ -270,9 +248,23 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
   return [((keys: any): GIKey[]), updatedMap]
 }
 
-export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey) {
-  console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
+export const keyAdditionProcessor = function (hash: string, keys: (GIKey | EncryptedData<GIKey>)[], state: Object, contractID: string, signingKey: GIKey, internalSideEffectStack?: Function[]) {
   const decryptedKeys = []
+  const keysToPersist = []
+
+  const storeSecretKey = (key, decryptedKey) => {
+    const decryptedDeserializedKey = deserializeKey(decryptedKey)
+    const transient = !!key.meta.private.transient
+    sbp('chelonia/storeSecretKeys', () => [{
+      key: decryptedDeserializedKey,
+      // We always set this to true because this could be done from
+      // an outgoing message
+      transient: true
+    }])
+    if (!transient) {
+      keysToPersist.push({ key: decryptedDeserializedKey, transient })
+    }
+  }
 
   for (const wkey of keys) {
     const data = unwrapMaybeEncryptedData(wkey)
@@ -289,10 +281,7 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
         try {
           decryptedKey = key.meta.private.content.valueOf()
           decryptedKeys.push([key.id, decryptedKey])
-          sbp('chelonia/storeSecretKeys', () => [{
-            key: deserializeKey(decryptedKey),
-            transient: !!key.meta.private.transient
-          }])
+          storeSecretKey(key, decryptedKey)
         } catch (e) {
           console.warn(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
@@ -308,18 +297,22 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
     // accounting
     if (key.name.startsWith('#inviteKey-')) {
       if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
+      const inviteSecret = decryptedKey || (
+        has(this.transientSecretKeys, key.id)
+          ? serializeKey(this.transientSecretKeys[key.id], true)
+          : undefined
+      )
       this.config.reactiveSet(state._vm.invites, key.id, {
         status: INVITE_STATUS.VALID,
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,
         expires: key.meta.expires,
-        inviteSecret: decryptedKey || this.transientSecretKeys[key.id],
+        inviteSecret,
         responses: []
       })
     }
 
     // Is this KEY operation the result of requesting keys for another contract?
-    console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
     if (key.meta?.keyRequest?.contractID && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
       const data = unwrapMaybeEncryptedData(key.meta.keyRequest.contractID)
 
@@ -327,26 +320,63 @@ export const keyAdditionProcessor = function (keys: (GIKey | EncryptedData<GIKey
       // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
       // Setting pendingKeyRequests in these cases could result in issues
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
-      if (data) {
+      if (data && internalSideEffectStack) {
         const keyRequestContractID = data.data
-        const rootState = sbp(this.config.stateSelector)
-        if (!rootState[keyRequestContractID]) {
-          this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
-        } else if (!rootState[keyRequestContractID]._volatile) {
-          this.config.reactiveSet(rootState[keyRequestContractID], '_volatile', { pendingKeyRequests: [] })
-        } else if (!rootState[keyRequestContractID]._volatile.pendingKeyRequests) {
-          this.config.reactiveSet(rootState[keyRequestContractID]._volatile, 'pendingKeyRequests', [])
-        }
+        const reference = key.meta.keyRequest.reference && unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
 
-        // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ contractID, name: key.name })
+        // Since now we'll make changes to keyRequestContractID, we need to
+        // do this while no other operations are running for that
+        // contract
+        internalSideEffectStack.push(() => {
+          sbp('chelonia/private/queueEvent', keyRequestContractID, () => {
+            const rootState = sbp(this.config.stateSelector)
 
-        this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
+            const originatingContractState = rootState[contractID]
+            if (sbp('chelonia/contract/hasKeyShareBeenRespondedBy', originatingContractState, keyRequestContractID, reference)) {
+            // In the meantime, our key request has been responded, so we
+            // don't need to set pendingKeyRequests.
+              return
+            }
+
+            if (!has(rootState, keyRequestContractID)) this.config.reactiveSet(rootState, keyRequestContractID, Object.create(null))
+            const targetState = rootState[keyRequestContractID]
+
+            if (!targetState._volatile) {
+              this.config.reactiveSet(targetState, '_volatile', Object.create(null))
+            }
+            if (!targetState._volatile.pendingKeyRequests) {
+              this.config.reactiveSet(rootState[keyRequestContractID]._volatile, 'pendingKeyRequests', [])
+            }
+
+            if (targetState._volatile.pendingKeyRequests.some((pkr) => {
+              return pkr && pkr.contractID === contractID && pkr.hash === hash
+            })) {
+            // This pending key request has already been registered.
+            // Nothing left to do.
+              return
+            }
+
+            // Mark the contract for which keys were requested as pending keys
+            // The hash (of the current message) is added to this dictionary
+            // for cross-referencing puposes.
+            targetState._volatile.pendingKeyRequests.push({ contractID, name: key.name, hash, reference: reference?.data })
+
+            this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
+          }).catch((e) => {
+            console.error('Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
+          })
+        })
       }
     }
   }
 
-  subscribeToForeignKeyContracts.call(this, contractID, state)
+  // Any persistent keys are stored as a side-effect
+  if (keysToPersist.length) {
+    internalSideEffectStack?.push(() => {
+      sbp('chelonia/storeSecretKeys', () => keysToPersist)
+    })
+  }
+  internalSideEffectStack?.push(() => subscribeToForeignKeyContracts.call(this, contractID, state))
 }
 
 export const subscribeToForeignKeyContracts = function (contractID: string, state: Object) {
@@ -401,9 +431,8 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // duplicate operations. For operations involving keys, the payload will be
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
-export const recreateEvent = async (entry: GIMessage, state: Object): Promise<typeof undefined | GIMessage> => {
-  const contractID = entry.contractID()
-  const { HEAD: previousHEAD, height: previousHeight } = await sbp('chelonia/db/latestHEADinfo', contractID) || {}
+export const recreateEvent = (entry: GIMessage, state: Object, contractsState: Object): typeof undefined | GIMessage => {
+  const { HEAD: previousHEAD, height: previousHeight } = contractsState || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')
   }

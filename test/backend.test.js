@@ -46,7 +46,6 @@ const vuexState = {
   currentGroupId: null,
   currentChatRoomIDs: {},
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: THEME_LIGHT,
   fontSize: 1,
@@ -131,7 +130,7 @@ describe('Full walkthrough', function () {
 
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
-    username = `${username}-${Math.floor(Math.random() * 1000)}`
+    username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
     const msg = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/identity',
       keys: [

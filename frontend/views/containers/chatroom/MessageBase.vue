@@ -107,6 +107,7 @@ export default ({
     }
   },
   props: {
+    height: Number,
     text: String,
     messageHash: String,
     replyingMessage: String,
@@ -223,6 +224,7 @@ export default ({
 
 .c-message {
   padding: 0.5rem 1rem;
+  scroll-margin: 20px;
 
   @include tablet {
     padding: 0.5rem 1.25rem;

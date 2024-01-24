@@ -12,7 +12,7 @@ import {
   noUppercase
 } from './shared/validators.js'
 
-import { IDENTITY_USERNAME_MAX_CHARS, PROFILE_STATUS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -180,17 +180,30 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          return sbp('gi.actions/group/join', {
+          return inviteSecretId
+        }).then((inviteSecretId) => {
+          // Calling 'gi.actions/group/join' here _after_ queueInvoication
+          // and not inside of it.
+          // This is because 'gi.actions/group/join' might (depending on
+          // where we are at in the process of joining a group) call
+          // 'chelonia/out/keyRequest'. If this happens, it will block
+          // on the group contract queue (as normal and expected), but it
+          // will **ALSO** block on the current identity contract, which
+          // is already blocked by queueInvocation. This would result in
+          // a deadlock.
+          if (!inviteSecretId) return
+
+          sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
             contractID: data.groupContractID,
             contractName: 'gi.contracts/group',
+            reference: hash,
             signingKeyId: inviteSecretId,
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
-            blockOriginatingContract: false
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
           }).catch(e => {
-            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error joining group ${data.groupContractID}`, e)
+            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
           })
         }).catch(e => {
           console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)
@@ -211,7 +224,7 @@ sbp('chelonia/defineContract', {
         Vue.delete(state.groups, groupContractID)
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, async () => {
+        sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
 
@@ -228,14 +241,11 @@ sbp('chelonia/defineContract', {
           }
 
           if (has(rootState.contracts, groupContractID)) {
-            await sbp('gi.actions/group/removeOurselves', {
+            sbp('gi.actions/group/removeOurselves', {
               contractID: groupContractID,
-              data: {},
-              hooks: {
-                preSendCheck: (_, state) => {
-                  return state?.profiles?.[rootState.loggedIn.username]?.status === PROFILE_STATUS.ACTIVE
-                }
-              }
+              data: {}
+            }).catch(e => {
+              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselves action to group ${data.groupContractID}`, e)
             })
           }
 

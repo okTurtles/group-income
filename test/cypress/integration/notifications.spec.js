@@ -4,7 +4,7 @@ const WIDTH_MOBILE = TABLET - 10
 
 const dreamersGroupName = 'Dreamers'
 const turtlesGroupName = 'Turtles'
-const username = `user-${Math.floor(Math.random() * 10000)}`
+const username = `user-${performance.now().toFixed(20).replace('.', '')}`
 
 /* === Fake notifications === */
 

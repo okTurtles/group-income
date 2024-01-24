@@ -183,7 +183,7 @@ export function debounce (func: Function, wait: number, immediate: ?boolean): Fu
   if (wait == null) wait = 100
 
   function later () {
-    const last = Date.now() - timestamp
+    const last = performance.now() - timestamp
 
     if (last < wait && last >= 0) {
       timeout = setTimeout(later, wait - last)
@@ -199,7 +199,7 @@ export function debounce (func: Function, wait: number, immediate: ?boolean): Fu
   const debounced = function () {
     context = this
     args = arguments
-    timestamp = Date.now()
+    timestamp = performance.now()
     const callNow = immediate && !timeout
     if (!timeout) timeout = setTimeout(later, wait)
     if (callNow) {

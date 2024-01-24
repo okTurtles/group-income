@@ -28,7 +28,6 @@ const initialState = {
   chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string, height:number } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
@@ -767,6 +766,9 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           const distributionStarted = store.getters.groupDistributionStarted(reactiveDate.date)
           if (oldPeriod && newPeriod && distributionStarted && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+              .catch((e) => {
+                console.error('okTurtles.events/on CONTRACT_REGISTERED Error calling updateDistributionDate', e)
+              })
           }
         }
       )
