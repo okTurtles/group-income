@@ -363,6 +363,7 @@ export default (sbp('sbp/selectors/register', {
           return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
         }))
       } catch (err) {
+        alert(L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' }))
         console.error('Error during contract sync upon login (syncing all contractIDs)', err)
       }
 
@@ -384,24 +385,25 @@ export default (sbp('sbp/selectors/register', {
             // (1) Check whether the contract exists (may have been removed
             //     after sync)
             has(state.contracts, groupId) &&
-                  has(state[identityContractID].groups, groupId) &&
-                  // (2) Check whether the join process is still incomplete
-                  //     This needs to be re-checked because it may have changed after
-                  //     sync
-                  state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
-                  // (3) Call join
-                  sbp('gi.actions/group/join', {
-                    originatingContractID: identityContractID,
-                    originatingContractName: 'gi.contracts/identity',
-                    contractID: groupId,
-                    contractName: 'gi.contracts/group',
-                    reference: state[identityContractID].groups[groupId].hash,
-                    signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
-                    innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-                    encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
-                  }).catch((e) => {
-                    console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
-                  })
+              has(state[identityContractID].groups, groupId) &&
+              // (2) Check whether the join process is still incomplete
+              //     This needs to be re-checked because it may have changed after
+              //     sync
+              state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
+              // (3) Call join
+              sbp('gi.actions/group/join', {
+                originatingContractID: identityContractID,
+                originatingContractName: 'gi.contracts/identity',
+                contractID: groupId,
+                contractName: 'gi.contracts/group',
+                reference: state[identityContractID].groups[groupId].hash,
+                signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
+                innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+                encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+              }).catch((e) => {
+                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
+                console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
+              })
           ))
         )
 
@@ -427,6 +429,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       } catch (e) {
+        alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
       } finally {
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
