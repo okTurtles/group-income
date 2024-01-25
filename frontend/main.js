@@ -367,12 +367,9 @@ async function startApp () {
       // tests).
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.actions/identity/login', { identityContractID }).catch(async (e) => {
+        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
           console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
-          await sbp('gi.actions/identity/logout')
           console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-          // TODO: handle this better
-          await sbp('gi.db/settings/delete', identityContractID)
         })
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
