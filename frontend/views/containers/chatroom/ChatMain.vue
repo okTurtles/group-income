@@ -1012,7 +1012,9 @@ export default ({
 
 .c-body-conversation {
   margin-right: 1rem;
-  padding: 10rem 0 1rem 0; // top-padding '10rem' here is necessary for the message menu list to be displayed properly without being cropped off.
+   // top-padding '10rem' below is necessary for the message menu list to be displayed properly without being cropped off.
+   // (reference: https://github.com/okTurtles/group-income/issues/1818)
+  padding: 10rem 0 1rem 0;
   overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
 }
