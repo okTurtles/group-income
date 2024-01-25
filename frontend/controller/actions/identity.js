@@ -330,10 +330,9 @@ export default (sbp('sbp/selectors/register', {
         return index === -1 ? contractSyncPriorityList.length : index
       }
 
-      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited
-      sbp('chelonia/contract/sync', identityContractID, { force: true })
+      await sbp('chelonia/contract/sync', identityContractID, { force: true })
         .catch((err) => {
           sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
           const errMessage = err?.message || String(err)
