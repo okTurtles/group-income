@@ -27,7 +27,7 @@ page-section.c-section(:title='L("Invite links")')
     transition-group(name='slidedown' tag='tbody')
       tr(
         v-for='(item, index) in invitesToShow'
-        :key='item.inviteSecret'
+        :key='index'
       )
         td.c-name
           | {{ item.invitee }}
@@ -66,7 +66,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.inviteSecret)'
+                  @click='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
         td.c-state
@@ -95,7 +95,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.inviteSecret)'
+                  @click='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
 
@@ -123,7 +123,8 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
@@ -156,23 +157,28 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'groupShouldPropose',
+      'ourUsername',
+      'ourUserDisplayName',
       'groupSettings',
-      'ourUsername'
+      'currentWelcomeInvite',
+      'groupShouldPropose'
     ]),
     ...mapState([
       'currentGroupId'
     ]),
     invitesToShow () {
-      const { invites } = this.currentGroupState
+      const vmInvites = this.currentGroupState._vm?.invites
+      if (!vmInvites) { return [] }
 
-      if (!invites) { return [] }
+      const invites = this.currentGroupState.invites || {}
 
-      const invitesList = Object.values(invites)
-        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+      const invitesList = Object.entries(vmInvites)
+        .map(([id, invite]) => [id, { ...invite, creator: invites[id]?.creator, invitee: invites[id]?.invitee }])
+        .filter(([, invite]) => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
+
       const options = {
-        Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.inviteSecret === this.ephemeral.inviteRevokedNow)),
+        Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.id === this.ephemeral.inviteRevokedNow)),
         All: () => invitesList
       }
 
@@ -249,28 +255,29 @@ export default ({
       if (minutes) return L('{minutes}m left', { minutes })
       return L('Expired')
     },
-    mapInvite ({
+    mapInvite ([id, {
       creator,
       expires: expiryTime,
       invitee,
       inviteSecret,
+      initialQuantity,
       quantity,
-      responses,
       status
-    }) {
+    }]) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
-      const numberOfResponses = Object.keys(responses).length
-      const isAllInviteUsed = numberOfResponses === quantity
+      const numberOfResponses = initialQuantity - quantity
+      const isAllInviteUsed = (quantity === 0)
 
       return {
+        id,
         isAnyoneLink,
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
-        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret, isAnyoneLink ? undefined : this.ourUserDisplayName),
         description: this.inviteStatusDescription({
-          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity, numberOfResponses
+          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),
         expiryInfo: isInviteExpired ? L('Expired') : isInviteRevoked ? L('Revoked') : isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime),
         status: {
@@ -288,15 +295,30 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        if (this.groupShouldPropose) {
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+        if (this.groupShouldPropose || isWelcomeInviteExpired) {
+          const contractID = this.currentGroupId
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+            console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)
+          })
         } else {
           sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
         }
       }
     },
-    async handleSeeOriginal ({ inviteSecret }) {
-      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+    async handleSeeOriginal (/* { inviteSecret } */) {
+      // TODO: Ricardo - please update this code so that it checks for inviteKeyId
+      //       however, make sure that proposals actually have that on them
+      //       (instead of, or in addition to, the inviteSecret).
+      //       An alternative, is to grab the inviteSecret from currentGroupState.invites
+      //       and on line 175 pass that in, and keep this code as-is
+      //       Honestly this is fairly low priority because the proposal should be there
+      //       and all this code ends up doing is bringing up the proposal modal anyway
+      //       (instead of somehow linking directly to the proposal), so this is unnecessary
+      //       complexity.
+      await sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+      /*
+      const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
         const { data, payload } = entry[1]
@@ -310,16 +332,17 @@ export default ({
       } else {
         alert(L('Unable to find the original proposal.'))
       }
+      */
     },
-    async handleRevokeClick (inviteSecret) {
+    async handleRevokeClick (inviteKeyId) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
         return null
       }
 
       try {
-        this.ephemeral.inviteRevokedNow = inviteSecret
+        this.ephemeral.inviteRevokedNow = inviteKeyId
         await sbp('gi.actions/group/inviteRevoke', {
-          data: { inviteSecret },
+          data: { inviteKeyId },
           contractID: this.currentGroupId
         })
         setTimeout(() => {

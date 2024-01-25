@@ -1,29 +1,100 @@
 <template lang="pug">
 div
-  .c-container
+  group-welcome.c-welcome(v-if='ephemeral.groupJoined')
+  .c-container(v-else)
     svg-invitation.c-svg
 
     i18n.is-title-1(
+      data-test='pendingApprovalTitle'
+      :data-groupId='ephemeral.groupIdWhenMounted'
       tag='h2'
-      :args='{ groupName: groupSettings.groupName }'
+      :args='{ groupName: ephemeral.settings.groupName }'
     ) Waiting for approval to join {groupName}!
 
     i18n.has-text-1.c-text(tag='p') You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import sbp from '@sbp/sbp'
+import GroupWelcome from '@components/GroupWelcome.vue'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
+import { JOINED_GROUP } from '@utils/events.js'
+import { mapGetters, mapState } from 'vuex'
 
 export default ({
   name: 'PendingApproval',
   components: {
-    SvgInvitation
+    SvgInvitation,
+    GroupWelcome
+  },
+  data () {
+    return {
+      ephemeral: {
+        groupIdWhenMounted: null,
+        groupJoined: false,
+        isJoining: false,
+        settings: {}
+      }
+    }
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ])
+    ...mapGetters(['ourUsername']),
+    ...mapState(['currentGroupId']),
+    groupState () {
+      if (!this.ephemeral.groupIdWhenMounted) return
+      return this.$store.state[this.ephemeral.groupIdWhenMounted]
+    },
+    isJoining () {
+      return this.ephemeral.isJoining && sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+    },
+    haveActiveGroupProfile () {
+      const state = this.groupState
+      return (
+        // We want the group state to be active
+        state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
+        // And we don't want to be in the process of re-syncing (i.e., re-building
+        // the state after receiving new private keys)
+        !sbp('chelonia/contract/isResyncing', state) &&
+        // And finally, we want the join process to be complete
+        !this.isJoining
+      )
+    }
+  },
+  mounted () {
+    this.ephemeral.groupIdWhenMounted = this.currentGroupId
+    this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
+    this.ephemeral.isJoining = sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
+    if (this.ephemeral.isJoining) {
+      const handler = ({ contractID }) => {
+        if (contractID === this.ephemeral.groupIdWhenMounted) {
+          this.ephemeral.isJoining = false
+          delete this.ephemeral.handler
+          sbp('okTurtles.events/off', JOINED_GROUP, handler)
+        }
+      }
+      this.ephemeral.handler = handler
+      sbp('okTurtles.events/on', JOINED_GROUP, handler)
+    }
+  },
+  beforeDestroy () {
+    if (this.ephemeral.handler) {
+      sbp('okTurtles.events/off', JOINED_GROUP, this.ephemeral.handler)
+      delete this.ephemeral.handler
+    }
+  },
+  watch: {
+    groupState (to) {
+      if (to?.settings && this.ephemeral.settings !== to.settings) {
+        this.ephemeral.settings = to.settings
+      }
+    },
+    haveActiveGroupProfile (to) {
+      // if our group profile appears in the group state, it means we've joined the group
+      if (to !== this.ephemeral.groupJoined) {
+        this.ephemeral.groupJoined = to
+      }
+    }
   }
 }: Object)
 </script>
@@ -66,5 +137,16 @@ export default ({
 
 .c-text {
   font-size: $size_4;
+}
+
+::v-deep .c-welcome.wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100%;
+  background-color: $background_0;
+  z-index: $zindex-sidebar + 1;
 }
 </style>

@@ -2,7 +2,7 @@
 
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf,
-  string, number, optional, mapOf, literalOf
+  string, optional, number, mapOf, literalOf
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
@@ -12,13 +12,9 @@ import {
 // group.js related
 
 export const inviteType: any = objectOf({
-  inviteSecret: string,
-  quantity: number,
+  inviteKeyId: string,
   creator: string,
-  invitee: optional(string),
-  status: string,
-  responses: mapOf(string, string),
-  expires: number
+  invitee: optional(string)
 })
 
 // chatroom.js related
@@ -27,7 +23,8 @@ export const chatRoomAttributesType: any = objectOf({
   name: string,
   description: string,
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+  groupContractID: optional(string)
 })
 
 export const messageType: any = objectMaybeOf({

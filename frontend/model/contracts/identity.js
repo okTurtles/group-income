@@ -1,10 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-
 import { Vue, L } from '@common/common.js'
-import { merge } from './shared/giLodash.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { has, merge } from './shared/giLodash.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -23,11 +22,14 @@ sbp('chelonia/defineContract', {
     },
     loginState (state, getters) {
       return getters.currentIdentityState.loginState
+    },
+    ourDirectMessages (state, getters) {
+      return getters.currentIdentityState.chatRooms || {}
     }
   },
   actions: {
     'gi.contracts/identity': {
-      validate: (data, { state, meta }) => {
+      validate: (data, { state }) => {
         objectMaybeOf({
           attributes: objectMaybeOf({
             username: string,
@@ -58,7 +60,9 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
-          attributes: {}
+          attributes: {},
+          chatRooms: {},
+          groups: {}
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -89,28 +93,180 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/identity/setLoginState': {
-      validate: objectOf({
-        groupIds: arrayOf(string)
-      }),
-      process ({ data }, { state }) {
-        Vue.set(state, 'loginState', data)
+    'gi.contracts/identity/createDirectMessage': {
+      validate: (data, { state, getters }) => {
+        objectOf({
+          // NOTE: 'groupContractID' is the contract ID of the group where the direct messages is created
+          //       it's optional parameter meaning the direct message could be created outside of the group
+          groupContractID: optional(string),
+          contractID: string // NOTE: chatroom contract id
+        })(data)
       },
-      sideEffect ({ contractID }) {
-        // it only makes sense to call updateLoginStateUponLogin for ourselves
-        if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
-          // makes sure that updateLoginStateUponLogin gets run after the entire identity
-          // state has been synced, this way we don't end up joining groups we've left, etc.
-          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])
-            .catch((e) => {
-              sbp('gi.notifications/emit', 'ERROR', {
-                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-                  errName: e.name,
-                  errMsg: e.message || '?'
-                })
-              })
-            })
+      process ({ data }, { state }) {
+        const { groupContractID, contractID } = data
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true // NOTE: this attr is used to hide/show direct message
+        })
+      },
+      async sideEffect ({ contractID, data }) {
+        await sbp('chelonia/contract/sync', data.contractID)
+      }
+    },
+    'gi.contracts/identity/joinDirectMessage': {
+      validate: objectOf({
+        groupContractID: optional(string),
+        contractID: string
+      }),
+      process ({ data }, { state, getters }) {
+        // NOTE: this method is always created by another
+        const { groupContractID, contractID } = data
+        if (getters.ourDirectMessages[contractID]) {
+          throw new TypeError(L('Already joined direct message.'))
         }
+
+        Vue.set(state.chatRooms, contractID, {
+          groupContractID,
+          visible: true
+        })
+      },
+      async sideEffect ({ data }, { getters }) {
+        if (getters.ourDirectMessages[data.contractID].visible) {
+          await sbp('chelonia/contract/sync', data.contractID)
+        }
+      }
+    },
+    'gi.contracts/identity/joinGroup': {
+      validate: objectMaybeOf({
+        groupContractID: string,
+        inviteSecret: string,
+        creator: optional(boolean)
+      }),
+      process ({ hash, data, meta }, { state }) {
+        const { groupContractID, inviteSecret } = data
+        if (has(state.groups, groupContractID)) {
+          throw new Error(`Cannot join already joined group ${groupContractID}`)
+        }
+
+        const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
+
+        Vue.set(state.groups, groupContractID, { hash, inviteSecretId })
+      },
+      sideEffect ({ hash, data, contractID }, { state }) {
+        const { groupContractID, inviteSecret } = data
+
+        sbp('chelonia/storeSecretKeys', () => [{
+          key: inviteSecret, transient: true
+        }])
+
+        sbp('chelonia/queueInvocation', contractID, () => {
+          const rootState = sbp('state/vuex/state')
+          const state = rootState[contractID]
+
+          // If we've logged out, return
+          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+            return
+          }
+
+          // If we've left the group, return
+          if (!has(state.groups, groupContractID)) {
+            return
+          }
+
+          const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
+
+          // If the hash doesn't match (could happen after re-joining), return
+          if (state.groups[groupContractID].hash !== hash) {
+            return
+          }
+
+          return inviteSecretId
+        }).then((inviteSecretId) => {
+          // Calling 'gi.actions/group/join' here _after_ queueInvoication
+          // and not inside of it.
+          // This is because 'gi.actions/group/join' might (depending on
+          // where we are at in the process of joining a group) call
+          // 'chelonia/out/keyRequest'. If this happens, it will block
+          // on the group contract queue (as normal and expected), but it
+          // will **ALSO** block on the current identity contract, which
+          // is already blocked by queueInvocation. This would result in
+          // a deadlock.
+          if (!inviteSecretId) return
+
+          sbp('gi.actions/group/join', {
+            originatingContractID: contractID,
+            originatingContractName: 'gi.contracts/identity',
+            contractID: data.groupContractID,
+            contractName: 'gi.contracts/group',
+            reference: hash,
+            signingKeyId: inviteSecretId,
+            innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
+            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+          }).catch(e => {
+            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
+          })
+        }).catch(e => {
+          console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)
+        })
+      }
+    },
+    'gi.contracts/identity/leaveGroup': {
+      validate: objectOf({
+        groupContractID: string
+      }),
+      process ({ data, meta }, { state }) {
+        const { groupContractID } = data
+
+        if (!has(state.groups, groupContractID)) {
+          throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
+        }
+
+        Vue.delete(state.groups, groupContractID)
+      },
+      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
+        sbp('chelonia/queueInvocation', contractID, () => {
+          const rootState = sbp('state/vuex/state')
+          const state = rootState[contractID]
+
+          // If we've logged out, return
+          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+            return
+          }
+
+          const { groupContractID } = data
+
+          // If we've re-joined since, return
+          if (has(state.groups, groupContractID)) {
+            return
+          }
+
+          if (has(rootState.contracts, groupContractID)) {
+            sbp('gi.actions/group/removeOurselves', {
+              contractID: groupContractID,
+              data: {}
+            }).catch(e => {
+              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselves action to group ${data.groupContractID}`, e)
+            })
+          }
+
+          // TODO disconnect, key rotations (PEK), etc.
+        }).catch(e => {
+          console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e)
+        })
+      }
+    },
+    'gi.contracts/identity/setDirectMessageVisibility': {
+      validate: (data, { state, getters }) => {
+        objectOf({
+          contractID: string,
+          visible: boolean
+        })(data)
+        if (!getters.ourDirectMessages[data.contractID]) {
+          throw new TypeError(L('Not existing direct message.'))
+        }
+      },
+      process ({ data }, { state, getters }) {
+        Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
       }
     }
   }

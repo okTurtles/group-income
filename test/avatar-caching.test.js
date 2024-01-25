@@ -7,7 +7,7 @@ const { readFile } = require('node:fs/promises')
 
 describe('avatar file serving', function () {
   const apiURL = process.env.API_URL
-  const hash = '21XWnNX5exusmJoJNWNNqjhWPqxGURryWbkUhYVsGT5NFtSGKs'
+  const hash = 'z9brRu3VWZa5jruzt8aaSrmUdHuSSmmuS6ZdR42mygvMGuecuctH'
   let retPath = ''
 
   before('manually upload a test avatar to the file database', async () => {

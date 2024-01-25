@@ -14,7 +14,7 @@ function makeMentionFromUsername (username) {
 }
 
 const groupName = 'Dreamers'
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
 const user3 = `user3${userId}`
@@ -125,25 +125,17 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName} group`, () => {
+  it(`user2 joins ${groupName} group and sends greetings, asks to have meeting`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
+      existingMemberUsername: user1,
       groupName: groupName,
       shouldLogoutAfter: false,
       bypassUI: true
     })
     me = user2
+
     cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
-  })
-
-  it('user2 sends greetings and asks to have meeting this morning', () => {
     sendMessage(`Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
     sendMessage('Can we have a meeting this morning?')
   })
@@ -211,19 +203,13 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   it(`user3 joins ${groupName} group and mentions user1 and all`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
+      existingMemberUsername: user1,
       groupName: groupName,
       shouldLogoutAfter: false,
       bypassUI: true
     })
     me = user3
     cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
 
     sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
     sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)

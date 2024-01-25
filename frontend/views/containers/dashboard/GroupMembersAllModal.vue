@@ -112,7 +112,7 @@ modal-base-template.has-background(
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
                 :args='LTags("span")'
-              ) Add {span_} to channel{_span}
+              ) Add {span_}to channel{_span}
 
               group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
 </template>
@@ -311,11 +311,15 @@ export default ({
   }
 }
 
-::v-deep .c-actions span {
-  margin-left: 0.3rem;
+::v-deep .c-actions {
+  span {
+    @include phone {
+      display: none;
+    }
+  }
 
-  @include phone {
-    display: none;
+  i + span {
+    margin-left: 0.3rem;
   }
 }
 

@@ -5,7 +5,9 @@
     <title>Group Income</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="theme-color" content="#F5F5F5">
     <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="manifest" href="/assets/pwa-manifest.webmanifest" />
     <link rel="icon" href="/assets/images/group-income-icon-transparent.png" sizes="32x32">
   </head>
   <body>
@@ -19,13 +21,14 @@
       id="app"
       data-test="app"
       :class="appClasses"
-      :data-sync='ephemeral.syncs'
-      :data-logged-in='ephemeral.finishedLogin'
+      :data-sync="ephemeral.syncs"
+      :data-logged-in="ephemeral.finishedLogin"
+      :data-ready="ephemeral.ready"
     >
       <app-styles></app-styles>
       <banner-general ref="bannerGeneral"></banner-general>
       <navigation v-if="showNav" class="l-navigation"></navigation>
-      <router-view class="l-page"></router-view>
+      <router-view v-if="ephemeral.ready" class="l-page"></router-view>
       <modal class="l-modal"></modal>
       <background-sounds></background-sounds>
       <!-- we no longer use cypress-bypass-ui -->

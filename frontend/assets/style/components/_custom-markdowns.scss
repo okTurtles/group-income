@@ -1,0 +1,84 @@
+.custom-markdown-content {
+  // style declarations for custom markdown html output content
+  white-space: initial;
+
+  code {
+    display: inline-block;
+    border-radius: $radius;
+    padding: 0.25rem;
+    line-height: 1;
+    font-size: $size_5;
+    background-color: $general_1;
+    color: $warning_0;
+    margin-left: 1px;
+    margin-right: 1px;
+  }
+
+  pre > code {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    background-color: $general_1;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  * + pre,
+  * + blockquote {
+    margin-top: 0.25rem;
+  }
+
+  em {
+    margin-left: 1px;
+    margin-right: 1px;
+  }
+
+  ul {
+    margin: 0.75rem 0;
+  }
+
+  ul li {
+    position: relative;
+    display: block;
+    padding: 0 0 0.2rem 1.25rem;
+
+    &:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      display: block;
+      left: 0.2rem;
+      top: 0.5rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background-color: $text_0;
+    }
+  }
+
+  blockquote {
+    position: relative;
+    padding-left: 1rem;
+    white-space: pre-line;
+
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      left: 0;
+      width: 4px;
+      top: 0;
+      bottom: 0;
+      border-radius: 8px;
+      background-color: $general_0;
+    }
+  }
+
+  a {
+    color: $primary_0;
+    text-decoration: underline;
+  }
+}

@@ -201,6 +201,9 @@ const periodicNotificationEntries = [
               contractID,
               data: { proposalIds: expiredProposalIds }
             })
+              .catch((e) => {
+                console.error('Error calling markProposalsExpired from notifications mixin', e)
+              })
           }
         }
       },

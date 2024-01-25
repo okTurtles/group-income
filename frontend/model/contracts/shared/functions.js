@@ -1,8 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, MESSAGE_TYPES, POLL_STATUS } from './constants.js'
-import { DAYS_MILLIS } from './time.js'
+import { MESSAGE_TYPES, POLL_STATUS } from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -49,42 +48,21 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
   }
 }
 
-export function createInvite ({ quantity = 1, creator, expires, invitee }: {
-  quantity: number, creator: string, expires: number, invitee?: string
-}): {|
-  creator: string,
-  expires: number,
-  inviteSecret: string,
-  invitee: void | string,
-  quantity: number,
-  responses: {...},
-  status: string,
-|} {
-  return {
-    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    quantity,
-    creator,
-    invitee,
-    status: INVITE_STATUS.VALID,
-    responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * expires
-  }
-}
-
 // chatroom.js related
 
-export function createMessage ({ meta, data, hash, id, state }: {
-  meta: Object, data: Object, hash: string, id: string, state?: Object
+export function createMessage ({ meta, data, hash, height, state, pending }: {
+  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
 
   let newMessage = {
     type,
-    id,
     hash,
+    height,
     from: meta.username,
-    datetime: new Date(createdDate).toISOString()
+    datetime: new Date(createdDate).toISOString(),
+    pending
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
@@ -141,13 +119,6 @@ export async function leaveChatRoom ({ contractID }: {
 
   sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
   sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
-
-  // NOTE: make sure *not* to await on this, since that can cause
-  //       a potential deadlock. See same warning in sideEffect for
-  //       'gi.contracts/group/removeMember'
-  sbp('chelonia/contract/remove', contractID).catch(e => {
-    console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e)
-  })
 }
 
 export function findMessageIdx (hash: string, messages: Array<Object>): number {

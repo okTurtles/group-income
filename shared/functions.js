@@ -1,8 +1,12 @@
 'use strict'
 
-import multihash from 'multihashes'
 import nacl from 'tweetnacl'
-import blake from 'blakejs'
+import { CID } from './multiformats/cid.js'
+import { base58btc } from './multiformats/bases/base58.js'
+import { blake2b256 } from './multiformats/blake2b.js'
+
+// Values from https://github.com/multiformats/multicodec/blob/master/table.csv
+const multicodes = { JSON: 0x0200, RAW: 0x00 }
 
 // Makes the `Buffer` global available in the browser if needed.
 if (typeof window === 'object' && typeof Buffer === 'undefined') {
@@ -11,13 +15,20 @@ if (typeof window === 'object' && typeof Buffer === 'undefined') {
   window.Buffer = Buffer
 }
 
-export function blake32Hash (data: string | Buffer | Uint8Array): string {
-  // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
-  const uint8array = blake.blake2b(data, null, 32)
-  // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
-  // https://github.com/feross/typedarray-to-buffer
-  const buf = Buffer.from(uint8array.buffer)
-  return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
+// TODO: implement a streaming hashing function for large files.
+// Note: in fact this returns a serialized CID, not a CID object.
+export function createCID (data: string | Uint8Array, multicode: number = multicodes.RAW): string {
+  const uint8array = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const digest = blake2b256.digest(uint8array)
+  return CID.create(1, multicode, digest).toString(base58btc.encoder)
+}
+
+export function blake32Hash (data: string | Uint8Array): string {
+  const uint8array = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const digest = blake2b256.digest(uint8array)
+  // While `digest.digest` is only 32 bytes long in this case,
+  // `digest.bytes` is 36 bytes because it includes a multiformat prefix.
+  return base58btc.encode(digest.bytes)
 }
 
 // NOTE: to preserve consistency across browser and node, we use the Buffer

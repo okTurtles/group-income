@@ -5,16 +5,17 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
-import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -45,7 +46,6 @@ const vuexState = {
   currentGroupId: null,
   currentChatRoomIDs: {},
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: THEME_LIGHT,
   fontSize: 1,
@@ -100,7 +100,7 @@ describe('Full walkthrough', function () {
           allowedSelectors: [
             'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
             'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
-            'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
+            'chelonia/queueInvocation',
             'gi.actions/chatroom/leave', 'gi.notifications/emit'
           ],
           allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
@@ -120,34 +120,71 @@ describe('Full walkthrough', function () {
   }
 
   async function createIdentity (username, email, testFn) {
+    const CSK = keygen(SNULL)
+    const CSKid = keyId(CSK)
+    const CSKp = serializeKey(CSK, false)
+
+    sbp('chelonia/storeSecretKeys',
+      () => [CSK].map(key => ({ key, transient: true }))
+    )
+
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
-    username = `${username}-${Math.floor(Math.random() * 1000)}`
+    username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
     const msg = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/identity',
+      keys: [
+        {
+          id: CSKid,
+          name: 'csk',
+          purpose: ['sig'],
+          ringLevel: 0,
+          permissions: '*',
+          allowedActions: '*',
+          data: CSKp
+        }
+      ],
       data: {
         // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
         attributes: { username, email }
       },
+      signingKeyId: CSKid,
       hooks: {
-        prepublish: (message) => { message.decryptedValue(JSON.parse) },
+        // TODO when merging: decryptedValue no longer takes an argument (was decryptedValue(JSON.parse))
+        prepublish: (message) => { message.decryptedValue() },
         postpublish: (message) => { testFn && testFn(message) }
       }
     })
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
-    const initialInvite = createInvite({
+    const CSK = keygen(SNULL)
+    const CSKid = keyId(CSK)
+    const CSKp = serializeKey(CSK, false)
+
+    sbp('chelonia/storeSecretKeys',
+      () => [CSK].map(key => ({ key, transient: true }))
+    )
+
+    /* const initialInvite = createInvite({
       quantity: 60,
       creator: INVITE_INITIAL_CREATOR,
       expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-    })
+    }) */
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
+      keys: [
+        {
+          id: CSKid,
+          name: 'csk',
+          purpose: ['sig'],
+          ringLevel: 0,
+          permissions: '*',
+          allowedActions: '*',
+          data: CSKp
+        }
+      ],
       data: {
-        invites: {
-          [initialInvite.inviteSecret]: initialInvite
-        },
         settings: {
           // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
           groupName: name,
@@ -166,11 +203,12 @@ describe('Full walkthrough', function () {
           }
         }
       },
+      signingKeyId: CSKid,
       hooks
     })
   }
-  function createPaymentTo (to, amount, contractID, currency = 'USD'): Promise {
-    return sbp('chelonia/out/actionEncrypted', {
+  function createPaymentTo (to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
+    return sbp('chelonia/out/actionUnencrypted', {
       action: 'gi.contracts/group/payment',
       data: {
         toUser: to.decryptedValue().data.attributes.username,
@@ -180,24 +218,9 @@ describe('Full walkthrough', function () {
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL
       },
-      contractID
+      contractID,
+      signingKeyId
     })
-  }
-
-  async function createMailboxFor (user) {
-    const { username } = users.bob.decryptedValue().data.attributes
-    const mailbox = await sbp('chelonia/out/registerContract', {
-      contractName: 'gi.contracts/mailbox',
-      data: { username }
-    })
-    await sbp('chelonia/out/actionEncrypted', {
-      action: 'gi.contracts/identity/setAttributes',
-      data: { mailbox: mailbox.contractID() },
-      contractID: user.contractID()
-    })
-    user.mailbox = mailbox
-    await sbp('chelonia/contract/sync', mailbox.contractID())
-    return mailbox
   }
 
   describe('Identity tests', function () {
@@ -232,13 +255,6 @@ describe('Full walkthrough', function () {
     it('Should open socket for Alice', async function () {
       users.alice.socket = await sbp('chelonia/connect')
     })
-
-    it('Should create mailboxes for Alice and Bob and subscribe', async function () {
-      this.timeout(5000)
-      // Object.values(users).forEach(async user => await createMailboxFor(user))
-      await createMailboxFor(users.alice)
-      await createMailboxFor(users.bob)
-    })
   })
 
   describe('Group tests', function () {
@@ -249,29 +265,8 @@ describe('Full walkthrough', function () {
       await sbp('chelonia/contract/sync', groups.group1.contractID())
     })
 
-    // NOTE: The frontend needs to use the `fetch` API instead of superagent because
-    //       superagent doesn't support streaming, whereas fetch does.
-    // TODO: We should also remove superagent as a dependency since `fetch` does
-    //       everything we need. Use fetch from now on.
-    it('Should get mailbox info for Bob', async function () {
-      // 1. look up bob's username to get his identity contract
-      const { bob } = users
-      const bobsName = bob.decryptedValue().data.attributes.username
-      const bobsContractId = await sbp('namespace/lookup', bobsName)
-      should(bobsContractId).equal(bob.contractID())
-      // 2. fetch all events for his identity contract to get latest state for it
-      const state = await sbp('chelonia/latestContractState', bobsContractId)
-      console.log(bold.red('FINAL STATE:'), state)
-      // 3. get bob's mailbox contractID from his identity contract attributes
-      should(state.attributes.mailbox).equal(bob.mailbox.contractID())
-      // 4. fetch the latest hash for bob's mailbox.
-      //    we don't need latest state for it just latest hash
-      const res = await sbp('chelonia/out/latestHash', state.attributes.mailbox)
-      should(res).equal(bob.mailbox.hash())
-    })
-
     it('Should post an event', function () {
-      return createPaymentTo(users.bob, 100, groups.group1.contractID())
+      return createPaymentTo(users.bob, 100, groups.group1.contractID(), groups.group1.signingKeyId())
     })
 
     it('Should sync group and verify payments in state', async function () {
@@ -325,7 +320,7 @@ describe('Full walkthrough', function () {
       // })
       // since we're just saving the buffer now, we might as well use the simpler readFileSync API
       const buffer = fs.readFileSync(filepath)
-      const hash = blake32Hash(buffer)
+      const hash = createCID(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
       form.append('data', new Blob([buffer]), path.basename(filepath))

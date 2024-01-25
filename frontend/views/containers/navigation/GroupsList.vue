@@ -11,7 +11,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
       :text='group.groupName'
     )
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
-        avatar.c-avatar(:src='$store.state[group.contractID].settings.groupPicture')
+        avatar.c-avatar(:src='groupPictureForContract(group.contractID)')
       badge(
         v-if='badgeVisiblePerGroup[group.contractID]'
         type='compact'
@@ -74,7 +74,19 @@ export default ({
       id && this.changeGroup(id)
     },
     changeGroup (hash) {
-      sbp('gi.actions/group/switch', hash)
+      const path = this.$route.path
+      const emptyGroupPicture = this.groupPictureForContract(hash) === ''
+      if (hash !== this.currentGroupId) {
+        sbp('gi.actions/group/switch', hash)
+      }
+      if (emptyGroupPicture && path !== '/pending-approval') {
+        this.$router.push(({ path: '/pending-approval' }))
+      } else if (!emptyGroupPicture && path === '/pending-approval') {
+        this.$router.push(({ path: '/dashboard' }))
+      }
+    },
+    groupPictureForContract (contractID) {
+      return this.$store.state[contractID].settings?.groupPicture || ''
     }
   }
 }: Object)

@@ -20,6 +20,7 @@ export default ({
   },
   inject: ['chatMessageUtils'],
   props: {
+    height: Number,
     id: String,
     messageHash: String,
     type: String,
@@ -46,7 +47,7 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayName', 'isGroupDirectMessage', 'currentChatRoomId']),
+    ...mapGetters(['userDisplayName', 'isDirectMessage', 'currentChatRoomId']),
     message () {
       const {
         username,
@@ -57,7 +58,10 @@ export default ({
       const displayName = this.userDisplayName(username)
 
       const notificationTemplates = {
-        onGroupDM: {
+        // NOTE: 'onDirectMessage' is not being used at the moment
+        //       since no notification messages are made inside the direct messages.
+        //       But it's not removed because it could be useful in the future.
+        onDirectMessage: {
           [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member: {displayName}', { displayName }),
           [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined')
         },
@@ -75,7 +79,7 @@ export default ({
         }
       }
 
-      const notificationSelector = this.isGroupDirectMessage() ? 'onGroupDM' : 'default'
+      const notificationSelector = this.isDirectMessage() ? 'onDirectMessage' : 'default'
       const text = notificationTemplates[notificationSelector][this.notification.type]
       return { text }
     },

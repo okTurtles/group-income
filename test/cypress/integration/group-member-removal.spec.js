@@ -3,7 +3,7 @@
 // causing the bypassUI to fail in the middle (because it changed pages)
 
 describe('Group - Removing a member', () => {
-  const userId = Math.floor(Math.random() * 10000)
+  const userId = performance.now().toFixed(20).replace('.', '')
   const groupNameA = 'Dreamers'
   const groupNameB = 'Donuts'
 
@@ -29,11 +29,21 @@ describe('Group - Removing a member', () => {
 
   function removeMemberNow (username) {
     assertMembersCount(2)
-    cy.getByDT('modalProposal').within(() => {
-      cy.getByDT('description').should('contain', `Are you sure you want to remove ${username}-${userId} from the group?`)
-      cy.getByDT('submitBtn').click()
+    cy.window().its('sbp').then(sbp => {
+      const state = sbp('state/vuex/state')
+      const currentGroupId = state.currentGroupId
+      const currentHeight = state.contracts[currentGroupId].height
+
+      return [currentGroupId, currentHeight]
+    }).then(([currentGroupId, currentHeight]) => {
+      cy.log(`Height for ${currentGroupId} is ${currentHeight}; verifying keys are rotated`)
+      cy.getByDT('modalProposal').within(() => {
+        cy.getByDT('description').should('contain', `Are you sure you want to remove ${username}-${userId} from the group?`)
+        cy.getByDT('submitBtn').click()
+      })
+      cy.getByDT('closeModal').should('not.exist')
+      cy.giAssertKeyRotation(currentGroupId, currentHeight, 'csk')
     })
-    cy.getByDT('closeModal').should('not.exist')
     assertMembersCount(1)
   }
 
@@ -59,6 +69,7 @@ describe('Group - Removing a member', () => {
   it('user2 joins groupA and cannot remove user1', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       bypassUI: true,
       actionBeforeLogout: () => {
@@ -78,6 +89,12 @@ describe('Group - Removing a member', () => {
     assertMembersCount(2)
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
+    assertMembersCount(1)
+
+    cy.giRedirectToGroupChat()
+    cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', `user2-${userId}`)
+    cy.get('div.c-message:last-child .c-notification').should('contain', 'Left General')
+
     cy.giLogout()
   })
 
@@ -87,6 +104,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       isLoggedIn: true,
       shouldLogoutAfter: false
@@ -107,10 +125,12 @@ describe('Group - Removing a member', () => {
   })
 
   it('user1 joins groupB - has now 2 groups', () => {
-    cy.giSwitchUser(`user1-${userId}`)
+    cy.giLogout()
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
       username: `user1-${userId}`,
+      existingMemberUsername: `user2-${userId}`,
       groupName: groupNameB,
       isLoggedIn: true,
       bypassUI: true
@@ -136,6 +156,7 @@ describe('Group - Removing a member', () => {
   it('userBot joins groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `userbot-${userId}`,
+      existingMemberUsername: `user2-${userId}`,
       groupName: groupNameA,
       bypassUI: true
     })
@@ -246,6 +267,7 @@ describe('Group - Removing a member', () => {
   it('user2 rejoins the groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
+      existingMemberUsername: `user1-${userId}`,
       groupName: groupNameA,
       isLoggedIn: true,
       shouldLogoutAfter: false

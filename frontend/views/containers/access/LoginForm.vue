@@ -39,6 +39,9 @@ import { requestNotificationPermission } from '@model/contracts/shared/nativeNot
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 
+// Returns a function that returns the function's argument
+const wrapValueInFunction = (v) => () => v
+
 export default ({
   name: 'LoginForm',
   mixins: [
@@ -82,14 +85,23 @@ export default ({
       try {
         this.$refs.formMsg.clean()
 
+        const username = this.form.username
+
         await sbp('gi.actions/identity/login', {
-          username: this.form.username,
-          password: this.form.password
+          username,
+          passwordFn: wrapValueInFunction(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        requestNotificationPermission()
+        const granted = (await requestNotificationPermission()) === 'granted'
+        if (granted) {
+          // TODO: remove in production - this is just for testing the notification
+          await sbp('service-worker/send-push', {
+            title: 'Logged in',
+            body: 'Welcome again!'
+          })
+        }
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

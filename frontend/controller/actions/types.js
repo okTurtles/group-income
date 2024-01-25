@@ -11,9 +11,23 @@ export type GIRegParams = {
 
 // keep in sync with ChelActionParams
 export type GIActionParams = {
+  action: string;
   contractID: string;
   data: Object;
   options?: Object; // these are options for the action wrapper
-  hooks?: Object;
-  publishOptions?: Object
+  signingKeyId: ?string;
+  encryptionKeyId: ?string;
+  originatingContractID: ?string;
+  signingContractID: ?string;
+  innerSigningContractID: ?string;
+  innerSigningKeyId: ?string;
+  hooks?: {
+    preSendCheck?: null | (Object, Object) => boolean;
+    prepublishContract?: null | (Object) => void;
+    prepublish?: null | (Object) => void;
+    postpublish?: null | (Object) => void;
+    onprocessed?: null | (Object) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+  returnInvocation?: boolean;
 }

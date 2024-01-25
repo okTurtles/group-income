@@ -31,12 +31,12 @@ Vue.use(Router)
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
-  redirect: (to, from) => ({ path: '/dashboard' })
+  redirect: (to, from) => ({ path: store.getters.ourProfileActive ? '/dashboard' : '/pending-approval' })
 }
+
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
-  // TODO/BUG "next" does not work.
-  redirect: (to, from) => ({ path: '/', query: { next: to.path } })
+  redirect: (to, from) => ({ path: '/', query: { ...to.query, next: to.path } })
 }
 
 const inviteGuard = {
@@ -51,6 +51,11 @@ const inviteGuard = {
 const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/' })
+}
+
+const pendingApprovalGuard = {
+  guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
+  redirect: (to, from) => ({ path: '/pending-approval' })
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary
@@ -91,28 +96,28 @@ const router: any = new Router({
       component: lazyGroupDashboard,
       name: 'GroupDashboard',
       meta: { title: L('Group Dashboard') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/contributions',
       component: lazyContributions,
       name: 'Contributions',
       meta: { title: L('Contributions') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/payments',
       component: lazyPayments,
       name: 'Payments',
       meta: { title: L('Payments') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/group-chat',
       component: lazyGroupChat,
       name: 'GroupChat',
       meta: { title: L('Group Chat') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/group-chat/:chatRoomId',
@@ -124,21 +129,20 @@ const router: any = new Router({
        * Chatroom details could be retrieved from the backend using it's id(chatRoomId)
        * So until that time, chatroom name is unknown and could display `Loading`
        */
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/group-settings',
       component: lazyGroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
       path: '/join',
       name: Join.name,
       component: Join,
       meta: { title: L('Join a Group') },
-      // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(inviteGuard)
     },
     {
@@ -146,7 +150,7 @@ const router: any = new Router({
       component: lazyPendingApproval,
       name: 'PendingApproval',
       meta: { title: L('Pending Approval') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     ...(process.env.NODE_ENV === 'development'
       ? [{

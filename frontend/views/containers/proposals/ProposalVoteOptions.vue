@@ -29,9 +29,8 @@ import { L } from '@common/common.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
-import { createInvite } from '@model/contracts/shared/functions.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { leaveAllChatRooms } from '@controller/actions/group.js'
+import { createInvite } from '@controller/actions/utils.js'
 
 export default ({
   name: 'Vote',
@@ -107,7 +106,7 @@ export default ({
 
         if (oneVoteToPass(proposalHash)) {
           if (this.type === PROPOSAL_INVITE_MEMBER) {
-            passPayload = createInvite({
+            passPayload = await createInvite({
               invitee: this.proposal.data.proposalData.member,
               creator: this.proposal.meta.username,
               expires: this.currentGroupState.settings.inviteExpiryProposal
@@ -116,7 +115,6 @@ export default ({
             passPayload = {
               secret: `${parseInt(Math.random() * 10000)}` // TODO: this
             }
-            await leaveAllChatRooms(this.currentGroupId, this.data.member)
           }
         }
         await sbp('gi.actions/group/proposalVote', {

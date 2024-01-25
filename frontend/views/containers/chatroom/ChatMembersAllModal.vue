@@ -95,20 +95,22 @@ modal-base-template.has-background(
                   .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
             .c-actions(v-if='isJoined')
-              i18n.button.is-outlined.is-small(
+              button-submit.button.is-outlined.is-small(
                 v-if='!joinedDate'
-                tag='button'
+                type='button'
                 @click.stop='addToChannel(username)'
                 :data-test='"addToChannel-" + username'
-                :args='LTags("span")'
-              ) Add {span_} to channel{_span}
+              )
+                i18n(:args='LTags("span")') Add {span_}to channel{_span}
+
               .has-text-success(v-else)
                 i.icon-check
                 i18n Added.
-                button.is-unstyled.c-action-undo(
+                button-submit.is-unstyled.c-action-undo(
                   v-if='!isDirectMessage()'
                   @click.stop='removeMember(username, true)'
-                ) {{L("Undo")}}
+                )
+                  i18n Undo
 </template>
 
 <script>
@@ -119,9 +121,11 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { uniq } from '@model/contracts/shared/giLodash.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
@@ -134,7 +138,8 @@ export default ({
     Search,
     AvatarUser,
     GroupMembersTooltipPending,
-    ProfileCard
+    ProfileCard,
+    ButtonSubmit
   },
   data () {
     return {
@@ -179,11 +184,8 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.chatRoomAttribute
       let title = name
-      if (this.isPrivateDirectMessage()) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
-      } else if (this.isGroupDirectMessage()) {
-        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        title = this.ourGroupDirectMessages[this.currentChatRoomId].title
       }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
@@ -205,11 +207,8 @@ export default ({
       return this.isJoined
         ? this.chatRoomUsersInSort
         : this.groupMembersSorted
-          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users.includes(member.username))
+          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users[member.username]?.status === PROFILE_STATUS.ACTIVE)
           .map(member => ({ username: member.username, displayName: member.displayName }))
-    },
-    isPrivacyLevelPrivate () {
-      return this.chatRoomAttribute.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   mounted () {
@@ -247,7 +246,7 @@ export default ({
           }))
       }
     },
-    localizedName (username: string, displayName?: string) {
+    localizedName (username, displayName) {
       const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
@@ -278,8 +277,7 @@ export default ({
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
-            member: username,
-            leavingGroup: false
+            member: username
           }
         })
         if (undoing) {
@@ -295,20 +293,15 @@ export default ({
     },
     async addToChannel (username: string, undoing = false) {
       if (this.isDirectMessage()) {
-        if (this.isPrivacyLevelPrivate) {
-          const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const chatRoomId = this.getGroupDMByUsers(usernames)
-          if (chatRoomId) {
-            this.redirect(chatRoomId)
-          } else {
-            this.createGroupDM(usernames)
-          }
-          this.closeModal()
+        const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(username))
+        const chatRoomId = this.ourGroupDirectMessageFromUsernames(usernames)
+        if (chatRoomId) {
+          this.redirect(chatRoomId)
         } else {
-          await this.addMemberToGroupDM(this.currentChatRoomId, username)
-          this.canAddMembers = this.canAddMembers.map(member =>
-            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+          this.createDirectMessage(usernames)
         }
+        this.closeModal()
+
         return
       }
 
@@ -448,11 +441,13 @@ export default ({
 
 ::v-deep .c-actions {
   span {
-    margin-left: 0.3rem;
-
     @include phone {
       display: none;
     }
+  }
+
+  i + span {
+    margin-left: 0.3rem;
   }
 
   .c-action-undo {

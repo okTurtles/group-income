@@ -1,4 +1,4 @@
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import type {
   NewProposalType,
   NotificationTemplate
@@ -15,22 +15,28 @@ const contractName = (contractID) => sbp('state/vuex/state').contracts[contractI
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
 // To guard against XSS when rendering usernames, use the `v-safe-html` directive.
-const escapeForHtml = (text) => text.replace(/[<>&]/g, '\\$&')
+const escapeForHtml = (text) => text.replace(/[<>&]/g, (c) => ('&#' + c.codePointAt(0) + ';'))
 const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
     const { activity, error, message } = data
     const contractID = message.contractID()
-    const [opType] = message.op()
-    const { action, meta } = message.decryptedValue()
+    const opType = message.opType()
+    const value = message.decryptedValue()
+    let action
+    let meta
+    if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
+      action = value.action
+      meta = value.meta
+    }
     return {
       body: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
         ...LTags('b'),
         errName: error.name,
         activity,
         action: action ?? opType,
-        who: meta?.username ?? 'TODO: signing keyID',
+        who: meta?.username ?? message.signingKeyId(),
         contract: contractName(contractID),
         errMsg: error.message ?? '?'
       }),
@@ -111,8 +117,8 @@ export default ({
       body: L('{name} has left your group. Contributions were updated accordingly.', {
         name: strong(data.username)
       }),
-      icon: 'icon-minus',
-      level: 'info',
+      icon: 'user-minus',
+      level: 'danger',
       linkTo: '/contributions',
       scope: 'group'
     }

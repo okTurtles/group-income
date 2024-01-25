@@ -32,6 +32,7 @@ declare module '@hapi/boom' { declare module.exports: any }
 declare module '@hapi/hapi' { declare module.exports: any }
 declare module '@hapi/inert' { declare module.exports: any }
 declare module '@hapi/joi' { declare module.exports: any }
+declare module 'web-push' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
@@ -67,6 +68,7 @@ declare module '@sbp/okturtles.events' { declare module.exports: any }
 declare module 'favico.js' { declare module.exports: any }
 declare module 'lru-cache' { declare module.exports: any }
 declare module 'uuid' { declare module.exports: any }
+declare module 'marked' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
@@ -89,3 +91,8 @@ declare module '@model/contracts/shared/functions.js' { declare module.exports: 
 declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
+declare module './controller/service-worker.js' { declare module.exports: any }
+declare module '@controller/instance-keys.js' { declare module.exports: any }
+declare module './multiformats/bases/base58.js' { declare module.exports: any }
+declare module './multiformats/cid.js' { declare module.exports: any }
+declare module './multiformats/blake2b.js' { declare module.exports: any }

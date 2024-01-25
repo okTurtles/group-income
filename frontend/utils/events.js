@@ -6,7 +6,11 @@
 //       This file is primarily for frontend UI related events.
 
 export const LOGIN = 'login'
+export const LOGIN_ERROR = 'login-error'
 export const LOGOUT = 'logout'
+
+export const SWITCH_GROUP = 'switch-group'
+export const JOINED_GROUP = 'joined-group'
 
 export const REPLACED_STATE = 'replaced-state'
 
@@ -29,4 +33,7 @@ export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
 
-export const SWITCH_GROUP = 'switch-group'
+export const THEME_CHANGE = 'theme-change'
+
+export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
+export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'

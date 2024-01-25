@@ -75,12 +75,12 @@
 
       .buttons
         i18n.button.is-outlined(@click='close') Cancel
-        i18n.is-success(
-          tag='button'
+        button-submit.is-success(
           data-test='createChannelSubmit'
           @click='submit'
           :disabled='$v.form.$invalid'
-        ) Create channel
+        )
+          i18n Create channel
 </template>
 
 <script>
@@ -91,6 +91,7 @@ import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import {
   CHATROOM_TYPES,
@@ -122,7 +123,8 @@ export default ({
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     ModalTemplate,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   computed: {
     ...mapState(['currentGroupId']),
