@@ -163,6 +163,9 @@ Cypress.Commands.add('giSignup', (username, {
   const email = `${username}@email.com`
 
   if (bypassUI) {
+    // Wait for the app to be ready
+    cy.getByDT('app').should('have.attr', 'data-ready', 'true')
+
     cy.window().its('sbp').then(async sbp => {
       await sbp('gi.actions/identity/signupAndLogin', { username, email, passwordFn: () => password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
@@ -202,6 +205,9 @@ Cypress.Commands.add('giLogin', (username, {
   firstLoginAfterJoinGroup = false
 } = {}) => {
   if (bypassUI) {
+    // Wait for the app to be ready
+    cy.getByDT('app').should('have.attr', 'data-ready', 'true')
+
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         const ourUsername = sbp('state/vuex/getters').ourUsername

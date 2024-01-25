@@ -330,111 +330,111 @@ export default (sbp('sbp/selectors/register', {
         return index === -1 ? contractSyncPriorityList.length : index
       }
 
-      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       // See the TODO note in startApp (main.js) for why this is not awaited
-      sbp('chelonia/contract/sync', identityContractID, { force: true })
-        .catch((err) => {
-          sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
-          const errMessage = err?.message || String(err)
-          console.error('Error during login contract sync', errMessage)
+      try {
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+      } catch (err) {
+        sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
+        const errMessage = err?.message || String(err)
+        console.error('Error during login contract sync', errMessage)
 
-          const promptOptions = {
-            heading: L('Login error'),
-            question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
-            primaryButton: L('No'),
-            secondaryButton: L('Yes')
-          }
+        const promptOptions = {
+          heading: L('Login error'),
+          question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
+          primaryButton: L('No'),
+          secondaryButton: L('Yes')
+        }
 
-          sbp('gi.ui/prompt', promptOptions).then((result) => {
-            if (!result) {
-              sbp('gi.actions/identity/logout')
-                .catch((e) => {
-                  console.error('[gi.actions/identity/login] Error calling logout', e)
-                })
+        const result = await sbp('gi.ui/prompt', promptOptions)
+        if (!result) {
+          return sbp('gi.actions/identity/logout')
+        } else {
+          throw err
+        }
+      }
+
+      try {
+        // $FlowFixMe[incompatible-call]
+        await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
+          // Sync contracts in order based on type
+          return getContractSyncPriority(a) - getContractSyncPriority(b)
+        }).map(([, ids]) => {
+          return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+        }))
+      } catch (err) {
+        alert(L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' }))
+        console.error('Error during contract sync upon login (syncing all contractIDs)', err)
+      }
+
+      try {
+        // The state above might be null, so we re-grab it
+        const state = sbp('state/vuex/state')
+
+        // The updated list of groups
+        const groupIds = Object.keys(state[identityContractID].groups)
+
+        // contract sync might've triggered an async call to /remove, so
+        // wait before proceeding
+        // $FlowFixMe[incompatible-call]
+        await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
+
+        // Call 'gi.actions/group/join' on all groups which may need re-joining
+        await Promise.allSettled(
+          groupIds.map(groupId => (
+            // (1) Check whether the contract exists (may have been removed
+            //     after sync)
+            has(state.contracts, groupId) &&
+              has(state[identityContractID].groups, groupId) &&
+              // (2) Check whether the join process is still incomplete
+              //     This needs to be re-checked because it may have changed after
+              //     sync
+              state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
+              // (3) Call join
+              sbp('gi.actions/group/join', {
+                originatingContractID: identityContractID,
+                originatingContractName: 'gi.contracts/identity',
+                contractID: groupId,
+                contractName: 'gi.contracts/group',
+                reference: state[identityContractID].groups[groupId].hash,
+                signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
+                innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+                encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+              }).catch((e) => {
+                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
+                console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
+              })
+          ))
+        )
+
+        // update the 'lastLoggedIn' field in user's group profiles
+        sbp('state/vuex/getters').groupsByName
+          .map(entry => entry.contractID)
+          .forEach(cId => {
+            // We send this action only for groups we have fully joined (i.e.,
+            // accepted an invite add added our profile)
+            if (state[cId]?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE) {
+              sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
             }
-          }).catch((e) => {
-            console.error('Error at gi.ui/prompt', e)
           })
 
-          throw new Error('Unable to sync identity contract')
-        }).then(() => {
-          // $FlowFixMe[incompatible-call]
-          return Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
-            // Sync contracts in order based on type
-            return getContractSyncPriority(a) - getContractSyncPriority(b)
-          }).map(([, ids]) => {
-            return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
-          }))
-            .catch((err) => {
-              console.error('Error during contract sync upon login (syncing all contractIDs)', err)
-            })
-            .then(async function () {
-              // The state above might be null, so we re-grab it
-              const state = sbp('state/vuex/state')
+        // NOTE: users could notice that they leave the group by someone
+        // else when they log in
+        if (!state.currentGroupId) {
+          const gId = Object.keys(state.contracts)
+            .find(cID => has(state[identityContractID].groups, cID))
 
-              // The updated list of groups
-              const groupIds = Object.keys(state[identityContractID].groups)
+          if (gId) {
+            sbp('gi.actions/group/switch', gId)
+          }
+        }
+      } catch (e) {
+        alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
+        console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
+      } finally {
+        sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
+      }
 
-              // contract sync might've triggered an async call to /remove, so
-              // wait before proceeding
-              // $FlowFixMe[incompatible-call]
-              await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
-
-              // Call 'gi.actions/group/join' on all groups which may need re-joining
-              await Promise.allSettled(
-                groupIds.map(groupId => (
-                  // (1) Check whether the contract exists (may have been removed
-                  //     after sync)
-                  has(state.contracts, groupId) &&
-                  has(state[identityContractID].groups, groupId) &&
-                  // (2) Check whether the join process is still incomplete
-                  //     This needs to be re-checked because it may have changed after
-                  //     sync
-                  state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
-                  // (3) Call join
-                  sbp('gi.actions/group/join', {
-                    originatingContractID: identityContractID,
-                    originatingContractName: 'gi.contracts/identity',
-                    contractID: groupId,
-                    contractName: 'gi.contracts/group',
-                    reference: state[identityContractID].groups[groupId].hash,
-                    signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
-                    innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-                    encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
-                  }).catch((e) => {
-                    console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
-                  })
-                ))
-              )
-
-              // update the 'lastLoggedIn' field in user's group profiles
-              sbp('state/vuex/getters').groupsByName
-                .map(entry => entry.contractID)
-                .forEach(cId => {
-                // We send this action only for groups we have fully joined (i.e.,
-                // accepted an invite add added our profile)
-                  if (state[cId]?.profiles?.[username]?.status === PROFILE_STATUS.ACTIVE) {
-                    sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
-                  }
-                })
-
-              // NOTE: users could notice that they leave the group by someone
-              // else when they log in
-              if (!state.currentGroupId) {
-                const gId = Object.keys(state.contracts)
-                  .find(cID => has(state[identityContractID].groups, cID))
-
-                if (gId) {
-                  sbp('gi.actions/group/switch', gId)
-                }
-              }
-            }).finally(() => {
-              sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
-            })
-        }).catch((err) => {
-          console.error('Error during identity contract sync upon login', err)
-        })
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)

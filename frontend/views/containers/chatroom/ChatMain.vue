@@ -440,6 +440,7 @@ export default ({
         }
       }).catch((e) => {
         console.error(`Error while publishing message for ${contractID}`, e)
+        alert(e?.message || e)
       })
     },
     async scrollToMessage (messageHash, effect = true) {

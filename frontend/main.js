@@ -232,28 +232,6 @@ async function startApp () {
       }
     }))
     await sbp('translations/init', navigator.language)
-    // NOTE: important to do this before setting up Vue.js because a lot of that relies
-    //       on the router stuff which has guards that expect the contracts to be loaded
-    const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-    try {
-      if (identityContractID) {
-        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
-        // TODO: 'gi.actions/identity/login' will return before the contract
-        // state is synced
-        // This is to continue with the following block that is setting up
-        // Vue.js, but as a result the login events listened for below may
-        // have already fired. Instead, this block should be moved below the
-        // Vue.js set up, and the router be updated to handle not having a login
-        // state initially.
-        await sbp('gi.actions/identity/login', { identityContractID })
-      }
-    } catch (e) {
-      console.error(`caught ${e.name} while logging in: ${e.message}`, e)
-      await sbp('gi.actions/identity/logout')
-      console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-      // TODO: handle this better
-      await sbp('gi.db/settings/delete', identityContractID)
-    }
   } catch (e) {
     const errMsg = `Fatal error while initializing Group Income: ${e.name} - ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
     console.error(errMsg, e)
@@ -380,6 +358,24 @@ async function startApp () {
 
       sbp('okTurtles.events/emit', THEME_CHANGE, this.$store.state.settings.themeColor)
       this.setBadgeOnTab()
+
+      // Now that the app is ready, we proceed to call /login (which will restore
+      // the user's session, if they are already logged in)
+      // Since this is asynchronous, we must check this.ephemeral.finishedLogin
+      // to ensure that we don't override user interactions that have already
+      // happened (an example where things can happen this quickly is in the
+      // tests).
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
+        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
+        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
+          console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
+          console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+        })
+      }).catch(e => {
+        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+      }).finally(() => {
+        Vue.set(this.ephemeral, 'ready', true)
+      })
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
