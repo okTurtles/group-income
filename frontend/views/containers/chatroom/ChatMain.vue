@@ -1012,7 +1012,7 @@ export default ({
 
 .c-body-conversation {
   margin-right: 1rem;
-  padding: 10rem 0 1rem 0;
+  padding: 10rem 0 1rem 0; // top-padding '10rem' here is necessary for the message menu list to be displayed properly without being cropped off.
   overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
 }
