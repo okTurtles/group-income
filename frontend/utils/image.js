@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 // Copied from https://stackoverflow.com/a/27980815/4737729
@@ -33,7 +33,7 @@ export const imageUpload = async (imageFile: File): Promise<any> => {
       if (result === null) {
         console.warn('File upload failed: could not load the given file into an array buffer.')
       } else {
-        const hash = blake32Hash(new Uint8Array(((result: any): ArrayBuffer)))
+        const hash = createCID(new Uint8Array(((result: any): ArrayBuffer)))
         console.debug('picture hash:', hash)
         fd.append('hash', hash)
         fd.append('data', file)

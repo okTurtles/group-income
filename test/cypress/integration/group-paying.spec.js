@@ -10,7 +10,7 @@ function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
 }
 
 const API_URL = Cypress.config('baseUrl')
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const groupName = 'Dreamers'
 const mincome = 1000
 const timeStart = Date.now()

@@ -20,6 +20,7 @@ export default ({
   },
   inject: ['chatMessageUtils'],
   props: {
+    height: Number,
     id: String,
     messageHash: String,
     type: String,

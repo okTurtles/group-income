@@ -5,7 +5,7 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
@@ -46,7 +46,6 @@ const vuexState = {
   currentGroupId: null,
   currentChatRoomIDs: {},
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: THEME_LIGHT,
   fontSize: 1,
@@ -131,7 +130,7 @@ describe('Full walkthrough', function () {
 
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
-    username = `${username}-${Math.floor(Math.random() * 1000)}`
+    username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
     const msg = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/identity',
       keys: [
@@ -321,7 +320,7 @@ describe('Full walkthrough', function () {
       // })
       // since we're just saving the buffer now, we might as well use the simpler readFileSync API
       const buffer = fs.readFileSync(filepath)
-      const hash = blake32Hash(buffer)
+      const hash = createCID(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
       form.append('data', new Blob([buffer]), path.basename(filepath))

@@ -124,7 +124,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
@@ -207,7 +207,7 @@ export default ({
       return this.isJoined
         ? this.chatRoomUsersInSort
         : this.groupMembersSorted
-          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users.includes(member.username))
+          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users[member.username]?.status === PROFILE_STATUS.ACTIVE)
           .map(member => ({ username: member.username, displayName: member.displayName }))
     }
   },

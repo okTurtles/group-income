@@ -3,7 +3,7 @@
 // causing the bypassUI to fail in the middle (because it changed pages)
 
 describe('Group - Removing a member', () => {
-  const userId = Math.floor(Math.random() * 10000)
+  const userId = performance.now().toFixed(20).replace('.', '')
   const groupNameA = 'Dreamers'
   const groupNameB = 'Donuts'
 
@@ -29,11 +29,21 @@ describe('Group - Removing a member', () => {
 
   function removeMemberNow (username) {
     assertMembersCount(2)
-    cy.getByDT('modalProposal').within(() => {
-      cy.getByDT('description').should('contain', `Are you sure you want to remove ${username}-${userId} from the group?`)
-      cy.getByDT('submitBtn').click()
+    cy.window().its('sbp').then(sbp => {
+      const state = sbp('state/vuex/state')
+      const currentGroupId = state.currentGroupId
+      const currentHeight = state.contracts[currentGroupId].height
+
+      return [currentGroupId, currentHeight]
+    }).then(([currentGroupId, currentHeight]) => {
+      cy.log(`Height for ${currentGroupId} is ${currentHeight}; verifying keys are rotated`)
+      cy.getByDT('modalProposal').within(() => {
+        cy.getByDT('description').should('contain', `Are you sure you want to remove ${username}-${userId} from the group?`)
+        cy.getByDT('submitBtn').click()
+      })
+      cy.getByDT('closeModal').should('not.exist')
+      cy.giAssertKeyRotation(currentGroupId, currentHeight, 'csk')
     })
-    cy.getByDT('closeModal').should('not.exist')
     assertMembersCount(1)
   }
 
