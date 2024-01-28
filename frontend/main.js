@@ -29,6 +29,7 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
+import Loading from '@components/Loading.vue'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import './views/utils/avatar.js'
 import './views/utils/ui.js'
@@ -251,7 +252,8 @@ async function startApp () {
       BackgroundSounds,
       BannerGeneral,
       Navigation,
-      Modal
+      Modal,
+      Loading
     },
     data () {
       return {
@@ -260,7 +262,8 @@ async function startApp () {
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
           debouncedSyncBanner: null,
-          isCorrupted: false // TODO #761
+          isCorrupted: false, // TODO #761
+          ready: false
         }
       }
     },
@@ -374,7 +377,7 @@ async function startApp () {
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
-        Vue.set(this.ephemeral, 'ready', true)
+        this.ephemeral.ready = true
       })
     },
     computed: {
