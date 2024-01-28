@@ -1,5 +1,8 @@
 name: NodeJS with Grunt
 
+env:
+  CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
 on:
   push:
     branches: [ "master" ]
