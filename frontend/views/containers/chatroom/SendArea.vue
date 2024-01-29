@@ -513,7 +513,7 @@ export default ({
         sbp('gi.actions/chatroom/user-stop-typing-event', {
           contractID: this.currentChatRoomId
         }).catch(e => {
-          console.info('Error emitting user stopped typing event', e)
+          console.error('Error emitting user stopped typing event', e)
         })
       } else if (this.ephemeral.textWithLines.length < newValue.length) {
         // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
@@ -735,12 +735,11 @@ export default ({
       sbp('gi.actions/chatroom/user-typing-event', {
         contractID: this.currentChatRoomId
       }).catch(e => {
-        console.info('Error emitting user typing event', e)
+        console.error('Error emitting user typing event', e)
       })
     },
     onBtnClick (e) {
       e.preventDefault()
-      console.log('!@# on btn click: ', e)
     }
   }
 }: Object)
