@@ -213,19 +213,19 @@ async function startApp () {
           sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
         },
         [NOTIFICATION_TYPE.PUB] (msg) {
-          const { channelID, data } = msg
+          const { contractID, innerSigningContractID, data } = msg
 
-          switch (data.type) {
-            case CHATROOM_USER_TYPING: {
-              sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { username: data.username })
+          switch (data[0]) {
+            case 'gi.contracts/chatroom/user-typing-event': {
+              sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { contractID, innerSigningContractID })
               break
             }
-            case CHATROOM_USER_STOP_TYPING: {
-              sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { username: data.username })
+            case 'gi.contracts/chatroom/user-stop-typing-event': {
+              sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { contractID, innerSigningContractID })
               break
             }
             default: {
-              console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+              console.log(`[pubsub] Received data from channel ${contractID}:`, data)
             }
           }
         }

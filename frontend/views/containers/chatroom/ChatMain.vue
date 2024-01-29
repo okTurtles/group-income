@@ -227,8 +227,6 @@ export default ({
   },
   data () {
     return {
-      GIMessage,
-      JSON,
       config: {
         isPhone: null
       },
