@@ -14,11 +14,11 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
-import { encryptedOutgoingData, isEncryptedData } from './encryptedData.js'
+import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
+import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
-import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId } from './utils.js'
+import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -492,7 +492,37 @@ export default (sbp('sbp/selectors/register', {
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
-        ...(options.messageHandlers || {}),
+        ...(Object.fromEntries(
+          Object.entries(options.messageHandlers || {}).map(([k, v]) => [
+            k,
+            k === NOTIFICATION_TYPE.PUB
+              ? (msg) => {
+                  if (!msg.channelID) {
+                    console.info('[chelonia] Discarding pub event without channelID')
+                    return
+                  }
+                  if (!this.subscriptionSet.has(msg.channelID)) {
+                    console.info(`[chelonia] Discarding pub event for ${msg.channelID} because it's not in the current subscriptionSet`)
+                    return
+                  }
+                  const rootState = sbp(this.config.stateSelector)
+                  if (!rootState.contracts[msg.channelID]?.type) {
+                    console.warn(`[chelonia] Discarding pub event for ${msg.channelID} because its contract name could not be determined`)
+                    return
+                  }
+                  try {
+                    v(parseEncryptedOrUnencryptedMessage.call(this, {
+                      contractID: msg.channelID,
+                      contractName: rootState.contracts[msg.channelID].type,
+                      serializedData: msg.data
+                    }))
+                  } catch (e) {
+                    console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
+                  }
+                }
+              : v
+          ])
+        )),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
@@ -1167,7 +1197,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/out/propDel': async function () {
 
-  }
+  },
+  'chelonia/out/generateEncryptedOrUnencryptedMessage': generateEncryptedOrUnencryptedMessage
 }): string[])
 
 function contractNameFromAction (action: string): string {
@@ -1175,6 +1206,110 @@ function contractNameFromAction (action: string): string {
   const contractName = regexResult?.[2]
   if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
   return contractName
+}
+
+function generateEncryptedOrUnencryptedMessage ({
+  contractID,
+  contractName,
+  innerSigningKeyId,
+  encryptionKeyId,
+  signingKeyId,
+  data
+}: {
+  contractID: string,
+  contractName: string,
+  innerSigningKeyId: ?string,
+  encryptionKeyId: ?string,
+  signingKeyId: string,
+  data: Object
+}) {
+  const instance = this._instance
+  const manifestHash = this.config.contracts.manifests[contractName]
+  const { contract } = this.manifestToContract[manifestHash]
+  const state = contract.state(contractID)
+  const signedMessage = innerSigningKeyId
+    ? (state._vm.authorizedKeys[innerSigningKeyId] && state._vm.authorizedKeys[innerSigningKeyId]?._notAfterHeight == null)
+        ? signedOutgoingData(contractID, innerSigningKeyId, (data: any), this.transientSecretKeys)
+        : signedOutgoingDataWithRawKey(this.transientSecretKeys[innerSigningKeyId], (data: any), this.transientSecretKeys)
+    : data
+  const payload = !encryptionKeyId
+    ? signedMessage
+    : encryptedOutgoingData(contractID, encryptionKeyId, signedMessage)
+  const message = signedOutgoingData(contractID, signingKeyId, (payload: any), this.transientSecretKeys)
+  const self = this
+  return {
+    get serialize () {
+      return () => {
+        if (instance !== self._instance) throw new Error('Chelonia instance has been reset')
+        const rootState = sbp(self.config.stateSelector)
+        const height = String(rootState.contracts[contractID].height)
+        return { ...message.serialize(height), height }
+      }
+    }
+  }
+}
+
+function parseEncryptedOrUnencryptedMessage ({
+  contractID,
+  contractName,
+  serializedData
+}: {
+  contractID: string,
+  contractName: string,
+  serializedData: Object
+}) {
+  if (!serializedData) {
+    throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
+  }
+  const manifestHash = this.config.contracts.manifests[contractName]
+  const { contract } = this.manifestToContract[manifestHash]
+  const state = contract.state(contractID)
+
+  const numericHeight = parseInt(serializedData.height)
+  const rootState = sbp(this.config.stateSelector)
+  const currentHeight = String(rootState.contracts[contractID].height)
+  if (!(numericHeight >= 0) || !(numericHeight <= currentHeight)) {
+    throw new Error(`[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${serializedData.height}; it must be between 0 and ${currentHeight}`)
+  }
+
+  const v = signedIncomingData(contractID, state, serializedData, numericHeight, serializedData.height, (message) => {
+    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, serializedData.height, undefined)
+  })
+
+  const encryptedData = unwrapMaybeEncryptedData(v.valueOf())
+
+  const result = {
+    get contractID () {
+      return contractID
+    },
+    get innerSigningKeyId () {
+      if (!encryptedData) return
+      if (isSignedData(encryptedData.data)) {
+        return encryptedData.data.signingKeyId
+      }
+    },
+    get encryptionKeyId () {
+      return encryptedData?.encryptionKeyId
+    },
+    get signingKeyId () {
+      return v.signingKeyId
+    },
+    get data () {
+      if (!encryptedData) return
+      if (isSignedData(encryptedData.data)) {
+        return encryptedData.data.valueOf()
+      }
+      return encryptedData.data
+    },
+    get signingContractID () {
+      return getContractIDfromKeyId(contractID, result.signingKeyId, state)
+    },
+    get innerSigningContractID () {
+      return getContractIDfromKeyId(contractID, result.innerSigningKeyId, state)
+    }
+  }
+
+  return result
 }
 
 async function outEncryptedOrUnencryptedAction (
