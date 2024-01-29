@@ -511,7 +511,7 @@ export default (sbp('sbp/selectors/register', {
                     return
                   }
                   try {
-                    v(parseEncryptedOrUnencryptedMessage.call(this, {
+                    (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       contractName: rootState.contracts[msg.channelID].type,
                       serializedData: msg.data
@@ -1198,7 +1198,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   },
-  'chelonia/out/generateEncryptedOrUnencryptedMessage': generateEncryptedOrUnencryptedMessage
+  'chelonia/out/encryptedOrUnencryptedPubMessage': outputEncryptedOrUnencryptedPubMessage
 }): string[])
 
 function contractNameFromAction (action: string): string {
@@ -1208,7 +1208,7 @@ function contractNameFromAction (action: string): string {
   return contractName
 }
 
-function generateEncryptedOrUnencryptedMessage ({
+function outputEncryptedOrUnencryptedPubMessage ({
   contractID,
   contractName,
   innerSigningKeyId,
@@ -1223,7 +1223,6 @@ function generateEncryptedOrUnencryptedMessage ({
   signingKeyId: string,
   data: Object
 }) {
-  const instance = this._instance
   const manifestHash = this.config.contracts.manifests[contractName]
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
@@ -1236,17 +1235,10 @@ function generateEncryptedOrUnencryptedMessage ({
     ? signedMessage
     : encryptedOutgoingData(contractID, encryptionKeyId, signedMessage)
   const message = signedOutgoingData(contractID, signingKeyId, (payload: any), this.transientSecretKeys)
-  const self = this
-  return {
-    get serialize () {
-      return () => {
-        if (instance !== self._instance) throw new Error('Chelonia instance has been reset')
-        const rootState = sbp(self.config.stateSelector)
-        const height = String(rootState.contracts[contractID].height)
-        return { ...message.serialize(height), height }
-      }
-    }
-  }
+  const rootState = sbp(this.config.stateSelector)
+  const height = String(rootState.contracts[contractID].height)
+  const serializedData = { ...message.serialize(height), height }
+  this.pubsub.pub(contractID, serializedData)
 }
 
 function parseEncryptedOrUnencryptedMessage ({
@@ -1267,7 +1259,7 @@ function parseEncryptedOrUnencryptedMessage ({
 
   const numericHeight = parseInt(serializedData.height)
   const rootState = sbp(this.config.stateSelector)
-  const currentHeight = String(rootState.contracts[contractID].height)
+  const currentHeight = rootState.contracts[contractID].height
   if (!(numericHeight >= 0) || !(numericHeight <= currentHeight)) {
     throw new Error(`[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${serializedData.height}; it must be between 0 and ${currentHeight}`)
   }

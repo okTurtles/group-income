@@ -1,6 +1,5 @@
 'use strict'
 
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -159,8 +158,7 @@ export const encryptedNotification = (
 
     const actionReplaced = action.replace('gi.actions', 'gi.contracts')
 
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const message = sbp('chelonia/out/generateEncryptedOrUnencryptedMessage', {
+    return sbp('chelonia/out/encryptedOrUnencryptedPubMessage', {
       contractID: params.contractID,
       contractName: actionReplaced.split('/', 2).join('/'),
       innerSigningKeyId,
@@ -168,7 +166,6 @@ export const encryptedNotification = (
       signingKeyId,
       data: [actionReplaced, params.data]
     })
-    pubsub.pub(params.contractID, message.serialize())
   }
   return {
     [action]: async function (params: GIActionParams) {
