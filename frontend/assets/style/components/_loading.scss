@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   font-size: 30px;
-  background-color: #EDEDED;
+  background-color: #ededed;
 
   &.is-removed {
     width: 1px;
@@ -57,7 +57,7 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    background-color: #2E3032;
+    background-color: #2e3032;
   }
 
   @keyframes logo-rotation {
