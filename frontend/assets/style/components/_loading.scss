@@ -22,3 +22,46 @@
   50% { background-position: 100% 0; }
   100% { background-position: 100% 0; }
 }
+
+.main-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  background-color: #EDEDED;
+
+  &.is-removed {
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  img {
+    display: inline-block;
+    width: 2.4rem;
+    height: auto;
+    transform-origin: center center;
+    animation: logo-rotation 5s linear infinite;
+
+    @include from ($tablet) {
+      width: 3rem;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #2E3032;
+  }
+
+  @keyframes logo-rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+}

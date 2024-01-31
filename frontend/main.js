@@ -29,7 +29,6 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import Loading from '@components/Loading.vue'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import './views/utils/avatar.js'
 import './views/utils/ui.js'
@@ -252,8 +251,7 @@ async function startApp () {
       BackgroundSounds,
       BannerGeneral,
       Navigation,
-      Modal,
-      Loading
+      Modal
     },
     data () {
       return {
@@ -378,6 +376,11 @@ async function startApp () {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
         this.ephemeral.ready = true
+
+        const loadingScreenEl = document.querySelector('#main-loading-screen')
+        if (loadingScreenEl) {
+          loadingScreenEl.classList.add('is-removed')
+        }
       })
     },
     computed: {
