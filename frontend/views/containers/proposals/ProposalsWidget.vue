@@ -21,12 +21,12 @@ component(
   ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
-      :key='hash'
+      :key='`proposal-${hash}`'
       :proposalHash='hash'
     )
     proposal-item(
       v-for='[hash, obj] of ephemeral.archivedProposals'
-      :key='hash'
+      :key='`archived-proposal-${hash}`'
       :proposalHash='hash'
       :proposalObject='obj'
     )
@@ -38,13 +38,14 @@ component(
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 
@@ -55,13 +56,12 @@ export default ({
     ButtonDropdownMenu
   },
   mounted () {
+    this.refreshArchivedProposals()
     sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
-    while (this.ephemeral.timeouts.length > 0) {
-      clearTimeout(this.ephemeral.timeouts.pop())
-    }
+    this.clearTimeouts()
   },
   data () {
     return {
@@ -72,13 +72,16 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters([
       'currentGroupState',
+      'currentWelcomeInvite',
       'currentIdentityState',
       'groupDistributionStarted',
       'groupShouldPropose',
       'groupSettings',
       'ourUsername',
+      'ourIdentityContractId',
       'groupMembersCount'
     ]),
     hasProposals () {
@@ -156,14 +159,35 @@ export default ({
     }
   },
   methods: {
-    onProposalArchived (hashWithProp) {
-      this.ephemeral.archivedProposals.unshift(hashWithProp)
+    onProposalArchived (groupId, hash, proposal) {
+      if (groupId === this.currentGroupId) {
+        this.ephemeral.archivedProposals.unshift([hash, proposal])
+        this.ephemeral.timeouts.push(setTimeout(() => {
+          this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
+        }, new Date(proposal.dateClosed).getTime() - Date.now() + DAYS_MILLIS))
+      }
+    },
+    async refreshArchivedProposals () {
+      // NOTE: all the archived proposals are displayed in the dashboard widget for 24 hours
+      //       https://github.com/okTurtles/group-income/pull/1723#discussion_r1323369824
+      const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
+      const archivedProposals = await sbp('gi.db/archive/load', key) || []
+      // proposals which are archived in the last 24 hours
+      this.ephemeral.archivedProposals = archivedProposals
+        .filter(([hash, prop]) => Date.now() - new Date(prop.dateClosed).getTime() < DAYS_MILLIS)
+        .sort(([hash1, prop1], [hash2, prop2]) => new Date(prop2.dateClosed).getTime() - new Date(prop1.dateClosed).getTime())
       // after a day, remove it from the list
-      this.ephemeral.timeouts.push(setTimeout(() => {
-        this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => {
-          return x[0] !== hashWithProp[0]
-        })
-      }, 1000 * 60 * 60 * 24)) // 1 day
+      this.clearTimeouts()
+      for (const [hash, proposal] of this.ephemeral.archivedProposals) {
+        this.ephemeral.timeouts.push(setTimeout(() => {
+          this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
+        }, new Date(proposal.dateClosed).getTime() - Date.now() + DAYS_MILLIS))
+      }
+    },
+    clearTimeouts () {
+      while (this.ephemeral.timeouts.length > 0) {
+        clearTimeout(this.ephemeral.timeouts.pop())
+      }
     },
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
@@ -187,11 +211,17 @@ export default ({
         'remove-member': { toRemove: true }
       }
 
-      if (itemId === 'add-new-member' && this.groupShouldPropose) {
+      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+      if (itemId === 'add-new-member' && (this.groupShouldPropose || isWelcomeInviteExpired)) {
         return sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
+    }
+  },
+  watch: {
+    currentGroupId () {
+      this.refreshArchivedProposals()
     }
   }
 }: Object)

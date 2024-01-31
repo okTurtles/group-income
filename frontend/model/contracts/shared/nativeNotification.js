@@ -8,6 +8,7 @@ export async function requestNotificationPermission (force: boolean = false): Pr
   if (typeof Notification === 'undefined') {
     return null
   }
+
   if (force || Notification.permission === 'default') {
     try {
       sbp('state/vuex/commit', 'setNotificationEnabled', await Notification.requestPermission() === 'granted')
@@ -16,6 +17,16 @@ export async function requestNotificationPermission (force: boolean = false): Pr
       return null
     }
   }
+
+  // TODO FIXME: TEMPORARILY DISABLED AS IT CAUSES AN ERROR DURING THE TESTS
+  if (isNaN(1) && Notification.permission === 'granted') {
+    await sbp('service-worker/setup-push-subscription').catch((e) => {
+      // TODO: Temporary until this is better addressed. When running tests,
+      // it results in an AbortError.
+      console.error('Error setting up service worker', e)
+    })
+  }
+
   return Notification.permission
 }
 

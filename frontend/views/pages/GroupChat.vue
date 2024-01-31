@@ -179,7 +179,8 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomId } = to.params
-      if (chatRoomId && chatRoomId !== from.params.chatRoomId) {
+      const prevChatRoomId = from.params.chatRoomId || ''
+      if (chatRoomId && chatRoomId !== prevChatRoomId) {
         this.updateCurrentChatRoomID(chatRoomId)
         // NOTE: No need to consider not-joined private chatroom because it's impossible
         if (!this.isJoinedChatRoom(chatRoomId)) {

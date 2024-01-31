@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
@@ -37,18 +37,14 @@ const ChatMixin: Object = {
       'currentChatRoomState',
       'currentGroupState',
       'groupIdFromChatRoomId',
+      'ourGroupDirectMessages',
       'chatRoomUsers',
       'generalChatRoomId',
       'getGroupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPrivateChatRoom',
       'ourContactProfiles',
-      'isDirectMessage',
-      'isPrivateDirectMessage',
-      'isGroupDirectMessage',
-      'usernameFromDirectMessageID',
-      'groupDirectMessageInfo'
+      'isDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -58,13 +54,9 @@ const ChatMixin: Object = {
 
       let title = this.currentChatRoomState.attributes.name
       let picture
-      if (this.isPrivateDirectMessage(this.currentChatRoomId)) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        const partner = this.ourContactProfiles[partnerUsername]
-        title = partner?.displayName || partnerUsername
-        picture = partner?.picture
-      } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
-        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        title = this.ourGroupDirectMessages[this.currentChatRoomId].title
+        picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
 
       return {
@@ -104,16 +96,20 @@ const ChatMixin: Object = {
       const summarizedAttr = this.getGroupChatRooms[chatRoomId]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, users } = summarizedAttr
+        const activeUsers = Object
+          .entries(users)
+          .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
+          .map(([username]) => {
+            const { displayName, picture, email } = this.globalProfile(username) || {}
+            return [username, { displayName, picture, email }]
+          })
         this.loadedSummary = {
           ...initSummary,
           chatRoomId,
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
-          users: Object.fromEntries(users.map(username => {
-            const { displayName, picture, email } = this.globalProfile(username) || {}
-            return [username, { displayName, picture, email }]
-          })),
-          numberOfUsers: users.length,
+          users: activeUsers,
+          numberOfUsers: activeUsers.length,
           participants: this.ourContactProfiles // TODO: return only historical contributors
         }
         this.refreshTitle(name)

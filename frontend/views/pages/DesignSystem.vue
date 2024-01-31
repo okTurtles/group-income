@@ -171,11 +171,13 @@ page(
               i.icon-arrow-right icon-arrow-right
               i.icon-bars icon-bars
               i.icon-bell icon-bell
+              i.icon-bold icon-bold
               i.icon-chart-pie icon-chart-pie
               i.icon-check icon-check
               i.icon-check-circle icon-check-circle
               i.icon-chevron-left icon-chevron-left
               i.icon-chevron-right icon-chevron-right
+              i.icon-code icon-code
               i.icon-cog icon-cog
               i.icon-coins icon-coins
               i.icon-columns icon-columns
@@ -196,6 +198,7 @@ page(
               i.icon-heart icon-heart
               i.icon-info icon-info
               i.icon-info-circle icon-info-circle
+              i.icon-italic icon-italic
               i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
@@ -206,10 +209,10 @@ page(
               i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
-              i.icon-share-atl share-atl
               i.icon-search icon-search
               i.icon-sort-down sort-down
               i.icon-star icon-star
+              i.icon-strikethrough icon-strikethrough
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
@@ -1279,16 +1282,16 @@ page(
               br
               | &nbsp  heading: 'Update info',
               br
-              | &nbsp  yesButton: 'Yes',
+              | &nbsp  primaryButton: 'Yes',
               br
-              | &nbsp  noButton: 'No'
+              | &nbsp  secondaryButton: 'No'
               br
               | })
           td
             button.is-outlined(@click='openPrompt()')
               i18n Open Prompt
 
-      p *yesButton and noButton parameters are optional
+      p *primaryButton and secondaryButton parameters are optional
 
   article#clipboard-uis
     section.card

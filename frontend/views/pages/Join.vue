@@ -31,8 +31,6 @@ div
         | &nbsp;
         i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
-    group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
-
     .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
@@ -46,17 +44,19 @@ div
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { mapGetters, mapState } from 'vuex'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
-import { LOGIN } from '@utils/events.js'
-import SignupForm from '@containers/access/SignupForm.vue'
-import LoginForm from '@containers/access/LoginForm.vue'
-import Loading from '@components/Loading.vue'
-import Avatar from '@components/Avatar.vue'
-import GroupWelcome from '@components/GroupWelcome.vue'
-import SvgBrokenLink from '@svgs/broken-link.svg'
 import { L } from '@common/common.js'
+import Avatar from '@components/Avatar.vue'
+import Loading from '@components/Loading.vue'
+import LoginForm from '@containers/access/LoginForm.vue'
+import SignupForm from '@containers/access/SignupForm.vue'
+import sbp from '@sbp/sbp'
+import SvgBrokenLink from '@svgs/broken-link.svg'
+import { LOGIN } from '@utils/events.js'
+import { mapGetters, mapState } from 'vuex'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
@@ -68,7 +68,6 @@ export default ({
     LoginForm,
     SignupForm,
     Avatar,
-    GroupWelcome,
     SvgBrokenLink
   },
   data () {
@@ -86,7 +85,7 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const possibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
+        const possibleStatus = ['LOADING', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
         if (!possibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${possibleStatus.join(', ')}`)
         }
@@ -107,46 +106,41 @@ export default ({
     async initialize () {
       try {
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-        const invite = state.invites[this.ephemeral.query.secret]
-        if (!invite || invite.status !== INVITE_STATUS.VALID) {
-          console.error('Join.vue error: Link is not valid.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+        const publicKeyId = keyId(this.ephemeral.query.secret)
+        const invite = state._vm.invites[publicKeyId]
+        const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
+        if (invite?.expires < Date.now()) {
+          console.log('Join.vue error: Link is already expired.')
+          this.ephemeral.errorMsg = messageToAskAnother
+          this.pageStatus = 'EXPIRED'
+          return
+        } else if (invite?.initialQuantity > 0 && !invite.quantity) {
+          console.log('Join.vue error: Link is already used.')
+          this.ephemeral.errorMsg = messageToAskAnother
           this.pageStatus = 'INVALID'
           return
-        } else if (invite.expires < Date.now()) {
-          console.log('Join.vue error: Link is already expired.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-          this.pageStatus = 'EXPIRED'
+        } if (invite?.status !== INVITE_STATUS.VALID) {
+          console.error('Join.vue error: Link is not valid.')
+          this.ephemeral.errorMsg = messageToAskAnother
+          this.pageStatus = 'INVALID'
           return
         }
         if (this.ourUsername) {
-          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
+          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourUsername])) {
             this.$router.push({ path: '/dashboard' })
           } else {
             await this.accept()
           }
           return
         }
-        let creator = null
-        let creatorPicture = null
-        let message = null
-
-        if (invite.creator === INVITE_INITIAL_CREATOR) {
-          message = L('You were invited to join')
-        } else {
-          const identityContractID = await sbp('namespace/lookup', invite.creator)
-          const userState = await sbp('chelonia/latestContractState', identityContractID)
-          const userDisplayName = userState.attributes.displayName || userState.attributes.username
-          message = L('{who} invited you to join their group!', { who: userDisplayName })
-          creator = userDisplayName
-          creatorPicture = userState.attributes.picture
-        }
+        const creator = this.ephemeral.query.creator
+        const message = creator
+          ? L('{who} invited you to join their group!', { who: creator })
+          : L('You were invited to join')
 
         this.ephemeral.invitation = {
-          groupName: state.settings.groupName,
-          groupPicture: state.settings.groupPicture,
+          groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
           creator,
-          creatorPicture,
           message
         }
         this.pageStatus = 'SIGNING'
@@ -165,15 +159,14 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
-      if (this.$store.state.contracts[groupId]) {
+      const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourUsername]?.status
+      if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(profileStatus)) {
         return this.$router.push({ path: '/dashboard' })
       }
       try {
-        await sbp('gi.actions/group/joinAndSwitch', {
-          contractID: groupId,
-          data: { inviteSecret: secret }
-        })
-        this.pageStatus = 'WELCOME'
+        await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
+        // this.pageStatus = 'WELCOME'
+        this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message

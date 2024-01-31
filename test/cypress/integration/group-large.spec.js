@@ -1,4 +1,4 @@
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const groupName = 'Dreamers'
 const groupLength = 12
 
@@ -20,19 +20,25 @@ describe('Large group', () => {
   })
 
   it(`A group with ${groupLength} members shows correctly the pledging month overview widget`, () => {
-    for (let i = 2; i <= groupLength; i++) {
-      cy.giAcceptGroupInvite(invitationLinks.anyone, {
-        username: `user${i}-${userId}`,
-        groupName,
-        bypassUI: true,
-        actionBeforeLogout: () => {
-          if (i > 3) {
-            cy.getByDT('contributionsLink').click()
-          }
-          cy.giAddRandomIncome()
+    const indexes = Array.from({ length: groupLength - 1 }, (_, i) => i + 2)
+    const usernames = indexes.map(i => `user${i}-${userId}`)
+    const actionsBeforeLogout = indexes.map(i => {
+      return () => {
+        if (i > 3) {
+          cy.getByDT('contributionsLink').click()
         }
-      })
-    }
+        cy.giAddRandomIncome()
+      }
+    })
+
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
+      usernames,
+      actionBeforeLogout: actionsBeforeLogout,
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      bypassUI: true
+    })
+
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
     cy.giAddRandomIncome()
     cy.get('.graph-bar')

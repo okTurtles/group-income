@@ -18,13 +18,13 @@ const originalConsole = console
 // These are initialized in `captureLogsStart()`.
 let appLogsFilter: string[] = []
 let logger: Object = null
-let username: string = ''
+let identityContractID: string = ''
 
 // A default storage backend using `localStorage`.
-const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${username}/${key}`)
-const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${username}/${key}`)
+const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${identityContractID}/${key}`)
+const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${identityContractID}/${key}`)
 const setItem = (key: string, value: any): void => {
-  localStorage.setItem(`giConsole/${username}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
+  localStorage.setItem(`giConsole/${identityContractID}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
 }
 
 function createLogger (config: Object): Object {
@@ -58,7 +58,15 @@ function captureLogEntry (type, ...args) {
     type,
     // Detect when arg is an Error and capture it properly.
     // ex: uncaught Vue errors or custom try/catch errors.
-    msg: args.map((arg) => arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+    msg: args.map((arg) => {
+      try {
+        return JSON.parse(
+          JSON.stringify(arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+        )
+      } catch (e) {
+        return `[captureLogs failed to stringify argument of type '${typeof arg}'. Err: ${e.message}]`
+      }
+    })
   }
   getLogger().entries.add(entry)
   // To avoid infinite loop because we log all selector calls, we run sbp calls
@@ -69,7 +77,7 @@ function captureLogEntry (type, ...args) {
 }
 
 function captureLogsStart (userLogged: string) {
-  username = userLogged
+  identityContractID = userLogged
 
   logger = getLogger()
 
@@ -114,24 +122,16 @@ function downloadLogs (elLink: Object): void {
     _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     ua: navigator.userAgent,
     logs: getLogger().entries.toArray()
-  })], { type: 'application/json' })
+  }, undefined, 2)], { type: 'application/json' })
 
-  if (window.navigator.msSaveOrOpenBlob) {
-    // IE10+ and Edge
-    console.log('download using MS API')
-    window.navigator.msSaveOrOpenBlob(file, filename)
-  } else {
-    console.log('download using URL obj')
-
-    const url = URL.createObjectURL(file)
-    elLink.href = url
-    elLink.download = filename
-    elLink.click()
-    setTimeout(() => {
-      elLink.href = '#'
-      window.URL.revokeObjectURL(url)
-    }, 0)
-  }
+  const url = URL.createObjectURL(file)
+  elLink.href = url
+  elLink.download = filename
+  elLink.click()
+  setTimeout(() => {
+    elLink.href = '#'
+    URL.revokeObjectURL(url)
+  }, 0)
 }
 
 function getLogger (): Object {
@@ -169,5 +169,5 @@ sbp('sbp/selectors/register', {
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
-  'appLogs/startCapture' (username) { captureLogsStart(username) }
+  'appLogs/startCapture' (identityContractID) { captureLogsStart(identityContractID) }
 })

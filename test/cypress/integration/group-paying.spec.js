@@ -1,12 +1,16 @@
 
 // Similar to time.js but without the import.
-export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
+function addTimeToDate (dateOrIsoString, milliseconds) {
+  return new Date(new Date(dateOrIsoString).getTime() + milliseconds).toISOString()
+}
+
+function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   const locale = navigator.languages ? navigator.languages[0] : navigator.language
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
 const API_URL = Cypress.config('baseUrl')
-const userId = Math.floor(Math.random() * 10000)
+const userId = performance.now().toFixed(20).replace('.', '')
 const groupName = 'Dreamers'
 const mincome = 1000
 const timeStart = Date.now()
@@ -26,6 +30,10 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist')
   cy.url().should('eq', `${API_URL}/app/contributions`)
+}
+
+function assertMonthOverviewTitle (title) {
+  cy.getByDT('monthOverviewTitle').should('contain', title)
 }
 
 function assertNavTabs (tabs) {
@@ -84,30 +92,94 @@ describe('Group Payments', () => {
     })
 
     setIncomeDetails(true, 250)
+
+    // TODO: move these assertions to unit tests.
+    cy.window().its('sbp').then(sbp => {
+      // The getters we're going to test.
+      const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod } = sbp('state/vuex/getters')
+      const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
+      const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const twoPeriodLengthsAhead = addTimeToDate(distributionDate, distributionPeriodLength * 2)
+      const oneSecondAhead = addTimeToDate(distributionDate, 1000)
+      const oneSecondBefore = addTimeToDate(distributionDate, -1000)
+      /* eslint-disable no-unused-expressions */
+      expect(periodStampGivenDate(new Date()) === onePeriodLengthBefore, 1).to.be.true
+      expect(periodStampGivenDate(distributionDate) === distributionDate, 2).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead, 3).to.be.true
+      expect(periodStampGivenDate(twoPeriodLengthsAhead) === twoPeriodLengthsAhead, 4).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthBefore) === onePeriodLengthBefore, 5).to.be.true
+      expect(periodStampGivenDate(oneSecondAhead) === distributionDate, 6).to.be.true
+      expect(periodStampGivenDate(oneSecondBefore) === onePeriodLengthBefore, 7).to.be.true
+
+      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead, 8).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === twoPeriodLengthsAhead, 9).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthBefore) === distributionDate, 10).to.be.true
+
+      expect(periodBeforePeriod(distributionDate) === onePeriodLengthBefore, 11).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 12).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 13).to.be.true
+      /* eslint-enable no-unused-expressions */
+    })
     cy.giLogout()
   })
 
   it('Three users join the group and add their income details', () => {
-    const options = { groupName, bypassUI: true, shouldLogoutAfter: false }
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, ...options })
-    setIncomeDetails(false, 900)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, ...options })
-    setIncomeDetails(false, 750)
-    cy.giLogout()
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user4-${userId}`, ...options })
-    setIncomeDetails(true, 100)
+    const usernames = [2, 3, 4].map(i => `user${i}-${userId}`)
+    const actionsBeforeLogout = [[false, 900], [false, 750], [true, 100]]
+      .map(([doesPledge, incomeAmount]) => () => setIncomeDetails(doesPledge, incomeAmount))
+    cy.giAcceptMultipleGroupInvites(invitationLinks.anyone, {
+      usernames,
+      actionBeforeLogout: actionsBeforeLogout,
+      existingMemberUsername: `user1-${userId}`,
+      groupName,
+      bypassUI: true
+    })
   })
 
   it('user1 sends $250 to user3 (total)', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
     //       REFERENCE IN CASE WE RUN INTO MORE!
     cy.giForceDistributionDateToNow()
 
+    // Period-related getters should also work in a normal period.
+    cy.window().its('sbp').then(sbp => {
+      const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod, groupSortedPeriodKeys } = sbp('state/vuex/getters')
+      const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
+      const onePeriodLengthAhead = addTimeToDate(distributionDate, distributionPeriodLength)
+      const twoPeriodLengthsAhead = addTimeToDate(distributionDate, distributionPeriodLength * 2)
+      const oneSecondAhead = addTimeToDate(distributionDate, 1000)
+      const oneSecondBefore = addTimeToDate(distributionDate, -1000)
+      const waitingPeriod = groupSortedPeriodKeys[0]
+      /* eslint-disable no-unused-expressions */
+      // The provided integers are there to help identify a failed assertion.
+      expect(periodStampGivenDate(new Date()) === distributionDate, 1).to.be.true
+      expect(periodStampGivenDate(distributionDate) === distributionDate, 2).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthAhead) === onePeriodLengthAhead, 3).to.be.true
+      expect(periodStampGivenDate(onePeriodLengthBefore) === undefined, 4).to.be.true
+      expect(periodStampGivenDate(oneSecondAhead) === distributionDate, 5).to.be.true
+      expect(periodStampGivenDate(oneSecondBefore) === waitingPeriod, 6).to.be.true
+      expect(periodStampGivenDate(waitingPeriod) === waitingPeriod, 7).to.be.true
+
+      expect(periodAfterPeriod(distributionDate) === onePeriodLengthAhead, 8).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthAhead) === twoPeriodLengthsAhead, 9).to.be.true
+      expect(periodAfterPeriod(onePeriodLengthBefore) === undefined, 10).to.be.true
+      expect(periodAfterPeriod(oneSecondAhead) === onePeriodLengthAhead, 11).to.be.true
+      expect(periodAfterPeriod(oneSecondBefore) === distributionDate, 12).to.be.true
+      expect(periodAfterPeriod(waitingPeriod) === distributionDate, 13).to.be.true
+
+      expect(periodBeforePeriod(distributionDate) === waitingPeriod, 14).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthAhead) === distributionDate, 15).to.be.true
+      expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 16).to.be.true
+      expect(periodBeforePeriod(oneSecondAhead) === waitingPeriod, 17).to.be.true
+      expect(periodBeforePeriod(oneSecondBefore) === undefined, 18).to.be.true
+      expect(periodBeforePeriod(twoPeriodLengthsAhead) === onePeriodLengthAhead, 19).to.be.true
+      expect(periodBeforePeriod(waitingPeriod) === undefined, 20).to.be.true
+      /* eslint-enable no-unused-expressions */
+    })
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
@@ -116,6 +188,13 @@ describe('Group Payments', () => {
       ['Payments sent', '0 out of 1'],
       ['Amount sent', '$0 out of $250']
     ])
+    cy.window().its('sbp').then(sbp => {
+      const { distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      // Use 'Date.now()' here rather than 'timeStart' since a few seconds have already elapsed.
+      const start = humanDate(Date.now())
+      const end = humanDate(Date.now() + distributionPeriodLength)
+      assertMonthOverviewTitle(`Period: ${start} - ${end}`)
+    })
 
     cy.getByDT('recordPayment').should('be.disabled')
     // NOTE: keep this comment around just to show the lengths we have to go to
@@ -183,7 +262,7 @@ describe('Group Payments', () => {
     cy.closeModal()
 
     cy.log('user3 confirms the received payment')
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user3-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
@@ -233,7 +312,7 @@ describe('Group Payments', () => {
     })
 
     cy.log('user1 receives a notification for a thank you note')
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
     openNotificationCard({
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
@@ -247,7 +326,7 @@ describe('Group Payments', () => {
   })
 
   it('user4 sends $50 to user2 (partial)', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user4-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('todoCheck').click()
@@ -283,7 +362,7 @@ describe('Group Payments', () => {
     })
 
     cy.log('user2 confirms the received payment')
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user2-${userId}`)
     cy.getByDT('paymentsLink').click()
 
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
@@ -294,8 +373,99 @@ describe('Group Payments', () => {
     })
   })
 
+  it('user1 sends $250 to user3 (again)', () => {
+    cy.giSwitchUser(`user1-${userId}`)
+
+    cy.giForceDistributionDateToNow()
+
+    cy.getByDT('paymentsLink').click()
+    cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
+
+    assertNavTabs(['Todo1', 'Completed'])
+    assertMonthOverview([
+      ['Payments sent', '0 out of 1'],
+      ['Amount sent', '$0 out of $250']
+    ])
+    cy.window().its('sbp').then(sbp => {
+      const { distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
+      // Use 'Date.now()' here rather than 'timeStart' since a few seconds have already elapsed.
+      const start = humanDate(Date.now())
+      const end = humanDate(Date.now() + distributionPeriodLength)
+      assertMonthOverviewTitle(`Period: ${start} - ${end}`)
+    })
+
+    cy.getByDT('recordPayment').should('be.disabled')
+    cy.getByDT('todoCheck').click({ force: true })
+    cy.getByDT('recordPayment').should('not.be.disabled').click()
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
+      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '250')
+      cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
+
+      cy.get('button[type="submit"]').click()
+      cy.getByDT('successClose').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    assertMonthOverview([
+      ['Payments sent', '1 out of 1'],
+      ['Amount sent', '$250 out of $250']
+    ])
+
+    cy.log('assert payments table is correct again')
+    assertNavTabs(['Todo', 'Completed'])
+    cy.getByDT('link-PaymentRowSent').click()
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user3-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
+
+      cy.log('assert payment detail is correct')
+      cy.getByDT('menuTrigger').eq(0).click()
+      cy.getByDT('menuContent').find('ul > li:nth-child(1)').as('btnDetails')
+      cy.get('@btnDetails').should('contain', 'Payment details')
+      cy.get('@btnDetails').click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('amount').should('contain', '$250')
+      cy.getByDT('subtitle').should('contain', `Sent to user3-${userId}`)
+
+      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+    })
+    cy.closeModal()
+
+    cy.log('user3 confirms the received payment again')
+    cy.giSwitchUser(`user3-${userId}`)
+    cy.getByDT('paymentsLink').click()
+
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user1-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
+    })
+
+    assertMonthOverview([
+      ['Payments received', '1 out of 1'],
+      ['Amount received', '$250 out of $250']
+    ])
+
+    cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
+    openNotificationCard({
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Payment details')
+    })
+    cy.closeModal()
+  })
+
   it('user1 changes their income details to "needing" and sees the correct UI', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
 
     setIncomeDetails(false, 950)
 
@@ -305,7 +475,7 @@ describe('Group Payments', () => {
     cy.getByDT('noPayments').should('exist')
 
     cy.getByDT('link-PaymentRowSent').click()
-    cy.getByDT('payList').find('tbody').children().should('have.length', 1)
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
 
     assertMonthOverview([
       ['Payments received', '0 out of 0'],
@@ -325,7 +495,7 @@ describe('Group Payments', () => {
     cy.visit('/')
     cy.tick(timeOneMonth)
 
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
 

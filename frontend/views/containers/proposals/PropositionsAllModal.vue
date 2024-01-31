@@ -53,9 +53,8 @@ export default ({
     }
   }),
   async mounted () {
-    const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
-    const archivedProposals = await sbp('gi.db/archive/load', key) || []
-    this.ephemeral.proposals = archivedProposals
+    const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
+    this.ephemeral.proposals = await sbp('gi.db/archive/load', key) || []
   },
   methods: {
     unfocusSelect () {
@@ -64,7 +63,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentGroupState', 'ourUsername']),
+    ...mapGetters(['currentGroupState', 'ourUsername', 'ourIdentityContractId']),
     proposals () {
       const p = this.ephemeral.proposals
       return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()

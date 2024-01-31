@@ -7,16 +7,18 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
-
 import '@model/captureLogs.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
+import './controller/service-worker.js'
+import '~/shared/domains/chelonia/persistent-actions.js'
 import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -37,12 +39,14 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
+import { showNavMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
 
 const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
@@ -69,6 +73,10 @@ async function startApp () {
     const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/set',
+      'chelonia/rootState',
+      'chelonia/haveSecretKey',
+      'chelonia/private/enqueuePostSyncOps',
+      'chelonia/private/invoke',
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
@@ -103,11 +111,24 @@ async function startApp () {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
+          'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
-          'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
-          'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
-          'gi.notifications/emit'
+          'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
+          'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
+          'chelonia/queueInvocation',
+          'chelonia/contract/waitingForKeyShareTo',
+          'gi.actions/chatroom/leave',
+          'gi.actions/group/removeOurselves',
+          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
+          'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
+          'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
+          'gi.notifications/emit',
+          'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
+          'chelonia/out/keyDel',
+          'chelonia/contract/disconnect',
+          'gi.actions/chatroom/join',
+          'chelonia/contract/hasKeysToPerformOperation'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -134,6 +155,10 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
+        // For now, we ignore all missing keys errors
+        if (e.name === 'ChelErrorDecryptionKeyNotFound') {
+          return
+        }
         errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
@@ -154,8 +179,9 @@ async function startApp () {
     window.sbp = sbp
   }
 
-  // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
-  // be called before the main App component is loaded (just after we call login)
+  // this is definitely very hacky, but we put it here since two events
+  // (CONTRACT_IS_SYNCING)
+  // can be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
   const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
   const syncFn = function (contractID, isSyncing) {
@@ -167,26 +193,45 @@ async function startApp () {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
   }
+
   const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
-    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
-    await sbp('translations/init', navigator.language)
-    // NOTE: important to do this before setting up Vue.js because a lot of that relies
-    //       on the router stuff which has guards that expect the contracts to be loaded
-    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-    try {
-      if (username) {
-        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
-        await sbp('gi.actions/identity/login', { username })
+    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
+      messageHandlers: {
+        [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
+          const ourVersion = process.env.GI_VERSION
+          const theirVersion = msg.data.GI_VERSION
+
+          const ourContractsVersion = process.env.CONTRACTS_VERSION
+          const theirContractsVersion = msg.data.CONTRACTS_VERSION
+          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
+          }
+        },
+        [REQUEST_TYPE.PUSH_ACTION] (msg) {
+          sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
+        },
+        [NOTIFICATION_TYPE.PUB] (msg) {
+          const { contractID, innerSigningContractID, data } = msg
+
+          switch (data[0]) {
+            case 'gi.contracts/chatroom/user-typing-event': {
+              sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { contractID, innerSigningContractID })
+              break
+            }
+            case 'gi.contracts/chatroom/user-stop-typing-event': {
+              sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { contractID, innerSigningContractID })
+              break
+            }
+            default: {
+              console.log(`[pubsub] Received data from channel ${contractID}:`, data)
+            }
+          }
+        }
       }
-    } catch (e) {
-      console.error(`caught ${e.name} while logging in: ${e.message}`, e)
-      await sbp('gi.actions/identity/logout')
-      console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-      // TODO: handle this better
-      await sbp('gi.db/settings/delete', username)
-    }
+    }))
+    await sbp('translations/init', navigator.language)
   } catch (e) {
     const errMsg = `Fatal error while initializing Group Income: ${e.name} - ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
     console.error(errMsg, e)
@@ -194,10 +239,13 @@ async function startApp () {
     return
   }
 
+  // register service-worker
+  await sbp('service-workers/setup')
+
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    mixins: [notificationsMixin],
+    mixins: [notificationsMixin, showNavMixin],
     components: {
       AppStyles,
       BackgroundSounds,
@@ -240,18 +288,23 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
-      sbp('okTurtles.events/on', LOGIN, () => {
+      sbp('okTurtles.events/on', LOGIN, async () => {
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
+        const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
+        sbp('chelonia.persistentActions/configure', { databaseKey })
+        await sbp('chelonia.persistentActions/load')
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
+        // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+        sbp('chelonia.persistentActions/unload')
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
         this.initOrResetPeriodicNotifications()
@@ -277,6 +330,14 @@ async function startApp () {
           },
           'reconnection-succeeded' () {
             sbp('gi.ui/clearBanner')
+          },
+          'subscription-succeeded' (event) {
+            const { channelID } = event.detail
+            if (channelID in sbp('state/vuex/state').contracts) {
+              sbp('chelonia/contract/sync', channelID, { force: true }).catch(err => {
+                console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
+              })
+            }
           }
         })
       })
@@ -295,7 +356,26 @@ async function startApp () {
         )
       }
 
+      sbp('okTurtles.events/emit', THEME_CHANGE, this.$store.state.settings.themeColor)
       this.setBadgeOnTab()
+
+      // Now that the app is ready, we proceed to call /login (which will restore
+      // the user's session, if they are already logged in)
+      // Since this is asynchronous, we must check this.ephemeral.finishedLogin
+      // to ensure that we don't override user interactions that have already
+      // happened (an example where things can happen this quickly is in the
+      // tests).
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
+        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
+        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
+          console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
+          console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+        })
+      }).catch(e => {
+        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+      }).finally(() => {
+        Vue.set(this.ephemeral, 'ready', true)
+      })
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
@@ -308,9 +388,6 @@ async function startApp () {
       },
       shouldSetBadge () {
         return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
-      },
-      showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
       appClasses () {
         return {

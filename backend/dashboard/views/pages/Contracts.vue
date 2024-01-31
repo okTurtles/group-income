@@ -54,7 +54,6 @@ export default {
         contractFilter: { id: 'all-contracts', name: L('All contracts') },
         filterOptions: [
           { id: 'all-contracts', name: L('All contracts') },
-          { id: 'mailbox', name: L('Mailbox') },
           { id: 'chatroom', name: L('Chatroom') },
           { id: 'identity', name: L('Identity') },
           { id: 'group', name: L('Group') }

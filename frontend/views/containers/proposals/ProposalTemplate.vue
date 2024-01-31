@@ -44,9 +44,9 @@
         button-submit(
           key='change'
           :class='submitStyleNonProposal'
-          v-if='!shouldPropose'
+          v-if='!isConfirmation && !shouldPropose'
           @click='submit'
-          :disabled='disabled'
+          :disabled='disabled || !isGroupCreator'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -83,11 +83,11 @@
       .c-footer
         i.icon-vote-yea
         span(v-if='shouldPropose' v-safe-html='footerVotingExplanation')
+        slot(v-else-if='shouldImmediateChange' name='shouldImmediateChangeFooter')
         i18n(
           v-else-if='!groupShouldPropose'
           :args='LTags("strong")'
         ) Your group has less than 3 members, so {strong_}this change will be immediate{_strong} (no voting required).
-        slot(v-else name='shouldImmediateChangeFooter')
 </template>
 
 <script>
@@ -118,7 +118,7 @@ export default ({
     },
     variant: {
       validator (value) {
-        return ['addMember', 'removeMember', 'changeDistributionDate'].indexOf(value) > -1
+        return ['addMember', 'removeMember'].indexOf(value) > -1
       }
     },
     shouldImmediateChange: Boolean
@@ -136,6 +136,9 @@ export default ({
     },
     proposalSettings () {
       return this.groupProposalSettings()
+    },
+    isGroupCreator () {
+      return this.ourUsername === this.groupSettings.groupCreator
     },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
@@ -199,7 +202,7 @@ export default ({
   },
   methods: {
     close () {
-      this.$refs.modal.close()
+      this.$refs.modal.unload()
     },
     next () {
       // TODO/BUG - we must clear formMsg (if visible) when changing steps.

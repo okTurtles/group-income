@@ -124,8 +124,8 @@ export default ({
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
-      'ourPrivateDirectMessages',
-      'directMessageIDFromUsername'
+      'ourGroupDirectMessageFromUsernames',
+      'ourIdentityContractId'
     ]),
     isSelf () {
       return this.username === this.ourUsername
@@ -161,12 +161,12 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      if (!this.ourPrivateDirectMessages[this.username]) {
-        this.createPrivateDM(this.username)
+      const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.username)
+      if (!chatRoomId) {
+        this.createDirectMessage(this.username)
       } else {
-        const chatRoomId = this.directMessageIDFromUsername(this.username)
-        if (this.ourPrivateDirectMessages[this.username].hidden) {
-          this.setDMVisibility(chatRoomId, false)
+        if (!this.ourGroupDirectMessages[chatRoomId].visible) {
+          this.setDMVisibility(chatRoomId, true)
         } else {
           this.redirect(chatRoomId)
         }

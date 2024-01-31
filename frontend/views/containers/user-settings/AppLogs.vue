@@ -84,7 +84,7 @@ export default ({
     prettyLogs () {
       return this.ephemeral.logs
         .filter(({ type }) => this.form.filter.includes(type))
-        .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map(JSON.stringify).join(' ')}`)
+        .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map((x) => JSON.stringify(x)).join(' ')}`)
         .join('\n')
     },
     issuePageTag () {

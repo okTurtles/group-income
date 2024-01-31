@@ -64,6 +64,9 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.js'
 
+// Returns a function that returns the function's argument
+const wrapValueInFunction = (v) => () => v
+
 export const usernameValidations = {
   [L('A username is required.')]: required,
   [L('A username cannot contain whitespace.')]: noWhitespace,
@@ -125,12 +128,19 @@ export default ({
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password
+          passwordFn: wrapValueInFunction(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        requestNotificationPermission()
+        const granted = (await requestNotificationPermission()) === 'granted'
+        if (granted) {
+          // TODO: remove in production - this is just for testing the notification
+          await sbp('service-worker/send-push', {
+            title: 'Welcome to Group Income!',
+            body: 'Congratulations on signing up on the app.'
+          })
+        }
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

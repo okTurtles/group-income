@@ -1,43 +1,27 @@
 'use strict'
 
-export class ChelErrorDBBadPreviousHEAD extends Error {
-  // ugly boilerplate because JavaScript is stupid
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-  constructor (...params: any[]) {
-    super(...params)
-    // this.name = this.constructor.name
-    this.name = 'ChelErrorDBBadPreviousHEAD' // string literal so minifier doesn't overwrite
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
+// ugly boilerplate because JavaScript is stupid
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
+export const ChelErrorGenerator = (
+  name: string,
+  base: typeof Error = Error
+): typeof Error =>
+  ((class extends base {
+    constructor (...params: any[]) {
+      super(...params)
+      this.name = name // string literal so minifier doesn't overwrite
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor)
+      }
     }
-  }
-}
-export class ChelErrorDBConnection extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = 'ChelErrorDBConnection'
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
+  }: any): typeof Error)
 
-export class ChelErrorUnexpected extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = 'ChelErrorUnexpected'
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
-
-export class ChelErrorUnrecoverable extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = 'ChelErrorUnrecoverable'
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
+export const ChelErrorWarning: typeof Error = ChelErrorGenerator('ChelErrorWarning')
+export const ChelErrorDBBadPreviousHEAD: typeof Error = ChelErrorGenerator('ChelErrorDBBadPreviousHEAD')
+export const ChelErrorDBConnection: typeof Error = ChelErrorGenerator('ChelErrorDBConnection')
+export const ChelErrorUnexpected: typeof Error = ChelErrorGenerator('ChelErrorUnexpected')
+export const ChelErrorUnrecoverable: typeof Error = ChelErrorGenerator('ChelErrorUnrecoverable')
+export const ChelErrorDecryptionError: typeof Error = ChelErrorGenerator('ChelErrorDecryptionError')
+export const ChelErrorDecryptionKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorDecryptionKeyNotFound', ChelErrorDecryptionError)
+export const ChelErrorSignatureError: typeof Error = ChelErrorGenerator('ChelErrorSignatureError')
+export const ChelErrorSignatureKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyNotFound', ChelErrorSignatureError)

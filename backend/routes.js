@@ -4,15 +4,14 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
-
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
 const staticServeConfig = {
   routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',
@@ -43,13 +42,22 @@ route.POST('/event', {
   try {
     console.log('/event handler')
     const entry = GIMessage.deserialize(request.payload)
-    await sbp('backend/server/handleEntry', entry)
+    try {
+      await sbp('backend/server/handleEntry', entry)
+    } catch (err) {
+      if (err.name === 'ChelErrorDBBadPreviousHEAD') {
+        console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
+        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
+        const r = Boom.conflict(err.message, { HEADinfo })
+        Object.assign(r.output.headers, {
+          'shelter-headinfo-head': HEADinfo.HEAD,
+          'shelter-headinfo-height': HEADinfo.height
+        })
+        return r
+      }
+    }
     return entry.hash()
   } catch (err) {
-    if (err.name === 'ChelErrorDBBadPreviousHEAD') {
-      console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
-      return Boom.conflict(err.message)
-    }
     return logger(err)
   }
 })
@@ -131,17 +139,17 @@ route.GET('/name/{name}', {}, async function (request, h) {
   }
 })
 
-route.GET('/latestHash/{contractID}', {
+route.GET('/latestHEADinfo/{contractID}', {
   cache: { otherwise: 'no-store' }
 }, async function (request, h) {
   try {
     const { contractID } = request.params
-    const hash = await sbp('chelonia/db/latestHash', contractID)
-    if (!hash) {
-      console.warn(`[backend] latestHash not found for ${contractID}`)
+    const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (!HEADinfo) {
+      console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
       return Boom.notFound()
     }
-    return hash
+    return HEADinfo
   } catch (err) {
     return logger(err)
   }
@@ -179,7 +187,7 @@ route.POST('/file', {
     const { hash, data } = request.payload
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
-    const ourHash = blake32Hash(data)
+    const ourHash = createCID(data)
     if (ourHash !== hash) {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
@@ -254,4 +262,108 @@ route.GET(staticServeConfig.routePath, {}, {
 
 route.GET('/', {}, function (req, h) {
   return h.redirect(staticServeConfig.redirect)
+})
+
+route.POST('/zkpp/register/{contract}', {
+  validate: {
+    payload: Joi.alternatives([
+      {
+        // what b is
+        b: Joi.string().required()
+      },
+      {
+        r: Joi.string().required(), // what r is
+        s: Joi.string().required(), // what s is
+        sig: Joi.string().required(),
+        Eh: Joi.string().required()
+      }
+    ])
+  }
+}, async function (req, h) {
+  try {
+    if (req.payload['b']) {
+      const result = await registrationKey(req.params['contract'], req.payload['b'])
+
+      if (result) {
+        return result
+      }
+    } else {
+      const result = await register(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+
+      if (result) {
+        return result
+      }
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error('Error at POST /zkpp/{contract}: ' + e.message, { ip })
+  }
+
+  return Boom.internal('internal error')
+})
+
+route.GET('/zkpp/{contract}/auth_hash', {
+  validate: {
+    query: Joi.object({ b: Joi.string().required() })
+  }
+}, async function (req, h) {
+  try {
+    const challenge = await getChallenge(req.params['contract'], req.query['b'])
+
+    return challenge || Boom.notFound()
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error('Error at GET /zkpp/{contract}/auth_hash: ' + e.message, { ip })
+  }
+
+  return Boom.internal('internal error')
+})
+
+route.GET('/zkpp/{contract}/contract_hash', {
+  validate: {
+    query: Joi.object({
+      r: Joi.string().required(),
+      s: Joi.string().required(),
+      sig: Joi.string().required(),
+      hc: Joi.string().required()
+    })
+  }
+}, async function (req, h) {
+  try {
+    const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+
+    if (salt) {
+      return salt
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error('Error at GET /zkpp/{contract}/contract_hash: ' + e.message, { ip })
+  }
+
+  return Boom.internal('internal error')
+})
+
+route.POST('/zkpp/updatePasswordHash/{contract}', {
+  validate: {
+    payload: Joi.object({
+      r: Joi.string().required(),
+      s: Joi.string().required(),
+      sig: Joi.string().required(),
+      hc: Joi.string().required(),
+      Ea: Joi.string().required()
+    })
+  }
+}, async function (req, h) {
+  try {
+    const result = await updateContractSalt(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+
+    if (result) {
+      return result
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error('Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
+  }
+
+  return Boom.internal('internal error')
 })

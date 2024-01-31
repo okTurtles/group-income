@@ -2,6 +2,8 @@
 .c-send-wrapper(
   :class='{"is-public": isPublicChannel}'
 )
+  .c-typing-indicator(v-if='typingIndicatorSentence' v-safe-html='typingIndicatorSentence')
+
   .c-public-helper(v-if='isPublicChannel')
     i.icon-exclamation-triangle.is-prefix
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
@@ -76,6 +78,52 @@
               @click='openEmoticon'
             )
               i.icon-smile-beam
+          tooltip(
+            direction='top'
+            :text='L("Bold")'
+          )
+            button.is-icon(
+              :aria-label='L("Bold style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
+            )
+              i.icon-bold
+          tooltip(
+            direction='top'
+            :text='L("Italic")'
+          )
+            button.is-icon(
+              :aria-label='L("Italic style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+            )
+              i.icon-italic
+          tooltip(
+            direction='top'
+            :text='L("Code")'
+          )
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+            )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+            )
+              i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
 
       .c-edit-actions(v-if='isEditing')
         i18n.is-small.is-outlined(
@@ -89,52 +137,98 @@
         ) Save changes
 
       .c-edit-action-wrapper(v-else)
-        .addons
+        .addons(v-if='ephemeral.showButtons')
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Create poll")'
+            :text='L("Bold")'
           )
             button.is-icon(
-              :aria-label='L("Create poll")'
-              @click='openCreatePollModal'
+              :aria-label='L("Bold style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @click='onBtnClick'
             )
-              i.icon-poll
+              i.icon-bold
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Add reaction")'
+            :text='L("Italic")'
           )
             button.is-icon(
-              :aria-label='L("Add reaction")'
-              @click='openEmoticon'
+              :aria-label='L("Italic style text")'
+              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
             )
-              i.icon-smile-beam
+              i.icon-italic
           tooltip(
-            v-if='ephemeral.showButtons'
             direction='top'
-            :text='L("Attach file")'
+            :text='L("Code")'
           )
-            button.is-icon.c-file-attachment-btn(
-              :aria-label='L("Attach file")'
-              @click='openFileAttach'
+            button.is-icon(
+              :aria-label='L("Add code")'
+              @mousedown='transformTextSelectionToMarkdown($event, "code")'
             )
-              i.icon-paper-clip
-              input(
-                ref='fileAttachmentInputEl'
-                type='file'
-                multiple
-                :accept='supportedFileExtensions'
-                @change='fileAttachmentHandler($event.target.files)'
-              )
+              i.icon-code
+          tooltip(
+            direction='top'
+            :text='L("Strikethrough")'
+          )
+            button.is-icon(
+              :aria-label='L("Add strikethrough")'
+              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+            )
+              i.icon-strikethrough
+          tooltip(
+            direction='top'
+            :text='L("Link")'
+          )
+            button.is-icon(
+              :aria-label='L("Add link")'
+              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+            )
+              i.icon-link
 
-        .c-send-button(
-          id='mobileSendButton'
-          tag='button'
-          :class='{ isActive }'
-          @click='sendMessage'
-        )
-          .icon-paper-plane
+        .primary-ctas
+          .addons(v-if='ephemeral.showButtons')
+            tooltip(
+              direction='top'
+              :text='L("Create poll")'
+            )
+              button.is-icon(
+                :aria-label='L("Create poll")'
+                @click='openCreatePollModal'
+              )
+                i.icon-poll
+            tooltip(
+              direction='top'
+              :text='L("Add reaction")'
+            )
+              button.is-icon(
+                :aria-label='L("Add reaction")'
+                @click='openEmoticon'
+              )
+                i.icon-smile-beam
+            tooltip(
+              direction='top'
+              :text='L("Attach file")'
+            )
+              button.is-icon.c-file-attachment-btn(
+                :aria-label='L("Attach file")'
+                @click='openFileAttach'
+              )
+                i.icon-paper-clip
+                input(
+                  ref='fileAttachmentInputEl'
+                  type='file'
+                  multiple
+                  :accept='supportedFileExtensions'
+                  @change='fileAttachmentHandler($event.target.files)'
+                )
+
+          .c-send-button(
+            id='mobileSendButton'
+            tag='button'
+            :class='{ isActive }'
+            @click='sendMessage'
+          )
+            .icon-paper-plane
 
     .textarea.c-send-mask(
       ref='mask'
@@ -145,6 +239,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import CreatePoll from './CreatePoll.vue'
@@ -154,7 +249,9 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
+import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -211,8 +308,11 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [] // [ { url: instace of URL.createObjectURL , name: string }, ... ]
-      }
+        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        typingUsers: []
+      },
+      typingUserTimeoutIds: {},
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
     }
   },
   watch: {
@@ -242,17 +342,23 @@ export default ({
     this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/on', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
+    sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
+    sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
   },
   computed: {
     ...mapGetters([
       'chatRoomUsers',
-      'isPrivateDirectMessage',
       'currentChatRoomId',
       'chatRoomAttributes',
-      'ourContactProfiles'
+      'ourContactProfiles',
+      'ourContactProfilesById',
+      'globalProfile',
+      'ourUsername'
     ]),
     users () {
       return Object.keys(this.chatRoomUsers)
@@ -278,6 +384,21 @@ export default ({
     },
     supportedFileExtensions () {
       return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
+    },
+    typingIndicatorSentence () {
+      const userArr = this.ephemeral.typingUsers
+
+      if (userArr.length) {
+        const getDisplayName = (username) => (this.globalProfile(username).displayName || username)
+        const isMultiple = userArr.length > 1
+        const usernameCombined = userArr.map(u => getDisplayName(u)).join(', ')
+
+        return isMultiple
+          ? L('{strong_}{users}{_strong} are typing', { users: usernameCombined, ...LTags('strong') })
+          : L('{strong_}{user}{_strong} is typing', { user: usernameCombined, ...LTags('strong') })
+      } else {
+        return null
+      }
     }
   },
   methods: {
@@ -356,8 +477,11 @@ export default ({
       }
     },
     handleKeyup (e) {
-      if (e.keyCode === 13) e.preventDefault()
-      else this.updateTextArea()
+      if (e.keyCode === 13) {
+        e.preventDefault()
+      } else {
+        this.updateTextArea()
+      }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
@@ -372,13 +496,28 @@ export default ({
          mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
       const selectionStart = this.ephemeral.mention.position + mention.length + 1
-      this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
+      this.moveCursorTo(selectionStart)
       this.endMention()
+    },
+    moveCursorTo (index) {
+      this.$refs.textarea.setSelectionRange(index, index)
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
       if (this.ephemeral.textWithLines === newValue) {
         return false
+      }
+
+      if (!newValue) {
+        // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
+        sbp('gi.actions/chatroom/user-stop-typing-event', {
+          contractID: this.currentChatRoomId
+        }).catch(e => {
+          console.error('Error emitting user stopped typing event', e)
+        })
+      } else if (this.ephemeral.textWithLines.length < newValue.length) {
+        // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
+        this.throttledEmitUserTypingEvent()
       }
 
       this.ephemeral.textWithLines = newValue
@@ -431,7 +570,7 @@ export default ({
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
       this.$refs.poll.open({
-        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        right: `${window.innerWidth - bbox.right + 24}px`, // 24 -> 1.5rem padding-left
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
     },
@@ -500,12 +639,18 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      const availableMentions = this.isPrivateDirectMessage()
-        ? this.users
-        : [
-            ...this.users,
-            { username: all, displayName: all, picture: '/assets/images/horn.png' } // TODO: use group picture here or broadcast icon
-          ]
+      let availableMentions = this.users
+      // NOTE: '@all' mention should only be needed when the members are more than 3
+      if (this.users.length > 2) {
+        availableMentions = [
+          ...availableMentions,
+          {
+            username: all,
+            displayName: all,
+            picture: '/assets/images/horn.png'
+          }
+        ]
+      }
       this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
@@ -525,6 +670,76 @@ export default ({
       if (!element) {
         this.endMention()
       }
+    },
+    transformTextSelectionToMarkdown (e, type) {
+      e.preventDefault() // Calling e.preventDefault() in 'mousedown' event listener prevents the button from being focused upon click.
+
+      const prevFocusElement = document.activeElement // the captured activeElement inside 'mousedown' handler is still a previously focused element.
+      const inputEl = this.$refs.textarea
+      const selStart = inputEl.selectionStart
+      const selEnd = inputEl.selectionEnd
+      const inputValue = inputEl.value
+
+      // Check if call-to-action buttons are clicked while a string segment of the input field is selected.
+      if (prevFocusElement === inputEl && (selStart !== selEnd)) {
+        let result
+        switch (type) {
+          case 'bold':
+          case 'italic':
+          case 'code':
+          case 'strikethrough': {
+            result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
+            inputEl.value = result.output
+            this.moveCursorTo(result.focusIndex)
+            break
+          }
+          case 'link': {
+            result = injectOrStripLink(inputValue, selStart, selEnd)
+            inputEl.value = result.output
+            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
+          }
+        }
+      }
+    },
+    onUserTyping (data) {
+      if (data.contractID !== this.currentChatRoomId) return
+      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
+
+      if (typingUser && typingUser !== this.ourUsername) {
+        const addToList = username => {
+          this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
+        }
+
+        addToList(typingUser)
+        clearTimeout(this.typingUserTimeoutIds[typingUser])
+        this.typingUserTimeoutIds[typingUser] = setTimeout(() => this.removeFromTypingUsersArray(typingUser), 30 * 1000)
+      }
+    },
+    onUserStopTyping (data) {
+      if (data.contractID !== this.currentChatRoomId) return
+      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
+
+      if (typingUser && typingUser !== this.ourUsername) {
+        this.removeFromTypingUsersArray(typingUser)
+      }
+    },
+    removeFromTypingUsersArray (username) {
+      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
+
+      if (this.typingUserTimeoutIds[username]) {
+        clearTimeout(this.typingUserTimeoutIds[username])
+        delete this.typingUserTimeoutIds[username]
+      }
+    },
+    emitUserTypingEvent () {
+      sbp('gi.actions/chatroom/user-typing-event', {
+        contractID: this.currentChatRoomId
+      }).catch(e => {
+        console.error('Error emitting user typing event', e)
+      })
+    },
+    onBtnClick (e) {
+      e.preventDefault()
     }
   }
 }: Object)
@@ -534,10 +749,11 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-send-wrapper {
-  padding: 1rem;
+  position: relative;
+  padding: 1rem 1rem 1.6rem;
 
   @include tablet {
-    padding: 0 1.25rem 1.25rem 1.25rem;
+    padding: 0 1.25rem 1.6rem 1.25rem;
   }
 
   &.is-public {
@@ -628,8 +844,14 @@ export default ({
       display: flex;
       justify-content: space-between;
 
+      @include phone {
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
+      }
+
       .c-edit-actions {
         margin-right: 0.5rem;
+        margin-left: 0.5rem;
       }
     }
 
@@ -643,9 +865,23 @@ export default ({
   top: 0;
 }
 
+.primary-ctas {
+  display: flex;
+  align-items: center;
+
+  .addons {
+    margin-right: 0.5rem;
+  }
+}
+
 .inputgroup .addons {
   position: relative;
   margin-left: 0.25rem;
+
+  &.addons-editing {
+    display: flex;
+    width: 100%;
+  }
 
   button.is-icon:focus {
     box-shadow: none;
@@ -653,7 +889,7 @@ export default ({
   }
 
   button.is-icon:first-child:last-child {
-    width: 2rem;
+    width: 1.825rem;
   }
 }
 
@@ -786,5 +1022,14 @@ export default ({
   &.isActive {
     background: $primary_0;
   }
+}
+
+.c-typing-indicator {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 1rem;
+  display: block;
+  font-size: 0.675rem;
+  padding: 0.25rem 0.25rem;
 }
 </style>

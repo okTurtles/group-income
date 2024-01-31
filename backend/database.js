@@ -41,10 +41,11 @@ if (!fs.existsSync(dataFolder)) {
 // Streams stored contract log entries since the given entry hash (inclusive!), most recent first.
 sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
-    let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
-    if (!currentHEAD) {
+    const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
+    let { HEAD: currentHEAD } = latestHEADinfo
     let prefix = '['
     if (MAX_EVENTS_AFTER) {
       const circularList = createCircularList(MAX_EVENTS_AFTER, undefined)
@@ -87,7 +88,7 @@ sbp('sbp/selectors/register', {
           const json = `"${strToB64(entry.serialize())}"`
           if (currentHEAD !== hash) {
             this.push(prefix + json)
-            currentHEAD = entry.message().previousHEAD
+            currentHEAD = entry.head().previousHEAD
             prefix = ','
           } else {
             this.push(prefix + json + ']')
@@ -123,7 +124,7 @@ sbp('sbp/selectors/register', {
             this.push(prefix + json)
             prefix = ','
             limit--
-            currentHEAD = entry.message().previousHEAD
+            currentHEAD = entry.head().previousHEAD
           }
         } catch (e) {
           // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
@@ -158,7 +159,7 @@ sbp('sbp/selectors/register', {
             offset--
           }
 
-          currentHEAD = entry.message().previousHEAD
+          currentHEAD = entry.head().previousHEAD
           if (!currentHEAD || (isMet && !offset)) {
             this.push(']')
             this.push(null)
@@ -235,10 +236,10 @@ export default async () => {
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
   }
-  // TODO: Update this to only run when persistence is disabled when `¢hel deploy` can target SQLite.
+  // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== './data') {
-    const HASH_LENGTH = 50
     // Remember to keep these values up-to-date.
+    const HASH_LENGTH = 52
     const CONTRACT_MANIFEST_MAGIC = '{"head":{"manifestVersion"'
     const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
@@ -246,7 +247,7 @@ export default async () => {
     // has been used before. We won't load them here; that's the job of `chel migrate`.
     // Note: our target files are currently deployed with unprefixed hashes as file names.
     // We can take advantage of this to recognize them more easily.
-    // TODO: Update this code when `¢hel deploy` no longer generates unprefixed keys.
+    // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
       .filter(k => k.length === HASH_LENGTH)

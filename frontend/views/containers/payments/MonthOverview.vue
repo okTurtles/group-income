@@ -2,9 +2,9 @@
 .c-summary(data-test='monthOverview')
   i18n.c-summary-title.is-title-4(
     tag='h4'
-    data-test='thisMonth'
-    :args='{ month: humanDate(Date.now(), { month: "long" }) }'
-  ) {month} overview
+    data-test='monthOverviewTitle'
+    :args='{ start: humanStartDate, end: humanDueDate }'
+  ) Period: {start} - {end}
 
   ul
     li.c-summary-item(
@@ -19,8 +19,8 @@
         :secValue='item.hasPartials ? item.value + 0.5 : 0'
         :hasMarks='item.hasMarks'
       )
-      p(:class='{"has-text-success": item.max === item.value}')
-        i.icon-check.is-prefix(v-if='item.max === item.value')
+      p(:class='{ "has-text-success": item.max && (item.max === item.value) }')
+        i.icon-check.is-prefix(v-if='item.max && (item.max === item.value)')
         span.has-text-1 {{ item.label }}
 
     li.c-summary-item(v-if='notReceivedPayments')
@@ -44,7 +44,6 @@ export default ({
     ProgressBar
   },
   methods: {
-    humanDate,
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
@@ -54,13 +53,22 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentPaymentPeriod',
+      'dueDateForPeriod',
       'ourGroupProfile',
       'groupSettings',
       'ourPaymentsSummary',
-      'ourPayments'
+      'ourPayments',
+      'periodStampGivenDate'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    humanDueDate () {
+      return humanDate(this.dueDateForPeriod(this.currentPaymentPeriod))
+    },
+    humanStartDate () {
+      return humanDate(this.periodStampGivenDate(this.currentPaymentPeriod))
     },
     summaryCopy () {
       const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
