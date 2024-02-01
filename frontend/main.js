@@ -377,10 +377,9 @@ async function startApp () {
       }).finally(() => {
         this.ephemeral.ready = true
 
+        // remove the loading animation screen
         const loadingScreenEl = document.querySelector('#main-loading-screen')
-        if (loadingScreenEl) {
-          loadingScreenEl.classList.add('is-removed')
-        }
+        loadingScreenEl && loadingScreenEl.remove()
       })
     },
     computed: {

@@ -37,11 +37,8 @@
   font-size: 30px;
   background-color: #ededed;
 
-  &.is-removed {
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
+  @media (prefers-color-scheme: dark) {
+    background-color: #2e3032;
   }
 
   img {
@@ -54,10 +51,6 @@
     @include from ($tablet) {
       width: 3rem;
     }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    background-color: #2e3032;
   }
 
   @keyframes logo-rotation {
