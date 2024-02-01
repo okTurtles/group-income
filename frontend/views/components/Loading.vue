@@ -2,7 +2,6 @@
 .c-loading.has-text-centered(
   :class='{ "c-fullView": theme === "fullView" }'
 )
-  img.c-logo(src='/assets/images/group-income-icon-transparent.png')
   h1.is-title-1 {{ title }}
   p {{ text }}
 </template>
@@ -37,27 +36,11 @@ export default ({
   padding: 2rem 0;
   animation: showLoading 200ms 500ms forwards;
 
-  .c-logo {
-    display: none;
-  }
-
-  &.c-fullView,
-  &.l-page {
+  &.c-fullView {
     min-height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-
-  &.l-page {
-    align-items: center;
-
-    .c-logo {
-      display: inline-block;
-      width: 5.5rem;
-      height: auto;
-      margin-bottom: 1.5rem;
-    }
   }
 }
 
