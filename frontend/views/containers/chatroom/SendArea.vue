@@ -85,7 +85,6 @@
             button.is-icon(
               :aria-label='L("Bold style text")'
               @mousedown='transformTextSelectionToMarkdown($event, "bold")'
-              @click='onBtnClick'
             )
               i.icon-bold
           tooltip(
@@ -145,7 +144,6 @@
             button.is-icon(
               :aria-label='L("Bold style text")'
               @mousedown='transformTextSelectionToMarkdown($event, "bold")'
-              @click='onBtnClick'
             )
               i.icon-bold
           tooltip(
@@ -727,10 +725,6 @@ export default ({
         this.currentChatRoomId,
         this.ourUsername
       )
-    },
-    onBtnClick (e) {
-      e.preventDefault()
-      console.log('!@# on btn click: ', e)
     }
   }
 }: Object)

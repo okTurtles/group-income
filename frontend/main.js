@@ -370,20 +370,15 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      console.log('!@# 11111')
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
-        console.log('!@# aaaaa - ', identityContractID)
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
         return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
-          console.log('!@# 22222')
           console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
           console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
         })
       }).catch(e => {
-        console.log('!@# bbbbb')
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
-        console.log('!@# ccccc')
         this.ephemeral.ready = true
         this.removeLoadingAnimation()
       })
