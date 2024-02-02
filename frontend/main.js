@@ -308,7 +308,7 @@ async function startApp () {
         sbp('chelonia.persistentActions/unload')
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
-        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action. 
+        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
         this.removeLoadingAnimation()
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
@@ -420,7 +420,7 @@ async function startApp () {
         FaviconBadge.setBubble(this.shouldSetBadge)
       },
       removeLoadingAnimation () {
-        // remove the minimal loading animation in index.html 
+        // remove the minimal loading animation in index.html
         const loadingScreenEl = document.querySelector('#main-loading-screen')
         loadingScreenEl && loadingScreenEl.remove()
       }
