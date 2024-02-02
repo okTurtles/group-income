@@ -13,15 +13,9 @@ import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData 
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorUnrecoverable, ChelErrorWarning } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
-import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
-
-const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state: Object) => {
-  return signingKeyId && state._vm.authorizedKeys[signingKeyId].foreignKey
-    ? new URL(state._vm.authorizedKeys[signingKeyId].foreignKey).pathname
-    : contractID
-}
 
 const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable

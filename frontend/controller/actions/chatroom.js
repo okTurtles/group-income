@@ -1,7 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
 
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { has, omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -10,8 +9,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
-import { encryptedAction } from './utils.js'
-import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
+import { encryptedAction, encryptedNotification } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
@@ -183,16 +181,8 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/chatroom/emit-user-typing-event': (chatroomId: string, username: string) => {
-    // publish CHATROOM_USER_TYPING event to every subscribers of the pubsub channel with chatroomId
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomId, { type: CHATROOM_USER_TYPING, username })
-  },
-  'gi.actions/chatroom/emit-user-stop-typing-event': (chatroomId: string, username: string) => {
-    // publish CHATROOM_USER_STOP_TYPING event to every subscribers of the pubsub channel with chatroomId
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    pubsub.pub(chatroomId, { type: CHATROOM_USER_STOP_TYPING, username })
-  },
+  ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
+  ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),

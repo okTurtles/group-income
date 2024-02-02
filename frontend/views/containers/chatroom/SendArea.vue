@@ -354,6 +354,7 @@ export default ({
       'currentChatRoomId',
       'chatRoomAttributes',
       'ourContactProfiles',
+      'ourContactProfilesById',
       'globalProfile',
       'ourUsername'
     ]),
@@ -507,7 +508,11 @@ export default ({
 
       if (!newValue) {
         // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
-        sbp('gi.actions/chatroom/emit-user-stop-typing-event', this.currentChatRoomId, this.ourUsername)
+        sbp('gi.actions/chatroom/user-stop-typing-event', {
+          contractID: this.currentChatRoomId
+        }).catch(e => {
+          console.error('Error emitting user stopped typing event', e)
+        })
       } else if (this.ephemeral.textWithLines.length < newValue.length) {
         // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
         this.throttledEmitUserTypingEvent()
@@ -695,9 +700,10 @@ export default ({
       }
     },
     onUserTyping (data) {
-      const typingUser = data.username
+      if (data.contractID !== this.currentChatRoomId) return
+      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
 
-      if (typingUser !== this.ourUsername) {
+      if (typingUser && typingUser !== this.ourUsername) {
         const addToList = username => {
           this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
         }
@@ -708,8 +714,11 @@ export default ({
       }
     },
     onUserStopTyping (data) {
-      if (data.username !== this.ourUsername) {
-        this.removeFromTypingUsersArray(data.username)
+      if (data.contractID !== this.currentChatRoomId) return
+      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
+
+      if (typingUser && typingUser !== this.ourUsername) {
+        this.removeFromTypingUsersArray(typingUser)
       }
     },
     removeFromTypingUsersArray (username) {
@@ -721,10 +730,11 @@ export default ({
       }
     },
     emitUserTypingEvent () {
-      sbp('gi.actions/chatroom/emit-user-typing-event',
-        this.currentChatRoomId,
-        this.ourUsername
-      )
+      sbp('gi.actions/chatroom/user-typing-event', {
+        contractID: this.currentChatRoomId
+      }).catch(e => {
+        console.error('Error emitting user typing event', e)
+      })
     }
   }
 }: Object)
