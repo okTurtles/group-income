@@ -13,7 +13,7 @@ import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
+import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -260,7 +260,8 @@ async function startApp () {
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
           debouncedSyncBanner: null,
-          isCorrupted: false // TODO #761
+          isCorrupted: false, // TODO #761
+          ready: false
         }
       }
     },
@@ -305,6 +306,10 @@ async function startApp () {
         // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
         sbp('chelonia.persistentActions/unload')
+      })
+      sbp('okTurtles.events/once', LOGIN_ERROR, () => {
+        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
+        this.removeLoadingAnimation()
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
         this.initOrResetPeriodicNotifications()
@@ -374,7 +379,8 @@ async function startApp () {
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
-        Vue.set(this.ephemeral, 'ready', true)
+        this.ephemeral.ready = true
+        this.removeLoadingAnimation()
       })
     },
     computed: {
@@ -407,6 +413,11 @@ async function startApp () {
       ]),
       setBadgeOnTab () {
         FaviconBadge.setBubble(this.shouldSetBadge)
+      },
+      removeLoadingAnimation () {
+        // remove the minimal loading animation in index.html
+        const loadingScreenEl = document.querySelector('#main-loading-screen')
+        loadingScreenEl && loadingScreenEl.remove()
       }
     },
     watch: {

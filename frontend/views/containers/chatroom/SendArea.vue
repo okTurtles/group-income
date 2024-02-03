@@ -85,7 +85,6 @@
             button.is-icon(
               :aria-label='L("Bold style text")'
               @mousedown='transformTextSelectionToMarkdown($event, "bold")'
-              @click='onBtnClick'
             )
               i.icon-bold
           tooltip(
@@ -145,7 +144,6 @@
             button.is-icon(
               :aria-label='L("Bold style text")'
               @mousedown='transformTextSelectionToMarkdown($event, "bold")'
-              @click='onBtnClick'
             )
               i.icon-bold
           tooltip(
@@ -737,9 +735,6 @@ export default ({
       }).catch(e => {
         console.error('Error emitting user typing event', e)
       })
-    },
-    onBtnClick (e) {
-      e.preventDefault()
     }
   }
 }: Object)
