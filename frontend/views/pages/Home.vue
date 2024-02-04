@@ -96,7 +96,20 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     navigateToGroupPage () {
-      this.$router.push({ path: this.ourGroupProfile ? '/dashboard' : '/pending-approval' }).catch(console.warn)
+      this.$router.push({
+        // NOTE:
+        // When browser refresh is triggered, there is an issue that Vue router prematurely decides ('loginGuard' there) that
+        // the user is not signed in when in actual reality user-login is still being processed and then
+        // takes user to 'Home.vue' with the '$route.query.next' being set to the initial url.
+        // In this particular condition, the app needs to immediately redirect user to '$route.query.next'
+        // so that the user stays in the same page after the browser refresh.
+        // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
+        path: this.$route.query.next ?? (
+          this.ourGroupProfile
+            ? '/dashboard'
+            : '/pending-approval'
+        )
+      }).catch(console.warn)
     }
   },
   watch: {
