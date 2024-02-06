@@ -80,7 +80,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourUsername']),
+    ...mapGetters(['ourIdentityContractId']),
     ...mapState(['currentGroupId']),
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
@@ -96,7 +96,7 @@ export default ({
   mounted () {
     // For some reason in some Cypress tests it loses the route query when initialized is called
     this.ephemeral.query = this.$route.query
-    if (syncFinished || !this.ourUsername) {
+    if (syncFinished || !this.ourIdentityContractId) {
       this.initialize()
     } else {
       sbp('okTurtles.events/once', LOGIN, () => this.initialize())
@@ -125,22 +125,22 @@ export default ({
           this.pageStatus = 'INVALID'
           return
         }
-        if (this.ourUsername) {
-          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourUsername])) {
+        if (this.ourIdentityContractId) {
+          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.query.groupId]?.profiles?.[this.ourIdentityContractId])) {
             this.$router.push({ path: '/dashboard' })
           } else {
             await this.accept()
           }
           return
         }
-        const creator = this.ephemeral.query.creator
-        const message = creator
-          ? L('{who} invited you to join their group!', { who: creator })
+        const creatorID = this.ephemeral.query.creatorID
+        const message = creatorID
+          ? L('{who} invited you to join their group!', { who: creatorID })
           : L('You were invited to join')
 
         this.ephemeral.invitation = {
           groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
-          creator,
+          creatorID,
           message
         }
         this.pageStatus = 'SIGNING'
@@ -159,7 +159,7 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
-      const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourUsername]?.status
+      const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourIdentityContractId]?.status
       if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(profileStatus)) {
         return this.$router.push({ path: '/dashboard' })
       }

@@ -12,14 +12,14 @@ form.c-search-form(@submit.prevent='')
         name='search'
       )
         .profile-wrapper(
-          v-for='(username, index) in usernames'
+          v-for='(contractID, index) in users'
           :key='index'
         )
           .profile
-            avatar-user(:username='username' size='xs')
-            .c-name.has-text-bold {{ displayName(username) }}
+            avatar-user(:contractID='contractID' size='xs')
+            .c-name.has-text-bold {{ userDisplayNameFromID(contractID) }}
             .button.is-icon-small(
-              @click.prevent.stop='remove(username)'
+              @click.prevent.stop='remove(contractID)'
               :aria-label='L("Clear search")'
             )
               i.icon-times
@@ -31,7 +31,7 @@ form.c-search-form(@submit.prevent='')
           @keyup='onHandleKeyUp'
         )
 
-  .buttons.is-end.c-button-container(v-if='usernames.length')
+  .buttons.is-end.c-button-container(v-if='users.length')
     button-submit.is-success.c-create-btn(@click='submitHandler')
       i18n Create
 </template>
@@ -52,7 +52,7 @@ export default ({
       type: String,
       required: true
     },
-    usernames: {
+    users: {
       type: Array,
       default: []
     },
@@ -74,7 +74,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourContactProfiles'])
+    ...mapGetters(['userDisplayNameFromID'])
   },
   mounted () {
     this.$refs.input.innerHTML = this.defaultValue
@@ -84,11 +84,8 @@ export default ({
     }
   },
   methods: {
-    remove (username) {
-      this.$emit('remove', username)
-    },
-    displayName (username) {
-      return this.ourContactProfiles[username].displayName || username
+    remove (contractID) {
+      this.$emit('remove', contractID)
     },
     clear () {
       this.$refs.input.focus()

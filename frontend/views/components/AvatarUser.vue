@@ -18,7 +18,7 @@ export default ({
     picture: {
       type: String
     },
-    username: String,
+    contractID: String,
     alt: {
       type: String,
       default: ''
@@ -38,13 +38,8 @@ export default ({
   },
   async mounted () {
     if (!this.profilePicture) {
-      console.debug(`Looking for ${this.username} profile picture`)
-      const userContractId = await sbp('namespace/lookup', this.username)
-      if (!userContractId) {
-        console.warn(`AvatarUser: ${this.username} doesn't exist!`)
-        return
-      }
-      const state = await sbp('chelonia/latestContractState', userContractId) || {}
+      console.debug(`Looking for ${this.contractID} profile picture`)
+      const state = await sbp('chelonia/latestContractState', this.contractID) || {}
       this.ephemeral.url = state.attributes && state.attributes.picture
     }
   },
@@ -53,7 +48,7 @@ export default ({
       'ourGroupProfile'
     ]),
     profilePicture () {
-      const profile = this.$store.getters.globalProfile(this.username)
+      const profile = this.$store.getters.globalProfile(this.contractID)
       return this.picture || (profile && profile.picture)
     },
     pictureURL () {

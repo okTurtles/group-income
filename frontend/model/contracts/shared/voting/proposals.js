@@ -29,8 +29,8 @@ export function archiveProposal (
   )
 }
 
-export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creator?: string): string {
-  return `${location.origin}/app/join?${(new URLSearchParams({ groupId: groupId, groupName: groupName, secret: inviteSecret, creator: creator || '' })).toString()}`
+export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creatorID?: string): string {
+  return `${location.origin}/app/join?${(new URLSearchParams({ groupId: groupId, groupName: groupName, secret: inviteSecret, creatorID: creatorID || '' })).toString()}`
 }
 
 export const proposalSettingsType: any = objectOf({
@@ -81,15 +81,16 @@ export const proposalDefaults = {
 const proposals: Object = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+    [VOTE_FOR]: function (state, message) {
+      const { data, contractID } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
       //       this code will need to be updated...
-      const message = { meta, data: data.passPayload, contractID }
-      sbp('gi.contracts/group/invite/process', message, state)
+      const forMessage = { ...message, data: data.passPayload }
+      sbp('gi.contracts/group/invite/process', forMessage, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       archiveProposal({ state, proposalHash, proposal, contractID })
       // TODO: for now, generate the link and send it to the user's inbox
@@ -127,20 +128,17 @@ const proposals: Object = {
   },
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+    [VOTE_FOR]: function (state, message) {
+      const { data, contractID } = message
       const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
-      const messageData = {
-        ...proposal.data.proposalData,
-        proposalHash,
-        proposalPayload: passPayload
-      }
-      const message = { data: messageData, meta, contractID }
-      sbp('gi.contracts/group/removeMember/process', message, state)
+      const messageData = proposal.data.proposalData
+      const forMessage = { ...message, data: messageData, proposalHash }
+      sbp('gi.contracts/group/removeMember/process', forMessage, state)
       sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/removeMember/sideEffect', message]
+        ['gi.contracts/group/removeMember/sideEffect', forMessage]
       )
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
@@ -148,44 +146,46 @@ const proposals: Object = {
   },
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+    [VOTE_FOR]: function (state, message) {
+      const { data, contractID } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
       // NOTE: if updateSettings ever needs more ethana just meta+data
       //       this code will need to be updated
-      const message = {
-        meta,
+      const forMessage = {
+        ...message,
         data: { [setting]: proposedValue },
-        contractID
+        proposalHash
       }
-      sbp('gi.contracts/group/updateSettings/process', message, state)
+      sbp('gi.contracts/group/updateSettings/process', forMessage, state)
       sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/updateSettings/sideEffect', { ...message, meta: { ...message.meta, username: proposal.meta.username } }])
+        ['gi.contracts/group/updateSettings/sideEffect', forMessage])
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+    [VOTE_FOR]: function (state, message) {
+      const { data, contractID } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
-      const message = {
-        meta,
+      const forMessage = {
+        ...message,
         data: proposal.data.proposalData,
-        contractID
+        proposalHash
       }
-      sbp('gi.contracts/group/updateAllVotingRules/process', message, state)
+      sbp('gi.contracts/group/updateAllVotingRules/process', forMessage, state)
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GENERIC]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+    [VOTE_FOR]: function (state, { data, contractID }) {
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED

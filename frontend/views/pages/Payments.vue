@@ -261,7 +261,7 @@ export default ({
       'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
-      'userDisplayName',
+      'userDisplayNameFromID',
       'withGroupCurrency'
     ]),
     needsIncome () {
@@ -343,8 +343,8 @@ export default ({
       for (const payment of this.historicalPayments.todo) {
         payments.push({
           hash: payment.hash || randomHexString(15),
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
+          toMemberID: payment.toMemberID,
+          displayName: this.userDisplayNameFromID(payment.toMemberID),
           amount: payment.amount,
           total: payment.total,
           partial: payment.partial,
@@ -359,8 +359,8 @@ export default ({
     paymentsSent () {
       return this.historicalPayments.sent.map(payment => ({
         ...payment,
-        username: payment.data.toUser,
-        displayName: this.userDisplayName(payment.data.toUser),
+        toMemberID: payment.data.toMemberID,
+        displayName: this.userDisplayNameFromID(payment.data.toMemberID),
         monthstamp: dateToMonthstamp(payment.meta.createdDate),
         date: payment.meta.createdDate
       }))
@@ -368,8 +368,8 @@ export default ({
     paymentsReceived () {
       return this.historicalPayments.received.map(payment => ({
         ...payment,
-        username: payment.meta.username, // fromUser
-        displayName: this.userDisplayName(payment.meta.username),
+        fromMemberID: payment.data.fromMemberID,
+        displayName: this.userDisplayNameFromID(payment.data.fromMemberID),
         date: payment.meta.createdDate
       }))
     },

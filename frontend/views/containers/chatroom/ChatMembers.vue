@@ -19,9 +19,9 @@
       :key='chatRoomId'
     )
       .profile-wrapper(v-if='partners.length === 1')
-        profile-card(:username='partners[0]' deactivated)
-          avatar-user(:username='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0]') {{ title }}
+        profile-card(:contractID='partners[0]' deactivated)
+          avatar-user(:contractID='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(:data-test='usernameFromID(partners[0])') {{ title }}
 
       .group-wrapper(v-else)
         .picture-wrapper
@@ -71,7 +71,8 @@ export default ({
       'ourContactProfiles',
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'chatRoomUnreadMentions'
+      'chatRoomUnreadMentions',
+      'usernameFromID'
     ])
   },
   methods: {

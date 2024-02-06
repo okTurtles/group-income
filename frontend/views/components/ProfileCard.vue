@@ -17,8 +17,8 @@ tooltip(
       :aria-label='L("{username} profile", { username })'
     )
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
-        avatar-user(:username='username' size='lg')
-        user-name(:username='username')
+        avatar-user(:contractID='contractID' size='lg')
+        user-name(:contractID='contractID')
 
       i18n.has-text-1(
         tag='p'
@@ -70,9 +70,9 @@ tooltip(
         ) Send message
 
         i18n.button.is-outlined.is-small(
-          v-if='groupShouldPropose || ourUsername === groupSettings.groupCreator'
+          v-if='groupShouldPropose || ourIdentityContractId === groupSettings.groupCreatorID'
           tag='button'
-          @click='openModal("RemoveMember", { username })'
+          @click='openModal("RemoveMember", { member: contractID })'
           data-test='buttonRemoveMember'
         ) Remove member
 
@@ -96,7 +96,7 @@ import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 export default ({
   name: 'ProfileCard',
   props: {
-    username: String,
+    contractID: String,
     direction: {
       type: String,
       validator: (value) => ['left', 'top-left'].includes(value),
@@ -118,23 +118,25 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
       'groupProfiles',
       'groupSettings',
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
-      'ourGroupDirectMessageFromUsernames',
+      'ourGroupDirectMessageFromUserIds',
       'ourIdentityContractId'
     ]),
     isSelf () {
-      return this.username === this.ourUsername
+      return this.contractID === this.ourIdentityContractId
     },
     profile () {
-      return this.globalProfile(this.username)
+      return this.globalProfile(this.contractID)
+    },
+    username () {
+      return this.profile?.username || this.contractID
     },
     userGroupProfile () {
-      return this.groupProfiles[this.username]
+      return this.groupProfiles[this.contractID]
     },
     isActiveGroupMember () {
       return this.userGroupProfile?.status === PROFILE_STATUS.ACTIVE
@@ -161,9 +163,9 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.username)
+      const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.contractID)
       if (!chatRoomId) {
-        this.createDirectMessage(this.username)
+        this.createDirectMessage(this.contractID)
       } else {
         if (!this.ourGroupDirectMessages[chatRoomId].visible) {
           this.setDMVisibility(chatRoomId, true)

@@ -86,20 +86,20 @@ export default ({
   computed: {
     ...mapGetters([
       'groupStreaks',
-      'userDisplayName',
+      'userDisplayNameFromID',
       'groupProfiles'
     ]),
     onTimePayments () {
       return Object.entries(this.groupStreaks.onTimePayments || {})
         .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
         .sort((a, b) => b[1] - a[1])
-        .map(([username, streak]) => L('{user} - {count} month streak', { user: this.userDisplayName(username), count: streak }))
+        .map(([username, streak]) => L('{user} - {count} month streak', { user: this.userDisplayNameFromID(username), count: streak }))
     },
     missedPayments () {
       return Object.entries(this.groupStreaks.missedPayments || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
         .map(([username, streak]) => {
-          const Largs = { user: this.userDisplayName(username), streak }
+          const Largs = { user: this.userDisplayNameFromID(username), streak }
 
           return streak >= 2
             ? L('{user} missed {streak} payments', Largs)
@@ -111,18 +111,18 @@ export default ({
 
       return Object.entries(this.groupProfiles)
         .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= STREAK_NOT_LOGGED_IN_DAYS * DAYS_MILLIS)
-        .map(([username]) => this.userDisplayName(username))
+        .map(([username]) => this.userDisplayNameFromID(username))
     },
     noIncomeDetails () { // group members that haven't entered their income details yet
       return Object.entries(this.groupProfiles)
         .filter(([username, profile]) => !profile.incomeDetailsType)
-        .map(([username]) => this.userDisplayName(username))
+        .map(([username]) => this.userDisplayNameFromID(username))
     },
     noVotes () {
       return Object.entries(this.groupStreaks.noVotes || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
         .map(([username, streak]) => {
-          const Largs = { user: this.userDisplayName(username), streak }
+          const Largs = { user: this.userDisplayNameFromID(username), streak }
 
           return streak >= 2
             ? L('{user} missed {streak} votes', Largs)

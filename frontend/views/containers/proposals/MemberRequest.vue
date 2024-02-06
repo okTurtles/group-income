@@ -32,12 +32,12 @@
 
     ul.c-group-list
       li.c-group-member(
-        v-for='{username, displayName, status, date} in requestsSorted'
+        v-for='{contractID, username, displayName, status, date} in requestsSorted'
         :data-test='`request-${username}`'
-        :key='username'
+        :key='contractID'
       )
-        profile-card(:username='username')
-          avatar-user(:username='username' size='sm')
+        profile-card(:contractID='contractID')
+          avatar-user(:contractID='contractID' size='sm')
           .c-name.has-text-bold {{username}}
           .c-date.has-text-1 {{ humanDate(date, { month: 'long', day: 'numeric', year: 'numeric' }) }}
           .c-action-container(v-if='status === "requested"')
@@ -94,18 +94,21 @@ export default {
       SvgConversation,
       requestsSorted: [
         {
+          contractID: '1',
           username: 'Pierre',
           date: new Date().toISOString(),
           displayName: 'Pierre',
           status: 'requested'
         },
         {
+          contractID: '2',
           username: 'Pierre',
           date: new Date().toISOString(),
           displayName: 'Pierre',
           status: 'rejected'
         },
         {
+          contractID: '3',
           username: 'Greg',
           date: new Date().toISOString(),
           displayName: 'Greg',

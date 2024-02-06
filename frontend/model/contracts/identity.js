@@ -140,7 +140,7 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         groupContractID: string,
         inviteSecret: string,
-        creator: optional(boolean)
+        creatorID: optional(boolean)
       }),
       process ({ hash, data, meta }, { state }) {
         const { groupContractID, inviteSecret } = data
@@ -241,11 +241,8 @@ sbp('chelonia/defineContract', {
           }
 
           if (has(rootState.contracts, groupContractID)) {
-            sbp('gi.actions/group/removeOurselves', {
-              contractID: groupContractID,
-              data: {}
-            }).catch(e => {
-              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error sending /removeOurselves action to group ${data.groupContractID}`, e)
+            sbp('chelonia/contract/remove', groupContractID).catch(e => {
+              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing group contract ${data.groupContractID}`, e)
             })
           }
 

@@ -80,8 +80,7 @@ export default ({
       'ourGroupProfile',
       'groupSettings',
       'groupCurrency',
-      'ourUsername',
-      'userDisplayName'
+      'userDisplayNameFromID'
     ]),
     isLightning () {
       return this.paymentType === 'lightning'

@@ -524,7 +524,8 @@ export const recreateEvent = (entry: GIMessage, state: Object, contractsState: O
   return entry
 }
 
-export const getContractIDfromKeyId = (contractID: string, signingKeyId?: string, state: Object): string => {
+export const getContractIDfromKeyId = (contractID: string, signingKeyId: ?string, state: Object): ?string => {
+  if (!signingKeyId) return
   return signingKeyId && state._vm.authorizedKeys[signingKeyId].foreignKey
     ? new URL(state._vm.authorizedKeys[signingKeyId].foreignKey).pathname
     : contractID

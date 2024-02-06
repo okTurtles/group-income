@@ -10,7 +10,7 @@ li.c-item-wrapper(data-test='proposalItem')
         )
         avatar-user.c-avatar(
           v-else
-          :username='proposal.meta.username' size='xs'
+          :contractID='proposal.creatorID' size='xs'
         )
 
       .c-main-content
@@ -43,7 +43,7 @@ li.c-item-wrapper(data-test='proposalItem')
         banner-scoped(ref='voteMsg' data-test='voteMsg')
         p.c-sendLink(v-if='invitationLink' data-test='sendLink')
           i18n(
-            :args='{ user: proposal.data.proposalData.member}'
+            :args='{ user: proposal.data.proposalData.memberName}'
           ) Please send the following link to {user} so they can join the group:
 
           link-to-copy.c-invite-link(
@@ -115,8 +115,9 @@ export default ({
     ...mapGetters([
       'currentGroupState',
       'groupMembersCount',
-      'userDisplayName',
-      'ourUsername',
+      'userDisplayNameFromID',
+      'usernameFromID',
+      'ourIdentityContractId',
       'ourUserDisplayName'
     ]),
     ...mapState(['currentGroupId']),
@@ -127,8 +128,9 @@ export default ({
       return this.proposalObject || this.currentGroupState.proposals[this.proposalHash]
     },
     subtitle () {
-      const username = this.proposal.meta.username
-      const isOwnProposal = username === this.ourUsername
+      const creatorID = this.proposal.creatorID
+      const username = this.usernameFromID(creatorID)
+      const isOwnProposal = creatorID === this.ourIdentityContractId
 
       if (this.proposal.data.proposalData.automated) {
         return L('Group Income system is proposing')
@@ -149,18 +151,18 @@ export default ({
       return this.proposal.data.proposalType
     },
     isOurProposal () {
-      return this.proposal.meta.username === this.ourUsername
+      return this.proposal.creatorID === this.ourIdentityContractId
     },
     isToRemoveMe () {
-      return this.proposalType === PROPOSAL_REMOVE_MEMBER && this.proposal.data.proposalData.member === this.ourUsername
+      return this.proposalType === PROPOSAL_REMOVE_MEMBER && this.proposal.data.proposalData.memberName === this.ourIdentityContractId
     },
     typeDescription () {
       return {
         [PROPOSAL_INVITE_MEMBER]: () => L('Add {user} to group.', {
-          user: this.proposal.data.proposalData.member
+          user: this.usernameFromID(this.proposal.data.proposalData.memberName)
         }),
         [PROPOSAL_REMOVE_MEMBER]: () => {
-          const user = this.userDisplayName(this.proposal.data.proposalData.member)
+          const user = this.userDisplayNameFromID(this.proposal.data.proposalData.memberName)
           const automated = this.proposal.data.proposalData.automated ? `[${L('Automated')}] ` : ''
           return this.isToRemoveMe
             ? L('{automated}Remove {user} (you) from the group.', { user, automated })
@@ -310,7 +312,7 @@ export default ({
           this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight === undefined &&
           this.currentGroupState._vm.invites?.[inviteKeyId]?.inviteSecret
         ) {
-          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourUserDisplayName)
+          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourIdentityContractId)
         }
       }
       return false

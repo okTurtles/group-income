@@ -79,25 +79,25 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
-      'userDisplayName'
+      'ourIdentityContractId',
+      'userDisplayNameFromID'
     ]),
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
     },
-    fromUser () {
-      return this.payment?.meta.username || ''
+    fromMemberID () {
+      return this.payment?.data.fromMemberID || ''
     },
     isPaidByMyself () {
-      return this.fromUser === this.ourUsername
+      return this.fromMemberID === this.ourIdentityContractId
     },
     buttonCount () {
       return Number(!this.isPaidByMyself) + Number(this.isPaidByMyself && !this.payment.isOldPayment)
     },
     subtitleCopy () {
-      const toUser = this.payment.data.toUser
-      const arg = (username) => ({ name: this.userDisplayName(username) })
-      return toUser === this.ourUsername ? L('Sent by {name}', arg(this.fromUser)) : L('Sent to {name}', arg(toUser))
+      const toMemberID = this.payment.data.toMemberID
+      const arg = (username) => ({ name: this.userDisplayNameFromID(username) })
+      return toMemberID === this.ourIdentityContractId ? L('Sent by {name}', arg(this.fromMemberID)) : L('Sent to {name}', arg(toMemberID))
     }
   },
   methods: {
@@ -132,7 +132,7 @@ export default ({
       alert('TODO: Implement cancel payment')
     },
     sendThankYou () {
-      sbp('okTurtles.events/emit', REPLACE_MODAL, 'SendThankYouModal', { to: this.payment.meta.username })
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'SendThankYouModal', { toMemberID: this.payment.data.fromMemberID })
     }
   },
   validations: {

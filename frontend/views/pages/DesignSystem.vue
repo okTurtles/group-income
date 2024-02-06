@@ -1050,8 +1050,8 @@ page(
               pre
                 | users-selector(
                 |   label='Search for users'
-                |   :usernames='["alexjin", "greg", "andrea"]'
-                |   defaultValue='alexjin'
+                |   :users='["contractID 1", "contractID 2", "contractID 3"]'
+                |   defaultValue='contractID 1'
                 |   :autofocus='true'
                 |   @change='onChange'
                 |   @remove='onRemove'
@@ -1061,8 +1061,8 @@ page(
             td
               users-selector(
                 label='Search for users'
-                :usernames='form.searchUsers'
-                defaultValue='alexjin'
+                :users='form.searchUsers'
+                defaultValue='contractID 1'
               )
         tr
           td

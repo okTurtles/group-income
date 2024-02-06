@@ -389,7 +389,10 @@ export default (sbp('sbp/selectors/register', {
               // (2) Check whether the join process is still incomplete
               //     This needs to be re-checked because it may have changed after
               //     sync
-              state[groupId]?.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE &&
+              // //     We only check for groups where we don't have a profile, as
+              // //     re-joining is handled by the group contract itself.
+              // !state[groupId]?.profiles?.[identityContractID] && // ?.status !== PROFILE_STATUS.
+              state[groupId]?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
               // (3) Call join
               sbp('gi.actions/group/join', {
                 originatingContractID: identityContractID,
@@ -585,7 +588,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/createDirectMessage', L('Failed to create a new direct message channel.'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
-    const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+    const partnerIDs = params.data.memberIDs.map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
     //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
     const currentGroupId = rootState.currentGroupId
@@ -616,14 +619,14 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/chatroom/join', {
       ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
-      data: { username: rootState.loggedIn.username }
+      data: {}
     })
 
-    for (const profile of partnerProfiles) {
+    for (const partnerID of partnerIDs) {
       await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: message.contractID(),
-        data: { username: profile.username }
+        data: { memberID: partnerID }
       })
     }
 
@@ -638,14 +641,14 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    for (const [index, profile] of partnerProfiles.entries()) {
-      const hooks = index < partnerProfiles.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+    for (let index = 0; index < partnerIDs.length; index++) {
+      const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
 
       // Share the keys to the newly created chatroom with partners
       // TODO: We need to handle multiple groups and the possibility of not
       // having any groups in common
       await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: profile.contractID,
+        contractID: partnerIDs[index],
         contractName: 'gi.contracts/identity',
         subjectContractID: message.contractID(),
         keyIds: '*'
@@ -653,7 +656,7 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('gi.actions/identity/joinDirectMessage', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: profile.contractID,
+        contractID: partnerIDs[index],
         data: {
           groupContractID: currentGroupId,
           // TODO: We need to handle multiple groups and the possibility of not
@@ -662,7 +665,7 @@ export default (sbp('sbp/selectors/register', {
         },
         // For now, we assume that we're messaging someone which whom we
         // share a group
-        signingKeyId: sbp('chelonia/contract/suitableSigningKey', profile.contractID, [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        signingKeyId: sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
         innerSigningContractID: rootState.currentGroupId,
         hooks
       })

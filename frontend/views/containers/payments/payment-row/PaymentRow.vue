@@ -7,10 +7,10 @@
       template(v-if='!$slots["cellUser"]')
         .c-user
           profile-card(
-            :username='payment.username'
+            :contractID='payment.toMemberID'
             direction='top-left'
           )
-            avatar-user.c-avatar(:username='payment.username' size='xs')
+            avatar-user.c-avatar(:contractID='payment.toMemberID' size='xs')
             strong.c-name {{payment.displayName}}
 
         span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}

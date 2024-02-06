@@ -17,6 +17,35 @@ import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, get
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
+const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
+  const signingKeyId = message.signingKeyId()
+  let innerSigningKeyId: ?string = null
+
+  const result = {
+    signingKeyId,
+    get signingContractID () {
+      return getContractIDfromKeyId(contractID, signingKeyId, state)
+    },
+    get innerSigningKeyId () {
+      if (innerSigningKeyId === null) {
+        const value = message.message()
+        const data = unwrapMaybeEncryptedData(value)
+        if (data?.data && isSignedData(data.data)) {
+          innerSigningKeyId = (data.data: any).signingKeyId
+        } else {
+          innerSigningKeyId = undefined
+        }
+        return innerSigningKeyId
+      }
+    },
+    get innerSigningContractID () {
+      return getContractIDfromKeyId(contractID, result.innerSigningKeyId, state)
+    }
+  }
+
+  return result
+}
+
 const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a GIMessage may not be serializable (i.e., supported by the
@@ -35,7 +64,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
     key._notBeforeHeight = height
     if (authorizedKeys?.[key.id]) {
       if (authorizedKeys[key.id]._notAfterHeight == null) {
-        throw new Error('Cannot set existing unrevoked key')
+        throw new Error(`Cannot set existing unrevoked key: ${key.id}`)
       }
       // If the key was get previously, preserve its _notBeforeHeight
       // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
@@ -210,9 +239,9 @@ export default (sbp('sbp/selectors/register', {
         getRandomValues: (v) => globalThis.crypto.getRandomValues(v)
       },
       ...(typeof window === 'object' && window && {
-        alert: window.alert,
-        confirm: window.confirm,
-        prompt: window.prompt
+        alert: window.alert.bind(window),
+        confirm: window.confirm.bind(window),
+        prompt: window.prompt.bind(window)
       }),
       isNaN,
       console,
@@ -527,8 +556,6 @@ export default (sbp('sbp/selectors/register', {
             v = (v: any).valueOf()
           }
 
-          // TODO: Verify signing permissions
-
           const { data, meta, action } = (v: any)
 
           if (!config.whitelisted(action)) {
@@ -567,7 +594,7 @@ export default (sbp('sbp/selectors/register', {
         for (const key of v.keys) {
           if (key.id && key.meta?.private?.content) {
             if (!has(state._vm, 'sharedKeyIds')) self.config.reactiveSet(state._vm, 'sharedKeyIds', [])
-            if (!state._vm.sharedKeyIds.includes(key.id)) state._vm.sharedKeyIds.push(key.id)
+            if (!state._vm.sharedKeyIds.some((sK) => sK.id === key.id)) state._vm.sharedKeyIds.push({ id: key.id, contractID: v.contractID, height, keyRequestHash: v.keyRequestHash, keyRequestHeight: v.keyRequestHeight })
           }
         }
 
@@ -776,6 +803,7 @@ export default (sbp('sbp/selectors/register', {
 
           self.config.reactiveSet(state._vm.keyshares, hash, {
             contractID: originatingContractID,
+            height,
             success,
             ...(success && {
               hash: v.keyShareHash
@@ -1303,7 +1331,7 @@ export default (sbp('sbp/selectors/register', {
       ])
 
       const keys = pick(
-        state['secretKeys'],
+        state.secretKeys,
         Object.entries(contractState._vm.authorizedKeys)
           .filter(([, key]) => !!(key: any).meta?.private?.shareable)
           .map(([kId]) => kId)
@@ -1325,7 +1353,8 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         })),
-        keyRequestHash: hash
+        keyRequestHash: hash,
+        keyRequestHeight: height
       }
 
       // 3. Send OP_KEY_SHARE to identity contract
@@ -1516,7 +1545,7 @@ export default (sbp('sbp/selectors/register', {
         // we revert any changes to the contract state that occurred, ignoring this mutation
         console.warn(`[chelonia] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
         processingErrored = e?.name !== 'ChelErrorWarning'
-        this.config.hooks.processError?.(e, message)
+        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
         // special error that prevents the head from being updated, effectively killing the contract
         if (e.name === 'ChelErrorUnrecoverable') throw e
       }

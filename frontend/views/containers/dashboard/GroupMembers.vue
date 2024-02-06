@@ -13,20 +13,20 @@
 
   ul.c-group-list
     li.c-group-member(
-      v-for='{username, displayName, invitedBy, isNew} in firstTenMembers'
-      :data-test='username'
+      v-for='{id, contractID, username, displayName, invitedBy, isNew} of firstTenMembers'
+      :data-test='displayName'
       :class='invitedBy && "is-pending"'
-      :key='username'
+      :key='id'
     )
-      profile-card(:username='username')
+      profile-card(:contractID='contractID')
         avatar(v-if='invitedBy' src='/assets/images/user-avatar-pending.png' size='sm' data-test='openMembersProfileCard')
-        avatar-user(v-else :username='username' size='sm' data-test='openMemberProfileCard')
+        avatar-user(v-else :contractID='contractID' size='sm' data-test='openMemberProfileCard')
 
-        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(contractID, displayName) }}
         i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
         i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-        group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
+        group-members-tooltip-pending.c-menu(v-if='invitedBy' :contractID='contractID')
 
   i18n.link(
     tag='button'
@@ -72,8 +72,7 @@ export default ({
       'groupMembersSorted',
       'groupShouldPropose',
       'currentWelcomeInvite',
-      'ourUsername',
-      'userDisplayName'
+      'ourIdentityContractId'
     ]),
     firstTenMembers () {
       return this.groupMembersSorted.slice(0, 10)
@@ -86,9 +85,9 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    localizedName (username) {
-      const name = this.userDisplayName(username)
-      return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    localizedName (contractID, displayName) {
+      const name = displayName
+      return contractID === this.ourIdentityContractId ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
       if (this.action === 'addMember') {

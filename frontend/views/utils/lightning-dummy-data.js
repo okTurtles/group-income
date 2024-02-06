@@ -42,7 +42,7 @@ export const dummyLightningPaymentDetails = {
   data: {
     // $FlowFixMe
     transactionId: randomHexString(50),
-    toUser: 'fake-user-2',
+    toMemberID: 'fake-user-2',
     amount: 98.57142857,
     groupMincome: 1000,
     memo: 'Love you so much! Thank you for the Portuguese class last week. P.S.: sent to the Paypal email on your profile.',
