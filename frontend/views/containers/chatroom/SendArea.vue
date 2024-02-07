@@ -490,7 +490,7 @@ export default ({
       const curPosition = this.$refs.textarea.selectionStart
       const selection = this.ephemeral.mention.options[index]
 
-      const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, this.currentChatRoomId, true)
+      const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
       const mention = selection.memberID === mentionObj.all ? mentionObj.all : mentionObj.me
       const value = curValue.slice(0, this.ephemeral.mention.position) +
          mention + ' ' + curValue.slice(curPosition)
@@ -563,15 +563,14 @@ export default ({
       }
 
       /* Process mentions in the form @username => @userID */
-      const allMention = makeMentionFromUsername('', this.currentChatRoomId, true).all
-      const mentionStart = allMention[0]
+      const mentionStart = makeMentionFromUsername('').all[0]
       const availableMentions = this.members.map(memberID => memberID.username)
       msgToSend = msgToSend.replace(
         // This regular expression matches all @username mentions that are
         // standing alone between spaces
-        new RegExp(`(?<=\\s|^)${mentionStart}(${allMention.slice(1)}|${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g'),
+        new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g'),
         (_, username) => {
-          return makeMentionFromUsername(username, this.currentChatRoomId).me
+          return makeMentionFromUsername(username).me
         }
       )
 
@@ -651,13 +650,13 @@ export default ({
       this.updateTextWithLines()
     },
     startMention (keyword, position) {
-      const all = makeMentionFromUsername('', this.currentChatRoomId, true).all
+      const all = makeMentionFromUsername('').all
       const availableMentions = Array.from(this.members)
       // NOTE: '@all' mention should only be needed when the members are more than 3
       if (availableMentions.length > 2) {
         availableMentions.push({
           memberID: all,
-          displayName: L('all'),
+          displayName: all.slice(1),
           picture: '/assets/images/horn.png'
         })
       }

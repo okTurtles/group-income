@@ -131,7 +131,7 @@ export default ({
     convertTextToMarkdown: Boolean
   },
   computed: {
-    ...mapGetters(['chatRoomMembers', 'currentChatRoomId', 'usernameFromID']),
+    ...mapGetters(['chatRoomMembers', 'usernameFromID']),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
     },
@@ -200,8 +200,8 @@ export default ({
           }
         ]
       }
-      const allMention = makeMentionFromUserID('', this.currentChatRoomId).all
-      const possibleMentions = Object.keys(this.chatRoomMembers).map(u => makeMentionFromUserID(u, this.currentChatRoomId).me).filter(v => !!v)
+      const allMention = makeMentionFromUserID('').all
+      const possibleMentions = Object.keys(this.chatRoomMembers).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
       return text
         // We try to find all the mentions and render them as mentions instead
@@ -212,7 +212,7 @@ export default ({
         .split(new RegExp(`(?<=\\s|^)(${allMention}|${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
           if (t === allMention) {
-            return { type: TextObjectType.Mention, text: t[0] + 'all' }
+            return { type: TextObjectType.Mention, text: t }
           }
           return possibleMentions.includes(t)
             ? { type: TextObjectType.Mention, text: t[0] + this.usernameFromID(t.slice(1)) }

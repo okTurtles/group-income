@@ -422,7 +422,7 @@ sbp('chelonia/defineContract', {
           return
         }
         const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
-        const mentions = makeMentionFromUserID(me, contractID)
+        const mentions = makeMentionFromUserID(me)
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
@@ -467,7 +467,7 @@ sbp('chelonia/defineContract', {
 
         const isAlreadyAdded = !!sbp('state/vuex/getters')
           .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
-        const mentions = makeMentionFromUserID(me, contractID)
+        const mentions = makeMentionFromUserID(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
         if (!isAlreadyAdded) {
@@ -497,7 +497,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/deleteMessage': {
       validate: actionRequireInnerSignature(objectOf({ hash: string })),
-      process ({ data, meta, contractID, innerSigningContractID }, { state }) {
+      process ({ data, meta, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
@@ -510,7 +510,7 @@ sbp('chelonia/defineContract', {
           if (message.replyingMessage?.hash === data.hash) {
             message.replyingMessage.hash = null
             message.replyingMessage.text = L('Original message was removed by {user}', {
-              user: makeMentionFromUserID(innerSigningContractID, contractID).me
+              user: makeMentionFromUserID(innerSigningContractID).me
             })
           }
         }
