@@ -130,23 +130,30 @@ export function findMessageIdx (hash: string, messages: Array<Object>): number {
   return -1
 }
 
+// This function serves two purposes, depending on the forceUsername parameter
+// If forceUsername is true, mentions will be like @username, @all, for display
+// purposes.
+// If forceUsername is false (default), mentions like @username will be converted
+// to @<userID>, for internal representation purposes.
 // forceUsername is used for display purposes in the UI, so that we can show
 // a mention like @username instead of @userID in SendArea
-export function makeMentionFromUsername (username: string, forceUsername: ?boolean): {
+export function makeMentionFromUsername (username: string, channelID: string, forceUsername: ?boolean): {
   me: string, all: string
 } {
   const rootGetters = sbp('state/vuex/getters')
   // Even if forceUsername is true, we want to look up the contract ID to ensure
   // that it exists, so that we know it'll later succeed.
   const userID = rootGetters.ourContactProfiles[username]?.contractID
-  return makeMentionFromUserID(forceUsername && userID ? username : userID)
+  return forceUsername
+    ? makeMentionFromUserID(userID ? username : userID, 'all')
+    : makeMentionFromUserID(username === 'all' ? channelID : userID, channelID)
 }
 
-export function makeMentionFromUserID (userID: string): {
+export function makeMentionFromUserID (userID: string, channelID: string): {
   me: string, all: string
 } {
   return {
     me: userID ? `@${userID}` : '',
-    all: '@all'
+    all: `@${channelID}`
   }
 }
