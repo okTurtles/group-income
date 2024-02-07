@@ -8,12 +8,12 @@
       avatar-user(:contractID='ourIdentityContractId' size='sm')
       .c-user
         strong.has-ellipsis(
-          :data-test='userDisplayNameFromID ? "profileDisplayName" : "profileName"'
-        ) {{ userDisplayNameFromID || ourUsername || ourIdentityContractId }}
+          :data-test='ourDisplayName ? "profileDisplayName" : "profileName"'
+        ) {{ ourDisplayName || ourUsername || ourIdentityContractId }}
 
         span.has-ellipsis(
           data-test='profileName'
-          v-if='userDisplayNameFromID'
+          v-if='ourDisplayName'
         ) @{{ ourUsername }}
 
   button.is-icon-small(
@@ -41,7 +41,7 @@ export default ({
       'ourUsername',
       'ourIdentityContractId'
     ]),
-    userDisplayNameFromID () {
+    ourDisplayName () {
       const userContract = this.$store.getters.currentIdentityState
       return userContract && userContract.attributes && userContract.attributes.displayName
     }

@@ -124,14 +124,14 @@ export default ({
     ]),
     ourNewDMContacts () {
       return this.ourContactsById
-        .filter(user => {
-          if (user === this.ourIdentityContractId) {
+        .filter(userID => {
+          if (userID === this.ourIdentityContractId) {
             return false
           }
-          const chatRoomId = this.ourGroupDirectMessageFromUserIds(user)
+          const chatRoomId = this.ourGroupDirectMessageFromUserIds(userID)
           return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
         })
-        .map(user => this.ourContactProfilesById[user])
+        .map(userID => this.ourContactProfilesById[userID])
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
