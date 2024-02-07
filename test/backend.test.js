@@ -174,6 +174,7 @@ describe('Full walkthrough', function () {
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
       keys: [
+        // This is the group's CSK and is used for outer signatures.
         {
           id: CSKid,
           name: 'csk',
@@ -183,6 +184,9 @@ describe('Full walkthrough', function () {
           allowedActions: '*',
           data: CSKp
         },
+        // We need to add the creator's CSK to the group in order to validate
+        // inner signatures, which are part of the permissions system in the
+        // group contract.
         {
           id: creator.signingKeyId(),
           name: 'creator',

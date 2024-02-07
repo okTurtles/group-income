@@ -272,6 +272,17 @@ export default (sbp('sbp/selectors/register', {
 
       const { identityContractID: userID } = loggedIn
 
+      // When syncing the group contract, the contract might call /remove on
+      // itself if we had previously joined and left the group. By using
+      // deferredRemove we ensure that it's not deleted until we've finished
+      // trying to join.
+      // When we are re-joinining, this function will call /cancelRemove to
+      // ensure that the contract isn't removed, and if we're not re-joining,
+      // the call at the end to /remove with removeIfPending will remove the
+      // group contract.
+      // Part of this same functionality is what `sbp('okTurtles.data/set', 'JOINING_GROUP-'`
+      // does. In a later improvement, we could remove that and handle re-joinining
+      // within the contract state.
       await sbp('chelonia/contract/sync', params.contractID, { deferredRemove: true })
       const rootState = sbp('state/vuex/state')
       if (!rootState.contracts[params.contractID]) {
@@ -356,7 +367,7 @@ export default (sbp('sbp/selectors/register', {
         // permissions specified in the parameters.
         // The second stap is sending an OP_KEY_REQUEST message to the
         // group contract.
-        // Note  that this is a two-step process that involves writing to
+        // Note that this is a two-step process that involves writing to
         // two contracts: the current group contract and the originating
         // (identity) contract. Calls to keyRequest require
         // simultaneously waiting on the group and the identity
@@ -376,6 +387,8 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
           throw e
         })
+        // While we're waiting for keys, we should not remove the group contract
+        // (if had previously left) because we're re-joining
         sbp('chelonia/contract/cancelRemove', params.contractID)
 
         // Nothing left to do until the keys are received
@@ -468,6 +481,10 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/contract/cancelRemove', params.contractID)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     } finally {
+      // If we called join but it didn't result in any actions being sent, we
+      // may have left the group. In this case, we execute any pending /remove
+      // actions on the contract. This will have no side-effects if /remove on
+      // the group contract hasn't been called.
       await sbp('chelonia/contract/remove', params.contractID, { removeIfPending: true })
     }
   },
