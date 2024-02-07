@@ -96,7 +96,6 @@ export default ({
   mounted () {
     // For some reason in some Cypress tests it loses the route query when initialized is called
     this.ephemeral.hash = new URLSearchParams(this.$route.hash.slice(1))
-    console.error(this.$route)
     if (syncFinished || !this.ourIdentityContractId) {
       this.initialize()
     } else {
