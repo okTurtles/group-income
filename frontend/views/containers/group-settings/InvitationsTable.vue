@@ -157,7 +157,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourUsername',
+      'ourIdentityContractId',
       'ourUserDisplayName',
       'groupSettings',
       'currentWelcomeInvite',
@@ -173,8 +173,8 @@ export default ({
       const invites = this.currentGroupState.invites || {}
 
       const invitesList = Object.entries(vmInvites)
-        .map(([id, invite]) => [id, { ...invite, creator: invites[id]?.creator, invitee: invites[id]?.invitee }])
-        .filter(([, invite]) => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+        .map(([id, invite]) => [id, { ...invite, creatorID: invites[id]?.creatorID, invitee: invites[id]?.invitee }])
+        .filter(([, invite]) => invite.creatorID === INVITE_INITIAL_CREATOR || invite.creatorID === this.ourIdentityContractId)
         .map(this.mapInvite)
 
       const options = {
@@ -185,7 +185,7 @@ export default ({
       return options[this.ephemeral.selectbox.selectedOption]()
     },
     isUserGroupCreator () {
-      return this.ourUsername === this.groupSettings.groupCreator
+      return this.ourIdentityContractId === this.groupSettings.groupCreatorID
     }
   },
   methods: {
@@ -256,7 +256,7 @@ export default ({
       return L('Expired')
     },
     mapInvite ([id, {
-      creator,
+      creatorID,
       expires: expiryTime,
       invitee,
       inviteSecret,
@@ -264,7 +264,7 @@ export default ({
       quantity,
       status
     }]) {
-      const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
+      const isAnyoneLink = creatorID === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
       const numberOfResponses = initialQuantity - quantity
@@ -275,7 +275,7 @@ export default ({
         isAnyoneLink,
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
-        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret, isAnyoneLink ? undefined : this.ourUserDisplayName),
+        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret, isAnyoneLink ? undefined : this.ourIdentityContractId),
         description: this.inviteStatusDescription({
           isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),

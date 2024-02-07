@@ -101,7 +101,7 @@ export default ({
     ]),
     ...mapGetters([
       'groupDistributionStarted',
-      'ourUsername',
+      'ourIdentityContractId',
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount'
@@ -113,7 +113,7 @@ export default ({
       return this.groupDistributionStarted(new Date().toISOString())
     },
     shouldImmediateChangeDistributionDate () {
-      return !this.distributionStarted && this.ourUsername === this.groupSettings.groupCreator
+      return !this.distributionStarted && this.ourIdentityContractId === this.groupSettings.groupCreatorID
     }
   },
   beforeMount () {

@@ -167,7 +167,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
       'ourGroupProfile',
       'groupSettings',
       'groupMembersCount',

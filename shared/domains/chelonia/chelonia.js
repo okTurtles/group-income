@@ -410,6 +410,28 @@ export default (sbp('sbp/selectors/register', {
     if (!result?.length) return null
     return result
   },
+  'chelonia/contract/successfulKeySharesByContractID': function (contractIDOrState: string | Object, requestingContractID?: string) {
+    if (typeof contractIDOrState === 'string') {
+      const rootState = sbp(this.config.stateSelector)
+      contractIDOrState = rootState[contractIDOrState]
+    }
+    const keyShares = Object.values(contractIDOrState._vm.keyshares || {})
+    if (!keyShares?.length) return
+    const result = Object.create(null)
+    // $FlowFixMe[incompatible-call]
+    keyShares.forEach((kS: { success: boolean, contractID: string, height: number, hash: string }) => {
+      if (!kS.success) return
+      if (requestingContractID && kS.contractID !== requestingContractID) return
+      if (!result[kS.contractID]) result[kS.contractID] = []
+      result[kS.contractID].push({ height: kS.height, hash: kS.hash })
+    })
+    Object.keys(result).forEach(cID => {
+      result[cID].sort((a, b) => {
+        return b.height - a.height
+      })
+    })
+    return result
+  },
   'chelonia/contract/hasKeysToPerformOperation': function (contractIDOrState: string | Object, operation: string) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
@@ -431,7 +453,7 @@ export default (sbp('sbp/selectors/register', {
     const op = (operation !== '*') ? [operation] : operation
     const keyId = findSuitableSecretKeyId(contractIDOrState, op, ['sig'])
 
-    return sourceContractIDOrState?._vm?.sharedKeyIds?.includes(keyId)
+    return sourceContractIDOrState?._vm?.sharedKeyIds?.some((sK) => sK.id === keyId)
   },
   'chelonia/contract/currentKeyIdByName': function (contractIDOrState: string | Object, name: string, requireSecretKey?: boolean) {
     if (typeof contractIDOrState === 'string') {
@@ -580,7 +602,7 @@ export default (sbp('sbp/selectors/register', {
           const gProxy = gettersProxy(state, contract.getters)
           state = state || contract.state(contractID)
           contract.metadata.validate(meta, { state, ...gProxy, contractID })
-          contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
+          contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
         // 'mutation' is an object that's similar to 'message', but not identical
@@ -744,17 +766,19 @@ export default (sbp('sbp/selectors/register', {
       }
 
       if (params?.removeIfPending) {
-        if (!rootState.contracts[contractID].pendingRemove) {
-          if (has(this.removeCount, contractID)) {
-            if (this.removeCount[contractID] > 1) {
-              this.removeCount[contractID] -= 1
-            } else {
-              delete this.removeCount[contractID]
-            }
+        if (has(this.removeCount, contractID)) {
+          if (this.removeCount[contractID] > 1) {
+            this.removeCount[contractID] -= 1
+          } else {
+            delete this.removeCount[contractID]
           }
+        }
+        if (!rootState.contracts[contractID].pendingRemove) {
           return undefined
         }
-      } else if (this.removeCount[contractID] >= 1) {
+      }
+
+      if (this.removeCount[contractID] >= 1) {
         rootState.contracts[contractID].pendingRemove = true
         return undefined
       }

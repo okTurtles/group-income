@@ -17,17 +17,17 @@ export default ({
     Tooltip
   },
   props: {
-    username: String
+    contractID: String
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
+      'ourIdentityContractId',
       'groupMembersPending'
     ]),
     tooltipText () {
       const invitedBy = (this.groupMembersPending[this.username] || {}).invitedBy
 
-      return this.username === this.ourUsername
+      return this.contractID === this.ourIdentityContractId
         ? L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you).', { invitedBy })
         : L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.', { invitedBy })
     }

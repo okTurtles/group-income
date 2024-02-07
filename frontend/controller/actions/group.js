@@ -174,13 +174,14 @@ export default (sbp('sbp/selectors/register', {
         data: {
           invites: {
             [inviteKeyId]: {
-              creator: INVITE_INITIAL_CREATOR,
+              creatorID: INVITE_INITIAL_CREATOR,
               inviteKeyId
             }
           },
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: name,
+            groupCreatorID: userID,
             groupPicture: finalPicture,
             sharedValues,
             mincomeAmount: +mincomeAmount,
@@ -225,7 +226,7 @@ export default (sbp('sbp/selectors/register', {
         data: {
           groupContractID: contractID,
           inviteSecret: serializeKey(CSK, true),
-          creator: true
+          creatorID: true
         }
       }])
 
@@ -262,15 +263,16 @@ export default (sbp('sbp/selectors/register', {
     // JOINING_GROUP, so that we process leave actions and don't interfere
     // with the leaving process (otherwise, the side-effects will prevent
     // us from fully leaving).
-    sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
+    await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
+    // TODO: See if we can remove the need for okTurtles.data/set
     sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const { loggedIn } = sbp('state/vuex/state')
       if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
 
-      const { username, identityContractID: userID } = loggedIn
+      const { identityContractID: userID } = loggedIn
 
-      await sbp('chelonia/contract/sync', params.contractID)
+      await sbp('chelonia/contract/sync', params.contractID, { deferredRemove: true })
       const rootState = sbp('state/vuex/state')
       if (!rootState.contracts[params.contractID]) {
         console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
@@ -340,6 +342,8 @@ export default (sbp('sbp/selectors/register', {
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
       }
 
+      // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
+
       // After syncing the group contract, we send a key request
       if (sendKeyRequest) {
         // Send the key request
@@ -352,7 +356,7 @@ export default (sbp('sbp/selectors/register', {
         // permissions specified in the parameters.
         // The second stap is sending an OP_KEY_REQUEST message to the
         // group contract.
-        // Note that this is a two-step process that involves writing to
+        // Note  that this is a two-step process that involves writing to
         // two contracts: the current group contract and the originating
         // (identity) contract. Calls to keyRequest require
         // simultaneously waiting on the group and the identity
@@ -372,6 +376,7 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
           throw e
         })
+        sbp('chelonia/contract/cancelRemove', params.contractID)
 
         // Nothing left to do until the keys are received
 
@@ -385,7 +390,7 @@ export default (sbp('sbp/selectors/register', {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (state.profiles?.[username]?.status !== PROFILE_STATUS.ACTIVE) {
+        if (state.profiles?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
           // All reads are done here at the top to ensure that they happen
           // synchronously, before any await calls.
           // If reading after an asynchronous operation, we might get inconsistent
@@ -432,10 +437,6 @@ export default (sbp('sbp/selectors/register', {
                 postpublish: null
               }
             })
-
-            if (rootState.currentGroupId === params.contractID) {
-              await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
-            }
           } catch (e) {
             console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
             throw e
@@ -452,59 +453,22 @@ export default (sbp('sbp/selectors/register', {
         // This could happen, for example, after logging in if we still haven't
         // received a response to the key request.
         sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
-        console.warn('Requested to join group but we\'ve been removed. contractID=' + params.contractID)
-
-        // Now, we check to make sure that we were removed (could have
-        // happened while we were offline or on a different device)
-        sbp('chelonia/queueInvocation', params.contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[params.contractID]
-
-          // The contract has already been removed
-          if (!state) return
-
-          // We have indeed been removed
-          if (state.profiles?.[username]?.status === PROFILE_STATUS.REMOVED) {
-            // We can't await as remove is using the same queue
-            console.info('[gi.actions/group/join] We appear to have left the group. Removing the contract.', {
-              contractID: params.contractID,
-              username,
-              userID,
-              hasSecretKeys,
-              pendingKeyShares,
-              status: state.profiles?.[username]?.status
-            })
-            sbp('chelonia/contract/remove', params.contractID).catch((e) => {
-              console.error('[gi.actions/group/join] An error occurred while trying to remove the group contract', e)
-            })
-          } else {
-            console.warn('[gi.actions/group/join] Invalid or inconsistent state. We would appear to have been removed but aren\'nt', {
-              contractID: params.contractID,
-              username,
-              userID,
-              hasSecretKeys,
-              pendingKeyShares,
-              status: state.profiles?.[username]?.status
-            })
-          }
-        }).catch((e) => {
-          console.error('[gi.actions/group/join] Error while completing the group removal process', {
-            contractID: params.contractID,
-            username,
-            userID,
-            hasSecretKeys,
-            pendingKeyShares,
-            status: state.profiles?.[username]?.status
-          }, e)
-        })
       } else if (pendingKeyShares) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
+        // If we're waiting on keys to be shared with us, we need to cancel any
+        // pending removal while we're waiting
+        sbp('chelonia/contract/cancelRemove', params.contractID)
       } else {
-        console.warn('Requested to join group but the state appears invalid. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
+        console.error('Requested to join group but the state appears invalid. This should be unreachable. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
+      // If an error occurred, the join process is incomplete and we should not
+      // remove the group contract.
+      sbp('chelonia/contract/cancelRemove', params.contractID)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
+    } finally {
+      await sbp('chelonia/contract/remove', params.contractID, { removeIfPending: true })
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
@@ -537,9 +501,8 @@ export default (sbp('sbp/selectors/register', {
     // $FlowFixMe
     return Promise.all(
       Object.entries(state.profiles)
-        .filter(([_, p]) => (p: any).departedDate == null)
-        .map(async ([username]) => {
-          const pContractID = await sbp('namespace/lookup', username)
+        .filter(([_, p]) => (p: any).status === PROFILE_STATUS.ACTIVE)
+        .map(([pContractID]) => {
           const CEKid = sbp('chelonia/contract/currentKeyIdByName', rootState[pContractID], 'cek')
           if (!CEKid) {
             console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
@@ -644,18 +607,18 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
     const rootGetters = sbp('state/vuex/getters')
-    const me = rootState.loggedIn.username
-    const username = params.data.username || me
+    const me = rootState.loggedIn.identityContractID
+    const memberID = params.data.memberID || me
 
-    if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
+    if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && memberID !== me) {
       throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
     }
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
-    if (username !== me && rootState[params.data.chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+    if (memberID !== me && rootState[params.data.chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: rootGetters.ourContactProfiles[username].contractID,
+        contractID: memberID,
         contractName: 'gi.contracts/identity',
         subjectContractID: params.data.chatRoomID,
         keyIds: '*'
@@ -713,16 +676,15 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   }),
+  'gi.actions/group/removeOurselves': (params: GIActionParams) => {
+    return sbp('gi.actions/group/removeMember', {
+      ...omit(params, ['options', 'action']),
+      data: {}
+    })
+  },
   ...encryptedAction('gi.actions/group/removeMember',
-    (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
+    (params, e) => params.data.memberID ? L('Failed to remove {memberID}: {reportError}', { memberID: params.data.memberID, ...LError(e) }) : L('Failed to leave group. {codeError}', { codeError: e.message }),
     async function (sendMessage, params, signingKeyId) {
-      await sendMessage({
-        ...omit(params, ['options', 'action'])
-      })
-    }),
-  ...encryptedAction('gi.actions/group/removeOurselves',
-    (e) => L('Failed to leave group. {codeError}', { codeError: e.message }),
-    async function (sendMessage, params) {
       await sendMessage({
         ...omit(params, ['options', 'action'])
       })
@@ -752,13 +714,13 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }),
-  'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
+  'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
     try {
       if (attempt === 1) {
         // to decrease likelihood of multiple proposals being created at the same time, wait
         // a random amount of time on the first call
         setTimeout(() => {
-          sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+          sbp('gi.actions/group/autobanUser', message, error, msgMeta, attempt + 1)
             .catch((e) => {
               console.error('[gi.actions/group/autobanUser] Error from setTimeout callback (1st attempt)', e)
             })
@@ -771,23 +733,22 @@ export default (sbp('sbp/selectors/register', {
       //
       // NOTE: we cast to 'any' to work around flow errors
       //       see: https://stackoverflow.com/a/41329247/1781435
-      const { meta } = message.decryptedValue()
-      const username = meta && meta.username
+      const memberID = msgMeta && msgMeta.innerSigningContractID
       const groupID = message.contractID()
-      const contractState = sbp('state/vuex/state')[groupID]
-      const getters = sbp('state/vuex/getters')
-      if (username && getters.groupProfile(username)) {
-        console.warn(`autoBanSenderOfMessage: autobanning ${username} from ${groupID}`)
+      const rootState = sbp('state/vuex/state')
+      const contractState = rootState[groupID]
+      if (memberID && rootState.contracts[groupID]?.type === 'gi.contracts/group' && contractState?.profiles?.[memberID]?.status === PROFILE_STATUS.ACTIVE) {
+        console.warn(`autoBanSenderOfMessage: autobanning ${memberID} from ${groupID}`)
         // find existing proposal if it exists
         let [proposalHash, proposal]: [string, ?Object] = Object.entries(contractState.proposals)
           .find(([hash, prop]: [string, Object]) => (
             prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
-            prop.data.proposalData.member === username
+            prop.data.proposalData.memberName === memberID
           )) ?? ['', undefined]
         if (proposal) {
           // cast our vote if we haven't already cast it
-          if (!proposal.votes[getters.ourUsername]) {
+          if (!proposal.votes[rootState.loggedIn.identityContractID]) {
             await sbp('gi.actions/group/proposalVote', {
               contractID: groupID,
               data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '' } },
@@ -802,7 +763,7 @@ export default (sbp('sbp/selectors/register', {
               data: {
                 proposalType: PROPOSAL_REMOVE_MEMBER,
                 proposalData: {
-                  member: username,
+                  memberID,
                   reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message }),
                   automated: true
                 },
@@ -813,12 +774,12 @@ export default (sbp('sbp/selectors/register', {
             })
           } catch (e) {
             if (attempt > 3) {
-              console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)
+              console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${memberID}`, message, e)
             } else {
               const randDelay = randomIntFromRange(0, 1500)
-              console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${username}, retrying in ${randDelay} ms...`, e)
+              console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${memberID}, retrying in ${randDelay} ms...`, e)
               setTimeout(() => {
-                sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+                sbp('gi.actions/group/autobanUser', message, error, msgMeta, attempt + 1)
                   .catch((e) => {
                     console.error('[gi.actions/group/autobanUser] Error from setTimeout callback (> 3rd attempt)', e)
                   })
@@ -893,7 +854,7 @@ export default (sbp('sbp/selectors/register', {
 
     const enforceDunbar = true // Context for this hard-coded boolean variable: https://github.com/okTurtles/group-income/pull/1648#discussion_r1230389924
     const { groupMembersCount, currentGroupState } = sbp('state/vuex/getters')
-    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter((invite: any) => invite.creator !== INVITE_INITIAL_CREATOR).length
+    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter((invite: any) => invite.creatorID !== INVITE_INITIAL_CREATOR).length
     const isGroupSizeLarge = (groupMembersCount + memberInvitesCount) >= MAX_GROUP_MEMBER_COUNT
 
     if (isGroupSizeLarge) {

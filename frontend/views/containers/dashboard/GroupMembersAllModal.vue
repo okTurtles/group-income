@@ -58,12 +58,12 @@ modal-base-template.has-background(
           tag='ul'
         )
           li.c-search-member(
-            v-for='{username, displayName, invitedBy, isNew} in addedMember'
-            :key='username'
+            v-for='{contractID, username, displayName, invitedBy, isNew} in addedMember'
+            :key='addedMember'
           )
-            profile-card(:username='username' direction='top-left')
+            profile-card(:contractID='contractID' direction='top-left')
               .c-identity
-                avatar-user(:username='username' size='sm')
+                avatar-user(:contractID='contractID' size='sm')
                 .c-name(data-test='username')
                   span
                     strong {{ localizedName(username) }}
@@ -85,12 +85,12 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName, invitedBy, isNew} in searchResult'
-          :key='username'
+          v-for='{contractID, username, displayName, invitedBy, isNew} in searchResult'
+          :key='contractID'
         )
-          profile-card(:username='username' direction='top-left')
+          profile-card(:contractID='contractID' direction='top-left')
             .c-identity
-              avatar-user(:username='username' size='sm')
+              avatar-user(:contractID='contractID' size='sm')
               .c-name(data-test='username')
                 span
                   strong {{ localizedName(username) }}
@@ -102,7 +102,7 @@ modal-base-template.has-background(
             .c-actions
               button.is-icon(
                 v-if='$route.query.toRemove'
-                @click.stop='removeMember(username)'
+                @click.stop='removeMember(contractID)'
               )
                 i.icon-times
 
@@ -114,7 +114,7 @@ modal-base-template.has-background(
                 :args='LTags("span")'
               ) Add {span_}to channel{_span}
 
-              group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
+              group-members-tooltip-pending(v-else-if='invitedBy' :contractID='contractID')
 </template>
 
 <script>
@@ -157,8 +157,8 @@ export default ({
     ...mapGetters([
       'groupMembersSorted',
       'groupMembersCount',
-      'ourUsername',
-      'userDisplayName'
+      'ourIdentityContractId',
+      'userDisplayNameFromID'
     ]),
     searchResult () {
       return filterByKeyword(this.groupMembersSorted, this.searchText, ['username', 'displayName'])
@@ -172,15 +172,15 @@ export default ({
     }
   },
   methods: {
-    localizedName (username) {
-      const name = this.userDisplayName(username)
-      return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    localizedName (memberID) {
+      const name = this.userDisplayNameFromID(memberID)
+      return memberID === this.ourIdentityContractId ? L('{name} (you)', { name }) : name
     },
     closeModal () {
       this.$refs.modal.close()
     },
-    removeMember (username) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'RemoveMember', { username })
+    removeMember (memberID) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'RemoveMember', { memberID })
     },
     addToChannel () {
       console.log('TODO addToChannel')

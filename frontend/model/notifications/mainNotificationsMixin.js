@@ -116,7 +116,7 @@ const periodicNotificationEntries = [
         sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
           createdDate: new Date().toISOString(),
           groupID: rootState.currentGroupId,
-          creator: rootGetters.ourUsername,
+          creatorID: rootGetters.ourIdentityContractId,
           memberType: rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
         })
       },
@@ -151,16 +151,16 @@ const periodicNotificationEntries = [
                   proposalData: proposal.data.proposalData,
                   expires_date_ms: proposal.data.expires_date_ms,
                   createdDate: proposal.meta.createdDate,
-                  creator: proposal.meta.username
+                  creatorID: proposal.creatorID
                 })
               }
 
-              if (!Object.keys(proposal.votes).includes(rootGetters.ourUsername) && // check if the user hasn't voted for this proposal.
+              if (!Object.keys(proposal.votes).includes(rootGetters.ourIdentityContractId) && // check if the user hasn't voted for this proposal.
                 !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the pop-up notification.
               ) {
                 groupNotificationItems.push({
                   proposalId,
-                  creator: proposal.meta.username,
+                  creatorID: proposal.creatorID,
                   proposalType: proposal.data.proposalType,
                   proposalData: proposal.data.proposalData
                 })
@@ -187,7 +187,7 @@ const periodicNotificationEntries = [
               sbp('gi.notifications/emit', 'PROPOSAL_EXPIRING', {
                 createdDate: new Date().toISOString(),
                 groupID: contractID,
-                creator: proposal.creator,
+                creatorID: proposal.creatorID,
                 proposalId: proposal.proposalId,
                 proposalType: proposal.proposalType,
                 proposalData: proposal.proposalData,

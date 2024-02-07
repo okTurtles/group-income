@@ -13,7 +13,7 @@ modal-template(
     .c-note-container
       i18n.has-text-1.c-label(
         data-test='memoLabel'
-        :args='{ name: from }'
+        :args='{ name: usernameFromID(from) }'
       ) {name} Note:
 
       .c-note.has-text-bold(data-test='memo') {{ thankYouNote }}
@@ -32,7 +32,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupThankYousFrom'
+      'groupThankYousFrom',
+      'usernameFromID'
     ]),
     from () {
       return this.$route.query.from || ''

@@ -25,7 +25,7 @@
             @selectstart='ephemeral.isSelectingText = true'
           )
             span.c-thumbCircle
-              avatar-user(:username='item.avatarUsername' size='md')
+              avatar-user(:contractID='item.avatarUserID' size='md')
               i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
               span.c-item-text(v-safe-html='item.body')

@@ -9,7 +9,7 @@ import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
@@ -157,7 +157,7 @@ describe('Full walkthrough', function () {
     })
     return msg
   }
-  function createGroup (name: string, hooks: Object = {}): Promise {
+  function createGroup (name: string, creator: any, hooks: Object = {}): Promise {
     const CSK = keygen(SNULL)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
@@ -168,7 +168,7 @@ describe('Full walkthrough', function () {
 
     /* const initialInvite = createInvite({
       quantity: 60,
-      creator: INVITE_INITIAL_CREATOR,
+      creatorID: INVITE_INITIAL_CREATOR,
       expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
     }) */
     return sbp('chelonia/out/registerContract', {
@@ -182,6 +182,16 @@ describe('Full walkthrough', function () {
           permissions: '*',
           allowedActions: '*',
           data: CSKp
+        },
+        {
+          id: creator.signingKeyId(),
+          name: 'creator',
+          purpose: ['sig'],
+          ringLevel: 1,
+          permissions: '*',
+          allowedActions: '*',
+          data: sbp('chelonia/rootState')[creator.contractID()]._vm.authorizedKeys[creator.signingKeyId()].data,
+          foreignKey: `sp:${encodeURIComponent(creator.contractID())}?keyName=${encodeURIComponent('csk')}`
         }
       ],
       data: {
@@ -201,17 +211,22 @@ describe('Full walkthrough', function () {
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
             [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
           }
+        },
+        profiles: {
+          [creator.contractID()]: {
+            status: PROFILE_STATUS.ACTIVE
+          }
         }
       },
       signingKeyId: CSKid,
       hooks
     })
   }
-  function createPaymentTo (to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
+  function createPaymentTo (from, to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
     return sbp('chelonia/out/actionUnencrypted', {
       action: 'gi.contracts/group/payment',
       data: {
-        toUser: to.decryptedValue().data.attributes.username,
+        toMemberID: to.contractID(),
         amount: amount,
         currency: currency,
         txid: String(parseInt(Math.random() * 10000000)),
@@ -219,7 +234,8 @@ describe('Full walkthrough', function () {
         paymentType: PAYMENT_TYPE_MANUAL
       },
       contractID,
-      signingKeyId
+      signingKeyId,
+      innerSigningKeyId: from.signingKeyId()
     })
   }
 
@@ -261,12 +277,12 @@ describe('Full walkthrough', function () {
     it('Should create a group & subscribe Alice', async function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
-      groups.group1 = await createGroup('group1')
+      groups.group1 = await createGroup('group1', users.alice)
       await sbp('chelonia/contract/sync', groups.group1.contractID())
     })
 
     it('Should post an event', function () {
-      return createPaymentTo(users.bob, 100, groups.group1.contractID(), groups.group1.signingKeyId())
+      return createPaymentTo(users.alice, users.bob, 100, groups.group1.contractID(), groups.group1.signingKeyId())
     })
 
     it('Should sync group and verify payments in state', async function () {
@@ -276,7 +292,7 @@ describe('Full walkthrough', function () {
 
     it('Should fail with wrong contractID', async function () {
       try {
-        await createPaymentTo(users.bob, 100, '')
+        await createPaymentTo(users.alice, users.bob, 100, '')
         return Promise.reject(new Error("shouldn't get here!"))
       } catch (e) {
         return Promise.resolve()

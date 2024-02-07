@@ -13,7 +13,7 @@ import {
 
 export const inviteType: any = objectOf({
   inviteKeyId: string,
-  creator: string,
+  creatorID: string,
   invitee: optional(string)
 })
 
@@ -22,7 +22,16 @@ export const inviteType: any = objectOf({
 export const chatRoomAttributesType: any = objectOf({
   name: string,
   description: string,
+  creatorID: string,
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+  groupContractID: optional(string)
+})
+
+export const groupChatRoomAttributesType: any = objectOf({
+  name: string,
+  description: string,
+  type: literalOf(CHATROOM_TYPES.GROUP),
   privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
   groupContractID: optional(string)
 })
@@ -35,7 +44,7 @@ export const messageType: any = objectMaybeOf({
     proposalType: string,
     expires_date_ms: number,
     createdDate: string,
-    creator: string,
+    creatorID: string,
     variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map(v => literalOf(v)))
   }),
   notification: objectMaybeOf({

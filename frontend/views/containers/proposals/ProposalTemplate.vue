@@ -126,7 +126,7 @@ export default ({
   computed: {
     ...mapGetters([
       'groupSettings',
-      'ourUsername',
+      'ourIdentityContractId',
       'groupMembersCount',
       'groupShouldPropose',
       'groupProposalSettings'
@@ -138,7 +138,7 @@ export default ({
       return this.groupProposalSettings()
     },
     isGroupCreator () {
-      return this.ourUsername === this.groupSettings.groupCreator
+      return this.ourIdentityContractId === this.groupSettings.groupCreatorID
     },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1

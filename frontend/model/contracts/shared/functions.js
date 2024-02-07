@@ -25,9 +25,9 @@ export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[
   let hashes = []
   if (periodPayments) {
     const { paymentsFrom } = periodPayments
-    for (const fromUser in paymentsFrom) {
-      for (const toUser in paymentsFrom[fromUser]) {
-        hashes = hashes.concat(paymentsFrom[fromUser][toUser])
+    for (const fromMemberID in paymentsFrom) {
+      for (const toMemberID in paymentsFrom[fromMemberID]) {
+        hashes = hashes.concat(paymentsFrom[fromMemberID][toMemberID])
       }
     }
   }
@@ -36,11 +36,11 @@ export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[
 }
 
 export function createPaymentInfo (paymentHash: string, payment: Object): {
-  from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
+  fromMemberID: string, toMemberID: string, hash: string, amount: number, isLate: boolean, when: string
 } {
   return {
-    from: payment.meta.username,
-    to: payment.data.toUser,
+    fromMemberID: payment.data.fromMemberID,
+    toMemberID: payment.data.toMemberID,
     hash: paymentHash,
     amount: payment.data.amount,
     isLate: !!payment.data.isLate,
@@ -50,8 +50,8 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
 
 // chatroom.js related
 
-export function createMessage ({ meta, data, hash, height, state, pending }: {
-  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean
+export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
+  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean, innerSigningContractID?: String
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
@@ -60,7 +60,7 @@ export function createMessage ({ meta, data, hash, height, state, pending }: {
     type,
     hash,
     height,
-    from: meta.username,
+    from: innerSigningContractID,
     datetime: new Date(createdDate).toISOString(),
     pending
   }
@@ -74,7 +74,7 @@ export function createMessage ({ meta, data, hash, height, state, pending }: {
       ...newMessage,
       pollData: {
         ...pollData,
-        creator: meta.username,
+        creatorID: innerSigningContractID,
         status: POLL_STATUS.ACTIVE,
         // 'voted' field below will contain the user names of the users who has voted for this option
         options: pollData.options.map(opt => ({ ...opt, voted: [] }))
@@ -130,11 +130,31 @@ export function findMessageIdx (hash: string, messages: Array<Object>): number {
   return -1
 }
 
-export function makeMentionFromUsername (username: string): {
+// forceUsername is used for display purposes in the UI, so that we can show
+// a mention like @username instead of @userID in SendArea
+export function makeMentionFromUsername (username: string, forceUsername: ?boolean): {
+  me: string, all: string
+} {
+  const rootGetters = sbp('state/vuex/getters')
+  // Even if forceUsername is true, we want to look up the contract ID to ensure
+  // that it exists, so that we know it'll later succeed.
+  const userID = rootGetters.ourContactProfiles[username]?.contractID
+  return makeMentionFromUserID(forceUsername && userID ? username : userID)
+}
+
+export function makeMentionFromUserID (userID: string): {
   me: string, all: string
 } {
   return {
-    me: `@${username}`,
+    me: userID ? `@${userID}` : '',
     all: '@all'
   }
+}
+
+export const actionRequireInnerSignature = (next: Function): Function => (data, props) => {
+  const innerSigningContractID = props.message.innerSigningContractID
+  if (!innerSigningContractID || innerSigningContractID === props.contractID) {
+    throw new Error('Missing inner signature')
+  }
+  return next(data, props)
 }

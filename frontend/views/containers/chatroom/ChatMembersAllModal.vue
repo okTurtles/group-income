@@ -46,29 +46,29 @@ modal-base-template.has-background(
           data-test='joinedChannelMembersList'
         )
           li.c-search-member(
-            v-for='{username, displayName, departedDate} in filteredRecents'
-            :key='username'
+            v-for='{contractID, username, displayName, departedDate} in filteredRecents'
+            :key='contractID'
           )
-            profile-card(:username='username' direction='top-left')
+            profile-card(:contractID='contractID' direction='top-left')
               .c-identity
-                avatar-user(:username='username' size='sm')
+                avatar-user(:contractID='contractID' size='sm')
                 .c-name(data-test='username')
                   span
-                    strong {{ localizedName(username, displayName) }}
+                    strong {{ localizedName(contractID, username, displayName) }}
                     .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-              .c-actions(v-if='!isDirectMessage() && isJoined && removable(username)')
+              .c-actions(v-if='!isDirectMessage() && isJoined && removable(contractID)')
                 button.is-icon(
                   v-if='!departedDate'
                   :data-test='"removeMember-" + username'
-                  @click.stop='removeMember(username)'
+                  @click.stop='removeMember(contractID)'
                 )
                   i.icon-times
                 .has-text-success(v-else)
                   i.icon-check
                   i18n Removed.
                   button.is-unstyled.c-action-undo(
-                    @click.stop='addToChannel(username, true)'
+                    @click.stop='addToChannel(contractID, true)'
                   ) {{L("Undo")}}
 
         .is-subtitle.c-second-section
@@ -83,22 +83,22 @@ modal-base-template.has-background(
         data-test='unjoinedChannelMembersList'
       )
         li.c-search-member(
-          v-for='{username, displayName, joinedDate} in filteredOthers'
-          :key='username'
+          v-for='{contractID, username, displayName, joinedDate} in filteredOthers'
+          :key='contractID'
         )
-          profile-card(:username='username' direction='top-left')
+          profile-card(:contractID='contractID' direction='top-left')
             .c-identity
-              avatar-user(:username='username' size='sm')
+              avatar-user(:contractID='contractID' size='sm')
               .c-name(data-test='username')
                 span
-                  strong {{ localizedName(username, displayName) }}
+                  strong {{ localizedName(contractID, username, displayName) }}
                   .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
             .c-actions(v-if='isJoined')
               button-submit.button.is-outlined.is-small(
                 v-if='!joinedDate'
                 type='button'
-                @click.stop='addToChannel(username)'
+                @click.stop='addToChannel(contractID)'
                 :data-test='"addToChannel-" + username'
               )
                 i18n(:args='LTags("span")') Add {span_}to channel{_span}
@@ -108,7 +108,7 @@ modal-base-template.has-background(
                 i18n Added.
                 button-submit.is-unstyled.c-action-undo(
                   v-if='!isDirectMessage()'
-                  @click.stop='removeMember(username, true)'
+                  @click.stop='removeMember(contractID, true)'
                 )
                   i18n Undo
 </template>
@@ -154,10 +154,13 @@ export default ({
       'currentGroupState',
       'groupMembersSorted',
       'getGroupChatRooms',
-      'chatRoomUsers',
-      'chatRoomUsersInSort',
+      'chatRoomMembers',
+      'chatRoomMembersInSort',
       'globalProfile',
-      'isJoinedChatRoom'
+      'isJoinedChatRoom',
+      'ourIdentityContractId',
+      'ourContactsById',
+      'ourContactProfilesById'
     ]),
     ...mapState([
       'currentGroupId'
@@ -203,12 +206,12 @@ export default ({
       // TODO: remove 'users', 'deletedDate' to keep consistency when this.isJoined === false
       return this.isJoined ? this.currentChatRoomState.attributes : this.getGroupChatRooms[this.currentChatRoomId]
     },
-    chatRoomUsersInOrder () {
+    chatRoomMembersInOrder () {
       return this.isJoined
-        ? this.chatRoomUsersInSort
+        ? this.chatRoomMembersInSort
         : this.groupMembersSorted
-          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users[member.username]?.status === PROFILE_STATUS.ACTIVE)
-          .map(member => ({ username: member.username, displayName: member.displayName }))
+          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].members[member.username]?.status === PROFILE_STATUS.ACTIVE)
+          .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
     }
   },
   mounted () {
@@ -217,59 +220,65 @@ export default ({
   methods: {
     initializeMembers () {
       if (this.isDirectMessage()) {
-        this.addedMembers = Object.keys(this.chatRoomUsers)
-          .map(username => {
-            const profile = username === this.ourUsername ? this.globalProfile(username) : this.ourContactProfiles[username]
+        this.addedMembers = Object.keys(this.chatRoomMembers)
+          .map(contractID => {
+            const profile = contractID === this.ourIdentityContractId ? this.globalProfile(contractID) : this.ourContactProfilesById[contractID]
             return {
               displayName: profile.displayName,
-              username,
+              username: profile.username,
+              contractID,
               departedDate: null
             }
           })
         // TODO: every user needs to sync his contacts and also users from group messages
         // https://okturtles.slack.com/archives/C0EH7P20Y/p1669109352107659
-        this.canAddMembers = this.ourContacts
-          .filter(username => !this.addedMembers.find(mb => mb.username === username))
-          .map(username => ({
-            username,
-            displayName: this.ourContactProfiles[username].displayName,
-            joinedDate: null
-          }))
+        this.canAddMembers = this.ourContactsById
+          .filter(contractID => !this.addedMembers.find(mb => mb.contractID === contractID))
+          .map(contractID => {
+            const profile = this.ourContactProfilesById[contractID] || {}
+            return {
+              contractID,
+              username: profile.username,
+              displayName: profile.displayName,
+              joinedDate: null
+            }
+          })
       } else {
-        this.addedMembers = this.chatRoomUsersInOrder.map(member => ({ ...member, departedDate: null }))
+        this.addedMembers = this.chatRoomMembersInOrder.map(member => ({ ...member, departedDate: null }))
         this.canAddMembers = this.groupMembersSorted
-          .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
+          .filter(member => !this.addedMembers.find(mb => mb.contractID === member.contractID) && !member.invitedBy)
           .map(member => ({
             username: member.username,
             displayName: member.displayName,
+            contractID: member.contractID,
             joinedDate: null
           }))
       }
     },
-    localizedName (username, displayName) {
-      const name = displayName || `@${username}`
-      return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    localizedName (contractID, username, displayName) {
+      const name = displayName || `@${username || contractID}`
+      return contractID === this.ourIdentityContractId ? L('{name} (you)', { name }) : name
     },
     closeModal () {
       this.$refs.modal.close()
     },
-    removable (username: string) {
+    removable (memberID: string) {
       if (!this.isJoined) {
         return false
       }
-      const { creator } = this.chatRoomAttribute
+      const { creatorID } = this.chatRoomAttribute
       if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
         return false
-      } else if (this.ourUsername === creator) {
+      } else if (this.ourIdentityContractId === creatorID) {
         return true
-      } else if (this.ourUsername === username) {
+      } else if (this.ourIdentityContractId === memberID) {
         return true
       }
       return false
     },
-    async removeMember (username: string, undoing = false) {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId, username)) {
-        console.log(`${username} is not part of this chatroom`)
+    async removeMember (contractID: string, undoing = false) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId, contractID)) {
+        console.log(`${contractID} is not part of this chatroom`)
         return
       }
       try {
@@ -277,24 +286,24 @@ export default ({
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
-            member: username
+            memberID: contractID
           }
         })
         if (undoing) {
           this.canAddMembers = this.canAddMembers.map(member =>
-            member.username === username ? { ...member, joinedDate: null } : member)
+            member.contractID === contractID ? { ...member, joinedDate: null } : member)
         } else {
           this.addedMembers = this.addedMembers.map(member =>
-            member.username === username ? { ...member, departedDate: new Date().toISOString() } : member)
+            member.contractID === contractID ? { ...member, departedDate: new Date().toISOString() } : member)
         }
       } catch (e) {
         console.error('ChatMembersAllModal.vue removeMember() error:', e)
       }
     },
-    async addToChannel (username: string, undoing = false) {
+    async addToChannel (contractID: string, undoing = false) {
       if (this.isDirectMessage()) {
-        const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(username))
-        const chatRoomId = this.ourGroupDirectMessageFromUsernames(usernames)
+        const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(contractID))
+        const chatRoomId = this.ourGroupDirectMessageFromUserIds(usernames)
         if (chatRoomId) {
           this.redirect(chatRoomId)
         } else {
@@ -305,22 +314,22 @@ export default ({
         return
       }
 
-      if (this.isJoinedChatRoom(this.currentChatRoomId, username)) {
-        console.log(`${username} is already joined this chatroom`)
+      if (this.isJoinedChatRoom(this.currentChatRoomId, contractID)) {
+        console.log(`${contractID} is already joined this chatroom`)
         return
       }
 
       try {
         await sbp('gi.actions/group/joinChatRoom', {
           contractID: this.currentGroupId,
-          data: { username, chatRoomID: this.currentChatRoomId }
+          data: { memberID: contractID, chatRoomID: this.currentChatRoomId }
         })
         if (undoing) {
           this.addedMembers = this.addedMembers.map(member =>
-            member.username === username ? { ...member, departedDate: null } : member)
+            member.contractID === contractID ? { ...member, departedDate: null } : member)
         } else {
           this.canAddMembers = this.canAddMembers.map(member =>
-            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+            member.contractID === contractID ? { ...member, joinedDate: new Date().toISOString() } : member)
         }
       } catch (e) {
         console.error('ChatMembersAllModal.vue addToChannel() error:', e)

@@ -50,12 +50,12 @@ function reduceDistribution (payments: Distribution): Distribution {
       const paymentB = payments[j]
 
       // Were paymentA and paymentB between the same two users?
-      if ((paymentA.from === paymentB.from && paymentA.to === paymentB.to) ||
-        (paymentA.to === paymentB.from && paymentA.from === paymentB.to)) {
+      if ((paymentA.fromMemberID === paymentB.fromMemberID && paymentA.toMemberID === paymentB.toMemberID) ||
+        (paymentA.toMemberID === paymentB.fromMemberID && paymentA.fromMemberID === paymentB.toMemberID)) {
         // Add or subtract paymentB's amount to paymentA's amount, depending on the relative
         // direction of the two payments:
-        paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount
-        paymentA.total += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.total
+        paymentA.amount += (paymentA.fromMemberID === paymentB.fromMemberID ? 1 : -1) * paymentB.amount
+        paymentA.total += (paymentA.fromMemberID === paymentB.fromMemberID ? 1 : -1) * paymentB.total
         // Remove paymentB from payments, and decrement the inner sentinal loop variable:
         payments.splice(j, 1)
         j--

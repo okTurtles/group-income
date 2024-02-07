@@ -10,7 +10,7 @@
     template(slot='cellUser')
       .c-user-wrapper
         .c-user-avatar-name
-          avatar-user.c-avatar(:username='payment.username' size='xs')
+          avatar-user.c-avatar(:contractID='payment.toMemberID' size='xs')
           strong.c-name {{ payment.displayName }}
         i18n.pill.is-neutral.hide-tablet(tag='div') Lightning
 
