@@ -13,14 +13,18 @@ import { mapGetters } from 'vuex'
 export default ({
   name: 'UserName',
   props: {
-    username: String
+    contractID: String
   },
   computed: {
     ...mapGetters([
-      'globalProfile'
+      'globalProfile',
+      'usernameFromID'
     ]),
+    username () {
+      return this.usernameFromID(this.contractID)
+    },
     displayName () {
-      return this.globalProfile(this.username).displayName
+      return this.globalProfile(this.contractID).displayName
     }
   }
 }: Object)

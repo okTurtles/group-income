@@ -236,7 +236,10 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
         if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
         return verifySignedValue[1]
       }
-    : () => JSON.parse(data._signedData[0])
+    : () => {
+        const signedValue = JSON.parse(data._signedData[0])
+        return mapperFn ? mapperFn(signedValue) : signedValue
+      }
 
   return wrapper({
     get signingKeyId () {

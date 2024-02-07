@@ -112,20 +112,21 @@ export default ({
       'groupProfiles',
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
-      'ourUsername',
-      'ourGroupProfile'
+      'ourIdentityContractId',
+      'ourGroupProfile',
+      'usernameFromID'
     ]),
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },
     whoIsPledging () {
       const groupProfiles = this.groupProfiles
-      return Object.keys(groupProfiles).filter(username => {
-        return groupProfiles[username].incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername
+      return Object.keys(groupProfiles).filter(memberID => {
+        return groupProfiles[memberID].incomeDetailsType === 'pledgeAmount' && memberID !== this.ourIdentityContractId
       })
     },
     contributionMemberText () {
-      const who = this.whoIsPledging
+      const who = this.whoIsPledging.map(w => this.usernameFromID(w))
       switch (who.length) {
         case 1:
           return L('{firstMember} will ensure you meet the mincome', {

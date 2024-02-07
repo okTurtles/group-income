@@ -81,7 +81,6 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'ourUsername',
       'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',

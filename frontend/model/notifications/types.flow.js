@@ -9,7 +9,7 @@ export type NewProposalType =
 
 export type Notification = {
   // Indicates which user avatar icon to display alongside the notification.
-  +avatarUsername: string;
+  +avatarUserID: string;
   +body: string;
   // If present, indicates in which group's notification list to display the notification.
   +groupID?: string;
@@ -34,7 +34,7 @@ export type NotificationLevel = 'danger' | 'info';
 export type NotificationScope = 'group' | 'user' | 'app';
 
 export type NotificationTemplate = {
-  +avatarUsername?: string;
+  +avatarUserID?: string;
   +body: string;
   +icon: string;
   +level: NotificationLevel;

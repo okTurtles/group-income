@@ -20,13 +20,13 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
           ul
             menu-item(
-              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
             menu-item(
-              v-if='ourUsername === summary.attributes.creator && !isDirectMessage()'
+              v-if='ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
               @click='editDescription'
               data-test='updateDescription'
             )
@@ -49,7 +49,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
@@ -60,16 +60,16 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
       i18n.is-unstyled.c-link(
         tag='button'
         @click='openModal("ChatMembersAllModal")'
-        :args='{ numMembers: summary.numberOfUsers  }'
+        :args='{ numMembers: summary.numberOfMembers  }'
         data-test='channelMembers'
       ) {numMembers} members
       template(
-        v-if='summary.attributes.description || ourUsername === summary.attributes.creator'
+        v-if='summary.attributes.description || ourIdentityContractId === summary.attributes.creatorID'
       )
         | ∙
         .is-unstyled(
           v-if='summary.attributes.description'
-          :class='{"c-link": ourUsername === summary.attributes.creator}'
+          :class='{"c-link": ourIdentityContractId === summary.attributes.creatorID}'
           data-test='updateDescription'
           @click='editDescription'
         )
@@ -136,7 +136,7 @@ export default ({
       'groupProfiles',
       'isJoinedChatRoom',
       'getGroupChatRooms',
-      'ourUsername'
+      'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
       return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({

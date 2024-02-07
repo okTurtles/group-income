@@ -63,7 +63,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentGroupState', 'ourUsername', 'ourIdentityContractId']),
+    ...mapGetters(['currentGroupState', 'ourIdentityContractId']),
     proposals () {
       const p = this.ephemeral.proposals
       return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()

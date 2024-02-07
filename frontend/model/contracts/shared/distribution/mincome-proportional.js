@@ -1,7 +1,7 @@
 'use strict'
 
 export type HaveNeedObject = {
-  name: string;
+  memberID: string;
   haveNeed: number
 }
 
@@ -27,8 +27,8 @@ export default function mincomeProportional (haveNeeds: Array<HaveNeedObject>): 
       const belowPercentage = Math.abs(needer.haveNeed) / totalNeed
       payments.push({
         amount: distributionAmount * belowPercentage,
-        from: haver.name,
-        to: needer.name
+        fromMemberID: haver.memberID,
+        toMemberID: needer.memberID
       })
     }
   }

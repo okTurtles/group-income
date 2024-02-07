@@ -29,8 +29,8 @@
       )
         div(slot='no-more')
           conversation-greetings(
-            :members='summary.numberOfUsers'
-            :creator='summary.attributes.creator'
+            :members='summary.numberOfMembers'
+            :creatorID='summary.attributes.creatorID'
             :type='summary.attributes.type'
             :joined='summary.isJoined'
             :name='summary.title'
@@ -38,8 +38,8 @@
           )
         div(slot='no-results')
           conversation-greetings(
-            :members='summary.numberOfUsers'
-            :creator='summary.attributes.creator'
+            :members='summary.numberOfMembers'
+            :creatorID='summary.attributes.creatorID'
             :type='summary.attributes.type'
             :joined='summary.isJoined'
             :name='summary.title'
@@ -73,7 +73,7 @@
           :edited='!!message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
-          :currentUsername='currentUserAttr.username'
+          :currentUserID='currentUserAttr.id'
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
@@ -298,9 +298,8 @@ export default ({
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
-      'chatRoomUsers',
+      'chatRoomMembers',
       'ourIdentityContractId',
-      'ourUsername',
       'currentIdentityState',
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
@@ -346,7 +345,7 @@ export default ({
       }[message.type]
     },
     isCurrentUser (from) {
-      return this.currentUserAttr.username === from
+      return this.currentUserAttr.id === from
     },
     who (message) {
       const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
@@ -573,7 +572,7 @@ export default ({
       Vue.set(this.messageState, 'contract', {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
-        users: cloneDeep(this.chatRoomUsers),
+        users: cloneDeep(this.chatRoomMembers),
         _vm: cloneDeep(this.currentChatVm),
         messages: [],
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
@@ -778,8 +777,7 @@ export default ({
         const isMessageAddedOrDeleted = (message: GIMessage) => {
           if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
 
-          const { action, meta } = value
-          const rootState = sbp('state/vuex/state')
+          const { action } = value
           let addedOrDeleted = 'NONE'
 
           if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
@@ -789,11 +787,12 @@ export default ({
             addedOrDeleted = 'DELETED'
           }
 
-          return { addedOrDeleted, self: rootState.loggedIn.username === meta.username }
+          // TODO: Use innerSigningContractID
+          return { addedOrDeleted }
         }
 
         // NOTE: while syncing the chatroom contract, we should ignore all the events
-        const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
+        const { addedOrDeleted } = isMessageAddedOrDeleted(message)
 
         // This ensures that `this.latestEvents.push(message.serialize())` below
         // happens in order
@@ -839,10 +838,11 @@ export default ({
           this.$forceUpdate()
 
           if (this.ephemeral.scrolledDistance < 50) {
-            if (addedOrDeleted === 'ADDED') {
+            if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
               this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              if (!self && isScrollable) {
+              const fromOurselves = this.isCurrentUser(this.messages[this.messages.length - 1].from)
+              if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]

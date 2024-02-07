@@ -6,24 +6,23 @@ const DMMixin: Object = {
   computed: {
     ...mapGetters([
       'currentChatRoomId',
-      'ourUsername',
       'ourContacts',
       'ourContactProfiles',
       'isDirectMessage',
       'ourGroupDirectMessages',
       'ourIdentityContractId',
-      'ourGroupDirectMessageFromUsernames'
+      'ourGroupDirectMessageFromUserIds'
     ])
   },
   methods: {
-    async createDirectMessage (usernames: string | string[]) {
-      if (typeof usernames === 'string') {
-        usernames = [usernames]
+    async createDirectMessage (memberIDs: string | string[]) {
+      if (typeof memberIDs === 'string') {
+        memberIDs = [memberIDs]
       }
       try {
         await sbp('gi.actions/identity/createDirectMessage', {
           contractID: this.ourIdentityContractId,
-          data: { usernames },
+          data: { memberIDs },
           hooks: {
             onprocessed: (message) => {
               this.redirect(message.decryptedValue().data.contractID)

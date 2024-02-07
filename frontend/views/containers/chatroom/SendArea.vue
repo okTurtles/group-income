@@ -350,21 +350,21 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'chatRoomUsers',
+      'chatRoomMembers',
       'currentChatRoomId',
       'chatRoomAttributes',
-      'ourContactProfiles',
       'ourContactProfilesById',
       'globalProfile',
-      'ourUsername'
+      'ourIdentityContractId'
     ]),
-    users () {
-      return Object.keys(this.chatRoomUsers)
-        .map(username => {
-          const { displayName, picture } = this.ourContactProfiles[username]
+    members () {
+      return Object.keys(this.chatRoomMembers)
+        .map(memberID => {
+          const { username, displayName, picture } = this.ourContactProfilesById[memberID]
           return {
+            memberID,
             username,
-            displayName: displayName || username,
+            displayName: displayName || username || memberID,
             picture
           }
         })
@@ -387,7 +387,7 @@ export default ({
       const userArr = this.ephemeral.typingUsers
 
       if (userArr.length) {
-        const getDisplayName = (username) => (this.globalProfile(username).displayName || username)
+        const getDisplayName = (memberID) => (this.globalProfile(memberID).displayName || this.globalProfile(memberID).username || memberID)
         const isMultiple = userArr.length > 1
         const usernameCombined = userArr.map(u => getDisplayName(u)).join(', ')
 
@@ -488,8 +488,10 @@ export default ({
     addSelectedMention (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
+      const selection = this.ephemeral.mention.options[index]
 
-      const mention = makeMentionFromUsername(this.ephemeral.mention.options[index].username).me
+      const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
+      const mention = selection.memberID === mentionObj.all ? mentionObj.all : mentionObj.me
       const value = curValue.slice(0, this.ephemeral.mention.position) +
          mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
@@ -559,6 +561,18 @@ export default ({
 
         this.clearAllAttachments()
       }
+
+      /* Process mentions in the form @username => @userID */
+      const mentionStart = makeMentionFromUsername('').all[0]
+      const availableMentions = this.members.map(memberID => memberID.username)
+      msgToSend = msgToSend.replace(
+        // This regular expression matches all @username mentions that are
+        // standing alone between spaces
+        new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g'),
+        (_, username) => {
+          return makeMentionFromUsername(username).me
+        }
+      )
 
       this.$emit('send', msgToSend) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
@@ -636,22 +650,20 @@ export default ({
       this.updateTextWithLines()
     },
     startMention (keyword, position) {
-      const all = makeMentionFromUsername('').all.slice(1)
-      let availableMentions = this.users
+      const all = makeMentionFromUsername('').all
+      const availableMentions = Array.from(this.members)
       // NOTE: '@all' mention should only be needed when the members are more than 3
-      if (this.users.length > 2) {
-        availableMentions = [
-          ...availableMentions,
-          {
-            username: all,
-            displayName: all,
-            picture: '/assets/images/horn.png'
-          }
-        ]
+      if (availableMentions.length > 2) {
+        availableMentions.push({
+          memberID: all,
+          displayName: all.slice(1),
+          picture: '/assets/images/horn.png'
+        })
       }
+      const normalKeyword = keyword.normalize().toUpperCase()
       this.ephemeral.mention.options = availableMentions.filter(user =>
-        user.username.toUpperCase().includes(keyword.toUpperCase()) ||
-        user.displayName.toUpperCase().includes(keyword.toUpperCase()))
+        user.username?.normalize().toUpperCase().includes(normalKeyword) ||
+        user.displayName?.normalize().toUpperCase().includes(normalKeyword))
       this.ephemeral.mention.position = position
       this.ephemeral.mention.index = 0
     },
@@ -701,9 +713,9 @@ export default ({
     },
     onUserTyping (data) {
       if (data.contractID !== this.currentChatRoomId) return
-      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
+      const typingUser = data.innerSigningContractID
 
-      if (typingUser && typingUser !== this.ourUsername) {
+      if (typingUser && typingUser !== this.ourIdentityContractId) {
         const addToList = username => {
           this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
         }
@@ -715,18 +727,18 @@ export default ({
     },
     onUserStopTyping (data) {
       if (data.contractID !== this.currentChatRoomId) return
-      const typingUser = this.ourContactProfilesById[data.innerSigningContractID]?.username
+      const typingUser = data.innerSigningContractID
 
-      if (typingUser && typingUser !== this.ourUsername) {
+      if (typingUser && typingUser !== this.ourIdentityContractId) {
         this.removeFromTypingUsersArray(typingUser)
       }
     },
-    removeFromTypingUsersArray (username) {
-      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== username)
+    removeFromTypingUsersArray (memberID) {
+      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== memberID)
 
-      if (this.typingUserTimeoutIds[username]) {
-        clearTimeout(this.typingUserTimeoutIds[username])
-        delete this.typingUserTimeoutIds[username]
+      if (this.typingUserTimeoutIds[memberID]) {
+        clearTimeout(this.typingUserTimeoutIds[memberID])
+        delete this.typingUserTimeoutIds[memberID]
       }
     },
     emitUserTypingEvent () {

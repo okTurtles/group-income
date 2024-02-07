@@ -3,17 +3,17 @@
   v-if='$store.state.loggedIn'
   data-test='userProfile'
 )
-  profile-card(:username='ourUsername' direction='top-left')
+  profile-card(:contractID='ourIdentityContractId' direction='top-left')
     button.is-unstyled.c-avatar-user(data-test='openProfileCard')
-      avatar-user(:username='ourUsername' size='sm')
+      avatar-user(:contractID='ourIdentityContractId' size='sm')
       .c-user
         strong.has-ellipsis(
-          :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
-        ) {{ userDisplayName || ourUsername }}
+          :data-test='ourDisplayName ? "profileDisplayName" : "profileName"'
+        ) {{ ourDisplayName || ourUsername || ourIdentityContractId }}
 
         span.has-ellipsis(
           data-test='profileName'
-          v-if='userDisplayName'
+          v-if='ourDisplayName'
         ) @{{ ourUsername }}
 
   button.is-icon-small(
@@ -38,9 +38,10 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername'
+      'ourUsername',
+      'ourIdentityContractId'
     ]),
-    userDisplayName () {
+    ourDisplayName () {
       const userContract = this.$store.getters.currentIdentityState
       return userContract && userContract.attributes && userContract.attributes.displayName
     }

@@ -251,9 +251,9 @@ export const encryptedNotification = (
   }
 }
 
-export async function createInvite ({ quantity = 1, creator, expires, invitee }: {
-  quantity: number, creator: string, expires: number, invitee?: string
-}): Promise<{inviteKeyId: string; creator: string; invitee?: string; }> {
+export async function createInvite ({ quantity = 1, creatorID, expires, invitee }: {
+  quantity: number, creatorID: string, expires: number, invitee?: string
+}): Promise<{inviteKeyId: string; creatorID: string; invitee?: string; }> {
   const rootState = sbp('state/vuex/state')
 
   if (!rootState.currentGroupId) {
@@ -308,7 +308,7 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
 
   return {
     inviteKeyId,
-    creator,
+    creatorID,
     invitee
   }
 }

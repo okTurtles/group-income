@@ -113,14 +113,14 @@ async function startApp () {
         allowedSelectors: [
           'namespace/lookup',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
-          'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/cancelRemove', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation',
           'chelonia/contract/waitingForKeyShareTo',
+          'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/chatroom/leave',
-          'gi.actions/group/removeOurselves',
-          'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
+          'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
           'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
           'gi.notifications/emit',
@@ -149,10 +149,10 @@ async function startApp () {
           errorNotification('handleEvent', e, message)
         }
       },
-      processError: (e: Error, message: GIMessage) => {
+      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
           sbp('okTurtles.eventQueue/queueEvent', message.contractID(), [
-            'gi.actions/group/autobanUser', message, e
+            'gi.actions/group/autobanUser', message, e, msgMeta
           ])
         }
         // For now, we ignore all missing keys errors

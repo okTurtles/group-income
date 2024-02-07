@@ -137,6 +137,13 @@ export default (sbp('sbp/selectors/register', {
             name: `${userID}/${userCSKid}`
           })
         ],
+        data: {
+          ...params.data,
+          attributes: {
+            ...params.data?.attributes,
+            creatorID: userID
+          }
+        },
         contractName: 'gi.contracts/chatroom'
       })
 
@@ -159,8 +166,7 @@ export default (sbp('sbp/selectors/register', {
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
     // $FlowFixMe
-    return Promise.all(Object.keys(state.users).map(async (username) => {
-      const pContractID = await sbp('namespace/lookup', username)
+    return Promise.all(Object.keys(state.members).map((pContractID) => {
       const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
       if (!CEKid) {
         console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
@@ -188,9 +194,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
-    const rootGetters = sbp('state/vuex/getters')
     const rootState = sbp('state/vuex/state')
-    const userID = rootGetters.ourContactProfiles[params.data.username]?.contractID
+    const userID = params.data.memberID || rootState.loggedIn.identityContractID
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
@@ -244,7 +249,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootGetters = sbp('state/vuex/getters')
-    const userID = rootGetters.ourContactProfiles[params.data.member]?.contractID
+    const userID = rootGetters.ourContactProfiles[params.data.memberID]?.contractID
 
     const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 

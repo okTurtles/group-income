@@ -11,7 +11,7 @@ modal-base-template.has-background(
     .card.c-card
       users-selector(
         :label='L("Search")'
-        :usernames='selections'
+        :userIDs='selections'
         :autofocus='true'
         @change='onChangeKeyword'
         @remove='onRemoveSelection'
@@ -46,18 +46,18 @@ modal-base-template.has-background(
           :key='chatRoomId'
         )
           profile-card(
-            :username='lastJoinedPartner'
+            :contractID='lastJoinedPartner'
             deactivated
             direction='top-left'
           )
             .c-identity
               .picture-wrapper
-                avatar-user(:username='lastJoinedPartner' size='sm')
+                avatar-user(:contractID='lastJoinedPartner' size='sm')
                 .c-badge(v-if='partners.length > 1') {{ partners.length }}
               .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.join(', @') }}
+                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map((p => usernameFromID(p))).join(', @') }}
 
       .is-subtitle
         i18n(
@@ -70,13 +70,13 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in filteredOthers'
-          @click='onAddSelection(username)'
+          v-for='{contractID, username, displayName} in filteredOthers'
+          @click='onAddSelection(contractID)'
           :key='username'
         )
-          profile-card(:username='username' deactivated direction='top-left')
+          profile-card(:contractID='contractID' deactivated direction='top-left')
             .c-identity
-              avatar-user(:username='username' size='sm')
+              avatar-user(:contractID='contractID' size='sm')
               .c-name(data-test='username')
                 span
                   strong {{ localizedName(username, displayName) }}
@@ -115,19 +115,23 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'userDisplayName',
-      'ourUnreadMessages'
+      'userDisplayNameFromID',
+      'usernameFromID',
+      'ourContactProfilesById',
+      'ourIdentityContractId',
+      'ourUnreadMessages',
+      'ourContactsById'
     ]),
     ourNewDMContacts () {
-      return this.ourContacts
-        .filter(username => {
-          if (username === this.ourUsername) {
+      return this.ourContactsById
+        .filter(userID => {
+          if (userID === this.ourIdentityContractId) {
             return false
           }
-          const chatRoomId = this.ourGroupDirectMessageFromUsernames(username)
+          const chatRoomId = this.ourGroupDirectMessageFromUserIds(userID)
           return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
         })
-        .map(username => this.ourContactProfiles[username])
+        .map(userID => this.ourContactProfilesById[userID])
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
@@ -165,7 +169,7 @@ export default ({
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
-        .filter(profile => !this.selections.includes(profile.username))
+        .filter(profile => !this.selections.includes(profile.contractID))
     },
     searchCount () {
       return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
@@ -183,22 +187,22 @@ export default ({
     onChangeKeyword (keyword) {
       this.searchText = keyword
     },
-    onAddSelection (usernames) {
-      if (typeof usernames === 'string') {
-        usernames = [usernames]
+    onAddSelection (contractIDs) {
+      if (typeof contractIDs === 'string') {
+        contractIDs = [contractIDs]
       }
-      for (const username of usernames) {
-        if (!this.selections.includes(username)) {
-          this.selections.push(username)
+      for (const contractID of contractIDs) {
+        if (!this.selections.includes(contractID)) {
+          this.selections.push(contractID)
         }
       }
     },
-    onRemoveSelection (username) {
-      this.selections = this.selections.filter(un => un !== username)
+    onRemoveSelection (contractID) {
+      this.selections = this.selections.filter(cID => cID !== contractID)
     },
     async onSubmit () {
       if (this.selections.length) {
-        const chatRoomId = this.ourGroupDirectMessageFromUsernames(this.selections)
+        const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.selections)
         if (chatRoomId) {
           this.redirect(chatRoomId)
         } else {
@@ -208,7 +212,7 @@ export default ({
         if (this.filteredRecents.length) {
           this.redirect(this.filteredRecents[0].chatRoomId)
         } else if (this.filteredOthers.length) {
-          await this.createDirectMessage(this.filteredOthers[0].username)
+          await this.createDirectMessage(this.filteredOthers[0].contractID)
         }
       }
 

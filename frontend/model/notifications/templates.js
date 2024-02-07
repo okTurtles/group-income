@@ -12,6 +12,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
+const usernameFromID = (userID) => sbp('state/vuex/getters').usernameFromID(userID)
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
 // To guard against XSS when rendering usernames, use the `v-safe-html` directive.
@@ -97,25 +98,25 @@ export default ({
       data: { lastUpdatedDate: data.lastUpdatedDate }
     }
   },
-  MEMBER_ADDED (data: { groupID: string, username: string }) {
+  MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
+    const name = strong(usernameFromID(data.memberID))
 
     return {
-      avatarUsername: data.username,
-      body: L('The group has a new member. Say hi to {name}!', {
-        name: strong(data.username)
-      }),
+      avatarUserID: data.memberID,
+      body: L('The group has a new member. Say hi to {name}!', { name }),
       icon: 'user-plus',
       level: 'info',
       linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
       scope: 'group'
     }
   },
-  MEMBER_LEFT (data: { groupID: string, username: string }) {
+  MEMBER_LEFT (data: { groupID: string, memberID: string }) {
+    const name = strong(usernameFromID(data.memberID))
     return {
-      avatarUsername: data.username,
+      avatarUserID: data.memberID,
       body: L('{name} has left your group. Contributions were updated accordingly.', {
-        name: strong(data.username)
+        name
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -123,12 +124,13 @@ export default ({
       scope: 'group'
     }
   },
-  MEMBER_REMOVED (data: { groupID: string, username: string }) {
+  MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
+    const name = strong(usernameFromID(data.memberID))
     return {
-      avatarUsername: data.username,
+      avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
       body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
-        name: strong(data.username)
+        name
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -136,14 +138,15 @@ export default ({
       scope: 'group'
     }
   },
-  NEW_PROPOSAL (data: { groupID: string, creator: string, subtype: NewProposalType }) {
+  NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
+    const name = strong(usernameFromID(data.creatorID))
     const bodyTemplateMap = {
-      ADD_MEMBER: (creator: string) => L('{member} proposed to add a member to the group. Vote now!', { member: strong(creator) }),
-      CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
-      CHANGE_DISTRIBUTION_DATE: (creator: string) => L('{member} proposed to change the group distribution date. Vote now!', { member: strong(creator) }),
-      CHANGE_VOTING_RULE: (creator: string) => L('{member} proposed to change the group voting system. Vote now!', { member: strong(creator) }),
-      REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) }),
-      GENERIC: (creator: string) => L('{member} created a proposal. Vote now!', { member: strong(creator) })
+      ADD_MEMBER: () => L('{name} proposed to add a member to the group. Vote now!', { name }),
+      CHANGE_MINCOME: () => L('{name} proposed to change the group mincome. Vote now!', { name }),
+      CHANGE_DISTRIBUTION_DATE: () => L('{name} proposed to change the group distribution date. Vote now!', { name }),
+      CHANGE_VOTING_RULE: () => L('{name} proposed to change the group voting system. Vote now!', { name }),
+      REMOVE_MEMBER: () => L('{name} proposed to remove a member from the group. Vote now!', { name }),
+      GENERIC: () => L('{name} created a proposal. Vote now!', { name })
     }
 
     const iconMap = {
@@ -156,9 +159,9 @@ export default ({
     }
 
     return {
-      avatarUsername: data.creator,
-      body: bodyTemplateMap[data.subtype](data.creator),
-      creator: data.creator,
+      avatarUserID: data.creatorID,
+      body: bodyTemplateMap[data.subtype](),
+      creatorID: data.creatorID,
       icon: iconMap[data.subtype],
       level: 'info',
       linkTo: '/dashboard#proposals',
@@ -166,7 +169,7 @@ export default ({
       scope: 'group'
     }
   },
-  PROPOSAL_EXPIRING (data: { creator: string, proposalType: string, proposalData: any, title?: string, proposalId: string }) {
+  PROPOSAL_EXPIRING (data: { creatorID: string, proposalType: string, proposalData: any, title?: string, proposalId: string }) {
     const typeToTitleMap = {
       [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
       [PROPOSAL_REMOVE_MEMBER]: L('Member removal'),
@@ -179,7 +182,7 @@ export default ({
     }
 
     return {
-      avatarUsername: data.creator,
+      avatarUserID: data.creatorID,
       body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. please vote!', {
         ...LTags('i'),
         proposalTitle: typeToTitleMap[data.proposalType]
@@ -191,59 +194,60 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, creator: string, proposalStatus: string }) {
+  PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposalStatus: string }) {
+    const name = strong(usernameFromID(data.creatorID))
     const bodyTemplateMap = {
       // TODO: needs various messages depending on the proposal type? TBD by team.
-      [STATUS_PASSED]: (creator: string) => L("{member}'s proposal has passed.", { member: strong(creator) }),
-      [STATUS_FAILED]: (creator: string) => L("{member}'s proposal has failed.", { member: strong(creator) })
+      [STATUS_PASSED]: () => L("{name}'s proposal has passed.", { name }),
+      [STATUS_FAILED]: () => L("{name}'s proposal has failed.", { name })
     }
 
     return {
-      avatarUsername: data.creator,
-      body: bodyTemplateMap[data.proposalStatus](data.creator),
+      avatarUserID: data.creatorID,
+      body: bodyTemplateMap[data.proposalStatus](),
       icon: 'cog', // TODO : to be decided.
       level: 'info',
       linkTo: '/dashboard#proposals',
       scope: 'group'
     }
   },
-  PAYMENT_RECEIVED (data: { creator: string, amount: string, paymentHash: string }) {
-    const { userDisplayName } = sbp('state/vuex/getters')
+  PAYMENT_RECEIVED (data: { creatorID: string, amount: string, paymentHash: string }) {
+    const { userDisplayNameFromID } = sbp('state/vuex/getters')
 
     return {
-      avatarUsername: data.creator,
-      body: L('{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
-        fromUser: userDisplayName(data.creator), // displayName of the sender
+      avatarUserID: data.creatorID,
+      body: L('{name} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        name: userDisplayNameFromID(data.creatorID), // displayName of the sender
         amount: data.amount,
         ...LTags('strong')
       }),
-      creator: data.creator,
+      creatorID: data.creatorID,
       icon: '',
       level: 'info',
       linkTo: `/payments?modal=PaymentDetail&id=${data.paymentHash}`,
       scope: 'group'
     }
   },
-  PAYMENT_THANKYOU_SENT (data: { creator: string, fromUser: string, toUser: string }) {
+  PAYMENT_THANKYOU_SENT (data: { creatorID: string, fromMemberID: string, toMemberID: string }) {
     return {
-      avatarUsername: data.creator,
+      avatarUserID: data.creatorID,
       body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: strong(data.fromUser),
+        name: strong(usernameFromID(data.fromMemberID)),
         ...LTags('strong')
       }),
-      creator: data.creator,
+      creatorID: data.creatorID,
       icon: '',
       level: 'info',
-      linkTo: `/payments?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
+      linkTo: `/payments?modal=ThankYouNoteModal&from=${data.fromMemberID}&to=${data.toMemberID}`,
       scope: 'group'
     }
   },
-  MINCOME_CHANGED (data: { creator: string, to: number, memberType: string, increased: boolean }) {
+  MINCOME_CHANGED (data: { creatorID: string, to: number, memberType: string, increased: boolean }) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
     return {
-      avatarUsername: data.creator,
+      avatarUserID: data.creatorID,
       body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
-      creator: data.creator,
+      creatorID: data.creatorID,
       icon: '',
       level: 'info',
       scope: 'group',
@@ -257,14 +261,14 @@ export default ({
       }]
     }
   },
-  NEW_DISTRIBUTION_PERIOD (data: { creator: string, memberType: string }) {
+  NEW_DISTRIBUTION_PERIOD (data: { creatorID: string, memberType: string }) {
     const bodyTemplate = {
       'pledger': L('A new distribution period has started. Please check Payment TODOs.'),
       'receiver': L('A new distribution period has started. Please update your income details if they have changed.')
     }
 
     return {
-      avatarUsername: data.creator,
+      avatarUserID: data.creatorID,
       body: bodyTemplate[data.memberType],
       level: 'info',
       icon: 'coins',

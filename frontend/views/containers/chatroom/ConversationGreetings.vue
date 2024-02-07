@@ -12,7 +12,7 @@
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!isDirectMessage() && joined && !description && creator === ourUsername'
+      v-if='!isDirectMessage() && joined && !description && creatorID === ourIdentityContractId'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -41,7 +41,7 @@ export default ({
     joined: {
       type: Boolean
     },
-    creator: {
+    creatorID: {
       type: String
     },
     type: {
@@ -55,7 +55,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourUsername', 'isDirectMessage']),
+    ...mapGetters(['ourIdentityContractId', 'isDirectMessage']),
     text () {
       return {
         GIBot: L('I’m here to keep you update while you are away.'),

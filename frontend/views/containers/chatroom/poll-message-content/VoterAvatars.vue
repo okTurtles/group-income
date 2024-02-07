@@ -6,7 +6,7 @@
 )
   template(v-for='entry in votersToDisplay')
     .c-number-avatar(v-if='isNum(entry)') +{{ entry }}
-    avatar-user.c-user-avatar(v-else :key='entry' :username='entry' size='xs')
+    avatar-user.c-user-avatar(v-else :key='entry' :contractID='entry' size='xs')
 
   .c-voters-tooltip(
     :class='{ "is-active": ephemeral.isTooltipActive }'
@@ -24,7 +24,7 @@
 
       ul.c-voters-list
         li.c-voter-item(v-for='(votername, index) in voters' :key='votername + index')
-          avatar-user.c-voter-item-avatar(:username='votername' size='xs')
+          avatar-user.c-voter-item-avatar(:contractID='votername' size='xs')
           span.c-voter-item-name {{ getDisplayName(votername) }}
 </template>
 

@@ -13,19 +13,19 @@ let me
 // since we are differentiate channels by their names in test mode
 // of course, we can create same name in production
 const chatRooms = [
-  { name: 'Channel12', description: 'Description for Channel12', isPrivate: false, users: [user1, user2] },
-  { name: 'Channel14', description: 'Description for Channel14', isPrivate: true, users: [user1] },
-  { name: 'Channel13', description: '', isPrivate: true, users: [user1, user2] },
-  { name: 'Channel11', description: '', isPrivate: false, users: [user1] },
-  { name: 'Channel15', description: '', isPrivate: false, users: [user1, user2] },
-  { name: 'Channel23', description: 'Description for Channel23', isPrivate: false, users: [user2] },
-  { name: 'Channel22', description: 'Description for Channel22', isPrivate: true, users: [user2, user1, user3] },
-  { name: 'Channel24', description: '', isPrivate: true, users: [user2, user3] },
-  { name: 'Channel21', description: '', isPrivate: false, users: [user2, user1] }
+  { name: 'Channel12', description: 'Description for Channel12', isPrivate: false, members: [user1, user2] },
+  { name: 'Channel14', description: 'Description for Channel14', isPrivate: true, members: [user1] },
+  { name: 'Channel13', description: '', isPrivate: true, members: [user1, user2] },
+  { name: 'Channel11', description: '', isPrivate: false, members: [user1] },
+  { name: 'Channel15', description: '', isPrivate: false, members: [user1, user2] },
+  { name: 'Channel23', description: 'Description for Channel23', isPrivate: false, members: [user2] },
+  { name: 'Channel22', description: 'Description for Channel22', isPrivate: true, members: [user2, user1, user3] },
+  { name: 'Channel24', description: '', isPrivate: true, members: [user2, user3] },
+  { name: 'Channel21', description: '', isPrivate: false, members: [user2, user1] }
 ]
-const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('Channel1') && c.users.includes(user2)).map(c => c.name)
-const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user1)).map(c => c.name)
-const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user3)).map(c => c.name)
+const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('Channel1') && c.members.includes(user2)).map(c => c.name)
+const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.members.includes(user1)).map(c => c.name)
+const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.members.includes(user3)).map(c => c.name)
 
 function getProposalItems () {
   return cy.getByDT('proposalsWidget').children()
@@ -251,11 +251,11 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it('user1 checks the visibilities, sort order and permissions', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
-    cy.log('ssers can update details(name, description) of the channels they created.')
+    cy.log('Users can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
     const detailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && c.description)[0]
-    const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.description && c.users.includes(me))[0]
-    const notJoinedChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.users.includes(me))[0]
+    const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.description && c.members.includes(me))[0]
+    const notJoinedChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.members.includes(me))[0]
 
     cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
     cy.log('"Add Description" button is visible because no description is added')
@@ -308,9 +308,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log('users can not see the private channels they are not part of.')
     cy.log('joined-channels are always in front of unjoined-channels. It means the channels order are different for each user.')
-    const joinedChannels = chatRooms.filter(c => c.users.includes(me)).map(c => c.name)
+    const joinedChannels = chatRooms.filter(c => c.members.includes(me)).map(c => c.name)
       .concat([CHATROOM_GENERAL_NAME]).sort()
-    const unjoinedChannels = chatRooms.filter(c => !c.users.includes(me) && !c.isPrivate).map(c => c.name).sort()
+    const unjoinedChannels = chatRooms.filter(c => !c.members.includes(me) && !c.isPrivate).map(c => c.name).sort()
     const visibleChatRooms = joinedChannels.concat(unjoinedChannels)
 
     cy.getByDT('channelsList').within(() => {
@@ -351,7 +351,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
     const leavingChannels = chatRooms
-      .filter(c => c.name.includes('Channel1') && c.users.includes(user2) && !c.isPrivate).map(c => c.name)
+      .filter(c => c.name.includes('Channel1') && c.members.includes(user2) && !c.isPrivate).map(c => c.name)
 
     // User1 kicks user2
     kickMemberFromChannel(leavingChannels[0], user2)

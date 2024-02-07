@@ -65,10 +65,10 @@ export default ({
       let list = {}
       // TODO: cleanup/improve this code
       if (this.distribution.length === 0) {
-        Object.keys(this.groupProfiles).forEach(username => {
-          const profile = this.groupProfiles[username]
+        Object.keys(this.groupProfiles).forEach(memberID => {
+          const profile = this.groupProfiles[memberID]
           if (profile.incomeDetailsType) {
-            list[username] = {
+            list[memberID] = {
               amount: 0,
               total: profile.incomeDetailsType === 'incomeAmount' ? profile.incomeAmount - this.mincome : profile.pledgeAmount
             }
@@ -76,8 +76,8 @@ export default ({
         })
       } else {
         this.distribution.forEach(distribution => {
-          list = this.addToList(list, distribution.from, distribution.amount)
-          list = this.addToList(list, distribution.to, -distribution.amount)
+          list = this.addToList(list, distribution.fromMemberID, distribution.amount)
+          list = this.addToList(list, distribution.toMemberID, -distribution.amount)
         })
       }
       // Sort object by need / pledge

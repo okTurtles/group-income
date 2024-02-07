@@ -127,7 +127,7 @@ export default ({
       'groupMincomeCurrency',
       'thisPeriodPaymentInfo',
       'ourPayments',
-      'userDisplayName'
+      'userDisplayNameFromID'
     ]),
     paymentsList () {
       return this.todoItems.map(item => {
@@ -136,8 +136,8 @@ export default ({
               hash: item.hash,
               data: item.data,
               meta: item.meta,
-              username: item.data.toUser,
-              displayName: this.userDisplayName(item.data.toUser),
+              toMemberID: item.data.toMemberID,
+              displayName: this.userDisplayNameFromID(item.data.toMemberID),
               date: item.meta.createdDate,
               monthstamp: dateToMonthstamp(item.meta.createdDate),
               amount: item.data.amount
@@ -185,7 +185,7 @@ export default ({
           //       getters.thisPeriodPaymentInfo.initialCurrency || getters.groupMincomeCurrency
           const memo = this.form.memo
           const paymentInfo = {
-            toUser: payment.username,
+            toMemberID: payment.toMemberID,
             amount: +pRecord.amount,
             total: payment.amount,
             isLate: payment.isLate,

@@ -32,7 +32,7 @@
 
     .c-voters
       .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
-        voter-avatars(:voters='entry.users' :optionName='entry.optionName')
+        voter-avatars(:voters='entry.members' :optionName='entry.optionName')
 </template>
 
 <script>
@@ -58,7 +58,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername'
+      'ourIdentityContractId'
     ]),
     isPollExpired () {
       return this.pollData.status === POLL_STATUS.CLOSED
@@ -75,7 +75,7 @@ export default ({
           id: opt.id,
           percent: this.getPercent(opt.voted),
           name: opt.value,
-          hasMyVote: opt.voted.includes(this.ourUsername)
+          hasMyVote: opt.voted.includes(this.ourIdentityContractId)
         })
 
         voters.push({

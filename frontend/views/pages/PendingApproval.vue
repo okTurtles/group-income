@@ -39,7 +39,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourUsername']),
+    ...mapGetters(['ourIdentityContractId']),
     ...mapState(['currentGroupId']),
     groupState () {
       if (!this.ephemeral.groupIdWhenMounted) return
@@ -52,7 +52,7 @@ export default ({
       const state = this.groupState
       return (
         // We want the group state to be active
-        state?.profiles?.[this.ourUsername]?.status === PROFILE_STATUS.ACTIVE &&
+        state?.profiles?.[this.ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
         // And we don't want to be in the process of re-syncing (i.e., re-building
         // the state after receiving new private keys)
         !sbp('chelonia/contract/isResyncing', state) &&

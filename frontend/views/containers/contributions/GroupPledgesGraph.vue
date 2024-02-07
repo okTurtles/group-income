@@ -74,7 +74,7 @@ export default ({
       'groupProfiles',
       'currentPaymentPeriod',
       'haveNeedsForThisPeriod',
-      'ourUsername'
+      'ourIdentityContractId'
     ]),
     graphData () {
       const doWePledge = this.type === 'pledgeAmount'
@@ -84,7 +84,7 @@ export default ({
       const ourPledgeAmount = doWePledge && this.amount >= 0 && this.amount
       const ourIncomeAmount = doWeNeedIncome && this.amount < mincome && this.amount
       const haveNeeds = this.haveNeedsForThisPeriod(this.currentPaymentPeriod)
-        .filter(entry => entry.name !== this.ourUsername)
+        .filter(entry => entry.memberID !== this.ourIdentityContractId)
       const othersIncomeNeeded = haveNeeds.reduce(
         (accu, entry) => entry.haveNeed < 0 ? accu + (-1 * entry.haveNeed) : accu, 0
       )
@@ -99,10 +99,10 @@ export default ({
       let ourIncomeToReceive = ourIncomeNeeded
 
       if (!doWePledge && neededPledges > 0) {
-        haveNeeds.push({ name: this.ourUsername, haveNeed: ourIncomeAmount - mincome })
+        haveNeeds.push({ memberID: this.ourIdentityContractId, haveNeed: ourIncomeAmount - mincome })
 
         ourIncomeToReceive = unadjustedDistribution({ haveNeeds, minimize: false })
-          .filter(i => i.to === this.ourUsername)
+          .filter(i => i.toMemberID === this.ourIdentityContractId)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
 

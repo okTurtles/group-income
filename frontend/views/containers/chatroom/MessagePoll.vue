@@ -43,7 +43,7 @@ export default ({
     pollData: Object, // { creator, status, question, options ... }
     messageId: String,
     messageHash: String,
-    currentUsername: String,
+    currentUserID: String,
     who: String,
     type: String,
     avatar: String,
@@ -72,14 +72,14 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
+      'ourIdentityContractId',
       'currentChatRoomId'
     ]),
     votesFlattened () {
       return this.pollData.options.reduce((accu, opt) => [...accu, ...opt.voted], [])
     },
     hasVoted () { // checks if the current user has voted on this poll or not
-      return this.votesFlattened.includes(this.ourUsername)
+      return this.votesFlattened.includes(this.ourIdentityContractId)
     },
     isPollEditable () { // If the current user is the creator of the poll and no one has voted yet, poll can be editted.
       return this.isCurrentUser && this.votesFlattened.length === 0
