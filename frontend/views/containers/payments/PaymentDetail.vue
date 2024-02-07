@@ -96,7 +96,7 @@ export default ({
     },
     subtitleCopy () {
       const toMemberID = this.payment.data.toMemberID
-      const arg = (username) => ({ name: this.userDisplayNameFromID(username) })
+      const arg = (memberID) => ({ name: this.userDisplayNameFromID(memberID) })
       return toMemberID === this.ourIdentityContractId ? L('Sent by {name}', arg(this.fromMemberID)) : L('Sent to {name}', arg(toMemberID))
     }
   },

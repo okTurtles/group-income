@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, string, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, optional, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -18,7 +18,7 @@ import {
   MESSAGE_TYPES,
   POLL_STATUS
 } from './shared/constants.js'
-import { createMessage, findMessageIdx, leaveChatRoom, makeMentionFromUserID, actionRequireInnerSignature } from './shared/functions.js'
+import { createMessage, findMessageIdx, leaveChatRoom, makeMentionFromUserID } from './shared/functions.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'

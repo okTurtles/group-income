@@ -755,7 +755,9 @@ export default (sbp('sbp/selectors/register', {
       const rootState = sbp('state/vuex/state')
       const contractState = rootState[groupID]
       if (memberID && rootState.contracts[groupID]?.type === 'gi.contracts/group' && contractState?.profiles?.[memberID]?.status === PROFILE_STATUS.ACTIVE) {
-        console.warn(`autoBanSenderOfMessage: autobanning ${memberID} from ${groupID}`)
+        const rootGetters = sbp('state/vuex/getters')
+        const username = rootGetters.usernameFromID(memberID)
+        console.warn(`autoBanSenderOfMessage: autobanning ${memberID} (username ${username}) from ${groupID}`)
         // find existing proposal if it exists
         let [proposalHash, proposal]: [string, ?Object] = Object.entries(contractState.proposals)
           .find(([hash, prop]: [string, Object]) => (

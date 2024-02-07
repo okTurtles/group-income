@@ -1050,7 +1050,7 @@ page(
               pre
                 | users-selector(
                 |   label='Search for users'
-                |   :users='["contractID 1", "contractID 2", "contractID 3"]'
+                |   :userIDs='["contractID 1", "contractID 2", "contractID 3"]'
                 |   defaultValue='contractID 1'
                 |   :autofocus='true'
                 |   @change='onChange'
@@ -1061,7 +1061,7 @@ page(
             td
               users-selector(
                 label='Search for users'
-                :users='form.searchUsers'
+                :userIDs='form.searchUserIDs'
                 defaultValue='contractID 1'
               )
         tr
@@ -1534,7 +1534,7 @@ export default ({
       },
       form: {
         searchValue: '',
-        searchUsers: [],
+        searchUserIDs: [],
         selectPayment: 'choose',
         copyableInput: '',
         sliderValue: 25

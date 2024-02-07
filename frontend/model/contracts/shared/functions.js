@@ -150,11 +150,3 @@ export function makeMentionFromUserID (userID: string): {
     all: '@all'
   }
 }
-
-export const actionRequireInnerSignature = (next: Function): Function => (data, props) => {
-  const innerSigningContractID = props.message.innerSigningContractID
-  if (!innerSigningContractID || innerSigningContractID === props.contractID) {
-    throw new Error('Missing inner signature')
-  }
-  return next(data, props)
-}

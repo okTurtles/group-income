@@ -14,13 +14,13 @@ import {
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
-import { createPaymentInfo, paymentHashesFromPaymentPeriod, actionRequireInnerSignature } from './shared/functions.js'
+import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { cloneDeep, deepEqualJSONType, omit, merge } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate, plusOnePeriodLength } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
 import { inviteType, groupChatRoomAttributesType } from './shared/types.js'
-import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 
@@ -1846,7 +1846,11 @@ sbp('chelonia/defineContract', {
         return
       }
 
-      // TODO: Use this later
+      // TODO: Use this later. This is an attempt at removing the need for JOINING_GROUP.
+      // The following detects whether we're in the process of joining, and if we
+      // are, it doesn't remove the contract and calls /join to complete the
+      // joining process. It'll likely be useful later for removing JOINING_GROUP
+      // and handling re-joininig within the group contract itself.
       /*
       if (isNaN(0) && member === identityContractID) {
         // It looks like we were removed. Now, before removing the contract we

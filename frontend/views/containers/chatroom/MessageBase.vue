@@ -204,6 +204,11 @@ export default ({
       const possibleMentions = Object.keys(this.chatRoomMembers).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
       return text
+        // We try to find all the mentions and render them as mentions instead
+        // of regular text. The `(?<=\\s|^)` part ensures that a mention is
+        // preceded by a space or is the start of a line and the `(?=[^\\w\\d]|$)`
+        // ensures that it's followed by an end-of-line or a character that's not
+        // a letter or a number (so `Hi @user!` works).
         .split(new RegExp(`(?<=\\s|^)(${allMention}|${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
           if (t === allMention) {

@@ -402,3 +402,11 @@ function unionOf_ (...typeFuncs) {
 // $FlowFixMe
 // const unionOf: UnionT = (unionOf_)
 export const unionOf = unionOf_
+
+export const actionRequireInnerSignature = (next: Function): Function => (data, props) => {
+  const innerSigningContractID = props.message.innerSigningContractID
+  if (!innerSigningContractID || innerSigningContractID === props.contractID) {
+    throw new Error('Missing inner signature')
+  }
+  return next(data, props)
+}

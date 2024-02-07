@@ -11,7 +11,7 @@ modal-base-template.has-background(
     .card.c-card
       users-selector(
         :label='L("Search")'
-        :users='selections'
+        :userIDs='selections'
         :autofocus='true'
         @change='onChangeKeyword'
         @remove='onRemoveSelection'

@@ -12,7 +12,7 @@ form.c-search-form(@submit.prevent='')
         name='search'
       )
         .profile-wrapper(
-          v-for='(contractID, index) in users'
+          v-for='(contractID, index) in userIDs'
           :key='index'
         )
           .profile
@@ -31,7 +31,7 @@ form.c-search-form(@submit.prevent='')
           @keyup='onHandleKeyUp'
         )
 
-  .buttons.is-end.c-button-container(v-if='users.length')
+  .buttons.is-end.c-button-container(v-if='userIDs.length')
     button-submit.is-success.c-create-btn(@click='submitHandler')
       i18n Create
 </template>
@@ -52,7 +52,7 @@ export default ({
       type: String,
       required: true
     },
-    users: {
+    userIDs: {
       type: Array,
       default: []
     },
