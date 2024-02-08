@@ -9,7 +9,7 @@ import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
-import { createCircularList } from '../shared/circularList.js'
+import CircularList from '../shared/CircularList.js'
 
 const Boom = require('@hapi/boom')
 
@@ -48,7 +48,7 @@ sbp('sbp/selectors/register', {
     let { HEAD: currentHEAD } = latestHEADinfo
     let prefix = '['
     if (MAX_EVENTS_AFTER) {
-      const circularList = createCircularList(MAX_EVENTS_AFTER, undefined)
+      const circularList = new CircularList(MAX_EVENTS_AFTER, undefined)
       while (currentHEAD !== hash) {
         const entry = await sbp('chelonia/db/getEntry', currentHEAD)
         currentHEAD = entry.message().previousHEAD
