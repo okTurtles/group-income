@@ -79,7 +79,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'userDisplayName',
+      'userDisplayNameFromID',
       'withGroupCurrency'
     ]),
     paymentType () {
@@ -123,8 +123,8 @@ export default ({
       const tableRows = itemsToExport.map(entry => {
         return [
           this.paymentType === 'sent'
-            ? this.userDisplayName(entry.data.toUser)
-            : this.userDisplayName(entry.meta.username), // 'Sent by' or 'Sent to'
+            ? this.userDisplayNameFromID(entry.data.toMemberID)
+            : this.userDisplayNameFromID(entry.data.fromMemberID), // 'Sent by' or 'Sent to'
           this.withGroupCurrency(entry.data.amount), // 'Amount',
           L('Manual'), // 'Payment metod' - !!TODO: once lightning payment is implemented in the app, update the logic here too.
           humanDate(

@@ -16,7 +16,6 @@ const PaymentsMixin: Object = {
       'groupPeriodPayments',
       'groupSettings',
       'groupSortedPeriodKeys',
-      'ourUsername',
       'ourIdentityContractId',
       'ourPayments',
       'periodAfterPeriod',
@@ -84,14 +83,14 @@ const PaymentsMixin: Object = {
       for (const periodStamp of Object.keys(periodPayments).sort().reverse()) {
         const paymentsByHash = await this.getPaymentDetailsByPeriod(periodStamp)
         const { paymentsFrom } = periodPayments[periodStamp]
-        for (const fromUser of Object.keys(paymentsFrom)) {
-          for (const toUser of Object.keys(paymentsFrom[fromUser])) {
-            if (toUser === this.ourUsername || fromUser === this.ourUsername) {
-              const receivedOrSent = toUser === this.ourUsername ? received : sent
-              for (const hash of paymentsFrom[fromUser][toUser]) {
+        for (const fromMemberID of Object.keys(paymentsFrom)) {
+          for (const toMemberID of Object.keys(paymentsFrom[fromMemberID])) {
+            if (toMemberID === this.ourIdentityContractId || fromMemberID === this.ourIdentityContractId) {
+              const receivedOrSent = toMemberID === this.ourIdentityContractId ? received : sent
+              for (const hash of paymentsFrom[fromMemberID][toMemberID]) {
                 if (hash in paymentsByHash) {
                   const { data, meta } = paymentsByHash[hash]
-                  receivedOrSent.push({ hash, data, meta, amount: data.amount, username: toUser, period: periodStamp })
+                  receivedOrSent.push({ hash, data, meta, amount: data.amount, toMemberID, period: periodStamp })
                 } else {
                   console.error(`getAllPaymentsInTypes: couldn't find payment ${hash} for period ${periodStamp}!`)
                 }

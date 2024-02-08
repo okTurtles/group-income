@@ -9,7 +9,6 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
 import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
-import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -220,18 +219,18 @@ const getters = {
     return state.loggedIn && state.loggedIn.username
   },
   ourProfileActive (state, getters) {
-    return getters.profileActive(getters.ourUsername)
+    return getters.profileActive(getters.ourIdentityContractId)
   },
   ourPendingAccept (state, getters) {
-    return getters.pendingAccept(getters.ourUsername)
+    return getters.pendingAccept(getters.ourIdentityContractId)
   },
   ourGroupProfile (state, getters) {
-    return getters.groupProfile(getters.ourUsername)
+    return getters.groupProfile(getters.ourIdentityContractId)
   },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
     const userContract = getters.currentIdentityState || {}
-    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername
+    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername || getters.ourIdentityContractId
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
@@ -241,7 +240,7 @@ const getters = {
   //       into group.js
   ourContributionSummary (state, getters) {
     const groupProfiles = getters.groupProfiles
-    const ourUsername = getters.ourUsername
+    const ourIdentityContractId = getters.ourIdentityContractId
     const ourGroupProfile = getters.ourGroupProfile
 
     if (!ourGroupProfile || !ourGroupProfile.incomeDetailsType) {
@@ -251,17 +250,16 @@ const getters = {
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const distribution = getters.groupIncomeDistribution
 
-    const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
-    const getDisplayName = (username) => getters.globalProfile(username)?.displayName || username
+    const nonMonetaryContributionsOf = (memberID) => groupProfiles[memberID].nonMonetaryContributions || []
 
     return {
       givingMonetary: (() => {
         if (doWeNeedIncome) { return null }
         const who = []
         const total = distribution
-          .filter(p => p.from === ourUsername)
+          .filter(p => p.fromMemberID === ourIdentityContractId)
           .reduce((acc, payment) => {
-            who.push(getDisplayName(payment.to))
+            who.push(getters.userDisplayNameFromID(payment.toMemberID))
             return acc + payment.amount
           }, 0)
 
@@ -272,9 +270,9 @@ const getters = {
         const needed = getters.groupSettings.mincomeAmount - ourGroupProfile.incomeAmount
         const who = []
         const total = distribution
-          .filter(p => p.to === ourUsername)
+          .filter(p => p.toMemberID === ourIdentityContractId)
           .reduce((acc, payment) => {
-            who.push(getDisplayName(payment.from))
+            who.push(getters.userDisplayNameFromID(payment.fromMemberID))
             return acc + payment.amount
           }, 0)
 
@@ -282,10 +280,10 @@ const getters = {
       })(),
       receivingNonMonetary: (() => {
         const listWho = Object.keys(groupProfiles)
-          .filter(username => username !== ourUsername && nonMonetaryContributionsOf(username).length > 0)
-        const listWhat = listWho.reduce((contr, username) => {
-          const displayName = getDisplayName(username)
-          const userContributions = nonMonetaryContributionsOf(username)
+          .filter(memberID => memberID !== ourIdentityContractId && nonMonetaryContributionsOf(memberID).length > 0)
+        const listWhat = listWho.reduce((contr, memberID) => {
+          const displayName = getters.userDisplayNameFromID(memberID)
+          const userContributions = nonMonetaryContributionsOf(memberID)
 
           userContributions.forEach((what) => {
             const contributionIndex = contr.findIndex(c => c.what === what)
@@ -305,13 +303,19 @@ const getters = {
       })()
     }
   },
-  userDisplayName (state, getters) {
-    return (username) => {
-      if (username === getters.ourUsername) {
+  usernameFromID (state, getters) {
+    return (userID) => {
+      const profile = getters.ourContactProfilesById[userID]
+      return profile?.username || userID
+    }
+  },
+  userDisplayNameFromID (state, getters) {
+    return (user) => {
+      if (user === getters.ourIdentityContractId) {
         return getters.ourUserDisplayName
       }
-      const profile = getters.ourContactProfiles[username] || {}
-      return profile.displayName || username
+      const profile = getters.ourContactProfilesById[user] || {}
+      return profile.displayName || profile.username || user
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
@@ -324,11 +328,11 @@ const getters = {
   latePayments (state, getters) {
     const periodPayments = getters.groupPeriodPayments
     if (Object.keys(periodPayments).length === 0) return
-    const ourUsername = getters.ourUsername
+    const ourIdentityContractId = getters.ourIdentityContractId
     const pPeriod = getters.periodBeforePeriod(getters.currentPaymentPeriod)
     const pPayments = periodPayments[pPeriod]
     if (pPayments) {
-      return pPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
+      return pPayments.lastAdjustedDistribution.filter(todo => todo.fromMemberID === ourIdentityContractId)
     }
   },
   // used with graphs like those in the dashboard and in the income details modal
@@ -363,17 +367,17 @@ const getters = {
       const thisPeriodPayments = periodPayments[period]
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
-        const ourUsername = getters.ourUsername
+        const ourIdentityContractId = getters.ourIdentityContractId
         const allPayments = getters.currentGroupState.payments
-        for (const toUser in paymentsFrom[ourUsername]) {
-          for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
-            const { data, meta } = allPayments[paymentHash]
+        for (const toMemberID in paymentsFrom[ourIdentityContractId]) {
+          for (const paymentHash of paymentsFrom[ourIdentityContractId][toMemberID]) {
+            const { data, meta, height } = allPayments[paymentHash]
 
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, period })
+            payments.push({ hash: paymentHash, height, data, meta, amount: data.amount, period })
           }
         }
       }
-      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
+      return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
@@ -384,27 +388,27 @@ const getters = {
       const thisPeriodPayments = periodPayments[period]
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
-        const ourUsername = getters.ourUsername
+        const ourIdentityContractId = getters.ourIdentityContractId
         const allPayments = getters.currentGroupState.payments
-        for (const fromUser in paymentsFrom) {
-          for (const toUser in paymentsFrom[fromUser]) {
-            if (toUser === ourUsername) {
-              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = allPayments[paymentHash]
+        for (const fromMemberID in paymentsFrom) {
+          for (const toMemberID in paymentsFrom[fromMemberID]) {
+            if (toMemberID === ourIdentityContractId) {
+              for (const paymentHash of paymentsFrom[fromMemberID][toMemberID]) {
+                const { data, meta, height } = allPayments[paymentHash]
 
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
+                payments.push({ hash: paymentHash, height, data, meta, amount: data.amount })
               }
             }
           }
         }
       }
-      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
+      return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
   ourPayments (state, getters) {
     const periodPayments = getters.groupPeriodPayments
     if (Object.keys(periodPayments).length === 0) return
-    const ourUsername = getters.ourUsername
+    const ourIdentityContractId = getters.ourIdentityContractId
     const cPeriod = getters.currentPaymentPeriod
     const pPeriod = getters.periodBeforePeriod(cPeriod)
     const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
@@ -414,7 +418,7 @@ const getters = {
 
     // TODO: take into account pending payments that have been sent but not yet completed
     const todo = () => {
-      return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
+      return getters.groupIncomeAdjustedDistribution.filter(p => p.fromMemberID === ourIdentityContractId)
     }
 
     return {
@@ -425,9 +429,9 @@ const getters = {
   },
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const ourUsername = getters.ourUsername
+    const ourIdentityContractId = getters.ourIdentityContractId
     const isOurPayment = (payment) => {
-      return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
+      return isNeeder ? payment.toMemberID === ourIdentityContractId : payment.fromMemberID === ourIdentityContractId
     }
     const sumUpAmountReducer = (acc, payment) => acc + payment.amount
     const cPeriod = getters.currentPaymentPeriod
@@ -456,7 +460,7 @@ const getters = {
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
+    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR)
     const expires = getters.currentGroupState._vm.authorizedKeys[inviteId].meta.expires
     return { inviteId, expires }
   },
@@ -473,32 +477,38 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles || !profiles[getters.ourUsername]) return []
-    const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
-    const isNewMember = (username) => {
-      if (username === getters.ourUsername) { return false }
-      const memberProfile = profiles[username]
+    if (!profiles || !profiles[getters.ourIdentityContractId]) return []
+    const weJoinedHeight = profiles[getters.ourIdentityContractId].joinedHeight
+    const isNewMember = (memberID) => {
+      if (memberID === getters.ourIdentityContractId) { return false }
+      const memberProfile = profiles[memberID]
       if (!memberProfile) return false
+      const memberJoinedHeight = memberProfile.joinedHeight
       const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
-      const joinedAfterUs = weJoinedMs <= memberJoinedMs
+      const joinedAfterUs = weJoinedHeight < memberJoinedHeight
       return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
     }
 
-    return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
-      .filter(username => getters.groupProfiles[username] ||
-         getters.groupMembersPending[username].expires >= Date.now())
-      .map(username => {
-        const { displayName } = getters.globalProfile(username) || {}
+    const groupMembersPending = getters.groupMembersPending
+
+    // $FlowFixMe[method-unbinding]
+    return [groupMembersPending, getters.groupProfiles].flatMap(Object.keys)
+      .filter(memberID => getters.groupProfiles[memberID] ||
+         getters.groupMembersPending[memberID].expires >= Date.now())
+      .map(memberID => {
+        const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || {}
         return {
+          id: memberID, // common unique ID: it can be either the contract ID or the invite key
+          contractID,
           username,
-          displayName: displayName || username,
-          invitedBy: getters.groupMembersPending[username],
-          isNew: isNewMember(username)
+          displayName: displayName || username || memberID,
+          invitedBy: getters.groupMembersPending[memberID],
+          isNew: isNewMember(memberID)
         }
       })
       .sort((userA, userB) => {
-        const nameA = userA.displayName.toUpperCase()
-        const nameB = userB.displayName.toUpperCase()
+        const nameA = userA.displayName.normalize().toUpperCase()
+        const nameB = userB.displayName.normalize().toUpperCase()
         // Show pending members first
         if (userA.invitedBy && !userB.invitedBy) { return -1 }
         if (!userA.invitedBy && userB.invitedBy) { return 1 }
@@ -514,8 +524,8 @@ const getters = {
   },
   globalProfile (state, getters) {
     // get profile from username who is part of current group
-    return username => {
-      return getters.ourContactProfiles[username]
+    return memberID => {
+      return getters.ourContactProfilesById[memberID]
     }
   },
   ourContactProfiles (state, getters) {
@@ -537,7 +547,7 @@ const getters = {
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
-          profiles[contractID] = attributes
+          profiles[contractID] = { ...attributes, contractID }
         }
       })
     return profiles
@@ -545,17 +555,17 @@ const getters = {
   ourContactsById (state, getters) {
     return Object.keys(getters.ourContactProfilesById)
       .sort((userIdA, userIdB) => {
-        const nameA = ((getters.ourContactProfilesById[userIdA].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdA].username || userIdA
-        const nameB = ((getters.ourContactProfilesById[userIdB].displayName?.toUpperCase())) || getters.ourContactProfilesById[userIdB].username || userIdB
-        return nameA > nameB ? 1 : -1
+        const nameA = ((getters.ourContactProfilesById[userIdA].displayName)) || getters.ourContactProfilesById[userIdA].username || userIdA
+        const nameB = ((getters.ourContactProfilesById[userIdB].displayName)) || getters.ourContactProfilesById[userIdB].username || userIdB
+        return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
   ourContacts (state, getters) {
     return Object.keys(getters.ourContactProfiles)
       .sort((usernameA, usernameB) => {
-        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase() || usernameA
-        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase() || usernameB
-        return nameA > nameB ? 1 : -1
+        const nameA = getters.ourContactProfiles[usernameA].displayName || usernameA
+        const nameB = getters.ourContactProfiles[usernameB].displayName || usernameB
+        return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
   ourGroupDirectMessages (state, getters) {
@@ -565,17 +575,17 @@ const getters = {
       const directMessageSettings = getters.ourDirectMessages[chatRoomId]
 
       // NOTE: skip DMs whose chatroom contracts are not synced yet
-      if (!chatRoomState || !chatRoomState.users?.[getters.ourUsername]) {
+      if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
         continue
       }
       // NOTE: get only visible DMs for the current group
       if (directMessageSettings.groupContractID === state.currentGroupId && directMessageSettings.visible) {
-        const users = Object.keys(chatRoomState.users)
-        const partners = users
-          .filter(username => username !== getters.ourUsername)
+        const members = Object.keys(chatRoomState.members)
+        const partners = members
+          .filter(memberID => memberID !== getters.ourIdentityContractId)
           .sort((p1, p2) => {
-            const p1JoinedDate = new Date(chatRoomState.users[p1].joinedDate).getTime()
-            const p2JoinedDate = new Date(chatRoomState.users[p2].joinedDate).getTime()
+            const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
+            const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
         // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
@@ -584,14 +594,14 @@ const getters = {
         const lastJoinedPartner = partners[partners.length - 1]
         currentGroupDirectMessages[chatRoomId] = {
           ...directMessageSettings,
-          users,
+          members,
           partners,
           lastJoinedPartner,
           // TODO: The UI should display display names, usernames and (in the future)
           // identity contract IDs differently in some way (e.g., font, font size,
           // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
           // users (e.g., 'user1' changing their display name to 'user2')
-          title: partners.map(un => getters.ourContactProfiles[un]?.displayName || un).join(', '),
+          title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
           picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
         }
       }
@@ -601,7 +611,7 @@ const getters = {
   // NOTE: this getter is used to find the ID of the direct message in the current group
   //       with the name[s] of partner[s]. Normally it's more useful to find direct message
   //       by the partners instead of contractID
-  ourGroupDirectMessageFromUsernames (state, getters) {
+  ourGroupDirectMessageFromUserIds (state, getters) {
     return (partners) => { // NOTE: string | string[]
       if (typeof partners === 'string') {
         partners = [partners]
@@ -618,7 +628,7 @@ const getters = {
     return chatRoomId => !!getters.ourGroupDirectMessages[chatRoomId || getters.currentChatRoomId]
   },
   isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => !!state[chatRoomId]?.users?.[username || getters.ourUsername]
+    return (chatRoomId: string, memberID?: string) => !!state[chatRoomId]?.members?.[memberID || getters.ourIdentityContractId]
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -664,7 +674,7 @@ const getters = {
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
-        chatRoom.users[state.loggedIn.username]) {
+        chatRoom.members[state.loggedIn.identityContractID]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
@@ -678,10 +688,10 @@ const getters = {
     }
     return chatRoomsInDetail
   },
-  chatRoomUsersInSort (state, getters) {
+  chatRoomMembersInSort (state, getters) {
     return getters.groupMembersSorted
-      .map(member => ({ username: member.username, displayName: member.displayName }))
-      .filter(member => !!getters.chatRoomUsers[member.username]) || []
+      .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
+      .filter(member => !!getters.chatRoomMembers[member.contractID]) || []
   }
 }
 

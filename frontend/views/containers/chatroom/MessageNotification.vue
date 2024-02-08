@@ -27,7 +27,7 @@ export default ({
     text: String,
     notification: Object, // { type, params }
     who: String,
-    currentUsername: String,
+    currentUserID: String,
     avatar: String,
     datetime: {
       type: Date,
@@ -47,15 +47,15 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayName', 'isDirectMessage', 'currentChatRoomId']),
+    ...mapGetters(['userDisplayNameFromID', 'isDirectMessage', 'currentChatRoomId']),
     message () {
       const {
-        username,
+        memberID,
         channelName,
         channelDescription,
         votedOptions
       } = this.notification.params
-      const displayName = this.userDisplayName(username)
+      const displayName = this.userDisplayNameFromID(memberID)
 
       const notificationTemplates = {
         // NOTE: 'onDirectMessage' is not being used at the moment

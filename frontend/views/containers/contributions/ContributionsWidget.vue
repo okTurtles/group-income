@@ -59,7 +59,6 @@ export default ({
       'currentGroupState',
       'groupProfiles',
       'currentIdentityState',
-      'ourUsername',
       'ourGroupProfile',
       'ourContributionSummary',
       'ourPaymentsSummary'

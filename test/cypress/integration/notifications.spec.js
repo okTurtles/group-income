@@ -12,19 +12,19 @@ const fakeNotificationsForDreamers = [
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'greg'
+      memberID: 'greg'
     }
   },
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'kate'
+      memberID: 'kate'
     }
   },
   {
     type: 'NEW_PROPOSAL',
     data: {
-      creator: 'greg',
+      creatorID: 'greg',
       subtype: 'CHANGE_MINCOME',
       value: '$1000'
     }
@@ -32,13 +32,13 @@ const fakeNotificationsForDreamers = [
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'bot'
+      memberID: 'bot'
     }
   },
   {
     type: 'NEW_PROPOSAL',
     data: {
-      creator: 'kate',
+      creatorID: 'kate',
       subtype: 'REMOVE_MEMBER'
     }
   }
@@ -48,13 +48,13 @@ const otherFakeNotificationsForDreamers = [
   {
     type: 'MEMBER_REMOVED',
     data: {
-      username: 'bot'
+      memberID: 'bot'
     }
   },
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'john'
+      memberID: 'john'
     }
   }
 ]
@@ -63,19 +63,19 @@ const fakeNotificationsForTurtles = [
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'alice'
+      memberID: 'alice'
     }
   },
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'bob'
+      memberID: 'bob'
     }
   },
   {
     type: 'MEMBER_ADDED',
     data: {
-      username: 'john'
+      memberID: 'john'
     }
   }
 ]

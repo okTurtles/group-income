@@ -11,8 +11,8 @@ const initSummary = {
   isPrivate: false,
   isGeneral: false,
   isJoined: false,
-  users: {},
-  numberOfUsers: 0,
+  members: {},
+  numberOfMembers: 0,
   participants: []
 }
 
@@ -38,12 +38,12 @@ const ChatMixin: Object = {
       'currentGroupState',
       'groupIdFromChatRoomId',
       'ourGroupDirectMessages',
-      'chatRoomUsers',
+      'chatRoomMembers',
       'generalChatRoomId',
       'getGroupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
-      'ourContactProfiles',
+      'ourContactProfilesById',
       'isDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
@@ -67,12 +67,12 @@ const ChatMixin: Object = {
         isPrivate: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         isGeneral: this.generalChatRoomId === this.currentChatRoomId,
         isJoined: true,
-        users: Object.fromEntries(Object.keys(this.currentChatRoomState.users).map(username => {
-          const { displayName, picture, email } = this.globalProfile(username) || {}
-          return [username, { ...this.currentChatRoomState.users[username], displayName, picture, email }]
+        members: Object.fromEntries(Object.keys(this.currentChatRoomState.members).map(memberID => {
+          const { displayName, picture, email } = this.globalProfile(memberID) || {}
+          return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
-        numberOfUsers: Object.keys(this.currentChatRoomState.users).length,
-        participants: this.ourContactProfiles // TODO: return only historical contributors
+        numberOfMembers: Object.keys(this.currentChatRoomState.members).length,
+        participants: this.ourContactProfilesById // TODO: return only historical contributors
       }
     }
   },
@@ -95,9 +95,9 @@ const ChatMixin: Object = {
     loadLatestState (chatRoomId: string): void {
       const summarizedAttr = this.getGroupChatRooms[chatRoomId]
       if (summarizedAttr) {
-        const { creator, name, description, type, privacyLevel, users } = summarizedAttr
-        const activeUsers = Object
-          .entries(users)
+        const { creator, name, description, type, privacyLevel, members } = summarizedAttr
+        const activeMembers = Object
+          .entries(members)
           .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
           .map(([username]) => {
             const { displayName, picture, email } = this.globalProfile(username) || {}
@@ -108,9 +108,9 @@ const ChatMixin: Object = {
           chatRoomId,
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
-          users: activeUsers,
-          numberOfUsers: activeUsers.length,
-          participants: this.ourContactProfiles // TODO: return only historical contributors
+          members: activeMembers,
+          numberOfMembers: activeMembers.length,
+          participants: this.ourContactProfilesById // TODO: return only historical contributors
         }
         this.refreshTitle(name)
       } else {

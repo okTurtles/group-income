@@ -69,7 +69,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
+      'ourIdentityContractId',
       'currentChatRoomId'
     ]),
     allowMultipleChoices () {
@@ -143,7 +143,7 @@ export default ({
   },
   mounted () {
     if (this.isChangeMode) {
-      const extractedIds = this.pollData.options.filter(opt => opt.voted.includes(this.ourUsername))
+      const extractedIds = this.pollData.options.filter(opt => opt.voted.includes(this.ourIdentityContractId))
         .map(opt => opt.id)
 
       if (extractedIds.length) {

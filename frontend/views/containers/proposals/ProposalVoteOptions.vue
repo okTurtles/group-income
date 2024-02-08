@@ -52,7 +52,7 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'ourUsername',
+      'ourIdentityContractId',
       'currentGroupState',
       'groupSettings',
       'currentIdentityState'
@@ -65,7 +65,7 @@ export default ({
         [VOTE_FOR]: L('yes'),
         [VOTE_AGAINST]: L('no')
       }
-      return humanStatus[this.proposal.votes[this.ourUsername]]
+      return humanStatus[this.proposal.votes[this.ourIdentityContractId]]
     },
     meta () {
       return this.proposal.meta
@@ -77,13 +77,13 @@ export default ({
       return this.proposal.data.proposalData
     },
     isToRemoveMe () {
-      return this.type === PROPOSAL_REMOVE_MEMBER && this.data.member === this.ourUsername
+      return this.type === PROPOSAL_REMOVE_MEMBER && this.data.memberID === this.ourIdentityContractId
     },
     hadVoted () {
-      return this.proposal.votes[this.ourUsername]
+      return this.proposal.votes[this.ourIdentityContractId]
     },
     ownProposal () {
-      return this.ourUsername === this.proposal.meta.username
+      return this.ourIdentityContractId === this.proposal.creatorID
     },
     refVoteMsg () {
       return this.$parent.$refs.voteMsg
@@ -95,7 +95,7 @@ export default ({
     },
     async voteFor () {
       // Avoid redundant vote from "Change vote" if already voted FOR before
-      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.ourUsername] === VOTE_FOR) {
+      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.ourIdentityContractId] === VOTE_FOR) {
         return null
       }
       this.ephemeral.changingVote = false
@@ -107,14 +107,12 @@ export default ({
         if (oneVoteToPass(proposalHash)) {
           if (this.type === PROPOSAL_INVITE_MEMBER) {
             passPayload = await createInvite({
-              invitee: this.proposal.data.proposalData.member,
-              creator: this.proposal.meta.username,
+              invitee: this.proposal.data.proposalData.memberName,
+              creatorID: this.proposal.creatorID,
               expires: this.currentGroupState.settings.inviteExpiryProposal
             })
           } else if (this.type === PROPOSAL_REMOVE_MEMBER) {
-            passPayload = {
-              secret: `${parseInt(Math.random() * 10000)}` // TODO: this
-            }
+            passPayload = {}
           }
         }
         await sbp('gi.actions/group/proposalVote', {
@@ -128,7 +126,7 @@ export default ({
     },
     async voteAgainst () {
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
-      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.ourUsername] === VOTE_AGAINST) {
+      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.ourIdentityContractId] === VOTE_AGAINST) {
         return null
       }
       this.ephemeral.changingVote = false

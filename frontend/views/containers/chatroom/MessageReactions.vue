@@ -3,7 +3,7 @@
   .c-emoticon-wrapper(
     v-for='(list, emoticon, index) in emoticonsList'
     :key='index'
-    :class='{"is-user-emoticon": list.includes(currentUsername)}'
+    :class='{"is-user-emoticon": list.includes(currentUserID)}'
     @click='$emit("selectEmoticon", emoticon)'
     v-if='list.length'
   )
@@ -35,7 +35,7 @@ export default ({
     Tooltip
   },
   props: {
-    currentUsername: String,
+    currentUserID: String,
     emoticonsList: {
       type: Object,
       default: null
@@ -51,10 +51,10 @@ export default ({
   methods: {
     emoticonUserList (emoticon, list) {
       const you = L('You')
-      const nameList = list.map(username => {
-        const userProp = this.globalProfile(username)
-        if (username === this.currentUsername) return you
-        if (userProp) return userProp.displayName || userProp.username
+      const nameList = list.map(contractID => {
+        const userProp = this.globalProfile(contractID)
+        if (contractID === this.currentUserID) return you
+        if (userProp) return userProp.displayName || userProp.username || contractID
         return null
       })
       const alreadyMade = nameList.indexOf(you)

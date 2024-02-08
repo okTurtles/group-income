@@ -19,7 +19,7 @@ export default ({
     MenuItem
   },
   props: {
-    member: String
+    memberID: String
   }
 }: Object)
 </script>

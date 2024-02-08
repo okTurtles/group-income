@@ -59,7 +59,7 @@
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
     :messageType='type'
-    :currentUsername='currentUsername'
+    :currentUserID='currentUserID'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
@@ -87,7 +87,7 @@ import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
@@ -112,7 +112,7 @@ export default ({
     messageHash: String,
     replyingMessage: String,
     who: String,
-    currentUsername: String,
+    currentUserID: String,
     avatar: String,
     datetime: {
       type: Date,
@@ -131,7 +131,7 @@ export default ({
     convertTextToMarkdown: Boolean
   },
   computed: {
-    ...mapGetters(['chatRoomUsers', 'ourUsername']),
+    ...mapGetters(['chatRoomMembers', 'usernameFromID']),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
     },
@@ -200,20 +200,27 @@ export default ({
           }
         ]
       }
-      const possibleMentions = [
-        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
-        makeMentionFromUsername('').all
-      ]
+      const allMention = makeMentionFromUserID('').all
+      const possibleMentions = Object.keys(this.chatRoomMembers).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
       return text
-        .split(new RegExp(`(${possibleMentions.join('|')})`))
-        .map(t => possibleMentions.includes(t)
-          ? { type: TextObjectType.Mention, text: t }
-          : {
-              type: TextObjectType.Text,
-              text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
-            }
-        )
+        // We try to find all the mentions and render them as mentions instead
+        // of regular text. The `(?<=\\s|^)` part ensures that a mention is
+        // preceded by a space or is the start of a line and the `(?=[^\\w\\d]|$)`
+        // ensures that it's followed by an end-of-line or a character that's not
+        // a letter or a number (so `Hi @user!` works).
+        .split(new RegExp(`(?<=\\s|^)(${allMention}|${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .map(t => {
+          if (t === allMention) {
+            return { type: TextObjectType.Mention, text: t }
+          }
+          return possibleMentions.includes(t)
+            ? { type: TextObjectType.Mention, text: t[0] + this.usernameFromID(t.slice(1)) }
+            : {
+                type: TextObjectType.Text,
+                text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
+              }
+        })
     }
   }
 }: Object)

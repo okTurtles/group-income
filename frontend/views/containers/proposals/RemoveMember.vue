@@ -12,8 +12,8 @@ proposal-template(
     avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
 
     p.is-title-4.c-descr(data-test='description')
-      i18n(:args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from the group
-      i18n(:args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from the group?
+      i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-if='groupShouldPropose') Remove {name} from the group
+      i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-else) Are you sure you want to remove {name} from the group?
 
     label.checkbox.c-use-admin-permissions(v-if='groupShouldPropose && isGroupCreator')
       input.input(type='checkbox' v-model='form.useAdminPermission')
@@ -40,7 +40,7 @@ export default ({
   },
   data () {
     return {
-      username: null,
+      memberID: null,
       ephemeral: {
         currentStep: 0
       },
@@ -55,16 +55,16 @@ export default ({
     }
   },
   created () {
-    const username = this.$route.query.username
-    const isPartOfGroup = this.groupProfiles[username]
+    const memberID = this.$route.query.memberID
+    const isPartOfGroup = this.groupProfiles[memberID]
 
-    if (username) {
-      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'RemoveMember', { username })
+    if (memberID) {
+      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'RemoveMember', { memberID })
     }
     if (isPartOfGroup) {
-      this.username = username
+      this.memberID = memberID
     } else {
-      console.warn('RemoveMember: Missing valid query "username".')
+      console.warn('RemoveMember: Missing valid query "memberID".')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
@@ -79,20 +79,20 @@ export default ({
       'groupSettings',
       'groupShouldPropose',
       'groupMembersCount',
-      'ourUsername',
-      'userDisplayName'
+      'ourIdentityContractId',
+      'userDisplayNameFromID'
     ]),
     memberGlobalProfile () {
-      return this.globalProfile(this.username) || {}
+      return this.globalProfile(this.memberID) || {}
     },
     isGroupCreator () {
-      return this.ourUsername === this.groupSettings.groupCreator
+      return this.ourIdentityContractId === this.groupSettings.groupCreatorID
     }
   },
   methods: {
     async submit (form) {
       this.$refs.formMsg.clean()
-      const member = this.username
+      const memberID = this.memberID
 
       if (this.groupShouldPropose && !this.form.useAdminPermission) {
         try {
@@ -101,7 +101,7 @@ export default ({
             data: {
               proposalType: PROPOSAL_REMOVE_MEMBER,
               proposalData: {
-                member,
+                memberID,
                 reason: form.reason
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
@@ -110,7 +110,7 @@ export default ({
           })
           this.ephemeral.currentStep += 1
         } catch (e) {
-          console.error('RemoveMember submit() error:', member, e)
+          console.error('RemoveMember submit() error:', memberID, e)
           this.$refs.formMsg.danger(e.message)
 
           this.ephemeral.currentStep = 0
@@ -120,11 +120,11 @@ export default ({
 
       try {
         await sbp('gi.actions/group/removeMember', {
-          contractID: this.currentGroupId, data: { member }
+          contractID: this.currentGroupId, data: { memberID }
         })
         this.$refs.proposal.close()
       } catch (e) {
-        console.error('Failed to remove member %s:', member, e.message)
+        console.error('Failed to remove member %s:', memberID, e.message)
         this.$refs.formMsg.danger(e.message)
       }
     }

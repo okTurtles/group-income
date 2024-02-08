@@ -61,8 +61,7 @@ export default ({
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
-            chatRoomID: this.currentChatRoomId,
-            member: this.loggedIn.username
+            chatRoomID: this.currentChatRoomId
           }
         })
       } catch (e) {

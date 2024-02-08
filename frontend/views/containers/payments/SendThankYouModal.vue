@@ -53,7 +53,6 @@ modal-template(
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgHello from '@svgs/hello.svg'
@@ -73,11 +72,6 @@ export default ({
       }
     }
   },
-  computed: {
-    ...mapGetters([
-      'ourUserDisplayName'
-    ])
-  },
   methods: {
     close () {
       this.$refs.modal.close(0)
@@ -92,8 +86,7 @@ export default ({
         await sbp('gi.actions/group/sendPaymentThankYou', {
           contractID: this.$store.state.currentGroupId,
           data: {
-            fromUser: this.ourUserDisplayName,
-            toUser: this.$route.query.to,
+            toMemberID: this.$route.query.toMemberID,
             memo: this.form.memo
           }
         })
