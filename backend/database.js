@@ -9,11 +9,10 @@ import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
-import CircularList from '../shared/CircularList.js'
 
 const Boom = require('@hapi/boom')
 
-const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10)
+const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
 const production = process.env.NODE_ENV === 'production'
 // Defaults to `fs` in production.
 const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
@@ -45,58 +44,42 @@ sbp('sbp/selectors/register', {
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
-    let { HEAD: currentHEAD } = latestHEADinfo
+    const entries = []
+    // Number of entries pushed.
+    let counter = 0
+    let currentHash = hash
     let prefix = '['
-    if (MAX_EVENTS_AFTER) {
-      const circularList = new CircularList(MAX_EVENTS_AFTER, undefined)
-      while (currentHEAD !== hash) {
-        const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-        currentHEAD = entry.message().previousHEAD
-        circularList.add(entry)
-      }
-      const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-      circularList.add(entry)
-
-      const entries = circularList.toArray()
-      let i = 0
-      return new Readable({
-        read (): void {
-          try {
-            const entry = entries[i++]
-            if (entry) {
-              const json = `"${strToB64(entry.serialize())}"`
-              this.push(prefix + json)
-              prefix = ','
-            } else {
-              this.push(prefix === ',' ? ']' : '[]')
-              this.push(null)
-            }
-          } catch (e) {
-            console.error(`read(): ${e.message}:`, e)
-            this.push(prefix === ',' ? ']' : '[]')
-            this.push(null)
-          }
+    try {
+      while (currentHash && (entries.length < MAX_EVENTS_AFTER)) {
+        const entry = await sbp('chelonia/db/getEntry', currentHash)
+        if (entry) {
+          entries.push(entry)
+          currentHash = await sbp('chelonia/db/get', `next=${currentHash}`)
         }
-      })
+      }
+    } catch (e) {
+      console.error(`read(): ${e.message}:`, e)
     }
+    entries.reverse()
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
-      async read (): Promise<void> {
+      read (): void {
         try {
-          const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-          const json = `"${strToB64(entry.serialize())}"`
-          if (currentHEAD !== hash) {
+          const entry = entries[counter]
+          if (entry) {
+            const json = `"${strToB64(entry.serialize())}"`
             this.push(prefix + json)
-            currentHEAD = entry.head().previousHEAD
             prefix = ','
+            counter++
           } else {
-            this.push(prefix + json + ']')
+            this.push(prefix === ',' ? ']' : '[]')
             this.push(null)
+            console.debug(`streamEntriesAfter: ${counter} entries pushed`)
           }
         } catch (e) {
           console.error(`read(): ${e.message}:`, e)
-          this.push(']')
+          this.push(prefix === ',' ? ']' : '[]')
           this.push(null)
         }
       }
