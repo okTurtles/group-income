@@ -587,6 +587,8 @@ export default ({
       })
     },
     openFileAttach (e) {
+      if (e.target.matches('input')) { return }
+
       e.target.blur()
       this.$refs.fileAttachmentInputEl.click()
     },
