@@ -65,6 +65,11 @@ route.POST('/event', {
 route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
+
+    if (contractID.startsWith('_private_') || since.startsWith('_private_')) {
+      return Boom.notFound()
+    }
+
     const stream = await sbp('backend/db/streamEntriesAfter', contractID, since)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
@@ -89,6 +94,7 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     if (!before) return Boom.badRequest('missing before')
     if (!limit) return Boom.badRequest('missing limit')
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
+    if (before.startsWith('_private_')) return Boom.notFound()
 
     const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
     request.events.once('disconnect', stream.destroy.bind(stream))
@@ -106,6 +112,7 @@ route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h
     if (!startHash) return Boom.badRequest('missing startHash')
     if (!endHash) return Boom.badRequest('missing endHash')
     if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
+    if (startHash.startsWith('_private_') || endHash.startsWith('_private_')) return Boom.notFound()
 
     const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
     request.events.once('disconnect', stream.destroy.bind(stream))
@@ -125,6 +132,7 @@ route.POST('/name', {
 }, async function (request, h) {
   try {
     const { name, value } = request.payload
+    if (value.startsWith('_private_')) return Boom.badData()
     return await sbp('backend/db/registerName', name, value)
   } catch (err) {
     return logger(err)
@@ -144,6 +152,7 @@ route.GET('/latestHEADinfo/{contractID}', {
 }, async function (request, h) {
   try {
     const { contractID } = request.params
+    if (contractID.startsWith('_private_')) return Boom.notFound()
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
@@ -211,6 +220,10 @@ route.GET('/file/{hash}', {
   const { hash } = request.params
   console.debug(`GET /file/${hash}`)
 
+  if (hash.startsWith('_private_')) {
+    return Boom.notFound()
+  }
+
   const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
   if (!blobOrString) {
     return Boom.notFound()
@@ -264,7 +277,7 @@ route.GET('/', {}, function (req, h) {
   return h.redirect(staticServeConfig.redirect)
 })
 
-route.POST('/zkpp/register/{contract}', {
+route.POST('/zkpp/register/{contractID}', {
   validate: {
     payload: Joi.alternatives([
       {
@@ -280,15 +293,16 @@ route.POST('/zkpp/register/{contract}', {
     ])
   }
 }, async function (req, h) {
+  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
   try {
     if (req.payload['b']) {
-      const result = await registrationKey(req.params['contract'], req.payload['b'])
+      const result = await registrationKey(req.params['contractID'], req.payload['b'])
 
       if (result) {
         return result
       }
     } else {
-      const result = await register(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+      const result = await register(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
 
       if (result) {
         return result
@@ -296,30 +310,31 @@ route.POST('/zkpp/register/{contract}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at POST /zkpp/{contract}: ' + e.message, { ip })
+    console.error('Error at POST /zkpp/{contractID}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contract}/auth_hash', {
+route.GET('/zkpp/{contractID}/auth_hash', {
   validate: {
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
+  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
   try {
-    const challenge = await getChallenge(req.params['contract'], req.query['b'])
+    const challenge = await getChallenge(req.params['contractID'], req.query['b'])
 
     return challenge || Boom.notFound()
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at GET /zkpp/{contract}/auth_hash: ' + e.message, { ip })
+    console.error('Error at GET /zkpp/{contractID}/auth_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contract}/contract_hash', {
+route.GET('/zkpp/{contractID}/contract_hash', {
   validate: {
     query: Joi.object({
       r: Joi.string().required(),
@@ -329,21 +344,22 @@ route.GET('/zkpp/{contract}/contract_hash', {
     })
   }
 }, async function (req, h) {
+  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
   try {
-    const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+    const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
       return salt
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at GET /zkpp/{contract}/contract_hash: ' + e.message, { ip })
+    console.error('Error at GET /zkpp/{contractID}/contract_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/updatePasswordHash/{contract}', {
+route.POST('/zkpp/updatePasswordHash/{contractID}', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -354,6 +370,7 @@ route.POST('/zkpp/updatePasswordHash/{contract}', {
     })
   }
 }, async function (req, h) {
+  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
   try {
     const result = await updateContractSalt(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 

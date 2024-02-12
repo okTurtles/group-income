@@ -1,27 +1,75 @@
-import { blake32Hash } from '~/shared/functions.js'
-import { timingSafeEqual } from 'crypto'
-import nacl from 'tweetnacl'
 import sbp from '@sbp/sbp'
-import { boxKeyPair, encryptContractSalt, hashStringArray, hashRawStringArray, hash, parseRegisterSalt, randomNonce, computeCAndHc, base64urlToBase64, base64ToBase64url } from '~/shared/zkpp.js'
+import { randomBytes, timingSafeEqual } from 'crypto'
+import nacl from 'tweetnacl'
+import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, encryptContractSalt, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
 
-// TODO HARDCODED VALUES
-// These values will eventually come from server the configuration
-const recordPepper = 'pepper' // TODO: get rid of `recordPepper`, just use `private/rid/${contractID}`
 // used to encrypt salts in database
-const recordMasterKey = 'masterKey' // TODO: store in file that's got root privs (after dropping privs)
+let recordSecret: string
 // corresponds to the key for the keyed Hash function in "Log in / session establishment"
-const challengeSecret = 'secret' // TODO: generate randomly and store in DB under private prefix
+let challengeSecret: string
 // corresponds to a component of s in Step 3 of "Salt registration"
-const registrationSecret = 'secret' // TODO: generate randomly and store in DB under private prefix
+let registrationSecret: string
+
+// Input keying material used to derive various secret keys used in this
+// protocol: recordSecret, challengeSecret and registrationSecret.
+// This key is unique to each instance (instance here means a single server or
+// multiple servers if they are meant to act as a single server from a user's
+// perspective, such as multiple servers behind a load balancer) and it should
+// not change after it is set. If it changes, the following will happen:
+//   1. The most severe consequence is that `recordSecret` will change.
+//      `recordSecret` is used to derive an encryption key used for encrypting
+//      salt values. Thus, those entries will become unreadable and passwords
+//      will stop working altogether. Rotating this value requires re-encrypting
+//      all ZKPP salt records, which must be done manually as it's not yet
+//      implemented.
+//   2. Less significant consequences are that `challengeSecret` and
+//      `registrationSecret` will change. These values are only used during a
+//      registration or login session and the impact of changing them is limited
+//      to ongoing login or registration sessions (note that this means the login
+//      process itself, not the 'session' created after login, which is
+//      unaffected). This means that in theory the impact of rotating these
+//      values is rather low. The only reason to use a stable value for these
+//      parameters is to ensure that users are as little inconvenienced as
+//      possible if the server is restarted or if they are handed over to a
+//      different machine (e.g., under a load balancer).
+// When migrating to a different server, note the following:
+//   1. For internal migrations (i.e., the server administrator doesn't change):
+//      When transfering data over to a new instance, ensure that the key
+//      `_private_immutable_zkpp_ikm` is moved over and that it's the same as
+//      for the old instance.
+//   2. For other migrations (when the server administrator changes):
+//      a. Instances could implement a method to transfer salt records from one
+//         server to the other, either in an encrypted or unencrypted form.
+//         Since the actual encryption key used for `_private_rid_` entries is
+//         different for each contract ID, either key is possible. However, this
+//         is not implemented.
+//      b. Alternatively, migration can be done without migrating password salt
+//         records. This requires user interaction to create new salt records
+//         on the new server.
+export const initZkpp = async () => {
+  const IKM = await sbp('chelonia/db/get', '_private_immutable_zkpp_ikm').then((IKM) => {
+    if (!IKM) {
+      const secret = randomBytes(33).toString('base64')
+      return sbp('chelonia/db/set', '_private_immutable_zkpp_ikm', secret).then(() => {
+        return secret
+      })
+    }
+    return IKM
+  })
+
+  recordSecret = Buffer.from(hashStringArray('private/recordSecret', IKM)).toString('base64')
+  challengeSecret = Buffer.from(hashStringArray('private/challengeSecret', IKM)).toString('base64')
+  registrationSecret = Buffer.from(hashStringArray('private/registrationSecret', IKM)).toString('base64')
+}
 
 const maxAge = 30
 
-const getZkppSaltRecord = async (contract: string) => {
-  const recordId = blake32Hash(hashStringArray('RID', contract, recordPepper))
+const getZkppSaltRecord = async (contractID: string) => {
+  const recordId = `_private_rid_${contractID}`
   const record = await sbp('chelonia/db/get', recordId)
 
   if (record) {
-    const encryptionKey = hashStringArray('REK', contract, recordMasterKey).slice(0, nacl.secretbox.keyLength)
+    const encryptionKey = hashStringArray('REK', contractID, recordSecret).slice(0, nacl.secretbox.keyLength)
 
     const recordBuf = Buffer.from(base64urlToBase64(record), 'base64')
     const nonce = recordBuf.slice(0, nacl.secretbox.nonceLength)
@@ -57,11 +105,9 @@ const getZkppSaltRecord = async (contract: string) => {
   return null
 }
 
-const setZkppSaltRecord = async (contract: string, hashedPassword: string, authSalt: string, contractSalt: string) => {
-  const recordId = blake32Hash(hashStringArray('RID', contract, recordPepper))
-  // TODO: replace the above line with:
-  // const recordId = `private/rid/${contractID}`
-  const encryptionKey = hashStringArray('REK', contract, recordMasterKey).slice(0, nacl.secretbox.keyLength)
+const setZkppSaltRecord = async (contractID: string, hashedPassword: string, authSalt: string, contractSalt: string) => {
+  const recordId = `_private_rid_${contractID}`
+  const encryptionKey = hashStringArray('REK', contractID, recordSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt])
   const recordCiphertext = nacl.secretbox(Buffer.from(recordPlaintext), nonce, encryptionKey)
@@ -91,10 +137,10 @@ export const getChallenge = async (contract: string, b: string): Promise<false |
   }
 }
 
-const verifyChallenge = (contract: string, r: string, s: string, userSig: string): boolean => {
+const verifyChallenge = (contractID: string, r: string, s: string, userSig: string): boolean => {
   // Check sig has the right format
   if (!/^[a-fA-F0-9]{1,11},[a-zA-Z0-9_-]{86}(?:==)?$/.test(userSig)) {
-    console.info(`wrong signature format for challenge for contract: ${contract}`)
+    console.info(`wrong signature format for challenge for contract: ${contractID}`)
     return false
   }
 
@@ -108,24 +154,24 @@ const verifyChallenge = (contract: string, r: string, s: string, userSig: string
   }
 
   const b = hash(r)
-  const sig = hashStringArray(contract, b, s, then, challengeSecret)
+  const sig = hashStringArray(contractID, b, s, then, challengeSecret)
   const macBuf = Buffer.from(base64urlToBase64(mac), 'base64')
 
   return sig.byteLength === macBuf.byteLength && timingSafeEqual(sig, macBuf)
 }
 
-export const registrationKey = async (contract: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
-  const record = await getZkppSaltRecord(contract)
+export const registrationKey = async (contractID: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
+  const record = await getZkppSaltRecord(contractID)
   if (record) {
     throw new Error('registrationKey: User record already exists')
   }
 
-  const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashStringArray('REG', contractID, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const keyPair = boxKeyPair()
   const s = base64ToBase64url(Buffer.concat([nonce, nacl.secretbox(keyPair.secretKey, nonce, encryptionKey)]).toString('base64'))
   const now = (Date.now() / 1000 | 0).toString(16)
-  const sig = [now, base64ToBase64url(Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64'))].join(',')
+  const sig = [now, base64ToBase64url(Buffer.from(hashStringArray(contractID, b, s, now, challengeSecret)).toString('base64'))].join(',')
 
   return {
     s,
@@ -134,26 +180,26 @@ export const registrationKey = async (contract: string, b: string): Promise<fals
   }
 }
 
-export const register = async (contract: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<boolean> => {
-  if (!verifyChallenge(contract, clientPublicKey, encryptedSecretKey, userSig)) {
-    console.warn('register: Error validating challenge: ' + JSON.stringify({ contract, clientPublicKey, userSig }))
+export const register = async (contractID: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<boolean> => {
+  if (!verifyChallenge(contractID, clientPublicKey, encryptedSecretKey, userSig)) {
+    console.warn('register: Error validating challenge: ' + JSON.stringify({ contract: contractID, clientPublicKey, userSig }))
     throw new Error('register: Invalid challenge')
   }
 
-  const record = await getZkppSaltRecord(contract)
+  const record = await getZkppSaltRecord(contractID)
 
   if (record) {
-    console.warn('register: Error: ZKPP salt record for contract ID ' + contract + ' already exists')
+    console.warn('register: Error: ZKPP salt record for contract ID ' + contractID + ' already exists')
     return false
   }
 
   const encryptedSecretKeyBuf = Buffer.from(base64urlToBase64(encryptedSecretKey), 'base64')
-  const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashStringArray('REG', contractID, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const secretKeyBuf = nacl.secretbox.open(encryptedSecretKeyBuf.slice(nacl.secretbox.nonceLength), encryptedSecretKeyBuf.slice(0, nacl.secretbox.nonceLength), encryptionKey)
 
   // Likely a bad implementation on the client side
   if (!secretKeyBuf) {
-    console.warn(`register: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error decrypting arguments for contract ID ${contractID} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
@@ -161,13 +207,13 @@ export const register = async (contract: string, clientPublicKey: string, encryp
 
   // Likely a bad implementation on the client side
   if (!parseRegisterSaltRes) {
-    console.warn(`register: Error parsing registration salt for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error parsing registration salt for contract ID ${contractID} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
   const [authSalt, contractSalt, hashedPasswordBuf] = parseRegisterSaltRes
 
-  await setZkppSaltRecord(contract, Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt)
+  await setZkppSaltRecord(contractID, Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt)
 
   return true
 }

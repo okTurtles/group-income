@@ -9,6 +9,7 @@ import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
+import { initZkpp } from './zkppSalt.js'
 
 const Boom = require('@hapi/boom')
 
@@ -204,6 +205,12 @@ export default async () => {
       },
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
         checkKey(key)
+        if (key.startsWith('_private_immutable_')) {
+          const existingValue = await readData(key)
+          if (existingValue !== undefined) {
+            throw new Error('Cannot set already set immutable key')
+          }
+        }
         await writeData(key, value)
         cache.set(key, value)
       }
@@ -247,4 +254,5 @@ export default async () => {
     }
     numNewKeys && console.log(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
+  await initZkpp()
 }
