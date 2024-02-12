@@ -2,6 +2,7 @@
 
 import nacl from 'tweetnacl'
 import should from 'should'
+import initDB from './database.js'
 import 'should-sinon'
 
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
@@ -16,6 +17,10 @@ const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash:
 
   return [authSalt, contractSalt, encryptedHashedPassword]
 }
+
+before(async () => {
+  await initDB()
+})
 
 describe('ZKPP Salt functions', () => {
   it('register() conforms to the API to register a new salt', async () => {
