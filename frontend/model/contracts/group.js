@@ -1178,26 +1178,24 @@ sbp('chelonia/defineContract', {
             // new member has joined, so subscribe to their identity contract
             // TODO: Check if member is active; will be easier once profiles
             // are indexed by contract ID
-            sbp('chelonia/contract/sync', innerSigningContractID).catch(() => {
+            sbp('chelonia/contract/sync', innerSigningContractID).then(() => {
+              const { profiles = {} } = state
+              const myProfile = profiles[loggedIn.identityContractID]
+
+              if (isActionYoungerThanUser(height, myProfile)) {
+                sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+                  createdDate: meta.createdDate,
+                  groupID: contractID,
+                  memberID: innerSigningContractID
+                })
+              }
+            }).catch(() => {
               console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`)
             })
           }
         }).catch(e => {
           console.error('[gi.contracts/group/inviteAccept/sideEffect]: An error occurred', e)
         })
-
-        if (innerSigningContractID !== loggedIn.identityContractID) {
-          const { profiles = {} } = state
-          const myProfile = profiles[loggedIn.identityContractID]
-
-          if (isActionYoungerThanUser(height, myProfile)) {
-            sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              memberID: innerSigningContractID
-            })
-          }
-        }
       }
     },
     'gi.contracts/group/inviteRevoke': {
