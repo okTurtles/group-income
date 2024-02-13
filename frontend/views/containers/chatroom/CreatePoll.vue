@@ -273,7 +273,7 @@ export default {
   height: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: $zindex-modal;
+  z-index: $zindex-modal + 1;
 
   &.is-active {
     pointer-events: initial;
