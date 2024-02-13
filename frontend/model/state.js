@@ -578,16 +578,17 @@ const getters = {
       if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
         continue
       }
-      // NOTE: get only visible DMs for the current group
-      if (directMessageSettings.groupContractID === state.currentGroupId && directMessageSettings.visible) {
-        const members = Object.keys(chatRoomState.members)
-        const partners = members
-          .filter(memberID => memberID !== getters.ourIdentityContractId)
-          .sort((p1, p2) => {
-            const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
-            const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
-            return p1JoinedDate - p2JoinedDate
-          })
+      // NOTE: direct messages should be filtered to the ones which are visible and of active group members
+      const members = Object.keys(chatRoomState.members)
+      const partners = members
+        .filter(memberID => memberID !== getters.ourIdentityContractId)
+        .sort((p1, p2) => {
+          const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
+          const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
+          return p1JoinedDate - p2JoinedDate
+        })
+      const hasActiveMember = partners.some(memberID => Object.keys(getters.groupProfiles).includes(memberID))
+      if (directMessageSettings.visible && hasActiveMember) {
         // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
         //       His profile picture can be used as the picture of the direct message
         //       possibly with the badge of the number of partners.

@@ -19,7 +19,7 @@ import { cloneDeep, deepEqualJSONType, omit, merge } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, dateIsWithinPeriod, DAYS_MILLIS, periodStampsForDate, plusOnePeriodLength } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies from './shared/currencies.js'
-import { inviteType, groupChatRoomAttributesType } from './shared/types.js'
+import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
@@ -1338,7 +1338,7 @@ sbp('chelonia/defineContract', {
       // The #General chatroom is added without an inner signature
       validate: objectOf({
         chatRoomID: string,
-        attributes: groupChatRoomAttributesType
+        attributes: chatRoomAttributesType
       }),
       process ({ data, meta, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes

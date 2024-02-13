@@ -55,6 +55,7 @@ export default ({
       'groupsByName',
       'ourUnreadMessages',
       'groupUnreadMessages',
+      'ourGroupDirectMessages',
       'unreadGroupNotificationCountFor'
     ]),
     badgeVisiblePerGroup () {
