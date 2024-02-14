@@ -29,7 +29,8 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string, height:number } (for contracts we've successfully subscribed to)
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
-  periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
+  periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
+  contractSiginingKeys: Object.create(null)
 }
 
 if (window.matchMedia) {
