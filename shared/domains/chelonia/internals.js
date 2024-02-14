@@ -7,7 +7,7 @@ import { b64ToStr, createCID } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, keyId } from './crypto.js'
+import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
@@ -169,14 +169,90 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/queueEvent': function (queueName, invocation) {
     return sbp('okTurtles.eventQueue/queueEvent', queueName, ['chelonia/private/invoke', this._instance, invocation])
   },
-  'chelonia/private/loadManifest': async function (manifestHash: string) {
+  'chelonia/private/verifyManifestSignature': function (contractName: string, manifestHash: string, manifest: Object) {
+    // We check that the manifest contains a 'signature' field with the correct
+    // shape
+    if (!has(manifest, 'signature') || typeof manifest.signature.keyId !== 'string' || typeof manifest.signature.value !== 'string') {
+      throw new Error(`Invalid or missing signature field for manifest ${manifestHash} (named ${contractName})`)
+    }
+
+    // Now, start the signature verification process
+    const rootState = sbp(this.config.stateSelector)
+    if (!has(rootState, 'contractSiginingKeys')) {
+      this.config.reactiveSet(rootState, 'contractSiginingKeys', Object.create(null))
+    }
+    // Because `contractName` comes from potentially unsafe sources (for
+    // instance, from `processMessage`), the key isn't used directly because
+    // it could overlap with current or future 'special' key names in JavaScript,
+    // such as `prototype`, `__proto__`, etc. We also can't guarantee that the
+    // `contractSiginingKeys` always has a null prototype, and, because of the
+    // way we manage state, neither can we use `Map`. So, we use prefix for the
+    // lookup key that's unlikely to ever be part of a special JS name.
+    const contractNameLookupKey = `name:${contractName}`
+    // If the contract name has been seen before, validate its signature now
+    let signatureValidated = false
+    if (has(rootState.contractSiginingKeys, contractNameLookupKey)) {
+      console.info(`[chelonia] verifying signature for ${manifestHash} with an existing key`)
+      if (!has(rootState.contractSiginingKeys[contractNameLookupKey], manifest.signature.keyId)) {
+        console.error(`The manifest with ${manifestHash} (named ${contractName}) claims to be signed with a key with ID ${manifest.signature.keyId}, which is not trusted. The trusted key IDs for this name are:`, Object.keys(rootState.contractSiginingKeys[contractNameLookupKey]))
+        throw new Error(`Invalid or missing signature in manifest ${manifestHash} (named ${contractName}). It claims to be signed with a key with ID ${manifest.signature.keyId}, which has not been authorized for this contract before.`)
+      }
+      const signingKey = rootState.contractSiginingKeys[contractNameLookupKey][manifest.signature.keyId]
+      verifySignature(signingKey, manifest.body + manifest.head, manifest.signature.value)
+      console.info(`[chelonia] successful signature verification for ${manifestHash} (named ${contractName}) using the already-trusted key ${manifest.signature.keyId}.`)
+      signatureValidated = true
+    }
+    // Otherwise, when this is a yet-unseen contract, we parse the body to
+    // see its allowed signers to trust on first-use (TOFU)
+    const body = JSON.parse(manifest.body)
+    // If we don't have a list of authorized signatures yet, verify this
+    // contract's signature and set the auhorized signing keys
+    if (!signatureValidated) {
+      console.info(`[chelonia] verifying signature for ${manifestHash} (named ${contractName}) for the first time`)
+      if (!has(body, 'signingKeys') || !Array.isArray(body.signingKeys)) {
+        throw new Error(`Invalid manifest file ${manifestHash} (named ${contractName}). Its body doesn't contain a 'signingKeys' list'`)
+      }
+      let contractSigningKeys: { [idx: string]: string}
+      try {
+        contractSigningKeys = Object.fromEntries(body.signingKeys.map((serializedKey) => {
+          return [
+            keyId(serializedKey),
+            serializedKey
+          ]
+        }))
+      } catch (e) {
+        console.error(`[chelonia] Error parsing the public keys list for ${manifestHash} (named ${contractName})`, e)
+        throw e
+      }
+      if (!has(contractSigningKeys, manifest.signature.keyId)) {
+        throw new Error(`Invalid or missing signature in manifest ${manifestHash} (named ${contractName}). It claims to be signed with a key with ID ${manifest.signature.keyId}, which is not listed in its 'signingKeys' field.`)
+      }
+      verifySignature(contractSigningKeys[manifest.signature.keyId], manifest.body + manifest.head, manifest.signature.value)
+      console.info(`[chelonia] successful signature verification for ${manifestHash} (named ${contractName}) using ${manifest.signature.keyId}. The following key IDs will now be trusted for this contract name`, Object.keys(contractSigningKeys))
+      signatureValidated = true
+      rootState.contractSiginingKeys[contractNameLookupKey] = contractSigningKeys
+    }
+
+    // If verification was successful, return the parsed body to make the newly-
+    // loaded contract available
+    return body
+  },
+  'chelonia/private/loadManifest': async function (contractName: string, manifestHash: string) {
+    if (!contractName || typeof contractName !== 'string') {
+      throw new Error('Invalid or missing contract name')
+    }
     if (this.manifestToContract[manifestHash]) {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
       return
     }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
-    const manifest = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('json'))
-    const body = JSON.parse(manifest.body)
+    const manifestSource = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+    const manifestHashOurs = createCID(manifestSource)
+    if (manifestHashOurs !== manifestHash) {
+      throw new Error(`expected manifest hash ${manifestHash}. Got: ${manifestHashOurs}`)
+    }
+    const manifest = JSON.parse(manifestSource)
+    const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
@@ -191,7 +267,6 @@ export default (sbp('sbp/selectors/register', {
       .reduce(reduceAllow, {})
     const allowedDoms = this.config.contracts.defaults.allowedDomains
       .reduce(reduceAllow, {})
-    let contractName: string // eslint-disable-line prefer-const
     const contractSBP = (selector: string, ...args) => {
       const domain = domainFromSelector(selector)
       if (selector.startsWith(contractName + '/')) {
@@ -292,7 +367,9 @@ export default (sbp('sbp/selectors/register', {
         return fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
       }
     })
-    contractName = this.defContract.name
+    if (contractName !== this.defContract.name) {
+      throw new Error(`Invalid contract name for manifest ${manifestHash}. Expected ${contractName} but got ${this.defContract.name}`)
+    }
     this.defContractSelectors.forEach(s => { allowedSels[s] = true })
     this.manifestToContract[manifestHash] = {
       slim: contractInfo === body.contractSlim,
@@ -946,7 +1023,16 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
     if (!this.manifestToContract[manifestHash]) {
-      await sbp('chelonia/private/loadManifest', manifestHash)
+      const rootState = sbp(this.config.stateSelector)
+      const contractName = has(rootState.contracts, contractID)
+        ? rootState.contracts[contractID].type
+        : opT === GIMessage.OP_CONTRACT
+          ? ((opV: any): GIOpContract).type
+          : ''
+      if (!contractName) {
+        throw new Error(`Unable to determine the name for a contract and refusing to load it (contract ID was ${contractID} and its manifest hash was ${manifestHash})`)
+      }
+      await sbp('chelonia/private/loadManifest', contractName, manifestHash)
     }
     let processOp = true
     if (config.preOp) {
