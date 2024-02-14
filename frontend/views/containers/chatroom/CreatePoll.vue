@@ -274,7 +274,7 @@ export default {
   pointer-events: none;
   overflow: hidden;
   // NOTE: z-index should be bigger than the one of sidebar
-  //       because CreatePool modal is rendered before the sidebar
+  //       because CreatePoll modal is rendered before the sidebar
   // REF:  https://github.com/okTurtles/group-income/issues/1843
   z-index: $zindex-modal + 1;
 
