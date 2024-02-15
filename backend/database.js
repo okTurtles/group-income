@@ -212,7 +212,7 @@ export default async () => {
   if (persistence !== 'fs' || options.fs.dirname !== './data') {
     // Remember to keep these values up-to-date.
     const HASH_LENGTH = 52
-    const CONTRACT_MANIFEST_MAGIC = '{"head":{"manifestVersion"'
+    const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
     const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
     // Note: the data folder may contain other files if the `fs` persistence mode
