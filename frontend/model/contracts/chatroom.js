@@ -138,7 +138,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         attributes: chatRoomAttributesType
       }),
-      process ({ meta, data }, { state }) {
+      process ({ data }, { state }) {
         const initialState = merge({
           settings: {
             actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,

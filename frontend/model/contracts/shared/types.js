@@ -22,18 +22,11 @@ export const inviteType: any = objectOf({
 export const chatRoomAttributesType: any = objectOf({
   name: string,
   description: string,
-  creatorID: string,
+  // NOTE: creatorID is optional parameter which is not being used
+  //       in group contract function gi.actions/group/addChatRoom
+  creatorID: optional(string),
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
-  groupContractID: optional(string)
-})
-
-export const groupChatRoomAttributesType: any = objectOf({
-  name: string,
-  description: string,
-  type: literalOf(CHATROOM_TYPES.GROUP),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
-  groupContractID: optional(string)
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
 })
 
 export const messageType: any = objectMaybeOf({
