@@ -311,7 +311,7 @@ export default (sbp('sbp/selectors/register', {
       const manifests = this.config.contracts.manifests
       console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
       for (const contractName in manifests) {
-        await sbp('chelonia/private/loadManifest', manifests[contractName])
+        await sbp('chelonia/private/loadManifest', contractName, manifests[contractName])
       }
     }
   },
