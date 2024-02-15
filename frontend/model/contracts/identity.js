@@ -96,16 +96,12 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/createDirectMessage': {
       validate: (data, { state, getters }) => {
         objectOf({
-          // NOTE: 'groupContractID' is the contract ID of the group where the direct messages is created
-          //       it's optional parameter meaning the direct message could be created outside of the group
-          groupContractID: optional(string),
           contractID: string // NOTE: chatroom contract id
         })(data)
       },
       process ({ data }, { state }) {
-        const { groupContractID, contractID } = data
+        const { contractID } = data
         Vue.set(state.chatRooms, contractID, {
-          groupContractID,
           visible: true // NOTE: this attr is used to hide/show direct message
         })
       },
@@ -115,18 +111,16 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinDirectMessage': {
       validate: objectOf({
-        groupContractID: optional(string),
         contractID: string
       }),
       process ({ data }, { state, getters }) {
         // NOTE: this method is always created by another
-        const { groupContractID, contractID } = data
+        const { contractID } = data
         if (getters.ourDirectMessages[contractID]) {
           throw new TypeError(L('Already joined direct message.'))
         }
 
         Vue.set(state.chatRooms, contractID, {
-          groupContractID,
           visible: true
         })
       },

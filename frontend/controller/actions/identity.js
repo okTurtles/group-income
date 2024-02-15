@@ -633,7 +633,6 @@ export default (sbp('sbp/selectors/register', {
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
       data: {
-        groupContractID: currentGroupId,
         contractID: message.contractID()
       },
       hooks: {
@@ -658,7 +657,6 @@ export default (sbp('sbp/selectors/register', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: partnerIDs[index],
         data: {
-          groupContractID: currentGroupId,
           // TODO: We need to handle multiple groups and the possibility of not
           // having any groups in common
           contractID: message.contractID()
@@ -666,7 +664,7 @@ export default (sbp('sbp/selectors/register', {
         // For now, we assume that we're messaging someone which whom we
         // share a group
         signingKeyId: sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
-        innerSigningContractID: rootState.currentGroupId,
+        innerSigningContractID: currentGroupId,
         hooks
       })
     }
