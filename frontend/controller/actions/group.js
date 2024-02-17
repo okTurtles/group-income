@@ -569,11 +569,7 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
-        ...params.data,
-        attributes: {
-          ...params.data?.attributes,
-          groupContractID: params.contractID
-        }
+        ...params.data
       },
       options: {
         ...params.options,
