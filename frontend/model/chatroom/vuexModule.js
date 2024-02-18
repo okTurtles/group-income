@@ -1,5 +1,7 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
+import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 const defaultState = {
@@ -152,7 +154,60 @@ const getters = {
 
 // mutations
 const mutations = {
+  setCurrentChatRoomId (state, { groupId, chatRoomId }) {
+    const rootState = sbp('state/vuex/state')
 
+    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
+    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
+      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomId)
+    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
+      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, rootState[groupId].generalChatRoomId || null)
+    } else { // reset
+      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
+    }
+  },
+  setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)
+  },
+  deleteChatRoomScrollPosition (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  },
+  setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
+    Vue.set(state.chatRoomUnread, chatRoomId, {
+      readUntil: { messageHash, createdDate, deletedDate: null },
+      messages: state.chatRoomUnread[chatRoomId].messages
+        ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
+    })
+  },
+  deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
+    if (state.chatRoomUnread[chatRoomId].readUntil) {
+      Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
+    }
+  },
+  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, type }) {
+    state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
+  },
+  deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
+    Vue.set(
+      state.chatRoomUnread[chatRoomId],
+      'messages',
+      state.chatRoomUnread[chatRoomId].messages.filter(m => m.messageHash !== messageHash)
+    )
+  },
+  deleteChatRoomUnread (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomUnread, chatRoomId)
+  },
+  setChatroomNotificationSettings (state, { chatRoomId, settings }) {
+    if (chatRoomId) {
+      if (!state.chatNotificationSettings[chatRoomId]) {
+        Vue.set(state.chatNotificationSettings, chatRoomId, {})
+      }
+      for (const key in settings) {
+        Vue.set(state.chatNotificationSettings[chatRoomId], key, settings[key])
+      }
+    }
+  }
 }
 
 export default ({
