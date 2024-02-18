@@ -70,7 +70,7 @@ sbp('sbp/selectors/register', {
     //   state.notifications = []
     // }
 
-    const chatroomState = state.chatroom
+    const chatroomState = state.chatroom || {}
     // TODO: need to remove the whole content after we release 0.2.*
     for (const chatRoomId in chatroomState.chatRoomUnread) {
       if (!chatroomState.chatRoomUnread[chatRoomId].messages) {
