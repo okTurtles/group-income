@@ -87,11 +87,11 @@ const getters = {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => !!getters.ourGroupDirectMessages[chatRoomId || getters.currentChatRoomId]
   },
-  isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, memberID?: string) => !!state[chatRoomId]?.members?.[memberID || getters.ourIdentityContractId]
+  isJoinedChatRoom (state, getters, rootState) {
+    return (chatRoomId: string, memberID?: string) => !!rootState[chatRoomId]?.members?.[memberID || getters.ourIdentityContractId]
   },
-  currentChatVm (state, getters) {
-    return state?.[getters.currentChatRoomId]?._vm || null
+  currentChatVm (state, getters, rootState) {
+    return rootState?.[getters.currentChatRoomId]?._vm || null
   },
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
