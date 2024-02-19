@@ -145,7 +145,7 @@
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "2.1.1",
-    "@exact-realty/multipart-parser": "1.0.11",
+    "@exact-realty/multipart-parser": "1.0.12",
     "@exact-realty/rfc8188": "1.0.4",
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",

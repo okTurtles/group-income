@@ -1,51 +1,53 @@
-import sbp from '@sbp/sbp'
+import encodeMultipartMessage from '@exact-realty/multipart-parser/encodeMultipartMessage'
 import { aes256gcm } from '@exact-realty/rfc8188/encodings'
 import encrypt from '@exact-realty/rfc8188/encrypt'
-import encodeMultipartMessage from '@exact-realty/multipart-parser/encodeMultipartMessage'
+import sbp from '@sbp/sbp'
+import { createCIDfromStream } from '~/shared/functions.js'
 
 // From: <https://github.com/Exact-Realty/ts-rfc8188/blob/master/test/index.test.ts>
 // We're using Response for testing, which doesn't seem to like ArrayBuffer but
 // only takes Uint8Array.
-const ArrayBufferToUint8ArrayStream = (s: ReadableStream<ArrayBufferLike>) =>
+const ArrayBufferToUint8ArrayStream = (s: ReadableStream) =>
   s.pipeThrough(
     // eslint-disable-next-line no-undef
-    new TransformStream<ArrayBufferLike, Uint8Array>({
-      start () {},
-      transform (chunk, controller) {
-        console.error('@@@@TRANSFORM', chunk)
-        if (ArrayBuffer.isView(chunk)) {
-          controller.enqueue(
-            new Uint8Array(
-              chunk.buffer,
-              chunk.byteOffset,
-              chunk.byteLength
+    new TransformStream(
+      // $FlowFixMe[extra-arg]
+      {
+        transform (chunk, controller) {
+          if (ArrayBuffer.isView(chunk)) {
+            controller.enqueue(
+              new Uint8Array(
+                chunk.buffer,
+                chunk.byteOffset,
+                chunk.byteLength
+              )
             )
-          )
-        } else {
-          controller.enqueue(new Uint8Array(chunk))
+          } else {
+            controller.enqueue(new Uint8Array(chunk))
+          }
         }
-      },
-      flush (controller) {
-        console.error('@@@@@FLUSH', controller)
-      }
-    })
+      })
   )
 
-export const computeChunkDescriptors = (inStream: ReadableStream) => {
+const computeChunkDescriptors = (inStream: ReadableStream) => {
   let length = 0
-  return new Promise((resolve, reject) => {
-    inStream.pipeTo(new WritableStream({
+  const [lengthStream, cidStream] = inStream.tee()
+  const lengthPromise = new Promise((resolve, reject) => {
+    // $FlowFixMe[incompatible-call]
+    lengthStream.pipeTo(new WritableStream({
       write (chunk) {
         length += chunk.byteLength
       },
       close () {
-        resolve([length, 'some-fake-cid'])
+        resolve(length)
       },
       abort (reason) {
         reject(reason)
       }
     }))
   })
+  const cidPromise = createCIDfromStream(cidStream)
+  return Promise.all([lengthPromise, cidPromise])
 }
 
 export default (sbp('sbp/selectors/register', {
@@ -58,18 +60,17 @@ export default (sbp('sbp/selectors/register', {
     const transferParts = await Promise.all(chunks.map(async (chunk: Blob) => {
       const stream = chunk.stream()
       const encryptedStream = await encrypt(aes256gcm, stream, recordSize, keyId, IKM)
-      // const [body, s] = encryptedStream.tee()
-      // chunkDescriptors.push(computeChunkDescriptors(s))
-      console.log('@@@@ COMPUTED A STREAM', encryptedStream)
+      const [body, s] = encryptedStream.tee()
+      chunkDescriptors.push(computeChunkDescriptors(s))
       return {
         headers: new Headers([['content-type', 'application/octet-stream']]),
-        body: encryptedStream
+        body
       }
     }))
     transferParts.push({
       headers: new Headers([['content-type', 'application/vnd.shelter.manifest+json']]),
       body: new ReadableStream({
-        async pull (controller) {
+        async start (controller) {
           const chunks = await Promise.all(chunkDescriptors)
           const manifest = {
             version: '1.0.0',
@@ -78,7 +79,8 @@ export default (sbp('sbp/selectors/register', {
             size: chunks.reduce((acc, [cv]) => acc + cv, 0),
             chunks
           }
-          controller.push(Buffer.from(JSON.stringify(manifest)))
+          controller.enqueue(Buffer.from(JSON.stringify(manifest)))
+          controller.close()
         }
       })
     })
@@ -87,4 +89,4 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/fileDownload': function () {
   }
-}))
+}): string[])
