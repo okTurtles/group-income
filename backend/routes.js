@@ -180,8 +180,9 @@ const SECOND = 1000
 route.POST('/file', {
   // TODO: only allow uploads from registered users
   payload: {
-    output: 'data',
-    multipart: true,
+    parse: true,
+    output: 'stream',
+    multipart: { output: 'annotated' },
     allow: 'multipart/form-data',
     failAction: function (request, h, err) {
       console.error('failAction error:', err)
@@ -193,6 +194,8 @@ route.POST('/file', {
 }, async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
+    console.log(request.payload)
+    console.log(Object.keys(request))
     const { hash, data } = request.payload
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
