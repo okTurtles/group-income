@@ -23,9 +23,9 @@
         modal-close.c-tooltip-close-btn(@close='closeTooltip')
 
       ul.c-voters-list
-        li.c-voter-item(v-for='(votername, index) in voters' :key='votername + index')
-          avatar-user.c-voter-item-avatar(:contractID='votername' size='xs')
-          span.c-voter-item-name {{ getDisplayName(votername) }}
+        li.c-voter-item(v-for='(voterContractID, index) in voters' :key='voterContractID + index')
+          avatar-user.c-voter-item-avatar(:contractID='voterContractID' size='xs')
+          span.c-voter-item-name {{ getDisplayName(voterContractID) }}
 </template>
 
 <script>
@@ -77,8 +77,9 @@ export default ({
     closeTooltip () {
       this.ephemeral.isTooltipActive = false
     },
-    getDisplayName (username) {
-      return this.globalProfile(username).displayName || username
+    getDisplayName (contractID) {
+      const profile = this.globalProfile(contractID)
+      return profile.displayName || profile.username
     }
   }
 }: Object)
