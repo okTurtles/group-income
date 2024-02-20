@@ -151,7 +151,6 @@ export default (sbp('sbp/selectors/register', {
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       if (entryPreviousHEAD) {
         await sbp('chelonia/db/set', `next=${entryPreviousHEAD}`, entry.hash())
-        console.debug(`[chelonia.db] next hash for ${entryPreviousHEAD} updated to:`, entry.hash())
       }
       return entry.hash()
     } catch (e) {
