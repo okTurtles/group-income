@@ -3,7 +3,7 @@ import decrypt from '@exact-realty/rfc8188/decrypt'
 import { aes256gcm } from '@exact-realty/rfc8188/encodings'
 import encrypt from '@exact-realty/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
-import { createCID, createCIDfromStream } from '~/shared/functions.js'
+import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
@@ -131,70 +131,95 @@ const fileStream = (chelonia: Object, manifest: Object) => {
   })
 }
 
-const handleNonePayload = async (chelonia: Object, manifest: Object) => {
-  const bytes = await streamToUint8Array(fileStream(chelonia, manifest))
-  return new Blob([bytes], { type: manifest.type || 'application/octet-stream' })
-}
-
-const handleAes256gcmPayload = async (chelonia: Object, manifest: Object) => {
-  const maxRecordSize = 1 << 27 // 128 MiB
-  if (!manifest['cipher-params'] || !manifest['cipher-params'].keyId) {
-    throw new Error('Missing cipher-params')
-  }
-  const keyId = manifest['cipher-params'].keyId
-  const bytes = await streamToUint8Array(
-    decrypt(aes256gcm, fileStream(chelonia, manifest), (actualKeyId) => {
-      if (Buffer.from(actualKeyId).toString() !== keyId) {
-        throw new Error('Invalid key ID')
+export const aes256gcmHandlers: any = {
+  upload: (chelonia: Object, manifestOptions: Object) => {
+    let IKM = manifestOptions['cipher-params']?.IKM
+    const recordSize = manifestOptions['cipher-params']?.rs ?? 1 << 16
+    if (!IKM) {
+      IKM = new Uint8Array(33)
+      window.crypto.getRandomValues(IKM)
+    }
+    const keyId = blake32Hash('aes256gcm-keyId' + blake32Hash(IKM)).slice(-8)
+    const binaryKeyId = Buffer.from(keyId)
+    return {
+      cipherParams: {
+        keyId
+      },
+      streamHandler: async (stream: ReadableStream) => {
+        return await encrypt(aes256gcm, stream, recordSize, binaryKeyId, IKM)
+      },
+      downloadParams: {
+        IKM: Buffer.from(IKM).toString('base64'),
+        rs: recordSize
       }
-      return Buffer.from('TODO-ikm')
-    }, maxRecordSize)
-  )
-  return new Blob([bytes], { type: manifest.type || 'application/octet-stream' })
+    }
+  },
+  download: (chelonia: Object, downloadParams: Object, manifest: Object) => {
+    const IKMb64 = downloadParams.IKM
+    if (!IKMb64) {
+      throw new Error('Missing IKM in downloadParams')
+    }
+    const IKM = Buffer.from(IKMb64, 'base64')
+    const keyId = blake32Hash('aes256gcm-keyId' + blake32Hash(IKM)).slice(-8)
+    if (!manifest['cipher-params'] || !manifest['cipher-params'].keyId) {
+      throw new Error('Missing cipher-params')
+    }
+    if (keyId !== manifest['cipher-params'].keyId) {
+      throw new Error('Key ID mismatch')
+    }
+    const maxRecordSize = downloadParams.rs ?? 1 << 27 // 128 MiB
+    return {
+      payloadHandler: async () => {
+        const bytes = await streamToUint8Array(
+          decrypt(aes256gcm, fileStream(chelonia, manifest), (actualKeyId) => {
+            if (Buffer.from(actualKeyId).toString() !== keyId) {
+              throw new Error('Invalid key ID')
+            }
+            return IKM
+          }, maxRecordSize)
+        )
+        return new Blob([bytes], { type: manifest.type || 'application/octet-stream' })
+      }
+    }
+  }
 }
 
-const uploadNoneChunkStream = (chelonia: Object, manifestOptions?: Object, stream: ReadableStream) => {
-  return stream
+export const noneHandlers: any = {
+  upload: (chelonia: Object, manifestOptions: Object) => {
+    return {
+      cipherParams: undefined,
+      streamHandler: (stream: ReadableStream) => {
+        return stream
+      },
+      downloadParams: undefined
+    }
+  },
+  download: (chelonia: Object, downloadParams: Object, manifest: Object) => {
+    return {
+      payloadHandler: async () => {
+        const bytes = await streamToUint8Array(fileStream(chelonia, manifest))
+        return new Blob([bytes], { type: manifest.type || 'application/octet-stream' })
+      }
+    }
+  }
 }
 
-const uploadAes256ChunkStream = async (chelonia: Object, manifestOptions: Object, stream: ReadableStream) => {
-  // TODO: Get keyId from params, verify that it's of the correct type and get
-  // the IKM from the key by looking it up in externalKeys
-  const keyId = 'TODO-id'
-  const binaryKeyId = Buffer.from(keyId)
-  const IKM = Buffer.from('TODO-ikm')
-  const recordSize = 1 << 16 // 64 KiB TODO: Decide on a reasonable size
-  return await encrypt(aes256gcm, stream, recordSize, binaryKeyId, IKM)
+// TODO: Move into Chelonia config
+const cipherHandlers = {
+  aes256gcm: aes256gcmHandlers,
+  none: noneHandlers
 }
 
 export default (sbp('sbp/selectors/register', {
   'chelonia/fileUpload': async function (chunks: Blob | Blob[], manifestOptions: Object) {
     if (!Array.isArray(chunks)) chunks = [chunks]
     const chunkDescriptors: Promise<[number, string]>[] = []
-    let cipherParams
-    switch (manifestOptions.cipher) {
-      case 'aes256gcm':
-        cipherParams = { keyId: 'TODO-id' }
-        break
-      case 'none':
-        cipherParams = undefined
-        break
-      default:
-        throw new Error('Unsupported cipher')
-    }
+    const cipherHandler = await cipherHandlers[manifestOptions.cipher]?.upload?.(this, manifestOptions)
+    if (!cipherHandler) throw new Error('Unsupported cipher')
+    const cipherParams = cipherHandler.cipherParams
     const transferParts = await Promise.all(chunks.map(async (chunk: Blob, i) => {
       const stream = chunk.stream()
-      let encryptedStream
-      switch (manifestOptions.cipher) {
-        case 'aes256gcm':
-          encryptedStream = await uploadAes256ChunkStream(this, manifestOptions, stream)
-          break
-        case 'none':
-          encryptedStream = await uploadNoneChunkStream(this, manifestOptions, stream)
-          break
-        default:
-          throw new Error('Unsupported cipher')
-      }
+      const encryptedStream = await cipherHandler.streamHandler(stream)
       const [body, s] = encryptedStream.tee()
       chunkDescriptors.push(computeChunkDescriptors(s))
       return {
@@ -240,10 +265,13 @@ export default (sbp('sbp/selectors/register', {
     })
 
     if (!uploadResponse.ok) throw new Error('Error uploading file')
-    return uploadResponse.text()
+    return {
+      manifestCid: await uploadResponse.text(),
+      downloadParams: cipherHandler.downloadParams
+    }
   },
-  'chelonia/fileDownload': async function (manifestID: string) {
-    const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestID}`, {
+  'chelonia/fileDownload': async function (manifestCid: string, downloadParams: Object) {
+    const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal
     })
@@ -251,19 +279,15 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to retrieve manifest')
     }
     const manifestBinary = await manifestResponse.arrayBuffer()
-    if (createCID(coerce(manifestBinary)) !== manifestID) throw new Error('mismatched manifest hash')
+    if (createCID(coerce(manifestBinary)) !== manifestCid) throw new Error('mismatched manifest hash')
     const manifest = JSON.parse(Buffer.from(manifestBinary).toString())
     if (typeof manifest !== 'object') throw new Error('manifest format is invalid')
     if (manifest.version !== '1.0.0') throw new Error('unsupported manifest version')
     if (!Array.isArray(manifest.chunks)) throw new Error('missing required field: chunks')
-    console.log(manifest)
-    if (!['aes256gcm', 'none'].includes(manifest.cipher)) throw new Error('unsupported cipher')
 
-    switch (manifest.cipher) {
-      case 'aes256gcm':
-        return handleAes256gcmPayload(this, manifest)
-      case 'none':
-        return handleNonePayload(this, manifest)
-    }
+    const cipherHandler = await cipherHandlers[manifest.cipher]?.download?.(this, downloadParams, manifest)
+    if (!cipherHandler) throw new Error('Unsupported cipher')
+
+    return cipherHandler.payloadHandler()
   }
 }): string[])

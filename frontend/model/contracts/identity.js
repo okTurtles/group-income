@@ -34,7 +34,10 @@ sbp('chelonia/defineContract', {
           attributes: objectMaybeOf({
             username: string,
             email: string,
-            picture: string
+            picture: objectOf({
+              manifestCid: string,
+              downloadParams: optional(object)
+            })
           })
         })(data)
         const { username } = data.attributes

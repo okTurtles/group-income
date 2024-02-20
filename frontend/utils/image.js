@@ -17,8 +17,8 @@ export function imageDataURItoBlob (dataURI: string): Blob {
   return new Blob([ab], { type: imageType })
 }
 
-export const imageUpload = (imageFile: File): Promise<string> => {
+export const imageUpload = (imageFile: File): Promise<Object> => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
-  return sbp('chelonia/fileUpload', imageFile, { type: file.type })
+  return sbp('chelonia/fileUpload', imageFile, { type: file.type, cipher: 'aes256gcm' })
 }

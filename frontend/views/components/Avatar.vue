@@ -17,7 +17,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 export default ({
   name: 'Avatar',
   props: {
-    src: String, // acts as a placeholder when used together with blobURL
+    src: [String, Object], // acts as a placeholder when used together with blobURL
     alt: {
       type: String,
       default: ''
@@ -31,9 +31,21 @@ export default ({
   },
   mounted () {
     console.log(`Avatar under ${this.$parent.$vnode.tag} blobURL:`, this.blobURL, 'src:', this.src)
+    if (typeof this.src === 'object') {
+      sbp('chelonia/fileDownload', this.src.manifestCid, this.src.downloadParams).then((blob) => {
+        this.setFromBlob(blob)
+      }).catch((e) => {
+        console.error('[Avatar.vue] Error setting avatar blob', e)
+      })
+    }
     if (this.blobURL && !this.objectURL) {
       // trigger the watcher
       this.setBlobURL(this.blobURL)
+    }
+  },
+  beforeUnmount() {
+    if (this.objectURL) {
+      URL.revokeObjectURL(this.objectURL)
     }
   },
   data () {
@@ -44,7 +56,10 @@ export default ({
   methods: {
     setFromBlob (blob) {
       // free this resource per https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_object_URLs
-      this.$refs.img.onload = function () { URL.revokeObjectURL(this.src) }
+      // this.$refs.img.onload = function () { URL.revokeObjectURL(this.src) }
+      if (this.objectURL) {
+        URL.revokeObjectURL(this.objectURL)
+      }
       this.objectURL = URL.createObjectURL(blob)
     },
     async setBlobURL (newBlobURL) {
@@ -94,7 +109,7 @@ export default ({
   },
   computed: {
     imageURL () {
-      return this.objectURL || this.src
+      return this.objectURL || (typeof this.src === 'string' && this.src)
     }
   }
 }: Object)
