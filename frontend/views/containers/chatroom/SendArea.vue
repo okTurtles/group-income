@@ -387,7 +387,10 @@ export default ({
       const userArr = this.ephemeral.typingUsers
 
       if (userArr.length) {
-        const getDisplayName = (memberID) => (this.globalProfile(memberID).displayName || this.globalProfile(memberID).username || memberID)
+        const getDisplayName = (memberID) => {
+          const profile = this.globalProfile(memberID)
+          return profile?.displayName || profile?.username || memberID
+        }
         const isMultiple = userArr.length > 1
         const usernameCombined = userArr.map(u => getDisplayName(u)).join(', ')
 
