@@ -70,6 +70,7 @@ declare module 'lru-cache' { declare module.exports: any }
 declare module 'uuid' { declare module.exports: any }
 declare module 'marked' { declare module.exports: any }
 declare module '@exact-realty/multipart-parser/encodeMultipartMessage' { declare module.exports: any }
+declare module '@exact-realty/rfc8188/decrypt' { declare module.exports: any }
 declare module '@exact-realty/rfc8188/encodings' { declare module.exports: any }
 declare module '@exact-realty/rfc8188/encrypt' { declare module.exports: any }
 
