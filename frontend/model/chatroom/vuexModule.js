@@ -161,7 +161,7 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
     } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomId)
-    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
+    } else if (groupId && rootState[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, rootState[groupId].generalChatRoomId || null)
     } else { // reset
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
