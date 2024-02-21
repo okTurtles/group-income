@@ -32,7 +32,7 @@ export default ({
   mounted () {
     console.log(`Avatar under ${this.$parent.$vnode.tag} blobURL:`, this.blobURL, 'src:', this.src)
     if (typeof this.src === 'object') {
-      sbp('chelonia/fileDownload', this.src.manifestCid, this.src.downloadParams).then((blob) => {
+      sbp('chelonia/fileDownload', this.src).then((blob) => {
         this.setFromBlob(blob)
       }).catch((e) => {
         console.error('[Avatar.vue] Error setting avatar blob', e)
@@ -43,7 +43,7 @@ export default ({
       this.setBlobURL(this.blobURL)
     }
   },
-  beforeUnmount() {
+  beforeUnmount () {
     if (this.objectURL) {
       URL.revokeObjectURL(this.objectURL)
     }

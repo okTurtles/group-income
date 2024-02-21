@@ -270,7 +270,7 @@ export default (sbp('sbp/selectors/register', {
       downloadParams: cipherHandler.downloadParams
     }
   },
-  'chelonia/fileDownload': async function (manifestCid: string, downloadParams: Object) {
+  'chelonia/fileDownload': async function ({ manifestCid, downloadParams }: { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
     const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal
@@ -284,6 +284,11 @@ export default (sbp('sbp/selectors/register', {
     if (typeof manifest !== 'object') throw new Error('manifest format is invalid')
     if (manifest.version !== '1.0.0') throw new Error('unsupported manifest version')
     if (!Array.isArray(manifest.chunks)) throw new Error('missing required field: chunks')
+
+    if (manifestChecker) {
+      const proceed = await manifestChecker?.(manifest)
+      if (!proceed) return false
+    }
 
     const cipherHandler = await cipherHandlers[manifest.cipher]?.download?.(this, downloadParams, manifest)
     if (!cipherHandler) throw new Error('Unsupported cipher')
