@@ -164,19 +164,70 @@ const files = localforage.createInstance({
   storeName: 'Files'
 })
 
+const maxFileEntries = 100
+
 sbp('sbp/selectors/register', {
-  'gi.db/files/save': function (url: string, blob: Blob): Promise<*> {
-    return files.setItem(url, blob).then(v => {
-      console.log('successfully saved:', url)
-    }).catch(e => {
-      console.error('error saving:', url, e)
+  'gi.db/files/save': async function (cacheKey: string, blob: Blob): Promise<*> {
+    const keys = await files.getItem('keys') ?? []
+
+    return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', () => {
+      // `_` prefix to avoid overlapping with the special `keys` key
+      return files.setItem('_' + cacheKey, blob).then(async v => {
+        console.log('successfully saved:', cacheKey)
+        const idx = keys.indexOf(cacheKey)
+        if (idx !== -1) {
+          // Remove current entry
+          keys.splice(idx, 1)
+        }
+        // And bring it to the top
+        keys.push(cacheKey)
+        // If the list gets too long, remove the last element
+        if (keys.length > maxFileEntries) {
+          const last = keys.splice(0, keys.length - maxFileEntries)
+          await Promise.all(last.map((e) => files.removeItem('_' + e)))
+        }
+        // Save the new current keys
+        await files.setItem('keys', keys)
+      }).catch(e => {
+        console.error('error saving:', cacheKey, e)
+      })
     })
   },
-  'gi.db/files/load': function (url: string): Promise<Blob> {
-    return files.getItem(url)
+  'gi.db/files/load': async function (cacheKey: string): Promise<Blob> {
+    const file = await files.getItem('_' + cacheKey)
+    if (file) {
+      // No await here so that we can return early
+      sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
+        const keys = await files.getItem('keys') ?? []
+        const idx = keys.indexOf(cacheKey)
+        if (idx !== -1) {
+          // Bring entry to the top
+          keys.splice(idx, 1)
+          keys.push(cacheKey)
+          await files.setItem('keys', keys)
+        }
+      }).catch(e => {
+        console.error('[gi.db/files/load] Error updating keys')
+      })
+    }
+    return file
   },
-  'gi.db/files/delete': function (url: string): Promise<Blob> {
-    return files.removeItem(url)
+  'gi.db/files/delete': async function (cacheKey: string): Promise<Blob> {
+    await files.removeItem('_' + cacheKey)
+    // No await here so that we can return early
+    sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
+      const keys = await files.getItem('keys') ?? []
+      const idx = keys.indexOf(cacheKey)
+      if (idx !== -1) {
+        keys.splice(idx, 1)
+        await files.setItem('keys', keys)
+      }
+    }).catch(e => {
+      console.error('[gi.db/files/load] Error updating keys')
+    })
+  },
+  'gi.db/files/clear': function (): Promise<any> {
+    return archive.clear()
   }
 })
 

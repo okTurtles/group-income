@@ -495,6 +495,7 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
+    sbp('gi.db/files/clear')
     sbp('state/vuex/reset')
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
