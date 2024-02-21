@@ -30,7 +30,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 export default ({
   name: 'AvatarUpload',
   props: {
-    avatar: String,
+    avatar: [String, Object],
     sbpParams: {
       type: Object,
       required: true
