@@ -21,6 +21,8 @@ import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/c
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
 
+// Remove this when dropping support for Node versions lower than v20.
+const File = require('buffer').File
 const fs = require('fs')
 const path = require('path')
 // const { PassThrough, Readable } = require('stream')

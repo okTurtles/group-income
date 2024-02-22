@@ -2,6 +2,8 @@
 import '~/shared/domains/chelonia/chelonia.js'
 
 const assert = require('node:assert')
+// Remove this when dropping support for Node versions lower than v20.
+const File = require('buffer').File
 const { readFile } = require('node:fs/promises')
 
 describe('avatar file serving', function () {
