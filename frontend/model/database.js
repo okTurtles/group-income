@@ -216,9 +216,9 @@ sbp('sbp/selectors/register', {
         console.error('[gi.db/files/load] Error updating keys')
       })
     }
-    return file
+    return ((file: any): Blob)
   },
-  'gi.db/files/delete': async function (cacheKey: string): Promise<Blob> {
+  'gi.db/files/delete': async function (cacheKey: string): Promise<void> {
     await files.removeItem('_' + cacheKey)
     // No await here so that we can return early
     sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
@@ -232,8 +232,8 @@ sbp('sbp/selectors/register', {
       console.error('[gi.db/files/load] Error updating keys')
     })
   },
-  'gi.db/files/clear': function (): Promise<any> {
-    return archive.clear()
+  'gi.db/files/clear': async function (): Promise<void> {
+    await archive.clear()
   }
 })
 

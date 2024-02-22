@@ -2,9 +2,9 @@
 
 import nacl from 'tweetnacl'
 import { blake2b256stream } from '~/shared/blake2bstream.js'
-import { base58btc } from './multiformats/bases/base58.js'
-import { blake2b256 } from './multiformats/blake2b.js'
-import { CID } from './multiformats/cid.js'
+import { base58btc } from '~/shared/multiformats/bases/base58.js'
+import { blake2b256 } from '~/shared/multiformats/blake2b.js'
+import { CID } from '~/shared/multiformats/cid.js'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
 const multicodes = { JSON: 0x0200, RAW: 0x00 }

@@ -1,6 +1,6 @@
 import blakejs from 'blakejs'
-import * as bytes from './multiformats/bytes.js'
-import { from } from './multiformats/hasher.js'
+import * as bytes from '~/shared/multiformats/bytes.js'
+import { from } from '~/shared/multiformats/hasher.js'
 
 const { blake2b, blake2bInit, blake2bUpdate, blake2bFinal } = blakejs
 

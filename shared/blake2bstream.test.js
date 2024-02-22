@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { blake2b256stream } from '~/shared/blake2bstream.js'
-import { blake2b256 } from './multiformats/blake2b.js'
+import { blake2b256 } from '~/shared/multiformats/blake2b.js'
 
 describe('blake2b256stream have the same output as blake2b256', () => {
   it('Using Uint8Array input', async () => {
