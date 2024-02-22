@@ -8,7 +8,7 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, merge, cloneDeep, debounce, union } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -476,6 +476,22 @@ const getters = {
       .filter(contractID => contracts[contractID].type === 'gi.contracts/group')
       .map(contractID => ({ groupName: state[contractID].settings?.groupName || L('Pending'), contractID }))
   },
+  profilesByGroup (state, getters) {
+    return groupID => {
+      const profiles = {}
+      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+        return profiles
+      }
+      const groupProfiles = state[groupID].profiles || {}
+      for (const member in groupProfiles) {
+        const profile = groupProfiles[member]
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[member] = profile
+        }
+      }
+      return profiles
+    }
+  },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
     if (!profiles || !profiles[getters.ourIdentityContractId]) return []
@@ -569,46 +585,51 @@ const getters = {
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
-  ourGroupDirectMessages (state, getters) {
-    const currentGroupDirectMessages = {}
-    for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
-      const chatRoomState = state[chatRoomId]
-      const directMessageSettings = getters.ourDirectMessages[chatRoomId]
+  directMessagesByGroup (state, getters) {
+    return groupID => {
+      const currentGroupDirectMessages = {}
+      for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
+        const chatRoomState = state[chatRoomId]
+        const directMessageSettings = getters.ourDirectMessages[chatRoomId]
 
-      // NOTE: skip DMs whose chatroom contracts are not synced yet
-      if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
-        continue
-      }
-      // NOTE: direct messages should be filtered to the ones which are visible and of active group members
-      const members = Object.keys(chatRoomState.members)
-      const partners = members
-        .filter(memberID => memberID !== getters.ourIdentityContractId)
-        .sort((p1, p2) => {
-          const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
-          const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
-          return p1JoinedDate - p2JoinedDate
-        })
-      const hasActiveMember = partners.some(memberID => Object.keys(getters.groupProfiles).includes(memberID))
-      if (directMessageSettings.visible && hasActiveMember) {
-        // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
-        //       His profile picture can be used as the picture of the direct message
-        //       possibly with the badge of the number of partners.
-        const lastJoinedPartner = partners[partners.length - 1]
-        currentGroupDirectMessages[chatRoomId] = {
-          ...directMessageSettings,
-          members,
-          partners,
-          lastJoinedPartner,
-          // TODO: The UI should display display names, usernames and (in the future)
-          // identity contract IDs differently in some way (e.g., font, font size,
-          // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
-          // users (e.g., 'user1' changing their display name to 'user2')
-          title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
-          picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
+        // NOTE: skip DMs whose chatroom contracts are not synced yet
+        if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
+          continue
+        }
+        // NOTE: direct messages should be filtered to the ones which are visible and of active group members
+        const members = Object.keys(chatRoomState.members)
+        const partners = members
+          .filter(memberID => memberID !== getters.ourIdentityContractId)
+          .sort((p1, p2) => {
+            const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
+            const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
+            return p1JoinedDate - p2JoinedDate
+          })
+        const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
+        if (directMessageSettings.visible && hasActiveMember) {
+          // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
+          //       His profile picture can be used as the picture of the direct message
+          //       possibly with the badge of the number of partners.
+          const lastJoinedPartner = partners[partners.length - 1]
+          currentGroupDirectMessages[chatRoomId] = {
+            ...directMessageSettings,
+            members,
+            partners,
+            lastJoinedPartner,
+            // TODO: The UI should display display names, usernames and (in the future)
+            // identity contract IDs differently in some way (e.g., font, font size,
+            // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
+            // users (e.g., 'user1' changing their display name to 'user2')
+            title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+            picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
+          }
         }
       }
+      return currentGroupDirectMessages
     }
-    return currentGroupDirectMessages
+  },
+  ourGroupDirectMessages (state, getters) {
+    return getters.directMessagesByGroup(state.currentGroupId)
   },
   // NOTE: this getter is used to find the ID of the direct message in the current group
   //       with the name[s] of partner[s]. Normally it's more useful to find direct message
@@ -661,10 +682,14 @@ const getters = {
     }
   },
   groupUnreadMessages (state, getters) {
-    return (groupID: string) => Object.keys(getters.ourUnreadMessages)
-      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
-      .map(cID => getters.ourUnreadMessages[cID].messages.length)
-      .reduce((sum, n) => sum + n, 0)
+    return (groupID: string) => {
+      const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)
+      const isGroupChatroom = cID => Object.keys(state[groupID]?.chatRooms || {}).includes(cID)
+      return Object.keys(getters.ourUnreadMessages)
+        .filter(cID => isGroupDirectMessage(cID) || isGroupChatroom(cID))
+        .map(cID => getters.ourUnreadMessages[cID].messages.length)
+        .reduce((sum, n) => sum + n, 0)
+    }
   },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
