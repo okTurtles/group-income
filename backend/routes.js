@@ -66,7 +66,7 @@ route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
 
-    if (contractID.startsWith('_private_') || since.startsWith('_private_')) {
+    if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
     }
 
@@ -94,7 +94,7 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     if (!before) return Boom.badRequest('missing before')
     if (!limit) return Boom.badRequest('missing limit')
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
-    if (before.startsWith('_private_')) return Boom.notFound()
+    if (before.startsWith('_private')) return Boom.notFound()
 
     const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
     request.events.once('disconnect', stream.destroy.bind(stream))
@@ -112,7 +112,7 @@ route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h
     if (!startHash) return Boom.badRequest('missing startHash')
     if (!endHash) return Boom.badRequest('missing endHash')
     if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
-    if (startHash.startsWith('_private_') || endHash.startsWith('_private_')) return Boom.notFound()
+    if (startHash.startsWith('_private') || endHash.startsWith('_private')) return Boom.notFound()
 
     const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
     request.events.once('disconnect', stream.destroy.bind(stream))
@@ -132,7 +132,7 @@ route.POST('/name', {
 }, async function (request, h) {
   try {
     const { name, value } = request.payload
-    if (value.startsWith('_private_')) return Boom.badData()
+    if (value.startsWith('_private')) return Boom.badData()
     return await sbp('backend/db/registerName', name, value)
   } catch (err) {
     return logger(err)
@@ -152,7 +152,7 @@ route.GET('/latestHEADinfo/{contractID}', {
 }, async function (request, h) {
   try {
     const { contractID } = request.params
-    if (contractID.startsWith('_private_')) return Boom.notFound()
+    if (contractID.startsWith('_private')) return Boom.notFound()
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
@@ -263,7 +263,7 @@ route.GET('/file/{hash}', {
   const { hash } = request.params
   console.debug(`GET /file/${hash}`)
 
-  if (hash.startsWith('_private_')) {
+  if (hash.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -336,7 +336,7 @@ route.POST('/zkpp/register/{contractID}', {
     ])
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
+  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
   try {
     if (req.payload['b']) {
       const result = await registrationKey(req.params['contractID'], req.payload['b'])
@@ -364,7 +364,7 @@ route.GET('/zkpp/{contractID}/auth_hash', {
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
+  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
   try {
     const challenge = await getChallenge(req.params['contractID'], req.query['b'])
 
@@ -387,7 +387,7 @@ route.GET('/zkpp/{contractID}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
+  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
   try {
     const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
@@ -413,7 +413,7 @@ route.POST('/zkpp/updatePasswordHash/{contractID}', {
     })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private_')) return Boom.notFound()
+  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
   try {
     const result = await updateContractSalt(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
