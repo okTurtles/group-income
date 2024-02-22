@@ -440,8 +440,7 @@ export default (sbp('sbp/selectors/register', {
               signingKeyId: CSKid
             })
 
-            // Send inviteAccept action to the group to add ourselves to the
-            // members list
+            // Send inviteAccept action to the group to add ourselves to the members list
             await sbp('chelonia/contract/wait', params.contractID)
             await sbp('gi.actions/group/inviteAccept', {
               ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
