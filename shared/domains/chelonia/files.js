@@ -111,6 +111,13 @@ const fileStream = (chelonia: Object, manifest: Object) => {
       if (createCID(coerce(chunkBinary)) !== chunk[1]) throw new Error('mismatched chunk hash')
       yield chunkBinary
     }
+    // Now that we're done, we check to see if we read the correct size
+    // If all went well, we should have and this would never throw. However,
+    // if the payload was tampered with, we could have read a different size
+    // than expected. This will throw at the end, after all chunks are processed
+    // and after some or all of the data have already been consumed.
+    // If integrity of the entire payload is important, consumers must buffer
+    // the stream and wait until the end before any processing.
     if (readSize !== manifest.size) throw new Error('mismatched size')
   }
 
@@ -134,6 +141,9 @@ const fileStream = (chelonia: Object, manifest: Object) => {
 
 export const aes256gcmHandlers: any = {
   upload: (chelonia: Object, manifestOptions: Object) => {
+    // IKM stands for Input Keying Material, and is a random value used to
+    // derive the encryption used in the chunks. See RFC 8188 for how the
+    // actual encryption key gets derived from the IKM.
     let IKM = manifestOptions['cipher-params']?.IKM
     const recordSize = manifestOptions['cipher-params']?.rs ?? 1 << 16
     if (!IKM) {
@@ -257,6 +267,9 @@ export default (sbp('sbp/selectors/register', {
           const chunks = await Promise.all(chunkDescriptors)
           const manifest = {
             version: '1.0.0',
+            // ?? undefined coerces null and undefined to undefined
+            // This ensures that null or undefined values don't make it to the
+            // JSON (otherwise, null values _would_ be stringified as 'null')
             type: manifestOptions.type ?? undefined,
             meta: manifestOptions.meta ?? undefined,
             cipher: manifestOptions.cipher,
@@ -271,7 +284,16 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     })
-    const boundary = window.crypto.randomUUID()
+    // TODO: Using `window.crypto.randomUUID` breaks the tests. Maybe upgrading
+    // Cypress would fix this.
+    const boundary = typeof window.crypto?.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      // If randomUUID not available, we instead compute a random boundary
+      // The indirect call to Math.random (`(0, Math.random)`) is to explicitly
+      // mark that we intend on using Math.random, even though it's not a
+      // CSPRNG, so that it's not reported as a bug in by static analysis tools.
+      : new Array(36).fill('').map(v =>
+        'abcdefghijklmnopqrstuvwxyz'[(0, Math.random)() * 26 | 0]).join('')
     const stream = encodeMultipartMessage(boundary, transferParts)
 
     const uploadResponse = await fetch(`${this.config.connectionURL}/file`, {

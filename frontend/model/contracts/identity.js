@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { has, merge } from './shared/giLodash.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, boolean, optional, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -34,10 +34,10 @@ sbp('chelonia/defineContract', {
           attributes: objectMaybeOf({
             username: string,
             email: string,
-            picture: objectOf({
+            picture: unionOf(string, objectOf({
               manifestCid: string,
               downloadParams: optional(object)
-            })
+            }))
           })
         })(data)
         const { username } = data.attributes

@@ -652,10 +652,10 @@ sbp('chelonia/defineContract', {
         settings: objectMaybeOf({
           // TODO: add 'groupPubkey'
           groupName: string,
-          groupPicture: objectOf({
+          groupPicture: unionOf(string, objectOf({
             manifestCid: string,
             downloadParams: optional(object)
-          }),
+          })),
           sharedValues: string,
           mincomeAmount: number,
           mincomeCurrency: string,
