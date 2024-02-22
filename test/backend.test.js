@@ -21,8 +21,8 @@ import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/c
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
 
-// Remove this when dropping support for Node versions lower than v18.
-const Blob = require('buffer').Blob
+// Remove this when dropping support for Node versions lower than v20.
+const File = require('buffer').File
 const fs = require('fs')
 const path = require('path')
 // const { PassThrough, Readable } = require('stream')
@@ -203,7 +203,7 @@ describe('Full walkthrough', function () {
         settings: {
           // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
           groupName: name,
-          groupPicture: '',
+          groupPicture: { manifestCid: '' },
           sharedValues: 'our values',
           mincomeAmount: 1000,
           mincomeCurrency: 'USD',
@@ -343,11 +343,37 @@ describe('Full walkthrough', function () {
       const buffer = fs.readFileSync(filepath)
       const hash = createCID(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
-      form.append('hash', hash)
-      form.append('data', new Blob([buffer]), path.basename(filepath))
+      const manifest = {
+        version: '1.0.0',
+        type: 'image/png',
+        // The file is not encrypted, but we use 'aes256gcm' anyhow because
+        // the server will reject unencrypted files
+        cipher: 'aes256gcm',
+        'cipher-params': { 'keyId': 'ojSKsDaV' },
+        size: buffer.byteLength,
+        chunks: [[buffer.byteLength, hash]]
+      }
+      const manifestBuffer = Buffer.from(JSON.stringify(manifest))
+      const manifestCid = createCID(manifestBuffer)
+      form.append(
+        '0',
+        new File(
+          [buffer],
+          '0',
+          { type: 'application/octet-stream' }
+        )
+      )
+      form.append(
+        'manifest',
+        new File(
+          [manifestBuffer],
+          'manifest.json',
+          { type: 'application/vnd.shelter.manifest' }
+        )
+      )
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
-        .then(r => should(r).equal(`/file/${hash}`))
+        .then(r => should(r).equal(manifestCid))
     })
   })
 

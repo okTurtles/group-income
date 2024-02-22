@@ -159,24 +159,83 @@ sbp('sbp/selectors/register', {
 //       approach cache limits.
 // =======================
 
-const files = localforage.createInstance({
+const filesCache = localforage.createInstance({
   name: 'Group Income',
-  storeName: 'Files'
+  storeName: 'Files Cache'
 })
 
+const maxFileEntries = 100
+
 sbp('sbp/selectors/register', {
-  'gi.db/files/save': function (url: string, blob: Blob): Promise<*> {
-    return files.setItem(url, blob).then(v => {
-      console.log('successfully saved:', url)
-    }).catch(e => {
-      console.error('error saving:', url, e)
+  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<*> {
+    if (cacheKey.startsWith('__')) throw new Error('Invalid key')
+    const keys = await filesCache.getItem('keys') ?? []
+
+    // We need to perform several operations in the DB, which includes
+    // the operation requested (i.e., saving a file) and updating the `keys`
+    // entry for caching, as well as possibly deleting cached entries.
+    // Because the `keys` entry is a point of contention among calls and we
+    // can only perform a single storage operation at the same time, we use
+    // a queue to ensure that all operations are done atomically.
+    return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', () => {
+      return filesCache.setItem(cacheKey, blob).then(async v => {
+        console.log('successfully saved:', cacheKey)
+        const idx = keys.indexOf(cacheKey)
+        if (idx !== -1) {
+          // Remove current entry
+          keys.splice(idx, 1)
+        }
+        // And bring it to the top
+        keys.push(cacheKey)
+        // If the list gets too long, remove the last element
+        if (keys.length > maxFileEntries) {
+          const last = keys.splice(0, keys.length - maxFileEntries)
+          await Promise.all(last.map((e) => filesCache.removeItem(e)))
+        }
+        // Save the new current keys
+        await filesCache.setItem('keys', keys)
+      }).catch(e => {
+        console.error('error saving:', cacheKey, e)
+      })
     })
   },
-  'gi.db/files/load': function (url: string): Promise<Blob> {
-    return files.getItem(url)
+  'gi.db/filesCache/load': async function (cacheKey: string): Promise<Blob> {
+    if (cacheKey.startsWith('__')) throw new Error('Invalid key')
+    const file = await filesCache.getItem(cacheKey)
+    if (file) {
+      // No await here so that we can return early
+      sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
+        const keys = await filesCache.getItem('keys') ?? []
+        const idx = keys.indexOf(cacheKey)
+        if (idx !== -1) {
+          // Bring entry to the top
+          keys.splice(idx, 1)
+          keys.push(cacheKey)
+          await filesCache.setItem('keys', keys)
+        }
+      }).catch(e => {
+        console.error('[gi.db/filesCache/load] Error updating keys')
+      })
+    }
+    return ((file: any): Blob)
   },
-  'gi.db/files/delete': function (url: string): Promise<Blob> {
-    return files.removeItem(url)
+  'gi.db/filesCache/delete': async function (cacheKey: string): Promise<void> {
+    if (cacheKey.startsWith('__')) throw new Error('Invalid key')
+    await filesCache.removeItem(cacheKey)
+    // No await here so that we can return early
+    sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
+      const keys = await filesCache.getItem('keys') ?? []
+      const idx = keys.indexOf(cacheKey)
+      if (idx !== -1) {
+        keys.splice(idx, 1)
+        await filesCache.setItem('keys', keys)
+      }
+    }).catch(e => {
+      console.error('[gi.db/filesCache/load] Error updating keys')
+    })
+  },
+  'gi.db/filesCache/clear': async function (): Promise<void> {
+    await filesCache.clear()
   }
 })
 

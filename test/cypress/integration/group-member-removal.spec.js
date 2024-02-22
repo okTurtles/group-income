@@ -14,12 +14,10 @@ describe('Group - Removing a member', () => {
   }
 
   function openRemoveMemberModal (username, nth) {
-    cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).within(() => {
-      cy.getByDT('username').should('contain', `${username}-${userId}`)
-
-      cy.getByDT('openMemberProfileCard').click()
-    })
-
+    if (nth) {
+      cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).should('contain', `${username}-${userId}`)
+    }
+    cy.getByDT('groupMembers').contains(username).click()
     cy.getByDT('memberProfileCard').within(() => {
       cy.getByDT('buttonRemoveMember')
         .should('contain', 'Remove member')
@@ -74,10 +72,13 @@ describe('Group - Removing a member', () => {
       bypassUI: true,
       actionBeforeLogout: () => {
         cy.log('Option to Remove Member does not exist')
-        cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
-          cy.getByDT('username').should('contain', `user1-${userId}`)
-          cy.getByDT('openMemberProfileCard').click()
-        })
+        cy.getByDT('groupMembers').contains('user1-').click()
+        // The following breaks because the node could be detached when loading
+        // the profile picture.
+        // cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
+        //  cy.getByDT('username').should('contain', `user1-${userId}`)
+        //  cy.getByDT('openMemberProfileCard').click()
+        // })
         cy.getByDT('memberProfileCard').find('button').should('have.length', 2) // Send message and close
         cy.getByDT('closeProfileCard').click()
       }
