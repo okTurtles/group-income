@@ -1909,9 +1909,8 @@ sbp('chelonia/defineContract', {
 
           Promise.resolve()
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))
-            .then(() => {
-              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
-            }).catch((e) => {
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false))
+            .catch((e) => {
               console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
 

@@ -6313,17 +6313,9 @@ ${this.getErrorInfo()}`;
   var chatRoomAttributesType = objectOf({
     name: string,
     description: string,
-    creatorID: string,
+    creatorID: optional(string),
     type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
-    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
-    groupContractID: optional(string)
-  });
-  var groupChatRoomAttributesType = objectOf({
-    name: string,
-    description: string,
-    type: literalOf(CHATROOM_TYPES.GROUP),
-    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
-    groupContractID: optional(string)
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
   });
   var messageType = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
@@ -8516,7 +8508,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/addChatRoom": {
         validate: objectOf({
           chatRoomID: string,
-          attributes: groupChatRoomAttributesType
+          attributes: chatRoomAttributesType
         }),
         process({ data, meta, contractID, innerSigningContractID }, { state }) {
           const { name, type, privacyLevel, description } = data.attributes;
@@ -8921,9 +8913,7 @@ ${this.getErrorInfo()}`;
               groupID: contractID,
               memberID
             });
-            Promise.resolve().then(() => (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID)).then(() => {
-              return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
-            }).catch((e) => {
+            Promise.resolve().then(() => (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID)).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false)).catch((e) => {
               console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e);
             });
             (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, memberID, state);

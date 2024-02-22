@@ -302,14 +302,12 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity/createDirectMessage": {
         validate: (data, { state, getters }) => {
           objectOf({
-            groupContractID: optional(string),
             contractID: string
           })(data);
         },
         process({ data }, { state }) {
-          const { groupContractID, contractID } = data;
+          const { contractID } = data;
           import_common.Vue.set(state.chatRooms, contractID, {
-            groupContractID,
             visible: true
           });
         },
@@ -319,16 +317,14 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/joinDirectMessage": {
         validate: objectOf({
-          groupContractID: optional(string),
           contractID: string
         }),
         process({ data }, { state, getters }) {
-          const { groupContractID, contractID } = data;
+          const { contractID } = data;
           if (getters.ourDirectMessages[contractID]) {
             throw new TypeError((0, import_common.L)("Already joined direct message."));
           }
           import_common.Vue.set(state.chatRooms, contractID, {
-            groupContractID,
             visible: true
           });
         },
