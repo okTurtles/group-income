@@ -18,6 +18,7 @@ import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unw
 import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
+import './files.js'
 import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract

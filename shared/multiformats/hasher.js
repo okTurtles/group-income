@@ -17,7 +17,7 @@ export class Hasher {
         this.encode = encode;
     }
     digest(input) {
-        if (input instanceof Uint8Array) {
+        if (input instanceof Uint8Array || input instanceof ReadableStream) {
             const result = this.encode(input);
             return result instanceof Uint8Array
                 ? Digest.create(this.code, result)
