@@ -37,7 +37,7 @@ export default ({
       })
     }
   },
-  beforeUnmount () {
+  beforeDestroy () {
     this.revokeObjectURL()
   },
   data () {
@@ -59,7 +59,7 @@ export default ({
       this.revokableObjectURL = this.blobURL = URL.createObjectURL(blob)
     },
     async downloadFile (src) {
-      const cached = await sbp('gi.db/files/load', src.manifestCid).catch((e) => {
+      const cached = await sbp('gi.db/filesCache/load', src.manifestCid).catch((e) => {
         console.error('[Avatar.vue] Error loading file from cache', e)
       })
       if (src !== this.src) return
@@ -69,7 +69,7 @@ export default ({
       }
       try {
         const blob = await sbp('chelonia/fileDownload', src)
-        sbp('gi.db/files/save', src.manifestCid, blob).catch((e) => {
+        sbp('gi.db/filesCache/save', src.manifestCid, blob).catch((e) => {
           console.error('[Avatar.vue] Error caching avatar blob', e)
         })
         if (src !== this.src) return

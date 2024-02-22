@@ -495,7 +495,8 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
-    sbp('gi.db/files/clear')
+    // Clear the file cache when logging out to preserve privacy
+    sbp('gi.db/filesCache/clear').catch((e) => { console.error('Error clearing file cache', e) })
     sbp('state/vuex/reset')
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
