@@ -7,7 +7,8 @@ import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.
 import { coerce } from '~/shared/multiformats/bytes.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
-const supportsRequestStreams = (() => {
+// Node.js supports request streams, but also this check isn't meant for Node.js
+const supportsRequestStreams = typeof window !== 'object' || (() => {
   let duplexAccessed = false
 
   const hasContentType = new Request('', {
