@@ -139,6 +139,22 @@ export const aes256gcmHandlers: any = {
       IKM = new Uint8Array(33)
       window.crypto.getRandomValues(IKM)
     }
+    // The keyId is only used as a sanity check but otherwise it is not needed
+    // Because the keyId is computed from the IKM, which is a secret, it is
+    // truncated to just eight characters so that it doesn't disclose too much
+    // information about the IKM (in theory, since it's a random string 33 bytes
+    // long, a full hash shouldn't disclose too much information anyhow).
+    // The reason the keyId is not _needed_ is that the IKM is part of the
+    // downloadParams, so anyone downloading a file should have the required
+    // context, and there is exactly one valid IKM for any downloadParams.
+    // By truncating the keyId, the only way to fully verify whether a given
+    // IKM decrypts a file is by attempting decryption.
+    // A side-effect of truncating the keyId is that, if the IKM were shared
+    // some other way (e.g., using the OP_KEY_SHARE mechanism), because of
+    // collisions it may not always be possible to look up the correct IKM.
+    // Therefore, a handler that uses a different strategy than the one used
+    // here (namely, including the IKM in the downloadParams) may need to use
+    // longer key IDs, possibly a full hash.
     const keyId = blake32Hash('aes256gcm-keyId' + blake32Hash(IKM)).slice(-8)
     const binaryKeyId = Buffer.from(keyId)
     return {

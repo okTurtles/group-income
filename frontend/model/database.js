@@ -170,6 +170,12 @@ sbp('sbp/selectors/register', {
   'gi.db/files/save': async function (cacheKey: string, blob: Blob): Promise<*> {
     const keys = await files.getItem('keys') ?? []
 
+    // We need to perform several operations in the DB, which includes
+    // the operation requested (i.e., saving a file) and updating the `keys`
+    // entry for caching, as well as possibly deleting cached entries.
+    // Because the `keys` entry is a point of contention among calls and we
+    // can only perform a single storage operation at the same time, we use
+    // a queue to ensure that all operations are done atomically.
     return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', () => {
       // `_` prefix to avoid overlapping with the special `keys` key
       return files.setItem('_' + cacheKey, blob).then(async v => {
