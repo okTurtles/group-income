@@ -180,8 +180,9 @@ const SECOND = 1000
 route.POST('/file', {
   // TODO: only allow uploads from registered users
   payload: {
-    output: 'data',
-    multipart: true,
+    parse: true,
+    output: 'stream',
+    multipart: { output: 'annotated' },
     allow: 'multipart/form-data',
     failAction: function (request, h, err) {
       console.error('failAction error:', err)
@@ -193,16 +194,58 @@ route.POST('/file', {
 }, async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
-    const { hash, data } = request.payload
-    if (!hash) return Boom.badRequest('missing hash')
-    if (!data) return Boom.badRequest('missing data')
-    const ourHash = createCID(data)
-    if (ourHash !== hash) {
-      console.error(`hash(${hash}) != ourHash(${ourHash})`)
-      return Boom.badRequest('bad hash!')
-    }
-    await sbp('chelonia/db/set', hash, data)
-    return '/file/' + hash
+    const manifestMeta = request.payload['manifest']
+    if (typeof manifestMeta !== 'object') return Boom.badRequest('missing manifest')
+    if (manifestMeta.filename !== 'manifest.json') return Boom.badRequest('wrong manifest filename')
+    if (!(manifestMeta.payload instanceof Uint8Array)) return Boom.badRequest('wrong manifest format')
+    const manifest = (() => {
+      try {
+        return JSON.parse(Buffer.from(manifestMeta.payload).toString())
+      } catch {
+        throw Boom.badData('Error parsing manifest')
+      }
+    })()
+    if (typeof manifest !== 'object') return Boom.badData('manifest format is invalid')
+    if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
+    if (manifest.cipher !== 'aes256gcm') return Boom.badData('unsupported cipher')
+    if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
+
+    // Now that the manifest format looks right, validate the chunks
+    let ourSize = 0
+    const chunks = manifest.chunks.map((chunk, i) => {
+      // Validate the chunk information
+      if (
+        !Array.isArray(chunk) ||
+        chunk.length !== 2 ||
+        typeof chunk[0] !== 'number' ||
+        typeof chunk[1] !== 'string' ||
+        !Number.isSafeInteger(chunk[0]) ||
+        chunk[0] <= 0
+      ) {
+        throw Boom.badData('bad chunk description')
+      }
+      if (!request.payload[i] || !(request.payload[i].payload instanceof Uint8Array)) {
+        throw Boom.badRequest('chunk missing in submitted data')
+      }
+      const ourHash = createCID(request.payload[i].payload)
+      if (request.payload[i].payload.byteLength !== chunk[0]) {
+        throw Boom.badRequest('bad chunk size')
+      }
+      if (ourHash !== chunk[1]) {
+        throw Boom.badRequest('bad chunk hash')
+      }
+      // We're done validating the chunk
+      ourSize += chunk[0]
+      return [ourHash, request.payload[i].payload]
+    })
+    // Finally, verify the size is correct
+    if (ourSize !== manifest.size) return Boom.badRequest('Mismatched total size')
+
+    // Now, store all chunks and the manifest
+    await Promise.all(chunks.map(([cid, data]) => sbp('chelonia/db/set', cid, data)))
+    const manifestHash = createCID(manifestMeta.payload)
+    await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
+    return manifestHash
   } catch (err) {
     return logger(err)
   }

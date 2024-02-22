@@ -16,6 +16,8 @@ export const SNULL = 'sNULL'
 export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
 export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
+// 32 bytes of keying material, used for external keys (such as files)
+export const EXTERNALKM32 = 'externalkm32'
 
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
   if (!(ary instanceof Uint8Array)) {
@@ -69,6 +71,14 @@ export const keygen = (type: string): Key => {
     }
 
     Object.defineProperty(res, 'secretKey', { value: nacl.randomBytes(nacl.secretbox.keyLength) })
+
+    return res
+  } else if (type === EXTERNALKM32) {
+    const res: Key = {
+      type: type
+    }
+
+    Object.defineProperty(res, 'secretKey', { value: nacl.randomBytes(32) })
 
     return res
   }

@@ -16,7 +16,7 @@ export default ({
   components: { Avatar },
   props: {
     picture: {
-      type: String
+      type: [String, Object]
     },
     contractID: String,
     alt: {

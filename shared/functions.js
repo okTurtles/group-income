@@ -1,9 +1,10 @@
 'use strict'
 
 import nacl from 'tweetnacl'
-import { CID } from './multiformats/cid.js'
-import { base58btc } from './multiformats/bases/base58.js'
-import { blake2b256 } from './multiformats/blake2b.js'
+import { blake2b256stream } from '~/shared/blake2bstream.js'
+import { base58btc } from '~/shared/multiformats/bases/base58.js'
+import { blake2b256 } from '~/shared/multiformats/blake2b.js'
+import { CID } from '~/shared/multiformats/cid.js'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
 const multicodes = { JSON: 0x0200, RAW: 0x00 }
@@ -13,6 +14,12 @@ if (typeof window === 'object' && typeof Buffer === 'undefined') {
   // Only import `Buffer` to hopefully help treeshaking.
   const { Buffer } = require('buffer')
   window.Buffer = Buffer
+}
+
+export async function createCIDfromStream (data: string | Uint8Array | ReadableStream, multicode: number = multicodes.RAW): Promise<string> {
+  const uint8array = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const digest = await blake2b256stream.digest(uint8array)
+  return CID.create(1, multicode, digest).toString(base58btc.encoder)
 }
 
 // TODO: implement a streaming hashing function for large files.
