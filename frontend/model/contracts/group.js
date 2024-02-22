@@ -184,14 +184,14 @@ function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, s
   Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 }
 
-function isActionYoungerThanUser (height: number, userProfile: ?Object): boolean {
+function isActionYoungerThanUser (contractID: string, height: number, userProfile: ?Object): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
   // 'MEMBER_ADDED' notification for user-1.
   // In some situations, userProfile is undefined, for example, when inviteAccept is called in
   // certain situations. So we need to check for that here.
-  if (!userProfile) {
+  if (!userProfile || sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
     return false
   }
   return userProfile.joinedHeight < height
@@ -903,7 +903,7 @@ sbp('chelonia/defineContract', {
 
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
-        if (isActionYoungerThanUser(height, myProfile)) {
+        if (isActionYoungerThanUser(contractID, height, myProfile)) {
           sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
             createdDate: meta.createdDate,
             groupID: contractID,
@@ -958,7 +958,7 @@ sbp('chelonia/defineContract', {
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (proposal?.dateClosed &&
-          isActionYoungerThanUser(height, myProfile)) {
+          isActionYoungerThanUser(contractID, height, myProfile)) {
           sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
             createdDate: meta.createdDate,
             groupID: contractID,
@@ -1182,7 +1182,7 @@ sbp('chelonia/defineContract', {
               const { profiles = {} } = state
               const myProfile = profiles[loggedIn.identityContractID]
 
-              if (isActionYoungerThanUser(height, myProfile)) {
+              if (isActionYoungerThanUser(contractID, height, myProfile)) {
                 sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
                   createdDate: meta.createdDate,
                   groupID: contractID,
@@ -1574,7 +1574,6 @@ sbp('chelonia/defineContract', {
   methods: {
     'gi.contracts/group/_cleanup': ({ contractID, resync }) => {
       const rootState = sbp('state/vuex/state')
-      const rootGetters = sbp('state/vuex/getters')
       const contracts = rootState.contracts || {}
       const { identityContractID } = rootState.loggedIn
 
@@ -1636,11 +1635,6 @@ sbp('chelonia/defineContract', {
           console.error(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
         })
         // TODO - #828 remove other group members contracts if applicable
-
-      // NOTE: remove all notifications whose scope is in this group
-      for (const notification of rootGetters.notificationsByGroup(contractID)) {
-        sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
-      }
     },
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
       const { identityContractID } = sbp('state/vuex/state').loggedIn
@@ -1745,7 +1739,7 @@ sbp('chelonia/defineContract', {
       //   3) and send 'MINCOME_CHANGED' notification.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
 
-      if (isActionYoungerThanUser(height, myProfile) && myProfile.incomeDetailsType) {
+      if (isActionYoungerThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
         const mincomeIncreased = data.toAmount > data.fromAmount
         const actionNeeded = mincomeIncreased ||
@@ -1826,6 +1820,7 @@ sbp('chelonia/defineContract', {
     // eslint-disable-next-line require-await
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID }) => {
       const rootState = sbp('state/vuex/state')
+      const rootGetters = sbp('state/vuex/getters')
       const state = rootState[contractID]
       const { identityContractID } = rootState.loggedIn
       const memberID = data.memberID || innerSigningContractID
@@ -1839,9 +1834,17 @@ sbp('chelonia/defineContract', {
         console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, { contractID, memberID, status: state.profiles?.[memberID]?.status })
         return
       }
-      if (memberID === identityContractID && sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
-        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member is currently joining`, { contractID, memberID, status: state.profiles?.[memberID]?.status })
-        return
+
+      if (memberID === identityContractID) {
+        // NOTE: remove all notifications whose scope is in this group
+        for (const notification of rootGetters.notificationsByGroup(contractID)) {
+          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
+        }
+
+        if (sbp('okTurtles.data/get', 'JOINING_GROUP-' + contractID)) {
+          console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member is currently joining`, { contractID, memberID, status: state.profiles?.[memberID]?.status })
+          return
+        }
       }
 
       // TODO: Use this later. This is an attempt at removing the need for JOINING_GROUP.
@@ -1896,7 +1899,7 @@ sbp('chelonia/defineContract', {
       } else {
         const myProfile = getters.groupProfile(identityContractID)
 
-        if (isActionYoungerThanUser(height, myProfile)) {
+        if (isActionYoungerThanUser(contractID, height, myProfile)) {
           const memberRemovedThemselves = memberID === innerSigningContractID
 
           sbp('gi.notifications/emit', // emit a notification for a member removal.
