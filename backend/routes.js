@@ -40,7 +40,7 @@ route.POST('/event', {
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
   try {
-    console.log('/event handler')
+    console.info('/event handler')
     const entry = GIMessage.deserialize(request.payload)
     try {
       await sbp('backend/server/handleEntry', entry)
@@ -58,14 +58,14 @@ route.POST('/event', {
     }
     return entry.hash()
   } catch (err) {
-    return logger(err)
+    logger.error('POST /event', err.message, err.stack || err)
+    return err
   }
 })
 
 route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
+  const { contractID, since } = request.params
   try {
-    const { contractID, since } = request.params
-
     if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
     }
@@ -83,14 +83,14 @@ route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    return logger(err)
+    logger.error(`GET /eventsAfter/${contractID}/${since}`, err.message, err.stack || err)
+    return err
   }
 })
 
 route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
+  const { before, limit } = request.params
   try {
-    const { before, limit } = request.params
-
     if (!before) return Boom.badRequest('missing before')
     if (!limit) return Boom.badRequest('missing limit')
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
@@ -100,13 +100,14 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    return logger(err)
+    logger.error(`GET /eventsBefore/${before}/${limit}`, err.message, err.stack || err)
+    return err
   }
 })
 
 route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
+  const { startHash, endHash } = request.params
   try {
-    const { startHash, endHash } = request.params
     const offset = parseInt(request.query.offset || '0')
 
     if (!startHash) return Boom.badRequest('missing startHash')
@@ -118,7 +119,8 @@ route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    return logger(err)
+    logger.error(`GET /eventsBetwene/${startHash}/${endHash}`, err.message, err.stack || err)
+    return err
   }
 })
 
@@ -135,23 +137,26 @@ route.POST('/name', {
     if (value.startsWith('_private')) return Boom.badData()
     return await sbp('backend/db/registerName', name, value)
   } catch (err) {
-    return logger(err)
+    logger.error('POST /name', err.message, err.stack || err)
+    return err
   }
 })
 
 route.GET('/name/{name}', {}, async function (request, h) {
+  const { name } = request.params
   try {
-    return await sbp('backend/db/lookupName', request.params.name)
+    return await sbp('backend/db/lookupName', name)
   } catch (err) {
-    return logger(err)
+    logger.error(`GET /name/${name}`, err.message, err.stack || err)
+    return err
   }
 })
 
 route.GET('/latestHEADinfo/{contractID}', {
   cache: { otherwise: 'no-store' }
 }, async function (request, h) {
+  const { contractID } = request.params
   try {
-    const { contractID } = request.params
     if (contractID.startsWith('_private')) return Boom.notFound()
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
@@ -160,7 +165,8 @@ route.GET('/latestHEADinfo/{contractID}', {
     }
     return HEADinfo
   } catch (err) {
-    return logger(err)
+    logger.error(`GET /latestHEADinfo/${contractID}`, err.message, err.stack || err)
+    return err
   }
 })
 
@@ -211,7 +217,7 @@ route.POST('/file', {
   }
 }, async function (request, h) {
   try {
-    console.log('FILE UPLOAD!')
+    console.info('FILE UPLOAD!')
     const manifestMeta = request.payload['manifest']
     if (typeof manifestMeta !== 'object') return Boom.badRequest('missing manifest')
     if (manifestMeta.filename !== 'manifest.json') return Boom.badRequest('wrong manifest filename')
@@ -265,7 +271,8 @@ route.POST('/file', {
     await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
     return manifestHash
   } catch (err) {
-    return logger(err)
+    logger.error('POST /file', err.message, err.stack || err)
+    return err
   }
 })
 

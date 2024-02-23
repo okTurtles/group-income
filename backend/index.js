@@ -6,18 +6,41 @@ import '@sbp/okturtles.events'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import chalk from 'chalk'
+import pino from 'pino'
 
-global.logger = function (err) {
-  console.error(err)
-  err.stack && console.error(err.stack)
-  return err // routes.js is written in a way that depends on this returning the error
+const prettyPrint = process.env.NODE_ENV === 'development' || process.env.CI || process.env.CYPRESS_RECORD_KEY
+const logger = pino(prettyPrint
+  ? {
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true
+        }
+      }
+    }
+  : {})
+
+const logLevel = process.env.LOG_LEVEL || (prettyPrint ? 'debug' : 'info')
+if (Object.keys(logger.levels.values).includes(logLevel)) {
+  logger.level = logLevel
+} else {
+  logger.warn(`Unknown log level: ${logLevel}`)
 }
+
+global.logger = logger
+console.debug = logger.debug.bind(logger)
+console.info = logger.info.bind(logger)
+console.log = logger.info.bind(logger)
+console.warn = logger.warn.bind(logger)
+console.error = logger.error.bind(logger)
+
+console.info('NODE_ENV = %s', process.env.NODE_ENV)
 
 const dontLog = { 'backend/server/broadcastEntry': true }
 
 function logSBP (domain, selector, data) {
   if (!dontLog[selector]) {
-    console.log(chalk.bold(`[sbp] ${selector}`), data)
+    console.info(chalk.bold(`[sbp] ${selector}`), data)
   }
 }
 
@@ -26,7 +49,7 @@ function logSBP (domain, selector, data) {
 
 module.exports = (new Promise((resolve, reject) => {
   sbp('okTurtles.events/on', SERVER_RUNNING, function () {
-    console.log(chalk.bold('backend startup sequence complete.'))
+    console.info(chalk.bold('backend startup sequence complete.'))
     resolve()
   })
   // call this after we've registered listener for SERVER_RUNNING
@@ -35,13 +58,13 @@ module.exports = (new Promise((resolve, reject) => {
 
 const shutdownFn = function (message) {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (pubsub) {
-    console.log('message received in child, shutting down...', message)
+    console.info('message received in child, shutting down...', message)
     pubsub.on('close', async function () {
       try {
         await sbp('backend/server/stop')
-        console.log('Hapi server down')
+        console.info('Hapi server down')
         // await db.stop()
-        // console.log('database stopped')
+        // console.info('database stopped')
         process.send({}) // tell grunt we've successfully shutdown the server
         process.nextTick(() => process.exit(0)) // triple-check we quit :P
       } catch (err) {
@@ -63,12 +86,12 @@ process.on('SIGUSR2', shutdownFn)
 process.on('message', shutdownFn)
 
 process.on('uncaughtException', (err) => {
-  console.error('[server] Unhandled exception:', err, err.stack)
+  console.error(err, '[server] Unhandled exception')
   process.exit(1)
 })
 
 process.on('unhandledRejection', (reason, p) => {
-  console.error('[server] Unhandled promise rejection:', p, 'reason:', reason)
+  console.error(reason, '[server] Unhandled promise rejection: %s', reason)
   process.exit(1)
 })
 

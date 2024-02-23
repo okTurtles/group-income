@@ -227,7 +227,7 @@ export default async () => {
     let numVisitedKeys = 0
     let numNewKeys = 0
 
-    console.log('[chelonia.db] Preloading...')
+    console.info('[chelonia.db] Preloading...')
     for (const key of keys) {
       // Skip keys which are already in the DB.
       if (!persistence || !await sbp('chelonia/db/get', key)) {
@@ -240,10 +240,10 @@ export default async () => {
       }
       numVisitedKeys++
       if (numVisitedKeys % Math.floor(numKeys / 10) === 0) {
-        console.log(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
+        console.info(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
       }
     }
-    numNewKeys && console.log(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
+    numNewKeys && console.info(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
   await initZkpp()
 }

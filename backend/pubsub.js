@@ -44,10 +44,10 @@ const generateSocketID = (() => {
   return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
 })()
 
-const log = console.log.bind(console, tag)
-log.bold = (...args) => console.log(bold(tag, ...args))
-log.debug = console.debug.bind(console, tag)
-log.error = (...args) => console.error(bold.red(tag, ...args))
+const log = logger.info.bind(logger, tag)
+log.bold = (...args) => logger.info(bold(tag, ...args))
+log.debug = logger.debug.bind(logger, tag)
+log.error = (...args) => logger.error(bold.red(tag, ...args))
 
 // ====== API ====== //
 
@@ -189,7 +189,6 @@ const defaultServerHandlers = {
   },
   error (error: Error) {
     log.error('Server error:', error)
-    logger(error)
   },
   headers () {
   },
@@ -227,7 +226,7 @@ const defaultSocketEventHandlers = {
     }
     // Now that we have successfully parsed the message, we can log it.
     if (msg.type !== 'pong' || server.options.logPongMessages) {
-      log(`Received '${msg.type}' on socket ${socket.id}`, text)
+      log.debug(`Received '${msg.type}' on socket ${socket.id}`, text)
     }
     // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
@@ -238,7 +237,7 @@ const defaultSocketEventHandlers = {
         handler.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
-        logger(error)
+        log.error('onMesage:', error)
         server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
