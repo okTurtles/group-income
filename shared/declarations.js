@@ -69,6 +69,10 @@ declare module 'favico.js' { declare module.exports: any }
 declare module 'lru-cache' { declare module.exports: any }
 declare module 'uuid' { declare module.exports: any }
 declare module 'marked' { declare module.exports: any }
+declare module '@exact-realty/multipart-parser/encodeMultipartMessage' { declare module.exports: any }
+declare module '@exact-realty/rfc8188/decrypt' { declare module.exports: any }
+declare module '@exact-realty/rfc8188/encodings' { declare module.exports: any }
+declare module '@exact-realty/rfc8188/encrypt' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
@@ -93,6 +97,8 @@ declare module './model/contracts/manifests.json' { declare module.exports: any 
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
 declare module '@controller/instance-keys.js' { declare module.exports: any }
-declare module './multiformats/bases/base58.js' { declare module.exports: any }
-declare module './multiformats/cid.js' { declare module.exports: any }
-declare module './multiformats/blake2b.js' { declare module.exports: any }
+declare module '~/shared/multiformats/bases/base58.js' { declare module.exports: any }
+declare module '~/shared/multiformats/blake2b.js' { declare module.exports: any }
+declare module '~/shared/multiformats/bytes.js' { declare module.exports: any }
+declare module '~/shared/multiformats/cid.js' { declare module.exports: any }
+declare module '~/shared/blake2bstream.js' { declare module.exports: any }
