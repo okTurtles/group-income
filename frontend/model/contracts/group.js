@@ -1415,7 +1415,7 @@ sbp('chelonia/defineContract', {
             sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`)
             sbp('chelonia/contract/remove', data.chatRoomID).then(() => {
               const rootState = sbp('state/vuex/state')
-              if (rootState.currentChatRoomIDs[contractID] === data.chatRoomID) {
+              if (rootState.chatroom.currentChatRoomIDs[contractID] === data.chatRoomID) {
                 sbp('state/vuex/commit', 'setCurrentChatRoomId', {
                   groupId: contractID
                 })

@@ -156,7 +156,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID }) {
-        Vue.set(sbp('state/vuex/state').chatRoomUnread, contractID, {
+        Vue.set(sbp('state/vuex/state')?.chatroom?.chatRoomUnread, contractID, {
           readUntil: undefined,
           messages: []
         })
@@ -519,7 +519,7 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
-        if (rootState.chatRoomScrollPosition[contractID] === data.hash) {
+        if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomId: contractID, messageHash: null
           })
@@ -527,7 +527,7 @@ sbp('chelonia/defineContract', {
 
         // NOTE: readUntil can't be undefined because it would be set in advance
         //       while syncing the contracts events especially join, addMessage, ...
-        if (rootState.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
+        if (rootState.chatroom.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
           sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
             chatRoomId: contractID,
             deletedDate: meta.createdDate
