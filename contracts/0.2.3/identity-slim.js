@@ -240,10 +240,7 @@ ${this.getErrorInfo()}`;
             attributes: objectMaybeOf({
               username: string,
               email: string,
-              picture: unionOf(string, objectOf({
-                manifestCid: string,
-                downloadParams: optional(object)
-              }))
+              picture: string
             })
           })(data);
           const { username } = data.attributes;
