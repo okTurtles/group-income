@@ -175,6 +175,24 @@ route.GET('/time', {}, function (request, h) {
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
+// API endpoint to check for streams support
+route.POST('/streams-test', {
+  payload: {
+    parse: 'false'
+  }
+},
+function (request, h) {
+  if (
+    request.payload.byteLength === 2 &&
+    Buffer.from(request.payload).toString() === 'ok'
+  ) {
+    return h.response().code(204)
+  } else {
+    return Boom.badRequest()
+  }
+}
+)
+
 // File upload route.
 // If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {

@@ -8,7 +8,10 @@ import { coerce } from '~/shared/multiformats/bytes.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
-const supportsRequestStreams = typeof window !== 'object' || (() => {
+// This part only checks for client-side support. Later, when we try uploading
+// a file for the first time, we'll check if requests work, as streams are not
+// supported in HTTP/1.1 and lower versions.
+let supportsRequestStreams = typeof window !== 'object' || (() => {
   let duplexAccessed = false
 
   const hasContentType = new Request('', {
@@ -44,7 +47,22 @@ const streamToUint8Array = async (s: ReadableStream) => {
 
 // Check for streaming support, as of today (Feb 2024) only Blink-
 // based browsers support this (i.e., Firefox and Safari don't).
-const ArrayBufferToUint8ArrayStream = async (s: ReadableStream) => {
+const ArrayBufferToUint8ArrayStream = async (connectionURL: string, s: ReadableStream) => {
+  // Even if the browser supports streams, the server must support HTTP/2
+  if (supportsRequestStreams === true) {
+    await fetch(`${connectionURL}/streams-test`, {
+      method: 'POST',
+      body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')) } }),
+      duplex: 'half'
+    }).then((r) => {
+      if (!r.ok) throw new Error('Unexpected response')
+      // supportsRequestStreams is tri-state
+      supportsRequestStreams = 2
+    }).catch(() => {
+      console.info('files: Disabling streams support because the streams test failed')
+      supportsRequestStreams = false
+    })
+  }
   if (!supportsRequestStreams) {
     return await streamToUint8Array(s)
   }
@@ -299,8 +317,9 @@ export default (sbp('sbp/selectors/register', {
     const uploadResponse = await fetch(`${this.config.connectionURL}/file`, {
       method: 'POST',
       signal: this.abortController.signal,
-      body: await ArrayBufferToUint8ArrayStream(stream),
-      headers: new Headers([['content-type', `multipart/form-data; boundary=${boundary}`]])
+      body: await ArrayBufferToUint8ArrayStream(this.config.connectionURL, stream),
+      headers: new Headers([['content-type', `multipart/form-data; boundary=${boundary}`]]),
+      duplex: 'half'
     })
 
     if (!uploadResponse.ok) throw new Error('Error uploading file')
