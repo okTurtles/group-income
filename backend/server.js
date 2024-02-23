@@ -4,7 +4,6 @@ import sbp from '@sbp/sbp'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
 import initDB from './database.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
 import {
@@ -17,6 +16,8 @@ import {
 } from './pubsub.js'
 import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
+import '~/shared/domains/chelonia/chelonia.js'
+import { ChelErrorUnrecoverable } from '~/shared/domains/chelonia/errors.js'
 
 const Inert = require('@hapi/inert')
 
@@ -71,17 +72,19 @@ hapi.ext({
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
-  'backend/server/broadcastEntry': async function (entry: GIMessage) {
+  'backend/server/broadcastEntry': async function (contractID: string, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry.serialize())
-    const subscribers = pubsub.enumerateSubscribers(entry.contractID())
-    console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry)
+    const subscribers = pubsub.enumerateSubscribers(contractID)
+    // TODO: Fix log to use description again
+    console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry} to ${contractID}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
-  'backend/server/handleEntry': async function (entry: GIMessage) {
-    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(entry.contractID())
-    await sbp('chelonia/db/addEntry', entry)
-    await sbp('backend/server/broadcastEntry', entry)
+  'backend/server/handleEntry': async function (contractID: string, entry: string) {
+    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
+    // TODO: Check entry
+    await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)
+    await sbp('backend/server/broadcastEntry', contractID, entry)
   },
   'backend/server/stop': function () {
     return hapi.stop()
@@ -130,6 +133,19 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
+  await sbp('chelonia/configure', {
+    acceptAllMessages: true,
+    skipActionProcessing: true,
+    skipSideEffects: true,
+    reingestEvents: false,
+    hooks: {
+      processError: (e) => {
+        if (e?.name === 'ChelErrorSignatureError' || e?.name === 'ChelErrorSignatureKeyNotFound') {
+          throw new ChelErrorUnrecoverable(e.message)
+        }
+      }
+    }
+  })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: GiAuth },

@@ -110,7 +110,7 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
   return true
 }
 
-export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
+export const validateKeyPermissions = (config: Object, state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
   const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
   if (
     !signingKey ||
@@ -135,6 +135,7 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
   }
 
   if (
+    !config.skipActionProcessing &&
     opT === GIMessage.OP_ACTION_ENCRYPTED &&
     !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf(), direction)
   ) {

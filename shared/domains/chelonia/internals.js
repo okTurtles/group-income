@@ -601,7 +601,7 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
         v.forEach((u) => {
           if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
-          if (!validateKeyPermissions(state, signingKeyId, u[0], u[1], direction)) {
+          if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
             throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
           }
           opFns[u[0]](u[1])
@@ -1022,7 +1022,7 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
-    if (!this.manifestToContract[manifestHash]) {
+    if (!this.config.skipActionProcessing && !this.manifestToContract[manifestHash]) {
       const rootState = sbp(this.config.stateSelector)
       const contractName = has(rootState.contracts, contractID)
         ? rootState.contracts[contractID].type
@@ -1059,7 +1059,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
-      if (!validateKeyPermissions(stateForValidation, signingKeyId, opT, opV, direction)) {
+      if (!validateKeyPermissions(config, stateForValidation, signingKeyId, opT, opV, direction)) {
         throw new Error('No matching signing key was defined')
       }
 
@@ -1554,7 +1554,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in side effects result in dropped messages to be reprocessed
     try {
       // verify we're expecting to hear from this contract
-      if (!this.pending.some((entry) => entry?.contractID === contractID) && !this.subscriptionSet.has(contractID)) {
+      if (!this.config.acceptAllMessages && !this.pending.some((entry) => entry?.contractID === contractID) && !this.subscriptionSet.has(contractID)) {
         console.warn(`[chelonia] WARN: ignoring unexpected event for ${contractID}:`, rawMessage)
         return
       }
@@ -1599,7 +1599,7 @@ export default (sbp('sbp/selectors/register', {
       // first we make sure we save this message to the db
       // if an exception is thrown here we do not need to revert the state
       // because nothing has been processed yet
-      const proceed = await handleEvent.addMessageToDB(message)
+      const proceed = await handleEvent.addMessageToDB.call(this, message)
       if (proceed === false) return
 
       // If the contract was marked as dirty, we stop processing
@@ -1694,7 +1694,7 @@ const handleEvent = {
         eventsToReinjest.splice(reprocessIdx, 1)
       }
     } catch (e) {
-      if (e.name === 'ChelErrorDBBadPreviousHEAD') {
+      if (this.config.reingestEvents && e.name === 'ChelErrorDBBadPreviousHEAD') {
         // sometimes we simply miss messages, it's not clear why, but it happens
         // in rare cases. So we attempt to re-sync this contract once
         if (eventsToReinjest.length > 100) {

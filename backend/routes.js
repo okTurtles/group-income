@@ -41,13 +41,13 @@ route.POST('/event', {
 }, async function (request, h) {
   try {
     console.log('/event handler')
-    const entry = GIMessage.deserialize(request.payload)
+    const { contractID, hash } = GIMessage.deserializeHEAD(request.payload)
     try {
-      await sbp('backend/server/handleEntry', entry)
+      await sbp('backend/server/handleEntry', contractID, request.payload)
     } catch (err) {
       if (err.name === 'ChelErrorDBBadPreviousHEAD') {
         console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
-        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
+        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
           'shelter-headinfo-head': HEADinfo.HEAD,
@@ -56,7 +56,7 @@ route.POST('/event', {
         return r
       }
     }
-    return entry.hash()
+    return hash
   } catch (err) {
     return logger(err)
   }

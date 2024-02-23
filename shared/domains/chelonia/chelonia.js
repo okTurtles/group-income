@@ -205,6 +205,10 @@ export default (sbp('sbp/selectors/register', {
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
+      // acceptAllMessages disables checking whether we are expecting a message
+      // or not for processing
+      acceptAllMessages: true,
+      reingestEvents: true,
       skipActionProcessing: false,
       skipSideEffects: false,
       connectionOptions: {

@@ -295,6 +295,7 @@ export const isRawEncryptedData = (data: any): boolean => {
 
 export const unwrapMaybeEncryptedData = (data: any): { encryptionKeyId: string | null, data: any } | void => {
   if (isEncryptedData(data)) {
+    if (process.env.BUILD !== 'web') return
     try {
       return {
         encryptionKeyId: data.encryptionKeyId,

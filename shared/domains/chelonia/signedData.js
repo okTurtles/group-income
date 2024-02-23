@@ -227,19 +227,14 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
   const stringValueFn = () => data
   let verifySignedValue
   // TODO: Temporary until the server can validate signatures
-  const verifySignedValueFn = process.env.BUILD === 'web'
-    ? () => {
-        if (verifySignedValue) {
-          return verifySignedValue[1]
-        }
-        verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData)
-        if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
-        return verifySignedValue[1]
-      }
-    : () => {
-        const signedValue = JSON.parse(data._signedData[0])
-        return mapperFn ? mapperFn(signedValue) : signedValue
-      }
+  const verifySignedValueFn = () => {
+    if (verifySignedValue) {
+      return verifySignedValue[1]
+    }
+    verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData)
+    if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
+    return verifySignedValue[1]
+  }
 
   return wrapper({
     get signingKeyId () {
