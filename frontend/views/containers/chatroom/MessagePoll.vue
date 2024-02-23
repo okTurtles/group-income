@@ -46,7 +46,7 @@ export default ({
     currentUserID: String,
     who: String,
     type: String,
-    avatar: String,
+    avatar: [Object, String],
     emoticonsList: {
       type: Object,
       default: null

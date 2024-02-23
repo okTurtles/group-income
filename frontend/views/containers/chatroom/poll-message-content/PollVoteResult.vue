@@ -32,7 +32,7 @@
 
     .c-voters
       .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
-        voter-avatars(:voters='entry.members' :optionName='entry.optionName')
+        voter-avatars(:voters='entry.users' :optionName='entry.optionName')
 </template>
 
 <script>
