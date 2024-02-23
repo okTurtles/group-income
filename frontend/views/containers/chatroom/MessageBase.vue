@@ -131,7 +131,7 @@ export default ({
     convertTextToMarkdown: Boolean
   },
   computed: {
-    ...mapGetters(['chatRoomMembers', 'usernameFromID']),
+    ...mapGetters(['ourContactProfilesById', 'usernameFromID']),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
     },
@@ -201,7 +201,7 @@ export default ({
         ]
       }
       const allMention = makeMentionFromUserID('').all
-      const possibleMentions = Object.keys(this.chatRoomMembers).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
+      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
       return text
         // We try to find all the mentions and render them as mentions instead
