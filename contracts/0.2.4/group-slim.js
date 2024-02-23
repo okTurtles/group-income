@@ -1921,13 +1921,13 @@
             sk[i + 32] = pk[i];
           return 0;
         }
-        var L2 = new Float64Array([237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16]);
+        var L3 = new Float64Array([237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16]);
         function modL(r, x) {
           var carry, i, j, k;
           for (i = 63; i >= 32; --i) {
             carry = 0;
             for (j = i - 32, k = i - 12; j < k; ++j) {
-              x[j] += carry - 16 * x[i] * L2[j - (i - 32)];
+              x[j] += carry - 16 * x[i] * L3[j - (i - 32)];
               carry = Math.floor((x[j] + 128) / 256);
               x[j] -= carry * 256;
             }
@@ -1936,12 +1936,12 @@
           }
           carry = 0;
           for (j = 0; j < 32; j++) {
-            x[j] += carry - (x[31] >> 4) * L2[j];
+            x[j] += carry - (x[31] >> 4) * L3[j];
             carry = x[j] >> 8;
             x[j] &= 255;
           }
           for (j = 0; j < 32; j++)
-            x[j] -= carry * L2[j];
+            x[j] -= carry * L3[j];
           for (i = 0; i < 32; i++) {
             x[i + 1] += x[i] >> 8;
             r[i] = x[i] & 255;
@@ -2090,7 +2090,7 @@
           crypto_hash_BYTES,
           gf,
           D,
-          L: L2,
+          L: L3,
           pack25519,
           unpack25519,
           M,
@@ -2772,7 +2772,7 @@
         0,
         0
       ]);
-      function blake2bInit(outlen, key, salt, personal) {
+      function blake2bInit2(outlen, key, salt, personal) {
         if (outlen === 0 || outlen > 64) {
           throw new Error("Illegal output length, expected 0 < length <= 64");
         }
@@ -2806,12 +2806,12 @@
           ctx.h[i] = BLAKE2B_IV32[i] ^ B2B_GET32(parameterBlock, i * 4);
         }
         if (key) {
-          blake2bUpdate(ctx, key);
+          blake2bUpdate2(ctx, key);
           ctx.c = 128;
         }
         return ctx;
       }
-      function blake2bUpdate(ctx, input) {
+      function blake2bUpdate2(ctx, input) {
         for (let i = 0; i < input.length; i++) {
           if (ctx.c === 128) {
             ctx.t += ctx.c;
@@ -2821,7 +2821,7 @@
           ctx.b[ctx.c++] = input[i];
         }
       }
-      function blake2bFinal(ctx) {
+      function blake2bFinal2(ctx) {
         ctx.t += ctx.c;
         while (ctx.c < 128) {
           ctx.b[ctx.c++] = 0;
@@ -2833,7 +2833,7 @@
         }
         return out;
       }
-      function blake2b2(input, key, outlen, salt, personal) {
+      function blake2b3(input, key, outlen, salt, personal) {
         outlen = outlen || 64;
         input = util.normalizeInput(input);
         if (salt) {
@@ -2842,20 +2842,20 @@
         if (personal) {
           personal = util.normalizeInput(personal);
         }
-        const ctx = blake2bInit(outlen, key, salt, personal);
-        blake2bUpdate(ctx, input);
-        return blake2bFinal(ctx);
+        const ctx = blake2bInit2(outlen, key, salt, personal);
+        blake2bUpdate2(ctx, input);
+        return blake2bFinal2(ctx);
       }
       function blake2bHex(input, key, outlen, salt, personal) {
-        const output = blake2b2(input, key, outlen, salt, personal);
+        const output = blake2b3(input, key, outlen, salt, personal);
         return util.toHex(output);
       }
       module.exports = {
-        blake2b: blake2b2,
+        blake2b: blake2b3,
         blake2bHex,
-        blake2bInit,
-        blake2bUpdate,
-        blake2bFinal
+        blake2bInit: blake2bInit2,
+        blake2bUpdate: blake2bUpdate2,
+        blake2bFinal: blake2bFinal2
       };
     }
   });
@@ -5490,9 +5490,9 @@
     }
   });
 
-  // frontend/model/contracts/chatroom.js
-  var import_common = __require("@common/common.js");
+  // frontend/model/contracts/group.js
   var import_sbp6 = __toESM(__require("@sbp/sbp"));
+  var import_common3 = __require("@common/common.js");
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -5654,6 +5654,13 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
+  var boolean = function boolean2(value, _scope = "") {
+    if (isEmpty(value))
+      return false;
+    if (isBoolean(value))
+      return value;
+    throw validatorError(boolean2, value, _scope);
+  };
   var number = function number2(value, _scope = "") {
     if (isEmpty(value))
       return 0;
@@ -5668,6 +5675,24 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
+  function tupleOf_(...typeFuncs) {
+    function tuple(value, _scope = "") {
+      const cardinality = typeFuncs.length;
+      if (isEmpty(value))
+        return typeFuncs.map((fn) => fn(value));
+      if (Array.isArray(value) && value.length === cardinality) {
+        const tupleValue = [];
+        for (let i = 0; i < cardinality; i += 1) {
+          tupleValue.push(typeFuncs[i](value[i], _scope));
+        }
+        return tupleValue;
+      }
+      throw validatorError(tuple, value, _scope);
+    }
+    tuple.type = () => `[${typeFuncs.map((fn) => getType(fn)).join(", ")}]`;
+    return tuple;
+  }
+  var tupleOf = tupleOf_;
   function unionOf_(...typeFuncs) {
     function union(value, _scope = "") {
       for (const typeFn of typeFuncs) {
@@ -5690,10 +5715,383 @@ ${this.getErrorInfo()}`;
     return next(data, props);
   };
 
-  // shared/domains/chelonia/utils.js
-  var import_sbp3 = __toESM(__require("@sbp/sbp"));
+  // frontend/model/contracts/shared/constants.js
+  var INVITE_INITIAL_CREATOR = "invite-initial-creator";
+  var PROFILE_STATUS = {
+    ACTIVE: "active",
+    PENDING: "pending",
+    REMOVED: "removed"
+  };
+  var PROPOSAL_RESULT = "proposal-result";
+  var PROPOSAL_INVITE_MEMBER = "invite-member";
+  var PROPOSAL_REMOVE_MEMBER = "remove-member";
+  var PROPOSAL_GROUP_SETTING_CHANGE = "group-setting-change";
+  var PROPOSAL_PROPOSAL_SETTING_CHANGE = "proposal-setting-change";
+  var PROPOSAL_GENERIC = "generic";
+  var PROPOSAL_ARCHIVED = "proposal-archived";
+  var MAX_ARCHIVED_PROPOSALS = 100;
+  var PAYMENTS_ARCHIVED = "payments-archived";
+  var MAX_ARCHIVED_PERIODS = 100;
+  var MAX_SAVED_PERIODS = 2;
+  var STATUS_OPEN = "open";
+  var STATUS_PASSED = "passed";
+  var STATUS_FAILED = "failed";
+  var STATUS_EXPIRED = "expired";
+  var STATUS_CANCELLED = "cancelled";
+  var CHATROOM_GENERAL_NAME = "General";
+  var CHATROOM_TYPES = {
+    DIRECT_MESSAGE: "direct-message",
+    GROUP: "group"
+  };
+  var CHATROOM_PRIVACY_LEVEL = {
+    GROUP: "group",
+    PRIVATE: "private",
+    PUBLIC: "public"
+  };
+  var MESSAGE_TYPES = {
+    POLL: "poll",
+    TEXT: "text",
+    INTERACTIVE: "interactive",
+    NOTIFICATION: "notification"
+  };
+  var INVITE_EXPIRES_IN_DAYS = {
+    ON_BOARDING: 30,
+    PROPOSAL: 7
+  };
+  var MESSAGE_NOTIFICATIONS = {
+    ADD_MEMBER: "add-member",
+    JOIN_MEMBER: "join-member",
+    LEAVE_MEMBER: "leave-member",
+    KICK_MEMBER: "kick-member",
+    UPDATE_DESCRIPTION: "update-description",
+    UPDATE_NAME: "update-name",
+    DELETE_CHANNEL: "delete-channel",
+    VOTE_ON_POLL: "vote-on-poll",
+    CHANGE_VOTE_ON_POLL: "change-vote-on-poll"
+  };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "created",
+    EXPIRING: "expiring",
+    ACCEPTED: "accepted",
+    REJECTED: "rejected",
+    EXPIRED: "expired"
+  };
+
+  // frontend/model/contracts/shared/voting/rules.js
+  var VOTE_AGAINST = ":against";
+  var VOTE_INDIFFERENT = ":indifferent";
+  var VOTE_UNDECIDED = ":undecided";
+  var VOTE_FOR = ":for";
+  var RULE_PERCENTAGE = "percentage";
+  var RULE_DISAGREEMENT = "disagreement";
+  var RULE_MULTI_CHOICE = "multi-choice";
+  var getPopulation = (state) => Object.keys(state.profiles).filter((p) => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length;
+  var rules = {
+    [RULE_PERCENTAGE]: function(state, proposalType2, votes) {
+      votes = Object.values(votes);
+      let population = getPopulation(state);
+      if (proposalType2 === PROPOSAL_REMOVE_MEMBER)
+        population -= 1;
+      const defaultThreshold = state.settings.proposals[proposalType2].ruleSettings[RULE_PERCENTAGE].threshold;
+      const threshold = getThresholdAdjusted(RULE_PERCENTAGE, defaultThreshold, population);
+      const totalIndifferent = votes.filter((x) => x === VOTE_INDIFFERENT).length;
+      const totalFor = votes.filter((x) => x === VOTE_FOR).length;
+      const totalAgainst = votes.filter((x) => x === VOTE_AGAINST).length;
+      const totalForOrAgainst = totalFor + totalAgainst;
+      const turnout = totalForOrAgainst + totalIndifferent;
+      const absent = population - turnout;
+      const neededToPass = Math.ceil(threshold * (population - totalIndifferent));
+      console.debug(`votingRule ${RULE_PERCENTAGE} for ${proposalType2}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population });
+      if (totalFor >= neededToPass) {
+        return VOTE_FOR;
+      }
+      return totalFor + absent < neededToPass ? VOTE_AGAINST : VOTE_UNDECIDED;
+    },
+    [RULE_DISAGREEMENT]: function(state, proposalType2, votes) {
+      votes = Object.values(votes);
+      const population = getPopulation(state);
+      const minimumMax = proposalType2 === PROPOSAL_REMOVE_MEMBER ? 2 : 1;
+      const thresholdOriginal = Math.max(state.settings.proposals[proposalType2].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax);
+      const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population);
+      const totalFor = votes.filter((x) => x === VOTE_FOR).length;
+      const totalAgainst = votes.filter((x) => x === VOTE_AGAINST).length;
+      const turnout = votes.length;
+      const absent = population - turnout;
+      console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType2}:`, { totalFor, totalAgainst, threshold, turnout, population, absent });
+      if (totalAgainst >= threshold) {
+        return VOTE_AGAINST;
+      }
+      return totalAgainst + absent < threshold ? VOTE_FOR : VOTE_UNDECIDED;
+    },
+    [RULE_MULTI_CHOICE]: function(state, proposalType2, votes) {
+      throw new Error("unimplemented!");
+    }
+  };
+  var rules_default = rules;
+  var ruleType = unionOf(...Object.keys(rules).map((k) => literalOf(k)));
+  var getThresholdAdjusted = (rule, threshold, groupSize) => {
+    const groupSizeVoting = Math.max(3, groupSize);
+    return {
+      [RULE_DISAGREEMENT]: () => {
+        return Math.min(groupSizeVoting - 1, threshold);
+      },
+      [RULE_PERCENTAGE]: () => {
+        const minThreshold = 2 / groupSizeVoting;
+        return Math.max(minThreshold, threshold);
+      }
+    }[rule]();
+  };
+
+  // frontend/model/contracts/shared/voting/proposals.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+  var import_common2 = __require("@common/common.js");
+
+  // frontend/model/contracts/shared/time.js
+  var import_common = __require("@common/common.js");
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+  var plusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, periodLength));
+  var minusOnePeriodLength = (timestamp, periodLength) => dateToPeriodStamp(addTimeToDate(timestamp, -periodLength));
+  function periodStampsForDate(date, { knownSortedStamps, periodLength }) {
+    if (!(isIsoString(date) || Object.prototype.toString.call(date) === "[object Date]")) {
+      throw new TypeError("must be ISO string or Date object");
+    }
+    const timestamp = typeof date === "string" ? date : date.toISOString();
+    let previous, current, next;
+    if (knownSortedStamps.length) {
+      const latest = knownSortedStamps[knownSortedStamps.length - 1];
+      if (timestamp >= latest) {
+        current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength });
+        next = plusOnePeriodLength(current, periodLength);
+        previous = current > latest ? minusOnePeriodLength(current, periodLength) : knownSortedStamps[knownSortedStamps.length - 2];
+      } else {
+        for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
+          if (timestamp >= knownSortedStamps[i]) {
+            current = knownSortedStamps[i];
+            next = knownSortedStamps[i + 1];
+            previous = knownSortedStamps[i - 1];
+            break;
+          }
+        }
+      }
+    }
+    return { previous, current, next };
+  }
+  function dateToPeriodStamp(date) {
+    return new Date(date).toISOString();
+  }
+  function dateFromPeriodStamp(daystamp) {
+    return new Date(daystamp);
+  }
+  function periodStampGivenDate({ recentDate, periodStart, periodLength }) {
+    const periodStartDate = dateFromPeriodStamp(periodStart);
+    let nextPeriod = addTimeToDate(periodStartDate, periodLength);
+    const curDate = new Date(recentDate);
+    let curPeriod;
+    if (curDate < nextPeriod) {
+      if (curDate >= periodStartDate) {
+        return periodStart;
+      } else {
+        curPeriod = periodStartDate;
+        do {
+          curPeriod = addTimeToDate(curPeriod, -periodLength);
+        } while (curDate < curPeriod);
+      }
+    } else {
+      do {
+        curPeriod = nextPeriod;
+        nextPeriod = addTimeToDate(nextPeriod, periodLength);
+      } while (curDate >= nextPeriod);
+    }
+    return dateToPeriodStamp(curPeriod);
+  }
+  function dateIsWithinPeriod({ date, periodStart, periodLength }) {
+    const dateObj = new Date(date);
+    const start = dateFromPeriodStamp(periodStart);
+    return dateObj > start && dateObj < addTimeToDate(start, periodLength);
+  }
+  function addTimeToDate(date, timeMillis) {
+    const d = new Date(date);
+    d.setTime(d.getTime() + timeMillis);
+    return d;
+  }
+  function comparePeriodStamps(periodA, periodB) {
+    return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime();
+  }
+  function isPeriodStamp(arg) {
+    return isIsoString(arg);
+  }
+  function isIsoString(arg) {
+    return typeof arg === "string" && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
+  }
+
+  // frontend/model/contracts/shared/voting/proposals.js
+  function archiveProposal({ state, proposalHash, proposal, contractID }) {
+    import_common2.Vue.delete(state.proposals, proposalHash);
+    (0, import_sbp.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archiveProposal", contractID, proposalHash, proposal]);
+  }
+  var proposalSettingsType = objectOf({
+    rule: ruleType,
+    expires_ms: number,
+    ruleSettings: objectOf({
+      [RULE_PERCENTAGE]: objectOf({ threshold: number }),
+      [RULE_DISAGREEMENT]: objectOf({ threshold: number })
+    })
+  });
+  function voteAgainst(state, { meta, data, contractID }) {
+    const { proposalHash } = data;
+    const proposal = state.proposals[proposalHash];
+    proposal.status = STATUS_FAILED;
+    (0, import_sbp.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_AGAINST, data);
+    archiveProposal({ state, proposalHash, proposal, contractID });
+  }
+  var proposalDefaults = {
+    rule: RULE_PERCENTAGE,
+    expires_ms: 14 * DAYS_MILLIS,
+    ruleSettings: {
+      [RULE_PERCENTAGE]: { threshold: 0.66 },
+      [RULE_DISAGREEMENT]: { threshold: 1 }
+    }
+  };
+  var proposals = {
+    [PROPOSAL_INVITE_MEMBER]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, message) {
+        const { data, contractID } = message;
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.payload = data.passPayload;
+        proposal.status = STATUS_PASSED;
+        const forMessage = { ...message, data: data.passPayload };
+        (0, import_sbp.default)("gi.contracts/group/invite/process", forMessage, state);
+        (0, import_sbp.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_REMOVE_MEMBER]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, message) {
+        const { data, contractID } = message;
+        const { proposalHash, passPayload } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        proposal.payload = passPayload;
+        const messageData = proposal.data.proposalData;
+        const forMessage = { ...message, data: messageData, proposalHash };
+        (0, import_sbp.default)("gi.contracts/group/removeMember/process", forMessage, state);
+        (0, import_sbp.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", forMessage]);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_GROUP_SETTING_CHANGE]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, message) {
+        const { data, contractID } = message;
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        const { setting, proposedValue } = proposal.data.proposalData;
+        const forMessage = {
+          ...message,
+          data: { [setting]: proposedValue },
+          proposalHash
+        };
+        (0, import_sbp.default)("gi.contracts/group/updateSettings/process", forMessage, state);
+        (0, import_sbp.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/updateSettings/sideEffect", forMessage]);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, message) {
+        const { data, contractID } = message;
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        const forMessage = {
+          ...message,
+          data: proposal.data.proposalData,
+          proposalHash
+        };
+        (0, import_sbp.default)("gi.contracts/group/updateAllVotingRules/process", forMessage, state);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_GENERIC]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { data, contractID }) {
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        (0, import_sbp.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    }
+  };
+  var proposals_default = proposals;
+  var proposalType = unionOf(...Object.keys(proposals).map((k) => literalOf(k)));
+
+  // shared/domains/chelonia/constants.js
+  var INVITE_STATUS = {
+    REVOKED: "revoked",
+    VALID: "valid",
+    USED: "used"
+  };
+
+  // frontend/model/contracts/shared/payments/index.js
+  var PAYMENT_PENDING = "pending";
+  var PAYMENT_CANCELLED = "cancelled";
+  var PAYMENT_ERROR = "error";
+  var PAYMENT_NOT_RECEIVED = "not-received";
+  var PAYMENT_COMPLETED = "completed";
+  var paymentStatusType = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED].map((k) => literalOf(k)));
+  var PAYMENT_TYPE_MANUAL = "manual";
+  var PAYMENT_TYPE_BITCOIN = "bitcoin";
+  var PAYMENT_TYPE_PAYPAL = "paypal";
+  var paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map((k) => literalOf(k)));
+
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  function paymentHashesFromPaymentPeriod(periodPayments) {
+    let hashes = [];
+    if (periodPayments) {
+      const { paymentsFrom } = periodPayments;
+      for (const fromMemberID in paymentsFrom) {
+        for (const toMemberID in paymentsFrom[fromMemberID]) {
+          hashes = hashes.concat(paymentsFrom[fromMemberID][toMemberID]);
+        }
+      }
+    }
+    return hashes;
+  }
+  function createPaymentInfo(paymentHash, payment) {
+    return {
+      fromMemberID: payment.data.fromMemberID,
+      toMemberID: payment.data.toMemberID,
+      hash: paymentHash,
+      amount: payment.data.amount,
+      isLate: !!payment.data.isLate,
+      when: payment.data.completedDate
+    };
+  }
 
   // frontend/model/contracts/shared/giLodash.js
+  function omit(o, props) {
+    const x = {};
+    for (const k in o) {
+      if (!props.includes(k)) {
+        x[k] = o[k];
+      }
+    }
+    return x;
+  }
   function cloneDeep(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
@@ -5712,10 +6110,244 @@ ${this.getErrorInfo()}`;
     }
     return obj;
   }
+  function deepEqualJSONType(a, b) {
+    if (a === b)
+      return true;
+    if (a === null || b === null || typeof a !== typeof b)
+      return false;
+    if (typeof a !== "object")
+      return a === b;
+    if (Array.isArray(a)) {
+      if (a.length !== b.length)
+        return false;
+    } else if (a.constructor.name !== "Object") {
+      throw new Error(`not JSON type: ${a}`);
+    }
+    for (const key in a) {
+      if (!deepEqualJSONType(a[key], b[key]))
+        return false;
+    }
+    return true;
+  }
   var has = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+
+  // frontend/model/contracts/shared/distribution/mincome-proportional.js
+  function mincomeProportional(haveNeeds) {
+    let totalHave = 0;
+    let totalNeed = 0;
+    const havers = [];
+    const needers = [];
+    for (const haveNeed of haveNeeds) {
+      if (haveNeed.haveNeed > 0) {
+        havers.push(haveNeed);
+        totalHave += haveNeed.haveNeed;
+      } else if (haveNeed.haveNeed < 0) {
+        needers.push(haveNeed);
+        totalNeed += Math.abs(haveNeed.haveNeed);
+      }
+    }
+    const totalPercent = Math.min(1, totalNeed / totalHave);
+    const payments = [];
+    for (const haver of havers) {
+      const distributionAmount = totalPercent * haver.haveNeed;
+      for (const needer of needers) {
+        const belowPercentage = Math.abs(needer.haveNeed) / totalNeed;
+        payments.push({
+          amount: distributionAmount * belowPercentage,
+          fromMemberID: haver.memberID,
+          toMemberID: needer.memberID
+        });
+      }
+    }
+    return payments;
+  }
+
+  // frontend/model/contracts/shared/distribution/payments-minimizer.js
+  function minimizeTotalPaymentsCount(distribution) {
+    const neederTotalReceived = {};
+    const haverTotalHave = {};
+    const haversSorted = [];
+    const needersSorted = [];
+    const minimizedDistribution = [];
+    for (const todo of distribution) {
+      neederTotalReceived[todo.toMemberID] = (neederTotalReceived[todo.toMemberID] || 0) + todo.amount;
+      haverTotalHave[todo.fromMemberID] = (haverTotalHave[todo.fromMemberID] || 0) + todo.amount;
+    }
+    for (const memberID in haverTotalHave) {
+      haversSorted.push({ memberID, amount: haverTotalHave[memberID] });
+    }
+    for (const memberID in neederTotalReceived) {
+      needersSorted.push({ memberID, amount: neederTotalReceived[memberID] });
+    }
+    haversSorted.sort((a, b) => b.amount - a.amount);
+    needersSorted.sort((a, b) => b.amount - a.amount);
+    while (haversSorted.length > 0 && needersSorted.length > 0) {
+      const mostHaver = haversSorted.pop();
+      const mostNeeder = needersSorted.pop();
+      const diff = mostHaver.amount - mostNeeder.amount;
+      if (diff < 0) {
+        minimizedDistribution.push({ amount: mostHaver.amount, fromMemberID: mostHaver.memberID, toMemberID: mostNeeder.memberID });
+        mostNeeder.amount -= mostHaver.amount;
+        needersSorted.push(mostNeeder);
+      } else if (diff > 0) {
+        minimizedDistribution.push({ amount: mostNeeder.amount, fromMemberID: mostHaver.memberID, toMemberID: mostNeeder.memberID });
+        mostHaver.amount -= mostNeeder.amount;
+        haversSorted.push(mostHaver);
+      } else {
+        minimizedDistribution.push({ amount: mostNeeder.amount, fromMemberID: mostHaver.memberID, toMemberID: mostNeeder.memberID });
+      }
+    }
+    return minimizedDistribution;
+  }
+
+  // frontend/model/contracts/shared/currencies.js
+  var DECIMALS_MAX = 8;
+  function commaToDots(value) {
+    return typeof value === "string" ? value.replace(/,/, ".") : value.toString();
+  }
+  function isNumeric(nr) {
+    return !isNaN(nr - parseFloat(nr));
+  }
+  function isInDecimalsLimit(nr, decimalsMax) {
+    const decimals = nr.split(".")[1];
+    return !decimals || decimals.length <= decimalsMax;
+  }
+  function validateMincome(value, decimalsMax) {
+    const nr = commaToDots(value);
+    return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax);
+  }
+  function decimalsOrInt(num, decimalsMax) {
+    return num.toFixed(decimalsMax).replace(/\.0+$/, "");
+  }
+  function saferFloat(value) {
+    return parseFloat(value.toFixed(DECIMALS_MAX));
+  }
+  function makeCurrency(options) {
+    const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options;
+    return {
+      symbol,
+      symbolWithCode,
+      decimalsMax,
+      displayWithCurrency: (n) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+      displayWithoutCurrency: (n) => decimalsOrInt(n, decimalsMax),
+      validate: (n) => validateMincome(n, decimalsMax)
+    };
+  }
+  var currencies = {
+    USD: makeCurrency({
+      symbol: "$",
+      symbolWithCode: "$ USD",
+      decimalsMax: 2,
+      formatCurrency: (amount) => "$" + amount
+    }),
+    EUR: makeCurrency({
+      symbol: "\u20AC",
+      symbolWithCode: "\u20AC EUR",
+      decimalsMax: 2,
+      formatCurrency: (amount) => "\u20AC" + amount
+    }),
+    BTC: makeCurrency({
+      symbol: "\u0243",
+      symbolWithCode: "\u0243 BTC",
+      decimalsMax: DECIMALS_MAX,
+      formatCurrency: (amount) => amount + "\u0243"
+    })
+  };
+  var currencies_default = currencies;
+
+  // frontend/model/contracts/shared/distribution/distribution.js
+  var tinyNum = 1 / Math.pow(10, DECIMALS_MAX);
+  function unadjustedDistribution({ haveNeeds = [], minimize = true }) {
+    const distribution = mincomeProportional(haveNeeds);
+    return minimize ? minimizeTotalPaymentsCount(distribution) : distribution;
+  }
+  function adjustedDistribution({ distribution, payments, dueOn }) {
+    distribution = cloneDeep(distribution);
+    for (const todo of distribution) {
+      todo.total = todo.amount;
+    }
+    distribution = subtractDistributions(distribution, payments).filter((todo) => todo.amount >= tinyNum);
+    for (const todo of distribution) {
+      todo.amount = saferFloat(todo.amount);
+      todo.total = saferFloat(todo.total);
+      todo.partial = todo.total !== todo.amount;
+      todo.isLate = false;
+      todo.dueOn = dueOn;
+    }
+    return distribution;
+  }
+  function reduceDistribution(payments) {
+    payments = cloneDeep(payments);
+    for (let i = 0; i < payments.length; i++) {
+      const paymentA = payments[i];
+      for (let j = i + 1; j < payments.length; j++) {
+        const paymentB = payments[j];
+        if (paymentA.fromMemberID === paymentB.fromMemberID && paymentA.toMemberID === paymentB.toMemberID || paymentA.toMemberID === paymentB.fromMemberID && paymentA.fromMemberID === paymentB.toMemberID) {
+          paymentA.amount += (paymentA.fromMemberID === paymentB.fromMemberID ? 1 : -1) * paymentB.amount;
+          paymentA.total += (paymentA.fromMemberID === paymentB.fromMemberID ? 1 : -1) * paymentB.total;
+          payments.splice(j, 1);
+          j--;
+        }
+      }
+    }
+    return payments;
+  }
+  function addDistributions(paymentsA, paymentsB) {
+    return reduceDistribution([...paymentsA, ...paymentsB]);
+  }
+  function subtractDistributions(paymentsA, paymentsB) {
+    paymentsB = cloneDeep(paymentsB);
+    for (const p of paymentsB) {
+      p.amount *= -1;
+      p.total *= -1;
+    }
+    return addDistributions(paymentsA, paymentsB);
+  }
+
+  // frontend/model/contracts/shared/types.js
+  var inviteType = objectOf({
+    inviteKeyId: string,
+    creatorID: string,
+    invitee: optional(string)
+  });
+  var chatRoomAttributesType = objectOf({
+    name: string,
+    description: string,
+    creatorID: optional(string),
+    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
+  });
+  var messageType = objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
+    text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creatorID: string,
+      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+    }),
+    notification: objectMaybeOf({
+      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
+      params: mapOf(string, string)
+    }),
+    replyingMessage: objectOf({
+      hash: string,
+      text: string
+    }),
+    emoticons: mapOf(string, arrayOf(string)),
+    onlyVisibleTo: arrayOf(string)
+  });
+
+  // shared/domains/chelonia/utils.js
+  var import_sbp5 = __toESM(__require("@sbp/sbp"));
 
   // shared/functions.js
   var import_tweetnacl = __toESM(require_nacl_fast());
+
+  // shared/blake2bstream.js
+  var import_blakejs = __toESM(require_blakejs());
 
   // shared/multiformats/bytes.js
   var empty = new Uint8Array(0);
@@ -5745,6 +6377,165 @@ ${this.getErrorInfo()}`;
     }
     throw new Error("Unknown type, must be binary type");
   }
+
+  // shared/multiformats/vendor/varint.js
+  var encode_1 = encode;
+  var MSB = 128;
+  var REST = 127;
+  var MSBALL = ~REST;
+  var INT = Math.pow(2, 31);
+  function encode(num, out, offset) {
+    out = out || [];
+    offset = offset || 0;
+    var oldOffset = offset;
+    while (num >= INT) {
+      out[offset++] = num & 255 | MSB;
+      num /= 128;
+    }
+    while (num & MSBALL) {
+      out[offset++] = num & 255 | MSB;
+      num >>>= 7;
+    }
+    out[offset] = num | 0;
+    encode.bytes = offset - oldOffset + 1;
+    return out;
+  }
+  var decode = read;
+  var MSB$1 = 128;
+  var REST$1 = 127;
+  function read(buf, offset) {
+    var res = 0, offset = offset || 0, shift = 0, counter = offset, b, l = buf.length;
+    do {
+      if (counter >= l) {
+        read.bytes = 0;
+        throw new RangeError("Could not decode varint");
+      }
+      b = buf[counter++];
+      res += shift < 28 ? (b & REST$1) << shift : (b & REST$1) * Math.pow(2, shift);
+      shift += 7;
+    } while (b >= MSB$1);
+    read.bytes = counter - offset;
+    return res;
+  }
+  var N1 = Math.pow(2, 7);
+  var N2 = Math.pow(2, 14);
+  var N3 = Math.pow(2, 21);
+  var N4 = Math.pow(2, 28);
+  var N5 = Math.pow(2, 35);
+  var N6 = Math.pow(2, 42);
+  var N7 = Math.pow(2, 49);
+  var N8 = Math.pow(2, 56);
+  var N9 = Math.pow(2, 63);
+  var length = function(value) {
+    return value < N1 ? 1 : value < N2 ? 2 : value < N3 ? 3 : value < N4 ? 4 : value < N5 ? 5 : value < N6 ? 6 : value < N7 ? 7 : value < N8 ? 8 : value < N9 ? 9 : 10;
+  };
+  var varint = {
+    encode: encode_1,
+    decode,
+    encodingLength: length
+  };
+  var _brrp_varint = varint;
+  var varint_default = _brrp_varint;
+
+  // shared/multiformats/varint.js
+  function decode2(data, offset = 0) {
+    const code = varint_default.decode(data, offset);
+    return [code, varint_default.decode.bytes];
+  }
+  function encodeTo(int, target, offset = 0) {
+    varint_default.encode(int, target, offset);
+    return target;
+  }
+  function encodingLength(int) {
+    return varint_default.encodingLength(int);
+  }
+
+  // shared/multiformats/hashes/digest.js
+  function create(code, digest) {
+    const size = digest.byteLength;
+    const sizeOffset = encodingLength(code);
+    const digestOffset = sizeOffset + encodingLength(size);
+    const bytes = new Uint8Array(digestOffset + size);
+    encodeTo(code, bytes, 0);
+    encodeTo(size, bytes, sizeOffset);
+    bytes.set(digest, digestOffset);
+    return new Digest(code, size, digest, bytes);
+  }
+  function decode3(multihash) {
+    const bytes = coerce(multihash);
+    const [code, sizeOffset] = decode2(bytes);
+    const [size, digestOffset] = decode2(bytes.subarray(sizeOffset));
+    const digest = bytes.subarray(sizeOffset + digestOffset);
+    if (digest.byteLength !== size) {
+      throw new Error("Incorrect length");
+    }
+    return new Digest(code, size, digest, bytes);
+  }
+  function equals2(a, b) {
+    if (a === b) {
+      return true;
+    } else {
+      const data = b;
+      return a.code === data.code && a.size === data.size && data.bytes instanceof Uint8Array && equals(a.bytes, data.bytes);
+    }
+  }
+  var Digest = class {
+    code;
+    size;
+    digest;
+    bytes;
+    constructor(code, size, digest, bytes) {
+      this.code = code;
+      this.size = size;
+      this.digest = digest;
+      this.bytes = bytes;
+    }
+  };
+
+  // shared/multiformats/hasher.js
+  function from({ name, code, encode: encode3 }) {
+    return new Hasher(name, code, encode3);
+  }
+  var Hasher = class {
+    name;
+    code;
+    encode;
+    constructor(name, code, encode3) {
+      this.name = name;
+      this.code = code;
+      this.encode = encode3;
+    }
+    digest(input) {
+      if (input instanceof Uint8Array || input instanceof ReadableStream) {
+        const result = this.encode(input);
+        return result instanceof Uint8Array ? create(this.code, result) : result.then((digest) => create(this.code, digest));
+      } else {
+        throw Error("Unknown type, must be binary type");
+      }
+    }
+  };
+
+  // shared/blake2bstream.js
+  var { blake2b, blake2bInit, blake2bUpdate, blake2bFinal } = import_blakejs.default;
+  var blake2b256stream = from({
+    name: "blake2b-256",
+    code: 45600,
+    encode: async (input) => {
+      if (input instanceof ReadableStream) {
+        const ctx = blake2bInit(32);
+        const reader = input.getReader();
+        for (; ; ) {
+          const result = await reader.read();
+          if (result.done)
+            break;
+          blake2bUpdate(ctx, coerce(result.value));
+        }
+        return blake2bFinal(ctx);
+      } else {
+        return coerce(blake2b(input, void 0, 32));
+      }
+    }
+  });
 
   // shared/multiformats/base-x.js
   function base(ALPHABET, name) {
@@ -5974,19 +6765,19 @@ ${this.getErrorInfo()}`;
       return this.decoder.decode(input);
     }
   };
-  function from({ name, prefix, encode: encode3, decode: decode5 }) {
+  function from2({ name, prefix, encode: encode3, decode: decode5 }) {
     return new Codec(name, prefix, encode3, decode5);
   }
   function baseX({ name, prefix, alphabet }) {
     const { encode: encode3, decode: decode5 } = base_x_default(alphabet, name);
-    return from({
+    return from2({
       prefix,
       name,
       encode: encode3,
       decode: (text) => coerce(decode5(text))
     });
   }
-  function decode(string3, alphabet, bitsPerChar, name) {
+  function decode4(string3, alphabet, bitsPerChar, name) {
     const codes = {};
     for (let i = 0; i < alphabet.length; ++i) {
       codes[alphabet[i]] = i;
@@ -6016,7 +6807,7 @@ ${this.getErrorInfo()}`;
     }
     return out;
   }
-  function encode(data, alphabet, bitsPerChar) {
+  function encode2(data, alphabet, bitsPerChar) {
     const pad = alphabet[alphabet.length - 1] === "=";
     const mask = (1 << bitsPerChar) - 1;
     let out = "";
@@ -6041,17 +6832,353 @@ ${this.getErrorInfo()}`;
     return out;
   }
   function rfc4648({ name, prefix, bitsPerChar, alphabet }) {
-    return from({
+    return from2({
       prefix,
       name,
       encode(input) {
-        return encode(input, alphabet, bitsPerChar);
+        return encode2(input, alphabet, bitsPerChar);
       },
       decode(input) {
-        return decode(input, alphabet, bitsPerChar, name);
+        return decode4(input, alphabet, bitsPerChar, name);
       }
     });
   }
+
+  // shared/multiformats/bases/base58.js
+  var base58btc = baseX({
+    name: "base58btc",
+    prefix: "z",
+    alphabet: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+  });
+  var base58flickr = baseX({
+    name: "base58flickr",
+    prefix: "Z",
+    alphabet: "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+  });
+
+  // shared/multiformats/blake2b.js
+  var import_blakejs2 = __toESM(require_blakejs());
+  var { blake2b: blake2b2 } = import_blakejs2.default;
+  var blake2b8 = from({
+    name: "blake2b-8",
+    code: 45569,
+    encode: (input) => coerce(blake2b2(input, void 0, 1))
+  });
+  var blake2b16 = from({
+    name: "blake2b-16",
+    code: 45570,
+    encode: (input) => coerce(blake2b2(input, void 0, 2))
+  });
+  var blake2b24 = from({
+    name: "blake2b-24",
+    code: 45571,
+    encode: (input) => coerce(blake2b2(input, void 0, 3))
+  });
+  var blake2b32 = from({
+    name: "blake2b-32",
+    code: 45572,
+    encode: (input) => coerce(blake2b2(input, void 0, 4))
+  });
+  var blake2b40 = from({
+    name: "blake2b-40",
+    code: 45573,
+    encode: (input) => coerce(blake2b2(input, void 0, 5))
+  });
+  var blake2b48 = from({
+    name: "blake2b-48",
+    code: 45574,
+    encode: (input) => coerce(blake2b2(input, void 0, 6))
+  });
+  var blake2b56 = from({
+    name: "blake2b-56",
+    code: 45575,
+    encode: (input) => coerce(blake2b2(input, void 0, 7))
+  });
+  var blake2b64 = from({
+    name: "blake2b-64",
+    code: 45576,
+    encode: (input) => coerce(blake2b2(input, void 0, 8))
+  });
+  var blake2b72 = from({
+    name: "blake2b-72",
+    code: 45577,
+    encode: (input) => coerce(blake2b2(input, void 0, 9))
+  });
+  var blake2b80 = from({
+    name: "blake2b-80",
+    code: 45578,
+    encode: (input) => coerce(blake2b2(input, void 0, 10))
+  });
+  var blake2b88 = from({
+    name: "blake2b-88",
+    code: 45579,
+    encode: (input) => coerce(blake2b2(input, void 0, 11))
+  });
+  var blake2b96 = from({
+    name: "blake2b-96",
+    code: 45580,
+    encode: (input) => coerce(blake2b2(input, void 0, 12))
+  });
+  var blake2b104 = from({
+    name: "blake2b-104",
+    code: 45581,
+    encode: (input) => coerce(blake2b2(input, void 0, 13))
+  });
+  var blake2b112 = from({
+    name: "blake2b-112",
+    code: 45582,
+    encode: (input) => coerce(blake2b2(input, void 0, 14))
+  });
+  var blake2b120 = from({
+    name: "blake2b-120",
+    code: 45583,
+    encode: (input) => coerce(blake2b2(input, void 0, 15))
+  });
+  var blake2b128 = from({
+    name: "blake2b-128",
+    code: 45584,
+    encode: (input) => coerce(blake2b2(input, void 0, 16))
+  });
+  var blake2b136 = from({
+    name: "blake2b-136",
+    code: 45585,
+    encode: (input) => coerce(blake2b2(input, void 0, 17))
+  });
+  var blake2b144 = from({
+    name: "blake2b-144",
+    code: 45586,
+    encode: (input) => coerce(blake2b2(input, void 0, 18))
+  });
+  var blake2b152 = from({
+    name: "blake2b-152",
+    code: 45587,
+    encode: (input) => coerce(blake2b2(input, void 0, 19))
+  });
+  var blake2b160 = from({
+    name: "blake2b-160",
+    code: 45588,
+    encode: (input) => coerce(blake2b2(input, void 0, 20))
+  });
+  var blake2b168 = from({
+    name: "blake2b-168",
+    code: 45589,
+    encode: (input) => coerce(blake2b2(input, void 0, 21))
+  });
+  var blake2b176 = from({
+    name: "blake2b-176",
+    code: 45590,
+    encode: (input) => coerce(blake2b2(input, void 0, 22))
+  });
+  var blake2b184 = from({
+    name: "blake2b-184",
+    code: 45591,
+    encode: (input) => coerce(blake2b2(input, void 0, 23))
+  });
+  var blake2b192 = from({
+    name: "blake2b-192",
+    code: 45592,
+    encode: (input) => coerce(blake2b2(input, void 0, 24))
+  });
+  var blake2b200 = from({
+    name: "blake2b-200",
+    code: 45593,
+    encode: (input) => coerce(blake2b2(input, void 0, 25))
+  });
+  var blake2b208 = from({
+    name: "blake2b-208",
+    code: 45594,
+    encode: (input) => coerce(blake2b2(input, void 0, 26))
+  });
+  var blake2b216 = from({
+    name: "blake2b-216",
+    code: 45595,
+    encode: (input) => coerce(blake2b2(input, void 0, 27))
+  });
+  var blake2b224 = from({
+    name: "blake2b-224",
+    code: 45596,
+    encode: (input) => coerce(blake2b2(input, void 0, 28))
+  });
+  var blake2b232 = from({
+    name: "blake2b-232",
+    code: 45597,
+    encode: (input) => coerce(blake2b2(input, void 0, 29))
+  });
+  var blake2b240 = from({
+    name: "blake2b-240",
+    code: 45598,
+    encode: (input) => coerce(blake2b2(input, void 0, 30))
+  });
+  var blake2b248 = from({
+    name: "blake2b-248",
+    code: 45599,
+    encode: (input) => coerce(blake2b2(input, void 0, 31))
+  });
+  var blake2b256 = from({
+    name: "blake2b-256",
+    code: 45600,
+    encode: (input) => coerce(blake2b2(input, void 0, 32))
+  });
+  var blake2b264 = from({
+    name: "blake2b-264",
+    code: 45601,
+    encode: (input) => coerce(blake2b2(input, void 0, 33))
+  });
+  var blake2b272 = from({
+    name: "blake2b-272",
+    code: 45602,
+    encode: (input) => coerce(blake2b2(input, void 0, 34))
+  });
+  var blake2b280 = from({
+    name: "blake2b-280",
+    code: 45603,
+    encode: (input) => coerce(blake2b2(input, void 0, 35))
+  });
+  var blake2b288 = from({
+    name: "blake2b-288",
+    code: 45604,
+    encode: (input) => coerce(blake2b2(input, void 0, 36))
+  });
+  var blake2b296 = from({
+    name: "blake2b-296",
+    code: 45605,
+    encode: (input) => coerce(blake2b2(input, void 0, 37))
+  });
+  var blake2b304 = from({
+    name: "blake2b-304",
+    code: 45606,
+    encode: (input) => coerce(blake2b2(input, void 0, 38))
+  });
+  var blake2b312 = from({
+    name: "blake2b-312",
+    code: 45607,
+    encode: (input) => coerce(blake2b2(input, void 0, 39))
+  });
+  var blake2b320 = from({
+    name: "blake2b-320",
+    code: 45608,
+    encode: (input) => coerce(blake2b2(input, void 0, 40))
+  });
+  var blake2b328 = from({
+    name: "blake2b-328",
+    code: 45609,
+    encode: (input) => coerce(blake2b2(input, void 0, 41))
+  });
+  var blake2b336 = from({
+    name: "blake2b-336",
+    code: 45610,
+    encode: (input) => coerce(blake2b2(input, void 0, 42))
+  });
+  var blake2b344 = from({
+    name: "blake2b-344",
+    code: 45611,
+    encode: (input) => coerce(blake2b2(input, void 0, 43))
+  });
+  var blake2b352 = from({
+    name: "blake2b-352",
+    code: 45612,
+    encode: (input) => coerce(blake2b2(input, void 0, 44))
+  });
+  var blake2b360 = from({
+    name: "blake2b-360",
+    code: 45613,
+    encode: (input) => coerce(blake2b2(input, void 0, 45))
+  });
+  var blake2b368 = from({
+    name: "blake2b-368",
+    code: 45614,
+    encode: (input) => coerce(blake2b2(input, void 0, 46))
+  });
+  var blake2b376 = from({
+    name: "blake2b-376",
+    code: 45615,
+    encode: (input) => coerce(blake2b2(input, void 0, 47))
+  });
+  var blake2b384 = from({
+    name: "blake2b-384",
+    code: 45616,
+    encode: (input) => coerce(blake2b2(input, void 0, 48))
+  });
+  var blake2b392 = from({
+    name: "blake2b-392",
+    code: 45617,
+    encode: (input) => coerce(blake2b2(input, void 0, 49))
+  });
+  var blake2b400 = from({
+    name: "blake2b-400",
+    code: 45618,
+    encode: (input) => coerce(blake2b2(input, void 0, 50))
+  });
+  var blake2b408 = from({
+    name: "blake2b-408",
+    code: 45619,
+    encode: (input) => coerce(blake2b2(input, void 0, 51))
+  });
+  var blake2b416 = from({
+    name: "blake2b-416",
+    code: 45620,
+    encode: (input) => coerce(blake2b2(input, void 0, 52))
+  });
+  var blake2b424 = from({
+    name: "blake2b-424",
+    code: 45621,
+    encode: (input) => coerce(blake2b2(input, void 0, 53))
+  });
+  var blake2b432 = from({
+    name: "blake2b-432",
+    code: 45622,
+    encode: (input) => coerce(blake2b2(input, void 0, 54))
+  });
+  var blake2b440 = from({
+    name: "blake2b-440",
+    code: 45623,
+    encode: (input) => coerce(blake2b2(input, void 0, 55))
+  });
+  var blake2b448 = from({
+    name: "blake2b-448",
+    code: 45624,
+    encode: (input) => coerce(blake2b2(input, void 0, 56))
+  });
+  var blake2b456 = from({
+    name: "blake2b-456",
+    code: 45625,
+    encode: (input) => coerce(blake2b2(input, void 0, 57))
+  });
+  var blake2b464 = from({
+    name: "blake2b-464",
+    code: 45626,
+    encode: (input) => coerce(blake2b2(input, void 0, 58))
+  });
+  var blake2b472 = from({
+    name: "blake2b-472",
+    code: 45627,
+    encode: (input) => coerce(blake2b2(input, void 0, 59))
+  });
+  var blake2b480 = from({
+    name: "blake2b-480",
+    code: 45628,
+    encode: (input) => coerce(blake2b2(input, void 0, 60))
+  });
+  var blake2b488 = from({
+    name: "blake2b-488",
+    code: 45629,
+    encode: (input) => coerce(blake2b2(input, void 0, 61))
+  });
+  var blake2b496 = from({
+    name: "blake2b-496",
+    code: 45630,
+    encode: (input) => coerce(blake2b2(input, void 0, 62))
+  });
+  var blake2b504 = from({
+    name: "blake2b-504",
+    code: 45631,
+    encode: (input) => coerce(blake2b2(input, void 0, 63))
+  });
+  var blake2b512 = from({
+    name: "blake2b-512",
+    code: 45632,
+    encode: (input) => coerce(blake2b2(input, void 0, 64))
+  });
 
   // shared/multiformats/bases/base32.js
   var base32 = rfc4648({
@@ -6108,132 +7235,6 @@ ${this.getErrorInfo()}`;
     alphabet: "ybndrfg8ejkmcpqxot1uwisza345h769",
     bitsPerChar: 5
   });
-
-  // shared/multiformats/bases/base58.js
-  var base58btc = baseX({
-    name: "base58btc",
-    prefix: "z",
-    alphabet: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-  });
-  var base58flickr = baseX({
-    name: "base58flickr",
-    prefix: "Z",
-    alphabet: "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-  });
-
-  // shared/multiformats/vendor/varint.js
-  var encode_1 = encode2;
-  var MSB = 128;
-  var REST = 127;
-  var MSBALL = ~REST;
-  var INT = Math.pow(2, 31);
-  function encode2(num, out, offset) {
-    out = out || [];
-    offset = offset || 0;
-    var oldOffset = offset;
-    while (num >= INT) {
-      out[offset++] = num & 255 | MSB;
-      num /= 128;
-    }
-    while (num & MSBALL) {
-      out[offset++] = num & 255 | MSB;
-      num >>>= 7;
-    }
-    out[offset] = num | 0;
-    encode2.bytes = offset - oldOffset + 1;
-    return out;
-  }
-  var decode2 = read;
-  var MSB$1 = 128;
-  var REST$1 = 127;
-  function read(buf, offset) {
-    var res = 0, offset = offset || 0, shift = 0, counter = offset, b, l = buf.length;
-    do {
-      if (counter >= l) {
-        read.bytes = 0;
-        throw new RangeError("Could not decode varint");
-      }
-      b = buf[counter++];
-      res += shift < 28 ? (b & REST$1) << shift : (b & REST$1) * Math.pow(2, shift);
-      shift += 7;
-    } while (b >= MSB$1);
-    read.bytes = counter - offset;
-    return res;
-  }
-  var N1 = Math.pow(2, 7);
-  var N2 = Math.pow(2, 14);
-  var N3 = Math.pow(2, 21);
-  var N4 = Math.pow(2, 28);
-  var N5 = Math.pow(2, 35);
-  var N6 = Math.pow(2, 42);
-  var N7 = Math.pow(2, 49);
-  var N8 = Math.pow(2, 56);
-  var N9 = Math.pow(2, 63);
-  var length = function(value) {
-    return value < N1 ? 1 : value < N2 ? 2 : value < N3 ? 3 : value < N4 ? 4 : value < N5 ? 5 : value < N6 ? 6 : value < N7 ? 7 : value < N8 ? 8 : value < N9 ? 9 : 10;
-  };
-  var varint = {
-    encode: encode_1,
-    decode: decode2,
-    encodingLength: length
-  };
-  var _brrp_varint = varint;
-  var varint_default = _brrp_varint;
-
-  // shared/multiformats/varint.js
-  function decode3(data, offset = 0) {
-    const code = varint_default.decode(data, offset);
-    return [code, varint_default.decode.bytes];
-  }
-  function encodeTo(int, target, offset = 0) {
-    varint_default.encode(int, target, offset);
-    return target;
-  }
-  function encodingLength(int) {
-    return varint_default.encodingLength(int);
-  }
-
-  // shared/multiformats/hashes/digest.js
-  function create(code, digest) {
-    const size = digest.byteLength;
-    const sizeOffset = encodingLength(code);
-    const digestOffset = sizeOffset + encodingLength(size);
-    const bytes = new Uint8Array(digestOffset + size);
-    encodeTo(code, bytes, 0);
-    encodeTo(size, bytes, sizeOffset);
-    bytes.set(digest, digestOffset);
-    return new Digest(code, size, digest, bytes);
-  }
-  function decode4(multihash) {
-    const bytes = coerce(multihash);
-    const [code, sizeOffset] = decode3(bytes);
-    const [size, digestOffset] = decode3(bytes.subarray(sizeOffset));
-    const digest = bytes.subarray(sizeOffset + digestOffset);
-    if (digest.byteLength !== size) {
-      throw new Error("Incorrect length");
-    }
-    return new Digest(code, size, digest, bytes);
-  }
-  function equals2(a, b) {
-    if (a === b) {
-      return true;
-    } else {
-      const data = b;
-      return a.code === data.code && a.size === data.size && data.bytes instanceof Uint8Array && equals(a.bytes, data.bytes);
-    }
-  }
-  var Digest = class {
-    code;
-    size;
-    digest;
-    bytes;
-    constructor(code, size, digest, bytes) {
-      this.code = code;
-      this.size = size;
-      this.digest = digest;
-      this.bytes = bytes;
-    }
-  };
 
   // shared/multiformats/cid.js
   function format(link, base2) {
@@ -6344,7 +7345,7 @@ ${this.getErrorInfo()}`;
         return new CID(version, code, multihash, bytes ?? encodeCID(version, code, multihash.bytes));
       } else if (value[cidSymbol] === true) {
         const { version, multihash, code } = value;
-        const digest = decode4(multihash);
+        const digest = decode3(multihash);
         return CID.create(version, code, digest);
       } else {
         return null;
@@ -6402,7 +7403,7 @@ ${this.getErrorInfo()}`;
     static inspectBytes(initialBytes) {
       let offset = 0;
       const next = () => {
-        const [i, length2] = decode3(initialBytes.subarray(offset));
+        const [i, length2] = decode2(initialBytes.subarray(offset));
         offset += length2;
         return i;
       };
@@ -6497,355 +7498,6 @@ ${this.getErrorInfo()}`;
   }
   var cidSymbol = Symbol.for("@ipld/js-cid/CID");
 
-  // shared/multiformats/blake2b.js
-  var import_blakejs = __toESM(require_blakejs());
-
-  // shared/multiformats/hasher.js
-  function from2({ name, code, encode: encode3 }) {
-    return new Hasher(name, code, encode3);
-  }
-  var Hasher = class {
-    name;
-    code;
-    encode;
-    constructor(name, code, encode3) {
-      this.name = name;
-      this.code = code;
-      this.encode = encode3;
-    }
-    digest(input) {
-      if (input instanceof Uint8Array) {
-        const result = this.encode(input);
-        return result instanceof Uint8Array ? create(this.code, result) : result.then((digest) => create(this.code, digest));
-      } else {
-        throw Error("Unknown type, must be binary type");
-      }
-    }
-  };
-
-  // shared/multiformats/blake2b.js
-  var { blake2b } = import_blakejs.default;
-  var blake2b8 = from2({
-    name: "blake2b-8",
-    code: 45569,
-    encode: (input) => coerce(blake2b(input, void 0, 1))
-  });
-  var blake2b16 = from2({
-    name: "blake2b-16",
-    code: 45570,
-    encode: (input) => coerce(blake2b(input, void 0, 2))
-  });
-  var blake2b24 = from2({
-    name: "blake2b-24",
-    code: 45571,
-    encode: (input) => coerce(blake2b(input, void 0, 3))
-  });
-  var blake2b32 = from2({
-    name: "blake2b-32",
-    code: 45572,
-    encode: (input) => coerce(blake2b(input, void 0, 4))
-  });
-  var blake2b40 = from2({
-    name: "blake2b-40",
-    code: 45573,
-    encode: (input) => coerce(blake2b(input, void 0, 5))
-  });
-  var blake2b48 = from2({
-    name: "blake2b-48",
-    code: 45574,
-    encode: (input) => coerce(blake2b(input, void 0, 6))
-  });
-  var blake2b56 = from2({
-    name: "blake2b-56",
-    code: 45575,
-    encode: (input) => coerce(blake2b(input, void 0, 7))
-  });
-  var blake2b64 = from2({
-    name: "blake2b-64",
-    code: 45576,
-    encode: (input) => coerce(blake2b(input, void 0, 8))
-  });
-  var blake2b72 = from2({
-    name: "blake2b-72",
-    code: 45577,
-    encode: (input) => coerce(blake2b(input, void 0, 9))
-  });
-  var blake2b80 = from2({
-    name: "blake2b-80",
-    code: 45578,
-    encode: (input) => coerce(blake2b(input, void 0, 10))
-  });
-  var blake2b88 = from2({
-    name: "blake2b-88",
-    code: 45579,
-    encode: (input) => coerce(blake2b(input, void 0, 11))
-  });
-  var blake2b96 = from2({
-    name: "blake2b-96",
-    code: 45580,
-    encode: (input) => coerce(blake2b(input, void 0, 12))
-  });
-  var blake2b104 = from2({
-    name: "blake2b-104",
-    code: 45581,
-    encode: (input) => coerce(blake2b(input, void 0, 13))
-  });
-  var blake2b112 = from2({
-    name: "blake2b-112",
-    code: 45582,
-    encode: (input) => coerce(blake2b(input, void 0, 14))
-  });
-  var blake2b120 = from2({
-    name: "blake2b-120",
-    code: 45583,
-    encode: (input) => coerce(blake2b(input, void 0, 15))
-  });
-  var blake2b128 = from2({
-    name: "blake2b-128",
-    code: 45584,
-    encode: (input) => coerce(blake2b(input, void 0, 16))
-  });
-  var blake2b136 = from2({
-    name: "blake2b-136",
-    code: 45585,
-    encode: (input) => coerce(blake2b(input, void 0, 17))
-  });
-  var blake2b144 = from2({
-    name: "blake2b-144",
-    code: 45586,
-    encode: (input) => coerce(blake2b(input, void 0, 18))
-  });
-  var blake2b152 = from2({
-    name: "blake2b-152",
-    code: 45587,
-    encode: (input) => coerce(blake2b(input, void 0, 19))
-  });
-  var blake2b160 = from2({
-    name: "blake2b-160",
-    code: 45588,
-    encode: (input) => coerce(blake2b(input, void 0, 20))
-  });
-  var blake2b168 = from2({
-    name: "blake2b-168",
-    code: 45589,
-    encode: (input) => coerce(blake2b(input, void 0, 21))
-  });
-  var blake2b176 = from2({
-    name: "blake2b-176",
-    code: 45590,
-    encode: (input) => coerce(blake2b(input, void 0, 22))
-  });
-  var blake2b184 = from2({
-    name: "blake2b-184",
-    code: 45591,
-    encode: (input) => coerce(blake2b(input, void 0, 23))
-  });
-  var blake2b192 = from2({
-    name: "blake2b-192",
-    code: 45592,
-    encode: (input) => coerce(blake2b(input, void 0, 24))
-  });
-  var blake2b200 = from2({
-    name: "blake2b-200",
-    code: 45593,
-    encode: (input) => coerce(blake2b(input, void 0, 25))
-  });
-  var blake2b208 = from2({
-    name: "blake2b-208",
-    code: 45594,
-    encode: (input) => coerce(blake2b(input, void 0, 26))
-  });
-  var blake2b216 = from2({
-    name: "blake2b-216",
-    code: 45595,
-    encode: (input) => coerce(blake2b(input, void 0, 27))
-  });
-  var blake2b224 = from2({
-    name: "blake2b-224",
-    code: 45596,
-    encode: (input) => coerce(blake2b(input, void 0, 28))
-  });
-  var blake2b232 = from2({
-    name: "blake2b-232",
-    code: 45597,
-    encode: (input) => coerce(blake2b(input, void 0, 29))
-  });
-  var blake2b240 = from2({
-    name: "blake2b-240",
-    code: 45598,
-    encode: (input) => coerce(blake2b(input, void 0, 30))
-  });
-  var blake2b248 = from2({
-    name: "blake2b-248",
-    code: 45599,
-    encode: (input) => coerce(blake2b(input, void 0, 31))
-  });
-  var blake2b256 = from2({
-    name: "blake2b-256",
-    code: 45600,
-    encode: (input) => coerce(blake2b(input, void 0, 32))
-  });
-  var blake2b264 = from2({
-    name: "blake2b-264",
-    code: 45601,
-    encode: (input) => coerce(blake2b(input, void 0, 33))
-  });
-  var blake2b272 = from2({
-    name: "blake2b-272",
-    code: 45602,
-    encode: (input) => coerce(blake2b(input, void 0, 34))
-  });
-  var blake2b280 = from2({
-    name: "blake2b-280",
-    code: 45603,
-    encode: (input) => coerce(blake2b(input, void 0, 35))
-  });
-  var blake2b288 = from2({
-    name: "blake2b-288",
-    code: 45604,
-    encode: (input) => coerce(blake2b(input, void 0, 36))
-  });
-  var blake2b296 = from2({
-    name: "blake2b-296",
-    code: 45605,
-    encode: (input) => coerce(blake2b(input, void 0, 37))
-  });
-  var blake2b304 = from2({
-    name: "blake2b-304",
-    code: 45606,
-    encode: (input) => coerce(blake2b(input, void 0, 38))
-  });
-  var blake2b312 = from2({
-    name: "blake2b-312",
-    code: 45607,
-    encode: (input) => coerce(blake2b(input, void 0, 39))
-  });
-  var blake2b320 = from2({
-    name: "blake2b-320",
-    code: 45608,
-    encode: (input) => coerce(blake2b(input, void 0, 40))
-  });
-  var blake2b328 = from2({
-    name: "blake2b-328",
-    code: 45609,
-    encode: (input) => coerce(blake2b(input, void 0, 41))
-  });
-  var blake2b336 = from2({
-    name: "blake2b-336",
-    code: 45610,
-    encode: (input) => coerce(blake2b(input, void 0, 42))
-  });
-  var blake2b344 = from2({
-    name: "blake2b-344",
-    code: 45611,
-    encode: (input) => coerce(blake2b(input, void 0, 43))
-  });
-  var blake2b352 = from2({
-    name: "blake2b-352",
-    code: 45612,
-    encode: (input) => coerce(blake2b(input, void 0, 44))
-  });
-  var blake2b360 = from2({
-    name: "blake2b-360",
-    code: 45613,
-    encode: (input) => coerce(blake2b(input, void 0, 45))
-  });
-  var blake2b368 = from2({
-    name: "blake2b-368",
-    code: 45614,
-    encode: (input) => coerce(blake2b(input, void 0, 46))
-  });
-  var blake2b376 = from2({
-    name: "blake2b-376",
-    code: 45615,
-    encode: (input) => coerce(blake2b(input, void 0, 47))
-  });
-  var blake2b384 = from2({
-    name: "blake2b-384",
-    code: 45616,
-    encode: (input) => coerce(blake2b(input, void 0, 48))
-  });
-  var blake2b392 = from2({
-    name: "blake2b-392",
-    code: 45617,
-    encode: (input) => coerce(blake2b(input, void 0, 49))
-  });
-  var blake2b400 = from2({
-    name: "blake2b-400",
-    code: 45618,
-    encode: (input) => coerce(blake2b(input, void 0, 50))
-  });
-  var blake2b408 = from2({
-    name: "blake2b-408",
-    code: 45619,
-    encode: (input) => coerce(blake2b(input, void 0, 51))
-  });
-  var blake2b416 = from2({
-    name: "blake2b-416",
-    code: 45620,
-    encode: (input) => coerce(blake2b(input, void 0, 52))
-  });
-  var blake2b424 = from2({
-    name: "blake2b-424",
-    code: 45621,
-    encode: (input) => coerce(blake2b(input, void 0, 53))
-  });
-  var blake2b432 = from2({
-    name: "blake2b-432",
-    code: 45622,
-    encode: (input) => coerce(blake2b(input, void 0, 54))
-  });
-  var blake2b440 = from2({
-    name: "blake2b-440",
-    code: 45623,
-    encode: (input) => coerce(blake2b(input, void 0, 55))
-  });
-  var blake2b448 = from2({
-    name: "blake2b-448",
-    code: 45624,
-    encode: (input) => coerce(blake2b(input, void 0, 56))
-  });
-  var blake2b456 = from2({
-    name: "blake2b-456",
-    code: 45625,
-    encode: (input) => coerce(blake2b(input, void 0, 57))
-  });
-  var blake2b464 = from2({
-    name: "blake2b-464",
-    code: 45626,
-    encode: (input) => coerce(blake2b(input, void 0, 58))
-  });
-  var blake2b472 = from2({
-    name: "blake2b-472",
-    code: 45627,
-    encode: (input) => coerce(blake2b(input, void 0, 59))
-  });
-  var blake2b480 = from2({
-    name: "blake2b-480",
-    code: 45628,
-    encode: (input) => coerce(blake2b(input, void 0, 60))
-  });
-  var blake2b488 = from2({
-    name: "blake2b-488",
-    code: 45629,
-    encode: (input) => coerce(blake2b(input, void 0, 61))
-  });
-  var blake2b496 = from2({
-    name: "blake2b-496",
-    code: 45630,
-    encode: (input) => coerce(blake2b(input, void 0, 62))
-  });
-  var blake2b504 = from2({
-    name: "blake2b-504",
-    code: 45631,
-    encode: (input) => coerce(blake2b(input, void 0, 63))
-  });
-  var blake2b512 = from2({
-    name: "blake2b-512",
-    code: 45632,
-    encode: (input) => coerce(blake2b(input, void 0, 64))
-  });
-
   // shared/functions.js
   if (typeof window === "object" && typeof Buffer === "undefined") {
     const { Buffer: Buffer2 } = require_buffer();
@@ -6857,7 +7509,7 @@ ${this.getErrorInfo()}`;
   var import_scrypt_async = __toESM(require_scrypt_async());
 
   // shared/domains/chelonia/encryptedData.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp4 = __toESM(__require("@sbp/sbp"));
 
   // shared/domains/chelonia/errors.js
   var ChelErrorGenerator = (name, base2 = Error) => class extends base2 {
@@ -6880,7 +7532,7 @@ ${this.getErrorInfo()}`;
   var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
 
   // shared/domains/chelonia/signedData.js
-  var import_sbp = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
   var proto = Object.create(null, {
     _isSignedData: {
       value: true
@@ -6898,248 +7550,219 @@ ${this.getErrorInfo()}`;
   var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight == null)?.id;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
-  // frontend/model/contracts/shared/constants.js
-  var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
-  var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
-  var CHATROOM_ACTIONS_PER_PAGE = 40;
-  var MESSAGE_RECEIVE = "message-receive";
-  var CHATROOM_TYPES = {
-    DIRECT_MESSAGE: "direct-message",
-    GROUP: "group"
-  };
-  var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "group",
-    PRIVATE: "private",
-    PUBLIC: "public"
-  };
-  var MESSAGE_TYPES = {
-    POLL: "poll",
-    TEXT: "text",
-    INTERACTIVE: "interactive",
-    NOTIFICATION: "notification"
-  };
-  var MESSAGE_NOTIFICATIONS = {
-    ADD_MEMBER: "add-member",
-    JOIN_MEMBER: "join-member",
-    LEAVE_MEMBER: "leave-member",
-    KICK_MEMBER: "kick-member",
-    UPDATE_DESCRIPTION: "update-description",
-    UPDATE_NAME: "update-name",
-    DELETE_CHANNEL: "delete-channel",
-    VOTE_ON_POLL: "vote-on-poll",
-    CHANGE_VOTE_ON_POLL: "change-vote-on-poll"
-  };
-  var PROPOSAL_VARIANTS = {
-    CREATED: "created",
-    EXPIRING: "expiring",
-    ACCEPTED: "accepted",
-    REJECTED: "rejected",
-    EXPIRED: "expired"
-  };
-  var MESSAGE_NOTIFY_SETTINGS = {
-    ALL_MESSAGES: "all-messages",
-    DIRECT_MESSAGES: "direct-messages",
-    NOTHING: "nothing"
-  };
-  var POLL_STATUS = {
-    ACTIVE: "active",
-    CLOSED: "closed"
-  };
+  // frontend/model/notifications/mutationKeys.js
+  var REMOVE_NOTIFICATION = "removeNotification";
 
-  // frontend/model/contracts/shared/functions.js
-  var import_sbp4 = __toESM(__require("@sbp/sbp"));
-
-  // frontend/views/utils/misc.js
-  function logExceptNavigationDuplicated(err) {
-    err.name !== "NavigationDuplicated" && console.error(err);
-  }
-
-  // frontend/model/contracts/shared/functions.js
-  function createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }) {
-    const { type, text, replyingMessage } = data;
-    const { createdDate } = meta;
-    let newMessage = {
-      type,
-      hash,
-      height,
-      from: innerSigningContractID,
-      datetime: new Date(createdDate).toISOString(),
-      pending
-    };
-    if (type === MESSAGE_TYPES.TEXT) {
-      newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage };
-    } else if (type === MESSAGE_TYPES.POLL) {
-      const pollData = data.pollData;
-      newMessage = {
-        ...newMessage,
-        pollData: {
-          ...pollData,
-          creatorID: innerSigningContractID,
-          status: POLL_STATUS.ACTIVE,
-          options: pollData.options.map((opt) => ({ ...opt, voted: [] }))
-        }
-      };
-    } else if (type === MESSAGE_TYPES.NOTIFICATION) {
-      const params = {
-        channelName: state?.attributes.name,
-        channelDescription: state?.attributes.description,
-        ...data.notification
-      };
-      delete params.type;
-      newMessage = {
-        ...newMessage,
-        notification: { type: data.notification.type, params }
-      };
-    } else if (type === MESSAGE_TYPES.INTERACTIVE) {
-      newMessage = {
-        ...newMessage,
-        proposal: data.proposal
-      };
+  // frontend/model/contracts/group.js
+  function vueFetchInitKV(obj, key, initialValue) {
+    let value = obj[key];
+    if (!value) {
+      import_common3.Vue.set(obj, key, initialValue);
+      value = obj[key];
     }
-    return newMessage;
+    return value;
   }
-  async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp4.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
-    if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp4.default)("state/vuex/commit", "setCurrentChatRoomId", {
-        groupId: rootState.currentGroupId
-      });
-      const curRouteName = (0, import_sbp4.default)("controller/router").history.current.name;
-      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp4.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
-      }
-    }
-    (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-  }
-  function findMessageIdx(hash, messages) {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].hash === hash) {
-        return i;
-      }
-    }
-    return -1;
-  }
-  function makeMentionFromUserID(userID) {
+  function initGroupProfile(joinedDate, joinedHeight) {
     return {
-      me: userID ? `@${userID}` : "",
-      all: "@all"
+      globalUsername: "",
+      joinedDate,
+      joinedHeight,
+      lastLoggedIn: joinedDate,
+      nonMonetaryContributions: [],
+      status: PROFILE_STATUS.ACTIVE,
+      departedDate: null,
+      incomeDetailsLastUpdatedDate: null
     };
   }
-
-  // frontend/model/contracts/shared/nativeNotification.js
-  var import_sbp5 = __toESM(__require("@sbp/sbp"));
-  function makeNotification({ title, body, icon, path }) {
-    if (Notification?.permission === "granted" && (0, import_sbp5.default)("state/vuex/settings").notificationEnabled) {
-      const notification = new Notification(title, { body, icon });
-      if (path) {
-        notification.onclick = function(event) {
-          (0, import_sbp5.default)("controller/router").push({ path }).catch(console.warn);
-        };
+  function initPaymentPeriod({ meta, getters }) {
+    const start = getters.periodStampGivenDate(meta.createdDate);
+    return {
+      start,
+      end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
+      initialCurrency: getters.groupMincomeCurrency,
+      mincomeExchangeRate: 1,
+      paymentsFrom: {},
+      lastAdjustedDistribution: null,
+      haveNeedsSnapshot: null
+    };
+  }
+  function clearOldPayments({ contractID, state, getters }) {
+    const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort();
+    const archivingPayments = { paymentsByPeriod: {}, payments: {} };
+    while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
+      const period = sortedPeriodKeys.shift();
+      archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period]);
+      for (const paymentHash of getters.paymentHashesForPeriod(period)) {
+        archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash]);
+        import_common3.Vue.delete(state.payments, paymentHash);
       }
+      import_common3.Vue.delete(state.paymentsByPeriod, period);
+    }
+    (0, import_sbp6.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, archivingPayments]);
+  }
+  function initFetchPeriodPayments({ contractID, meta, state, getters }) {
+    const period = getters.periodStampGivenDate(meta.createdDate);
+    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }));
+    const previousPeriod = getters.periodBeforePeriod(period);
+    if (previousPeriod in state.paymentsByPeriod) {
+      state.paymentsByPeriod[previousPeriod].end = period;
+    }
+    clearOldPayments({ contractID, state, getters });
+    return periodPayments;
+  }
+  function initGroupStreaks() {
+    return {
+      lastStreakPeriod: null,
+      fullMonthlyPledges: 0,
+      fullMonthlySupport: 0,
+      onTimePayments: {},
+      missedPayments: {},
+      noVotes: {}
+    };
+  }
+  function updateCurrentDistribution({ contractID, meta, state, getters }) {
+    const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
+    const period = getters.periodStampGivenDate(meta.createdDate);
+    const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
+    if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+      updateGroupStreaks({ state, getters });
+      getters.groupSettings.distributionDate = period;
+    }
+    if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
+      curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
+    }
+    if (!noPayments) {
+      updateAdjustedDistribution({ period, getters });
     }
   }
-
-  // frontend/model/contracts/shared/types.js
-  var inviteType = objectOf({
-    inviteKeyId: string,
-    creatorID: string,
-    invitee: optional(string)
-  });
-  var chatRoomAttributesType = objectOf({
-    name: string,
-    description: string,
-    creatorID: optional(string),
-    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
-    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
-  });
-  var messageType = objectMaybeOf({
-    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
-    text: string,
-    proposal: objectMaybeOf({
-      proposalId: string,
-      proposalType: string,
-      expires_date_ms: number,
-      createdDate: string,
-      creatorID: string,
-      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
-    }),
-    notification: objectMaybeOf({
-      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
-      params: mapOf(string, string)
-    }),
-    replyingMessage: objectOf({
-      hash: string,
-      text: string
-    }),
-    emoticons: mapOf(string, arrayOf(string)),
-    onlyVisibleTo: arrayOf(string)
-  });
-
-  // frontend/model/contracts/chatroom.js
-  function createNotificationData(notificationType, moreParams = {}) {
-    return {
-      type: MESSAGE_TYPES.NOTIFICATION,
-      notification: {
-        type: notificationType,
-        ...moreParams
-      }
-    };
-  }
-  function setReadUntilWhileJoining({ contractID, hash, createdDate }) {
-    if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
-      (0, import_sbp6.default)("state/vuex/commit", "setChatRoomReadUntil", {
-        chatRoomId: contractID,
-        messageHash: hash,
-        createdDate
+  function updateAdjustedDistribution({ period, getters }) {
+    const payments = getters.groupPeriodPayments[period];
+    if (payments && payments.haveNeedsSnapshot) {
+      const minimize = getters.groupSettings.minimizeDistribution;
+      payments.lastAdjustedDistribution = adjustedDistribution({
+        distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
+        payments: getters.paymentsForPeriod(period),
+        dueOn: getters.dueDateForPeriod(period)
+      }).filter((todo) => {
+        return getters.groupProfile(todo.toMemberID).status === PROFILE_STATUS.ACTIVE;
       });
     }
   }
-  function messageReceivePostEffect({
-    contractID,
-    messageHash,
-    datetime,
-    text,
-    isDMOrMention,
-    messageType: messageType2,
-    memberID,
-    chatRoomName
-  }) {
-    if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
+  function memberLeaves({ memberID, dateLeft, heightLeft }, { contractID, meta, state, getters }) {
+    if (!state.profiles[memberID] || state.profiles[memberID].status !== PROFILE_STATUS.ACTIVE) {
+      throw new Error(`[gi.contracts/group memberLeaves] Can't remove non-exisiting member ${memberID}`);
+    }
+    state.profiles[memberID].status = PROFILE_STATUS.REMOVED;
+    state.profiles[memberID].departedDate = dateLeft;
+    state.profiles[memberID].departedHeight = heightLeft;
+    updateCurrentDistribution({ contractID, meta, state, getters });
+    Object.keys(state.chatRooms).forEach((chatroomID) => {
+      removeGroupChatroomProfile(state, chatroomID, memberID);
+    });
+    if (!state._volatile)
+      import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
+    if (!state._volatile.pendingKeyRevocations)
+      import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
+    const CSKid = findKeyIdByName(state, "csk");
+    const CEKid = findKeyIdByName(state, "cek");
+    import_common3.Vue.set(state._volatile.pendingKeyRevocations, CSKid, true);
+    import_common3.Vue.set(state._volatile.pendingKeyRevocations, CEKid, true);
+  }
+  function isActionYoungerThanUser(contractID, height, userProfile) {
+    if (!userProfile || (0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+      return false;
+    }
+    return userProfile.joinedHeight < height;
+  }
+  function updateGroupStreaks({ state, getters }) {
+    const streaks = vueFetchInitKV(state, "streaks", initGroupStreaks());
+    const cPeriod = getters.groupSettings.distributionDate;
+    const thisPeriodPayments = getters.groupPeriodPayments[cPeriod];
+    const noPaymentsAtAll = !thisPeriodPayments;
+    if (streaks.lastStreakPeriod === cPeriod)
+      return;
+    else {
+      import_common3.Vue.set(streaks, "lastStreakPeriod", cPeriod);
+    }
+    const thisPeriodDistribution = thisPeriodPayments?.lastAdjustedDistribution || adjustedDistribution({
+      distribution: unadjustedDistribution({
+        haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
+        minimize: getters.groupSettings.minimizeDistribution
+      }) || [],
+      payments: getters.paymentsForPeriod(cPeriod),
+      dueOn: getters.dueDateForPeriod(cPeriod)
+    }).filter((todo) => {
+      return getters.groupProfile(todo.toMemberID).status === PROFILE_STATUS.ACTIVE;
+    });
+    import_common3.Vue.set(streaks, "fullMonthlyPledges", noPaymentsAtAll ? 0 : thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
+    const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
+    const filterMyItems = (array, member) => array.filter((item) => item.fromMemberID === member);
+    const isPledgingMember = (member) => thisPeriodHaveNeeds.some((entry) => entry.memberID === member && entry.haveNeed > 0);
+    const totalContributionGoal = thisPeriodHaveNeeds.reduce((total, item) => item.haveNeed < 0 ? total + -1 * item.haveNeed : total, 0);
+    const totalPledgesDone = thisPeriodPaymentDetails.reduce((total, paymentItem) => paymentItem.amount + total, 0);
+    const fullMonthlySupportCurrent = vueFetchInitKV(streaks, "fullMonthlySupport", 0);
+    import_common3.Vue.set(streaks, "fullMonthlySupport", totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0);
+    for (const memberID in getters.groupProfiles) {
+      if (!isPledgingMember(memberID))
+        continue;
+      const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, memberID);
+      const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, memberID, 0);
+      import_common3.Vue.set(streaks.onTimePayments, memberID, noPaymentsAtAll ? 0 : myMissedPaymentsInThisPeriod.length === 0 && filterMyItems(thisPeriodPaymentDetails, memberID).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
+      const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, memberID, 0);
+      import_common3.Vue.set(streaks.missedPayments, memberID, noPaymentsAtAll ? myMissedPaymentsStreak + 1 : myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
+    }
+  }
+  var removeGroupChatroomProfile = (state, chatRoomID, member) => {
+    import_common3.Vue.set(state.chatRooms[chatRoomID], "members", Object.fromEntries(Object.entries(state.chatRooms[chatRoomID].members).map(([memberKey, profile]) => {
+      if (memberKey === member && profile?.status === PROFILE_STATUS.ACTIVE) {
+        return [memberKey, { ...profile, status: PROFILE_STATUS.REMOVED }];
+      }
+      return [memberKey, profile];
+    })));
+  };
+  var leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup) => {
+    const sendingData = leavingGroup || actorID !== memberID ? { memberID } : {};
+    if (state?.chatRooms?.[chatRoomID]?.members?.[memberID]?.status !== PROFILE_STATUS.REMOVED) {
       return;
     }
-    const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
-    const isDirectMessage = rootGetters.isDirectMessage(contractID);
-    const unreadMessageType = {
-      [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : void 0,
-      [MESSAGE_TYPES.INTERACTIVE]: MESSAGE_TYPES.INTERACTIVE,
-      [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
-    }[messageType2];
-    if (unreadMessageType) {
-      (0, import_sbp6.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
-        chatRoomId: contractID,
-        messageHash,
-        createdDate: datetime,
-        type: unreadMessageType
-      });
+    const extraParams = {};
+    if (leavingGroup) {
+      const encryptionKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "cek", true);
+      const signingKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
+      if (!signingKeyId) {
+        return;
+      }
+      extraParams.encryptionKeyId = encryptionKeyId;
+      extraParams.signingKeyId = signingKeyId;
+      extraParams.innerSigningContractID = null;
     }
-    let title = `# ${chatRoomName}`;
-    let icon;
-    if (isDirectMessage) {
-      title = rootGetters.ourGroupDirectMessages[contractID].title;
-      icon = rootGetters.ourGroupDirectMessages[contractID].picture;
+    (0, import_sbp6.default)("gi.actions/chatroom/leave", {
+      contractID: chatRoomID,
+      data: sendingData,
+      ...extraParams
+    }).catch((e) => {
+      if (leavingGroup && (e?.name === "ChelErrorSignatureKeyNotFound" || e?.name === "GIErrorUIRuntimeError" && ["ChelErrorSignatureKeyNotFound", "GIErrorMissingSigningKeyError"].includes(e?.cause?.name))) {
+        return;
+      }
+      throw e;
+    }).catch((e) => {
+      console.error("[gi.contracts/group] Error sending chatroom leave action", e);
+    });
+  };
+  var leaveAllChatRoomsUponLeaving = (state, memberID, actorID) => {
+    const chatRooms = state.chatRooms;
+    return Promise.all(Object.keys(chatRooms).filter((cID) => chatRooms[cID].members?.[memberID]?.status === PROFILE_STATUS.REMOVED).map((chatRoomID) => leaveChatRoomAction(state, chatRoomID, memberID, actorID, true)));
+  };
+  var actionRequireActiveMember = (next) => (data, props) => {
+    const innerSigningContractID = props.message.innerSigningContractID;
+    if (!innerSigningContractID || innerSigningContractID === props.contractID) {
+      throw new Error("Missing inner signature");
     }
-    const path = `/group-chat/${contractID}`;
-    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default;
-    const { messageNotification, messageSound } = chatNotificationSettings;
-    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    shouldNotifyMessage && makeNotification({ title, body: text, icon, path });
-    shouldSoundMessage && (0, import_sbp6.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
-  }
+    return next(data, props);
+  };
   (0, import_sbp6.default)("chelonia/defineContract", {
-    name: "gi.contracts/chatroom",
+    name: "gi.contracts/group",
     metadata: {
       validate: objectOf({
         createdDate: string
@@ -7151,525 +7774,1239 @@ ${this.getErrorInfo()}`;
       }
     },
     getters: {
-      currentChatRoomState(state) {
+      currentGroupState(state) {
         return state;
       },
-      chatRoomSettings(state, getters) {
-        return getters.currentChatRoomState.settings || {};
+      groupSettings(state, getters) {
+        return getters.currentGroupState.settings || {};
       },
-      chatRoomAttributes(state, getters) {
-        return getters.currentChatRoomState.attributes || {};
+      profileActive(state, getters) {
+        return (member) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles?.[member]?.status === PROFILE_STATUS.ACTIVE;
+        };
       },
-      chatRoomMembers(state, getters) {
-        return getters.currentChatRoomState.members || {};
+      pendingAccept(state, getters) {
+        return (member) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles?.[member]?.status === PROFILE_STATUS.PENDING;
+        };
       },
-      chatRoomLatestMessages(state, getters) {
-        return getters.currentChatRoomState.messages || [];
+      groupProfile(state, getters) {
+        return (member) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles && profiles[member];
+        };
+      },
+      groupProfiles(state, getters) {
+        const profiles = {};
+        for (const member in getters.currentGroupState.profiles || {}) {
+          const profile = getters.groupProfile(member);
+          if (profile.status === PROFILE_STATUS.ACTIVE) {
+            profiles[member] = profile;
+          }
+        }
+        return profiles;
+      },
+      groupCreatedDate(state, getters) {
+        const creator = getters.groupSettings.groupCreatorID;
+        return getters.groupProfile(creator).joinedDate;
+      },
+      groupMincomeAmount(state, getters) {
+        return getters.groupSettings.mincomeAmount;
+      },
+      groupMincomeCurrency(state, getters) {
+        return getters.groupSettings.mincomeCurrency;
+      },
+      groupSortedPeriodKeys(state, getters) {
+        const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+        if (!distributionDate)
+          return [];
+        const keys = Object.keys(getters.groupPeriodPayments).sort();
+        if (!keys.length && MAX_SAVED_PERIODS > 0) {
+          keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)));
+        }
+        if (keys[keys.length - 1] !== distributionDate) {
+          keys.push(distributionDate);
+        }
+        return keys;
+      },
+      periodStampGivenDate(state, getters) {
+        return (date) => {
+          return periodStampsForDate(date, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).current;
+        };
+      },
+      periodBeforePeriod(state, getters) {
+        return (periodStamp) => {
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).previous;
+        };
+      },
+      periodAfterPeriod(state, getters) {
+        return (periodStamp) => {
+          return periodStampsForDate(periodStamp, {
+            knownSortedStamps: getters.groupSortedPeriodKeys,
+            periodLength: getters.groupSettings.distributionPeriodLength
+          }).next;
+        };
+      },
+      dueDateForPeriod(state, getters) {
+        return (periodStamp) => {
+          return getters.periodAfterPeriod(periodStamp);
+        };
+      },
+      paymentHashesForPeriod(state, getters) {
+        return (periodStamp) => {
+          const periodPayments = getters.groupPeriodPayments[periodStamp];
+          if (periodPayments) {
+            return paymentHashesFromPaymentPeriod(periodPayments);
+          }
+        };
+      },
+      groupMembersByContractID(state, getters) {
+        return Object.keys(getters.groupProfiles);
+      },
+      groupMembersCount(state, getters) {
+        return getters.groupMembersByContractID.length;
+      },
+      groupMembersPending(state, getters) {
+        const invites = getters.currentGroupState.invites;
+        const vmInvites = getters.currentGroupState._vm.invites;
+        const pendingMembers = /* @__PURE__ */ Object.create(null);
+        for (const inviteKeyId in invites) {
+          if (vmInvites[inviteKeyId].status === INVITE_STATUS.VALID && invites[inviteKeyId].creatorID !== INVITE_INITIAL_CREATOR) {
+            pendingMembers[inviteKeyId] = {
+              displayName: invites[inviteKeyId].invitee,
+              invitedBy: invites[inviteKeyId].creatorID,
+              expires: vmInvites[inviteKeyId].expires
+            };
+          }
+        }
+        return pendingMembers;
+      },
+      groupShouldPropose(state, getters) {
+        return getters.groupMembersCount >= 3;
+      },
+      groupDistributionStarted(state, getters) {
+        return (currentDate) => currentDate >= getters.groupSettings?.distributionDate;
+      },
+      groupProposalSettings(state, getters) {
+        return (proposalType2 = PROPOSAL_GENERIC) => {
+          return getters.groupSettings.proposals?.[proposalType2];
+        };
+      },
+      groupCurrency(state, getters) {
+        const mincomeCurrency = getters.groupMincomeCurrency;
+        return mincomeCurrency && currencies_default[mincomeCurrency];
+      },
+      groupMincomeFormatted(state, getters) {
+        return getters.withGroupCurrency?.(getters.groupMincomeAmount);
+      },
+      groupMincomeSymbolWithCode(state, getters) {
+        return getters.groupCurrency?.symbolWithCode;
+      },
+      groupPeriodPayments(state, getters) {
+        return getters.currentGroupState.paymentsByPeriod || {};
+      },
+      groupThankYousFrom(state, getters) {
+        return getters.currentGroupState.thankYousFrom || {};
+      },
+      groupStreaks(state, getters) {
+        return getters.currentGroupState.streaks || {};
+      },
+      groupTotalPledgeAmount(state, getters) {
+        return getters.currentGroupState.totalPledgeAmount || 0;
+      },
+      withGroupCurrency(state, getters) {
+        return getters.groupCurrency?.displayWithCurrency;
+      },
+      getGroupChatRooms(state, getters) {
+        return getters.currentGroupState.chatRooms;
+      },
+      generalChatRoomId(state, getters) {
+        return getters.currentGroupState.generalChatRoomId;
+      },
+      haveNeedsForThisPeriod(state, getters) {
+        return (currentPeriod) => {
+          const groupProfiles = getters.groupProfiles;
+          const haveNeeds = [];
+          for (const memberID in groupProfiles) {
+            const { incomeDetailsType, joinedDate } = groupProfiles[memberID];
+            if (incomeDetailsType) {
+              const amount = groupProfiles[memberID][incomeDetailsType];
+              const haveNeed = incomeDetailsType === "incomeAmount" ? amount - getters.groupMincomeAmount : amount;
+              let when = dateFromPeriodStamp(currentPeriod).toISOString();
+              if (dateIsWithinPeriod({
+                date: joinedDate,
+                periodStart: currentPeriod,
+                periodLength: getters.groupSettings.distributionPeriodLength
+              })) {
+                when = joinedDate;
+              }
+              haveNeeds.push({ memberID, haveNeed, when });
+            }
+          }
+          return haveNeeds;
+        };
+      },
+      paymentsForPeriod(state, getters) {
+        return (periodStamp) => {
+          const hashes = getters.paymentHashesForPeriod(periodStamp);
+          const events = [];
+          if (hashes && hashes.length > 0) {
+            const payments = getters.currentGroupState.payments;
+            for (const paymentHash of hashes) {
+              const payment = payments[paymentHash];
+              if (payment.data.status === PAYMENT_COMPLETED) {
+                events.push(createPaymentInfo(paymentHash, payment));
+              }
+            }
+          }
+          return events;
+        };
       }
     },
     actions: {
-      "gi.contracts/chatroom": {
-        validate: objectOf({
-          attributes: chatRoomAttributesType
+      "gi.contracts/group": {
+        validate: objectMaybeOf({
+          settings: objectMaybeOf({
+            groupName: string,
+            groupPicture: unionOf(string, objectOf({
+              manifestCid: string,
+              downloadParams: optional(object)
+            })),
+            sharedValues: string,
+            mincomeAmount: number,
+            mincomeCurrency: string,
+            distributionDate: isPeriodStamp,
+            distributionPeriodLength: number,
+            minimizeDistribution: boolean,
+            proposals: objectOf({
+              [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+              [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+              [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+              [PROPOSAL_GENERIC]: proposalSettingsType
+            })
+          })
         }),
-        process({ data }, { state }) {
+        process({ data, meta, contractID }, { state, getters }) {
           const initialState = merge({
+            payments: {},
+            paymentsByPeriod: {},
+            thankYousFrom: {},
+            invites: {},
+            proposals: {},
             settings: {
-              actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
-              maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
-              maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+              distributionPeriodLength: 30 * DAYS_MILLIS,
+              inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL,
+              allowPublicChannels: false
             },
-            attributes: {
-              deletedDate: null
-            },
-            members: {},
-            messages: []
+            streaks: initGroupStreaks(),
+            profiles: {},
+            chatRooms: {},
+            totalPledgeAmount: 0
           }, data);
           for (const key in initialState) {
-            import_common.Vue.set(state, key, initialState[key]);
+            import_common3.Vue.set(state, key, initialState[key]);
           }
+          initFetchPeriodPayments({ contractID, meta, state, getters });
         },
-        sideEffect({ contractID }) {
-          import_common.Vue.set((0, import_sbp6.default)("state/vuex/state").chatRoomUnread, contractID, {
-            readUntil: void 0,
-            messages: []
-          });
-        }
-      },
-      "gi.contracts/chatroom/join": {
-        validate: actionRequireInnerSignature(objectOf({
-          memberID: optional(string)
-        })),
-        process({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
-          const memberID = data.memberID || innerSigningContractID;
-          if (!memberID) {
-            throw new Error("The new member must be given either explicitly or implcitly with an inner signature");
-          }
-          if (!state.onlyRenderMessage) {
-            if (state.members[memberID]) {
-              throw new Error(`Can not join the chatroom which ${memberID} is already part of`);
-            }
-            import_common.Vue.set(state.members, memberID, { joinedDate: meta.createdDate });
-            return;
-          }
-          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-            return;
-          }
-          const notificationType = memberID === innerSigningContractID ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
-          const notificationData = createNotificationData(notificationType, notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { memberID, actorID: innerSigningContractID } : { memberID });
-          const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
-          if (state.onlyRenderMessage)
-            return;
-          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp6.default)("state/vuex/state");
-            const state2 = rootState[contractID];
-            const memberID = data.memberID || innerSigningContractID;
-            if (!state2?.members?.[memberID]) {
-              return;
-            }
-            const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
-            const loggedIn = (0, import_sbp6.default)("state/vuex/state").loggedIn;
-            setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-            if (memberID === loggedIn.identityContractID) {
-              (0, import_sbp6.default)("okTurtles.data/delete", `JOINING_CHATROOM-${contractID}-${memberID}`);
-              if (state2.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-                (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
-                  chatRoomId: contractID,
-                  deletedDate: meta.createdDate
-                });
-              }
-              const profileIds = Object.keys(state2.members).filter((id) => id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]);
-              (0, import_sbp6.default)("chelonia/contract/sync", profileIds).catch((e) => {
-                console.error("Error while syncing other members' contracts at chatroom join", e);
+        sideEffect({ contractID }, { state }) {
+          if (!state.generalChatRoomId) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState = (0, import_sbp6.default)("state/vuex/state");
+              if (!rootState[contractID] || rootState[contractID].generalChatRoomId)
+                return;
+              const CSKid = findKeyIdByName(state, "csk");
+              const CEKid = findKeyIdByName(state, "cek");
+              return (0, import_sbp6.default)("gi.actions/group/addChatRoom", {
+                contractID,
+                data: {
+                  attributes: {
+                    name: CHATROOM_GENERAL_NAME,
+                    type: CHATROOM_TYPES.GROUP,
+                    description: "",
+                    privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
+                  }
+                },
+                signingKeyId: CSKid,
+                encryptionKeyId: CEKid,
+                innerSigningContractID: null
               });
-            } else {
-              if (!rootGetters.ourContactProfiles[memberID]) {
-                (0, import_sbp6.default)("chelonia/contract/sync", memberID).catch((e) => {
-                  console.error(`Error while syncing new memberID's contract ${memberID}`, e);
-                });
-              }
-            }
-          }).catch((e) => {
-            console.error("[gi.contracts/chatroom/join/sideEffect] Error at sideEffect", e?.message || e);
-          });
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/sideEffect] Error creating #General chatroom for ${contractID}`, e);
+            });
+          }
         }
       },
-      "gi.contracts/chatroom/rename": {
-        validate: actionRequireInnerSignature(objectOf({
-          name: string
+      "gi.contracts/group/payment": {
+        validate: actionRequireActiveMember(objectMaybeOf({
+          toMemberID: string,
+          amount: number,
+          currencyFromTo: tupleOf(string, string),
+          exchangeRate: number,
+          txid: string,
+          status: paymentStatusType,
+          paymentType,
+          details: optional(object),
+          memo: optional(string)
         })),
-        process({ data, meta, hash, height, innerSigningContractID }, { state }) {
-          import_common.Vue.set(state.attributes, "name", data.name);
-          if (!state.onlyRenderMessage) {
-            return;
+        process({ data, meta, hash, contractID, height, innerSigningContractID }, { state, getters }) {
+          if (data.status === PAYMENT_COMPLETED) {
+            console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("payments cannot be instantly completed!");
           }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
-          const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-        }
-      },
-      "gi.contracts/chatroom/changeDescription": {
-        validate: actionRequireInnerSignature(objectOf({
-          description: string
-        })),
-        process({ data, meta, hash, height, innerSigningContractID }, { state }) {
-          import_common.Vue.set(state.attributes, "description", data.description);
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
-          const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-        }
-      },
-      "gi.contracts/chatroom/leave": {
-        validate: objectOf({
-          memberID: optional(string)
-        }),
-        process({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
-          const memberID = data.memberID || innerSigningContractID;
-          if (!memberID) {
-            throw new Error("The removed member must be given either explicitly or implcitly with an inner signature");
-          }
-          const isKicked = innerSigningContractID && memberID !== innerSigningContractID;
-          if (!state.onlyRenderMessage) {
-            if (!state.members) {
-              console.error("Missing state.members: " + JSON.stringify(state));
-            }
-            if (!state.members[memberID]) {
-              throw new Error(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`);
-            }
-            import_common.Vue.delete(state.members, memberID);
-            return;
-          }
-          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-            return;
-          }
-          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
-          const notificationData = createNotificationData(notificationType, { memberID });
-          const newMessage = createMessage({
-            meta,
-            hash,
+          import_common3.Vue.set(state.payments, hash, {
+            data: {
+              ...data,
+              fromMemberID: innerSigningContractID,
+              groupMincome: getters.groupMincomeAmount
+            },
             height,
-            data: notificationData,
-            state,
-            innerSigningContractID: !isKicked ? memberID : innerSigningContractID
+            meta,
+            history: [[meta.createdDate, hash]]
           });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
-          if (state.onlyRenderMessage)
-            return;
-          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp6.default)("state/vuex/state");
-            const state2 = rootState[contractID];
-            const memberID = data.memberID || innerSigningContractID;
-            if (!state2 || !!state2.members?.[data.memberID]) {
-              return;
-            }
-            if (memberID === rootState.loggedIn.identityContractID) {
-              if (!(0, import_sbp6.default)("okTurtles.data/get", `JOINING_CHATROOM-${contractID}-${memberID}`)) {
-                (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
-                  console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
-                });
-              }
-            } else {
-              setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-              if (state2.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-                (0, import_sbp6.default)("gi.contracts/chatroom/rotateKeys", contractID, state2);
-              }
-            }
-            (0, import_sbp6.default)("gi.contracts/chatroom/removeForeignKeys", contractID, memberID, state2);
-          }).catch((e) => {
-            console.error("[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect", e?.message || e);
-          });
+          const { paymentsFrom } = initFetchPeriodPayments({ contractID, meta, state, getters });
+          const fromMemberID = vueFetchInitKV(paymentsFrom, innerSigningContractID, {});
+          const toMemberID = vueFetchInitKV(fromMemberID, data.toMemberID, []);
+          toMemberID.push(hash);
         }
       },
-      "gi.contracts/chatroom/delete": {
-        validate: actionRequireInnerSignature((_, { state, meta, message: { innerSigningContractID } }) => {
-          if (state.attributes.creatorID !== innerSigningContractID) {
-            throw new TypeError((0, import_common.L)("Only the channel creator can delete channel."));
-          }
-        }),
-        process({ meta }, { state }) {
-          import_common.Vue.set(state.attributes, "deletedDate", meta.createdDate);
-          for (const memberID in state.members) {
-            import_common.Vue.delete(state.members, memberID);
-          }
-        },
-        sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp6.default)("chelonia/contract/isSyncing", contractID)) {
-            return;
-          }
-          (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
-            console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e);
-          });
-        }
-      },
-      "gi.contracts/chatroom/addMessage": {
-        validate: actionRequireInnerSignature(messageType),
-        process({ direction, data, meta, hash, height, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const existingMsg = state.messages.find((msg) => msg.hash === hash);
-          if (!existingMsg) {
-            const pending = direction === "outgoing";
-            state.messages.push(createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }));
-          } else if (direction !== "outgoing") {
-            delete existingMsg.pending;
-          }
-        },
-        sideEffect({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-          const me = (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID;
-          if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
-            return;
-          }
-          const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID });
-          const mentions = makeMentionFromUserID(me);
-          const isMentionedMe = data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
-          messageReceivePostEffect({
-            contractID,
-            messageHash: newMessage.hash,
-            datetime: newMessage.datetime,
-            text: newMessage.text,
-            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
-            messageType: data.type,
-            memberID: innerSigningContractID,
-            chatRoomName: getters.chatRoomAttributes.name
-          });
-        }
-      },
-      "gi.contracts/chatroom/editMessage": {
-        validate: actionRequireInnerSignature(objectOf({
-          hash: string,
-          createdDate: string,
-          text: string
+      "gi.contracts/group/paymentUpdate": {
+        validate: actionRequireActiveMember(objectMaybeOf({
+          paymentHash: string,
+          updatedProperties: objectMaybeOf({
+            status: paymentStatusType,
+            details: object,
+            memo: string
+          })
         })),
-        process({ data, meta, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
+        process({ data, meta, hash, contractID, innerSigningContractID }, { state, getters }) {
+          const payment = state.payments[data.paymentHash];
+          if (!payment) {
+            console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("paymentUpdate without existing payment");
           }
-          const msgIndex = findMessageIdx(data.hash, state.messages);
-          if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
-            state.messages[msgIndex].text = data.text;
-            state.messages[msgIndex].updatedDate = meta.createdDate;
-            if (state.onlyRenderMessage && state.messages[msgIndex].pending) {
-              delete state.messages[msgIndex].pending;
+          if (innerSigningContractID !== payment.data.fromMemberID && innerSigningContractID !== payment.data.toMemberID) {
+            console.error(`paymentUpdate: bad member ${innerSigningContractID} != ${payment.data.fromMemberID} != ${payment.data.toMemberID}`, { data, meta, hash });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("paymentUpdate from bad user!");
+          }
+          payment.history.push([meta.createdDate, hash]);
+          merge(payment.data, data.updatedProperties);
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            payment.data.completedDate = meta.createdDate;
+            const updatePeriodStamp = getters.periodStampGivenDate(meta.createdDate);
+            const paymentPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate);
+            if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
+              updateAdjustedDistribution({ period: paymentPeriodStamp, getters });
+            } else {
+              updateCurrentDistribution({ contractID, meta, state, getters });
             }
+            const currentTotalPledgeAmount = vueFetchInitKV(state, "totalPledgeAmount", 0);
+            state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount;
           }
         },
-        sideEffect({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
-          const rootState = (0, import_sbp6.default)("state/vuex/state");
-          const me = rootState.loggedIn.identityContractID;
-          if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-            return;
-          }
-          const isAlreadyAdded = !!(0, import_sbp6.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);
-          const mentions = makeMentionFromUserID(me);
-          const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
-          if (!isAlreadyAdded) {
-            messageReceivePostEffect({
-              contractID,
-              messageHash: data.hash,
-              datetime: data.createdDate,
-              text: data.text,
-              isDMOrMention: isMentionedMe,
-              messageType: MESSAGE_TYPES.TEXT,
-              memberID: innerSigningContractID,
-              chatRoomName: getters.chatRoomAttributes.name
-            });
-          } else if (!isMentionedMe) {
-            (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
-              chatRoomId: contractID,
-              messageHash: data.hash
-            });
-          }
-        }
-      },
-      "gi.contracts/chatroom/deleteMessage": {
-        validate: actionRequireInnerSignature(objectOf({ hash: string })),
-        process({ data, meta, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const msgIndex = findMessageIdx(data.hash, state.messages);
-          if (msgIndex >= 0) {
-            state.messages.splice(msgIndex, 1);
-          }
-          for (const message of state.messages) {
-            if (message.replyingMessage?.hash === data.hash) {
-              message.replyingMessage.hash = null;
-              message.replyingMessage.text = (0, import_common.L)("Original message was removed by {user}", {
-                user: makeMentionFromUserID(innerSigningContractID).me
+        sideEffect({ meta, contractID, data, innerSigningContractID }, { state, getters }) {
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
+            const payment = state.payments[data.paymentHash];
+            if (loggedIn.identityContractID === payment.data.toMemberID) {
+              (0, import_sbp6.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                creatorID: innerSigningContractID,
+                paymentHash: data.paymentHash,
+                amount: getters.withGroupCurrency(payment.data.amount)
               });
             }
           }
-        },
-        sideEffect({ data, contractID, hash, meta, innerSigningContractID }) {
-          const rootState = (0, import_sbp6.default)("state/vuex/state");
-          const me = rootState.loggedIn.identityContractID;
-          if (rootState.chatRoomScrollPosition[contractID] === data.hash) {
-            (0, import_sbp6.default)("state/vuex/commit", "setChatRoomScrollPosition", {
-              chatRoomId: contractID,
-              messageHash: null
-            });
-          }
-          if (rootState.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
-            (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
-              chatRoomId: contractID,
-              deletedDate: meta.createdDate
-            });
-          }
-          if (me === innerSigningContractID) {
-            return;
-          }
-          (0, import_sbp6.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
-            chatRoomId: contractID,
-            messageHash: data.hash
-          });
         }
       },
-      "gi.contracts/chatroom/makeEmotion": {
-        validate: actionRequireInnerSignature(objectOf({
-          hash: string,
-          emoticon: string
+      "gi.contracts/group/sendPaymentThankYou": {
+        validate: actionRequireActiveMember(objectOf({
+          toMemberID: string,
+          memo: string
+        })),
+        process({ data, innerSigningContractID }, { state }) {
+          const fromMemberID = vueFetchInitKV(state.thankYousFrom, innerSigningContractID, {});
+          import_common3.Vue.set(fromMemberID, data.toMemberID, data.memo);
+        },
+        sideEffect({ contractID, meta, data, innerSigningContractID }) {
+          const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
+          if (data.toMemberID === loggedIn.identityContractID) {
+            (0, import_sbp6.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              fromMemberID: innerSigningContractID,
+              toMemberID: data.toMemberID
+            });
+          }
+        }
+      },
+      "gi.contracts/group/proposal": {
+        validate: actionRequireActiveMember((data, { state, meta }) => {
+          objectOf({
+            proposalType,
+            proposalData: object,
+            votingRule: ruleType,
+            expires_date_ms: number
+          })(data);
+          const dataToCompare = omit(data.proposalData, ["reason"]);
+          for (const hash in state.proposals) {
+            const prop = state.proposals[hash];
+            if (prop.status !== STATUS_OPEN || prop.data.proposalType !== data.proposalType) {
+              continue;
+            }
+            if (deepEqualJSONType(omit(prop.data.proposalData, ["reason"]), dataToCompare)) {
+              throw new TypeError((0, import_common3.L)("There is an identical open proposal."));
+            }
+          }
+        }),
+        process({ data, meta, hash, height, innerSigningContractID }, { state }) {
+          import_common3.Vue.set(state.proposals, hash, {
+            data,
+            meta,
+            height,
+            creatorID: innerSigningContractID,
+            votes: { [innerSigningContractID]: VOTE_FOR },
+            status: STATUS_OPEN,
+            notifiedBeforeExpire: false,
+            payload: null
+          });
+        },
+        sideEffect({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
+          const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
+          const typeToSubTypeMap = {
+            [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
+            [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
+            [PROPOSAL_GROUP_SETTING_CHANGE]: {
+              mincomeAmount: "CHANGE_MINCOME",
+              distributionDate: "CHANGE_DISTRIBUTION_DATE"
+            }[data.proposalData.setting],
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: "CHANGE_VOTING_RULE",
+            [PROPOSAL_GENERIC]: "GENERIC"
+          };
+          const myProfile = getters.groupProfile(loggedIn.identityContractID);
+          if (isActionYoungerThanUser(contractID, height, myProfile)) {
+            (0, import_sbp6.default)("gi.notifications/emit", "NEW_PROPOSAL", {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              subtype: typeToSubTypeMap[data.proposalType]
+            });
+          }
+        }
+      },
+      "gi.contracts/group/proposalVote": {
+        validate: actionRequireActiveMember(objectOf({
+          proposalHash: string,
+          vote: string,
+          passPayload: optional(unionOf(object, string))
+        })),
+        process(message, { state, getters }) {
+          const { data, hash, meta, innerSigningContractID } = message;
+          const proposal = state.proposals[data.proposalHash];
+          if (!proposal) {
+            console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("proposalVote without existing proposal");
+          }
+          import_common3.Vue.set(proposal.votes, innerSigningContractID, data.vote);
+          if (new Date(meta.createdDate).getTime() > proposal.data.expires_date_ms) {
+            console.warn("proposalVote: vote on expired proposal!", { proposal, data, meta });
+            return;
+          }
+          const result = rules_default[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes);
+          if (result === VOTE_FOR || result === VOTE_AGAINST) {
+            proposals_default[proposal.data.proposalType][result](state, message);
+            import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
+            const votedMemberIDs = Object.keys(proposal.votes);
+            for (const memberID of getters.groupMembersByContractID) {
+              const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, memberID, 0);
+              const memberHasVoted = votedMemberIDs.includes(memberID);
+              import_common3.Vue.set(getters.groupStreaks.noVotes, memberID, memberHasVoted ? 0 : memberCurrentStreak + 1);
+            }
+          }
+        },
+        sideEffect({ contractID, data, meta, height, innerSigningContractID }, { state, getters }) {
+          const proposal = state.proposals[data.proposalHash];
+          const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
+          const myProfile = getters.groupProfile(loggedIn.identityContractID);
+          if (proposal?.dateClosed && isActionYoungerThanUser(contractID, height, myProfile)) {
+            (0, import_sbp6.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              proposalStatus: proposal.status
+            });
+          }
+        }
+      },
+      "gi.contracts/group/proposalCancel": {
+        validate: actionRequireActiveMember(objectOf({
+          proposalHash: string
         })),
         process({ data, meta, contractID, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
+          const proposal = state.proposals[data.proposalHash];
+          if (!proposal) {
+            console.error(`proposalCancel: no proposal for ${data.proposalHash}!`, { data, meta });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("proposalVote without existing proposal");
+          } else if (proposal.creatorID !== innerSigningContractID) {
+            console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.creatorID} not ${innerSigningContractID}!`, { data, meta });
+            throw new import_common3.Errors.GIErrorIgnoreAndBan("proposalWithdraw for wrong user!");
           }
-          const { hash, emoticon } = data;
-          const msgIndex = findMessageIdx(hash, state.messages);
-          if (msgIndex >= 0) {
-            let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {});
-            if (emoticons[emoticon]) {
-              const alreadyAdded = emoticons[emoticon].indexOf(innerSigningContractID);
-              if (alreadyAdded >= 0) {
-                emoticons[emoticon].splice(alreadyAdded, 1);
-                if (!emoticons[emoticon].length) {
-                  delete emoticons[emoticon];
-                  if (!Object.keys(emoticons).length) {
-                    emoticons = null;
-                  }
+          import_common3.Vue.set(proposal, "status", STATUS_CANCELLED);
+          import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
+          archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
+        }
+      },
+      "gi.contracts/group/markProposalsExpired": {
+        validate: actionRequireActiveMember(objectOf({
+          proposalIds: arrayOf(string)
+        })),
+        process({ data, meta, contractID }, { state }) {
+          if (data.proposalIds.length) {
+            for (const proposalId of data.proposalIds) {
+              const proposal = state.proposals[proposalId];
+              if (proposal) {
+                import_common3.Vue.set(proposal, "status", STATUS_EXPIRED);
+                import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
+                archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
+              }
+            }
+          }
+        }
+      },
+      "gi.contracts/group/notifyExpiringProposals": {
+        validate: actionRequireActiveMember(arrayOf(string)),
+        process({ data, meta, contractID }, { state }) {
+          for (const proposalId of data) {
+            import_common3.Vue.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
+          }
+        }
+      },
+      "gi.contracts/group/removeMember": {
+        validate: actionRequireActiveMember((data, { state, getters, meta, message: { innerSigningContractID, proposalHash } }) => {
+          objectOf({
+            memberID: optional(string),
+            reason: optional(string),
+            automated: optional(boolean)
+          })(data);
+          const memberToRemove = data.memberID || innerSigningContractID;
+          const membersCount = getters.groupMembersCount;
+          const isGroupCreator = innerSigningContractID === state.settings.groupCreatorID;
+          if (!state.profiles[memberToRemove]) {
+            throw new TypeError((0, import_common3.L)("Not part of the group."));
+          }
+          if (membersCount === 1) {
+            throw new TypeError((0, import_common3.L)("Cannot remove the last member."));
+          }
+          if (memberToRemove === innerSigningContractID) {
+            return true;
+          }
+          if (isGroupCreator) {
+            return true;
+          } else if (membersCount < 3) {
+            throw new TypeError((0, import_common3.L)("Only the group creator can remove members."));
+          } else {
+            const proposal = state.proposals[proposalHash];
+            if (!proposal) {
+              throw new TypeError((0, import_common3.L)("Admin credentials needed and not implemented yet."));
+            }
+          }
+        }),
+        process({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
+          memberLeaves({ memberID: data.memberID || innerSigningContractID, dateLeft: meta.createdDate, heightLeft: height }, { contractID, meta, state, getters });
+        },
+        sideEffect({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
+          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp6.default)("gi.contracts/group/leaveGroup", { data, meta, contractID, getters, height, innerSigningContractID })).catch((e) => {
+            console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e);
+          });
+        }
+      },
+      "gi.contracts/group/invite": {
+        validate: actionRequireActiveMember(inviteType),
+        process({ data, meta }, { state }) {
+          import_common3.Vue.set(state.invites, data.inviteKeyId, data);
+        }
+      },
+      "gi.contracts/group/inviteAccept": {
+        validate: actionRequireInnerSignature(() => {
+        }),
+        process({ data, meta, height, innerSigningContractID }, { state }) {
+          if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
+            throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`);
+          }
+          import_common3.Vue.set(state.profiles, innerSigningContractID, initGroupProfile(meta.createdDate, height));
+        },
+        sideEffect({ meta, contractID, height, innerSigningContractID }, { state }) {
+          const { loggedIn } = (0, import_sbp6.default)("state/vuex/state");
+          (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
+            const rootState = (0, import_sbp6.default)("state/vuex/state");
+            const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+            const state2 = rootState[contractID];
+            if (!state2) {
+              console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`);
+              return;
+            }
+            const { profiles = {} } = state2;
+            if (profiles[innerSigningContractID].status !== PROFILE_STATUS.ACTIVE) {
+              return;
+            }
+            const userID = loggedIn.identityContractID;
+            if (innerSigningContractID === userID) {
+              (0, import_sbp6.default)("chelonia/contract/cancelRemove", contractID);
+              await (0, import_sbp6.default)("gi.actions/identity/addJoinDirectMessageKey", userID, contractID, "csk");
+              const generalChatRoomId = state2.generalChatRoomId;
+              if (generalChatRoomId) {
+                if (state2.chatRooms[generalChatRoomId]?.members?.[loggedIn.identityContractID]?.status !== PROFILE_STATUS.ACTIVE) {
+                  (0, import_sbp6.default)("gi.actions/group/joinChatRoom", {
+                    contractID,
+                    data: {
+                      chatRoomID: generalChatRoomId
+                    },
+                    hooks: {
+                      onprocessed: () => {
+                        (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {
+                          groupId: contractID,
+                          chatRoomId: generalChatRoomId
+                        });
+                      }
+                    }
+                  }).catch((e) => {
+                    console.error("Error while joining the #General chatroom", e);
+                    (async () => {
+                      alert((0, import_common3.L)("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }));
+                    })();
+                  });
                 }
               } else {
-                emoticons[emoticon].push(innerSigningContractID);
+                (async () => {
+                  alert((0, import_common3.L)("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }));
+                })();
+              }
+              const profileIds = Object.keys(profiles).filter((id) => id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]);
+              (0, import_sbp6.default)("chelonia/contract/sync", profileIds).catch((e) => {
+                console.error("Error while syncing other members' contracts at inviteAccept", e);
+              });
+              if (!rootState.currentGroupId) {
+                (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+                (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", contractID);
               }
             } else {
-              emoticons[emoticon] = [innerSigningContractID];
+              (0, import_sbp6.default)("chelonia/contract/sync", innerSigningContractID).then(() => {
+                const { profiles: profiles2 = {} } = state2;
+                const myProfile = profiles2[loggedIn.identityContractID];
+                if (isActionYoungerThanUser(contractID, height, myProfile)) {
+                  (0, import_sbp6.default)("gi.notifications/emit", "MEMBER_ADDED", {
+                    createdDate: meta.createdDate,
+                    groupID: contractID,
+                    memberID: innerSigningContractID
+                  });
+                }
+              }).catch(() => {
+                console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`);
+              });
             }
-            if (emoticons) {
-              import_common.Vue.set(state.messages[msgIndex], "emoticons", emoticons);
+          }).catch((e) => {
+            console.error("[gi.contracts/group/inviteAccept/sideEffect]: An error occurred", e);
+          });
+        }
+      },
+      "gi.contracts/group/inviteRevoke": {
+        validate: actionRequireActiveMember((data, { state, meta }) => {
+          objectOf({
+            inviteKeyId: string
+          })(data);
+          if (!state._vm.invites[data.inviteKeyId]) {
+            throw new TypeError((0, import_common3.L)("The link does not exist."));
+          }
+        }),
+        process() {
+        }
+      },
+      "gi.contracts/group/updateSettings": {
+        validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
+          objectMaybeOf({
+            groupName: (x) => typeof x === "string",
+            groupPicture: (x) => typeof x === "string",
+            sharedValues: (x) => typeof x === "string",
+            mincomeAmount: (x) => typeof x === "number" && x > 0,
+            mincomeCurrency: (x) => typeof x === "string",
+            distributionDate: (x) => typeof x === "string",
+            allowPublicChannels: (x) => typeof x === "boolean"
+          })(data);
+          const isGroupCreator = innerSigningContractID === getters.groupSettings.groupCreatorID;
+          if ("allowPublicChannels" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
+          } else if ("distributionDate" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
+          } else if ("distributionDate" in data && (getters.groupDistributionStarted(meta.createdDate) || Object.keys(getters.groupPeriodPayments).length > 1)) {
+            throw new TypeError((0, import_common3.L)("Can't change distribution date because distribution period has already started."));
+          }
+        }),
+        process({ contractID, meta, data, height, innerSigningContractID }, { state, getters }) {
+          const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;
+          for (const key in data) {
+            import_common3.Vue.set(state.settings, key, data[key]);
+          }
+          if ("distributionDate" in data) {
+            import_common3.Vue.set(state, "paymentsByPeriod", {});
+            initFetchPeriodPayments({ contractID, meta, state, getters });
+          }
+          if (mincomeCache !== null) {
+            (0, import_sbp6.default)("gi.contracts/group/pushSideEffect", contractID, [
+              "gi.contracts/group/sendMincomeChangedNotification",
+              contractID,
+              meta,
+              {
+                toAmount: data.mincomeAmount,
+                fromAmount: mincomeCache
+              },
+              height,
+              innerSigningContractID
+            ]);
+          }
+        }
+      },
+      "gi.contracts/group/groupProfileUpdate": {
+        validate: actionRequireActiveMember(objectMaybeOf({
+          incomeDetailsType: (x) => ["incomeAmount", "pledgeAmount"].includes(x),
+          incomeAmount: (x) => typeof x === "number" && x >= 0,
+          pledgeAmount: (x) => typeof x === "number" && x >= 0,
+          nonMonetaryAdd: string,
+          nonMonetaryEdit: objectOf({
+            replace: string,
+            with: string
+          }),
+          nonMonetaryRemove: string,
+          paymentMethods: arrayOf(objectOf({
+            name: string,
+            value: string
+          }))
+        })),
+        process({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
+          const groupProfile = state.profiles[innerSigningContractID];
+          const nonMonetary = groupProfile.nonMonetaryContributions;
+          for (const key in data) {
+            const value = data[key];
+            switch (key) {
+              case "nonMonetaryAdd":
+                nonMonetary.push(value);
+                break;
+              case "nonMonetaryRemove":
+                nonMonetary.splice(nonMonetary.indexOf(value), 1);
+                break;
+              case "nonMonetaryEdit":
+                nonMonetary.splice(nonMonetary.indexOf(value.replace), 1, value.with);
+                break;
+              default:
+                import_common3.Vue.set(groupProfile, key, value);
+            }
+          }
+          if (data.incomeDetailsType) {
+            import_common3.Vue.set(groupProfile, "incomeDetailsLastUpdatedDate", meta.createdDate);
+            updateCurrentDistribution({ contractID, meta, state, getters });
+          }
+        }
+      },
+      "gi.contracts/group/updateAllVotingRules": {
+        validate: actionRequireActiveMember(objectMaybeOf({
+          ruleName: (x) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
+          ruleThreshold: number,
+          expires_ms: number
+        })),
+        process({ data, meta }, { state }) {
+          if (data.ruleName && data.ruleThreshold) {
+            for (const proposalSettings in state.settings.proposals) {
+              import_common3.Vue.set(state.settings.proposals[proposalSettings], "rule", data.ruleName);
+              import_common3.Vue.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], "threshold", data.ruleThreshold);
+            }
+          }
+        }
+      },
+      "gi.contracts/group/addChatRoom": {
+        validate: objectOf({
+          chatRoomID: string,
+          attributes: chatRoomAttributesType
+        }),
+        process({ data, meta, contractID, innerSigningContractID }, { state }) {
+          const { name, type, privacyLevel, description } = data.attributes;
+          if (!!innerSigningContractID === (data.attributes.name === CHATROOM_GENERAL_NAME)) {
+            throw new Error("All chatrooms other than #General must have an inner signature and the #General chatroom must have no inner signature");
+          }
+          import_common3.Vue.set(state.chatRooms, data.chatRoomID, {
+            creatorID: innerSigningContractID || contractID,
+            name,
+            description,
+            type,
+            privacyLevel,
+            deletedDate: null,
+            members: {}
+          });
+          if (!state.generalChatRoomId) {
+            import_common3.Vue.set(state, "generalChatRoomId", data.chatRoomID);
+          }
+        },
+        sideEffect({ contractID }, { state }) {
+          if (Object.keys(state.chatRooms).length === 1) {
+            (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {
+              groupId: contractID,
+              chatRoomId: state.generalChatRoomId
+            });
+          }
+        }
+      },
+      "gi.contracts/group/deleteChatRoom": {
+        validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
+          objectOf({ chatRoomID: string })(data);
+          if (getters.getGroupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
+            throw new TypeError((0, import_common3.L)("Only the channel creator can delete channel."));
+          }
+        }),
+        process({ data, meta }, { state }) {
+          import_common3.Vue.delete(state.chatRooms, data.chatRoomID);
+        }
+      },
+      "gi.contracts/group/leaveChatRoom": {
+        validate: actionRequireActiveMember(objectOf({
+          chatRoomID: string,
+          memberID: optional(string)
+        })),
+        process({ data, innerSigningContractID }, { state }) {
+          if (!state.chatRooms[data.chatRoomID]) {
+            throw new Error("Cannot leave a chatroom which isn't part of the group");
+          }
+          const memberID = data.memberID || innerSigningContractID;
+          if (state.chatRooms[data.chatRoomID].members[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
+            throw new Error("Cannot leave a chatroom that you're not part of");
+          }
+          removeGroupChatroomProfile(state, data.chatRoomID, memberID);
+        },
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
+          const rootState = (0, import_sbp6.default)("state/vuex/state");
+          const memberID = data.memberID || innerSigningContractID;
+          if (innerSigningContractID === rootState.loggedIn.identityContractID && !(0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp6.default)("state/vuex/state");
+              if (rootState2[contractID]?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
+                return leaveChatRoomAction(state, data.chatRoomID, memberID, innerSigningContractID);
+              }
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e });
+            });
+          } else if (memberID === rootState.loggedIn.identityContractID) {
+            if ((0, import_sbp6.default)("okTurtles.data/get", `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`)) {
+              (0, import_sbp6.default)("okTurtles.data/delete", `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`);
+              (0, import_sbp6.default)("chelonia/contract/remove", data.chatRoomID).then(() => {
+                const rootState2 = (0, import_sbp6.default)("state/vuex/state");
+                if (rootState2.currentChatRoomIDs[contractID] === data.chatRoomID) {
+                  (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {
+                    groupId: contractID
+                  });
+                }
+              }).catch((e) => {
+                console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error calling remove for ${contractID} on chatroom ${data.chatRoomID}`, e);
+              });
+            }
+          }
+        }
+      },
+      "gi.contracts/group/joinChatRoom": {
+        validate: actionRequireActiveMember(objectMaybeOf({
+          memberID: optional(string),
+          chatRoomID: string
+        })),
+        process({ data, meta, innerSigningContractID }, { state }) {
+          const memberID = data.memberID || innerSigningContractID;
+          if (state.profiles[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
+            throw new Error("Cannot join a chatroom for a group you're not a member of");
+          }
+          if (!state.chatRooms[data.chatRoomID]) {
+            throw new Error("Cannot join a chatroom which isn't part of the group");
+          }
+          if (state.chatRooms[data.chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
+            throw new Error("Cannot join a chatroom that you're already part of");
+          }
+          import_common3.Vue.set(state.chatRooms[data.chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE });
+        },
+        sideEffect({ meta, data, contractID, innerSigningContractID }, { state }) {
+          const rootState = (0, import_sbp6.default)("state/vuex/state");
+          const memberID = data.memberID || innerSigningContractID;
+          if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp6.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, memberID)).catch((e) => {
+              console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
+            });
+          } else if (memberID === rootState.loggedIn.identityContractID) {
+            (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => {
+              const rootState2 = (0, import_sbp6.default)("state/vuex/state");
+              if (rootState2[contractID]?.chatRooms[data.chatRoomID]?.members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
+                (0, import_sbp6.default)("okTurtles.data/set", `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`, true);
+                (0, import_sbp6.default)("chelonia/contract/sync", data.chatRoomID).catch((e) => {
+                  console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
+                });
+              }
+            });
+          }
+        }
+      },
+      "gi.contracts/group/renameChatRoom": {
+        validate: actionRequireActiveMember(objectOf({
+          chatRoomID: string,
+          name: string
+        })),
+        process({ data, meta }, { state, getters }) {
+          import_common3.Vue.set(state.chatRooms[data.chatRoomID], "name", data.name);
+        }
+      },
+      "gi.contracts/group/changeChatRoomDescription": {
+        validate: actionRequireActiveMember(objectOf({
+          chatRoomID: string,
+          description: string
+        })),
+        process({ data, meta }, { state, getters }) {
+          import_common3.Vue.set(state.chatRooms[data.chatRoomID], "description", data.description);
+        }
+      },
+      "gi.contracts/group/updateLastLoggedIn": {
+        validate: actionRequireActiveMember(() => {
+        }),
+        process({ meta, innerSigningContractID }, { getters }) {
+          const profile = getters.groupProfiles[innerSigningContractID];
+          if (profile) {
+            import_common3.Vue.set(profile, "lastLoggedIn", meta.createdDate);
+          }
+        }
+      },
+      "gi.contracts/group/updateDistributionDate": {
+        validate: actionRequireActiveMember(optional),
+        process({ meta }, { state, getters }) {
+          const period = getters.periodStampGivenDate(meta.createdDate);
+          const current = getters.groupSettings?.distributionDate;
+          if (current !== period) {
+            updateGroupStreaks({ state, getters });
+            getters.groupSettings.distributionDate = period;
+          }
+        }
+      },
+      ...{
+        "gi.contracts/group/forceDistributionDate": {
+          validate: optional,
+          process({ meta, contractID }, { state, getters }) {
+            getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate);
+          }
+        },
+        "gi.contracts/group/malformedMutation": {
+          validate: objectOf({ errorType: string, sideEffect: optional(boolean) }),
+          process({ data }) {
+            const ErrorType = import_common3.Errors[data.errorType];
+            if (data.sideEffect)
+              return;
+            if (ErrorType) {
+              throw new ErrorType("malformedMutation!");
             } else {
-              import_common.Vue.delete(state.messages[msgIndex], "emoticons");
+              throw new Error(`unknown error type: ${data.errorType}`);
             }
-          }
-        }
-      },
-      "gi.contracts/chatroom/voteOnPoll": {
-        validate: actionRequireInnerSignature(objectOf({
-          hash: string,
-          votes: arrayOf(string),
-          votesAsString: string
-        })),
-        process({ data, meta, hash, height, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const msgIndex = findMessageIdx(data.hash, state.messages);
-          if (msgIndex >= 0) {
-            const myVotes = data.votes;
-            const pollData = state.messages[msgIndex].pollData;
-            const optsCopy = cloneDeep(pollData.options);
-            const votedOptNames = [];
-            myVotes.forEach((optId) => {
-              const foundOpt = optsCopy.find((x) => x.id === optId);
-              if (foundOpt) {
-                foundOpt.voted.push(innerSigningContractID);
-                votedOptNames.push(`"${foundOpt.value}"`);
-              }
-            });
-            import_common.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
-          }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, {
-            votedOptions: data.votesAsString,
-            pollMessageHash: data.hash
-          });
-          const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-        }
-      },
-      "gi.contracts/chatroom/changeVoteOnPoll": {
-        validate: actionRequireInnerSignature(objectOf({
-          hash: string,
-          votes: arrayOf(string),
-          votesAsString: string
-        })),
-        process({ data, meta, hash, height, innerSigningContractID }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const msgIndex = findMessageIdx(data.hash, state.messages);
-          if (msgIndex >= 0) {
-            const me = innerSigningContractID;
-            const myUpdatedVotes = data.votes;
-            const pollData = state.messages[msgIndex].pollData;
-            const optsCopy = cloneDeep(pollData.options);
-            const votedOptNames = [];
-            optsCopy.forEach((opt) => {
-              opt.voted = opt.voted.filter((votername) => votername !== me);
-            });
-            myUpdatedVotes.forEach((optId) => {
-              const foundOpt = optsCopy.find((x) => x.id === optId);
-              if (foundOpt) {
-                foundOpt.voted.push(me);
-                votedOptNames.push(`"${foundOpt.value}"`);
-              }
-            });
-            import_common.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
-          }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, {
-            votedOptions: data.votesAsString,
-            pollMessageHash: data.hash
-          });
-          const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-        }
-      },
-      "gi.contracts/chatroom/closePoll": {
-        validate: actionRequireInnerSignature(objectOf({
-          hash: string
-        })),
-        process({ data }, { state }) {
-          if (!state.onlyRenderMessage) {
-            return;
-          }
-          const msgIndex = findMessageIdx(data.hash, state.messages);
-          if (msgIndex >= 0) {
-            const pollData = state.messages[msgIndex].pollData;
-            import_common.Vue.set(state.messages[msgIndex], "pollData", { ...pollData, status: POLL_STATUS.CLOSED });
+          },
+          sideEffect(message, { state }) {
+            if (!message.data.sideEffect)
+              return;
+            (0, import_sbp6.default)("gi.contracts/group/malformedMutation/process", {
+              ...message,
+              data: omit(message.data, ["sideEffect"])
+            }, state);
           }
         }
       }
     },
     methods: {
-      "gi.contracts/chatroom/_cleanup": ({ contractID, resync }) => {
+      "gi.contracts/group/_cleanup": ({ contractID, resync }) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const contracts = rootState.contracts || {};
+        const { identityContractID } = rootState.loggedIn;
+        Promise.all([
+          () => (0, import_sbp6.default)("gi.contracts/group/removeArchivedProposals", contractID),
+          () => (0, import_sbp6.default)("gi.contracts/group/removeArchivedPayments", contractID)
+        ]).catch((e) => {
+          console.error(`[gi.contracts/group/_cleanup] Error removing entries for archive for ${contractID}`, e);
+        });
         if (resync)
           return;
-        leaveChatRoom({ contractID }).catch((e) => {
-          console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e);
+        if (!rootState.currentGroupId || rootState.currentGroupId === contractID) {
+          const groupIdToSwitch = Object.keys(contracts).filter((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID).sort((cID) => rootState[cID]?.profiles?.[identityContractID] ? -1 : 1)[0] || null;
+          (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+          (0, import_sbp6.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
+        }
+        (0, import_sbp6.default)("gi.actions/identity/leaveGroup", {
+          contractID: identityContractID,
+          data: {
+            groupContractID: contractID
+          }
+        }).catch((e) => {
+          console.error(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e);
+        }).then(() => {
+          const router = (0, import_sbp6.default)("controller/router");
+          const switchFrom = router.currentRoute.path;
+          const switchTo = rootState.currentGroupId ? "/dashboard" : "/";
+          if (switchFrom !== "/join" && switchFrom !== switchTo) {
+            router.push({ path: switchTo }).catch(console.warn);
+          }
+        }).catch((e) => {
+          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown updating routes:`, e);
+        }).then(() => (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
+          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
         });
       },
-      "gi.contracts/chatroom/rotateKeys": (contractID, state) => {
+      "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${identityContractID}/${contractID}`;
+        const proposals2 = await (0, import_sbp6.default)("gi.db/archive/load", key) || [];
+        if (proposals2.some(([archivedProposalHash]) => archivedProposalHash === proposalHash)) {
+          return;
+        }
+        proposals2.unshift([proposalHash, proposal]);
+        while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
+          proposals2.pop();
+        }
+        await (0, import_sbp6.default)("gi.db/archive/save", key, proposals2);
+        (0, import_sbp6.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, contractID, proposalHash, proposal);
+      },
+      "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
+        const { paymentsByPeriod, payments } = archivingPayments;
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`;
+        const archPaymentsByPeriod = await (0, import_sbp6.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`;
+        const archSentOrReceivedPayments = await (0, import_sbp6.default)("gi.db/archive/load", archSentOrReceivedPaymentsKey) || { sent: [], received: [] };
+        const sortPayments = (payments2) => payments2.sort((f, l) => l.height - f.height);
+        for (const period of Object.keys(paymentsByPeriod).sort()) {
+          archPaymentsByPeriod[period] = paymentsByPeriod[period];
+          const newSentOrReceivedPayments = { sent: [], received: [] };
+          const { paymentsFrom } = paymentsByPeriod[period];
+          for (const fromMemberID of Object.keys(paymentsFrom)) {
+            for (const toMemberID of Object.keys(paymentsFrom[fromMemberID])) {
+              if (toMemberID === identityContractID || fromMemberID === identityContractID) {
+                const receivedOrSent = toMemberID === identityContractID ? "received" : "sent";
+                for (const hash of paymentsFrom[fromMemberID][toMemberID]) {
+                  const { data, meta, height } = payments[hash];
+                  newSentOrReceivedPayments[receivedOrSent].push({ hash, period, height, data, meta, amount: data.amount });
+                }
+              }
+            }
+          }
+          archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent];
+          archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received];
+          const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`;
+          const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period]);
+          const archPayments = Object.fromEntries(hashes.map((hash) => [hash, payments[hash]]));
+          while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
+            const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
+            const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
+            await (0, import_sbp6.default)("gi.db/archive/delete", `payments/${shouldBeDeletedPeriod}/${identityContractID}/${contractID}`);
+            delete archPaymentsByPeriod[shouldBeDeletedPeriod];
+            archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter((payment) => !paymentHashes.includes(payment.hash));
+            archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter((payment) => !paymentHashes.includes(payment.hash));
+          }
+          await (0, import_sbp6.default)("gi.db/archive/save", archPaymentsKey, archPayments);
+        }
+        await (0, import_sbp6.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
+        await (0, import_sbp6.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
+        (0, import_sbp6.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
+      },
+      "gi.contracts/group/removeArchivedProposals": async function(contractID) {
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${identityContractID}/${contractID}`;
+        await (0, import_sbp6.default)("gi.db/archive/delete", key);
+      },
+      "gi.contracts/group/removeArchivedPayments": async function(contractID) {
+        const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`;
+        const periods = Object.keys(await (0, import_sbp6.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {});
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`;
+        for (const period of periods) {
+          const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`;
+          await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsKey);
+        }
+        await (0, import_sbp6.default)("gi.db/archive/delete", archPaymentsByPeriodKey);
+        await (0, import_sbp6.default)("gi.db/archive/delete", archSentOrReceivedPaymentsKey);
+      },
+      "gi.contracts/group/sendMincomeChangedNotification": async function(contractID, meta, data, height, innerSigningContractID) {
+        const myProfile = (0, import_sbp6.default)("state/vuex/getters").ourGroupProfile;
+        if (isActionYoungerThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
+          const memberType = myProfile.incomeDetailsType === "pledgeAmount" ? "pledging" : "receiving";
+          const mincomeIncreased = data.toAmount > data.fromAmount;
+          const actionNeeded = mincomeIncreased || memberType === "receiving" && !mincomeIncreased && myProfile.incomeAmount < data.fromAmount && myProfile.incomeAmount > data.toAmount;
+          if (!actionNeeded) {
+            return;
+          }
+          if (memberType === "receiving" && !mincomeIncreased) {
+            await (0, import_sbp6.default)("gi.actions/group/groupProfileUpdate", {
+              contractID,
+              data: {
+                incomeDetailsType: "pledgeAmount",
+                pledgeAmount: 0
+              }
+            });
+            await (0, import_sbp6.default)("gi.actions/group/displayMincomeChangedPrompt", {
+              contractID,
+              data: {
+                amount: data.toAmount,
+                memberType,
+                increased: mincomeIncreased
+              }
+            });
+          }
+          await (0, import_sbp6.default)("gi.notifications/emit", "MINCOME_CHANGED", {
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            to: data.toAmount,
+            memberType,
+            increased: mincomeIncreased
+          });
+        }
+      },
+      "gi.contracts/group/joinGroupChatrooms": async function(contractID, chatRoomId, memberID) {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const state = rootState[contractID];
+        const actorID = rootState.loggedIn.identityContractID;
+        if (state?.profiles?.[actorID]?.status !== PROFILE_STATUS.ACTIVE || state.chatRooms?.[chatRoomId]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
+          return;
+        }
+        try {
+          await (0, import_sbp6.default)("chelonia/contract/sync", chatRoomId, { deferredRemove: true });
+          if (!(0, import_sbp6.default)("chelonia/contract/hasKeysToPerformOperation", chatRoomId, "gi.contracts/chatroom/join")) {
+            throw new Error(`Missing keys to join chatroom ${chatRoomId}`);
+          }
+          const encryptionKeyId = (0, import_sbp6.default)("chelonia/contract/currentKeyIdByName", state, "cek", true);
+          await (0, import_sbp6.default)("gi.actions/chatroom/join", {
+            contractID: chatRoomId,
+            data: actorID === memberID ? {} : { memberID },
+            encryptionKeyId,
+            ...actorID === memberID && {
+              hooks: {
+                onprocessed: () => {
+                  (0, import_sbp6.default)("state/vuex/commit", "setCurrentChatRoomId", { groupId: contractID, chatRoomId });
+                }
+              }
+            }
+          }).catch((e) => {
+            console.error(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e);
+          });
+        } finally {
+          await (0, import_sbp6.default)("chelonia/contract/remove", chatRoomId, { removeIfPending: true });
+        }
+      },
+      "gi.contracts/group/leaveGroup": async ({ data, meta, contractID, height, getters, innerSigningContractID }) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const rootGetters = (0, import_sbp6.default)("state/vuex/getters");
+        const state = rootState[contractID];
+        const { identityContractID } = rootState.loggedIn;
+        const memberID = data.memberID || innerSigningContractID;
+        if (!state) {
+          console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: contract has been removed`);
+          return;
+        }
+        if (state.profiles?.[memberID]?.status !== PROFILE_STATUS.REMOVED) {
+          console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, { contractID, memberID, status: state.profiles?.[memberID]?.status });
+          return;
+        }
+        if (memberID === identityContractID) {
+          for (const notification of rootGetters.notificationsByGroup(contractID)) {
+            (0, import_sbp6.default)("state/vuex/commit", REMOVE_NOTIFICATION, notification);
+          }
+          if ((0, import_sbp6.default)("okTurtles.data/get", "JOINING_GROUP-" + contractID)) {
+            console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member is currently joining`, { contractID, memberID, status: state.profiles?.[memberID]?.status });
+            return;
+          }
+        }
+        leaveAllChatRoomsUponLeaving(state, memberID, innerSigningContractID).catch((e) => {
+          console.error("[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms", e);
+        });
+        if (memberID === identityContractID) {
+          (0, import_sbp6.default)("chelonia/contract/remove", contractID).catch((e) => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
+          });
+        } else {
+          const myProfile = getters.groupProfile(identityContractID);
+          if (isActionYoungerThanUser(contractID, height, myProfile)) {
+            const memberRemovedThemselves = memberID === innerSigningContractID;
+            (0, import_sbp6.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              memberID
+            });
+            Promise.resolve().then(() => (0, import_sbp6.default)("gi.contracts/group/rotateKeys", contractID)).then(() => {
+              return (0, import_sbp6.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e);
+            });
+            (0, import_sbp6.default)("gi.contracts/group/removeForeignKeys", contractID, memberID, state);
+          }
+        }
+      },
+      "gi.contracts/group/rotateKeys": (contractID) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const pendingKeyRevocations = rootState[contractID]?._volatile?.pendingKeyRevocations;
+        if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) {
+          return;
+        }
+        (0, import_sbp6.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/group", "pending", "gi.actions/group/shareNewKeys").catch((e) => {
+          console.warn(`rotateKeys: ${e.name} thrown:`, e);
+        });
+      },
+      "gi.contracts/group/revokeGroupKeyAndRotateOurPEK": (groupContractID, disconnectGroup) => {
+        const rootState = (0, import_sbp6.default)("state/vuex/state");
+        const { identityContractID } = rootState.loggedIn;
+        const state = rootState[identityContractID];
         if (!state._volatile)
-          import_common.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
+          import_common3.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
         if (!state._volatile.pendingKeyRevocations)
-          import_common.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
+          import_common3.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
         const CSKid = findKeyIdByName(state, "csk");
         const CEKid = findKeyIdByName(state, "cek");
-        import_common.Vue.set(state._volatile.pendingKeyRevocations, CSKid, true);
-        import_common.Vue.set(state._volatile.pendingKeyRevocations, CEKid, true);
-        (0, import_sbp6.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys").catch((e) => {
-          console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
+        const PEKid = findKeyIdByName(state, "pek");
+        import_common3.Vue.set(state._volatile.pendingKeyRevocations, PEKid, true);
+        if (disconnectGroup) {
+          const groupCSKids = findForeignKeysByContractID(state, groupContractID);
+          if (groupCSKids?.length) {
+            if (!CEKid) {
+              throw new Error("Identity CEK not found");
+            }
+            (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
+              contractID: identityContractID,
+              contractName: "gi.contracts/identity",
+              data: groupCSKids,
+              signingKeyId: CSKid
+            }]).catch((e) => {
+              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
+            });
+          }
+          (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["chelonia/contract/disconnect", identityContractID, groupContractID]).catch((e) => {
+            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
+          });
+        }
+        (0, import_sbp6.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
+          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },
-      "gi.contracts/chatroom/removeForeignKeys": (contractID, memberID, state) => {
-        const keyIds = findForeignKeysByContractID(state, memberID);
+      "gi.contracts/group/removeForeignKeys": (contractID, userID, state) => {
+        const keyIds = findForeignKeysByContractID(state, userID);
         if (!keyIds?.length)
           return;
         const CSKid = findKeyIdByName(state, "csk");
-        const CEKid = findKeyIdByName(state, "cek");
-        if (!CEKid)
-          throw new Error("Missing encryption key");
         (0, import_sbp6.default)("chelonia/out/keyDel", {
           contractID,
-          contractName: "gi.contracts/chatroom",
+          contractName: "gi.contracts/group",
           data: keyIds,
-          signingKeyId: CSKid,
-          hooks: {
-            preSendCheck: (_, state2) => {
-              return !state2.members?.[memberID];
-            }
-          }
+          signingKeyId: CSKid
         }).catch((e) => {
-          console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
+          console.warn(`removeForeignKeys: ${e.name} error thrown:`, e);
         });
       }
     }
