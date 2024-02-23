@@ -535,10 +535,8 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
-    const identityContractID = state.attributes.identityContractID
-
     // TODO: Also share PEK with DMs
-    await Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
       const CSKid = findKeyIdByName(rootState[groupID], 'csk')
 
@@ -567,7 +565,7 @@ export default (sbp('sbp/selectors/register', {
         hooks: {
           preSendCheck: (_, state) => {
             // Don't send this message if we're no longer a group member
-            return state?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE
+            return state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
           }
         }
       }).catch(e => {
