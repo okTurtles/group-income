@@ -8,7 +8,7 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import { MESSAGE_TYPES, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -69,26 +69,6 @@ sbp('sbp/selectors/register', {
     // if (!state.notifications) {
     //   state.notifications = []
     // }
-
-    const chatroomState = state.chatroom || {}
-    // TODO: need to remove the whole content after we release 0.2.*
-    for (const chatRoomId in chatroomState.chatRoomUnread) {
-      if (!chatroomState.chatRoomUnread[chatRoomId].messages) {
-        chatroomState.chatRoomUnread[chatRoomId].messages = []
-      }
-      if (chatroomState.chatRoomUnread[chatRoomId].mentions) {
-        chatroomState.chatRoomUnread[chatRoomId].mentions.forEach(m => {
-          chatroomState.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.TEXT }, m))
-        })
-        Vue.delete(chatroomState.chatRoomUnread[chatRoomId], 'mentions')
-      }
-      if (chatroomState.chatRoomUnread[chatRoomId].others) {
-        chatroomState.chatRoomUnread[chatRoomId].others.forEach(o => {
-          chatroomState.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
-        })
-        Vue.delete(chatroomState.chatRoomUnread[chatRoomId], 'others')
-      }
-    }
   },
   'state/vuex/save': async function () {
     const state = store.state
