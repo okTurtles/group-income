@@ -1415,7 +1415,7 @@ sbp('chelonia/defineContract', {
             sbp('okTurtles.data/delete', `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`)
             sbp('chelonia/contract/remove', data.chatRoomID).then(() => {
               const rootState = sbp('state/vuex/state')
-              if (rootState.currentChatRoomIDs[contractID] === data.chatRoomID) {
+              if (rootState.chatroom.currentChatRoomIDs[contractID] === data.chatRoomID) {
                 sbp('state/vuex/commit', 'setCurrentChatRoomId', {
                   groupId: contractID
                 })
@@ -1915,9 +1915,8 @@ sbp('chelonia/defineContract', {
 
           Promise.resolve()
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))
-            .then(() => {
-              return sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false)
-            }).catch((e) => {
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false))
+            .catch((e) => {
               console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
 
