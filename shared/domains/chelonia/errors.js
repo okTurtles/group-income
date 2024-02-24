@@ -17,6 +17,7 @@ export const ChelErrorGenerator = (
   }: any): typeof Error)
 
 export const ChelErrorWarning: typeof Error = ChelErrorGenerator('ChelErrorWarning')
+export const ChelErrorAlreadyProcessed: typeof Error = ChelErrorGenerator('ChelErrorAlreadyProcessed')
 export const ChelErrorDBBadPreviousHEAD: typeof Error = ChelErrorGenerator('ChelErrorDBBadPreviousHEAD')
 export const ChelErrorDBConnection: typeof Error = ChelErrorGenerator('ChelErrorDBConnection')
 export const ChelErrorUnexpected: typeof Error = ChelErrorGenerator('ChelErrorUnexpected')

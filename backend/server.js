@@ -140,7 +140,14 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     reingestEvents: false,
     hooks: {
       processError: (e) => {
-        if (e?.name === 'ChelErrorSignatureError' || e?.name === 'ChelErrorSignatureKeyNotFound') {
+        const errorName = e?.name
+        if (['ChelErrorAlreadyProcessed', 'ChelErrorSignatureError', 'ChelErrorSignatureKeyNotFound'].includes(errorName)) {
+          throw new ChelErrorUnrecoverable(e.message)
+        }
+      },
+      handleEventError: (e) => {
+        const errorName = e?.name
+        if (['ChelErrorAlreadyProcessed', 'ChelErrorSignatureError', 'ChelErrorSignatureKeyNotFound'].includes(errorName)) {
           throw new ChelErrorUnrecoverable(e.message)
         }
       }

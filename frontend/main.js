@@ -141,6 +141,9 @@ async function startApp () {
     },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
+        // We can get these errors for old messages that come over the WS and
+        // are processed after calling sync
+        if (e.name === 'ChelErrorAlreadyProcessed') return
         if (e.name === 'ChelErrorUnrecoverable') {
           sbp('gi.ui/seriousErrorBanner', e)
         }
@@ -148,6 +151,8 @@ async function startApp () {
           // Avoid duplicate notifications for the same message.
           errorNotification('handleEvent', e, message)
         }
+        // We re-throw the error to indicate to Chelonia not to proceed
+        throw e
       },
       processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
@@ -160,11 +165,16 @@ async function startApp () {
           return
         }
         errorNotification('process', e, message)
+        // We re-throw the error to indicate to Chelonia not to proceed
+        throw e
       },
       sideEffectError: (e: Error, message: GIMessage) => {
         sbp('gi.ui/seriousErrorBanner', e)
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
+        // We used to revert the state and rethrow the error here, but we no longer do that
+        // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
+        // NO 'throw e' here
       }
     }
   })

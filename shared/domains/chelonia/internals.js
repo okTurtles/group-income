@@ -11,7 +11,7 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning } from './errors.js'
+import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -1630,10 +1630,14 @@ export default (sbp('sbp/selectors/register', {
         }
         // we revert any changes to the contract state that occurred, ignoring this mutation
         console.warn(`[chelonia] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
-        processingErrored = e?.name !== 'ChelErrorWarning'
-        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
-        // special error that prevents the head from being updated, effectively killing the contract
-        if (e.name === 'ChelErrorUnrecoverable') throw e
+        try {
+          if (!this.config.hooks.processError) throw e
+          this.config.hooks.processError(e, message, getMsgMeta(message, contractID, state))
+        } catch (e) {
+          processingErrored = e?.name !== 'ChelErrorWarning'
+          // special error that prevents the head from being updated, effectively killing the contract
+          if (e.name === 'ChelErrorUnrecoverable') throw e
+        }
       }
 
       // process any side-effects (these must never result in any mutation to the contract state!)
@@ -1666,13 +1670,16 @@ export default (sbp('sbp/selectors/register', {
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
     } catch (e) {
-      console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
       try {
-        handleEventError?.(e, message)
+        if (!handleEventError) throw e
+        handleEventError(e, message)
       } catch (e2) {
-        console.error('[chelonia] Ignoring user error in handleEventError hook:', e2)
+        console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
+        if (e !== e2) {
+          console.error(`[chelonia] ERROR In addition, handleEventError threw ${e.message || e}`, e)
+        }
+        throw e
       }
-      throw e
     }
   }
 }): string[])
@@ -1686,6 +1693,22 @@ const handleEvent = {
   async addMessageToDB (message: GIMessage) {
     const contractID = message.contractID()
     const hash = message.hash()
+    const height = message.height()
+    const state = sbp(this.config.stateSelector)
+    if (!Number.isSafeInteger(height)) {
+      throw new ChelErrorDBBadPreviousHEAD(`Message ${hash} in contract ${contractID} has an invalid height.`)
+    }
+    // Avoid re-processing already processed messages
+    if (
+      message.isFirstMessage()
+        // If this is the first message, the height is is expected not to exist
+        ? state.contracts[contractID]?.height != null
+        // If this isn't the first message, the height must be lower than the
+        // current's message height. The check is negated to handle NaN values
+        : !(state.contracts[contractID]?.height < height)
+    ) {
+      throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${state.contracts[contractID]?.height}.`)
+    }
     try {
       await sbp('chelonia/db/addEntry', message)
       const reprocessIdx = eventsToReinjest.indexOf(hash)
