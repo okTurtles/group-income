@@ -58,7 +58,8 @@ sbp('sbp/selectors/register', {
         }
       }
     } catch (e) {
-      console.error(`read(): ${e.message}:`, e)
+      console.error(`[backend] streamEntriesAfter: ${e.message}:`, e)
+      return new Boom.internal('internal error')
     }
     entries.reverse()
     // NOTE: if this ever stops working you can also try Readable.from():
