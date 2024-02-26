@@ -62,7 +62,7 @@ const getters = {
           // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
           // users (e.g., 'user1' changing their display name to 'user2')
           title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
-          picture: getters.ourContactProfiles[lastJoinedPartner]?.picture
+          picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture
         }
       }
     }

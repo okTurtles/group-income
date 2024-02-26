@@ -445,7 +445,7 @@ const getters = {
       return getters.ourContactProfilesById[memberID]
     }
   },
-  ourContactProfiles (state, getters) {
+  ourContactProfilesByUsername (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
