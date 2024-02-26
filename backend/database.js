@@ -13,6 +13,7 @@ import LRU from 'lru-cache'
 const Boom = require('@hapi/boom')
 
 const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
+
 const production = process.env.NODE_ENV === 'production'
 // Defaults to `fs` in production.
 const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
@@ -37,50 +38,39 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
-// Streams stored contract log entries since the given entry hash (inclusive!), most recent first.
+// Streams stored contract log entries since the given entry hash (inclusive!).
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string, limit: number = MAX_EVENTS_AFTER): Promise<*> {
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
-    const entries = []
     // Number of entries pushed.
     let counter = 0
     let currentHash = hash
     let prefix = '['
-    try {
-      while (currentHash && (entries.length < MAX_EVENTS_AFTER)) {
-        const entry = await sbp('chelonia/db/getEntry', currentHash)
-        if (entry) {
-          entries.push(entry)
-          currentHash = await sbp('chelonia/db/get', `next=${currentHash}`)
-        }
-      }
-    } catch (e) {
-      console.error(`[backend] streamEntriesAfter: ${e.message}:`, e)
-      return new Boom.internal('internal error')
-    }
-    entries.reverse()
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
       read (): void {
-        try {
-          const entry = entries[counter]
-          if (entry) {
-            const json = `"${strToB64(entry.serialize())}"`
-            this.push(prefix + json)
-            prefix = ','
-            counter++
-          } else {
-            this.push(prefix === ',' ? ']' : '[]')
+        if (currentHash && counter < limit) {
+          sbp('chelonia/db/getEntry', currentHash).then(async entry => {
+            if (entry) {
+              this.push(`${prefix}"${strToB64(entry.serialize())}"`)
+              prefix = ','
+              counter++
+              currentHash = await sbp('chelonia/db/get', `next=${currentHash}`)
+            } else {
+              this.push(counter > 0 ? ']' : '[]')
+              this.push(null)
+            }
+          }).catch(e => {
+            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e)
+            this.push(counter > 0 ? ']' : '[]')
             this.push(null)
-            console.debug(`streamEntriesAfter: ${counter} entries pushed`)
-          }
-        } catch (e) {
-          console.error(`read(): ${e.message}:`, e)
-          this.push(prefix === ',' ? ']' : '[]')
+          })
+        } else {
+          this.push(counter > 0 ? ']' : '[]')
           this.push(null)
         }
       }
