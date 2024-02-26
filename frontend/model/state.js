@@ -8,7 +8,7 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -391,6 +391,22 @@ const getters = {
     return Object.keys(contracts || {})
       .filter(contractID => contracts[contractID].type === 'gi.contracts/group')
       .map(contractID => ({ groupName: state[contractID].settings?.groupName || L('Pending'), contractID }))
+  },
+  profilesByGroup (state, getters) {
+    return groupID => {
+      const profiles = {}
+      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+        return profiles
+      }
+      const groupProfiles = state[groupID].profiles || {}
+      for (const member in groupProfiles) {
+        const profile = groupProfiles[member]
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[member] = profile
+        }
+      }
+      return profiles
+    }
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
