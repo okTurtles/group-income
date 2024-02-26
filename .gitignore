@@ -2,6 +2,7 @@
 /node_modules/
 /dist/
 /dist-dashboard/
+/contracts/
 *?rollup-plugin-vue=script.js
 key.json
 key.pub.json
