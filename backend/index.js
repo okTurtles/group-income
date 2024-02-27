@@ -27,11 +27,11 @@ if (Object.keys(logger.levels.values).includes(logLevel)) {
   logger.warn(`Unknown log level: ${logLevel}`)
 }
 
-global.logger = logger
-console.debug = logger.debug.bind(logger)
-console.info = logger.info.bind(logger)
-console.log = logger.info.bind(logger)
-console.warn = logger.warn.bind(logger)
+global.logger = logger // $FlowExpectedError
+console.debug = logger.debug.bind(logger) // $FlowExpectedError
+console.info = logger.info.bind(logger) // $FlowExpectedError
+console.log = logger.info.bind(logger) // $FlowExpectedError
+console.warn = logger.warn.bind(logger) // $FlowExpectedError
 console.error = logger.error.bind(logger)
 
 console.info('NODE_ENV = %s', process.env.NODE_ENV)
