@@ -1,5 +1,3 @@
-/* globals logger */
-
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -22,8 +20,6 @@ import chalk from 'chalk'
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
 const hapi = new Hapi.Server({
-  // TODO: improve logging and base it on process.env.NODE_ENV
-  //       https://github.com/okTurtles/group-income/issues/32
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
   debug: { log: ['error'], request: ['error'] },
@@ -69,7 +65,7 @@ sbp('sbp/selectors/register', {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry.serialize())
     const subscribers = pubsub.enumerateSubscribers(entry.contractID())
-    console.info(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/handleEntry': async function (entry: GIMessage) {
@@ -126,13 +122,13 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: require('./auth.js') },
-    { plugin: require('@hapi/inert') },
-    {
-      plugin: require('hapi-pino'),
-      options: {
-        instance: logger
-      }
-    }
+    { plugin: require('@hapi/inert') }
+    // {
+    //   plugin: require('hapi-pino'),
+    //   options: {
+    //     instance: logger
+    //   }
+    // }
   ])
   await initDB()
   require('./routes.js')

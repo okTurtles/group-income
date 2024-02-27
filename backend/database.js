@@ -61,7 +61,7 @@ sbp('sbp/selectors/register', {
             this.push(null)
           }
         } catch (e) {
-          console.error(`read(): ${e.message}:`, e)
+          console.error(e, `read(): ${e.message}`)
           this.push(']')
           this.push(null)
         }
@@ -94,7 +94,7 @@ sbp('sbp/selectors/register', {
           }
         } catch (e) {
           // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(`read(): ${e.message}:`, e)
+          console.error(e, `read(): ${e.message}:`)
           this.push(']')
           this.push(null)
         }
@@ -132,7 +132,7 @@ sbp('sbp/selectors/register', {
           }
         } catch (e) {
           // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(`read(): ${e.message}:`, e)
+          console.error(e, `read(): ${e.message}:`)
           this.push(']')
           this.push(null)
         }

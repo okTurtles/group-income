@@ -40,13 +40,13 @@ route.POST('/event', {
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
   try {
-    console.info('/event handler')
+    console.debug('/event handler')
     const entry = GIMessage.deserialize(request.payload)
     try {
       await sbp('backend/server/handleEntry', entry)
     } catch (err) {
       if (err.name === 'ChelErrorDBBadPreviousHEAD') {
-        console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
+        console.error(err, chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'))
         const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
@@ -55,10 +55,11 @@ route.POST('/event', {
         })
         return r
       }
+      throw err // rethrow error
     }
     return entry.hash()
   } catch (err) {
-    logger.error('POST /event', err.message, err.stack || err)
+    logger.error(err, 'POST /event', err.message)
     return err
   }
 })
@@ -83,7 +84,7 @@ route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    logger.error(`GET /eventsAfter/${contractID}/${since}`, err.message, err.stack || err)
+    logger.error(err, `GET /eventsAfter/${contractID}/${since}`, err.message)
     return err
   }
 })
@@ -100,7 +101,7 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    logger.error(`GET /eventsBefore/${before}/${limit}`, err.message, err.stack || err)
+    logger.error(err, `GET /eventsBefore/${before}/${limit}`, err.message)
     return err
   }
 })
@@ -119,7 +120,7 @@ route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    logger.error(`GET /eventsBetwene/${startHash}/${endHash}`, err.message, err.stack || err)
+    logger.error(err, `GET /eventsBetwene/${startHash}/${endHash}`, err.message)
     return err
   }
 })
@@ -137,7 +138,7 @@ route.POST('/name', {
     if (value.startsWith('_private')) return Boom.badData()
     return await sbp('backend/db/registerName', name, value)
   } catch (err) {
-    logger.error('POST /name', err.message, err.stack || err)
+    logger.error(err, 'POST /name', err.message)
     return err
   }
 })
@@ -147,7 +148,7 @@ route.GET('/name/{name}', {}, async function (request, h) {
   try {
     return await sbp('backend/db/lookupName', name)
   } catch (err) {
-    logger.error(`GET /name/${name}`, err.message, err.stack || err)
+    logger.error(err, `GET /name/${name}`, err.message)
     return err
   }
 })
@@ -165,7 +166,7 @@ route.GET('/latestHEADinfo/{contractID}', {
     }
     return HEADinfo
   } catch (err) {
-    logger.error(`GET /latestHEADinfo/${contractID}`, err.message, err.stack || err)
+    logger.error(err, `GET /latestHEADinfo/${contractID}`, err.message)
     return err
   }
 })
@@ -209,7 +210,7 @@ route.POST('/file', {
     multipart: { output: 'annotated' },
     allow: 'multipart/form-data',
     failAction: function (request, h, err) {
-      console.error('failAction error:', err)
+      console.error(err, 'failAction error')
       return err
     },
     maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
@@ -271,7 +272,7 @@ route.POST('/file', {
     await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
     return manifestHash
   } catch (err) {
-    logger.error('POST /file', err.message, err.stack || err)
+    logger.error(err, 'POST /file', err.message)
     return err
   }
 })
@@ -378,7 +379,7 @@ route.POST('/zkpp/register/{contractID}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at POST /zkpp/{contractID}: ' + e.message, { ip })
+    console.error(e, 'Error at POST /zkpp/{contractID}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -396,7 +397,7 @@ route.GET('/zkpp/{contractID}/auth_hash', {
     return challenge || Boom.notFound()
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at GET /zkpp/{contractID}/auth_hash: ' + e.message, { ip })
+    console.error(e, 'Error at GET /zkpp/{contractID}/auth_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -421,7 +422,7 @@ route.GET('/zkpp/{contractID}/contract_hash', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at GET /zkpp/{contractID}/contract_hash: ' + e.message, { ip })
+    console.error(e, 'Error at GET /zkpp/{contractID}/contract_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -447,7 +448,7 @@ route.POST('/zkpp/updatePasswordHash/{contractID}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
+    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')

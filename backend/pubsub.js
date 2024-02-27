@@ -45,7 +45,7 @@ const generateSocketID = (() => {
 })()
 
 const log = logger.info.bind(logger, tag)
-log.bold = (...args) => logger.info(bold(tag, ...args))
+log.bold = (...args) => logger.debug(bold(tag, ...args))
 log.debug = logger.debug.bind(logger, tag)
 log.error = (...args) => logger.error(bold.red(tag, ...args))
 
@@ -175,7 +175,7 @@ const defaultServerHandlers = {
       socket.on(eventName, (...args) => {
         // Logging of 'message' events is handled in the default 'message' event handler.
         if (eventName !== 'message') {
-          log(`Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
+          log.debug(`Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
         }
         try {
           (defaultSocketEventHandlers: Object)[eventName]?.call(socket, ...args)
@@ -281,7 +281,7 @@ const defaultMessageHandlers = {
       // Add this socket to the channel subscribers.
       server.subscribersByChannelID[channelID].add(socket)
     } else {
-      log('Already subscribed to', channelID)
+      log.debug('Already subscribed to', channelID)
     }
     socket.send(createOkResponse({ type: SUB, channelID }))
   },
