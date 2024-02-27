@@ -47,7 +47,7 @@ const getters = {
             const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
-        const hasActiveMember = partners.some(memberID => Object.keys(getters.groupProfiles).includes(memberID))
+        const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID))).includes(memberID))
         if (directMessageSettings.visible && hasActiveMember) {
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
