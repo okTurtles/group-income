@@ -207,7 +207,7 @@ export default (sbp('sbp/selectors/register', {
       reactiveDel: (obj, key) => { delete obj[key] },
       // acceptAllMessages disables checking whether we are expecting a message
       // or not for processing
-      acceptAllMessages: true,
+      acceptAllMessages: false,
       reingestEvents: true,
       skipActionProcessing: false,
       skipSideEffects: false,

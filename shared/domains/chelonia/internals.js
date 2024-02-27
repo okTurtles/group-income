@@ -1630,11 +1630,11 @@ export default (sbp('sbp/selectors/register', {
         }
         // we revert any changes to the contract state that occurred, ignoring this mutation
         console.warn(`[chelonia] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
+        processingErrored = e?.name !== 'ChelErrorWarning'
         try {
           if (!this.config.hooks.processError) throw e
           this.config.hooks.processError(e, message, getMsgMeta(message, contractID, state))
         } catch (e) {
-          processingErrored = e?.name !== 'ChelErrorWarning'
           // special error that prevents the head from being updated, effectively killing the contract
           if (e.name === 'ChelErrorUnrecoverable') throw e
         }
@@ -1695,6 +1695,12 @@ const handleEvent = {
     const hash = message.hash()
     const height = message.height()
     const state = sbp(this.config.stateSelector)
+    // The latest height we want to use is the one from `state.contracts` and
+    // not the one from the DB. The height in the state reflects the latest
+    // message that's been processed, which is desired here. On the other hand,
+    // the DB function includes the latest known message for that contract,
+    // which can be ahead of the latest message processed.
+    const latestProcessedHeight = state.contracts[contractID]?.height
     if (!Number.isSafeInteger(height)) {
       throw new ChelErrorDBBadPreviousHEAD(`Message ${hash} in contract ${contractID} has an invalid height.`)
     }
@@ -1702,37 +1708,35 @@ const handleEvent = {
     if (
       message.isFirstMessage()
         // If this is the first message, the height is is expected not to exist
-        ? state.contracts[contractID]?.height != null
-        // If this isn't the first message, the height must be lower than the
+        ? latestProcessedHeight != null
+        // If this isn't the first message, the height must not be lower than the
         // current's message height. The check is negated to handle NaN values
-        : !(state.contracts[contractID]?.height < height)
+        : !(latestProcessedHeight < height)
     ) {
       throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${state.contracts[contractID]?.height}.`)
     }
-    try {
-      await sbp('chelonia/db/addEntry', message)
-      const reprocessIdx = eventsToReinjest.indexOf(hash)
-      if (reprocessIdx !== -1) {
-        console.warn(`[chelonia] WARN: successfully reinjested ${message.description()}`)
-        eventsToReinjest.splice(reprocessIdx, 1)
+    // If the message is from the future, add it to eventsToReinjest
+    if (this.config.reingestEvents && (latestProcessedHeight + 1) < height) {
+      // sometimes we simply miss messages, it's not clear why, but it happens
+      // in rare cases. So we attempt to re-sync this contract once
+      if (eventsToReinjest.length > 100) {
+        throw new ChelErrorUnrecoverable('more than 100 different bad previousHEAD errors')
       }
-    } catch (e) {
-      if (this.config.reingestEvents && e.name === 'ChelErrorDBBadPreviousHEAD') {
-        // sometimes we simply miss messages, it's not clear why, but it happens
-        // in rare cases. So we attempt to re-sync this contract once
-        if (eventsToReinjest.length > 100) {
-          throw new ChelErrorUnrecoverable('more than 100 different bad previousHEAD errors')
-        }
-        if (!eventsToReinjest.includes(hash)) {
-          console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reinjest message`)
-          eventsToReinjest.push(hash)
-          reprocessDebounced(contractID)
-          return false // ignore the error for now
-        } else {
-          console.error(`[chelonia] ERROR already attempted to reinjest ${message.description()}, will not attempt again!`)
-        }
+      if (!eventsToReinjest.includes(hash)) {
+        console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reinjest message`)
+        eventsToReinjest.push(hash)
+        reprocessDebounced(contractID)
+        return false // ignore the error for now
+      } else {
+        console.error(`[chelonia] ERROR already attempted to reinjest ${message.description()}, will not attempt again!`)
+        throw new ChelErrorDBBadPreviousHEAD(`Already attempted to reingest ${hash}`)
       }
-      throw e
+    }
+    await sbp('chelonia/db/addEntry', message)
+    const reprocessIdx = eventsToReinjest.indexOf(hash)
+    if (reprocessIdx !== -1) {
+      console.warn(`[chelonia] WARN: successfully reinjested ${message.description()}`)
+      eventsToReinjest.splice(reprocessIdx, 1)
     }
   },
   async processMutation (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {

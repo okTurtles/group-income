@@ -300,6 +300,7 @@ sbp('chelonia/defineContract', {
         if (!state.onlyRenderMessage) {
           if (!state.members) {
             console.error('Missing state.members: ' + JSON.stringify(state))
+            throw new Error('Missing members state')
           }
           if (!state.members[memberID]) {
             throw new Error(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
