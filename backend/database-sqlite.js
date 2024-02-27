@@ -39,7 +39,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
     })
   })
   await run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
-  console.info('Connected to the %s SQLite database.', filename)
+  console.info(`Connected to the ${filename} SQLite database.`)
   readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
   writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
 }
