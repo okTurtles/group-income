@@ -31,7 +31,7 @@ export default ({
   },
   mounted () {
     console.log(`Avatar under ${this.$parent.$vnode.tag} blobURL:`, this.blobURL, 'src:', this.src)
-    if (typeof this.src === 'object') {
+    if (this.src && typeof this.src === 'object') {
       this.downloadFile(this.src).catch((e) => {
         console.error('[Avatar.vue] Error in downloadFile', e)
       })
@@ -81,7 +81,7 @@ export default ({
   },
   watch: {
     src (to) {
-      if (typeof to === 'object') {
+      if (to && typeof to === 'object') {
         this.downloadFile(to).catch((e) => {
           console.error('[Avatar.vue] Error in downloadFile', e)
         })

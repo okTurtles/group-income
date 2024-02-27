@@ -17,7 +17,6 @@ import {
 import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
 import '~/shared/domains/chelonia/chelonia.js'
-import { ChelErrorUnrecoverable } from '~/shared/domains/chelonia/errors.js'
 
 const Inert = require('@hapi/inert')
 
@@ -137,21 +136,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     acceptAllMessages: true,
     skipActionProcessing: true,
     skipSideEffects: true,
-    reingestEvents: false,
-    hooks: {
-      processError: (e) => {
-        const errorName = e?.name
-        if (['ChelErrorAlreadyProcessed', 'ChelErrorSignatureError', 'ChelErrorSignatureKeyNotFound'].includes(errorName)) {
-          throw new ChelErrorUnrecoverable(e.message)
-        }
-      },
-      handleEventError: (e) => {
-        const errorName = e?.name
-        if (['ChelErrorAlreadyProcessed', 'ChelErrorSignatureError', 'ChelErrorSignatureKeyNotFound'].includes(errorName)) {
-          throw new ChelErrorUnrecoverable(e.message)
-        }
-      }
-    }
+    reingestEvents: false
   })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([

@@ -1273,6 +1273,7 @@ export default (sbp('sbp/selectors/register', {
 
     const contractState = rootState[contractID]
     const keysToDelete = []
+    const keysToUpdate = []
 
     pendingWatch.forEach(([keyName, externalId]) => {
       // Does the key exist? If not, it has probably been removed and instead
@@ -1281,6 +1282,10 @@ export default (sbp('sbp/selectors/register', {
       if (!keyId) {
         keysToDelete.push(externalId)
         return
+      } else if (keyId !== externalId) {
+        // Or, the key has been updated and we need to update it in the external
+        // contract as well
+        keysToUpdate.push(externalId)
       }
 
       // Add keys to watchlist as another contract is waiting on these
@@ -1295,7 +1300,7 @@ export default (sbp('sbp/selectors/register', {
 
     // If there are keys that need to be revoked, queue an event to handle the
     // deletion
-    if (keysToDelete.length) {
+    if (keysToDelete.length || keysToUpdate.length) {
       if (!externalContractState._volatile) {
         this.config.reactiveSet(externalContractState, '_volatile', Object.create(null))
       }
@@ -1303,23 +1308,75 @@ export default (sbp('sbp/selectors/register', {
         this.config.reactiveSet(externalContractState._volatile, 'pendingKeyRevocations', Object.create(null))
       }
       keysToDelete.forEach((id) => this.config.reactiveSet(externalContractState._volatile.pendingKeyRevocations, id, 'del'))
+      keysToUpdate.forEach((id) => this.config.reactiveSet(externalContractState._volatile.pendingKeyRevocations, id, true))
 
-      sbp('chelonia/private/queueEvent', externalContractID, ['chelonia/private/deleteRevokedKeys', externalContractID]).catch((e) => {
-        console.error(`Error at deleteRevokedKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
+      sbp('chelonia/private/queueEvent', externalContractID, ['chelonia/private/deleteOrRotateRevokedKeys', externalContractID]).catch((e) => {
+        console.error(`Error at deleteOrRotateRevokedKeys for contractID ${contractID} and externalContractID ${externalContractID}`, e)
       })
     }
   },
-  'chelonia/private/deleteRevokedKeys': function (contractID: string) {
+  'chelonia/private/deleteOrRotateRevokedKeys': function (contractID: string) {
     const rootState = sbp(this.config.stateSelector)
     const contractState = rootState[contractID]
     const pendingKeyRevocations = contractState?._volatile.pendingKeyRevocations
 
     if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) return
 
+    const keysToUpdate = Object.entries(pendingKeyRevocations).filter(([, v]) => v === true).map(([id]) => id)
+
+    // Aggregate the keys that we can update to send them in a single operation
+    const [, keyUpdateSigningKeyId, keyUpdateArgs] = keysToUpdate.reduce((acc, keyId) => {
+      const key = contractState._vm?.authorizedKeys?.[keyId]
+      if (!key || !key.foreignKey) return acc
+      const foreignKey = String(key.foreignKey)
+      const fkUrl = new URL(foreignKey)
+      const foreignContractID = fkUrl.pathname
+      const foreignKeyName = fkUrl.searchParams.get('keyName')
+      const foreignState = rootState[foreignContractID]
+      if (!foreignState) return acc
+      const fKeyId = findKeyIdByName(foreignState, foreignKeyName)
+      if (!fKeyId) {
+        // Key was deleted
+        keysToUpdate.find(([id]) => id === keyId)[1] = 'del'
+        return acc
+      }
+
+      const [currentRingLevel, currentSigningKeyId, currentKeyArgs] = acc
+      const ringLevel = Math.min(currentRingLevel, key.ringLevel ?? Number.POSITIVE_INFINITY)
+      if (ringLevel >= currentRingLevel) {
+        (currentKeyArgs: any).push({
+          name: key.name,
+          oldKeyId: keyId,
+          id: fKeyId,
+          data: foreignState._vm.authorizedKeys[fKeyId].data
+        })
+        return [currentRingLevel, currentSigningKeyId, currentKeyArgs]
+      } else if (Number.isFinite(ringLevel)) {
+        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
+        if (signingKeyId) {
+          (currentKeyArgs: any).push({
+            keyId
+          })
+          return [ringLevel, signingKeyId, currentKeyArgs]
+        }
+      }
+      return acc
+    }, [Number.POSITIVE_INFINITY, '', []])
+
+    if (keyUpdateArgs.length !== 0) {
+      const contractName = contractState._vm.type
+
+      // This is safe to do without await because it's sending an operation
+      // Using await could deadlock when retrying to send the message
+      sbp('chelonia/out/keyUpdate', { contractID, contractName, data: keyUpdateArgs, signingKeyId: keyUpdateSigningKeyId }).catch(e => {
+        console.error(`[chelonia/private/deleteOrRotateRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
+      })
+    }
+
     const keysToDelete = Object.entries(pendingKeyRevocations).filter(([, v]) => v === 'del').map(([id]) => id)
 
     // Aggregate the keys that we can delete to send them in a single operation
-    const [, signingKeyId, keyIds] = keysToDelete.reduce((acc, keyId) => {
+    const [, keyDelSigningKeyId, keyIdsToDelete] = keysToDelete.reduce((acc, keyId) => {
       const [currentRingLevel, currentSigningKeyId, currentKeyIds] = acc
       const ringLevel = Math.min(currentRingLevel, contractState._vm?.authorizedKeys?.[keyId]?.ringLevel ?? Number.POSITIVE_INFINITY)
       if (ringLevel >= currentRingLevel) {
@@ -1335,15 +1392,15 @@ export default (sbp('sbp/selectors/register', {
       return acc
     }, [Number.POSITIVE_INFINITY, '', []])
 
-    if (keyIds.length === 0) return
+    if (keyIdsToDelete.length !== 0) {
+      const contractName = contractState._vm.type
 
-    const contractName = contractState._vm.type
-
-    // This is safe to do without await because it's sending an operation
-    // Using await could deadlock when retrying to send the message
-    sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIds, signingKeyId }).catch(e => {
-      console.error(`[chelonia/private/deleteRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
-    })
+      // This is safe to do without await because it's sending an operation
+      // Using await could deadlock when retrying to send the message
+      sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIdsToDelete, signingKeyId: keyDelSigningKeyId }).catch(e => {
+        console.error(`[chelonia/private/deleteRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
+      })
+    }
   },
   'chelonia/private/respondToAllKeyRequests': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -1676,15 +1733,15 @@ export default (sbp('sbp/selectors/register', {
       } catch (e2) {
         console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
         if (e !== e2) {
-          console.error(`[chelonia] ERROR In addition, handleEventError threw ${e.message || e}`, e)
+          console.error(`[chelonia] ERROR In addition, handleEventError threw ${e2.message || e2}`, e2)
         }
-        throw e
+        throw e2
       }
     }
   }
 }): string[])
 
-const eventsToReinjest = []
+const eventsToReingest = []
 const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID, { force: true }).catch((e) => {
   console.error(`[chelonia] Error at reprocessDebounced for ${contractID}`)
 }), 1000)
@@ -1715,28 +1772,28 @@ const handleEvent = {
     ) {
       throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${state.contracts[contractID]?.height}.`)
     }
-    // If the message is from the future, add it to eventsToReinjest
+    // If the message is from the future, add it to eventsToReingest
     if (this.config.reingestEvents && (latestProcessedHeight + 1) < height) {
       // sometimes we simply miss messages, it's not clear why, but it happens
       // in rare cases. So we attempt to re-sync this contract once
-      if (eventsToReinjest.length > 100) {
+      if (eventsToReingest.length > 100) {
         throw new ChelErrorUnrecoverable('more than 100 different bad previousHEAD errors')
       }
-      if (!eventsToReinjest.includes(hash)) {
-        console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reinjest message`)
-        eventsToReinjest.push(hash)
+      if (!eventsToReingest.includes(hash)) {
+        console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reingest message`)
+        eventsToReingest.push(hash)
         reprocessDebounced(contractID)
         return false // ignore the error for now
       } else {
-        console.error(`[chelonia] ERROR already attempted to reinjest ${message.description()}, will not attempt again!`)
+        console.error(`[chelonia] ERROR already attempted to reingest ${message.description()}, will not attempt again!`)
         throw new ChelErrorDBBadPreviousHEAD(`Already attempted to reingest ${hash}`)
       }
     }
     await sbp('chelonia/db/addEntry', message)
-    const reprocessIdx = eventsToReinjest.indexOf(hash)
+    const reprocessIdx = eventsToReingest.indexOf(hash)
     if (reprocessIdx !== -1) {
-      console.warn(`[chelonia] WARN: successfully reinjested ${message.description()}`)
-      eventsToReinjest.splice(reprocessIdx, 1)
+      console.warn(`[chelonia] WARN: successfully reingested ${message.description()}`)
+      eventsToReingest.splice(reprocessIdx, 1)
     }
   },
   async processMutation (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
