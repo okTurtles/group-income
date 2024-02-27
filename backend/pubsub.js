@@ -47,7 +47,7 @@ const generateSocketID = (() => {
 const log = logger.info.bind(logger, tag)
 log.bold = (...args) => logger.debug(bold(tag, ...args))
 log.debug = logger.debug.bind(logger, tag)
-log.error = (...args) => logger.error(bold.red(tag, ...args))
+log.error = (error, ...args) => logger.error(error, bold.red(tag, ...args))
 
 // ====== API ====== //
 
@@ -181,14 +181,14 @@ const defaultServerHandlers = {
           (defaultSocketEventHandlers: Object)[eventName]?.call(socket, ...args)
           socket.server.customSocketEventHandlers[eventName]?.call(socket, ...args)
         } catch (error) {
-          socket.server.emit('error', error)
+          socket.server.emit(error, 'error in socket connection')
           socket.terminate()
         }
       })
     })
   },
   error (error: Error) {
-    log.error('Server error:', error)
+    log.error(error, 'Server error')
   },
   headers () {
   },
@@ -220,7 +220,7 @@ const defaultSocketEventHandlers = {
     try {
       msg = messageParser(text)
     } catch (error) {
-      log.error(`Malformed message: ${error.message}`)
+      log.error(error, `Malformed message: ${error.message}`)
       server.rejectMessageAndTerminateSocket(msg, socket)
       return
     }
@@ -237,7 +237,7 @@ const defaultSocketEventHandlers = {
         handler.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
-        log.error('onMesage:', error)
+        log.error(error, 'onMesage')
         server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
