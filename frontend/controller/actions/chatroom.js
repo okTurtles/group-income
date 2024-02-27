@@ -187,6 +187,29 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
+  'gi.actions/chatroom/upload-chat-attachments': async function (attachments: Array<any>): Promise<any> {
+    const objectURLtoBlob = url => {
+      // reference: https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
+      return fetch(url).then(r => r.blob())
+    }
+    const results = await Promise.all(
+      attachments.map(async attachmentEntry => {
+        const { mimeType, url } = attachmentEntry // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+
+        const attachmentBlob = await objectURLtoBlob(url)
+        const uploadResult = await sbp('chelonia/fileUpload', attachmentBlob, {
+          type: mimeType, cipher: 'aes256gcm'
+        })
+
+        return {
+          ...attachmentEntry,
+          downloadData: uploadResult
+        }
+      })
+    )
+
+    return results
+  },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

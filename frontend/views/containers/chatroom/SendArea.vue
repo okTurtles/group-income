@@ -611,6 +611,7 @@ export default ({
       }
 
       for (const file of filesList) {
+        console.log('!@# file to attach entry  - ', file)
         const fileExt = getFileExtension(file.name)
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
@@ -627,6 +628,7 @@ export default ({
           url: fileUrl,
           name: file.name,
           extension: fileExt,
+          mimeType: file.type || '',
           attachType: file.type.match('image/') ? 'image' : 'non-image'
         })
       }
