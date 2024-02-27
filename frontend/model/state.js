@@ -493,11 +493,11 @@ const getters = {
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
-  ourContacts (state, getters) {
-    return Object.keys(getters.ourContactProfiles)
+  ourContactsByUsername (state, getters) {
+    return Object.keys(getters.ourContactProfilesByUsername)
       .sort((usernameA, usernameB) => {
-        const nameA = getters.ourContactProfiles[usernameA].displayName || usernameA
-        const nameB = getters.ourContactProfiles[usernameB].displayName || usernameB
+        const nameA = getters.ourContactProfilesByUsername[usernameA].displayName || usernameA
+        const nameB = getters.ourContactProfilesByUsername[usernameB].displayName || usernameB
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   }
