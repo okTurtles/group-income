@@ -208,14 +208,15 @@ export default (sbp('sbp/selectors/register', {
       // acceptAllMessages disables checking whether we are expecting a message
       // or not for processing
       acceptAllMessages: false,
-      reingestEvents: true,
       skipActionProcessing: false,
       skipSideEffects: false,
       // Strict processing will treat all processing errors as unrecoverable
       // This is useful, e.g., in the server, to prevent invalid messages from
       // being added to the database
       strictProcessing: false,
-      // Strict ordering will throw on ChelErrorAlreadyProcessed errors
+      // Strict ordering will throw on past events with ChelErrorAlreadyProcessed
+      // Similarly, future events will not be reingested and will throw
+      // with ChelErrorDBBadPreviousHEAD
       strictOrdering: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183

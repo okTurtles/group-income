@@ -15,8 +15,8 @@ import {
 } from './pubsub.js'
 import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
-
 import '~/shared/domains/chelonia/chelonia.js'
+import { SERVER } from '~/shared/domains/chelonia/presets.js'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -123,14 +123,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
-  await sbp('chelonia/configure', {
-    acceptAllMessages: true,
-    skipActionProcessing: true,
-    skipSideEffects: true,
-    reingestEvents: false,
-    strictProcessing: true,
-    strictOrdering: true
-  })
+  await sbp('chelonia/configure', SERVER)
   // Load the saved Chelonia state
   const savedState = await sbp('chelonia/db/get', '_private_cheloniaState')
   if (savedState) {

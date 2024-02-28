@@ -1796,7 +1796,7 @@ const handleEvent = {
     }
     // If the message is from the future, add it to eventsToReingest
     if ((latestProcessedHeight + 1) < height) {
-      if (!this.config.reingestEvents) {
+      if (this.config.strictOrdering) {
         throw new ChelErrorDBBadPreviousHEAD(`Unexpected message ${hash} with height ${height} in contract ${contractID}: height is too high. Current height: ${latestProcessedHeight}.`)
       }
       // sometimes we simply miss messages, it's not clear why, but it happens

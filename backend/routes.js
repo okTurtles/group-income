@@ -56,12 +56,10 @@ route.POST('/event', {
         return r
       } else if (err.name === 'ChelErrorSignatureError') {
         console.error(err, chalk.bold.yellow(err.name))
-        const r = Boom.badData('Invalid signature')
-        return r
+        return Boom.badData('Invalid signature')
       } else if (err.name === 'ChelErrorSignatureKeyUnauthorized') {
         console.error(err, chalk.bold.yellow(err.name))
-        const r = Boom.forbidden('Unauthorized signing key')
-        return r
+        return Boom.forbidden('Unauthorized signing key')
       }
       throw err // rethrow error
     }
