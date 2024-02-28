@@ -2,7 +2,6 @@
 
 import sbp from '@sbp/sbp'
 import Hapi from '@hapi/hapi'
-import GiAuth from './auth.js'
 import initDB from './database.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
@@ -18,18 +17,9 @@ import {
 import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
 
-const Inert = require('@hapi/inert')
-
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
-// NOTE: migration guides for Hapi v16 -> v17:
-//       https://github.com/hapijs/hapi/issues/3658
-//       https://medium.com/yld-engineering-blog/so-youre-thinking-about-updating-your-hapi-js-server-to-v17-b5732ab5bdb8
-//       https://futurestud.io/tutorials/hapi-v17-upgrade-guide-your-move-to-async-await
-
 const hapi = new Hapi.Server({
-  // TODO: improve logging and base it on process.env.NODE_ENV
-  //       https://github.com/okTurtles/group-income/issues/32
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
   debug: { log: ['error'], request: ['error'] },
@@ -75,7 +65,7 @@ sbp('sbp/selectors/register', {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry.serialize())
     const subscribers = pubsub.enumerateSubscribers(entry.contractID())
-    console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/handleEntry': async function (entry: GIMessage) {
@@ -129,14 +119,20 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 }))
 
 ;(async function () {
-  await initDB()
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
-    { plugin: GiAuth },
-    { plugin: Inert }
+    { plugin: require('./auth.js') },
+    { plugin: require('@hapi/inert') }
+    // {
+    //   plugin: require('hapi-pino'),
+    //   options: {
+    //     instance: logger
+    //   }
+    // }
   ])
+  await initDB()
   require('./routes.js')
   await hapi.start()
-  console.log('Backend server running at:', hapi.info.uri)
+  console.info('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)
 })()
