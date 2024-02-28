@@ -31,6 +31,7 @@ export default ({
   },
   mounted () {
     console.log(`Avatar under ${this.$parent.$vnode.tag} blobURL:`, this.blobURL, 'src:', this.src)
+    // typeof null === 'object', so both checks are needed
     if (this.src && typeof this.src === 'object') {
       this.downloadFile(this.src).catch((e) => {
         console.error('[Avatar.vue] Error in downloadFile', e)
