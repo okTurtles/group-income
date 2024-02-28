@@ -1314,6 +1314,19 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
+  // The following function gets called when we start watching a contract for
+  // foreign keys for the first time, and it ensures that, at the point the
+  // watching starts, keys are in sync between the two contracts (later on,
+  // this will be handled automatically for incoming OP_KEY_DEL and
+  // OP_KEY_UPDATE).
+  // For any given foreign key, there are three possible states:
+  //   1. The key is in sync with the foreign contract. In this case, there's
+  //      nothing left to do.
+  //   2. The key has been rotated in the foreign contract (replaced by another
+  //      key of the same name). We need to mirror this operation manually
+  //      since watching only affects new messages we receive.
+  //   3. The key has been removed in the foreign contract. We also need to
+  //      mirror the operation.
   'chelonia/private/deleteOrRotateRevokedKeys': function (contractID: string) {
     const rootState = sbp(this.config.stateSelector)
     const contractState = rootState[contractID]
@@ -1321,6 +1334,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) return
 
+    // First, we handle keys that have been rotated
     const keysToUpdate: string[] = Object.entries(pendingKeyRevocations).filter(([, v]) => v === true).map(([id]) => id)
 
     // Aggregate the keys that we can update to send them in a single operation
@@ -1373,6 +1387,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
+    // And then, we handle keys that have been deleted
     const keysToDelete = Object.entries(pendingKeyRevocations).filter(([, v]) => v === 'del').map(([id]) => id)
 
     // Aggregate the keys that we can delete to send them in a single operation
