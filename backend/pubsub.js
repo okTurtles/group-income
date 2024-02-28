@@ -44,10 +44,10 @@ const generateSocketID = (() => {
   return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
 })()
 
-const log = console.log.bind(console, tag)
-log.bold = (...args) => console.log(bold(tag, ...args))
-log.debug = console.debug.bind(console, tag)
-log.error = (...args) => console.error(bold.red(tag, ...args))
+const log = logger.info.bind(logger, tag)
+log.bold = (...args) => logger.debug(bold(tag, ...args))
+log.debug = logger.debug.bind(logger, tag)
+log.error = (error, ...args) => logger.error(error, bold.red(tag, ...args))
 
 // ====== API ====== //
 
@@ -175,21 +175,20 @@ const defaultServerHandlers = {
       socket.on(eventName, (...args) => {
         // Logging of 'message' events is handled in the default 'message' event handler.
         if (eventName !== 'message') {
-          log(`Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
+          log.debug(`Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
         }
         try {
           (defaultSocketEventHandlers: Object)[eventName]?.call(socket, ...args)
           socket.server.customSocketEventHandlers[eventName]?.call(socket, ...args)
         } catch (error) {
-          socket.server.emit('error', error)
+          socket.server.emit(error, 'error in socket connection')
           socket.terminate()
         }
       })
     })
   },
   error (error: Error) {
-    log.error('Server error:', error)
-    logger(error)
+    log.error(error, 'Server error')
   },
   headers () {
   },
@@ -221,13 +220,13 @@ const defaultSocketEventHandlers = {
     try {
       msg = messageParser(text)
     } catch (error) {
-      log.error(`Malformed message: ${error.message}`)
+      log.error(error, `Malformed message: ${error.message}`)
       server.rejectMessageAndTerminateSocket(msg, socket)
       return
     }
     // Now that we have successfully parsed the message, we can log it.
     if (msg.type !== 'pong' || server.options.logPongMessages) {
-      log(`Received '${msg.type}' on socket ${socket.id}`, text)
+      log.debug(`Received '${msg.type}' on socket ${socket.id}`, text)
     }
     // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
@@ -238,7 +237,7 @@ const defaultSocketEventHandlers = {
         handler.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
-        logger(error)
+        log.error(error, 'onMesage')
         server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
@@ -282,7 +281,7 @@ const defaultMessageHandlers = {
       // Add this socket to the channel subscribers.
       server.subscribersByChannelID[channelID].add(socket)
     } else {
-      log('Already subscribed to', channelID)
+      log.debug('Already subscribed to', channelID)
     }
     socket.send(createOkResponse({ type: SUB, channelID }))
   },

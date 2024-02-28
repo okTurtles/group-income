@@ -419,7 +419,7 @@ module.exports = (grunt) => {
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork(backendIndex, process.argv, {
-        env: process.env,
+        env: { NODE_ENV, ...process.env },
         execArgv: ['--require', '@babel/register']
       })
       child.on('error', (err) => {
