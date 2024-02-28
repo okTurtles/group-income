@@ -1691,13 +1691,9 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
         processingErrored = e?.name !== 'ChelErrorWarning'
-        try {
-          if (!this.config.hooks.processError) throw e
-          this.config.hooks.processError(e, message, getMsgMeta(message, contractID, state))
-        } catch (e) {
-          // special error that prevents the head from being updated, effectively killing the contract
-          if (e.name === 'ChelErrorUnrecoverable') throw e
-        }
+        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+        // special error that prevents the head from being updated, effectively killing the contract
+        if (e.name === 'ChelErrorUnrecoverable') throw e
       }
 
       // process any side-effects (these must never result in any mutation to the contract state!)
@@ -1735,16 +1731,13 @@ export default (sbp('sbp/selectors/register', {
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
     } catch (e) {
+      console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
       try {
-        if (!handleEventError) throw e
-        handleEventError(e, message)
+        handleEventError?.(e, message)
       } catch (e2) {
-        console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
-        if (e !== e2) {
-          console.error(`[chelonia] ERROR In addition, handleEventError threw ${e2.message || e2}`, e2)
-        }
-        throw e2
+        console.error('[chelonia] Ignoring user error in handleEventError hook:', e2)
       }
+      throw e
     }
   }
 }): string[])
@@ -1778,10 +1771,19 @@ const handleEvent = {
         // current's message height. The check is negated to handle NaN values
         : !(latestProcessedHeight < height)
     ) {
+      // The web client may sometimes get repeated messages. If strict ordering
+      // isn't enabled, instead of throwing we return false.
+      // On the other hand, the server must enforce strict ordering.
+      if (!this.config.strictOrdering) {
+        return false
+      }
       throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${state.contracts[contractID]?.height}.`)
     }
     // If the message is from the future, add it to eventsToReingest
-    if (this.config.reingestEvents && (latestProcessedHeight + 1) < height) {
+    if ((latestProcessedHeight + 1) < height) {
+      if (!this.config.reingestEvents) {
+        throw new ChelErrorDBBadPreviousHEAD(`Unexpected message ${hash} with height ${height} in contract ${contractID}: height is too high. Current height: ${state.contracts[contractID]?.height}.`)
+      }
       // sometimes we simply miss messages, it's not clear why, but it happens
       // in rare cases. So we attempt to re-sync this contract once
       if (eventsToReingest.length > 100) {

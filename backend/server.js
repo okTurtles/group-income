@@ -125,7 +125,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     skipActionProcessing: true,
     skipSideEffects: true,
     reingestEvents: false,
-    strictProcessing: true
+    strictProcessing: true,
+    strictOrdering: true
   })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
