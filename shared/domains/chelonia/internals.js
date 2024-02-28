@@ -1383,7 +1383,7 @@ export default (sbp('sbp/selectors/register', {
       // This is safe to do without await because it's sending an operation
       // Using await could deadlock when retrying to send the message
       sbp('chelonia/out/keyUpdate', { contractID, contractName, data: keyUpdateArgs, signingKeyId: keyUpdateSigningKeyId }).catch(e => {
-        console.error(`[chelonia/private/deleteOrRotateRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
+        console.error(`[chelonia/private/deleteOrRotateRevokedKeys] Error sending OP_KEY_UPDATE for ${contractID}`, e.message)
       })
     }
 
@@ -1413,7 +1413,7 @@ export default (sbp('sbp/selectors/register', {
       // This is safe to do without await because it's sending an operation
       // Using await could deadlock when retrying to send the message
       sbp('chelonia/out/keyDel', { contractID, contractName, data: keyIdsToDelete, signingKeyId: keyDelSigningKeyId }).catch(e => {
-        console.error(`[chelonia/private/deleteRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`)
+        console.error(`[chelonia/private/deleteRevokedKeys] Error sending OP_KEY_DEL for ${contractID}`, e.message)
       })
     }
   },
