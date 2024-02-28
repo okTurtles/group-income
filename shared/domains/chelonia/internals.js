@@ -1653,10 +1653,10 @@ export default (sbp('sbp/selectors/register', {
       }
       preHandleEvent?.(message)
       // the order the following actions are done is critically important!
-      // first we make sure we save this message to the db
+      // first we make sure we can save this message to the db
       // if an exception is thrown here we do not need to revert the state
       // because nothing has been processed yet
-      const proceed = await handleEvent.addMessageToDB.call(this, message)
+      const proceed = handleEvent.checkMessageOrdering.call(this, message)
       if (proceed === false) return
 
       // If the contract was marked as dirty, we stop processing
@@ -1687,6 +1687,9 @@ export default (sbp('sbp/selectors/register', {
         }
         // we revert any changes to the contract state that occurred, ignoring this mutation
         console.warn(`[chelonia] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
+        if (this.config.strictProcessing) {
+          throw e
+        }
         processingErrored = e?.name !== 'ChelErrorWarning'
         try {
           if (!this.config.hooks.processError) throw e
@@ -1720,9 +1723,14 @@ export default (sbp('sbp/selectors/register', {
       // possible in the code to reduce the chances of still ending up with
       // an inconsistent state if a sudden failure happens while this code
       // is executing. In particular, everything in between should be synchronous.
+      // This block will apply all the changes related to modifying the state
+      // after an event has been processed:
+      //   1. Adding the messge to the DB
+      //   2. Applying changes to the contract state
+      //   3. Applying changes to rootState.contracts
       try {
         const state = sbp(this.config.stateSelector)
-        handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
+        await handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
       } catch (e) {
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
@@ -1747,7 +1755,7 @@ const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync'
 }), 1000)
 
 const handleEvent = {
-  async addMessageToDB (message: GIMessage) {
+  checkMessageOrdering (message: GIMessage) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
@@ -1789,7 +1797,6 @@ const handleEvent = {
         throw new ChelErrorDBBadPreviousHEAD(`Already attempted to reingest ${hash}`)
       }
     }
-    await sbp('chelonia/db/addEntry', message)
     const reprocessIdx = eventsToReingest.indexOf(hash)
     if (reprocessIdx !== -1) {
       console.warn(`[chelonia] WARN: successfully reingested ${message.description()}`)
@@ -1870,11 +1877,12 @@ const handleEvent = {
       }
     })
   },
-  applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
+  async applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
 
+    await sbp('chelonia/db/addEntry', message)
     if (!processingErrored) {
       // Once side-effects are called, we apply changes to the state.
       // This means, as mentioned above, that retrieving the contract state

@@ -46,7 +46,7 @@ route.POST('/event', {
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
     } catch (err) {
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
-        console.error(err, chalk.bold.yellow(err.name), err)
+        console.error(err, chalk.bold.yellow(err.name))
         const HEADinfo = await sbp('chelonia/db/latestHEADinfo', deserializedHEAD.contractID) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
