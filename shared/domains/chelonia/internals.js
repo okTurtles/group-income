@@ -1792,12 +1792,12 @@ const handleEvent = {
       if (!this.config.strictOrdering) {
         return false
       }
-      throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${state.contracts[contractID]?.height}.`)
+      throw new ChelErrorAlreadyProcessed(`Message ${hash} with height ${height} in contract ${contractID} has already been processed. Current height: ${latestProcessedHeight}.`)
     }
     // If the message is from the future, add it to eventsToReingest
     if ((latestProcessedHeight + 1) < height) {
       if (!this.config.reingestEvents) {
-        throw new ChelErrorDBBadPreviousHEAD(`Unexpected message ${hash} with height ${height} in contract ${contractID}: height is too high. Current height: ${state.contracts[contractID]?.height}.`)
+        throw new ChelErrorDBBadPreviousHEAD(`Unexpected message ${hash} with height ${height} in contract ${contractID}: height is too high. Current height: ${latestProcessedHeight}.`)
       }
       // sometimes we simply miss messages, it's not clear why, but it happens
       // in rare cases. So we attempt to re-sync this contract once

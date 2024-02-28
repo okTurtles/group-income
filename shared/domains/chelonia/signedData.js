@@ -3,7 +3,7 @@ import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { Key } from './crypto.js'
 import { deserializeKey, keyId, serializeKey, sign, verifySignature } from './crypto.js'
-import { ChelErrorSignatureError, ChelErrorSignatureKeyNotFound, ChelErrorUnexpected } from './errors.js'
+import { ChelErrorSignatureError, ChelErrorSignatureKeyNotFound, ChelErrorSignatureKeyUnauthorized } from './errors.js'
 
 const rootStateFn = () => sbp('chelonia/rootState')
 
@@ -115,7 +115,7 @@ const verifySignatureData = function (height: number, data: any, additionalData:
   if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'sig'
   )) {
-    throw new ChelErrorUnexpected(
+    throw new ChelErrorSignatureKeyUnauthorized(
       `Key ${sKeyId} is unauthorized or expired for the current contract`
     )
   }
@@ -226,7 +226,6 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
 export const signedIncomingData = (contractID: string, state: ?Object, data: any, height: number, additionalData: string, mapperFn?: Function): SignedData<any> => {
   const stringValueFn = () => data
   let verifySignedValue
-  // TODO: Temporary until the server can validate signatures
   const verifySignedValueFn = () => {
     if (verifySignedValue) {
       return verifySignedValue[1]

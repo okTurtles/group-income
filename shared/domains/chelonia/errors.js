@@ -25,4 +25,5 @@ export const ChelErrorUnrecoverable: typeof Error = ChelErrorGenerator('ChelErro
 export const ChelErrorDecryptionError: typeof Error = ChelErrorGenerator('ChelErrorDecryptionError')
 export const ChelErrorDecryptionKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorDecryptionKeyNotFound', ChelErrorDecryptionError)
 export const ChelErrorSignatureError: typeof Error = ChelErrorGenerator('ChelErrorSignatureError')
+export const ChelErrorSignatureKeyUnauthorized: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyUnauthorized', ChelErrorSignatureError)
 export const ChelErrorSignatureKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyNotFound', ChelErrorSignatureError)

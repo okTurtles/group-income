@@ -15,6 +15,7 @@ import {
 } from './pubsub.js'
 import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
+
 import '~/shared/domains/chelonia/chelonia.js'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
@@ -71,6 +72,8 @@ sbp('sbp/selectors/register', {
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(deserializedHEAD.contractID)
     await sbp('chelonia/private/in/enqueueHandleEvent', deserializedHEAD.contractID, entry)
+    // Persist the Chelonia state after processing a message
+    await sbp('chelonia/db/set', '_private_cheloniaState', JSON.stringify(sbp('chelonia/private/state')))
     await sbp('backend/server/broadcastEntry', deserializedHEAD, entry)
   },
   'backend/server/stop': function () {
@@ -128,6 +131,11 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     strictProcessing: true,
     strictOrdering: true
   })
+  // Load the saved Chelonia state
+  const savedState = await sbp('chelonia/db/get', '_private_cheloniaState')
+  if (savedState) {
+    Object.assign(sbp('chelonia/private/state'), JSON.parse(savedState))
+  }
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: require('./auth.js') },
@@ -139,7 +147,6 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     //   }
     // }
   ])
-  await initDB()
   require('./routes.js')
   await hapi.start()
   console.info('Backend server running at:', hapi.info.uri)
