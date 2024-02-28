@@ -248,9 +248,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
-    const rootGetters = sbp('state/vuex/getters')
-    const userID = rootGetters.ourContactProfiles[params.data.memberID]?.contractID
-
+    const userID = params.data.memberID
     const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
     if (keyIds?.length) {

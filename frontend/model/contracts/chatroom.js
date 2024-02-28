@@ -234,7 +234,7 @@ sbp('chelonia/defineContract', {
               console.error('Error while syncing other members\' contracts at chatroom join', e)
             })
           } else {
-            if (!rootGetters.ourContactProfiles[memberID]) {
+            if (!rootGetters.ourContactProfilesById[memberID]) {
               sbp('chelonia/contract/sync', memberID).catch((e) => {
                 console.error(`Error while syncing new memberID's contract ${memberID}`, e)
               })

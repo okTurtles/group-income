@@ -143,7 +143,7 @@ export function makeMentionFromUsername (username: string, forceUsername: ?boole
   const rootGetters = sbp('state/vuex/getters')
   // Even if forceUsername is true, we want to look up the contract ID to ensure
   // that it exists, so that we know it'll later succeed.
-  const userID = rootGetters.ourContactProfiles[username]?.contractID
+  const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
   return makeMentionFromUserID(forceUsername && userID ? username : userID)
 }
 
