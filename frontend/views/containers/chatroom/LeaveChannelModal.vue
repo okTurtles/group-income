@@ -38,8 +38,7 @@ export default ({
       'currentChatRoomId',
       'currentChatRoomState',
       'ourGroupDirectMessages',
-      'isDirectMessage',
-      'ourContactProfiles'
+      'isDirectMessage'
     ]),
     ...mapState(['loggedIn', 'currentGroupId']),
     channelName () {
