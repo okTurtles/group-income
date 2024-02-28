@@ -284,7 +284,7 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
         if (!decryptedKeyResult) continue
         // Data aren't encrypted
         if (decryptedKeyResult.encryptionKeyId == null) {
-          throw new Error('Expected encrypted data but got unencrypted data for key with ID', key.id)
+          throw new Error('Expected encrypted data but got unencrypted data for key with ID: ' + key.id)
         }
         decryptedKey = decryptedKeyResult.data
         decryptedKeys.push([key.id, decryptedKey])

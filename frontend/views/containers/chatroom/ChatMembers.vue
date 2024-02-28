@@ -68,7 +68,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourContactProfiles',
       'groupShouldPropose',
       'ourGroupDirectMessages',
       'chatRoomUnreadMentions',

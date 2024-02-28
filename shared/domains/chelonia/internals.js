@@ -623,7 +623,6 @@ export default (sbp('sbp/selectors/register', {
         if (!config.skipActionProcessing) {
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
         }
-        console.log('OP_ACTION_ENCRYPTED: skipped action processing')
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
@@ -1322,7 +1321,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (!pendingKeyRevocations || Object.keys(pendingKeyRevocations).length === 0) return
 
-    const keysToUpdate = Object.entries(pendingKeyRevocations).filter(([, v]) => v === true).map(([id]) => id)
+    const keysToUpdate: string[] = Object.entries(pendingKeyRevocations).filter(([, v]) => v === true).map(([id]) => id)
 
     // Aggregate the keys that we can update to send them in a single operation
     const [, keyUpdateSigningKeyId, keyUpdateArgs] = keysToUpdate.reduce((acc, keyId) => {
@@ -1332,12 +1331,13 @@ export default (sbp('sbp/selectors/register', {
       const fkUrl = new URL(foreignKey)
       const foreignContractID = fkUrl.pathname
       const foreignKeyName = fkUrl.searchParams.get('keyName')
+      if (!foreignKeyName) throw new Error('Missing foreign key name')
       const foreignState = rootState[foreignContractID]
       if (!foreignState) return acc
       const fKeyId = findKeyIdByName(foreignState, foreignKeyName)
       if (!fKeyId) {
         // Key was deleted
-        keysToUpdate.find(([id]) => id === keyId)[1] = 'del'
+        pendingKeyRevocations.find(([id]) => id === keyId)[1] = 'del'
         return acc
       }
 
