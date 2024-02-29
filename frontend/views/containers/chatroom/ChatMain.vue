@@ -63,6 +63,7 @@
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
+          :attachments='message.attachments'
           :type='message.type'
           :notification='message.notification'
           :proposal='message.proposal'

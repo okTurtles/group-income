@@ -248,7 +248,7 @@ import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
-import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
@@ -553,21 +553,11 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const getName = entry => entry.name
-
       if (!this.isActive) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
-      if (this.hasAttachments) {
-        // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
-        msgToSend = msgToSend +
-          (msgToSend ? '\r\n' : '') +
-          `{ Attached: ${this.ephemeral.attachments.map(getName).join(', ')} } - Feature coming soon!`
-
-        this.clearAllAttachments()
-      }
 
       /* Process mentions in the form @username => @userID */
       const mentionStart = makeMentionFromUsername('').all[0]
@@ -581,10 +571,15 @@ export default ({
         }
       )
 
-      this.$emit('send', msgToSend) // TODO remove first / last empty lines
+      this.$emit(
+        'send',
+        msgToSend,
+        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : undefined
+      ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
+      if (this.hasAttachments) { this.clearAllAttachments() }
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -627,11 +622,13 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
 
+        // !@#
         list.push({
           url: fileUrl,
           name: file.name,
           extension: fileExt,
           mimeType: file.type || '',
+          attachmentId: randomHexString(15),
           attachType: file.type.match('image/') ? 'image' : 'non-image',
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
@@ -643,10 +640,10 @@ export default ({
       sbp('gi.actions/chatroom/upload-chat-attachments', this.ephemeral.attachments)
 
       // Set up an event listener for the completion of upload.
-      const uplooadCompleteHandler = ({ url, downloadData }) => {
+      const uplooadCompleteHandler = ({ attachmentId, downloadData }) => {
         // update ephemeral.attachments with the passed download data.
         this.ephemeral.attachments = this.ephemeral.attachments.map(entry => {
-          if (entry.url === url) {
+          if (entry.attachmentId === attachmentId) {
             return {
               ...entry,
               downloadData

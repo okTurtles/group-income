@@ -195,13 +195,13 @@ export default (sbp('sbp/selectors/register', {
     }
 
     attachments.forEach(async attachment => {
-      const { mimeType, url } = attachment // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+      const { mimeType, url, attachmentId } = attachment // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
 
       const attachmentBlob = await objectURLtoBlob(url)
       const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
         type: mimeType, cipher: 'aes256gcm'
       })
-      sbp('okTurtles.events/emit', CHATROOM_ATTACHMENT_UPLOADED, { url, downloadData })
+      sbp('okTurtles.events/emit', CHATROOM_ATTACHMENT_UPLOADED, { attachmentId, downloadData })
     })
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),

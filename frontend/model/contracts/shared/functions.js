@@ -75,6 +75,11 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
 
     if (attachments?.length) {
+      attachments.forEach(attachment => {
+        // once file-upload is completed, the objectURL is no longer in use.
+        // !!!TODO!!! : remove/update this logic while working on graceful chat-attachment handling.
+        delete attachment.url
+      })
       newMessage.attachments = attachments
     }
   } else if (type === MESSAGE_TYPES.POLL) {

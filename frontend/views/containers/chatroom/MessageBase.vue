@@ -52,6 +52,11 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
+      .c-attachments-wrapper(v-if='hasAttachments')
+        chat-attachment-preview(
+          :attachmentList='attachments'
+          :isForDownload='true'
+        )
   .c-full-width-body
     slot(name='full-width-body')
 
@@ -86,6 +91,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
@@ -99,7 +105,8 @@ export default ({
     Avatar,
     MessageActions,
     MessageReactions,
-    SendArea
+    SendArea,
+    ChatAttachmentPreview
   },
   data () {
     return {
@@ -109,6 +116,7 @@ export default ({
   props: {
     height: Number,
     text: String,
+    attachments: Array,
     messageHash: String,
     replyingMessage: String,
     who: String,
@@ -137,6 +145,9 @@ export default ({
     },
     replyMessageObjects () {
       return this.generateTextObjectsFromText(this.replyingMessage)
+    },
+    hasAttachments () {
+      return Boolean(this.attachments?.length)
     }
   },
   methods: {
@@ -307,6 +318,11 @@ export default ({
   &:first-child:last-child {
     margin-bottom: 0.5rem;
   }
+}
+
+.c-attachments-wrapper {
+  position: relative;
+  margin-top: 0.25rem;
 }
 
 .c-focused {

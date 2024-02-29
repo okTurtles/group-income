@@ -1,31 +1,46 @@
 <template lang='pug'>
-.c-attachment-container
-  .c-attachment-preview(
-    v-for='entry in attachmentList'
-    :key='entry.url'
-    :class='"is-" + entry.attachType'
-  )
-    img.c-preview-img(
-      v-if='entry.attachType === "image"'
-      :src='entry.url'
-      :alt='entry.name'
+.c-attachment-container(:class='{ "is-for-download": isForDownload }')
+  template(v-if='isForDownload')
+    .c-attachment-preview(
+      v-for='entry in attachmentList'
+      :key='entry.attachmentId'
+      class='is-download-item'
     )
-    .c-preview-non-image(v-else)
-      .c-non-image-icon
-        i.icon-file
+      .c-preview-non-image
+        .c-non-image-icon
+          i.icon-file
 
-      .c-non-image-file-info
-        .c-file-name.has-ellipsis {{ entry.name }}
-        .c-file-ext {{ fileExt(entry) }}
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
 
-    button.c-attachment-remove-btn(
-      type='button'
-      :aria-label='L("Remove attachment")'
-      @click='$emit("remove", entry.url)'
+  template(v-else)
+    .c-attachment-preview(
+      v-for='entry in attachmentList'
+      :key='entry.attachmentId'
+      :class='"is-" + entry.attachType'
     )
-      i.icon-times
+      img.c-preview-img(
+        v-if='entry.attachType === "image" && entry.url'
+        :src='entry.url'
+        :alt='entry.name'
+      )
+      .c-preview-non-image(v-else)
+        .c-non-image-icon
+          i.icon-file
 
-    .c-loader(v-if='!entry.downloadData')
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
+
+      button.c-attachment-remove-btn(
+        type='button'
+        :aria-label='L("Remove attachment")'
+        @click='$emit("remove", entry.url)'
+      )
+        i.icon-times
+
+      .c-loader(v-if='!entry.downloadData')
 </template>
 
 <script>
@@ -36,6 +51,10 @@ export default {
       // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
       type: Array,
       required: true
+    },
+    isForDownload: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -60,6 +79,10 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+
+  &.is-for-download {
+    padding: 0;
+  }
 }
 
 .c-attachment-preview {
@@ -73,7 +96,8 @@ export default {
     height: 4.5rem;
   }
 
-  &.is-non-image {
+  &.is-non-image,
+  &.is-download-item {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
@@ -184,6 +208,17 @@ export default {
       border-radius: 50%;
       color: $primary_0;
       animation: loadSpin 1.75s infinite linear;
+    }
+  }
+
+  &.is-download-item {
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      .c-file-name {
+        text-decoration: underline;
+      }
     }
   }
 }
