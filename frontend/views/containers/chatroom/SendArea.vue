@@ -370,7 +370,9 @@ export default ({
         })
     },
     isActive () {
-      return this.ephemeral.textWithLines
+      return this.hasAttachments
+        ? this.ephemeral.attachments.every(attachment => Boolean(attachment.downloadData))
+        : this.ephemeral.textWithLines
     },
     textareaStyles () {
       return {
@@ -400,6 +402,9 @@ export default ({
       } else {
         return null
       }
+    },
+    hasAttachments () {
+      return this.ephemeral.attachments.length > 0
     }
   },
   methods: {
@@ -548,15 +553,14 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const hasAttachments = this.ephemeral.attachments.length > 0
       const getName = entry => entry.name
 
-      if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
+      if (!this.isActive) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
-      if (hasAttachments) {
+      if (this.hasAttachments) {
         // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
         msgToSend = msgToSend +
           (msgToSend ? '\r\n' : '') +
@@ -1050,13 +1054,13 @@ export default ({
   align-items: center;
   border-radius: 0.25rem;
 
-  &:hover {
-    color: var(--primary_0);
-    cursor: pointer;
-  }
-
   &.isActive {
     background: $primary_0;
+
+    &:hover {
+      color: $general_1;
+      cursor: pointer;
+    }
   }
 }
 
