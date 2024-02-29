@@ -24,6 +24,8 @@
       @click='$emit("remove", entry.url)'
     )
       i.icon-times
+
+    .c-loader(v-if='!entry.downloadData')
 </template>
 
 <script>
@@ -137,7 +139,7 @@ export default {
     top: 0;
     right: 0;
     transform: translate(50%, -50%);
-    z-index: 1;
+    z-index: 2;
     width: 1.125rem;
     height: 1.125rem;
     border-radius: 1rem;
@@ -145,6 +147,44 @@ export default {
     font-size: 0.75rem;
     background-color: $text_1;
     color: $general_1;
+  }
+
+  .c-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.25rem;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: $general_1;
+      opacity: 0.65;
+    }
+
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid;
+      border-top-color: transparent;
+      border-radius: 50%;
+      color: $primary_0;
+      animation: loadSpin 1.75s infinite linear;
+    }
   }
 }
 </style>

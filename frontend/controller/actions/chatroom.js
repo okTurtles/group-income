@@ -8,6 +8,7 @@ import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 
@@ -187,28 +188,21 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/chatroom/upload-chat-attachments': async function (attachments: Array<any>): Promise<any> {
+  'gi.actions/chatroom/upload-chat-attachments': function (attachments: Array<any>) {
     const objectURLtoBlob = url => {
       // reference: https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
       return fetch(url).then(r => r.blob())
     }
-    const results = await Promise.all(
-      attachments.map(async attachmentEntry => {
-        const { mimeType, url } = attachmentEntry // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
 
-        const attachmentBlob = await objectURLtoBlob(url)
-        const uploadResult = await sbp('chelonia/fileUpload', attachmentBlob, {
-          type: mimeType, cipher: 'aes256gcm'
-        })
+    attachments.forEach(async attachment => {
+      const { mimeType, url } = attachment // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
 
-        return {
-          ...attachmentEntry,
-          downloadData: uploadResult
-        }
+      const attachmentBlob = await objectURLtoBlob(url)
+      const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+        type: mimeType, cipher: 'aes256gcm'
       })
-    )
-
-    return results
+      sbp('okTurtles.events/emit', CHATROOM_ATTACHMENT_UPLOADED, { url, downloadData })
+    })
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),

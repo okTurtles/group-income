@@ -51,12 +51,18 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
 // chatroom.js related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
-  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean, innerSigningContractID?: String
+  meta: Object,
+  data: Object,
+  hash: string,
+  height: number,
+  state?: Object,
+  pending?: boolean,
+  innerSigningContractID?: String
 }): Object {
-  const { type, text, replyingMessage } = data
+  const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
-  let newMessage = {
+  let newMessage: any = {
     type,
     hash,
     height,
@@ -67,6 +73,10 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
 
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
+
+    if (attachments?.length) {
+      newMessage.attachments = attachments
+    }
   } else if (type === MESSAGE_TYPES.POLL) {
     const pollData = data.pollData
 

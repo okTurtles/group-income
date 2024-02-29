@@ -60,8 +60,8 @@
     )
 
     chat-attachment-preview(
-      v-if='ephemeral.attachment.length'
-      :attachmentList='ephemeral.attachment'
+      v-if='ephemeral.attachments.length'
+      :attachmentList='ephemeral.attachments'
       @remove='removeAttachment'
     )
 
@@ -247,7 +247,7 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
 import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
@@ -306,7 +306,7 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         typingUsers: []
       },
       typingUserTimeoutIds: {},
@@ -548,7 +548,7 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const hasAttachments = this.ephemeral.attachment.length > 0
+      const hasAttachments = this.ephemeral.attachments.length > 0
       const getName = entry => entry.name
 
       if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
@@ -560,7 +560,7 @@ export default ({
         // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
         msgToSend = msgToSend +
           (msgToSend ? '\r\n' : '') +
-          `{ Attached: ${this.ephemeral.attachment.map(getName).join(', ')} } - Feature coming soon!`
+          `{ Attached: ${this.ephemeral.attachments.map(getName).join(', ')} } - Feature coming soon!`
 
         this.clearAllAttachments()
       }
@@ -600,9 +600,9 @@ export default ({
         const lastDotIndex = name.lastIndexOf('.')
         return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
       }
-      const attachmentsExist = Boolean(this.ephemeral.attachment.length)
+      const attachmentsExist = Boolean(this.ephemeral.attachments.length)
       const list = appendItems && attachmentsExist
-        ? [...this.ephemeral.attachment]
+        ? [...this.ephemeral.attachments]
         : []
 
       if (attachmentsExist) {
@@ -611,7 +611,6 @@ export default ({
       }
 
       for (const file of filesList) {
-        console.log('!@# file to attach entry  - ', file)
         const fileExt = getFileExtension(file.name)
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
@@ -629,26 +628,49 @@ export default ({
           name: file.name,
           extension: fileExt,
           mimeType: file.type || '',
-          attachType: file.type.match('image/') ? 'image' : 'non-image'
+          attachType: file.type.match('image/') ? 'image' : 'non-image',
+          downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
       }
 
-      this.ephemeral.attachment = list
+      this.ephemeral.attachments = list
+
+      // Start uploading the attached files to the server.
+      sbp('gi.actions/chatroom/upload-chat-attachments', this.ephemeral.attachments)
+
+      // Set up an event listener for the completion of upload.
+      const uplooadCompleteHandler = ({ url, downloadData }) => {
+        // update ephemeral.attachments with the passed download data.
+        this.ephemeral.attachments = this.ephemeral.attachments.map(entry => {
+          if (entry.url === url) {
+            return {
+              ...entry,
+              downloadData
+            }
+          } else return entry
+        })
+
+        if (this.ephemeral.attachments.every(entry => Boolean(entry.downloadData))) {
+          // if all attachments have been uploaded, destory the event listener.
+          sbp('okTurtles.events/off', CHATROOM_ATTACHMENT_UPLOADED)
+        }
+      }
+      sbp('okTurtles.events/on', CHATROOM_ATTACHMENT_UPLOADED, uplooadCompleteHandler)
     },
     clearAllAttachments () {
-      this.ephemeral.attachment.forEach(attachment => {
+      this.ephemeral.attachments.forEach(attachment => {
         URL.revokeObjectURL(attachment.url)
       })
-      this.ephemeral.attachment = []
+      this.ephemeral.attachments = []
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
       // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
-      const targetIndex = this.ephemeral.attachment.findIndex(entry => targetUrl === entry.url)
+      const targetIndex = this.ephemeral.attachments.findIndex(entry => targetUrl === entry.url)
 
       if (targetIndex >= 0) {
         URL.revokeObjectURL(targetUrl)
-        this.ephemeral.attachment.splice(targetIndex, 1)
+        this.ephemeral.attachments.splice(targetIndex, 1)
       }
     },
     selectEmoticon (emoticon) {

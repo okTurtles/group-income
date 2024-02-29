@@ -386,13 +386,13 @@ export default ({
       this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (message) {
+    handleSendMessage (message, attachments) {
       const replyingMessage = this.ephemeral.replyingMessageHash
         ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
         : null
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
-      const data = { type: MESSAGE_TYPES.TEXT, text: message }
+      const data = { type: MESSAGE_TYPES.TEXT, text: message, attachments }
 
       const contractID = this.currentChatRoomId
       // Call 'gi.actions/chatroom/addMessage' action with necessary data
