@@ -38,6 +38,12 @@ if (window.matchMedia) {
   })
 }
 
+const checkedUsername = (state: Object, username: string, userID: string) => {
+  if (username && state.namespaceLookups[username] === userID) {
+    return username
+  }
+}
+
 const reactiveDate = Vue.observable({ date: new Date() })
 setInterval(function () {
   // We want the getters to recalculate all of the payments within 1 minute of us entering a new period.
@@ -227,12 +233,12 @@ const getters = {
     }
   },
   userDisplayNameFromID (state, getters) {
-    return (user) => {
-      if (user === getters.ourIdentityContractId) {
+    return (userID) => {
+      if (userID === getters.ourIdentityContractId) {
         return getters.ourUserDisplayName
       }
-      const profile = getters.ourContactProfilesById[user] || {}
-      return profile.displayName || profile.username || user
+      const profile = getters.ourContactProfilesById[userID] || {}
+      return profile.displayName || profile.username || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
@@ -468,7 +474,12 @@ const getters = {
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
-          profiles[attributes.username] = { ...attributes, contractID }
+          const username = checkedUsername(state, attributes.username, contractID)
+          profiles[attributes.username] = {
+            ...attributes,
+            username,
+            contractID
+          }
         }
       })
     return profiles
@@ -480,7 +491,12 @@ const getters = {
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
-          profiles[contractID] = { ...attributes, contractID }
+          const username = checkedUsername(state, attributes.username, contractID)
+          profiles[contractID] = {
+            ...attributes,
+            username,
+            contractID
+          }
         }
       })
     return profiles
