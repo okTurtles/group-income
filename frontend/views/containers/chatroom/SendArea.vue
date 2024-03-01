@@ -246,7 +246,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
@@ -614,8 +614,7 @@ export default ({
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
-        if (fileSize > Math.pow(10, 9)) {
-          // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+        if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
         } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
           // Give users a warning about unsupported file types

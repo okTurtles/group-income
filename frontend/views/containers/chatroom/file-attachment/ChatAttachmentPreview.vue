@@ -5,10 +5,11 @@
       v-for='entry in attachmentList'
       :key='entry.attachmentId'
       class='is-download-item'
+      tabindex='0'
     )
       .c-preview-non-image
         .c-non-image-icon
-          i.icon-file
+          i.icon-download
 
         .c-non-image-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
@@ -219,6 +220,11 @@ export default {
       .c-file-name {
         text-decoration: underline;
       }
+    }
+
+    &:active,
+    &:focus {
+      border-color: $text_0;
     }
   }
 }
