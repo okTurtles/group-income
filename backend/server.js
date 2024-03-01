@@ -62,6 +62,45 @@ hapi.ext({
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
+  'backend/server/persistState': async function (deserializedHEAD: Object, entry: string) {
+    const contractID = deserializedHEAD.contractID
+    const cheloniaState = sbp('chelonia/private/state')
+    // If the contract has been removed or the height hasn't been updated,
+    // there's nothing to persist
+    if (!cheloniaState.contracts[contractID] || cheloniaState.contracts[contractID].height < deserializedHEAD.head.height) {
+      return
+    }
+    // If the current HEAD is not what we expect, don't save (the state could
+    // have been updated by a later message). This ensures that we save the
+    // latest state and also reduces the number of write operations
+    if (cheloniaState.contracts[contractID].HEAD === deserializedHEAD.hash) {
+      // Extract the parts of the state relevant to this contract
+      const state = {
+        state: cheloniaState[contractID],
+        contractState: cheloniaState.contracts[contractID]
+      }
+      // Save the state under a 'contract partition' key, so that updating a
+      // contract doesn't require saving the entire state.
+      // Although it's not important for the server right now, this will fail to
+      // persist changes the state for other contracts (for example, this happens
+      // when watching keys)
+      await sbp('chelonia/db/set', '_private_cheloniaState_cp_' + contractID, JSON.stringify(state))
+    }
+    // If this is a new contract, we also need to add it to the index, which
+    // is used when starting up the server to know which keys to fetch.
+    // In the future, consider having a multi-level index, since the index can
+    // get pretty large.
+    if (contractID === deserializedHEAD.hash) {
+      // We want to ensure that the index is updated atomically (i.e., if there
+      // are multiple new contracts, all of them should be added), so a queue
+      // is needed for the load & store operation.
+      await sbp('okTurtles.eventQueue/queueEvent', 'update-contract-indices', async () => {
+        const currentIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
+        const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${contractID}`
+        await sbp('chelonia/db/set', '_private_cheloniaState_index', updatedIndex)
+      })
+    }
+  },
   'backend/server/broadcastEntry': async function (deserializedHEAD: Object, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry)
@@ -70,10 +109,11 @@ sbp('sbp/selectors/register', {
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
-    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(deserializedHEAD.contractID)
-    await sbp('chelonia/private/in/enqueueHandleEvent', deserializedHEAD.contractID, entry)
+    const contractID = deserializedHEAD.contractID
+    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
+    await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)
     // Persist the Chelonia state after processing a message
-    await sbp('chelonia/db/set', '_private_cheloniaState', JSON.stringify(sbp('chelonia/private/state')))
+    await sbp('backend/server/persistState', deserializedHEAD, entry)
     await sbp('backend/server/broadcastEntry', deserializedHEAD, entry)
   },
   'backend/server/stop': function () {
@@ -125,9 +165,21 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   await initDB()
   await sbp('chelonia/configure', SERVER)
   // Load the saved Chelonia state
-  const savedState = await sbp('chelonia/db/get', '_private_cheloniaState')
-  if (savedState) {
-    Object.assign(sbp('chelonia/private/state'), JSON.parse(savedState))
+  // First, get the contract index
+  const savedStateIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
+  if (savedStateIndex) {
+    // Now, we contract the contract state by reading each contract state
+    // partition
+    const recoveredState = Object.create(null)
+    recoveredState.contracts = Object.create(null)
+    await Promise.all(savedStateIndex.split('\x00').map(async (contractID) => {
+      const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_cp_${contractID}`)
+      if (!cpSerialized) return
+      const cp = JSON.parse(cpSerialized)
+      recoveredState[contractID] = cp.state
+      recoveredState.contracts[contractID] = cp.contractState
+    }))
+    Object.assign(sbp('chelonia/private/state'), recoveredState)
   }
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
