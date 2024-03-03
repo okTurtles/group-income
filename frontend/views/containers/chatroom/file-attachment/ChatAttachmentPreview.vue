@@ -6,6 +6,7 @@
       :key='entry.attachmentId'
       class='is-download-item'
       tabindex='0'
+      @click='downloadHandler(entry)'
     )
       .c-preview-non-image
         .c-non-image-icon
@@ -42,9 +43,13 @@
         i.icon-times
 
       .c-loader(v-if='!entry.downloadData')
+
+  a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+
 export default {
   name: 'ChatAttachmentPreview',
   props: {
@@ -58,11 +63,39 @@ export default {
       default: false
     }
   },
+  data () {
+    return {
+      isPreparingDownload: []
+    }
+  },
   methods: {
     fileExt ({ name }) {
       const lastDotIndex = name.lastIndexOf('.')
       const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
       return ext.toUpperCase()
+    },
+    async downloadHandler (entry) {
+      if (!entry.downloadData) { return }
+
+      // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
+      const { downloadData, name, attachmentId } = entry
+      this.isPreparingDownload = [...this.isPreparingDownload, attachmentId]
+
+      try {
+        const blob = await sbp('chelonia/fileDownload', downloadData)
+
+        console.log('!@# blob: ', blob)
+        const url = URL.createObjectURL(blob)
+        const aTag = this.$refs.downloadHelper
+
+        aTag.setAttribute('href', url)
+        aTag.setAttribute('download', name)
+        aTag.click()
+
+        this.isPreparingDownload = this.isPreparingDownload.filter(v => v !== attachmentId)
+      } catch (err) {
+        console.error('error caught while downloading a file: ', err)
+      }
     }
   }
 }
@@ -217,6 +250,8 @@ export default {
 
     &:hover,
     &:focus {
+      border-color: $text_1;
+
       .c-file-name {
         text-decoration: underline;
       }
@@ -227,5 +262,13 @@ export default {
       border-color: $text_0;
     }
   }
+}
+
+.c-invisible-link {
+  position: relative;
+  top: -10rem;
+  left: -10rem;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
