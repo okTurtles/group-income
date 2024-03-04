@@ -52,16 +52,17 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
-        p.c-attachment-container
+        .c-attachment-container
           template(v-for='attachment in attachments')
-            .c-attachment
-              img.c-attachment-image(
-                v-if='attachment.attachType === "image"'
+            div(
+              :class='"c-attachment-" + attachment.attachType'
+            )
+              img(
+                v-if='isImage(attachment)'
                 :alt='attachment.name'
                 :src='attachment.url'
               )
-
-              .c-attachment-non-image(v-else)
+              template(v-else)
                 .c-non-image-icon
                   i.icon-file
 
@@ -69,6 +70,7 @@
                   .c-file-name.has-ellipsis {{ attachment.name }}
                   .c-file-ext {{ attachment.extension.substring(1) }}
 
+              .c-attachment-actions-container
                 .c-attachment-actions
                   tooltip(
                     direction='top'
@@ -231,6 +233,9 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
+    },
+    isImage (attachment) {
+      return attachment.attachType === 'image'
     },
     generateTextObjectsFromText (text) {
       if (!text) {
@@ -414,32 +419,24 @@ export default ({
   gap: 1rem;
 }
 
-.c-attachment-img,
+.c-attachment-image,
 .c-attachment-non-image {
   position: relative;
-  width: 100%;
-  height: 100%;
   border-radius: inherit;
   border: 1px solid $general_0;
-}
-
-.c-attachment-img {
-  width: 4.5rem;
-  height: 4.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
 }
 
 .c-attachment-non-image {
-  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "attachment-icon attachment-info";
   align-items: center;
-  padding: 0.5rem;
   gap: 0.5rem;
   width: 17.25rem;
   min-height: 3.5rem;
-  cursor: pointer;
 
   .c-non-image-icon {
     grid-area: attachment-icon;
@@ -473,23 +470,40 @@ export default ({
   }
 }
 
-.c-attachment {
-  position: relative;
-}
-
-.c-attachment-actions {
+.c-attachment-actions-container {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0.5rem;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+
+  @include phone {
+    right: 1.5rem;
+  }
+}
+
+.c-attachment-actions {
   display: flex;
   gap: 0.25rem;
   align-items: center;
-  visibility: hidden;
-  width: 3.5rem;
+  background-color: $background_0;
+  padding: 2px;
+
+  .is-icon-small {
+    color: $text_1;
+    border-radius: 0;
+
+    &:hover {
+      background-color: $general_2;
+      color: $text_0;
+    }
+  }
 }
 
-.c-attachment:hover .c-attachment-actions {
+.c-attachment-image:hover .c-attachment-actions,
+.c-attachment-non-image:hover .c-attachment-actions {
   visibility: visible;
 }
 </style>
