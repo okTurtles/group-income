@@ -44,6 +44,12 @@ export const messageType: any = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
   }),
+  attachments: arrayOf(objectOf({
+    attachType: string,
+    extension: string,
+    name: string,
+    url: string
+  })),
   replyingMessage: objectOf({
     hash: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)

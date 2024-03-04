@@ -25,6 +25,10 @@ export default ({
     messageHash: String,
     type: String,
     text: String,
+    attachments: {
+      type: Array,
+      default: () => []
+    },
     who: String,
     currentUserID: String,
     avatar: [Object, String],

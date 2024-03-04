@@ -63,6 +63,7 @@
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
+          :attachments='message.attachments'
           :type='message.type'
           :notification='message.notification'
           :proposal='message.proposal'
@@ -386,59 +387,88 @@ export default ({
       this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (message) {
-      const replyingMessage = this.ephemeral.replyingMessageHash
-        ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
-        : null
-      // Consider only simple TEXT now
-      // TODO: implement other types of messages later
-      const data = { type: MESSAGE_TYPES.TEXT, text: message }
+    handleSendMessage (text, attachments) {
+      const hasAttachments = attachments.length > 0
+      const sendMessage = () => {
+        const replyingMessage = this.ephemeral.replyingMessageHash
+          ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
+          : null
 
-      const contractID = this.currentChatRoomId
-      // Call 'gi.actions/chatroom/addMessage' action with necessary data
-      // to send the message
-      sbp('gi.actions/chatroom/addMessage', {
-        contractID,
-        // If not replying to a message, use original data; otherwise, append
-        // replyingMessage to data.
-        data: !replyingMessage ? data : { ...data, replyingMessage },
-        hooks: {
-          // Define a 'beforeRequest' hook for additional processing before the
-          // request is made.
-          // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
-          // message has been received. This is intentional to mark yet-unsent
-          // messages as pending in the UI
-          prepublish: (message) => {
-            if (!this.checkEventSourceConsistency(contractID)) return
-
-            // IMPORTANT: This is executed *BEFORE* the message is received over
-            // the network
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
-              if (!this.checkEventSourceConsistency(contractID)) return
-              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
-            }).catch((e) => {
-              console.error('Error sending message during pre-publish: ' + e.message)
-            })
-
-            this.stopReplying()
-            this.updateScroll()
-          },
-          beforeRequest: (message, oldMessage) => {
-            if (!this.checkEventSourceConsistency(contractID)) return
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
-              if (!this.checkEventSourceConsistency(contractID)) return
-              const messageStateContract = this.messageState.contract
-              const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
-              if (!msg) return
-              msg.hash = message.hash()
-              msg.height = message.height()
-            })
-          }
+        let data = { type: MESSAGE_TYPES.TEXT, text }
+        if (hasAttachments) {
+          // append attachments if exists
+          data = { ...data, attachments }
         }
-      }).catch((e) => {
-        console.error(`Error while publishing message for ${contractID}`, e)
-        alert(e?.message || e)
-      })
+        if (replyingMessage) {
+          // If not replying to a message, use original data; otherwise, append
+          // replyingMessage to data.
+          data = { ...data, replyingMessage }
+        }
+
+        const contractID = this.currentChatRoomId
+        const prepublish = (message) => {
+          if (!this.checkEventSourceConsistency(contractID)) return
+
+          // IMPORTANT: This is executed *BEFORE* the message is received over
+          // the network
+          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+            if (!this.checkEventSourceConsistency(contractID)) return
+            Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+          }).catch((e) => {
+            console.error('Error sending message during pre-publish: ' + e.message)
+          })
+
+          this.stopReplying()
+          this.updateScroll()
+        }
+        const beforeRequest = (message, oldMessage) => {
+          if (!this.checkEventSourceConsistency(contractID)) return
+          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+            if (!this.checkEventSourceConsistency(contractID)) return
+            const messageStateContract = this.messageState.contract
+            const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+            if (!msg) return
+            msg.hash = message.hash()
+            msg.height = message.height()
+          })
+        }
+        // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
+        sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data,
+          hooks: {
+            // Define a 'beforeRequest' hook for additional processing before the
+            // request is made.
+            // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
+            // message has been received. This is intentional to mark yet-unsent
+            // messages as pending in the UI
+            prepublish,
+            beforeRequest
+          }
+        }).catch((e) => {
+          console.error(`Error while publishing message for ${contractID}`, e)
+          alert(e?.message || e)
+        })
+      }
+      const uploadAttachments = () => {
+        // TODO: Update the whole block this this function
+        console.log('Attachment Uploading Started...')
+        return new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            console.log('Attachment Uploading Finished...')
+            clearTimeout(timeout)
+            resolve()
+          }, 1000 * 3)
+        })
+      }
+
+      if (!hasAttachments) {
+        sendMessage()
+      } else {
+        uploadAttachments().then(() => {
+          sendMessage()
+        })
+      }
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.messages.length) {

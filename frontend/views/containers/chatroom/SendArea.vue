@@ -549,19 +549,15 @@ export default ({
     },
     sendMessage () {
       const hasAttachments = this.ephemeral.attachment.length > 0
-      const getName = entry => entry.name
 
       if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
+      const attachmentsToSend = []
       if (hasAttachments) {
-        // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
-        msgToSend = msgToSend +
-          (msgToSend ? '\r\n' : '') +
-          `{ Attached: ${this.ephemeral.attachment.map(getName).join(', ')} } - Feature coming soon!`
-
+        attachmentsToSend.push(...this.ephemeral.attachment)
         this.clearAllAttachments()
       }
 
@@ -577,7 +573,7 @@ export default ({
         }
       )
 
-      this.$emit('send', msgToSend) // TODO remove first / last empty lines
+      this.$emit('send', msgToSend, attachmentsToSend) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
