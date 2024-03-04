@@ -64,14 +64,14 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
-  const { contractID, since } = request.params
+route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
+  const { contractID, since, limit } = request.params
   try {
     if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams

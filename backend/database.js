@@ -41,7 +41,8 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string, limit: number = MAX_EVENTS_AFTER): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string, requestedLimit: number = MAX_EVENTS_AFTER): Promise<*> {
+    const limit = Math.min(requestedLimit, process.env.MAX_EVENTS_BATCH_SIZE ?? Number.POSITIVE_INFINITY)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
@@ -52,7 +53,7 @@ sbp('sbp/selectors/register', {
     let prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
+    const stream = new Readable({
       read (): void {
         if (currentHash && counter < limit) {
           sbp('chelonia/db/getEntry', currentHash).then(async entry => {
@@ -76,8 +77,15 @@ sbp('sbp/selectors/register', {
         }
       }
     })
+    // $FlowFixMe[prop-missing]
+    stream.headers = {
+      'shelter-headinfo-head': latestHEADinfo.HEAD,
+      'shelter-headinfo-height': latestHEADinfo.height
+    }
+    return stream
   },
-  'backend/db/streamEntriesBefore': async function (before: string, limit: number): Promise<*> {
+  'backend/db/streamEntriesBefore': async function (before: string, requestedLimit: number): Promise<*> {
+    let limit = Math.min(requestedLimit, process.env.MAX_EVENTS_BATCH_SIZE ?? Number.POSITIVE_INFINITY)
     let prefix = '['
     let currentHEAD = before
     let entry = await sbp('chelonia/db/getEntry', currentHEAD)

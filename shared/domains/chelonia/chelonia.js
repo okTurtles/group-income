@@ -820,32 +820,47 @@ export default (sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
+  'chelonia/out/eventsAfter': async function (contractID: string, since: string, limit?: number) {
+    const aggregateEvents = []
+    let remainingEvents = limit ?? Number.POSITIVE_INFINITY
+    for (;;) {
+      const requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
+      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}/${requestLimit}`, { signal: this.abortController.signal })
+      const events = await handleFetchResult('json')(eventsResponse)
       // Sanity check
-      if (GIMessage.deserialize(b64ToStr(events[0])).hash() !== since) {
+      if (!Array.isArray(events)) throw new Error('Invalid response type')
+      if (events.length > requestLimit) {
+        throw new Error('Received too many events')
+      }
+      if (GIMessage.deserializeHEAD(b64ToStr(events[0])).hash !== since) {
         throw new Error('hash() !== since')
       }
-      // Maybe we didn't receive all the requested events because of eventsAfter's limit.
-      if (events.length === MAX_EVENTS_AFTER) {
-        while (true) {
-          const intermediateEventHash = GIMessage.deserialize(b64ToStr(events[events.length - 1])).hash()
-          const nextEvents = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${intermediateEventHash}`)
-            .then(handleFetchResult('json'))
-          // Break if we didn't receive any event we didn't have yet.
-          // Note: nextEvents usually starts with an intermediate event we already have.
-          if (!Array.isArray(nextEvents) || nextEvents.length < 2) break
-          // Avoid duplicating the intermediate event in the result.
-          events.pop()
-          events.push(...nextEvents)
-          // Only continue if we hit the limit again.
-          if (nextEvents.length !== MAX_EVENTS_AFTER) break
+      // Avoid duplicating the intermediate event in the result.
+      if (aggregateEvents.length) {
+        events.unshift()
+      }
+      remainingEvents -= events.length
+      // Because the number of events could potentially be quite large and hit
+      // stack limits (or limits to how many arguments can be passed), if the
+      // number of events is larger than 8192, then split it into smaller
+      // chunks.
+      if (events.length <= 8192) {
+        aggregateEvents.push(...events.map(b64ToStr))
+      } else {
+        while (events.length) {
+          aggregateEvents.push(...events.splice(0, 8192).map(b64ToStr))
         }
       }
-      return events.map(b64ToStr)
+      const latest = GIMessage.deserializeHEAD(aggregateEvents[aggregateEvents.length - 1]).hash
+      // If there are no remaining events, or if we've received the latest event,
+      // break out of the loop
+      if (
+        remainingEvents === 0 ||
+        latest === eventsResponse.headers.get('shelter-headinfo-head')
+      ) break
+      since = latest
     }
+    return aggregateEvents
   },
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
@@ -859,11 +874,44 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
+    const aggregateEvents = []
+    let remainingEvents = limit ?? Number.POSITIVE_INFINITY
+    for (;;) {
+      const requestLimit = Math.min(limit, remainingEvents)
+      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${requestLimit}`, { signal: this.abortController.signal })
+      const events = await handleFetchResult('json')(eventsResponse)
+      // Sanity check
+      if (!Array.isArray(events)) throw new Error('Invalid response type')
+      if (events.length > (requestLimit + 1)) {
+        throw new Error('Received too many events')
+      }
+      if (GIMessage.deserializeHEAD(b64ToStr(events[0])).hash !== before) {
+        throw new Error('hash() !== before')
+      }
+      // Avoid duplicating the intermediate event in the result.
+      if (aggregateEvents.length) {
+        events.unshift()
+      }
+      events.reverse()
+      remainingEvents -= events.length
+      // Because the number of events could potentially be quite large and hit
+      // stack limits (or limits to how many arguments can be passed), if the
+      // number of events is larger than 8192, then split it into smaller
+      // chunks.
+      if (events.length <= 8192) {
+        aggregateEvents.unshift(...events.map(b64ToStr))
+      } else {
+        while (events.length) {
+          aggregateEvents.unshift(...events.splice(-8192, 8192).map(b64ToStr))
+        }
+      }
+      const earliest = GIMessage.deserializeHEAD(aggregateEvents[0]).hash
+      // If there are no remaining events, or if we've received the latest event,
+      // break out of the loop
+      if (remainingEvents === 0) break
+      before = earliest
     }
+    return aggregateEvents
   },
   'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0) {
     if (offset < 0) {
