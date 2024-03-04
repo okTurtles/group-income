@@ -76,7 +76,7 @@
                     direction='top'
                     :text='L("Download")'
                   )
-                    button.hide-touch.is-icon-small(
+                    button.is-icon-small(
                       :aria-label='L("Download")'
                       @click='downloadAttachment(attachment)'
                     )
@@ -85,7 +85,7 @@
                     direction='top'
                     :text='L("Delete")'
                   )
-                    button.hide-touch.is-icon-small(
+                    button.is-icon-small(
                       :aria-label='L("Delete")'
                       @click='deleteAttachment(attachment)'
                     )
@@ -478,10 +478,6 @@ export default ({
   visibility: hidden;
   display: flex;
   align-items: center;
-
-  @include phone {
-    right: 1.5rem;
-  }
 }
 
 .c-attachment-actions {
@@ -502,8 +498,8 @@ export default ({
   }
 }
 
-.c-attachment-image:hover .c-attachment-actions,
-.c-attachment-non-image:hover .c-attachment-actions {
+.c-attachment-image:hover .c-attachment-actions-container,
+.c-attachment-non-image:hover .c-attachment-actions-container {
   visibility: visible;
 }
 </style>
