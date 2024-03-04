@@ -76,6 +76,7 @@
                   )
                     button.hide-touch.is-icon-small(
                       :aria-label='L("Download")'
+                      @click='downloadAttachment(attachment)'
                     )
                       i.icon-download
                   tooltip(
@@ -84,6 +85,7 @@
                   )
                     button.hide-touch.is-icon-small(
                       :aria-label='L("Delete")'
+                      @click='deleteAttachment(attachment)'
                     )
                       i.icon-trash-alt
 
@@ -262,6 +264,12 @@ export default ({
                 text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
               }
         })
+    },
+    downloadAttachment (attachment) {
+      console.log('TODO - Attachment download', attachment)
+    },
+    deleteAttachment (attachment) {
+      console.log('TODO - Attachment delete', attachment)
     }
   }
 }: Object)
