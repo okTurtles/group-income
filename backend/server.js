@@ -76,8 +76,8 @@ sbp('sbp/selectors/register', {
     if (cheloniaState.contracts[contractID].HEAD === deserializedHEAD.hash) {
       // Extract the parts of the state relevant to this contract
       const state = {
-        state: cheloniaState[contractID],
-        contractState: cheloniaState.contracts[contractID]
+        contractState: cheloniaState[contractID],
+        cheloniaContractInfo: cheloniaState.contracts[contractID]
       }
       // Save the state under a 'contract partition' key, so that updating a
       // contract doesn't require saving the entire state.
@@ -96,6 +96,9 @@ sbp('sbp/selectors/register', {
       // is needed for the load & store operation.
       await sbp('okTurtles.eventQueue/queueEvent', 'update-contract-indices', async () => {
         const currentIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
+        // Add the current contract ID to the contract index. Entries in the
+        // index are separated by \x00 (NUL). The index itself is used to know
+        // which entries to load.
         const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${contractID}`
         await sbp('chelonia/db/set', '_private_cheloniaState_index', updatedIndex)
       })
@@ -176,8 +179,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_cp_${contractID}`)
       if (!cpSerialized) return
       const cp = JSON.parse(cpSerialized)
-      recoveredState[contractID] = cp.state
-      recoveredState.contracts[contractID] = cp.contractState
+      recoveredState[contractID] = cp.contractState
+      recoveredState.contracts[contractID] = cp.cheloniaContractInfo
     }))
     Object.assign(sbp('chelonia/private/state'), recoveredState)
   }
