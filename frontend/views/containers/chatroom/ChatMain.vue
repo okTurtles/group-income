@@ -134,7 +134,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
-import { findMessageIdx } from '@model/contracts/shared/functions.js'
+import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -389,25 +389,29 @@ export default ({
     },
     handleSendMessage (text, attachments) {
       const hasAttachments = attachments.length > 0
-      const sendMessage = () => {
-        const replyingMessage = this.ephemeral.replyingMessageHash
-          ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
-          : null
+      const contractID = this.currentChatRoomId
+      const replyingMessage = this.ephemeral.replyingMessageHash
+        ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
+        : null
 
-        let data = { type: MESSAGE_TYPES.TEXT, text }
-        if (hasAttachments) {
-          // append attachments if exists
-          data = { ...data, attachments }
-        }
-        if (replyingMessage) {
-          // If not replying to a message, use original data; otherwise, append
-          // replyingMessage to data.
-          data = { ...data, replyingMessage }
-        }
+      let data = { type: MESSAGE_TYPES.TEXT, text }
+      if (hasAttachments) {
+        // append attachments if exists
+        data = { ...data, attachments }
+      }
+      if (replyingMessage) {
+        // If not replying to a message, use original data; otherwise, append
+        // replyingMessage to data.
+        data = { ...data, replyingMessage }
+      }
 
-        const contractID = this.currentChatRoomId
+      const sendMessage = (beforePrePublish) => {
         const prepublish = (message) => {
           if (!this.checkEventSourceConsistency(contractID)) return
+
+          if (beforePrePublish && typeof beforePrePublish === 'function') {
+            beforePrePublish()
+          }
 
           // IMPORTANT: This is executed *BEFORE* the message is received over
           // the network
@@ -465,8 +469,42 @@ export default ({
       if (!hasAttachments) {
         sendMessage()
       } else {
+        let temporaryMessage = null
+        sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data,
+          hooks: {
+            preSendCheck: (message, state) => {
+              // NOTE: this preSendCheck does nothing except appending pending message
+              //       temporarily until the uploading attachments is finished
+              //       it always returns false, so it doesn't affect the contract state
+              const [, opV] = message.op()
+              const { meta } = opV.valueOf().valueOf()
+
+              temporaryMessage = createMessage({
+                meta,
+                data,
+                hash: message.hash(),
+                height: message.height(),
+                state: this.messageState.contract,
+                pending: true,
+                innerSigningContractID: this.ourIdentityContractId
+              })
+              this.messageState.contract.messages.push(temporaryMessage)
+
+              return false
+            }
+          }
+        })
         uploadAttachments().then(() => {
-          sendMessage()
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
+              this.messageState.contract.messages.splice(msgIndex, 1)
+            }
+          }
+          sendMessage(removeTemporaryMessage)
         })
       }
     },
