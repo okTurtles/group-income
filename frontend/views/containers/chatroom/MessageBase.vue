@@ -303,6 +303,11 @@ export default ({
     .c-text {
       color: $general_0;
     }
+
+    .c-attachment-image,
+    .c-attachment-non-image {
+      filter: blur(0.125rem);
+    }
   }
 
   &.same-sender {
@@ -317,7 +322,7 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  &:hover {
+  &:hover:not(.pending) {
     background-color: $general_2;
 
     ::v-deep .c-actions {
@@ -428,6 +433,19 @@ export default ({
   padding: 0.5rem;
 }
 
+.c-attachment-image {
+  max-height: 25rem;
+  width: 30rem;
+  // TODO: remove the tricky following styles
+  height: 20rem;
+  background-image: linear-gradient(90deg, $general_1 0%, $general_0 50%, $general_2 75%);
+
+  @include phone {
+    max-height: 10rem;
+    width: 15rem;
+  }
+}
+
 .c-attachment-non-image {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -480,6 +498,11 @@ export default ({
   align-items: center;
 }
 
+.c-attachment-image .c-attachment-actions-container {
+  align-items: flex-start;
+  padding-top: 0.5rem;
+}
+
 .c-attachment-actions {
   display: flex;
   gap: 0.25rem;
@@ -498,8 +521,10 @@ export default ({
   }
 }
 
-.c-attachment-image:hover .c-attachment-actions-container,
-.c-attachment-non-image:hover .c-attachment-actions-container {
-  visibility: visible;
+.c-message:not(.pending) {
+  .c-attachment-image:hover .c-attachment-actions-container,
+  .c-attachment-non-image:hover .c-attachment-actions-container {
+    visibility: visible;
+  }
 }
 </style>
