@@ -60,8 +60,8 @@
     )
 
     chat-attachment-preview(
-      v-if='ephemeral.attachment.length'
-      :attachmentList='ephemeral.attachment'
+      v-if='ephemeral.attachments.length'
+      :attachmentList='ephemeral.attachments'
       @remove='removeAttachment'
     )
 
@@ -246,9 +246,9 @@ import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
+import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
 const caretKeyCodes = {
@@ -306,7 +306,7 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         typingUsers: []
       },
       typingUserTimeoutIds: {},
@@ -370,7 +370,9 @@ export default ({
         })
     },
     isActive () {
-      return this.ephemeral.textWithLines
+      return this.hasAttachments
+        ? this.ephemeral.attachments.every(attachment => Boolean(attachment.downloadData))
+        : this.ephemeral.textWithLines
     },
     textareaStyles () {
       return {
@@ -400,6 +402,9 @@ export default ({
       } else {
         return null
       }
+    },
+    hasAttachments () {
+      return this.ephemeral.attachments.length > 0
     }
   },
   methods: {
@@ -548,18 +553,11 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const hasAttachments = this.ephemeral.attachment.length > 0
-
-      if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
+      if (!this.isActive) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
-      const attachmentsToSend = []
-      if (hasAttachments) {
-        attachmentsToSend.push(...this.ephemeral.attachment)
-        this.clearAllAttachments()
-      }
 
       /* Process mentions in the form @username => @userID */
       const mentionStart = makeMentionFromUsername('').all[0]
@@ -573,10 +571,15 @@ export default ({
         }
       )
 
-      this.$emit('send', msgToSend, attachmentsToSend) // TODO remove first / last empty lines
+      this.$emit(
+        'send',
+        msgToSend,
+        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : undefined
+      ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
+      if (this.hasAttachments) { this.clearAllAttachments() }
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -596,9 +599,9 @@ export default ({
         const lastDotIndex = name.lastIndexOf('.')
         return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
       }
-      const attachmentsExist = Boolean(this.ephemeral.attachment.length)
+      const attachmentsExist = Boolean(this.ephemeral.attachments.length)
       const list = appendItems && attachmentsExist
-        ? [...this.ephemeral.attachment]
+        ? [...this.ephemeral.attachments]
         : []
 
       if (attachmentsExist) {
@@ -611,38 +614,63 @@ export default ({
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
-        if (fileSize > Math.pow(10, 9)) {
-          // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+        if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
         } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
           // Give users a warning about unsupported file types
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
 
+        // !@#
         list.push({
           url: fileUrl,
           name: file.name,
           extension: fileExt,
-          attachType: file.type.match('image/') ? 'image' : 'non-image'
+          mimeType: file.type || '',
+          attachmentId: randomHexString(15),
+          attachType: file.type.match('image/') ? 'image' : 'non-image',
+          downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
       }
 
-      this.ephemeral.attachment = list
+      this.ephemeral.attachments = list
+
+      // Start uploading the attached files to the server.
+      sbp('gi.actions/chatroom/upload-chat-attachments', this.ephemeral.attachments)
+
+      // Set up an event listener for the completion of upload.
+      const uplooadCompleteHandler = ({ attachmentId, downloadData }) => {
+        // update ephemeral.attachments with the passed download data.
+        this.ephemeral.attachments = this.ephemeral.attachments.map(entry => {
+          if (entry.attachmentId === attachmentId) {
+            return {
+              ...entry,
+              downloadData
+            }
+          } else return entry
+        })
+
+        if (this.ephemeral.attachments.every(entry => Boolean(entry.downloadData))) {
+          // if all attachments have been uploaded, destory the event listener.
+          sbp('okTurtles.events/off', CHATROOM_ATTACHMENT_UPLOADED)
+        }
+      }
+      sbp('okTurtles.events/on', CHATROOM_ATTACHMENT_UPLOADED, uplooadCompleteHandler)
     },
     clearAllAttachments () {
-      this.ephemeral.attachment.forEach(attachment => {
+      this.ephemeral.attachments.forEach(attachment => {
         URL.revokeObjectURL(attachment.url)
       })
-      this.ephemeral.attachment = []
+      this.ephemeral.attachments = []
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
       // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
-      const targetIndex = this.ephemeral.attachment.findIndex(entry => targetUrl === entry.url)
+      const targetIndex = this.ephemeral.attachments.findIndex(entry => targetUrl === entry.url)
 
       if (targetIndex >= 0) {
         URL.revokeObjectURL(targetUrl)
-        this.ephemeral.attachment.splice(targetIndex, 1)
+        this.ephemeral.attachments.splice(targetIndex, 1)
       }
     },
     selectEmoticon (emoticon) {
@@ -1022,13 +1050,13 @@ export default ({
   align-items: center;
   border-radius: 0.25rem;
 
-  &:hover {
-    color: var(--primary_0);
-    cursor: pointer;
-  }
-
   &.isActive {
     background: $primary_0;
+
+    &:hover {
+      color: $general_1;
+      cursor: pointer;
+    }
   }
 }
 

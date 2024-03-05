@@ -1,32 +1,55 @@
 <template lang='pug'>
-.c-attachment-container
-  .c-attachment-preview(
-    v-for='entry in attachmentList'
-    :key='entry.url'
-    :class='"is-" + entry.attachType'
-  )
-    img.c-preview-img(
-      v-if='entry.attachType === "image"'
-      :src='entry.url'
-      :alt='entry.name'
+.c-attachment-container(:class='{ "is-for-download": isForDownload }')
+  template(v-if='isForDownload')
+    .c-attachment-preview(
+      v-for='entry in attachmentList'
+      :key='entry.attachmentId'
+      class='is-download-item'
+      tabindex='0'
+      @click='downloadHandler(entry)'
     )
-    .c-preview-non-image(v-else)
-      .c-non-image-icon
-        i.icon-file
+      .c-preview-non-image
+        .c-non-image-icon
+          i.icon-download
 
-      .c-non-image-file-info
-        .c-file-name.has-ellipsis {{ entry.name }}
-        .c-file-ext {{ fileExt(entry) }}
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
 
-    button.c-attachment-remove-btn(
-      type='button'
-      :aria-label='L("Remove attachment")'
-      @click='$emit("remove", entry.url)'
+  template(v-else)
+    .c-attachment-preview(
+      v-for='entry in attachmentList'
+      :key='entry.attachmentId'
+      :class='"is-" + entry.attachType'
     )
-      i.icon-times
+      img.c-preview-img(
+        v-if='entry.attachType === "image" && entry.url'
+        :src='entry.url'
+        :alt='entry.name'
+      )
+      .c-preview-non-image(v-else)
+        .c-non-image-icon
+          i.icon-file
+
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
+
+      button.c-attachment-remove-btn(
+        type='button'
+        :aria-label='L("Remove attachment")'
+        @click='$emit("remove", entry.url)'
+      )
+        i.icon-times
+
+      .c-loader(v-if='!entry.downloadData')
+
+  a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+
 export default {
   name: 'ChatAttachmentPreview',
   props: {
@@ -34,6 +57,15 @@ export default {
       // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
       type: Array,
       required: true
+    },
+    isForDownload: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data () {
+    return {
+      isPreparingDownload: []
     }
   },
   methods: {
@@ -41,6 +73,29 @@ export default {
       const lastDotIndex = name.lastIndexOf('.')
       const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
       return ext.toUpperCase()
+    },
+    async downloadHandler (entry) {
+      if (!entry.downloadData) { return }
+
+      // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
+      const { downloadData, name, attachmentId } = entry
+      this.isPreparingDownload = [...this.isPreparingDownload, attachmentId]
+
+      try {
+        const blob = await sbp('chelonia/fileDownload', downloadData)
+
+        console.log('!@# blob: ', blob)
+        const url = URL.createObjectURL(blob)
+        const aTag = this.$refs.downloadHelper
+
+        aTag.setAttribute('href', url)
+        aTag.setAttribute('download', name)
+        aTag.click()
+
+        this.isPreparingDownload = this.isPreparingDownload.filter(v => v !== attachmentId)
+      } catch (err) {
+        console.error('error caught while downloading a file: ', err)
+      }
     }
   }
 }
@@ -58,6 +113,10 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+
+  &.is-for-download {
+    padding: 0;
+  }
 }
 
 .c-attachment-preview {
@@ -71,7 +130,8 @@ export default {
     height: 4.5rem;
   }
 
-  &.is-non-image {
+  &.is-non-image,
+  &.is-download-item {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
@@ -137,7 +197,7 @@ export default {
     top: 0;
     right: 0;
     transform: translate(50%, -50%);
-    z-index: 1;
+    z-index: 2;
     width: 1.125rem;
     height: 1.125rem;
     border-radius: 1rem;
@@ -146,5 +206,69 @@ export default {
     background-color: $text_1;
     color: $general_1;
   }
+
+  .c-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.25rem;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: $general_1;
+      opacity: 0.65;
+    }
+
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid;
+      border-top-color: transparent;
+      border-radius: 50%;
+      color: $primary_0;
+      animation: loadSpin 1.75s infinite linear;
+    }
+  }
+
+  &.is-download-item {
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      border-color: $text_1;
+
+      .c-file-name {
+        text-decoration: underline;
+      }
+    }
+
+    &:active,
+    &:focus {
+      border-color: $text_0;
+    }
+  }
+}
+
+.c-invisible-link {
+  position: relative;
+  top: -10rem;
+  left: -10rem;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>

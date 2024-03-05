@@ -32,7 +32,7 @@ export default {
         'large': {
           title: L('File too large'),
           // TODO: replace '1 GB' below with a value delivered from the server once implemented.
-          content: L('That file is too large and cannot be uploaded. The limit is {sizeLimit}', { sizeLimit: L('1 GB') })
+          content: L('That file is too large and cannot be uploaded. The limit is {sizeLimit}', { sizeLimit: L('6.29 MB') })
         },
         'unsupported': {
           title: L('Unsupported file type'),

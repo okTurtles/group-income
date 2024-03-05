@@ -14,3 +14,7 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
   '.eot', '.otf', '.rtf', '.ttf', '.woff', '.woff2', // font
   '.abw', '.azw', '.bin', '.csh', '.db', '.mpkg', '.vsd', '.xul' // miscellaneous
 ]
+
+// NOTE: Below value was obtained from the '413 Payload Too Large' server error
+//       meaning if this limit is updated on the server-side, an update is required here too.
+export const CHAT_ATTACHMENT_SIZE_LIMIT = 6291456 // in byte.

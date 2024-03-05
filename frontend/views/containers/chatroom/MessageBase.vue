@@ -52,45 +52,11 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
-        .c-attachment-container
-          template(v-for='attachment in attachments')
-            div(
-              :class='"c-attachment-" + attachment.attachType'
-            )
-              img(
-                v-if='isImage(attachment)'
-                :alt='attachment.name'
-                :src='attachment.url'
-              )
-              template(v-else)
-                .c-non-image-icon
-                  i.icon-file
-
-                .c-non-image-file-info
-                  .c-file-name.has-ellipsis {{ attachment.name }}
-                  .c-file-ext {{ attachment.extension.substring(1) }}
-
-              .c-attachment-actions-container
-                .c-attachment-actions
-                  tooltip(
-                    direction='top'
-                    :text='L("Download")'
-                  )
-                    button.is-icon-small(
-                      :aria-label='L("Download")'
-                      @click='downloadAttachment(attachment)'
-                    )
-                      i.icon-download
-                  tooltip(
-                    direction='top'
-                    :text='L("Delete")'
-                  )
-                    button.is-icon-small(
-                      :aria-label='L("Delete")'
-                      @click='deleteAttachment(attachment)'
-                    )
-                      i.icon-trash-alt
-
+      .c-attachments-wrapper(v-if='hasAttachments')
+        chat-attachment-preview(
+          :attachmentList='attachments'
+          :isForDownload='true'
+        )
   .c-full-width-body
     slot(name='full-width-body')
 
@@ -126,6 +92,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
@@ -140,7 +107,8 @@ export default ({
     Tooltip,
     MessageActions,
     MessageReactions,
-    SendArea
+    SendArea,
+    ChatAttachmentPreview
   },
   data () {
     return {
@@ -150,10 +118,7 @@ export default ({
   props: {
     height: Number,
     text: String,
-    attachments: {
-      type: Array,
-      default: () => []
-    },
+    attachments: Array,
     messageHash: String,
     replyingMessage: String,
     who: String,
@@ -182,6 +147,9 @@ export default ({
     },
     replyMessageObjects () {
       return this.generateTextObjectsFromText(this.replyingMessage)
+    },
+    hasAttachments () {
+      return Boolean(this.attachments?.length)
     }
   },
   methods: {
@@ -368,6 +336,11 @@ export default ({
   }
 }
 
+.c-attachments-wrapper {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
 .c-focused {
   animation: focused 1s linear 0.5s;
 }
@@ -410,121 +383,5 @@ export default ({
 
 .c-mention.c-mention-to-me {
   background-color: $warning_1;
-  // background-color: #f2c74466;
-}
-
-.c-attachment-container {
-  position: relative;
-  padding: 0 0.5rem;
-  margin-top: 0.75rem;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.c-attachment-image,
-.c-attachment-non-image {
-  position: relative;
-  border-radius: inherit;
-  border: 1px solid $general_0;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.c-attachment-image {
-  max-height: 25rem;
-  width: 30rem;
-  // TODO: remove the tricky following styles
-  height: 20rem;
-  background-image: linear-gradient(90deg, $general_1 0%, $general_0 50%, $general_2 75%);
-
-  @include phone {
-    max-height: 10rem;
-    width: 15rem;
-  }
-}
-
-.c-attachment-non-image {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: 1fr;
-  grid-template-areas: "attachment-icon attachment-info";
-  align-items: center;
-  gap: 0.5rem;
-  width: 17.25rem;
-  min-height: 3.5rem;
-
-  .c-non-image-icon {
-    grid-area: attachment-icon;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: inherit;
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 1.25rem;
-    color: $primary_0;
-    background-color: $primary_2;
-  }
-
-  .c-non-image-file-info {
-    grid-area: attachment-info;
-    position: relative;
-    display: block;
-    line-height: 1.2;
-    width: calc(100% - 3.5rem);
-
-    .c-file-name {
-      position: relative;
-      font-weight: bold;
-      max-width: 13.25rem;
-    }
-
-    .c-file-ext {
-      text-transform: uppercase;
-    }
-  }
-}
-
-.c-attachment-actions-container {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0.5rem;
-  visibility: hidden;
-  display: flex;
-  align-items: center;
-}
-
-.c-attachment-image .c-attachment-actions-container {
-  align-items: flex-start;
-  padding-top: 0.5rem;
-}
-
-.c-attachment-actions {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-  background-color: $background_0;
-  padding: 2px;
-
-  .is-icon-small {
-    color: $text_1;
-    border-radius: 0;
-
-    &:hover {
-      background-color: $general_2;
-      color: $text_0;
-    }
-  }
-}
-
-.c-message:not(.pending) {
-  .c-attachment-image:hover .c-attachment-actions-container,
-  .c-attachment-non-image:hover .c-attachment-actions-container {
-    visibility: visible;
-  }
 }
 </style>

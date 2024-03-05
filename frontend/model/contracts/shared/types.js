@@ -45,10 +45,18 @@ export const messageType: any = objectMaybeOf({
     params: mapOf(string, string) // { username }
   }),
   attachments: arrayOf(objectOf({
-    attachType: string,
-    extension: string,
     name: string,
-    url: string
+    extension: string,
+    memeType: string,
+    attachmentId: string,
+    attachType: string,
+    downloadData: {
+      manifestCid: string,
+      downloadParams: {
+        IKM: string,
+        rs: number
+      }
+    }
   })),
   replyingMessage: objectOf({
     hash: string, // scroll to the original message and highlight

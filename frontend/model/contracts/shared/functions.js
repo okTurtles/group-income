@@ -51,12 +51,18 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
 // chatroom.js related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
-  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean, innerSigningContractID?: String
+  meta: Object,
+  data: Object,
+  hash: string,
+  height: number,
+  state?: Object,
+  pending?: boolean,
+  innerSigningContractID?: String
 }): Object {
   const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
-  let newMessage = {
+  let newMessage: any = {
     type,
     hash,
     height,
@@ -71,6 +77,11 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
       newMessage = { ...newMessage, replyingMessage }
     }
     if (attachments) {
+      attachments.forEach(attachment => {
+        // once file-upload is completed, the objectURL is no longer in use.
+        // !!!TODO!!! : remove/update this logic while working on graceful chat-attachment handling.
+        delete attachment.url
+      })
       newMessage = { ...newMessage, attachments }
     }
   } else if (type === MESSAGE_TYPES.POLL) {
