@@ -247,7 +247,7 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, CHATROOM_ATTACHMENT_UPLOADED } from '@utils/events.js'
+import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
 
@@ -370,9 +370,7 @@ export default ({
         })
     },
     isActive () {
-      return this.hasAttachments
-        ? this.ephemeral.attachments.every(attachment => Boolean(attachment.downloadData))
-        : this.ephemeral.textWithLines
+      return this.hasAttachments || this.ephemeral.textWithLines
     },
     textareaStyles () {
       return {
@@ -634,28 +632,6 @@ export default ({
       }
 
       this.ephemeral.attachments = list
-
-      // Start uploading the attached files to the server.
-      sbp('gi.actions/chatroom/upload-chat-attachments', this.ephemeral.attachments)
-
-      // Set up an event listener for the completion of upload.
-      const uplooadCompleteHandler = ({ attachmentId, downloadData }) => {
-        // update ephemeral.attachments with the passed download data.
-        this.ephemeral.attachments = this.ephemeral.attachments.map(entry => {
-          if (entry.attachmentId === attachmentId) {
-            return {
-              ...entry,
-              downloadData
-            }
-          } else return entry
-        })
-
-        if (this.ephemeral.attachments.every(entry => Boolean(entry.downloadData))) {
-          // if all attachments have been uploaded, destory the event listener.
-          sbp('okTurtles.events/off', CHATROOM_ATTACHMENT_UPLOADED)
-        }
-      }
-      sbp('okTurtles.events/on', CHATROOM_ATTACHMENT_UPLOADED, uplooadCompleteHandler)
     },
     clearAllAttachments () {
       this.ephemeral.attachments.forEach(attachment => {

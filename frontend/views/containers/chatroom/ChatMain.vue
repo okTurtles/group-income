@@ -138,6 +138,7 @@ import { findMessageIdx, createMessage } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { objectURLtoBlob } from '@utils/image.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -454,16 +455,16 @@ export default ({
           alert(e?.message || e)
         })
       }
-      const uploadAttachments = () => {
-        // TODO: Update the whole block this this function
-        console.log('Attachment Uploading Started...')
-        return new Promise((resolve) => {
-          const timeout = setTimeout(() => {
-            console.log('Attachment Uploading Finished...')
-            clearTimeout(timeout)
-            resolve()
-          }, 1000 * 3)
-        })
+      const uploadAttachments = async () => {
+        await Promise.all(attachments.map(async (attachment) => {
+          const { mimeType, url } = attachment
+          // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+          const attachmentBlob = await objectURLtoBlob(url)
+
+          attachment.downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+            type: mimeType, cipher: 'aes256gcm'
+          })
+        }))
       }
 
       if (!hasAttachments) {
@@ -491,6 +492,7 @@ export default ({
                 innerSigningContractID: this.ourIdentityContractId
               })
               this.messageState.contract.messages.push(temporaryMessage)
+              this.updateScroll()
 
               return false
             }

@@ -61,7 +61,7 @@
       )
         i.icon-times
 
-      .c-loader(v-if='!entry.downloadData')
+      .c-loader(v-if='isForDownload && !entry.downloadData')
 
   a.c-invisible-link(ref='downloadHelper')
 </template>

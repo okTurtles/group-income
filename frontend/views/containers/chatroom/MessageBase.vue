@@ -237,12 +237,6 @@ export default ({
                 text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
               }
         })
-    },
-    downloadAttachment (attachment) {
-      console.log('TODO - Attachment download', attachment)
-    },
-    deleteAttachment (attachment) {
-      console.log('TODO - Attachment delete', attachment)
     }
   }
 }: Object)
