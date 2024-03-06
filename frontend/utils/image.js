@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 
 // Copied from https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
-export function objectURLtoBlob (url: string): Blob {
+export function objectURLtoBlob (url: string): Promise<Blob> {
   return fetch(url).then(r => r.blob())
 }
 
