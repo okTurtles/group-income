@@ -6,15 +6,34 @@
       :key='entry.attachmentId'
       class='is-download-item'
       tabindex='0'
-      @click='downloadHandler(entry)'
     )
       .c-preview-non-image
         .c-non-image-icon
-          i.icon-download
+          i.icon-file
 
         .c-non-image-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
           .c-file-ext {{ fileExt(entry) }}
+
+        .c-attachment-actions
+          tooltip(
+            direction='top'
+            :text='L("Download")'
+          )
+            button.is-icon-small(
+              :aria-label='L("Download")'
+              @click='downloadAttachment(entry)'
+            )
+              i.icon-download
+          tooltip(
+            direction='top'
+            :text='L("Delete")'
+          )
+            button.is-icon-small(
+              :aria-label='L("Delete")'
+              @click='deleteAttachment(entry)'
+            )
+              i.icon-trash-alt
 
   template(v-else)
     .c-attachment-preview(
@@ -49,9 +68,13 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'ChatAttachmentPreview',
+  components: {
+    Tooltip
+  },
   props: {
     attachmentList: {
       // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
@@ -74,17 +97,18 @@ export default {
       const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
       return ext.toUpperCase()
     },
-    async downloadHandler (entry) {
-      if (!entry.downloadData) { return }
+    deleteAttachment (attachment) {
+      console.log('TODO - delete attachment')
+    },
+    async downloadAttachment (attachment) {
+      if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
-      const { downloadData, name, attachmentId } = entry
+      const { downloadData, name, attachmentId } = attachment
       this.isPreparingDownload = [...this.isPreparingDownload, attachmentId]
 
       try {
         const blob = await sbp('chelonia/fileDownload', downloadData)
-
-        console.log('!@# blob: ', blob)
         const url = URL.createObjectURL(blob)
         const aTag = this.$refs.downloadHelper
 
@@ -116,13 +140,42 @@ export default {
 
   &.is-for-download {
     padding: 0;
+
+    .c-preview-non-image .c-non-image-file-info {
+      width: calc(100% - 4rem);
+    }
+
+    .c-attachment-actions {
+      position: absolute;
+      right: 0.5rem;
+      display: none;
+      gap: 0.25rem;
+      background-color: $background_0;
+      padding: 2px;
+
+      .is-icon-small {
+        border-radius: 0;
+      }
+    }
+
+    .is-download-item {
+      &:hover .c-attachment-actions {
+        display: flex;
+      }
+
+      .c-preview-non-image {
+        max-width: 20rem;
+        min-width: 16rem;
+        min-height: 3.5rem;
+      }
+    }
   }
 }
 
 .c-attachment-preview {
   position: relative;
   display: inline-block;
-  border: 1px solid var(--general_0);
+  border: 1px solid $general_0;
   border-radius: 0.25rem;
 
   &.is-image {
@@ -130,8 +183,7 @@ export default {
     height: 4.5rem;
   }
 
-  &.is-non-image,
-  &.is-download-item {
+  &.is-non-image {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
@@ -251,10 +303,6 @@ export default {
     &:hover,
     &:focus {
       border-color: $text_1;
-
-      .c-file-name {
-        text-decoration: underline;
-      }
     }
 
     &:active,

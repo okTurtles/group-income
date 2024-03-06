@@ -388,7 +388,7 @@ export default ({
       this.ephemeral.replyingTo = null
     },
     handleSendMessage (text, attachments) {
-      const hasAttachments = attachments && attachments.length > 0
+      const hasAttachments = attachments?.length > 0
       const contractID = this.currentChatRoomId
       const replyingMessage = this.ephemeral.replyingMessageHash
         ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }

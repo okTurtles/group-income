@@ -272,8 +272,8 @@ export default ({
       color: $general_0;
     }
 
-    .c-attachment-image,
-    .c-attachment-non-image {
+    .c-attachments-wrapper {
+      pointer-events: none;
       filter: blur(0.125rem);
     }
   }

@@ -118,4 +118,9 @@ export const POLL_STATUS = {
   CLOSED: 'closed'
 }
 
+export const ATTACHMENT_TYPES = {
+  IMAGE: 'image',
+  NON_IMAGE: 'non-image'
+}
+
 export const POLL_MAX_OPTIONS = 20
