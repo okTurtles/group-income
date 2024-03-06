@@ -118,7 +118,6 @@ import { mapGetters } from 'vuex'
 import { Vue } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
-import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -212,7 +211,6 @@ export default ({
     ConversationGreetings,
     Emoticons,
     InfiniteLoading,
-    Loading,
     Message,
     MessageInteractive,
     MessageNotification,

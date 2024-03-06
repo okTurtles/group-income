@@ -202,9 +202,6 @@ export default ({
     isMention (o) {
       return o.type === TextObjectType.Mention
     },
-    isImage (attachment) {
-      return attachment.attachType === 'image'
-    },
     generateTextObjectsFromText (text) {
       if (!text) {
         return []
@@ -253,7 +250,6 @@ export default ({
     padding: 0.5rem 1.25rem;
   }
   position: relative;
-  max-height: 100%;
 
   &.removed {
     background-color: $danger_2;

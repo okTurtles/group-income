@@ -245,7 +245,7 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
@@ -626,7 +626,7 @@ export default ({
           extension: fileExt,
           mimeType: file.type || '',
           attachmentId: randomHexString(15),
-          attachType: file.type.match('image/') ? 'image' : 'non-image',
+          attachType: file.type.match('image/') ? ATTACHMENT_TYPES.IMAGE : ATTACHMENT_TYPES.NON_IMAGE,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
       }

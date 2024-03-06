@@ -7,7 +7,7 @@
       class='is-download-item'
       tabindex='0'
     )
-      .c-preview-non-image
+      .c-preview-non-image(v-if='!shouldPreviewImages')
         .c-non-image-icon
           i.icon-file
 
@@ -15,6 +15,17 @@
           .c-file-name.has-ellipsis {{ entry.name }}
           .c-file-ext {{ fileExt(entry) }}
 
+      .c-preview-img(v-else)
+        img(
+          v-if='preloadedBlobs[entry.attachmentId]'
+          :src='preloadedBlobs[entry.attachmentId].url'
+          :alt='entry.name'
+        )
+        .loading-box(v-else)
+
+      .c-attachment-actions-wrapper(
+        :class='{ "is-for-image": shouldPreviewImages }'
+      )
         .c-attachment-actions
           tooltip(
             direction='top'
@@ -69,6 +80,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
+import { ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -88,7 +100,24 @@ export default {
   },
   data () {
     return {
-      isPreparingDownload: []
+      isPreparingDownload: [],
+      preloadedBlobs: {}
+    }
+  },
+  computed: {
+    shouldPreviewImages () {
+      return !this.attachmentList.some(attachment => attachment.attachType === ATTACHMENT_TYPES.NON_IMAGE)
+    }
+  },
+  mounted () {
+    if (this.shouldPreviewImages) {
+      (async () => {
+        for await (const attachment of this.attachmentList) {
+          const blobWithURL = await this.getBlobWithURLFromAttachment(attachment)
+          this.preloadedBlobs[attachment.attachmentId] = blobWithURL
+        }
+        this.$forceUpdate()
+      })()
     }
   },
   methods: {
@@ -100,19 +129,27 @@ export default {
     deleteAttachment (attachment) {
       console.log('TODO - delete attachment')
     },
+    async getBlobWithURLFromAttachment (attachment) {
+      if (!attachment.downloadData) { return }
+      const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
+      const url = URL.createObjectURL(blob)
+      return { blob, url }
+    },
     async downloadAttachment (attachment) {
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
-      const { downloadData, name, attachmentId } = attachment
+      const { name, attachmentId } = attachment
       this.isPreparingDownload = [...this.isPreparingDownload, attachmentId]
 
       try {
-        const blob = await sbp('chelonia/fileDownload', downloadData)
-        const url = URL.createObjectURL(blob)
+        let blobWithURL = this.preloadedBlobs[attachment.attachmentId]
+        if (!blobWithURL) {
+          blobWithURL = await this.getBlobWithURLFromAttachment(attachment)
+        }
         const aTag = this.$refs.downloadHelper
 
-        aTag.setAttribute('href', url)
+        aTag.setAttribute('href', blobWithURL.url)
         aTag.setAttribute('download', name)
         aTag.click()
 
@@ -145,21 +182,36 @@ export default {
       width: calc(100% - 4rem);
     }
 
-    .c-attachment-actions {
+    .c-attachment-actions-wrapper {
+      display: none;
       position: absolute;
       right: 0.5rem;
-      display: none;
-      gap: 0.25rem;
-      background-color: $background_0;
-      padding: 2px;
+      top: 0;
+      bottom: 0;
 
-      .is-icon-small {
-        border-radius: 0;
+      .c-attachment-actions {
+        display: flex;
+        gap: 0.25rem;
+        align-self: center;
+        align-items: center;
+        background-color: $background_0;
+        padding: 2px;
+
+        .is-icon-small {
+          border-radius: 0;
+        }
+      }
+
+      &.is-for-image {
+        .c-attachment-actions {
+          align-self: flex-start;
+          margin-top: 0.5rem;
+        }
       }
     }
 
     .is-download-item {
-      &:hover .c-attachment-actions {
+      &:hover .c-attachment-actions-wrapper {
         display: flex;
       }
 
@@ -167,6 +219,33 @@ export default {
         max-width: 20rem;
         min-width: 16rem;
         min-height: 3.5rem;
+      }
+
+      .c-preview-img {
+        padding: 0.5rem;
+
+        img {
+          max-width: 100%;
+          max-height: 20rem;
+
+          @include phone {
+            max-height: 12rem;
+          }
+        }
+
+        .loading-box {
+          border-radius: 0;
+          width: 24rem;
+          margin-bottom: 0;
+
+          @include tablet {
+            width: 20rem;
+          }
+
+          @include phone {
+            width: 16rem;
+          }
+        }
       }
     }
   }
