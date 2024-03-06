@@ -1125,26 +1125,29 @@ export default (sbp('sbp/selectors/register', {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
+        const eventsStream = sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
         // Sanity check: verify event with latest hash exists in list of events
         // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
-        for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserializeHEAD(events[i]).hash === latest) {
-            latestHashFound = true
+        // state.contracts[contractID] && events.shift()
+        const eventReader = eventsStream.getReader()
+        // remove the first element in cases where we are not getting the contract for the first time
+        for (let skip = !!state.contracts[contractID]; ; skip = false) {
+          const { done, value: event } = await eventReader.read()
+          if (done) {
+            if (!latestHashFound) {
+              throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
+            }
             break
           }
-        }
-        if (!latestHashFound) {
-          throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
-        }
-        // remove the first element in cases where we are not getting the contract for the first time
-        state.contracts[contractID] && events.shift()
-        for (let i = 0; i < events.length; i++) {
+          if (!latestHashFound) {
+            latestHashFound = GIMessage.deserializeHEAD(event).hash === latest
+          }
+          if (skip) continue
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', contractID, events[i])
+          await sbp('chelonia/private/in/handleEvent', contractID, event)
         }
       } else if (!isSubcribed) {
         this.subscriptionSet.add(contractID)
