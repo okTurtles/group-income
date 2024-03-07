@@ -77,11 +77,6 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
       newMessage = { ...newMessage, replyingMessage }
     }
     if (attachments) {
-      attachments.forEach(attachment => {
-        // once file-upload is completed, the objectURL is no longer in use.
-        // !!!TODO!!! : remove/update this logic while working on graceful chat-attachment handling.
-        delete attachment.url
-      })
       newMessage = { ...newMessage, attachments }
     }
   } else if (type === MESSAGE_TYPES.POLL) {
