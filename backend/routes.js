@@ -89,6 +89,27 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   }
 })
 
+route.GET('/events/{contractID}/height/{height}', {
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string(),
+      height: Joi.number().integer().min(0).max(Number.MAX_SAFE_INTEGER)
+    })
+  }
+}, async function (request, h) {
+  const { contractID, height } = request.params
+  try {
+    if (contractID.startsWith('_private')) {
+      return Boom.notFound()
+    }
+
+    return await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
+  } catch (err) {
+    logger.error(err, `GET '/events/${contractID}/height/${height}`, err.message)
+    return err
+  }
+})
+
 route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
   const { before, limit } = request.params
   try {

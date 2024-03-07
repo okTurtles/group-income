@@ -149,9 +149,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       await sbp('chelonia/db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
-      if (entryPreviousHEAD) {
-        await sbp('chelonia/db/set', `next=${entryPreviousHEAD}`, entry.hash())
-      }
+      await sbp('chelonia/db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {

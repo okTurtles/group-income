@@ -138,6 +138,17 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
+const collectEventStream = async (s: ReadableStream) => {
+  const reader = s.getReader()
+  const r = []
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    r.push(value)
+  }
+  return r
+}
+
 const ignorableScrollDistanceInPixel = 500
 
 // The following methods are wrapped inside `debounce`, which requires calling
@@ -622,37 +633,44 @@ export default ({
       const isLoadedFromStorage = !this.ephemeral.messagesInitiated && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
-        const newEvents = await sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEventHash)
-        newEvents.shift() // NOTE: already exists in this.latestEvents
-        if (newEvents.length > 0) {
-          // This ensures that `this.latestEvents.push(message.serialize())`
-          // below happens in order
-          await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        const newEventsStream = sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEventHash)
+        const newEventsStreamReader = newEventsStream.getReader()
+        await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+          // NOTE: discard the first event, since it already exists in
+          // this.latestEvents
+          const { done } = await newEventsStreamReader.read()
+          if (done) return
+          if (!this.checkEventSourceConsistency(chatRoomId)) return
+
+          for (;;) {
+            const { done, value: event } = await newEventsStreamReader.read()
+            if (done) break
+
+            const state = this.messageState.contract
+            const newState = await sbp('chelonia/in/processMessage', event, state)
+
             if (!this.checkEventSourceConsistency(chatRoomId)) return
 
-            for (const event of newEvents) {
-              const state = this.messageState.contract
-              const newState = await sbp('chelonia/in/processMessage', event, state)
+            Vue.set(this.messageState, 'contract', newState)
+            this.latestEvents.push(event)
+          }
 
-              if (!this.checkEventSourceConsistency(chatRoomId)) return
-
-              Vue.set(this.messageState, 'contract', newState)
-              this.latestEvents.push(event)
-            }
-
-            this.$forceUpdate()
-          })
-        }
+          this.$forceUpdate()
+        }).catch(e => {
+          console.error('[ChatMain.vue] Error processing events at renderMoreMessages', e)
+        }).finally(() => {
+          newEventsStreamReader.releaseLock()
+        })
       } else {
         if (!this.ephemeral.messagesInitiated && messageHashToScroll) {
           const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
           events = await sbp('chelonia/out/eventsBetween', messageHashToScroll, latestHash, limit)
         } else if (!this.ephemeral.messagesInitiated || !this.latestEvents.length) {
           const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
-          events = await sbp('chelonia/out/eventsBefore', latestHash, limit)
+          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, latestHash, limit))
         } else {
           const before = GIMessage.deserializeHEAD(this.latestEvents[0]).hash
-          events = await sbp('chelonia/out/eventsBefore', before, limit)
+          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, before, limit))
         }
       }
 
@@ -684,8 +702,7 @@ export default ({
 
       this.initializeState()
 
-      // This ensures that `this.latestEvents.push(message.serialize())` below
-      // happens in order
+      // This ensures that `this.latestEvents.push(event)` below happens in order
       return sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
         if (!this.checkEventSourceConsistency(contractID)) return
 
@@ -794,7 +811,7 @@ export default ({
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         const { addedOrDeleted } = isMessageAddedOrDeleted(message)
 
-        // This ensures that `this.latestEvents.push(message.serialize())` below
+        // This ensures that `this.latestEvents.push(serializedMessage)` below
         // happens in order
         sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
           if (!this.checkEventSourceConsistency(contractID)) return

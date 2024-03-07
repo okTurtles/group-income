@@ -61,7 +61,7 @@ sbp('sbp/selectors/register', {
               this.push(`${prefix}"${strToB64(entry.serialize())}"`)
               prefix = ','
               counter++
-              currentHash = await sbp('chelonia/db/get', `next=${currentHash}`)
+              currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
             } else {
               this.push(counter > 0 ? ']' : '[]')
               this.push(null)

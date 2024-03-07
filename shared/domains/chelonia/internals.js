@@ -620,10 +620,11 @@ export default (sbp('sbp/selectors/register', {
         keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
-        if (!config.skipActionProcessing) {
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
+        if (config.skipActionProcessing) {
+          console.log('OP_ACTION_ENCRYPTED: skipped action processing')
+          return
         }
-        console.log('OP_ACTION_ENCRYPTED: skipped action processing')
+        opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {

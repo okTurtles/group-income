@@ -699,7 +699,7 @@ module.exports = (grunt) => {
   })
 
   process.on('unhandledRejection', (reason, p) => {
-    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason)
+    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason.message, reason.stack)
     process.exit(1)
   })
 }
