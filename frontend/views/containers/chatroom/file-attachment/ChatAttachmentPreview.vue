@@ -260,6 +260,10 @@ export default {
   &.is-image {
     width: 4.5rem;
     height: 4.5rem;
+
+    .c-preview-img {
+      pointer-events: none;
+    }
   }
 
   &.is-non-image {
