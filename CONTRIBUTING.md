@@ -39,7 +39,7 @@ This contribution policy will evolve over time. For now it is based on a slightl
 2. All patches are owned by their authors. There SHALL NOT be any copyright assignment process.
 3. Each Contributor SHALL be responsible for identifying themselves in the project Contributor list.
 
-#### Pull Request Requirements (:exclamation:)
+#### Pull Request Requirements (❗️)
 
 Pull requests (PRs) must adhere to the following requirements (unless the Founation is organizing a special hackathon, in which case, hackathon-rules apply).
 

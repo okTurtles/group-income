@@ -391,7 +391,7 @@ module.exports = (grunt) => {
       // The `--require` flag ensures custom Babel support in our test files.
       test: {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: { ...process.env, ENABLE_UNSAFE_NULL_CRYPTO: 'true' } }
+        options: { env: process.env }
       },
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }

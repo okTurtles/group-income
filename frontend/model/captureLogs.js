@@ -61,7 +61,16 @@ function captureLogEntry (type, ...args) {
     msg: args.map((arg) => {
       try {
         return JSON.parse(
-          JSON.stringify(arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+          JSON.stringify(arg, (_, v) => {
+            if (v instanceof Error) {
+              return {
+                name: v.name,
+                message: v.message,
+                stack: v.stack
+              }
+            }
+            return v
+          })
         )
       } catch (e) {
         return `[captureLogs failed to stringify argument of type '${typeof arg}'. Err: ${e.message}]`
