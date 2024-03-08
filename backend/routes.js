@@ -41,23 +41,27 @@ route.POST('/event', {
 }, async function (request, h) {
   try {
     console.debug('/event handler')
-    const entry = GIMessage.deserialize(request.payload)
+    const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
-      await sbp('backend/server/handleEntry', entry)
+      await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
     } catch (err) {
-      if (err.name === 'ChelErrorDBBadPreviousHEAD') {
-        console.error(err, chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'))
-        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', entry.contractID()) ?? { HEAD: null, height: 0 }
+      console.error(err, chalk.bold.yellow(err.name))
+      if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
+        const HEADinfo = await sbp('chelonia/db/latestHEADinfo', deserializedHEAD.contractID) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
           'shelter-headinfo-head': HEADinfo.HEAD,
           'shelter-headinfo-height': HEADinfo.height
         })
         return r
+      } else if (err.name === 'ChelErrorSignatureError') {
+        return Boom.badData('Invalid signature')
+      } else if (err.name === 'ChelErrorSignatureKeyUnauthorized') {
+        return Boom.forbidden('Unauthorized signing key')
       }
       throw err // rethrow error
     }
-    return entry.hash()
+    return deserializedHEAD.hash
   } catch (err) {
     logger.error(err, 'POST /event', err.message)
     return err

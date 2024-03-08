@@ -15,7 +15,7 @@ import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -121,7 +121,7 @@ describe('Full walkthrough', function () {
   }
 
   async function createIdentity (username, email, testFn) {
-    const CSK = keygen(SNULL)
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
 
@@ -159,7 +159,7 @@ describe('Full walkthrough', function () {
     return msg
   }
   function createGroup (name: string, creator: any, hooks: Object = {}): Promise {
-    const CSK = keygen(SNULL)
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
 

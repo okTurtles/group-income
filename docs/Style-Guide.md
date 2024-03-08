@@ -21,6 +21,12 @@ If you notice any file not properly linted by `standard`, this means there's a b
 
 _It is still on you to ensure your code conforms to the `standard` spec, whether or not the linter catches everything._
 
+### When to Write Comments
+
+1. Any time code can be interpreted as "weird", "unusual", "complex", or "non-idiomatic", the code should be either made normal/idiomatic, or a comment should be added clearly explaining why the weirdness/complexity exists.
+2. If you think someone else on the team might be confused by what you're doing, you should add a comment. If you are unsure, the answer is "yes, add a comment."
+3. If there is a large block of code that does a series of steps, for example, a large function or selector, that block of code should have at least a 1-line comment explaining in high-level terms what that code block is for.
+
 ### A Note On Classes: Avoid Them, Usually
 
 For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
