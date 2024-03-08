@@ -61,6 +61,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
+import VueRouter from 'vue-router'
 import { OPEN_MODAL } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SvgCreateGroup from '@svgs/create-group.svg'
@@ -96,20 +97,20 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     navigateToGroupPage () {
-      this.$router.push({
-        // NOTE:
-        // When browser refresh is triggered, there is an issue that Vue router prematurely decides ('loginGuard' there) that
-        // the user is not signed in when in actual reality user-login is still being processed and then
-        // takes user to 'Home.vue' with the '$route.query.next' being set to the initial url.
-        // In this particular condition, the app needs to immediately redirect user to '$route.query.next'
-        // so that the user stays in the same page after the browser refresh.
-        // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
-        path: this.$route.query.next ?? (
-          this.ourGroupProfile
-            ? '/dashboard'
-            : '/pending-approval'
-        )
-      }).catch(console.warn)
+      // NOTE:
+      // When browser refresh is triggered, there is an issue that Vue router prematurely decides ('loginGuard' there) that
+      // the user is not signed in when in actual reality user-login is still being processed and then
+      // takes user to 'Home.vue' with the '$route.query.next' being set to the initial url.
+      // In this particular condition, the app needs to immediately redirect user to '$route.query.next'
+      // so that the user stays in the same page after the browser refresh.
+      // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
+      const path = this.$route.query.next ?? (this.ourGroupProfile ? '/dashboard' : '/pending-approval')
+      this.$router.push({ path }).catch(e => {
+        const { isNavigationFailure, NavigationFailureType } = VueRouter
+        if (isNavigationFailure(e, NavigationFailureType.cancelled)) {
+          console.log(`[Home.vue] Navigation to ${path} cancelled, and another navigation took place instead`)
+        }
+      })
     }
   },
   watch: {
