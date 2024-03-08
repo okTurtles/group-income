@@ -2,8 +2,8 @@
 .c-attachment-container(:class='{ "is-for-download": isForDownload }')
   template(v-if='isForDownload')
     .c-attachment-preview(
-      v-for='entry in attachmentList'
-      :key='entry.attachmentId'
+      v-for='(entry, entryIndex) in attachmentList'
+      :key='entryIndex'
       class='is-download-item'
       tabindex='0'
     )
@@ -17,8 +17,8 @@
 
       .c-preview-img(v-else)
         img(
-          v-if='preloadedBlobs[entry.attachmentId]'
-          :src='preloadedBlobs[entry.attachmentId].url'
+          v-if='objectURLList[entryIndex]'
+          :src='objectURLList[entryIndex]'
           :alt='entry.name'
         )
         .loading-box(v-else)
@@ -33,7 +33,7 @@
           )
             button.is-icon-small(
               :aria-label='L("Download")'
-              @click='downloadAttachment(entry)'
+              @click='downloadAttachment(entryIndex)'
             )
               i.icon-download
           tooltip(
@@ -42,18 +42,18 @@
           )
             button.is-icon-small(
               :aria-label='L("Delete")'
-              @click='deleteAttachment(entry)'
+              @click='deleteAttachment(entryIndex)'
             )
               i.icon-trash-alt
 
   template(v-else)
     .c-attachment-preview(
-      v-for='entry in attachmentList'
-      :key='entry.attachmentId'
-      :class='"is-" + entry.attachType'
+      v-for='(entry, entryIndex) in attachmentList'
+      :key='entryIndex'
+      :class='"is-" + fileType(entry)'
     )
       img.c-preview-img(
-        v-if='entry.attachType === "image" && entry.url'
+        v-if='fileType(entry) === "image" && entry.url'
         :src='entry.url'
         :alt='entry.name'
       )
@@ -80,7 +80,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
-import { ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { getFileExtension } from '@view-utils/filters.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -89,7 +89,6 @@ export default {
   },
   props: {
     attachmentList: {
-      // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
       type: Array,
       required: true
     },
@@ -100,60 +99,59 @@ export default {
   },
   data () {
     return {
-      isPreparingDownload: [],
-      preloadedBlobs: {}
+      objectURLList: []
     }
   },
   computed: {
     shouldPreviewImages () {
-      return !this.attachmentList.some(attachment => attachment.attachType === ATTACHMENT_TYPES.NON_IMAGE)
+      return !this.attachmentList.some(attachment => {
+        return this.fileType(attachment) === 'non-image'
+      })
     }
   },
   mounted () {
     if (this.shouldPreviewImages) {
       (async () => {
-        for await (const attachment of this.attachmentList) {
-          const blobWithURL = await this.getBlobWithURLFromAttachment(attachment)
-          this.preloadedBlobs[attachment.attachmentId] = blobWithURL
-        }
+        this.objectURLList = await Promise.all(this.attachmentList.map(async (attachment) => {
+          return await this.getAttachmentObjectURL(attachment)
+        }))
         this.$forceUpdate()
       })()
     }
   },
   methods: {
     fileExt ({ name }) {
-      const lastDotIndex = name.lastIndexOf('.')
-      const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
-      return ext.toUpperCase()
+      return getFileExtension(name, true)
+    },
+    fileType ({ mimeType }) {
+      return mimeType.match('image/') ? 'image' : 'non-image'
     },
     deleteAttachment (attachment) {
       console.log('TODO - delete attachment')
     },
-    async getBlobWithURLFromAttachment (attachment) {
-      if (!attachment.downloadData) { return }
-      const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
-      const url = URL.createObjectURL(blob)
-      return { blob, url }
+    async getAttachmentObjectURL (attachment) {
+      if (attachment.url) {
+        return attachment.url
+      } else if (attachment.downloadData) {
+        const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
+        return URL.createObjectURL(blob)
+      }
     },
-    async downloadAttachment (attachment) {
+    async downloadAttachment (index) {
+      const attachment = this.attachmentList[index]
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
-      const { name, attachmentId } = attachment
-      this.isPreparingDownload = [...this.isPreparingDownload, attachmentId]
-
       try {
-        let blobWithURL = this.preloadedBlobs[attachment.attachmentId]
-        if (!blobWithURL) {
-          blobWithURL = await this.getBlobWithURLFromAttachment(attachment)
+        let url = this.objectURLList[index]
+        if (!url) {
+          url = await this.getAttachmentObjectURL(attachment)
         }
         const aTag = this.$refs.downloadHelper
 
-        aTag.setAttribute('href', blobWithURL.url)
-        aTag.setAttribute('download', name)
+        aTag.setAttribute('href', url)
+        aTag.setAttribute('download', attachment.name)
         aTag.click()
-
-        this.isPreparingDownload = this.isPreparingDownload.filter(v => v !== attachmentId)
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
       }

@@ -245,11 +245,12 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL, ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle, cloneDeep, randomHexString } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
+import { getFileExtension } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -307,6 +308,7 @@ export default ({
           index: -1
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        staleObjectURLs: [],
         typingUsers: []
       },
       typingUserTimeoutIds: {},
@@ -347,6 +349,10 @@ export default ({
     window.removeEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
+
+    this.ephemeral.staleObjectURLs.forEach(url => {
+      URL.revokeObjectURL(url)
+    })
   },
   computed: {
     ...mapGetters([
@@ -593,16 +599,11 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
-      const getFileExtension = name => {
-        const lastDotIndex = name.lastIndexOf('.')
-        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
-      }
-      const attachmentsExist = Boolean(this.ephemeral.attachments.length)
-      const list = appendItems && attachmentsExist
+      const list = appendItems && this.hasAttachments
         ? [...this.ephemeral.attachments]
         : []
 
-      if (attachmentsExist) {
+      if (this.hasAttachments) {
         // make sure to clear the previous state if there is already attached file(s).
         this.clearAllAttachments()
       }
@@ -619,14 +620,10 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
 
-        // !@#
         list.push({
           url: fileUrl,
           name: file.name,
-          extension: fileExt,
           mimeType: file.type || '',
-          attachmentId: randomHexString(15),
-          attachType: file.type.match('image/') ? ATTACHMENT_TYPES.IMAGE : ATTACHMENT_TYPES.NON_IMAGE,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
       }
@@ -634,9 +631,7 @@ export default ({
       this.ephemeral.attachments = list
     },
     clearAllAttachments () {
-      this.ephemeral.attachments.forEach(attachment => {
-        URL.revokeObjectURL(attachment.url)
-      })
+      this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
       this.ephemeral.attachments = []
     },
     removeAttachment (targetUrl) {

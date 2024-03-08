@@ -394,10 +394,6 @@ export default ({
         : null
 
       let data = { type: MESSAGE_TYPES.TEXT, text }
-      if (hasAttachments) {
-        // append attachments if exists
-        data = { ...data, attachments }
-      }
       if (replyingMessage) {
         // If not replying to a message, use original data; otherwise, append
         // replyingMessage to data.
@@ -408,9 +404,7 @@ export default ({
         const prepublish = (message) => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
-          if (beforePrePublish && typeof beforePrePublish === 'function') {
-            beforePrePublish()
-          }
+          beforePrePublish?.()
 
           // IMPORTANT: This is executed *BEFORE* the message is received over
           // the network
@@ -454,15 +448,17 @@ export default ({
         })
       }
       const uploadAttachments = async () => {
-        await Promise.all(attachments.map(async (attachment) => {
-          const { mimeType, url } = attachment
+        const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
+          const { mimeType, url, name } = attachment
           // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
           const attachmentBlob = await objectURLtoBlob(url)
-
-          attachment.downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+          const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
             type: mimeType, cipher: 'aes256gcm'
           })
+          return { name, mimeType, downloadData }
         }))
+
+        data = { ...data, attachments: attachmentsToSend }
       }
 
       if (!hasAttachments) {

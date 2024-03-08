@@ -2,10 +2,10 @@
 
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf,
-  string, optional, number, mapOf, literalOf
+  object, string, optional, number, mapOf, literalOf
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
-  CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, ATTACHMENT_TYPES,
+  CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, PROPOSAL_VARIANTS
 } from './constants.js'
 
@@ -46,16 +46,10 @@ export const messageType: any = objectMaybeOf({
   }),
   attachments: arrayOf(objectOf({
     name: string,
-    extension: string,
     mimeType: string,
-    attachmentId: string,
-    attachType: unionOf(...Object.values(ATTACHMENT_TYPES).map(v => literalOf(v))),
     downloadData: objectOf({
       manifestCid: string,
-      downloadParams: objectOf({
-        IKM: string,
-        rs: number
-      })
+      downloadParams: optional(object)
     })
   })),
   replyingMessage: objectOf({
