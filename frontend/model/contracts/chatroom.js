@@ -172,7 +172,11 @@ sbp('chelonia/defineContract', {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
         }
         if (!state.onlyRenderMessage) {
-          if (state.members[memberID]) {
+          // For private chatrooms, group members can see the '/join' actions
+          // but nothing else. Because of this, `state.members` may be missing
+          if (!state.members) {
+            Vue.set(state, 'members', {})
+          } else if (state.members[memberID]) {
             throw new Error(`Can not join the chatroom which ${memberID} is already part of`)
           }
 
@@ -300,6 +304,7 @@ sbp('chelonia/defineContract', {
         if (!state.onlyRenderMessage) {
           if (!state.members) {
             console.error('Missing state.members: ' + JSON.stringify(state))
+            throw new Error('Missing members state')
           }
           if (!state.members[memberID]) {
             throw new Error(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
