@@ -45,8 +45,8 @@ route.POST('/event', {
     try {
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
     } catch (err) {
+      console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
-        console.error(err, chalk.bold.yellow(err.name))
         const HEADinfo = await sbp('chelonia/db/latestHEADinfo', deserializedHEAD.contractID) ?? { HEAD: null, height: 0 }
         const r = Boom.conflict(err.message, { HEADinfo })
         Object.assign(r.output.headers, {
@@ -55,10 +55,8 @@ route.POST('/event', {
         })
         return r
       } else if (err.name === 'ChelErrorSignatureError') {
-        console.error(err, chalk.bold.yellow(err.name))
         return Boom.badData('Invalid signature')
       } else if (err.name === 'ChelErrorSignatureKeyUnauthorized') {
-        console.error(err, chalk.bold.yellow(err.name))
         return Boom.forbidden('Unauthorized signing key')
       }
       throw err // rethrow error
