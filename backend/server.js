@@ -82,9 +82,22 @@ sbp('sbp/selectors/register', {
       // Save the state under a 'contract partition' key, so that updating a
       // contract doesn't require saving the entire state.
       // Although it's not important for the server right now, this will fail to
-      // persist changes the state for other contracts (for example, this happens
-      // when watching keys)
-      await sbp('chelonia/db/set', '_private_cheloniaState_cp_' + contractID, JSON.stringify(state))
+      // persist changes to the state for other contracts.
+      // For example, when watching foreign keys, this happens: whenever a
+      // foreign key for contract A is added to contract B, the private state
+      // for both contract A and B is updated (when both contracts are being
+      // monitored by Chelonia). However, here in this case, the updated state
+      // for contract A will not be saved immediately here, and it will only be
+      // saved if some other event happens later on contract A.
+      // TODO: If, in the future, processing a message affects other contracts
+      // in a way that is meaningful to the server, there'll need to be a way
+      // to detect these changes as well. One example could be, expanding on the
+      // previous scenario, if we decide that the server should enforce key
+      // rotations, so that updating a foreign key 'locks' that contract until
+      // the foreign key is rotated or deleted. For this to work reliably, we'd
+      // need to ensure that the state for both contract B and contract A are
+      // saved when the foreign key gets added to contract B.
+      await sbp('chelonia/db/set', '_private_cheloniaState_' + contractID, JSON.stringify(state))
     }
     // If this is a new contract, we also need to add it to the index, which
     // is used when starting up the server to know which keys to fetch.
@@ -176,7 +189,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     const recoveredState = Object.create(null)
     recoveredState.contracts = Object.create(null)
     await Promise.all(savedStateIndex.split('\x00').map(async (contractID) => {
-      const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_cp_${contractID}`)
+      const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_${contractID}`)
       if (!cpSerialized) return
       const cp = JSON.parse(cpSerialized)
       recoveredState[contractID] = cp.contractState
