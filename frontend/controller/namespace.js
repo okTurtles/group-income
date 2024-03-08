@@ -27,13 +27,15 @@ sbp('sbp/selectors/register', {
       return cache[name]
     }
   },
-  'namespace/lookup': (name: string) => {
-    const cached = sbp('namespace/lookupCached', name)
-    if (cached) {
-      // Wrapping in a Promise to return a consistent type across all execution
-      // paths (next return is a Promise)
-      // This way we can call .then() on the result
-      return Promise.resolve(cached)
+  'namespace/lookup': (name: string, { skipCache }: { skipCache: boolean } = { skipCache: false }) => {
+    if (!skipCache) {
+      const cached = sbp('namespace/lookupCached', name)
+      if (cached) {
+        // Wrapping in a Promise to return a consistent type across all execution
+        // paths (next return is a Promise)
+        // This way we can call .then() on the result
+        return Promise.resolve(cached)
+      }
     }
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${encodeURIComponent(name)}`).then((r: Object) => {
       if (!r.ok) {

@@ -47,6 +47,30 @@ const validateUsername = (username: string) => {
   }
 }
 
+const checkUsernameConsistency = async (contractID: string, username: string) => {
+  // Lookup and save the username so that we can verify that it matches
+  const lookupResult = await sbp('namespace/lookup', username, { skipCache: true })
+  if (lookupResult === contractID) return
+
+  console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`)
+
+  // If there was a mismatch, wait until the contract is finished processing
+  // (because the username could have been updated), and if the situation
+  // persists, warn the user
+  sbp('chelonia/queueInvocation', contractID, () => {
+    const rootState = sbp('state/vuex/state')
+    if (!has(rootState, contractID)) return
+
+    const username = rootState[contractID].attributes.username
+    if (sbp('namespace/lookupCached', username) !== contractID) {
+      sbp('gi.notifications/emit', 'WARNING', {
+        contractID,
+        message: L('Unable to confirm that the username {username} belongs to this identity contract', { username })
+      })
+    }
+  })
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
   getters: {
@@ -70,24 +94,7 @@ sbp('chelonia/defineContract', {
         if (!username) {
           throw new TypeError('A username is required')
         }
-        if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-          throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
-        }
-        if (!allowedUsernameCharacters(username)) {
-          throw new TypeError('A username cannot contain disallowed characters.')
-        }
-        if (!noConsecutiveHyphensOrUnderscores(username)) {
-          throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
-        }
-        if (!noLeadingOrTrailingHyphen(username)) {
-          throw new TypeError('A username cannot start or end with a hyphen.')
-        }
-        if (!noLeadingOrTrailingUnderscore(username)) {
-          throw new TypeError('A username cannot start or end with an underscore.')
-        }
-        if (!noUppercase(username)) {
-          throw new TypeError('A username cannot contain uppercase letters.')
-        }
+        validateUsername(username)
       },
       process ({ data }, { state }) {
         const initialState = merge({
@@ -101,11 +108,7 @@ sbp('chelonia/defineContract', {
         }
       },
       async sideEffect ({ contractID, data }) {
-        // Lookup and save the username so that we can verify that it matches
-        const lookupResult = await sbp('namespace/lookup', data.attributes.username)
-        if (lookupResult !== contractID) {
-          console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`)
-        }
+        await checkUsernameConsistency(contractID, data.attributes.username)
       }
     },
     'gi.contracts/identity/setAttributes': {
@@ -122,11 +125,7 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ contractID, data }) {
         if (has(data, 'username')) {
-          // Lookup and save the username so that we can verify that it matches
-          const lookupResult = await sbp('namespace/lookup', data.attributes.username)
-          if (lookupResult !== contractID) {
-            console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`)
-          }
+          await checkUsernameConsistency(contractID, data.username)
         }
       }
     },
