@@ -324,6 +324,10 @@ export class GIMessage {
       },
       get contractID () {
         return result.head?.contractID ?? result.hash
+      },
+      description (): string {
+        const type = this.head.op
+        return `<op_${type}|${this.hash} of ${this.contractID}>`
       }
     }
     return result

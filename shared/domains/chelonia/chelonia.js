@@ -205,8 +205,19 @@ export default (sbp('sbp/selectors/register', {
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
+      // acceptAllMessages disables checking whether we are expecting a message
+      // or not for processing
+      acceptAllMessages: false,
       skipActionProcessing: false,
       skipSideEffects: false,
+      // Strict processing will treat all processing errors as unrecoverable
+      // This is useful, e.g., in the server, to prevent invalid messages from
+      // being added to the database
+      strictProcessing: false,
+      // Strict ordering will throw on past events with ChelErrorAlreadyProcessed
+      // Similarly, future events will not be reingested and will throw
+      // with ChelErrorDBBadPreviousHEAD
+      strictOrdering: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
         reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets
