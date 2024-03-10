@@ -56,6 +56,7 @@
         chat-attachment-preview(
           :attachmentList='attachments'
           :isForDownload='true'
+          :isMsgCreator='isMsgSender'
         )
   .c-full-width-body
     slot(name='full-width-body')
@@ -73,7 +74,7 @@
     v-if='!isEditing'
     :variant='variant'
     :type='type'
-    :isCurrentUser='isCurrentUser'
+    :isMsgSender='isMsgSender'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
@@ -137,7 +138,7 @@ export default ({
     },
     variant: String,
     isSameSender: Boolean,
-    isCurrentUser: Boolean,
+    isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },
   computed: {

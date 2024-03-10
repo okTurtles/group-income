@@ -78,7 +78,7 @@
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
-          :isCurrentUser='isCurrentUser(message.from)'
+          :isMsgSender='isMsgSender(message.from)'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
@@ -344,11 +344,11 @@ export default ({
         [MESSAGE_TYPES.POLL]: 'message-poll'
       }[message.type]
     },
-    isCurrentUser (from) {
+    isMsgSender (from) {
       return this.currentUserAttr.id === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
+      const user = this.isMsgSender(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -357,7 +357,7 @@ export default ({
       } else if (message.hasFailed) {
         return MESSAGE_VARIANTS.FAILED
       } else {
-        return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
+        return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
     replyingMessage (message) {
@@ -905,7 +905,7 @@ export default ({
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
               this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              const fromOurselves = this.isCurrentUser(this.messages[this.messages.length - 1].from)
+              const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else if (!isScrollable && this.messages.length) {

@@ -61,7 +61,7 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    isCurrentUser: Boolean // says if the current user is the creator of the message
+    isMsgSender: Boolean // says if the current user is the creator of the message
   },
   data () {
     return {
@@ -82,7 +82,7 @@ export default ({
       return this.votesFlattened.includes(this.ourIdentityContractId)
     },
     isPollEditable () { // If the current user is the creator of the poll and no one has voted yet, poll can be editted.
-      return this.isCurrentUser && this.votesFlattened.length === 0
+      return this.isMsgSender && this.votesFlattened.length === 0
     },
     isPollExpired () {
       return this.pollData.status === POLL_STATUS.CLOSED

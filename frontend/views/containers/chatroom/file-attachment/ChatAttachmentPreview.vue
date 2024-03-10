@@ -37,6 +37,7 @@
             )
               i.icon-download
           tooltip(
+            v-if='isMsgCreator'
             direction='top'
             :text='L("Delete")'
           )
@@ -95,6 +96,10 @@ export default {
     isForDownload: {
       type: Boolean,
       default: false
+    },
+    isMsgCreator: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -127,7 +132,7 @@ export default {
       return mimeType.match('image/') ? 'image' : 'non-image'
     },
     deleteAttachment (attachment) {
-      console.log('TODO - delete attachment')
+      alert('TODO - delete attachment')
     },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
@@ -379,8 +384,6 @@ export default {
   }
 
   &.is-download-item {
-    cursor: pointer;
-
     &:hover,
     &:focus {
       border-color: $text_1;

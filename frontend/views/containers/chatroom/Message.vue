@@ -45,7 +45,7 @@ export default ({
       default: null
     },
     isSameSender: Boolean,
-    isCurrentUser: Boolean,
+    isMsgSender: Boolean,
     replyingMessage: null
   },
   constants: Object.freeze({

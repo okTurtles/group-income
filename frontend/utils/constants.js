@@ -9,7 +9,7 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
   'aac', 'cda', 'mid', 'midi', 'mp3', 'oga', 'opus', 'wav', 'weba', // audio
   'avi', 'mov', 'mp4', 'mpeg', 'ogv', 'ogx', 'ts', 'webm', '3gp', '3g2', // video
   'arc', 'bz', 'bz2', 'epub', 'gz', 'jar', 'rar', 'tar', 'zip', '7z', // archive
-  'csh', 'css', 'csv', 'doc', 'docx', 'htm', 'html', 'ics', 'js', 'json', 'jsonld', 'md', 'mjs',
+  'csh', 'css', 'csv', 'doc', 'docx', 'htm', 'html', 'ics', 'js', 'json', 'jsonld', 'md', 'mjs', 'vue', 'ts', 'scss',
   'odp', 'ods', 'odt', 'pdf', 'php', 'ppt', 'pptx', 'sh', 'txt', 'xhtml', 'xls', 'xlsx', 'xml', // common text/document
   'eot', 'otf', 'rtf', 'ttf', 'woff', 'woff2', // font
   'abw', 'azw', 'bin', 'csh', 'db', 'mpkg', 'vsd', 'xul' // miscellaneous
