@@ -13,7 +13,7 @@ exports.plugin = {
       return {
         authenticate: function (request, h) {
           const { authorization } = request.headers
-          if (!authorization) h.unauthenticated(Boom.unauthorized('Missing authorization'))
+          if (!authorization) return h.unauthenticated(Boom.unauthorized('Missing authorization'))
 
           let [scheme, json] = authorization.split(/\s+/)
           // NOTE: if you want to add any signature verification, do it here

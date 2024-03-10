@@ -110,7 +110,7 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
   return true
 }
 
-export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
+export const validateKeyPermissions = (config: Object, state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
   const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
   if (
     !signingKey ||
@@ -135,6 +135,7 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
   }
 
   if (
+    !config.skipActionProcessing &&
     opT === GIMessage.OP_ACTION_ENCRYPTED &&
     !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf(), direction)
   ) {
@@ -278,18 +279,16 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
         key.meta.private.content &&
         !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
       ) {
-        try {
-          decryptedKey = key.meta.private.content.valueOf()
-          decryptedKeys.push([key.id, decryptedKey])
-          storeSecretKey(key, decryptedKey)
-        } catch (e) {
-          console.warn(`Secret key decryption error '${e.message || e}':`, e)
-          // Ricardo feels this is an ambiguous situation, however if we rethrow it will
-          // render the contract unusable because it will undo all our changes to the state,
-          // and it's possible that an error here shouldn't necessarily break the entire
-          // contract. For example, in some situations we might read a contract as
-          // read-only and not have the key to write to it.
+        const decryptedKeyResult = unwrapMaybeEncryptedData(key.meta.private.content)
+        // Unable to decrypt
+        if (!decryptedKeyResult) continue
+        // Data aren't encrypted
+        if (decryptedKeyResult.encryptionKeyId == null) {
+          throw new Error('Expected encrypted data but got unencrypted data for key with ID: ' + key.id)
         }
+        decryptedKey = decryptedKeyResult.data
+        decryptedKeys.push([key.id, decryptedKey])
+        storeSecretKey(key, decryptedKey)
       }
     }
 
