@@ -831,22 +831,26 @@ export default (sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsAfter': function (contractID: string, since: string, limit?: number) {
+  'chelonia/out/eventsAfter': function (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string) {
     const fetchEventsStreamReader = async () => {
       requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
-      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}/${requestLimit}`, { signal })
+      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}/${requestLimit}`, { signal })
       if (!eventsResponse.ok) throw new Error('Unexpected status code')
       if (!eventsResponse.body) throw new Error('Missing body')
-      latestHEAD = eventsResponse.headers.get('shelter-headinfo-head')
+      latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
+      if (!Number.isSafeInteger(latestHeight)) throw new Error('Invalid latest height')
       requestCount++
       // $FlowFixMe[incompatible-use]
       return eventsResponse.body.getReader()
+    }
+    if (!Number.isSafeInteger(sinceHeight) || sinceHeight < 0) {
+      throw new TypeError('Invalid since height value. Expected positive integer.')
     }
     const signal = this.abortController.signal
     let requestCount = 0
     let remainingEvents = limit ?? Number.POSITIVE_INFINITY
     let eventsStreamReader
-    let latestHEAD
+    let latestHeight
     let state: 'fetch' | 'read-eos' | 'read-new-response' | 'read' | 'events' = 'fetch'
     let requestLimit: number
     let count: number
@@ -878,7 +882,7 @@ export default (sbp('sbp/selectors/register', {
               // data by making a new request
               if (done) {
                 // No more events to process or reached the latest event
-                if (remainingEvents === 0 || since === latestHEAD) {
+                if (remainingEvents === 0 || sinceHeight === latestHeight) {
                   controller.close()
                   return
                 } else if (state === 'read-new-response' || buffer) {
@@ -946,7 +950,8 @@ export default (sbp('sbp/selectors/register', {
                   currentEvent = b64ToStr(JSON.parse(eventValue))
                   if (count === 0) {
                     const hash = GIMessage.deserializeHEAD(currentEvent).hash
-                    if (hash !== since) {
+                    const height = GIMessage.deserializeHEAD(currentEvent).head.height
+                    if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
                       controller.error(new Error('hash() !== since'))
                       return
                     }
@@ -965,7 +970,9 @@ export default (sbp('sbp/selectors/register', {
                 // switch to 'read-eos'.
                 if (buffer[nextIdx] === ']') {
                   if (currentEvent) {
-                    since = GIMessage.deserializeHEAD(currentEvent).hash
+                    const deserialized = GIMessage.deserializeHEAD(currentEvent)
+                    sinceHeight = deserialized.head.height
+                    sinceHash = deserialized.hash
                   }
                   state = 'read-eos'
                   // This should be an empty string now
@@ -1001,19 +1008,35 @@ export default (sbp('sbp/selectors/register', {
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
-  'chelonia/out/eventsBefore': function (contractID: string, before: string, limit: number) {
+  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
+    }
+    const offset = Math.max(0, beforeHeight - limit + 1)
+    const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
+    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit)
+  },
+  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0) {
+    if (offset < 0) {
+      console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
+      return
     }
     let reader: ReadableStreamReader
     return new ReadableStream({
       start: async (controller) => {
-        const last = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${before}/1`, { signal: this.abortController.signal }).then(handleFetchResult('json'))
-        const deserializedHEAD = GIMessage.deserializeHEAD(b64ToStr(last[0]))
-        const height = deserializedHEAD.head.height
-        const offset = Math.max(0, deserializedHEAD.head.height - limit)
-        const since = offset ? await fetch(`${this.config.connectionURL}/events/${contractID}/height/${offset}`, { signal: this.abortController.signal }).then(handleFetchResult('text')) : contractID
-        reader = sbp('chelonia/out/eventsAfter', contractID, since, height + offset + 1).getReader()
+        const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        const deserializedHEAD = GIMessage.deserializeHEAD(first)
+        if (deserializedHEAD.contractID !== contractID) {
+          controller.error(new Error('Mismatched contract ID'))
+          return
+        }
+        const startOffset = Math.max(0, deserializedHEAD.head.height - offset)
+        const limit = endHeight - startOffset + 1
+        if (limit < 1) {
+          controller.close()
+          return
+        }
+        reader = sbp('chelonia/out/eventsAfter', contractID, startOffset, limit).getReader()
       },
       async pull (controller) {
         const { done, value } = await reader.read()
@@ -1025,18 +1048,6 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0) {
-    if (offset < 0) {
-      console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
-      return
-    }
-
-    const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
-  },
   'chelonia/rootState': function () { return sbp(this.config.stateSelector) },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
     const rootState = sbp(this.config.stateSelector)
@@ -1045,22 +1056,13 @@ export default (sbp('sbp/selectors/register', {
     if (!options.forceSync && rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
-    const events = await sbp('chelonia/private/out/eventsAfter', contractID, contractID)
     let state = Object.create(null)
+    const eventsStream = sbp('chelonia/out/eventsAfter', contractID, 0, undefined, contractID)
+    const eventsStreamReader = eventsStream.getReader()
     if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
-    // fast-path
-    try {
-      for (const event of events) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
-      }
-      return state
-    } catch (e) {
-      console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`, e.stack)
-      state = Object.create(null)
-      if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
-    }
-    // more error-tolerant but slower due to cloning state on each message
-    for (const event of events) {
+    for (;;) {
+      const { value: event, done } = await eventsStreamReader.read()
+      if (done) return state
       const stateCopy = cloneDeep(state)
       try {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
@@ -1070,7 +1072,6 @@ export default (sbp('sbp/selectors/register', {
         state = stateCopy
       }
     }
-    return state
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {

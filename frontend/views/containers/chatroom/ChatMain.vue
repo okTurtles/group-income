@@ -479,7 +479,7 @@ export default ({
       } else {
         const contractID = this.summary.chatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events = await sbp('chelonia/out/eventsBetween', messageHash, this.messages[0].hash, limit / 2)
+        const events = await collectEventStream(sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2))
         if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
@@ -632,8 +632,8 @@ export default ({
       let events = []
       const isLoadedFromStorage = !this.ephemeral.messagesInitiated && this.latestEvents.length
       if (isLoadedFromStorage) {
-        const prevLastEventHash = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
-        const newEventsStream = sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEventHash)
+        const prevLastEvent = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
+        const newEventsStream = sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEvent.height, undefined, prevLastEvent.hash)
         const newEventsStreamReader = newEventsStream.getReader()
         await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
           // NOTE: discard the first event, since it already exists in
@@ -663,14 +663,14 @@ export default ({
         })
       } else {
         if (!this.ephemeral.messagesInitiated && messageHashToScroll) {
-          const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
-          events = await sbp('chelonia/out/eventsBetween', messageHashToScroll, latestHash, limit)
+          const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
+          events = await collectEventStream(sbp('chelonia/out/eventsBetween', chatRoomId, messageHashToScroll, latestHeight, limit))
         } else if (!this.ephemeral.messagesInitiated || !this.latestEvents.length) {
-          const { HEAD: latestHash } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
-          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, latestHash, limit))
+          const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
+          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, latestHeight, limit))
         } else {
-          const before = GIMessage.deserializeHEAD(this.latestEvents[0]).hash
-          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, before, limit))
+          const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
+          events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, beforeHeight, limit))
         }
       }
 
@@ -725,10 +725,15 @@ export default ({
       if (!this.checkEventSourceConsistency(chatRoomId)) return
 
       const latestEvents = prevState ? JSON.parse(prevState) : []
-      this.messageState.prevFrom = latestEvents.length ? GIMessage.deserializeHEAD(latestEvents[0]).hash : null
-      this.messageState.prevTo = latestEvents.length
-        ? GIMessage.deserializeHEAD(latestEvents[latestEvents.length - 1]).hash
-        : null
+      if (latestEvents.length) {
+        const deserializedHEADfirst = GIMessage.deserializeHEAD(latestEvents[0])
+        const deserializedHEADlast = GIMessage.deserializeHEAD(latestEvents[latestEvents.length - 1])
+        this.messageState.prevFrom = { hash: deserializedHEADfirst.hash, height: deserializedHEADfirst.head.height }
+        this.messageState.prevTo = { hash: deserializedHEADlast.hash, height: deserializedHEADlast.head.height }
+      } else {
+        this.messageState.prevFrom = null
+        this.messageState.prevTo = null
+      }
 
       await this.rerenderEvents(latestEvents)
     },
@@ -956,7 +961,7 @@ export default ({
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
       if (latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
         sbp('gi.db/archive/delete', this.archiveKeyFromChatRoomId(chatRoomId))
-      } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
+      } else if (to !== this.messageState.prevTo?.hash || from !== this.messageState.prevFrom?.hash) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast
         // so it's good to initiate using input parameter chatRoomId
         sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(latestEvents))

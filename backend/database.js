@@ -41,7 +41,7 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string, requestedLimit: number = MAX_EVENTS_AFTER): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: number = MAX_EVENTS_AFTER): Promise<*> {
     const limit = Math.min(requestedLimit, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!latestHEADinfo) {
@@ -49,7 +49,7 @@ sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let currentHash = hash
+    let currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
     let prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
