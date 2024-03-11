@@ -228,6 +228,7 @@ export default {
         padding: 0.5rem;
 
         img {
+          pointer-events: none;
           max-width: 100%;
           max-height: 20rem;
 
