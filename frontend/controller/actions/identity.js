@@ -209,7 +209,8 @@ export default (sbp('sbp/selectors/register', {
         ],
         data: {
           attributes: { username, email, picture: finalPicture }
-        }
+        },
+        namespaceRegistration: username
       })
 
       userID = user.contractID()
@@ -238,7 +239,6 @@ export default (sbp('sbp/selectors/register', {
         },
         publishOptions
       })
-      await sbp('namespace/register', username, userID)
       return userID
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?

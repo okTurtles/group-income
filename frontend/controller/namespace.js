@@ -2,10 +2,12 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
+  /*
+  // Registration is done when creating a contract, using the
+  // `shelter-namespace-registration` header
   'namespace/register': (name: string, value: string) => {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
@@ -18,6 +20,7 @@ sbp('sbp/selectors/register', {
       return result
     })
   },
+  */
   'namespace/lookupCached': (name: string) => {
     const cache = sbp('state/vuex/state').namespaceLookups
     if (name in cache) {
