@@ -117,8 +117,8 @@ export default {
   mounted () {
     if (this.shouldPreviewImages) {
       (async () => {
-        this.objectURLList = await Promise.all(this.attachmentList.map(async (attachment) => {
-          return await this.getAttachmentObjectURL(attachment)
+        this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
+          return this.getAttachmentObjectURL(attachment)
         }))
         this.$forceUpdate()
       })()
