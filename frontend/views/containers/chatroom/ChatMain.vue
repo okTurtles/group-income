@@ -479,7 +479,9 @@ export default ({
       } else {
         const contractID = this.summary.chatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events = await collectEventStream(sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2))
+        const events = await collectEventStream(sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2)).catch((e) => {
+          console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`)
+        })
         if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
