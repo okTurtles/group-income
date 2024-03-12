@@ -497,10 +497,12 @@ export default ({
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
-      if (this.summary.chatRoomId) {
+      const contractID = this.summary.chatRoomId
+      if (contractID) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
           if (scrollTargetMessage) {
+            if (!this.checkEventSourceConsistency(contractID)) return
             this.scrollToMessage(scrollTargetMessage, effect)
           } else {
             this.jumpToLatest()
@@ -664,9 +666,11 @@ export default ({
       } else {
         if (!this.ephemeral.messagesInitiated && messageHashToScroll) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
+          if (!this.checkEventSourceConsistency(chatRoomId)) return
           events = await collectEventStream(sbp('chelonia/out/eventsBetween', chatRoomId, messageHashToScroll, latestHeight, limit))
         } else if (!this.ephemeral.messagesInitiated || !this.latestEvents.length) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomId)
+          if (!this.checkEventSourceConsistency(chatRoomId)) return
           events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomId, latestHeight, limit))
         } else {
           const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height

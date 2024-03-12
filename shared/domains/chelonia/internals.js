@@ -611,7 +611,9 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (config.skipActionProcessing) {
-          console.log('OP_ACTION_ENCRYPTED: skipped action processing')
+          if (process.env.BUILD === 'web') {
+            console.log('OP_ACTION_ENCRYPTED: skipped action processing')
+          }
           return
         }
         opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
