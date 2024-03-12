@@ -5,7 +5,6 @@ import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
-import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
@@ -19,9 +18,7 @@ import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import './files.js'
-import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
-
-const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
+import { eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -828,180 +825,7 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
-  // TODO: r.body is a stream.Transform, should we use a callback to process
-  //       the events one-by-one instead of converting to giant json object?
-  //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsAfter': function (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string) {
-    const fetchEventsStreamReader = async () => {
-      requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
-      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`, { signal })
-      if (!eventsResponse.ok) throw new Error('Unexpected status code')
-      if (!eventsResponse.body) throw new Error('Missing body')
-      latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
-      if (!Number.isSafeInteger(latestHeight)) throw new Error('Invalid latest height')
-      requestCount++
-      // $FlowFixMe[incompatible-use]
-      return eventsResponse.body.getReader()
-    }
-    if (!Number.isSafeInteger(sinceHeight) || sinceHeight < 0) {
-      throw new TypeError('Invalid since height value. Expected positive integer.')
-    }
-    const signal = this.abortController.signal
-    let requestCount = 0
-    let remainingEvents = limit ?? Number.POSITIVE_INFINITY
-    let eventsStreamReader
-    let latestHeight
-    let state: 'fetch' | 'read-eos' | 'read-new-response' | 'read' | 'events' = 'fetch'
-    let requestLimit: number
-    let count: number
-    let buffer: string = ''
-    let currentEvent: string
-    // return ReadableStream with a custom pull function to handle streamed data
-    return new ReadableStream({
-      // The pull function is called whenever the internal buffer of the stream
-      // becomes empty and needs more data.
-      async pull (controller) {
-        for (;;) {
-          // Handle different states of the stream reading process.
-          switch (state) {
-            // When in 'fetch' state, initiate a new fetch request to obtain a
-            // stream reader for events.
-            case 'fetch': {
-              eventsStreamReader = await fetchEventsStreamReader()
-              // Transition to reading the new response and reset the processed
-              // events counter
-              state = 'read-new-response'
-              count = 0
-              break
-            }
-            case 'read-eos': // End of stream case
-            case 'read-new-response': // Just started reading a new response
-            case 'read': { // Reading from the response stream
-              const { done, value } = await eventsStreamReader.read()
-              // If done, determine if the stream should close or fetch more
-              // data by making a new request
-              if (done) {
-                // No more events to process or reached the latest event
-                if (remainingEvents === 0 || sinceHeight === latestHeight) {
-                  controller.close()
-                  return
-                } else if (state === 'read-new-response' || buffer) {
-                  // If done prematurely, throw an error
-                  controller.error(new Error('Invalid response: done too early'))
-                  return
-                } else {
-                  // If there are still events to fetch, switch state to fetch
-                  state = 'fetch'
-                  break
-                }
-              }
-              if (!value) {
-                // If there's no value (e.g., empty response), throw an error
-                controller.error(new Error('Invalid response: missing body'))
-                return
-              }
-              // Concatenate new data to the buffer, trimming any
-              // leading/trailing whitespace (the response is a JSON array of
-              // base64-encoded data, meaning that whitespace is not significant)
-              buffer = buffer + Buffer.from(value).toString().trim()
-              // If there was only whitespace, try reading again
-              if (!buffer) break
-              if (state === 'read-new-response') {
-                // Response is in JSON format, so we look for the start of an
-                // array (`[`)
-                if (buffer[0] !== '[') {
-                  controller.error(new Error('Invalid response: no array start delimiter'))
-                  return
-                }
-                // Trim the array start delimiter from the buffer
-                buffer = buffer.slice(1)
-              } else if (state === 'read-eos') {
-                // If in 'read-eos' state and still reading data, it's an error
-                // because the response isn't valid JSON (there should be
-                // nothing other than whitespace after `]`)
-                controller.error(new Error('Invalid data at the end of response'))
-                return
-              }
-              // If not handling new response or end-of-stream, switch to
-              // processing events
-              state = 'events'
-              break
-            }
-            case 'events': {
-              // Process events by looking for a comma or closing bracket that
-              // indicates the end of an event
-              const nextIdx = buffer.search(/(?<=\s*)[,\]]/)
-              // If the end of the event isn't found, go back to reading more
-              // data
-              if (nextIdx < 0) {
-                state = 'read'
-                break
-              }
-              let enqueued = false
-              try {
-                // Extract the current event's value and trim whitespace
-                const eventValue = buffer.slice(0, nextIdx).trim()
-                if (eventValue) {
-                  // Check if the event limit is reached; if so, throw an error
-                  if (count === requestLimit) {
-                    controller.error(new Error('Received too many events'))
-                    return
-                  }
-                  currentEvent = b64ToStr(JSON.parse(eventValue))
-                  if (count === 0) {
-                    const hash = GIMessage.deserializeHEAD(currentEvent).hash
-                    const height = GIMessage.deserializeHEAD(currentEvent).head.height
-                    if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
-                      controller.error(new Error('hash() !== since'))
-                      return
-                    }
-                  }
-                  // If this is the first event in a second or later request,
-                  // drop the event because it's already been included in
-                  // a previous response
-                  if (count++ !== 0 || requestCount !== 0) {
-                    controller.enqueue(currentEvent)
-                    enqueued = true
-                    remainingEvents--
-                  }
-                }
-                // If the stream is finished (indicated by a closing bracket),
-                // update `since` (to make the next request if needed) and
-                // switch to 'read-eos'.
-                if (buffer[nextIdx] === ']') {
-                  if (currentEvent) {
-                    const deserialized = GIMessage.deserializeHEAD(currentEvent)
-                    sinceHeight = deserialized.head.height
-                    sinceHash = deserialized.hash
-                  }
-                  state = 'read-eos'
-                  // This should be an empty string now
-                  buffer = buffer.slice(nextIdx + 1).trim()
-                } else if (currentEvent) {
-                  // Otherwise, move the buffer pointer to the next event
-                  buffer = buffer.slice(nextIdx + 1).trimStart()
-                } else {
-                  // If the end delimiter (`]`) is missing, throw an error
-                  controller.error(new Error('Missing end delimiter'))
-                  return
-                }
-                // If an event was successfully enqueued, exit the loop to wait
-                // for the next pull request
-                if (enqueued) {
-                  return
-                }
-              } catch (e) {
-                console.error('[chelonia] Error during event parsing', e)
-                controller.error(e)
-                return
-              }
-              break
-            }
-          }
-        }
-      }
-    })
-  },
+  'chelonia/out/eventsAfter': eventsAfter,
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',

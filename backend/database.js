@@ -13,8 +13,6 @@ import { initZkpp } from './zkppSalt.js'
 
 const Boom = require('@hapi/boom')
 
-const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
-
 const production = process.env.NODE_ENV === 'production'
 // Defaults to `fs` in production.
 const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
@@ -41,8 +39,8 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: number = MAX_EVENTS_AFTER): Promise<*> {
-    const limit = Math.min(requestedLimit, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
+    const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
@@ -83,78 +81,6 @@ sbp('sbp/selectors/register', {
       'shelter-headinfo-height': latestHEADinfo.height
     }
     return stream
-  },
-  'backend/db/streamEntriesBefore': async function (before: string, requestedLimit: number): Promise<*> {
-    let limit = Math.min(requestedLimit, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
-    let prefix = '['
-    let currentHEAD = before
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
-    if (!entry) {
-      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
-    }
-    limit++ // to return `before` apart from the `limit` number of events
-    // NOTE: if this ever stops working you can also try Readable.from():
-    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
-      async read (): any {
-        try {
-          if (!currentHEAD || !limit) {
-            this.push(']')
-            this.push(null)
-          } else {
-            entry = await sbp('chelonia/db/getEntry', currentHEAD)
-            const json = `"${strToB64(entry.serialize())}"`
-            this.push(prefix + json)
-            prefix = ','
-            limit--
-            currentHEAD = entry.head().previousHEAD
-          }
-        } catch (e) {
-          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(e, `read(): ${e.message}:`)
-          this.push(']')
-          this.push(null)
-        }
-      }
-    })
-  },
-  'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<*> {
-    let prefix = '['
-    let isMet = false
-    let currentHEAD = endHash
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
-    if (!entry) {
-      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
-    }
-    // NOTE: if this ever stops working you can also try Readable.from():
-    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
-      async read (): any {
-        try {
-          entry = await sbp('chelonia/db/getEntry', currentHEAD)
-          const json = `"${strToB64(entry.serialize())}"`
-          this.push(prefix + json)
-          prefix = ','
-
-          if (currentHEAD === startHash) {
-            isMet = true
-          } else if (isMet) {
-            offset--
-          }
-
-          currentHEAD = entry.head().previousHEAD
-          if (!currentHEAD || (isMet && !offset)) {
-            this.push(']')
-            this.push(null)
-          }
-        } catch (e) {
-          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(e, `read(): ${e.message}:`)
-          this.push(']')
-          this.push(null)
-        }
-      }
-    })
   },
   // =======================
   // wrapper methods to add / lookup names

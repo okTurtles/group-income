@@ -93,63 +93,6 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   }
 })
 
-route.GET('/events/{contractID}/height/{height}', {
-  validate: {
-    params: Joi.object({
-      contractID: Joi.string(),
-      height: Joi.number().integer().min(0).max(Number.MAX_SAFE_INTEGER)
-    })
-  }
-}, async function (request, h) {
-  const { contractID, height } = request.params
-  try {
-    if (contractID.startsWith('_private')) {
-      return Boom.notFound()
-    }
-
-    return await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
-  } catch (err) {
-    logger.error(err, `GET '/events/${contractID}/height/${height}`, err.message)
-    return err
-  }
-})
-
-route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
-  const { before, limit } = request.params
-  try {
-    if (!before) return Boom.badRequest('missing before')
-    if (!limit) return Boom.badRequest('missing limit')
-    if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
-    if (before.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBefore/${before}/${limit}`, err.message)
-    return err
-  }
-})
-
-route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
-  const { startHash, endHash } = request.params
-  try {
-    const offset = parseInt(request.query.offset || '0')
-
-    if (!startHash) return Boom.badRequest('missing startHash')
-    if (!endHash) return Boom.badRequest('missing endHash')
-    if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
-    if (startHash.startsWith('_private') || endHash.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBetwene/${startHash}/${endHash}`, err.message)
-    return err
-  }
-})
-
 route.POST('/name', {
   validate: {
     payload: Joi.object({
