@@ -254,6 +254,11 @@ describe('Full walkthrough', function () {
       users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 
+    /*
+    // The following test is redundant because now namespace registration happens
+    // when registering a contract instead of after it's registered using
+    // 'namespace/register'. If we have no further use for 'namespace/register',
+    // consider removing this entirely
     it.skip('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
       let res = await sbp('namespace/register', alice.decryptedValue().data.attributes.username, alice.contractID())
@@ -265,6 +270,7 @@ describe('Full walkthrough', function () {
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
     })
+    */
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
