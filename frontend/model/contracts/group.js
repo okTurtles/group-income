@@ -1894,6 +1894,29 @@ sbp('chelonia/defineContract', {
       })
 
       if (memberID === identityContractID) {
+        // NOTE: should remove the identity contracts which we don't need to sync anymore
+        //       for users who don't have any common groups, and any common DMs
+        const anotherGroupIDs = Object.keys(rootState.contracts)
+          .filter(gID => rootState.contracts[gID].type === 'gi.contracts/group' && gID !== contractID)
+        const identityContractsMapToKeepSyncing = {}
+        anotherGroupIDs.forEach(gID => {
+          for (const [iID] of Object.entries((rootState[gID].profiles || {}))) {
+            identityContractsMapToKeepSyncing[iID] = true
+          }
+        })
+        const groupDirectMessages = rootGetters.directMessagesByGroup(contractID)
+        for (const cID of Object.keys(groupDirectMessages)) {
+          groupDirectMessages[cID].partners.forEach(iID => {
+            identityContractsMapToKeepSyncing[iID] = true
+          })
+        }
+
+        const identityContractsToRemove = Object.keys(state.profiles || {})
+          .filter(cID => cID !== identityContractID && !identityContractsMapToKeepSyncing[cID])
+        sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
+          console.error(`sideEffect(removeMember): ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+
         // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
         // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
         sbp('chelonia/contract/remove', contractID).catch(e => {
