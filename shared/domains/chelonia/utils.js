@@ -280,15 +280,16 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
         !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
       ) {
         const decryptedKeyResult = unwrapMaybeEncryptedData(key.meta.private.content)
-        // Unable to decrypt
-        if (!decryptedKeyResult) continue
+        // Ignore data that couldn't be decrypted
+        if (decryptedKeyResult) {
         // Data aren't encrypted
-        if (decryptedKeyResult.encryptionKeyId == null) {
-          throw new Error('Expected encrypted data but got unencrypted data for key with ID: ' + key.id)
+          if (decryptedKeyResult.encryptionKeyId == null) {
+            throw new Error('Expected encrypted data but got unencrypted data for key with ID: ' + key.id)
+          }
+          decryptedKey = decryptedKeyResult.data
+          decryptedKeys.push([key.id, decryptedKey])
+          storeSecretKey(key, decryptedKey)
         }
-        decryptedKey = decryptedKeyResult.data
-        decryptedKeys.push([key.id, decryptedKey])
-        storeSecretKey(key, decryptedKey)
       }
     }
 

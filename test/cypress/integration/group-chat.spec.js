@@ -207,8 +207,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       existingMemberUsername: user1,
       groupName: groupName1,
-      shouldLogoutAfter: true,
-      bypassUI: true
+      shouldLogoutAfter: true
     })
     me = undefined
   })
