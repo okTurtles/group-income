@@ -82,6 +82,8 @@ export default ({
   },
   watch: {
     src (to) {
+      // NOTE: src could be null while logging out
+      //       since typeof null === 'object', we should check if it's falsy
       if (to && typeof to === 'object') {
         this.downloadFile(to).catch((e) => {
           console.error('[Avatar.vue] Error in downloadFile', e)
