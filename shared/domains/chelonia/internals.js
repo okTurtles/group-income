@@ -1093,7 +1093,7 @@ export default (sbp('sbp/selectors/register', {
     const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    const { recentHEAD, recentHeight } = state.contracts[contractID] || {}
+    const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
     const isSubcribed = this.subscriptionSet.has(contractID)
     if (isSubcribed) {
       if (params?.deferredRemove) {

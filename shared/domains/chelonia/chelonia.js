@@ -834,7 +834,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/out/eventsAfter': function (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string) {
     const fetchEventsStreamReader = async () => {
       requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
-      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}/${requestLimit}`, { signal })
+      const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`, { signal })
       if (!eventsResponse.ok) throw new Error('Unexpected status code')
       if (!eventsResponse.body) throw new Error('Missing body')
       latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
