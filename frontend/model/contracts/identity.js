@@ -14,6 +14,63 @@ import {
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
+const attributesType = objectMaybeOf({
+  username: string,
+  email: string,
+  picture: unionOf(string, objectOf({
+    manifestCid: string,
+    downloadParams: optional(object)
+  }))
+})
+
+const validateUsername = (username: string) => {
+  if (!username) {
+    throw new TypeError('A username is required')
+  }
+  if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+    throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
+  }
+  if (!allowedUsernameCharacters(username)) {
+    throw new TypeError('A username cannot contain disallowed characters.')
+  }
+  if (!noConsecutiveHyphensOrUnderscores(username)) {
+    throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
+  }
+  if (!noLeadingOrTrailingHyphen(username)) {
+    throw new TypeError('A username cannot start or end with a hyphen.')
+  }
+  if (!noLeadingOrTrailingUnderscore(username)) {
+    throw new TypeError('A username cannot start or end with an underscore.')
+  }
+  if (!noUppercase(username)) {
+    throw new TypeError('A username cannot contain uppercase letters.')
+  }
+}
+
+const checkUsernameConsistency = async (contractID: string, username: string) => {
+  // Lookup and save the username so that we can verify that it matches
+  const lookupResult = await sbp('namespace/lookup', username, { skipCache: true })
+  if (lookupResult === contractID) return
+
+  console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`)
+
+  // If there was a mismatch, wait until the contract is finished processing
+  // (because the username could have been updated), and if the situation
+  // persists, warn the user
+  sbp('chelonia/queueInvocation', contractID, () => {
+    const rootState = sbp('state/vuex/state')
+    if (!has(rootState, contractID)) return
+
+    const username = rootState[contractID].attributes.username
+    if (sbp('namespace/lookupCached', username) !== contractID) {
+      sbp('gi.notifications/emit', 'WARNING', {
+        contractID,
+        message: L('Unable to confirm that the username {username} belongs to this identity contract', { username })
+      })
+    }
+  })
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
   getters: {
@@ -31,34 +88,13 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity': {
       validate: (data, { state }) => {
         objectMaybeOf({
-          attributes: objectMaybeOf({
-            username: string,
-            email: string,
-            picture: unionOf(string, objectOf({
-              manifestCid: string,
-              downloadParams: optional(object)
-            }))
-          })
+          attributes: attributesType
         })(data)
         const { username } = data.attributes
-        if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-          throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
+        if (!username) {
+          throw new TypeError('A username is required')
         }
-        if (!allowedUsernameCharacters(username)) {
-          throw new TypeError('A username cannot contain disallowed characters.')
-        }
-        if (!noConsecutiveHyphensOrUnderscores(username)) {
-          throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
-        }
-        if (!noLeadingOrTrailingHyphen(username)) {
-          throw new TypeError('A username cannot start or end with a hyphen.')
-        }
-        if (!noLeadingOrTrailingUnderscore(username)) {
-          throw new TypeError('A username cannot start or end with an underscore.')
-        }
-        if (!noUppercase(username)) {
-          throw new TypeError('A username cannot contain uppercase letters.')
-        }
+        validateUsername(username)
       },
       process ({ data }, { state }) {
         const initialState = merge({
@@ -70,18 +106,36 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+      },
+      async sideEffect ({ contractID, data }) {
+        await checkUsernameConsistency(contractID, data.attributes.username)
       }
     },
     'gi.contracts/identity/setAttributes': {
-      validate: object,
+      validate: (data) => {
+        attributesType(data)
+        if (has(data, 'username')) {
+          validateUsername(data.username)
+        }
+      },
       process ({ data }, { state }) {
         for (const key in data) {
           Vue.set(state.attributes, key, data[key])
         }
+      },
+      async sideEffect ({ contractID, data }) {
+        if (has(data, 'username')) {
+          await checkUsernameConsistency(contractID, data.username)
+        }
       }
     },
     'gi.contracts/identity/deleteAttributes': {
-      validate: arrayOf(string),
+      validate: (data) => {
+        arrayOf(string)(data)
+        if (data.includes('username')) {
+          throw new Error('Username can\'t be deleted')
+        }
+      },
       process ({ data }, { state }) {
         for (const attribute of data) {
           Vue.delete(state.attributes, attribute)
