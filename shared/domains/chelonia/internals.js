@@ -409,7 +409,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
+  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
 
@@ -488,6 +488,7 @@ export default (sbp('sbp/selectors/register', {
           method: 'POST',
           body: entry.serialize(),
           headers: {
+            ...headers,
             'Content-Type': 'text/plain',
             'Authorization': 'gi TODO - signature - if needed here - goes here'
           },

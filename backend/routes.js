@@ -44,6 +44,20 @@ route.POST('/event', {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
+      const name = request.headers['shelter-namespace-registration']
+      // If this is the first message in a contract and the
+      // `shelter-namespace-registration` header is present, proceed with also
+      // registering a name for the new contract
+      if (deserializedHEAD.contractID === deserializedHEAD.hash && name && !name.startsWith('_private')) {
+        // Name registation is enabled only for identity contracts
+        const cheloniaState = sbp('chelonia/private/state')
+        if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
+          const r = await sbp('backend/db/registerName', name, deserializedHEAD.contractID)
+          if (Boom.isBoom(r)) {
+            return r
+          }
+        }
+      }
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
@@ -93,6 +107,10 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   }
 })
 
+/*
+// The following endpoint is disabled because name registrations are handled
+// through the `shelter-namespace-registration` header when registering a
+// new contract
 route.POST('/name', {
   validate: {
     payload: Joi.object({
@@ -110,6 +128,7 @@ route.POST('/name', {
     return err
   }
 })
+*/
 
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params

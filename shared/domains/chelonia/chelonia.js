@@ -30,6 +30,7 @@ export type ChelRegParams = {
   actionSigningKeyId: string;
   actionEncryptionKeyId: ?string;
   keys: (GIKey | EncryptedData<GIKey>)[];
+  namespaceRegistration: ?string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     postpublishContract?: (GIMessage) => void;
@@ -39,7 +40,7 @@ export type ChelRegParams = {
     postpublish?: (GIMessage) => void;
     onprocessed?: (GIMessage) => void;
   };
-  publishOptions?: { maxAttempts: number };
+  publishOptions?: { headers: ?Object, maxAttempts: number };
 }
 
 export type ChelActionParams = {
@@ -919,7 +920,15 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     const contractID = contractMsg.hash()
-    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, hooks && {
+    await sbp('chelonia/private/out/publishEvent', contractMsg, (params.namespaceRegistration
+      ? {
+          ...publishOptions,
+          headers: {
+            ...publishOptions?.headers,
+            'shelter-namespace-registration': params.namespaceRegistration
+          }
+        }
+      : publishOptions), hooks && {
       prepublish: hooks.prepublishContract,
       postpublish: hooks.postpublishContract
     })
