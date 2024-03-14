@@ -448,17 +448,23 @@ export default ({
         })
       }
       const uploadAttachments = async () => {
-        const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
-          const { mimeType, url, name } = attachment
-          // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-          const attachmentBlob = await objectURLtoBlob(url)
-          const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
-            type: mimeType, cipher: 'aes256gcm'
-          })
-          return { name, mimeType, downloadData }
-        }))
+        try {
+          const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
+            const { mimeType, url, name } = attachment
+            // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+            const attachmentBlob = await objectURLtoBlob(url)
+            const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+              type: mimeType, cipher: 'aes256gcm'
+            })
+            return { name, mimeType, downloadData }
+          }))
+          data = { ...data, attachments: attachmentsToSend }
 
-        data = { ...data, attachments: attachmentsToSend }
+          return true
+        } catch (e) {
+          console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
+          return false
+        }
       }
 
       if (!hasAttachments) {
@@ -492,7 +498,7 @@ export default ({
             }
           }
         })
-        uploadAttachments().then(() => {
+        uploadAttachments().then((isUploaded) => {
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
@@ -500,7 +506,11 @@ export default ({
               this.messageState.contract.messages.splice(msgIndex, 1)
             }
           }
-          sendMessage(removeTemporaryMessage)
+          if (isUploaded) {
+            sendMessage(removeTemporaryMessage)
+          } else {
+            removeTemporaryMessage()
+          }
         })
       }
     },
