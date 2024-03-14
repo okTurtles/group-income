@@ -52,7 +52,7 @@ const ArrayBufferToUint8ArrayStream = async (connectionURL: string, s: ReadableS
   if (supportsRequestStreams === true) {
     await fetch(`${connectionURL}/streams-test`, {
       method: 'POST',
-      body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')) } }),
+      body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')); c.close() } }),
       duplex: 'half'
     }).then((r) => {
       if (!r.ok) throw new Error('Unexpected response')
