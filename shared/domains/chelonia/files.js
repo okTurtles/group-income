@@ -48,7 +48,8 @@ const streamToUint8Array = async (s: ReadableStream) => {
 // Check for streaming support, as of today (Feb 2024) only Blink-
 // based browsers support this (i.e., Firefox and Safari don't).
 const ArrayBufferToUint8ArrayStream = async (connectionURL: string, s: ReadableStream) => {
-  // Even if the browser supports streams, the server must support HTTP/2
+  // Even if the browser supports streams, some browsers (e.g., Chrome) also
+  // require that the server support HTTP/2
   if (supportsRequestStreams === true) {
     await fetch(`${connectionURL}/streams-test`, {
       method: 'POST',
