@@ -897,6 +897,61 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
+  'gi.actions/group/removeUselessIdentityContracts': function ({ contractID, possiblyUselessContractIDs }) {
+    // NOTE: should remove the identity contracts which we don't need to sync anymore
+    //       for users who don't have any common groups, and any common DMs
+    const interval = setInterval(() => {
+      const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+        .filter(([q]) => typeof q === 'string')
+        .flatMap(([, list]) => list)
+
+      if (pending.length === 0) {
+        const rootState = sbp('state/vuex/state')
+        const rootGetters = sbp('state/vuex/getters')
+
+        const identityContractsMapToKeepSyncing = {}
+        const anotherGroupIDs = Object.keys(rootState.contracts)
+          .filter(gID => rootState.contracts[gID].type === 'gi.contracts/group' && gID !== contractID)
+        anotherGroupIDs.forEach(gID => {
+          for (const [iID] of Object.entries((rootState[gID].profiles || {}))) {
+            identityContractsMapToKeepSyncing[iID] = true
+          }
+        })
+        // NOTE: we can not use 'directMessagesByGroup' getter since
+        //       the group contract whose ID is contractID could be already removed
+        const groupDirectMessages = {}
+        for (const chatRoomId of Object.keys(rootGetters.ourDirectMessages)) {
+          const chatRoomState = rootState[chatRoomId]
+
+          // NOTE: skip DMs whose chatroom contracts are not synced yet
+          if (!chatRoomState || !chatRoomState.members?.[rootGetters.ourIdentityContractId]) {
+            continue
+          }
+          // NOTE: direct messages should be filtered to the ones which are visible and of active group members
+          const members = Object.keys(chatRoomState.members)
+          const partners = members.filter(memberID => memberID !== rootGetters.ourIdentityContractId)
+          const hasActiveMember = partners.some(memberID => possiblyUselessContractIDs.includes(memberID))
+
+          if (hasActiveMember) {
+            groupDirectMessages[chatRoomId] = { partners }
+          }
+        }
+
+        for (const cID of Object.keys(groupDirectMessages)) {
+          groupDirectMessages[cID].partners.forEach(iID => {
+            identityContractsMapToKeepSyncing[iID] = true
+          })
+        }
+
+        const identityContractsToRemove = possiblyUselessContractIDs.filter(cID => !identityContractsMapToKeepSyncing[cID])
+        sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
+          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+
+        clearInterval(interval)
+      }
+    }, 1000)
+  },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
