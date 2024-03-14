@@ -82,14 +82,14 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
-  const { contractID, since } = request.params
+route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
+  const { contractID, since, limit } = request.params
   try {
     if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -103,42 +103,6 @@ route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
     return stream
   } catch (err) {
     logger.error(err, `GET /eventsAfter/${contractID}/${since}`, err.message)
-    return err
-  }
-})
-
-route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
-  const { before, limit } = request.params
-  try {
-    if (!before) return Boom.badRequest('missing before')
-    if (!limit) return Boom.badRequest('missing limit')
-    if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
-    if (before.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBefore/${before}/${limit}`, err.message)
-    return err
-  }
-})
-
-route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
-  const { startHash, endHash } = request.params
-  try {
-    const offset = parseInt(request.query.offset || '0')
-
-    if (!startHash) return Boom.badRequest('missing startHash')
-    if (!endHash) return Boom.badRequest('missing endHash')
-    if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
-    if (startHash.startsWith('_private') || endHash.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBetwene/${startHash}/${endHash}`, err.message)
     return err
   }
 })

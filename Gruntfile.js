@@ -41,6 +41,7 @@ const packageJSON = require('./package.json')
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
+  MAX_EVENTS_AFTER = '',
   NODE_ENV = 'development',
   EXPOSE_SBP = '',
   ENABLE_UNSAFE_NULL_CRYPTO = 'false'
@@ -217,6 +218,7 @@ module.exports = (grunt) => {
         'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
         'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`
@@ -697,7 +699,7 @@ module.exports = (grunt) => {
   })
 
   process.on('unhandledRejection', (reason, p) => {
-    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason)
+    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason.message, reason.stack)
     process.exit(1)
   })
 }
