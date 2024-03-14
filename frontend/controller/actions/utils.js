@@ -132,7 +132,6 @@ export const encryptedAction = (
           return await sm()
         }
       } catch (e) {
-        console.error(`${action} failed!`, e)
         const userFacingErrStr = typeof humanError === 'string'
           ? `${humanError} ${LError(e).reportError}`
           : humanError(params, e)
@@ -239,7 +238,6 @@ export const encryptedNotification = (
           return await sm()
         }
       } catch (e) {
-        console.error(`${action} failed!`, e)
         const userFacingErrStr = typeof humanError === 'string'
           ? `${humanError} ${LError(e).reportError}`
           : humanError(params, e)

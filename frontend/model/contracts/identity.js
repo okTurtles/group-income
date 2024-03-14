@@ -254,7 +254,7 @@ sbp('chelonia/defineContract', {
             innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
             encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
           }).catch(e => {
-            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
+            console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
           })
         }).catch(e => {
           console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e)
@@ -295,7 +295,7 @@ sbp('chelonia/defineContract', {
             sbp('gi.actions/group/removeOurselves', {
               contractID: groupContractID
             }).catch(e => {
-              console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
+              console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
             })
           }
 

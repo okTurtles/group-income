@@ -348,7 +348,10 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
       leavingGroup &&
       (e?.name === 'ChelErrorSignatureKeyNotFound' || (
         e?.name === 'GIErrorUIRuntimeError' &&
-        ['ChelErrorSignatureKeyNotFound', 'GIErrorMissingSigningKeyError'].includes(e?.cause?.name)
+        (
+          ['ChelErrorSignatureKeyNotFound', 'GIErrorMissingSigningKeyError'].includes(e?.cause?.name) ||
+          (e?.cause?.name === 'Error' && e.cause.message.endsWith('is not part of'))
+        )
       ))
     ) {
       // This is fine; it just means we were removed by someone else
@@ -356,7 +359,7 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
     }
     throw e
   }).catch((e) => {
-    console.error('[gi.contracts/group] Error sending chatroom leave action', e)
+    console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
 }
 
@@ -1067,7 +1070,7 @@ sbp('chelonia/defineContract', {
         // Put this invocation at the end of a sync to ensure that leaving and
         // re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', { data, meta, contractID, getters, height, innerSigningContractID })).catch(e => {
-          console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e)
+          console.warn(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e)
         })
       }
     },
@@ -1192,8 +1195,8 @@ sbp('chelonia/defineContract', {
                   memberID: innerSigningContractID
                 })
               }
-            }).catch(() => {
-              console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`)
+            }).catch((e) => {
+              console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e)
             })
           }
         }).catch(e => {
@@ -1464,7 +1467,7 @@ sbp('chelonia/defineContract', {
         // the relevant action to the chatroom contract
         if (innerSigningContractID === rootState.loggedIn.identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, memberID)).catch((e) => {
-            console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
+            console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
         } else if (memberID === rootState.loggedIn.identityContractID) {
           // If we were the ones added to the chatroom, we sync the chatroom.
@@ -1488,7 +1491,7 @@ sbp('chelonia/defineContract', {
               // we won't need this special key.
               sbp('okTurtles.data/set', `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`, true)
               sbp('chelonia/contract/sync', data.chatRoomID).catch((e) => {
-                console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
+                console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
               })
             }
           })
@@ -1615,7 +1618,7 @@ sbp('chelonia/defineContract', {
           groupContractID: contractID
         }
       }).catch(e => {
-        console.error(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
+        console.warn(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
       })
         // this looks crazy, but doing this was necessary to fix a race condition in the
         // group-member-removal Cypress tests where due to the ordering of asynchronous events
@@ -1627,7 +1630,7 @@ sbp('chelonia/defineContract', {
           const switchFrom = router.currentRoute.path
           const switchTo = rootState.currentGroupId ? '/dashboard' : '/'
           if (switchFrom !== '/join' && switchFrom !== switchTo) {
-            router.push({ path: switchTo }).catch(console.warn)
+            router.push({ path: switchTo }).catch((e) => console.error('Error switching groups', e))
           }
         })
         .catch(e => {
@@ -1635,7 +1638,7 @@ sbp('chelonia/defineContract', {
         })
         .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, true))
         .catch(e => {
-          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
+          console.warn(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e)
         })
         // TODO - #828 remove other group members contracts if applicable
     },
@@ -1814,7 +1817,7 @@ sbp('chelonia/defineContract', {
             }
           }
         }).catch(e => {
-          console.error(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e)
+          console.warn(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e)
         })
       } finally {
         await sbp('chelonia/contract/remove', chatRoomId, { removeIfPending: true })
@@ -1890,7 +1893,7 @@ sbp('chelonia/defineContract', {
       } */
 
       leaveAllChatRoomsUponLeaving(state, memberID, innerSigningContractID).catch((e) => {
-        console.error('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
+        console.warn('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
       })
 
       if (memberID === identityContractID) {
@@ -1917,7 +1920,7 @@ sbp('chelonia/defineContract', {
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))
             .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, false))
             .catch((e) => {
-              console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
+              console.warn(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
 
           sbp('gi.contracts/group/removeForeignKeys', contractID, memberID, state)
@@ -1970,17 +1973,17 @@ sbp('chelonia/defineContract', {
             signingKeyId: CSKid
           }])
             .catch(e => {
-              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
+              console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
             })
         }
 
         sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
-          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+          console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
         })
       }
 
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
-        console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
     'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
