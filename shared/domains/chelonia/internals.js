@@ -1348,7 +1348,7 @@ export default (sbp('sbp/selectors/register', {
       if (!foreignState) return acc
       const fKeyId = findKeyIdByName(foreignState, foreignKeyName)
       if (!fKeyId) {
-        // Key was deleted
+        // Key was deleted; mark it for deletion
         pendingKeyRevocations.find(([id]) => id === keyId)[1] = 'del'
         return acc
       }
@@ -1364,10 +1364,13 @@ export default (sbp('sbp/selectors/register', {
         })
         return [currentRingLevel, currentSigningKeyId, currentKeyArgs]
       } else if (Number.isFinite(ringLevel)) {
-        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
+        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
         if (signingKeyId) {
           (currentKeyArgs: any).push({
-            keyId
+            name: key.name,
+            oldKeyId: keyId,
+            id: fKeyId,
+            data: foreignState._vm.authorizedKeys[fKeyId].data
           })
           return [ringLevel, signingKeyId, currentKeyArgs]
         }
