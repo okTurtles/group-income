@@ -34,7 +34,7 @@
             ) {{ objReplyMessage.text }}
         send-area(
           v-if='isEditing'
-          :defaultText='text'
+          :defaultText='swapUserIDForUsername(text)'
           :isEditing='true'
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
@@ -202,6 +202,13 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
+    },
+    swapUserIDForUsername (text) {
+      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
+      return text
+        .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .map(t => !possibleMentions.includes(t) ? t : t[0] + this.usernameFromID(t.slice(1)))
+        .join('')
     },
     generateTextObjectsFromText (text) {
       if (!text) {
