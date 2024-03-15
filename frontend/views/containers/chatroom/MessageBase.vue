@@ -41,7 +41,7 @@
         )
 
         p.c-text(v-else-if='text')
-          template(v-for='(objText, index) in textObjects')
+          template(v-for='objText in textObjects')
             span.custom-markdown-content(
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
@@ -52,6 +52,12 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
+      .c-attachments-wrapper(v-if='hasAttachments')
+        chat-attachment-preview(
+          :attachmentList='attachments'
+          :isForDownload='true'
+          :isMsgCreator='isMsgSender'
+        )
   .c-full-width-body
     slot(name='full-width-body')
 
@@ -68,7 +74,7 @@
     v-if='!isEditing'
     :variant='variant'
     :type='type'
-    :isCurrentUser='isCurrentUser'
+    :isMsgSender='isMsgSender'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
@@ -82,10 +88,12 @@
 <script>
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import Tooltip from '@components/Tooltip.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
@@ -97,9 +105,11 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
+    Tooltip,
     MessageActions,
     MessageReactions,
-    SendArea
+    SendArea,
+    ChatAttachmentPreview
   },
   data () {
     return {
@@ -109,6 +119,7 @@ export default ({
   props: {
     height: Number,
     text: String,
+    attachments: Array,
     messageHash: String,
     replyingMessage: String,
     who: String,
@@ -127,7 +138,7 @@ export default ({
     },
     variant: String,
     isSameSender: Boolean,
-    isCurrentUser: Boolean,
+    isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },
   computed: {
@@ -137,6 +148,9 @@ export default ({
     },
     replyMessageObjects () {
       return this.generateTextObjectsFromText(this.replyingMessage)
+    },
+    hasAttachments () {
+      return Boolean(this.attachments?.length)
     }
   },
   methods: {
@@ -237,7 +251,6 @@ export default ({
     padding: 0.5rem 1.25rem;
   }
   position: relative;
-  max-height: 100%;
 
   &.removed {
     background-color: $danger_2;
@@ -248,6 +261,11 @@ export default ({
   &.pending {
     .c-text {
       color: $general_0;
+    }
+
+    .c-attachments-wrapper {
+      pointer-events: none;
+      filter: blur(0.125rem);
     }
   }
 
@@ -263,7 +281,7 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  &:hover {
+  &:hover:not(.pending) {
     background-color: $general_2;
 
     ::v-deep .c-actions {
@@ -309,6 +327,11 @@ export default ({
   }
 }
 
+.c-attachments-wrapper {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
 .c-focused {
   animation: focused 1s linear 0.5s;
 }
@@ -351,6 +374,5 @@ export default ({
 
 .c-mention.c-mention-to-me {
   background-color: $warning_1;
-  // background-color: #f2c74466;
 }
 </style>

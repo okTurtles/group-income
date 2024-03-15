@@ -25,6 +25,7 @@ export default ({
     messageHash: String,
     type: String,
     text: String,
+    attachments: Array,
     who: String,
     currentUserID: String,
     avatar: [Object, String],
@@ -44,7 +45,7 @@ export default ({
       default: null
     },
     isSameSender: Boolean,
-    isCurrentUser: Boolean,
+    isMsgSender: Boolean,
     replyingMessage: null
   },
   constants: Object.freeze({

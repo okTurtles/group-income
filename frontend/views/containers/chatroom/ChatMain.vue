@@ -63,6 +63,7 @@
           :messageId='message.id'
           :messageHash='message.hash'
           :text='message.text'
+          :attachments='message.attachments'
           :type='message.type'
           :notification='message.notification'
           :proposal='message.proposal'
@@ -77,7 +78,7 @@
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
-          :isCurrentUser='isCurrentUser(message.from)'
+          :isMsgSender='isMsgSender(message.from)'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
@@ -117,7 +118,6 @@ import { mapGetters } from 'vuex'
 import { Vue } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
-import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -133,10 +133,11 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
-import { findMessageIdx } from '@model/contracts/shared/functions.js'
+import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { objectURLtoBlob } from '@utils/image.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -221,7 +222,6 @@ export default ({
     ConversationGreetings,
     Emoticons,
     InfiniteLoading,
-    Loading,
     Message,
     MessageInteractive,
     MessageNotification,
@@ -355,11 +355,11 @@ export default ({
         [MESSAGE_TYPES.POLL]: 'message-poll'
       }[message.type]
     },
-    isCurrentUser (from) {
+    isMsgSender (from) {
       return this.currentUserAttr.id === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
+      const user = this.isMsgSender(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -368,7 +368,7 @@ export default ({
       } else if (message.hasFailed) {
         return MESSAGE_VARIANTS.FAILED
       } else {
-        return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
+        return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
     replyingMessage (message) {
@@ -397,59 +397,133 @@ export default ({
       this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (message) {
+    handleSendMessage (text, attachments) {
+      const hasAttachments = attachments?.length > 0
+      const contractID = this.currentChatRoomId
       const replyingMessage = this.ephemeral.replyingMessageHash
         ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
         : null
-      // Consider only simple TEXT now
-      // TODO: implement other types of messages later
-      const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
-      const contractID = this.currentChatRoomId
-      // Call 'gi.actions/chatroom/addMessage' action with necessary data
-      // to send the message
-      sbp('gi.actions/chatroom/addMessage', {
-        contractID,
+      let data = { type: MESSAGE_TYPES.TEXT, text }
+      if (replyingMessage) {
         // If not replying to a message, use original data; otherwise, append
         // replyingMessage to data.
-        data: !replyingMessage ? data : { ...data, replyingMessage },
-        hooks: {
-          // Define a 'beforeRequest' hook for additional processing before the
-          // request is made.
-          // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
-          // message has been received. This is intentional to mark yet-unsent
-          // messages as pending in the UI
-          prepublish: (message) => {
-            if (!this.checkEventSourceConsistency(contractID)) return
+        data = { ...data, replyingMessage }
+      }
 
-            // IMPORTANT: This is executed *BEFORE* the message is received over
-            // the network
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
-              if (!this.checkEventSourceConsistency(contractID)) return
-              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
-            }).catch((e) => {
-              console.error('Error sending message during pre-publish: ' + e.message)
-            })
+      const sendMessage = (beforePrePublish) => {
+        const prepublish = (message) => {
+          if (!this.checkEventSourceConsistency(contractID)) return
 
-            this.stopReplying()
-            this.updateScroll()
-          },
-          beforeRequest: (message, oldMessage) => {
+          beforePrePublish?.()
+
+          // IMPORTANT: This is executed *BEFORE* the message is received over
+          // the network
+          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
-              if (!this.checkEventSourceConsistency(contractID)) return
-              const messageStateContract = this.messageState.contract
-              const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
-              if (!msg) return
-              msg.hash = message.hash()
-              msg.height = message.height()
-            })
-          }
+            Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+          }).catch((e) => {
+            console.error('Error sending message during pre-publish: ' + e.message)
+          })
+
+          this.stopReplying()
+          this.updateScroll()
         }
-      }).catch((e) => {
-        console.error(`Error while publishing message for ${contractID}`, e)
-        alert(e?.message || e)
-      })
+        const beforeRequest = (message, oldMessage) => {
+          if (!this.checkEventSourceConsistency(contractID)) return
+          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+            if (!this.checkEventSourceConsistency(contractID)) return
+            const messageStateContract = this.messageState.contract
+            const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+            if (!msg) return
+            msg.hash = message.hash()
+            msg.height = message.height()
+          })
+        }
+        // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
+        sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data,
+          hooks: {
+            // Define a 'beforeRequest' hook for additional processing before the
+            // request is made.
+            // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
+            // message has been received. This is intentional to mark yet-unsent
+            // messages as pending in the UI
+            prepublish,
+            beforeRequest
+          }
+        }).catch((e) => {
+          console.error(`Error while publishing message for ${contractID}`, e)
+          alert(e?.message || e)
+        })
+      }
+      const uploadAttachments = async () => {
+        try {
+          const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
+            const { mimeType, url, name } = attachment
+            // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+            const attachmentBlob = await objectURLtoBlob(url)
+            const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+              type: mimeType, cipher: 'aes256gcm'
+            })
+            return { name, mimeType, downloadData }
+          }))
+          data = { ...data, attachments: attachmentsToSend }
+
+          return true
+        } catch (e) {
+          console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
+          return false
+        }
+      }
+
+      if (!hasAttachments) {
+        sendMessage()
+      } else {
+        let temporaryMessage = null
+        sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data,
+          hooks: {
+            preSendCheck: (message, state) => {
+              // NOTE: this preSendCheck does nothing except appending pending message
+              //       temporarily until the uploading attachments is finished
+              //       it always returns false, so it doesn't affect the contract state
+              const [, opV] = message.op()
+              const { meta } = opV.valueOf().valueOf()
+
+              temporaryMessage = createMessage({
+                meta,
+                data,
+                hash: message.hash(),
+                height: message.height(),
+                state: this.messageState.contract,
+                pending: true,
+                innerSigningContractID: this.ourIdentityContractId
+              })
+              this.messageState.contract.messages.push(temporaryMessage)
+              this.updateScroll()
+
+              return false
+            }
+          }
+        })
+        uploadAttachments().then((isUploaded) => {
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
+              this.messageState.contract.messages.splice(msgIndex, 1)
+            }
+          }
+          if (isUploaded) {
+            sendMessage(removeTemporaryMessage)
+          } else {
+            removeTemporaryMessage()
+          }
+        })
+      }
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.messages.length) {
@@ -869,7 +943,7 @@ export default ({
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
               this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              const fromOurselves = this.isCurrentUser(this.messages[this.messages.length - 1].from)
+              const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else if (!isScrollable && this.messages.length) {
