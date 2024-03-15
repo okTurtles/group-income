@@ -1,46 +1,165 @@
 <template lang='pug'>
-.c-attachment-container
-  .c-attachment-preview(
-    v-for='entry in attachmentList'
-    :key='entry.url'
-    :class='"is-" + entry.attachType'
-  )
-    img.c-preview-img(
-      v-if='entry.attachType === "image"'
-      :src='entry.url'
-      :alt='entry.name'
+.c-attachment-container(:class='{ "is-for-download": isForDownload }')
+  template(v-if='isForDownload')
+    .c-attachment-preview(
+      v-for='(entry, entryIndex) in attachmentList'
+      :key='entryIndex'
+      class='is-download-item'
+      tabindex='0'
     )
-    .c-preview-non-image(v-else)
-      .c-non-image-icon
-        i.icon-file
+      .c-preview-non-image(v-if='!shouldPreviewImages')
+        .c-non-image-icon
+          i.icon-file
 
-      .c-non-image-file-info
-        .c-file-name.has-ellipsis {{ entry.name }}
-        .c-file-ext {{ fileExt(entry) }}
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
 
-    button.c-attachment-remove-btn(
-      type='button'
-      :aria-label='L("Remove attachment")'
-      @click='$emit("remove", entry.url)'
+      .c-preview-img(v-else)
+        img(
+          v-if='objectURLList[entryIndex]'
+          :src='objectURLList[entryIndex]'
+          :alt='entry.name'
+        )
+        .loading-box(v-else)
+
+      .c-attachment-actions-wrapper(
+        :class='{ "is-for-image": shouldPreviewImages }'
+      )
+        .c-attachment-actions
+          tooltip(
+            direction='top'
+            :text='L("Download")'
+          )
+            button.is-icon-small(
+              :aria-label='L("Download")'
+              @click='downloadAttachment(entryIndex)'
+            )
+              i.icon-download
+          tooltip(
+            v-if='isMsgCreator'
+            direction='top'
+            :text='L("Delete")'
+          )
+            button.is-icon-small(
+              :aria-label='L("Delete")'
+              @click='deleteAttachment(entryIndex)'
+            )
+              i.icon-trash-alt
+
+  template(v-else)
+    .c-attachment-preview(
+      v-for='(entry, entryIndex) in attachmentList'
+      :key='entryIndex'
+      :class='"is-" + fileType(entry)'
     )
-      i.icon-times
+      img.c-preview-img(
+        v-if='fileType(entry) === "image" && entry.url'
+        :src='entry.url'
+        :alt='entry.name'
+      )
+      .c-preview-non-image(v-else)
+        .c-non-image-icon
+          i.icon-file
+
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext {{ fileExt(entry) }}
+
+      button.c-attachment-remove-btn(
+        type='button'
+        :aria-label='L("Remove attachment")'
+        @click='$emit("remove", entry.url)'
+      )
+        i.icon-times
+
+      .c-loader(v-if='isForDownload && !entry.downloadData')
+
+  a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+import Tooltip from '@components/Tooltip.vue'
+import { getFileExtension } from '@view-utils/filters.js'
+
 export default {
   name: 'ChatAttachmentPreview',
+  components: {
+    Tooltip
+  },
   props: {
     attachmentList: {
-      // [ { url: string, name: string, attachType: enum of ['image', 'non-image'] }, ... ]
       type: Array,
       required: true
+    },
+    isForDownload: {
+      type: Boolean,
+      default: false
+    },
+    isMsgCreator: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data () {
+    return {
+      objectURLList: []
+    }
+  },
+  computed: {
+    shouldPreviewImages () {
+      return !this.attachmentList.some(attachment => {
+        return this.fileType(attachment) === 'non-image'
+      })
+    }
+  },
+  mounted () {
+    if (this.shouldPreviewImages) {
+      (async () => {
+        this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
+          return this.getAttachmentObjectURL(attachment)
+        }))
+        this.$forceUpdate()
+      })()
     }
   },
   methods: {
     fileExt ({ name }) {
-      const lastDotIndex = name.lastIndexOf('.')
-      const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
-      return ext.toUpperCase()
+      return getFileExtension(name, true)
+    },
+    fileType ({ mimeType }) {
+      return mimeType.match('image/') ? 'image' : 'non-image'
+    },
+    deleteAttachment (attachment) {
+      alert('TODO - delete attachment')
+    },
+    async getAttachmentObjectURL (attachment) {
+      if (attachment.url) {
+        return attachment.url
+      } else if (attachment.downloadData) {
+        const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
+        return URL.createObjectURL(blob)
+      }
+    },
+    async downloadAttachment (index) {
+      const attachment = this.attachmentList[index]
+      if (!attachment.downloadData) { return }
+
+      // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
+      try {
+        let url = this.objectURLList[index]
+        if (!url) {
+          url = await this.getAttachmentObjectURL(attachment)
+        }
+        const aTag = this.$refs.downloadHelper
+
+        aTag.setAttribute('href', url)
+        aTag.setAttribute('download', attachment.name)
+        aTag.click()
+      } catch (err) {
+        console.error('error caught while downloading a file: ', err)
+      }
     }
   }
 }
@@ -58,17 +177,97 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+
+  &.is-for-download {
+    padding: 0;
+
+    .c-preview-non-image .c-non-image-file-info {
+      width: calc(100% - 4rem);
+    }
+
+    .c-attachment-actions-wrapper {
+      display: none;
+      position: absolute;
+      right: 0.5rem;
+      top: 0;
+      bottom: 0;
+
+      .c-attachment-actions {
+        display: flex;
+        gap: 0.25rem;
+        align-self: center;
+        align-items: center;
+        background-color: $background_0;
+        padding: 2px;
+
+        .is-icon-small {
+          border-radius: 0;
+        }
+      }
+
+      &.is-for-image {
+        .c-attachment-actions {
+          align-self: flex-start;
+          margin-top: 0.5rem;
+        }
+      }
+    }
+
+    .is-download-item {
+      &:hover .c-attachment-actions-wrapper {
+        display: flex;
+      }
+
+      .c-preview-non-image {
+        max-width: 20rem;
+        min-width: 16rem;
+        min-height: 3.5rem;
+      }
+
+      .c-preview-img {
+        padding: 0.5rem;
+
+        img {
+          pointer-events: none;
+          max-width: 100%;
+          max-height: 20rem;
+
+          @include phone {
+            max-height: 12rem;
+          }
+        }
+
+        .loading-box {
+          border-radius: 0;
+          width: 24rem;
+          margin-bottom: 0;
+
+          @include tablet {
+            width: 20rem;
+          }
+
+          @include phone {
+            width: 16rem;
+          }
+        }
+      }
+    }
+  }
 }
 
 .c-attachment-preview {
   position: relative;
   display: inline-block;
-  border: 1px solid var(--general_0);
+  border: 1px solid $general_0;
   border-radius: 0.25rem;
 
   &.is-image {
     width: 4.5rem;
     height: 4.5rem;
+
+    .c-preview-img {
+      pointer-events: none;
+    }
   }
 
   &.is-non-image {
@@ -137,7 +336,7 @@ export default {
     top: 0;
     right: 0;
     transform: translate(50%, -50%);
-    z-index: 1;
+    z-index: 2;
     width: 1.125rem;
     height: 1.125rem;
     border-radius: 1rem;
@@ -146,5 +345,63 @@ export default {
     background-color: $text_1;
     color: $general_1;
   }
+
+  .c-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.25rem;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: $general_1;
+      opacity: 0.65;
+    }
+
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid;
+      border-top-color: transparent;
+      border-radius: 50%;
+      color: $primary_0;
+      animation: loadSpin 1.75s infinite linear;
+    }
+  }
+
+  &.is-download-item {
+    &:hover,
+    &:focus {
+      border-color: $text_1;
+    }
+
+    &:active,
+    &:focus {
+      border-color: $text_0;
+    }
+  }
+}
+
+.c-invisible-link {
+  position: relative;
+  top: -10rem;
+  left: -10rem;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>

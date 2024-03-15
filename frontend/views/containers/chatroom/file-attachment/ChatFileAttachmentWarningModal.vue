@@ -20,6 +20,7 @@ modal-template(
 <script>
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { L } from '@common/common.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT } from '@utils/constants.js'
 
 export default {
   name: 'ChatFileAttachmentWarningModal',
@@ -32,7 +33,7 @@ export default {
         'large': {
           title: L('File too large'),
           // TODO: replace '1 GB' below with a value delivered from the server once implemented.
-          content: L('That file is too large and cannot be uploaded. The limit is {sizeLimit}', { sizeLimit: L('1 GB') })
+          content: L('That file is too large and cannot be uploaded. The limit is {sizeLimit} MB', { sizeLimit: CHAT_ATTACHMENT_SIZE_LIMIT })
         },
         'unsupported': {
           title: L('Unsupported file type'),

@@ -2,10 +2,12 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
+  /*
+  // Registration is done when creating a contract, using the
+  // `shelter-namespace-registration` header
   'namespace/register': (name: string, value: string) => {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
@@ -18,16 +20,27 @@ sbp('sbp/selectors/register', {
       return result
     })
   },
-  'namespace/lookup': (name: string) => {
-    // TODO: should `name` be encodeURI'd?
+  */
+  'namespace/lookupCached': (name: string) => {
     const cache = sbp('state/vuex/state').namespaceLookups
     if (name in cache) {
       // Wrapping in a Promise to return a consistent type across all execution
       // paths (next return is a Promise)
       // This way we can call .then() on the result
-      return Promise.resolve(cache[name])
+      return cache[name]
     }
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
+  },
+  'namespace/lookup': (name: string, { skipCache }: { skipCache: boolean } = { skipCache: false }) => {
+    if (!skipCache) {
+      const cached = sbp('namespace/lookupCached', name)
+      if (cached) {
+        // Wrapping in a Promise to return a consistent type across all execution
+        // paths (next return is a Promise)
+        // This way we can call .then() on the result
+        return Promise.resolve(cached)
+      }
+    }
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${encodeURIComponent(name)}`).then((r: Object) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {
@@ -37,6 +50,7 @@ sbp('sbp/selectors/register', {
       }
       return r['text']()
     }).then(value => {
+      const cache = sbp('state/vuex/state').namespaceLookups
       if (value !== null) {
         Vue.set(cache, name, value)
       }

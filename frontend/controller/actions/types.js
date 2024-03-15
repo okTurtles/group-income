@@ -5,6 +5,7 @@ export type GIRegParams = {
   contractID?: string; // always set on contract actions, but not when creating a contract
   data: Object;
   options?: Object; // these are options for the action wrapper
+  namespaceRegistration: ?string;
   hooks?: Object;
   publishOptions?: Object
 }

@@ -3,7 +3,7 @@
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
-import { b64ToStr, createCID } from '~/shared/functions.js'
+import { createCID } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
@@ -409,7 +409,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5 } = {}, hooks) {
+  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
 
@@ -488,6 +488,7 @@ export default (sbp('sbp/selectors/register', {
           method: 'POST',
           body: entry.serialize(),
           headers: {
+            ...headers,
             'Content-Type': 'text/plain',
             'Authorization': 'gi TODO - signature - if needed here - goes here'
           },
@@ -539,16 +540,6 @@ export default (sbp('sbp/selectors/register', {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
-  },
-  // TODO: r.body is a stream.Transform, should we use a callback to process
-  //       the events one-by-one instead of converting to giant json object?
-  //       however, note if we do that they would be processed in reverse...
-  'chelonia/private/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
   },
   'chelonia/private/postKeyShare': function (contractID, previousVolatileState, signingKey) {
     const cheloniaState = sbp(this.config.stateSelector)
@@ -620,9 +611,13 @@ export default (sbp('sbp/selectors/register', {
         keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
-        if (!config.skipActionProcessing) {
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
+        if (config.skipActionProcessing) {
+          if (process.env.BUILD === 'web') {
+            console.log('OP_ACTION_ENCRYPTED: skipped action processing')
+          }
+          return
         }
+        opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
@@ -1098,10 +1093,10 @@ export default (sbp('sbp/selectors/register', {
       this.config.reactiveSet(state, contractID, Object.create(null))
       this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
     }
-    const { HEAD: latest } = await sbp('chelonia/out/latestHEADInfo', contractID)
-    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
+    const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
+    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    const recent = state.contracts[contractID]?.HEAD
+    const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
     const isSubcribed = this.subscriptionSet.has(contractID)
     if (isSubcribed) {
       if (params?.deferredRemove) {
@@ -1121,29 +1116,32 @@ export default (sbp('sbp/selectors/register', {
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
-      if (latest !== recent) {
-        console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
+      if (latestHEAD !== recentHEAD) {
+        console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recentHEAD || 'undefined'} but the latest is ${latestHEAD}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
+        const eventsStream = sbp('chelonia/out/eventsAfter', contractID, recentHeight ?? 0, undefined, recentHEAD ?? contractID)
         // Sanity check: verify event with latest hash exists in list of events
         // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
-        for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserializeHEAD(events[i]).hash === latest) {
-            latestHashFound = true
+        // state.contracts[contractID] && events.shift()
+        const eventReader = eventsStream.getReader()
+        // remove the first element in cases where we are not getting the contract for the first time
+        for (let skip = !!state.contracts[contractID]; ; skip = false) {
+          const { done, value: event } = await eventReader.read()
+          if (done) {
+            if (!latestHashFound) {
+              throw new ChelErrorUnrecoverable(`expected hash ${latestHEAD} in list of events for contract ${contractID}`)
+            }
             break
           }
-        }
-        if (!latestHashFound) {
-          throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
-        }
-        // remove the first element in cases where we are not getting the contract for the first time
-        state.contracts[contractID] && events.shift()
-        for (let i = 0; i < events.length; i++) {
+          if (!latestHashFound) {
+            latestHashFound = GIMessage.deserializeHEAD(event).hash === latestHEAD
+          }
+          if (skip) continue
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', contractID, events[i])
+          await sbp('chelonia/private/in/handleEvent', contractID, event)
         }
       } else if (!isSubcribed) {
         this.subscriptionSet.add(contractID)

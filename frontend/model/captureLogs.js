@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
-import { createCircularList } from '~/frontend/utils/circularList.js'
+import CircularList from '~/shared/CircularList.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -28,7 +28,7 @@ const setItem = (key: string, value: any): void => {
 }
 
 function createLogger (config: Object): Object {
-  const entries = createCircularList(config.maxEntries)
+  const entries = new CircularList(config.maxEntries)
   const methods = loggingLevels.reduce(
     (acc, name) => {
       acc[name] = (...args) => {

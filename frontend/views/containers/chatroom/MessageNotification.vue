@@ -44,7 +44,7 @@ export default ({
       }
     },
     isSameSender: Boolean,
-    isCurrentUser: Boolean
+    isMsgSender: Boolean
   },
   computed: {
     ...mapGetters(['userDisplayNameFromID', 'isDirectMessage', 'currentChatRoomId']),

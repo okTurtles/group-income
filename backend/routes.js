@@ -44,6 +44,20 @@ route.POST('/event', {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
+      const name = request.headers['shelter-namespace-registration']
+      // If this is the first message in a contract and the
+      // `shelter-namespace-registration` header is present, proceed with also
+      // registering a name for the new contract
+      if (deserializedHEAD.contractID === deserializedHEAD.hash && name && !name.startsWith('_private')) {
+        // Name registation is enabled only for identity contracts
+        const cheloniaState = sbp('chelonia/private/state')
+        if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
+          const r = await sbp('backend/db/registerName', name, deserializedHEAD.contractID)
+          if (Boom.isBoom(r)) {
+            return r
+          }
+        }
+      }
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
@@ -68,14 +82,14 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
-  const { contractID, since } = request.params
+route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
+  const { contractID, since, limit } = request.params
   try {
     if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -93,42 +107,10 @@ route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
   }
 })
 
-route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
-  const { before, limit } = request.params
-  try {
-    if (!before) return Boom.badRequest('missing before')
-    if (!limit) return Boom.badRequest('missing limit')
-    if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
-    if (before.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBefore/${before}/${limit}`, err.message)
-    return err
-  }
-})
-
-route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
-  const { startHash, endHash } = request.params
-  try {
-    const offset = parseInt(request.query.offset || '0')
-
-    if (!startHash) return Boom.badRequest('missing startHash')
-    if (!endHash) return Boom.badRequest('missing endHash')
-    if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
-    if (startHash.startsWith('_private') || endHash.startsWith('_private')) return Boom.notFound()
-
-    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
-    request.events.once('disconnect', stream.destroy.bind(stream))
-    return stream
-  } catch (err) {
-    logger.error(err, `GET /eventsBetwene/${startHash}/${endHash}`, err.message)
-    return err
-  }
-})
-
+/*
+// The following endpoint is disabled because name registrations are handled
+// through the `shelter-namespace-registration` header when registering a
+// new contract
 route.POST('/name', {
   validate: {
     payload: Joi.object({
@@ -146,6 +128,7 @@ route.POST('/name', {
     return err
   }
 })
+*/
 
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params

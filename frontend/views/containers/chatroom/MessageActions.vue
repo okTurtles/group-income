@@ -116,7 +116,7 @@ export default ({
   props: {
     variant: String,
     type: String,
-    isCurrentUser: Boolean
+    isMsgSender: Boolean
   },
   computed: {
     isText () {
@@ -126,7 +126,7 @@ export default ({
       return this.type === MESSAGE_TYPES.POLL
     },
     isEditable (): Boolean {
-      return this.isCurrentUser && (this.isText || this.isPoll)
+      return this.isMsgSender && (this.isText || this.isPoll)
     }
   },
   methods: {

@@ -31,7 +31,7 @@
         i18n.is-success(
           tag='button'
           @click='submit'
-          :disabled='$v.form.$invalid'
+          :disabled='submitting || $v.form.$invalid'
           data-test='updateChannelNameSubmit'
         ) Save
 </template>
@@ -63,6 +63,7 @@ export default ({
   data () {
     return {
       channelId: this.$route.query.channel,
+      submitting: false,
       form: {
         name: null,
         existingNames: []
@@ -86,6 +87,8 @@ export default ({
     },
     async submit () {
       try {
+        if (this.submitting) return
+        this.submitting = true
         if (this.currentChatRoomState.attributes.name === this.form.name) {
           // TODO: No need to update chatroom name. Display message box or toast or sth else
           console.log('TODO: Channel name is not changed')
@@ -101,11 +104,13 @@ export default ({
             }
           })
         }
+        this.close()
       } catch (e) {
         console.error('RenameChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)
+      } finally {
+        this.submitting = false
       }
-      this.close()
     }
   },
   validations: {

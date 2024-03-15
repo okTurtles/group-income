@@ -60,8 +60,8 @@
     )
 
     chat-attachment-preview(
-      v-if='ephemeral.attachment.length'
-      :attachmentList='ephemeral.attachment'
+      v-if='ephemeral.attachments.length'
+      :attachmentList='ephemeral.attachments'
       @remove='removeAttachment'
     )
 
@@ -246,10 +246,11 @@ import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
+import { getFileExtension } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -306,7 +307,8 @@ export default ({
           options: [],
           index: -1
         },
-        attachment: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        staleObjectURLs: [],
         typingUsers: []
       },
       typingUserTimeoutIds: {},
@@ -347,6 +349,10 @@ export default ({
     window.removeEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
+
+    this.ephemeral.staleObjectURLs.forEach(url => {
+      URL.revokeObjectURL(url)
+    })
   },
   computed: {
     ...mapGetters([
@@ -370,7 +376,7 @@ export default ({
         })
     },
     isActive () {
-      return this.ephemeral.textWithLines
+      return this.hasAttachments || this.ephemeral.textWithLines
     },
     textareaStyles () {
       return {
@@ -400,6 +406,9 @@ export default ({
       } else {
         return null
       }
+    },
+    hasAttachments () {
+      return this.ephemeral.attachments.length > 0
     }
   },
   methods: {
@@ -548,22 +557,11 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      const hasAttachments = this.ephemeral.attachment.length > 0
-      const getName = entry => entry.name
-
-      if (!this.$refs.textarea.value && !hasAttachments) { // nothing to send
+      if (!this.isActive) { // nothing to send
         return false
       }
 
       let msgToSend = this.$refs.textarea.value || ''
-      if (hasAttachments) {
-        // TODO: remove this block and implement file-attachment properly once it's implemented in the back-end.
-        msgToSend = msgToSend +
-          (msgToSend ? '\r\n' : '') +
-          `{ Attached: ${this.ephemeral.attachment.map(getName).join(', ')} } - Feature coming soon!`
-
-        this.clearAllAttachments()
-      }
 
       /* Process mentions in the form @username => @userID */
       const mentionStart = makeMentionFromUsername('').all[0]
@@ -577,10 +575,15 @@ export default ({
         }
       )
 
-      this.$emit('send', msgToSend) // TODO remove first / last empty lines
+      this.$emit(
+        'send',
+        msgToSend,
+        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : undefined
+      ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
+      if (this.hasAttachments) { this.clearAllAttachments() }
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -596,16 +599,11 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
-      const getFileExtension = name => {
-        const lastDotIndex = name.lastIndexOf('.')
-        return lastDotIndex === -1 ? '' : name.substring(lastDotIndex).toLowerCase()
-      }
-      const attachmentsExist = Boolean(this.ephemeral.attachment.length)
-      const list = appendItems && attachmentsExist
-        ? [...this.ephemeral.attachment]
+      const list = appendItems && this.hasAttachments
+        ? [...this.ephemeral.attachments]
         : []
 
-      if (attachmentsExist) {
+      if (this.hasAttachments) {
         // make sure to clear the previous state if there is already attached file(s).
         this.clearAllAttachments()
       }
@@ -615,10 +613,10 @@ export default ({
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
-        if (fileSize > Math.pow(10, 9)) {
-          // TODO: update Math.pow(10, 9) above with the value delivered from the server once it's implemented there.
+        if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
         } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
+          console.log(fileExt, CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS)
           // Give users a warning about unsupported file types
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
@@ -626,27 +624,25 @@ export default ({
         list.push({
           url: fileUrl,
           name: file.name,
-          extension: fileExt,
-          attachType: file.type.match('image/') ? 'image' : 'non-image'
+          mimeType: file.type || '',
+          downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         })
       }
 
-      this.ephemeral.attachment = list
+      this.ephemeral.attachments = list
     },
     clearAllAttachments () {
-      this.ephemeral.attachment.forEach(attachment => {
-        URL.revokeObjectURL(attachment.url)
-      })
-      this.ephemeral.attachment = []
+      this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
+      this.ephemeral.attachments = []
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
       // (reference: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management)
-      const targetIndex = this.ephemeral.attachment.findIndex(entry => targetUrl === entry.url)
+      const targetIndex = this.ephemeral.attachments.findIndex(entry => targetUrl === entry.url)
 
       if (targetIndex >= 0) {
         URL.revokeObjectURL(targetUrl)
-        this.ephemeral.attachment.splice(targetIndex, 1)
+        this.ephemeral.attachments.splice(targetIndex, 1)
       }
     },
     selectEmoticon (emoticon) {
@@ -1026,13 +1022,13 @@ export default ({
   align-items: center;
   border-radius: 0.25rem;
 
-  &:hover {
-    color: var(--primary_0);
-    cursor: pointer;
-  }
-
   &.isActive {
     background: $primary_0;
+
+    &:hover {
+      color: $general_1;
+      cursor: pointer;
+    }
   }
 }
 

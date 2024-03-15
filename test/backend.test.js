@@ -154,7 +154,8 @@ describe('Full walkthrough', function () {
         // TODO when merging: decryptedValue no longer takes an argument (was decryptedValue(JSON.parse))
         prepublish: (message) => { message.decryptedValue() },
         postpublish: (message) => { testFn && testFn(message) }
-      }
+      },
+      namespaceRegistration: username
     })
     return msg
   }
@@ -253,7 +254,12 @@ describe('Full walkthrough', function () {
       users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 
-    it('Should register Alice and Bob in the namespace', async function () {
+    /*
+    // The following test is redundant because now namespace registration happens
+    // when registering a contract instead of after it's registered using
+    // 'namespace/register'. If we have no further use for 'namespace/register',
+    // consider removing this entirely
+    it.skip('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
       let res = await sbp('namespace/register', alice.decryptedValue().data.attributes.username, alice.contractID())
       // NOTE: don't rely on the return values for 'namespace/register'
@@ -264,6 +270,7 @@ describe('Full walkthrough', function () {
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
     })
+    */
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
