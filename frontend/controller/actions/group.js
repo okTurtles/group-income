@@ -951,8 +951,6 @@ export default (sbp('sbp/selectors/register', {
           })
         }
 
-        console.log(chatRoomIDs, groupIDs, identityContractsMapToKeepSyncing, '&&&&&&&&&&&&&&&&&&&&&')
-
         const identityContractsToRemove = possiblyUselessContractIDs.filter(cID => !identityContractsMapToKeepSyncing[cID])
         sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
           console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
