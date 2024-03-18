@@ -916,13 +916,14 @@ export default (sbp('sbp/selectors/register', {
         return
       }
 
-      sbp('chelonia/contract/wait', [...chatRoomIDs, ...groupIDs]).then(() => {
+      const waitFor = [...chatRoomIDs, ...groupIDs]
+      sbp('chelonia/contract/wait', waitFor).then(() => {
         if (rootGetters.ourIdentityContractId && rootGetters.ourIdentityContractId !== me) {
           return
         }
 
         const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
-          .filter(([q]) => typeof q === 'string')
+          .filter(([q]) => waitFor.includes(q))
           .flatMap(([, list]) => list)
 
         if (pending.length) {
