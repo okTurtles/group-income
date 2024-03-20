@@ -897,6 +897,69 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
+  'gi.actions/group/removeUselessIdentityContracts': function ({ contractID, possiblyUselessContractIDs }) {
+    // NOTE: should remove the identity contracts which we don't need to sync anymore
+    //       for users who don't have any common groups, and any common DMs
+    const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
+    const me = rootGetters.ourIdentityContractId
+
+    const removeIdentityContracts = () => {
+      const chatRoomIDs = Object.keys(rootGetters.ourDirectMessages)
+      const groupIDs = Object.keys(rootState.contracts)
+        .filter(gID => rootState.contracts[gID].type === 'gi.contracts/group' && gID !== contractID)
+
+      if (!chatRoomIDs.length && !groupIDs.length) {
+        sbp('chelonia/contract/remove', possiblyUselessContractIDs).catch(e => {
+          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+        return
+      }
+
+      const waitFor = [...chatRoomIDs, ...groupIDs]
+      sbp('chelonia/contract/wait', waitFor).then(() => {
+        if (rootGetters.ourIdentityContractId && rootGetters.ourIdentityContractId !== me) {
+          return
+        }
+
+        const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+          .filter(([q]) => waitFor.includes(q))
+          .flatMap(([, list]) => list)
+
+        if (pending.length) {
+          return removeIdentityContracts()
+        }
+
+        const identityContractsMapToKeepSyncing = {}
+        // NOTE: contracts for the members from another groups should not be removed
+        groupIDs.forEach(gID => {
+          for (const [iID] of Object.entries((rootState[gID].profiles || {}))) {
+            identityContractsMapToKeepSyncing[iID] = true
+          }
+        })
+
+        // NOTE: contracts for the members from direct messages should not be removed
+        for (const chatRoomId of chatRoomIDs) {
+          const chatRoomState = rootState[chatRoomId]
+
+          if (!chatRoomState || !chatRoomState.members?.[me]) {
+            continue
+          }
+
+          Object.keys(chatRoomState.members).forEach(memberID => {
+            identityContractsMapToKeepSyncing[memberID] = true
+          })
+        }
+
+        const identityContractsToRemove = possiblyUselessContractIDs.filter(cID => !identityContractsMapToKeepSyncing[cID])
+        sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
+          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+      })
+    }
+
+    removeIdentityContracts()
+  },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
