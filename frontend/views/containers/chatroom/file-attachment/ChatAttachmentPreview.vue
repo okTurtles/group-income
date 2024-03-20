@@ -116,12 +116,7 @@ export default {
   },
   mounted () {
     if (this.shouldPreviewImages) {
-      (async () => {
-        this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
-          return this.getAttachmentObjectURL(attachment)
-        }))
-        this.$forceUpdate()
-      })()
+      this.refreshObjectURLs()
     }
   },
   methods: {
@@ -131,8 +126,17 @@ export default {
     fileType ({ mimeType }) {
       return mimeType.match('image/') ? 'image' : 'non-image'
     },
-    deleteAttachment (attachment) {
-      alert('TODO - delete attachment')
+    async refreshObjectURLs () {
+      this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
+        return this.getAttachmentObjectURL(attachment)
+      }))
+      this.$forceUpdate()
+    },
+    deleteAttachment (index) {
+      const attachment = this.attachmentList[index]
+      if (attachment.downloadData) {
+        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+      }
     },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
@@ -159,6 +163,23 @@ export default {
         aTag.click()
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+      }
+    }
+  },
+  watch: {
+    attachmentList (to, from) {
+      if (from.length > to.length) {
+        // NOTE: this will be caught when user tries to delete attachments
+        const oldObjectURLMapping = {}
+        if (from.length === this.objectURLList.length) {
+          from.forEach((attachment, index) => {
+            oldObjectURLMapping[attachment.downloadData.manifestCid] = this.objectURLList[index]
+          })
+          this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+        } else {
+          // NOTE: this should not be caught, but considered for the error handler
+          this.refreshObjectURLs()
+        }
       }
     }
   }

@@ -551,12 +551,33 @@ sbp('chelonia/defineContract', {
         })
       }
     },
+    'gi.contracts/chatroom/deleteAttachment': {
+      validate: actionRequireInnerSignature(objectOf({
+        hash: string,
+        manifestCid: string
+      })),
+      process ({ data, innerSigningContractID }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+        if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
+          const oldAttachments = state.messages[msgIndex].attachments
+          if (Array.isArray(oldAttachments)) {
+            const newAttachments = oldAttachments.filter(attachment => {
+              return attachment.downloadData.manifestCid !== data.manifestCid
+            })
+            Vue.set(state.messages[msgIndex], 'attachments', newAttachments)
+          }
+        }
+      }
+    },
     'gi.contracts/chatroom/makeEmotion': {
       validate: actionRequireInnerSignature(objectOf({
         hash: string,
         emoticon: string
       })),
-      process ({ data, meta, contractID, innerSigningContractID }, { state }) {
+      process ({ data, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }

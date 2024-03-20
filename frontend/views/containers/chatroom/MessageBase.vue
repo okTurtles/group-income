@@ -57,6 +57,7 @@
           :attachmentList='attachments'
           :isForDownload='true'
           :isMsgCreator='isMsgSender'
+          @delete-attachment='deleteAttachment'
         )
   .c-full-width-body
     slot(name='full-width-body')
@@ -173,6 +174,9 @@ export default ({
     },
     deleteMessage () {
       this.$emit('delete-message')
+    },
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
       this.isEditing = false

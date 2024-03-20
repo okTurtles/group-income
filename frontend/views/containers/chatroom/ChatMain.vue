@@ -85,6 +85,7 @@
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
+          @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
           @add-emoticon='addEmoticon(message, $event)'
         )
 
@@ -616,16 +617,25 @@ export default ({
           text: newMessage
         }
       }).catch((e) => {
-        console.error(`Error while editing message for ${contractID}`, e)
+        console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
     deleteMessage (message) {
       const contractID = this.currentChatRoomId
+      const hash = message.hash
       sbp('gi.actions/chatroom/deleteMessage', {
-        contractID: this.currentChatRoomId,
-        data: { hash: message.hash }
+        contractID, data: { hash }
       }).catch((e) => {
-        console.error(`Error while deleting message for ${contractID}`, e)
+        console.error(`Error while deleting message(${hash}) for chatroom(${contractID})`, e)
+      })
+    },
+    deleteAttachment (message, manifestCid) {
+      const contractID = this.currentChatRoomId
+      const hash = message.hash
+      sbp('gi.actions/chatroom/deleteAttachment', {
+        contractID, data: { hash, manifestCid }
+      }).catch((e) => {
+        console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
       })
     },
     changeDay (index) {
