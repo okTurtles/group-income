@@ -1,9 +1,19 @@
 <template lang='pug'>
 ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
+  li.c-group-list-item.group-badge
+    tooltip(
+      direction='right'
+      :text='L("Global dashboard")'
+    )
+      button.c-group-picture.is-unstyled.c-global-dashboard-logo(@click='onGlobalDashboardClick')
+        avatar.c-avatar(
+          src='/assets/images/group-income-icon-transparent-circle.png'
+          alt='Global dashboard logo'
+        )
+
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
     :key='`group-${index}`'
-    tag='button'
     :class='{ "is-active": currentGroupId === group.contractID}'
   )
     tooltip(
@@ -72,6 +82,9 @@ export default ({
     },
     handleMenuSelect (id) {
       id && this.changeGroup(id)
+    },
+    onGlobalDashboardClick () {
+      alert('Coming soon!')
     },
     changeGroup (hash) {
       const path = this.$route.path
@@ -174,5 +187,17 @@ export default ({
 
 .c-group-picture {
   display: flex;
+
+  &.c-global-dashboard-logo {
+    background-color: $background_0;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+
+    ::v-deep img.c-avatar {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
 }
 </style>
