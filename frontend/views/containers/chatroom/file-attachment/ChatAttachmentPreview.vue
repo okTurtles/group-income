@@ -43,7 +43,7 @@
           )
             button.is-icon-small(
               :aria-label='L("Delete")'
-              @click='onClickedDeleteAttachment(entryIndex)'
+              @click='deleteAttachment(entryIndex)'
             )
               i.icon-trash-alt
 
@@ -145,24 +145,6 @@ export default {
       } else if (attachment.downloadData) {
         const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
         return URL.createObjectURL(blob)
-      }
-    },
-    async onClickedDeleteAttachment (index) {
-      const attachment = this.attachmentList[index]
-
-      const translationArgs = {
-        filePreview: `<p>${attachment.name}</p>`
-      }
-      const promptConfig = {
-        heading: L('Delete file'),
-        question: L('Are you sure you want to delete this file permanently?{filePreview}', translationArgs),
-        primaryButton: L('Yes'),
-        secondaryButton: L('Cancel')
-      }
-      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-
-      if (primaryButtonSelected) {
-        this.deleteAttachment(index)
       }
     },
     async downloadAttachment (index) {

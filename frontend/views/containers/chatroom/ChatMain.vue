@@ -116,7 +116,7 @@
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { mapGetters } from 'vuex'
-import { Vue } from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
@@ -629,14 +629,46 @@ export default ({
         console.error(`Error while deleting message(${hash}) for chatroom(${contractID})`, e)
       })
     },
-    deleteAttachment (message, manifestCid) {
+    async deleteAttachment (message, manifestCid) {
       const contractID = this.currentChatRoomId
       const hash = message.hash
-      sbp('gi.actions/chatroom/deleteAttachment', {
-        contractID, data: { hash, manifestCid }
-      }).catch((e) => {
-        console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
-      })
+      const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
+      let promptConfig = {}
+
+      if (shouldDeleteMessageInstead) {
+        promptConfig = {
+          heading: L('Delete message'),
+          question: L('Are you sure you want to delete this message permanently?'),
+          primaryButton: L('Yes'),
+          secondaryButton: L('Cancel')
+        }
+      } else {
+        const attachment = message.attachments.find(attachment => {
+          return attachment.downloadData.manifestCid === manifestCid
+        })
+        promptConfig = {
+          heading: L('Delete file'),
+          question: L('Are you sure you want to delete this file permanently?{filePreview}', {
+            filePreview: `<p>${attachment.name}</p>`
+          }),
+          primaryButton: L('Yes'),
+          secondaryButton: L('Cancel')
+        }
+      }
+
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+
+      if (primaryButtonSelected) {
+        if (shouldDeleteMessageInstead) {
+          this.deleteMessage(message)
+        } else {
+          sbp('gi.actions/chatroom/deleteAttachment', {
+            contractID, data: { hash, manifestCid }
+          }).catch((e) => {
+            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+          })
+        }
+      }
     },
     changeDay (index) {
       const conv = this.messages
