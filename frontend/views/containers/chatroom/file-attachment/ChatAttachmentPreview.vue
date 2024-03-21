@@ -149,6 +149,7 @@ export default {
     },
     async onClickedDeleteAttachment (index) {
       const attachment = this.attachmentList[index]
+
       const translationArgs = {
         filePreview: `<p>${attachment.name}</p>`
       }
