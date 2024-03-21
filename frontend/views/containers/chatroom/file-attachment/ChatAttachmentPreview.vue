@@ -82,7 +82,6 @@
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
 import { getFileExtension } from '@view-utils/filters.js'
-import { L } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
