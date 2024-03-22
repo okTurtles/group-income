@@ -454,6 +454,7 @@ export default ({
             beforeRequest
           }
         }).catch((e) => {
+          // TODO: add Retry button on the right side
           console.error(`Error while publishing message for ${contractID}`, e)
           alert(e?.message || e)
         })
@@ -495,7 +496,7 @@ export default ({
 
               temporaryMessage = createMessage({
                 meta,
-                data,
+                data: { ...data, attachments },
                 hash: message.hash(),
                 height: message.height(),
                 state: this.messageState.contract,
