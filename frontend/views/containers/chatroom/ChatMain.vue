@@ -510,19 +510,19 @@ export default ({
             }
           }
         }).then(async () => {
-          const removeTemporaryMessage = () => {
-            // NOTE: remove temporary message which is created before uploading attachments
-            if (temporaryMessage) {
-              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
-              this.messageState.contract.messages.splice(msgIndex, 1)
-            }
-          }
-
           const isUploaded = await uploadAttachments()
           if (isUploaded) {
+            const removeTemporaryMessage = () => {
+              // NOTE: remove temporary message which is created before uploading attachments
+              if (temporaryMessage) {
+                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
+                this.messageState.contract.messages.splice(msgIndex, 1)
+              }
+            }
             sendMessage(removeTemporaryMessage)
           } else {
-            removeTemporaryMessage()
+            temporaryMessage.pending = false
+            temporaryMessage.hasFailed = true
           }
         })
       }
@@ -598,8 +598,9 @@ export default ({
       }
     },
     retryMessage (index) {
-      // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-      console.log('TODO $store - retry sending a message')
+      const message = cloneDeep(this.messageState.contract.messages[index])
+      this.messageState.contract.messages.splice(index, 1)
+      this.handleSendMessage(message.text, message.attachments)
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text

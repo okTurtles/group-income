@@ -2,6 +2,7 @@
 menu-parent(ref='menu')
   .c-actions
     tooltip(
+      v-if='!isFailed'
       direction='top'
       :text='L("Add reaction")'
     )
@@ -12,7 +13,7 @@ menu-parent(ref='menu')
         i.icon-smile-beam
 
     tooltip(
-      v-if='isEditable'
+      v-if='isEditable && !isFailed'
       direction='top'
       :text='L("Edit")'
     )
@@ -23,7 +24,7 @@ menu-parent(ref='menu')
         i.icon-pencil-alt
 
     tooltip(
-      v-if='isText'
+      v-if='isText && !isFailed'
       direction='top'
       :text='L("Reply")'
     )
@@ -34,7 +35,7 @@ menu-parent(ref='menu')
         i.icon-reply
 
     tooltip(
-      v-if='variant === "failed"'
+      v-if='isFailed'
       direction='top'
       :text='L("Retry")'
     )
@@ -45,6 +46,7 @@ menu-parent(ref='menu')
         i.icon-undo
 
     menu-trigger.is-icon-small(
+      v-if='!isFailed'
       :aria-label='L("More options")'
     )
       i.icon-ellipsis-h
@@ -52,6 +54,7 @@ menu-parent(ref='menu')
   menu-content.c-responsive-menu
     ul
       menu-item.hide-desktop.is-icon-small(
+        v-if='!isFailed'
         tag='button'
         @click='action("openEmoticon", $event)'
       )
@@ -60,7 +63,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='isEditable'
+        v-if='isEditable && !isFailed'
         @click='action("editMessage")'
       )
         i.icon-pencil-alt
@@ -68,7 +71,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='isText'
+        v-if='isText && !isFailed'
         @click='action("reply")'
       )
         i.icon-reply
@@ -76,13 +79,14 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='variant === "failed"'
+        v-if='isFailed'
         @click='action("retry")'
       )
         i.icon-undo
         i18n Add emoticons
 
       menu-item.is-icon-small(
+        v-if='!isFailed'
         tag='button'
         @click='action("copyMessageLink")'
       )
@@ -92,7 +96,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
-        v-if='isEditable'
+        v-if='isEditable && !isFailed'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -102,7 +106,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',
@@ -114,7 +118,12 @@ export default ({
     Tooltip
   },
   props: {
-    variant: String,
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     type: String,
     isMsgSender: Boolean
   },
@@ -124,6 +133,9 @@ export default ({
     },
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
+    },
+    isFailed () {
+      return this.variant === MESSAGE_VARIANTS.FAILED
     },
     isEditable (): Boolean {
       return this.isMsgSender && (this.isText || this.isPoll)

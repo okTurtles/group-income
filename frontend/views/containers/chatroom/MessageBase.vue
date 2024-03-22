@@ -21,7 +21,7 @@
       slot(name='body')
         p.c-replying(
           if='replyingMessage'
-          @click='onReplyMessageClicked'
+          @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
             span.custom-markdown-content(
@@ -78,9 +78,9 @@
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
-    @deleteMessage='deleteMessage'
+    @deleteMessage='$emit("delete-message")'
     @reply='reply'
-    @retry='retry'
+    @retry='$emit("retry")'
     @copyMessageLink='copyMessageLink'
   )
 </template>
@@ -96,7 +96,7 @@ import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
@@ -136,7 +136,12 @@ export default ({
       type: Object,
       default: null
     },
-    variant: String,
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     isSameSender: Boolean,
     isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
@@ -162,17 +167,11 @@ export default ({
         this.isEditing = true
       }
     },
-    onReplyMessageClicked () {
-      this.$emit('reply-message-clicked')
-    },
     onMessageEdited (newMessage) {
       this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
       }
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
     },
     cancelEdit () {
       this.isEditing = false
@@ -190,9 +189,6 @@ export default ({
     },
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
-    },
-    retry () {
-      this.$emit('retry')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
@@ -265,7 +261,8 @@ export default ({
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
   }
 
-  &.pending {
+  &.pending,
+  &.failed {
     .c-text {
       color: $general_0;
     }
