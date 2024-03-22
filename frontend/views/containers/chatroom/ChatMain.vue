@@ -487,7 +487,7 @@ export default ({
           data,
           hooks: {
             preSendCheck: (message, state) => {
-              // NOTE: this preSendCheck does nothing except appending pending message
+              // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
               const [, opV] = message.op()
@@ -508,8 +508,7 @@ export default ({
               return false
             }
           }
-        })
-        uploadAttachments().then((isUploaded) => {
+        }).then(async () => {
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
@@ -517,6 +516,8 @@ export default ({
               this.messageState.contract.messages.splice(msgIndex, 1)
             }
           }
+
+          const isUploaded = await uploadAttachments()
           if (isUploaded) {
             sendMessage(removeTemporaryMessage)
           } else {
