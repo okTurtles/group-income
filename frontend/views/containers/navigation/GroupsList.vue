@@ -1,6 +1,6 @@
 <template lang='pug'>
 ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
-  li.c-group-list-item.group-badge
+  li.c-group-list-item.group-badge(:class='{ "is-active": isInGlobalDashboard }')
     tooltip(
       direction='right'
       :text='L("Global dashboard")'
@@ -14,7 +14,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
     :key='`group-${index}`'
-    :class='{ "is-active": currentGroupId === group.contractID}'
+    :class='{ "is-active": !isInGlobalDashboard && currentGroupId === group.contractID}'
   )
     tooltip(
       direction='right'
@@ -74,6 +74,9 @@ export default ({
           this.groupUnreadMessages(group.contractID) + this.unreadGroupNotificationCountFor(group.contractID) > 0
         ]))
       )
+    },
+    isInGlobalDashboard () {
+      return this.$route.path.startsWith('/global-dashboard')
     }
   },
   methods: {
@@ -82,9 +85,13 @@ export default ({
     },
     handleMenuSelect (id) {
       id && this.changeGroup(id)
+
+      if (this.isInGlobalDashboard) {
+        this.$router.push('/dashboard')
+      }
     },
     onGlobalDashboardClick () {
-      alert('Coming soon!')
+      this.$router.push(({ path: '/global-dashboard' }))
     },
     changeGroup (hash) {
       const path = this.$route.path

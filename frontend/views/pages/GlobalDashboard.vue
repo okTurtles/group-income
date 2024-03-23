@@ -3,23 +3,14 @@ page(
   pageTestName='GlobalDashboard'
   pageTestHeaderName='pageHeaderName'
 )
-  template(#title='') {{ currentTabConfig.pageTitle }}
+  template(#title='') {{ currentTabSetting.title }}
+  .c-global-dashboard-content
+    i18n(tag='p') Coming soon!
 </template>
 
 <script>
 import Page from '@components/Page.vue'
-import { L } from '@common/common.js'
-
-const dashboardTabConfigs = {
-  'news-and-updates': {
-    id: 'new-and-updates',
-    pageTitle: L('News & Updates')
-  },
-  'dms': {
-    id: 'dms',
-    pageTitle: L('Direct Messages')
-  }
-}
+import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/utils/misc.js'
 
 export default ({
   name: 'GlobalDashboard',
@@ -27,8 +18,8 @@ export default ({
     Page
   },
   computed: {
-    currentTabConfig () {
-      return dashboardTabConfigs[this.$route.params.id || 'news-and-updates']
+    currentTabSetting () {
+      return GLOBAL_DASHBOARD_SETTINGS[this.$route.params.id || 'news-and-updates']
     }
   }
 })
