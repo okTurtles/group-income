@@ -363,10 +363,10 @@ export default ({
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
-      if (message.pending) {
-        return MESSAGE_VARIANTS.PENDING
-      } else if (message.hasFailed) {
+      if (message.hasFailed) {
         return MESSAGE_VARIANTS.FAILED
+      } else if (message.pending) {
+        return MESSAGE_VARIANTS.PENDING
       } else {
         return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
@@ -408,7 +408,7 @@ export default ({
       if (replyingMessage) {
         // If not replying to a message, use original data; otherwise, append
         // replyingMessage to data.
-        data = { ...data, replyingMessage }
+        data.replyingMessage = replyingMessage
       }
 
       const sendMessage = (beforePrePublish) => {
@@ -470,7 +470,7 @@ export default ({
             })
             return { name, mimeType, downloadData }
           }))
-          data = { ...data, attachments: attachmentsToSend }
+          data.attachments = attachmentsToSend
 
           return true
         } catch (e) {
@@ -521,7 +521,6 @@ export default ({
             }
             sendMessage(removeTemporaryMessage)
           } else {
-            temporaryMessage.pending = false
             temporaryMessage.hasFailed = true
           }
         })
