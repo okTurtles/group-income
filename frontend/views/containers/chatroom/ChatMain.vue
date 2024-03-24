@@ -404,7 +404,7 @@ export default ({
         ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
         : null
 
-      let data = { type: MESSAGE_TYPES.TEXT, text }
+      const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
         // If not replying to a message, use original data; otherwise, append
         // replyingMessage to data.
