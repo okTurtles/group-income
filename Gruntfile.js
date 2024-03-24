@@ -118,7 +118,7 @@ module.exports = (grunt) => {
         grunt.log.writeln(chalk.underline(`Key file ${keyFile} exists, using that.`))
       } else {
         grunt.log.writeln(chalk.underline(`\nRunning 'chel keygen --pubout ${pubKeyFile} --out ${keyFile}'`))
-        const { stdout } = await execWithErrMsg(`chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
+        const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
         console.log(stdout)
       }
       grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
