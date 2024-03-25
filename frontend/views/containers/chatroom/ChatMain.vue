@@ -521,7 +521,7 @@ export default ({
             }
             sendMessage(removeTemporaryMessage)
           } else {
-            temporaryMessage.hasFailed = true
+            Vue.set(temporaryMessage, 'hasFailed', true)
           }
         })
       }
