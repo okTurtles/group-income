@@ -5,6 +5,7 @@ message-base(
   @reply='reply'
   @reply-message-clicked='scrollToReplyMessage'
   @message-edited='editMessage'
+  @delete-attachment='deleteAttachment'
   @delete-message='deleteMessage'
   :convertTextToMarkdown='true'
 )
@@ -57,6 +58,9 @@ export default ({
     },
     deleteMessage () {
       this.$emit('delete-message')
+    },
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     reply () {
       this.$emit('reply')
