@@ -722,6 +722,7 @@ export default ({
 
           for (;;) {
             const { done, value: event } = await newEventsStreamReader.read()
+            console.error({ done, event })
             if (done) break
 
             const state = this.messageState.contract
