@@ -54,7 +54,10 @@ sbp('sbp/selectors/register', {
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     const stream = new Readable({
       read (): void {
-        if (ended) return
+        if (ended) {
+          this.destroy()
+          return
+        }
         if (currentHash && counter < limit) {
           sbp('chelonia/db/getEntry', currentHash).then(async entry => {
             if (entry) {
