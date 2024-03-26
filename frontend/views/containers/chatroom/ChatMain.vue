@@ -177,6 +177,7 @@ const onChatScroll = function () {
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
+    if (msg.pending || msg.hasFailed) continue
     const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
     const height = this.$refs[msg.hash][0].$el.clientHeight
@@ -197,6 +198,7 @@ const onChatScroll = function () {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
+      if (msg.pending || msg.hasFailed) continue
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
@@ -401,9 +403,14 @@ export default ({
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
-        // If not replying to a message, use original data; otherwise, append
-        // replyingMessage to data.
+        // NOTE: If not replying to a message, use original data; otherwise, append replyingMessage to data.
         data.replyingMessage = replyingMessage
+        // NOTE: for the messages with only images, the text should be updated with file name
+        if (!replyingMessage.text) {
+          const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
+          const hasMoreThanTwoFiles = msg.attachments.length > 1
+          data.replyingMessage.text = msg.attachments[0].name + (hasMoreThanTwoFiles ? ' and more' : '')
+        }
       }
 
       const sendMessage = (beforePrePublish) => {
@@ -430,8 +437,7 @@ export default ({
           if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
-            const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+            const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) return
             msg.hash = message.hash()
             msg.height = message.height()
@@ -455,9 +461,9 @@ export default ({
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert('Can\'t send message when offline, please connect to the Internet')
           } else {
-            const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
+            const msgIndex = findMessageIdx(pendingMessageHash, this.messages)
             if (msgIndex > 0) {
-              Vue.set(this.messageState.contract.messages[msgIndex], 'hasFailed', true)
+              Vue.set(this.messages[msgIndex], 'hasFailed', true)
             }
           }
         })
@@ -506,7 +512,7 @@ export default ({
                 pending: true,
                 innerSigningContractID: this.ourIdentityContractId
               })
-              this.messageState.contract.messages.push(temporaryMessage)
+              this.messages.push(temporaryMessage)
 
               this.stopReplying()
               this.updateScroll()
@@ -519,8 +525,8 @@ export default ({
             const removeTemporaryMessage = () => {
               // NOTE: remove temporary message which is created before uploading attachments
               if (temporaryMessage) {
-                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
-                this.messageState.contract.messages.splice(msgIndex, 1)
+                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+                this.messages.splice(msgIndex, 1)
               }
             }
             sendMessage(removeTemporaryMessage)
@@ -601,8 +607,8 @@ export default ({
       }
     },
     retryMessage (index) {
-      const message = cloneDeep(this.messageState.contract.messages[index])
-      this.messageState.contract.messages.splice(index, 1)
+      const message = cloneDeep(this.messages[index])
+      this.messages.splice(index, 1)
       this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {

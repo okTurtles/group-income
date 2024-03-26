@@ -60,9 +60,8 @@
         )
 
       .c-failure-message-wrapper
-        span.c-failure-link(
-          @click='$emit("retry")'
-        ) {{ failureMessage }}
+        i18n(tag='span') Message failed to send.
+        i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
   .c-full-width-body
     slot(name='full-width-body')
@@ -104,7 +103,6 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
-import { L } from '@common/common.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
@@ -120,8 +118,7 @@ export default ({
   },
   data () {
     return {
-      isEditing: false,
-      failureMessage: L('Message failed to send. Resend message')
+      isEditing: false
     }
   },
   props: {
@@ -306,17 +303,14 @@ export default ({
   .c-failure-message-wrapper {
     display: none;
     margin-top: 0.25rem;
+    font-weight: bold;
+    font-size: 0.725rem;
 
     .c-failure-link {
-      font-weight: bold;
+      color: $primary_0;
+      margin-left: 0.1rem;
       cursor: pointer;
-      font-size: 0.725rem;
-      font-style: italic;
-      color: $danger_0;
-
-      &:hover {
-        text-decoration: underline;
-      }
+      text-decoration: underline;
     }
   }
 
