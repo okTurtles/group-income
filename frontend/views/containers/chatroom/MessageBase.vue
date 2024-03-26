@@ -58,6 +58,12 @@
           :isForDownload='true'
           :isMsgCreator='isMsgSender'
         )
+
+      .c-failure-message-wrapper
+        span.c-failure-link(
+          @click='$emit("retry")'
+        ) {{ failureMessage }}
+
   .c-full-width-body
     slot(name='full-width-body')
 
@@ -98,6 +104,7 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
+import { L } from '@common/common.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
@@ -113,7 +120,8 @@ export default ({
   },
   data () {
     return {
-      isEditing: false
+      isEditing: false,
+      failureMessage: L('Message failed to send. Resend message')
     }
   },
   props: {
@@ -285,11 +293,36 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  &:hover:not(.pending) {
+  &:hover {
     background-color: $general_2;
 
-    ::v-deep .c-actions {
-      display: flex;
+    &:not(.pending, .failed) {
+      ::v-deep .c-actions {
+        display: flex;
+      }
+    }
+  }
+
+  .c-failure-message-wrapper {
+    display: none;
+    margin-top: 0.25rem;
+
+    .c-failure-link {
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.725rem;
+      font-style: italic;
+      color: $danger_0;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &.failed {
+    .c-failure-message-wrapper {
+      display: block;
     }
   }
 }

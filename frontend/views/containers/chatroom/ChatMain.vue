@@ -412,6 +412,7 @@ export default ({
       }
 
       const sendMessage = (beforePrePublish) => {
+        let pendingMessageHash = null
         const prepublish = (message) => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
@@ -422,6 +423,7 @@ export default ({
           sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
             Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+            pendingMessageHash = message.hash()
           }).catch((e) => {
             console.error('Error sending message during pre-publish: ' + e.message)
           })
@@ -438,6 +440,7 @@ export default ({
             if (!msg) return
             msg.hash = message.hash()
             msg.height = message.height()
+            pendingMessageHash = message.hash()
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -454,9 +457,15 @@ export default ({
             beforeRequest
           }
         }).catch((e) => {
-          // TODO: add Retry button on the right side
-          console.error(`Error while publishing message for ${contractID}`, e)
-          alert(e?.message || e)
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert('Can\'t send message when offline, please connect to the Internet')
+          } else {
+            const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
+            if (msgIndex > 0) {
+              const failedMessage = this.messageState.contract.messages[msgIndex]
+              Vue.set(failedMessage, 'hasFailed', true)
+            }
+          }
         })
       }
       const uploadAttachments = async () => {

@@ -2,7 +2,6 @@
 menu-parent(ref='menu')
   .c-actions
     tooltip(
-      v-if='!isFailed'
       direction='top'
       :text='L("Add reaction")'
     )
@@ -13,7 +12,7 @@ menu-parent(ref='menu')
         i.icon-smile-beam
 
     tooltip(
-      v-if='isEditable && !isFailed'
+      v-if='isEditable'
       direction='top'
       :text='L("Edit")'
     )
@@ -24,7 +23,7 @@ menu-parent(ref='menu')
         i.icon-pencil-alt
 
     tooltip(
-      v-if='isText && !isFailed'
+      v-if='isText'
       direction='top'
       :text='L("Reply")'
     )
@@ -35,7 +34,7 @@ menu-parent(ref='menu')
         i.icon-reply
 
     tooltip(
-      v-if='isFailed'
+      v-if='variant==="failed"'
       direction='top'
       :text='L("Retry")'
     )
@@ -46,7 +45,6 @@ menu-parent(ref='menu')
         i.icon-undo
 
     menu-trigger.is-icon-small(
-      v-if='!isFailed'
       :aria-label='L("More options")'
     )
       i.icon-ellipsis-h
@@ -54,7 +52,6 @@ menu-parent(ref='menu')
   menu-content.c-responsive-menu
     ul
       menu-item.hide-desktop.is-icon-small(
-        v-if='!isFailed'
         tag='button'
         @click='action("openEmoticon", $event)'
       )
@@ -63,7 +60,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='isEditable && !isFailed'
+        v-if='isEditable'
         @click='action("editMessage")'
       )
         i.icon-pencil-alt
@@ -71,7 +68,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='isText && !isFailed'
+        v-if='isText'
         @click='action("reply")'
       )
         i.icon-reply
@@ -79,14 +76,13 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='isFailed'
+        v-if='variant==="failed"'
         @click='action("retry")'
       )
         i.icon-undo
         i18n Add emoticons
 
       menu-item.is-icon-small(
-        v-if='!isFailed'
         tag='button'
         @click='action("copyMessageLink")'
       )
@@ -96,7 +92,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
-        v-if='isEditable && !isFailed'
+        v-if='isEditable'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -133,9 +129,6 @@ export default ({
     },
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
-    },
-    isFailed () {
-      return this.variant === MESSAGE_VARIANTS.FAILED
     },
     isEditable (): Boolean {
       return this.isMsgSender && (this.isText || this.isPoll)
