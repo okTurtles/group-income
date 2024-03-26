@@ -43,11 +43,13 @@ export default ({
     },
     emoticonsList: {
       type: Object,
-      default: null
+      default: function () {
+        return null
+      }
     },
     isSameSender: Boolean,
     isMsgSender: Boolean,
-    replyingMessage: null
+    replyingMessage: String
   },
   constants: Object.freeze({
     variants: MESSAGE_VARIANTS

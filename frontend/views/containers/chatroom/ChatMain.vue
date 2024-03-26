@@ -68,7 +68,7 @@
           :notification='message.notification'
           :proposal='message.proposal'
           :pollData='message.pollData'
-          :replyingMessage='replyingMessage(message)'
+          :replyingMessage='replyingMessageText(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
@@ -97,8 +97,8 @@
       ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
-      :replying-message='ephemeral.replyingMessage'
-      :replying-to='ephemeral.replyingTo'
+      :replyingMessage='ephemeral.replyingMessage'
+      :replyingTo='ephemeral.replyingTo'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -256,7 +256,6 @@ export default ({
         //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
         renderingChatRoomId: null,
         replyingMessage: null,
-        replyingMessageHash: null,
         replyingTo: null,
         unprocessedEvents: []
       },
@@ -371,8 +370,8 @@ export default ({
         return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
-    replyingMessage (message) {
-      return message.replyingMessage ? message.replyingMessage.text : ''
+    replyingMessageText (message) {
+      return message.replyingMessage?.text || ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -394,15 +393,11 @@ export default ({
     },
     stopReplying () {
       this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments) {
+    handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
       const contractID = this.currentChatRoomId
-      const replyingMessage = this.ephemeral.replyingMessageHash
-        ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
-        : null
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
@@ -513,8 +508,9 @@ export default ({
                 innerSigningContractID: this.ourIdentityContractId
               })
               this.messageState.contract.messages.push(temporaryMessage)
-              this.updateScroll()
 
+              this.stopReplying()
+              this.updateScroll()
               return false
             }
           }
@@ -608,11 +604,11 @@ export default ({
     retryMessage (index) {
       const message = cloneDeep(this.messageState.contract.messages[index])
       this.messageState.contract.messages.splice(index, 1)
-      this.handleSendMessage(message.text, message.attachments)
+      this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {
-      this.ephemeral.replyingMessage = message.text
-      this.ephemeral.replyingMessageHash = message.hash
+      const { text, hash } = message
+      this.ephemeral.replyingMessage = { text, hash }
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {

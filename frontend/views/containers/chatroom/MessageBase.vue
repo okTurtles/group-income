@@ -20,7 +20,7 @@
 
       slot(name='body')
         p.c-replying(
-          if='replyingMessage'
+          v-if='replyingMessage'
           @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
