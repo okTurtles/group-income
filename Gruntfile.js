@@ -523,7 +523,8 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('deploy', ['checkDependencies', 'exec:chelDeployAll', 'build', 'backend:launch', 'keepalive'])
+  grunt.registerTask('deploy', ['checkDependencies', 'build'])
+  grunt.registerTask('serve', ['exec:chelDeployAll', 'backend:launch', 'keepalive'])
   grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
