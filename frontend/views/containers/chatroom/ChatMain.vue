@@ -457,8 +457,7 @@ export default ({
           } else {
             const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
             if (msgIndex > 0) {
-              const failedMessage = this.messageState.contract.messages[msgIndex]
-              Vue.set(failedMessage, 'hasFailed', true)
+              Vue.set(this.messageState.contract.messages[msgIndex], 'hasFailed', true)
             }
           }
         })
