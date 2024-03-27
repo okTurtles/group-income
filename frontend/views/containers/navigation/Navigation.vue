@@ -90,8 +90,8 @@ nav.c-navigation(
               rel='noopener noreferrer'
             ) Donate
 
-      .c-navigation-footer(v-if='showNav')
-        profile
+    .c-navigation-footer(v-if='showNav')
+      profile
 </template>
 
 <script>

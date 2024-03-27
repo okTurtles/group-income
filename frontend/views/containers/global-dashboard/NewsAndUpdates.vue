@@ -12,11 +12,12 @@
         )
       .c-post-content
         h3.is-title-4 {{ post.title }}
-        p {{ post.content }}
+        p(v-safe-html:a='convertToMarkdown(post.content)')
 </template>
 
 <script>
 import { humanDate } from '@model/contracts/shared/time.js'
+import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
@@ -24,13 +25,19 @@ const dummyPosts = [
     id: 'dummy-post-1',
     createdAt: new Date('2023-06-08'),
     title: 'The Prototype is Ready',
-    content: "It's been quite a journey, but we're finally here. A new kind of software is ready for testing. If you have a group of friends/family that's interested in supporting one another using monetary and non-monetary means, you're a perfect fit to try out the Group Income prototype, and we want to hear from you! Read more on our blog: <a href='https://groupincome.org/2023/06/the-prototype-is-ready/' target='_blank'>https://groupincome.org/2023/06/the-prototype-is-ready/</a>"
+    content: "It's been quite a journey, but we're finally here. A new kind of software is ready for testing. " +
+      "If you have a group of friends/family that's interested in supporting one another using monetary and non-monetary means, " +
+      "you're a perfect fit to try out the Group Income prototype, and we want to hear from you! Read more on our blog: " +
+      '[https://groupincome.org/2023/06/the-prototype-is-ready/](https://groupincome.org/2023/06/the-prototype-is-ready/)'
   },
   {
     id: 'dummy-post-2',
     createdAt: new Date('2021-06-08'),
     title: 'Roadmap Updates',
-    content: "Some say it's not the destination that matters so much, but the journey and friends you meet along the way. I couldn't agree more. But also, destinations aren't to be underestimated either! Back in 2019, during the Before Times, our team — a mixture of independent contractors and volunteers — got together. Read more on our blog: <a href='https://groupincome.org/2021/06/bulgaria-hackathon-2019-roadmap-updates-hiring/' target='_blank'>https://groupincome.org/2021/06/bulgaria-hackathon-2019-roadmap-updates-hiring/</a>"
+    content: "Some say it's not the destination that matters so much, but the journey and friends you meet along the way. " +
+    "I couldn't agree more. But also, destinations aren't to be underestimated either! Back in 2019, during the Before Times, " +
+    'our team — a mixture of independent contractors and volunteers — got together. Read more on our blog: ' +
+    '[https://groupincome.org/2021/06/bulgaria-hackathon-2019-roadmap-updates-hiring/](https://groupincome.org/2021/06/bulgaria-hackathon-2019-roadmap-updates-hiring/)'
   }
 ]
 
@@ -45,7 +52,8 @@ export default ({
     }
   },
   methods: {
-    humanDate
+    humanDate,
+    convertToMarkdown
   }
 }: Object)
 </script>
