@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { copyFile, readFile, writeFile } = require('fs/promises')
+const { copyFile, cpSync, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -522,9 +522,22 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('default', ['dev'])
-  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('deploy', ['checkDependencies', 'build'])
-  grunt.registerTask('serve', ['exec:chelDeployAll', 'backend:launch', 'keepalive'])
+
+  grunt.registerTask('deploy', function () {
+    grunt.task.run(['checkDependencies', 'build'])
+
+    // try {
+    //   cpSync(`${distDir}/*`, `${distDir}/frontend`, { recursive: true })
+    // } catch (e) {
+    //   throw new Error('copy files failed')
+    // }
+  })
+  grunt.registerTask('serve', function (target) {
+    console.log(target)
+
+    grunt.task.run(['exec:chelDeployAll', 'backend:launch', 'keepalive'])
+  })
+
   grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
