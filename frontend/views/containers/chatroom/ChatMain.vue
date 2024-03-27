@@ -68,7 +68,7 @@
           :notification='message.notification'
           :proposal='message.proposal'
           :pollData='message.pollData'
-          :replyingMessage='replyingMessage(message)'
+          :replyingMessage='replyingMessageText(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
@@ -97,8 +97,8 @@
       ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
-      :replying-message='ephemeral.replyingMessage'
-      :replying-to='ephemeral.replyingTo'
+      :replyingMessage='ephemeral.replyingMessage'
+      :replyingTo='ephemeral.replyingTo'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -115,7 +115,7 @@
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { mapGetters } from 'vuex'
-import { Vue } from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
@@ -177,6 +177,7 @@ const onChatScroll = function () {
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
+    if (msg.pending || msg.hasFailed) continue
     const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
     const height = this.$refs[msg.hash][0].$el.clientHeight
@@ -197,6 +198,7 @@ const onChatScroll = function () {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
+      if (msg.pending || msg.hasFailed) continue
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
@@ -256,7 +258,6 @@ export default ({
         //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
         renderingChatRoomId: null,
         replyingMessage: null,
-        replyingMessageHash: null,
         replyingTo: null,
         unprocessedEvents: []
       },
@@ -363,16 +364,16 @@ export default ({
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
-      if (message.pending) {
-        return MESSAGE_VARIANTS.PENDING
-      } else if (message.hasFailed) {
+      if (message.hasFailed) {
         return MESSAGE_VARIANTS.FAILED
+      } else if (message.pending) {
+        return MESSAGE_VARIANTS.PENDING
       } else {
         return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
-    replyingMessage (message) {
-      return message.replyingMessage ? message.replyingMessage.text : ''
+    replyingMessageText (message) {
+      return message.replyingMessage?.text || ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -394,24 +395,27 @@ export default ({
     },
     stopReplying () {
       this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments) {
+    handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
       const contractID = this.currentChatRoomId
-      const replyingMessage = this.ephemeral.replyingMessageHash
-        ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
-        : null
 
-      let data = { type: MESSAGE_TYPES.TEXT, text }
+      const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
-        // If not replying to a message, use original data; otherwise, append
-        // replyingMessage to data.
-        data = { ...data, replyingMessage }
+        // NOTE: If not replying to a message, use original data; otherwise, append replyingMessage to data.
+        data.replyingMessage = replyingMessage
+        // NOTE: for the messages with only images, the text should be updated with file name
+        if (!replyingMessage.text) {
+          const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
+          if (msg) {
+            data.replyingMessage.text = msg.attachments[0].name
+          }
+        }
       }
 
       const sendMessage = (beforePrePublish) => {
+        let pendingMessageHash = null
         const prepublish = (message) => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
@@ -422,6 +426,7 @@ export default ({
           sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
             Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+            pendingMessageHash = message.hash()
           }).catch((e) => {
             console.error('Error sending message during pre-publish: ' + e.message)
           })
@@ -433,11 +438,11 @@ export default ({
           if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
-            const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+            const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) return
             msg.hash = message.hash()
             msg.height = message.height()
+            pendingMessageHash = message.hash()
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -454,8 +459,14 @@ export default ({
             beforeRequest
           }
         }).catch((e) => {
-          console.error(`Error while publishing message for ${contractID}`, e)
-          alert(e?.message || e)
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
+          } else {
+            const msgIndex = findMessageIdx(pendingMessageHash, this.messages)
+            if (msgIndex > 0) {
+              Vue.set(this.messages[msgIndex], 'hasFailed', true)
+            }
+          }
         })
       }
       const uploadAttachments = async () => {
@@ -469,7 +480,7 @@ export default ({
             })
             return { name, mimeType, downloadData }
           }))
-          data = { ...data, attachments: attachmentsToSend }
+          data.attachments = attachmentsToSend
 
           return true
         } catch (e) {
@@ -487,7 +498,7 @@ export default ({
           data,
           hooks: {
             preSendCheck: (message, state) => {
-              // NOTE: this preSendCheck does nothing except appending pending message
+              // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
               const [, opV] = message.op()
@@ -495,32 +506,33 @@ export default ({
 
               temporaryMessage = createMessage({
                 meta,
-                data,
+                data: { ...data, attachments },
                 hash: message.hash(),
                 height: message.height(),
                 state: this.messageState.contract,
                 pending: true,
                 innerSigningContractID: this.ourIdentityContractId
               })
-              this.messageState.contract.messages.push(temporaryMessage)
-              this.updateScroll()
+              this.messages.push(temporaryMessage)
 
+              this.stopReplying()
+              this.updateScroll()
               return false
             }
           }
-        })
-        uploadAttachments().then((isUploaded) => {
-          const removeTemporaryMessage = () => {
-            // NOTE: remove temporary message which is created before uploading attachments
-            if (temporaryMessage) {
-              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
-              this.messageState.contract.messages.splice(msgIndex, 1)
-            }
-          }
+        }).then(async () => {
+          const isUploaded = await uploadAttachments()
           if (isUploaded) {
+            const removeTemporaryMessage = () => {
+              // NOTE: remove temporary message which is created before uploading attachments
+              if (temporaryMessage) {
+                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+                this.messages.splice(msgIndex, 1)
+              }
+            }
             sendMessage(removeTemporaryMessage)
           } else {
-            removeTemporaryMessage()
+            Vue.set(temporaryMessage, 'hasFailed', true)
           }
         })
       }
@@ -596,12 +608,13 @@ export default ({
       }
     },
     retryMessage (index) {
-      // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-      console.log('TODO $store - retry sending a message')
+      const message = cloneDeep(this.messages[index])
+      this.messages.splice(index, 1)
+      this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {
-      this.ephemeral.replyingMessage = message.text
-      this.ephemeral.replyingMessageHash = message.hash
+      const { text, hash } = message
+      this.ephemeral.replyingMessage = { text, hash }
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {

@@ -38,7 +38,7 @@
 
     .c-replying-wrapper
       .c-replying(v-if='replyingMessage')
-        i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+        i18n(:args='{ replyingTo, text: replyingMessage.text }') Replying to {replyingTo}: "{text}"
         button.c-clear.is-icon-small(
           :aria-label='L("Stop replying")'
           @click='stopReplying'
@@ -287,7 +287,12 @@ export default ({
       type: Boolean,
       default: false
     },
-    replyingMessage: String,
+    replyingMessage: {
+      type: Object, // { text: '', hash: '' }
+      default: function () {
+        return null
+      }
+    },
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -578,7 +583,8 @@ export default ({
       this.$emit(
         'send',
         msgToSend,
-        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : undefined
+        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : null,
+        this.replyingMessage
       ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()

@@ -23,6 +23,10 @@
         )
         .loading-box(v-else)
 
+      .c-preview-pending-flag(v-if='isPending')
+      .c-preview-failed-flag(v-else-if='isFailed')
+        i.icon-exclamation-triangle
+
       .c-attachment-actions-wrapper(
         :class='{ "is-for-image": shouldPreviewImages }'
       )
@@ -81,6 +85,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension } from '@view-utils/filters.js'
 
 export default {
@@ -92,6 +97,12 @@ export default {
     attachmentList: {
       type: Array,
       required: true
+    },
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
     },
     isForDownload: {
       type: Boolean,
@@ -112,6 +123,12 @@ export default {
       return !this.attachmentList.some(attachment => {
         return this.fileType(attachment) === 'non-image'
       })
+    },
+    isPending () {
+      return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    isFailed () {
+      return this.variant === MESSAGE_VARIANTS.FAILED
     }
   },
   mounted () {
@@ -403,5 +420,30 @@ export default {
   left: -10rem;
   opacity: 0;
   pointer-events: none;
+}
+
+.c-preview-pending-flag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: $general_0;
+    animation: loadSpin 1.75s infinite linear;
+  }
+}
+
+.c-preview-failed-flag {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  color: $warning_0;
 }
 </style>
