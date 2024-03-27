@@ -55,6 +55,7 @@
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
+          :variant='variant'
           :isForDownload='true'
           :isMsgCreator='isMsgSender'
         )
@@ -274,7 +275,6 @@ export default ({
 
     .c-attachments-wrapper {
       pointer-events: none;
-      filter: blur(0.125rem);
     }
   }
 
