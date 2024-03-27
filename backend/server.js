@@ -64,7 +64,7 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 sbp('sbp/selectors/register', {
   'backend/server/persistState': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
-    const cheloniaState = sbp('chelonia/private/state')
+    const cheloniaState = sbp('chelonia/rootState')
     // If the contract has been removed or the height hasn't been updated,
     // there's nothing to persist
     if (!cheloniaState.contracts[contractID] || cheloniaState.contracts[contractID].height < deserializedHEAD.head.height) {
@@ -195,7 +195,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       recoveredState[contractID] = cp.contractState
       recoveredState.contracts[contractID] = cp.cheloniaContractInfo
     }))
-    Object.assign(sbp('chelonia/private/state'), recoveredState)
+    Object.assign(sbp('chelonia/rootState'), recoveredState)
   }
   // https://hapi.dev/tutorials/plugins
   await hapi.register([

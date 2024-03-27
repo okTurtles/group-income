@@ -50,7 +50,7 @@ route.POST('/event', {
       // registering a name for the new contract
       if (deserializedHEAD.contractID === deserializedHEAD.hash && name && !name.startsWith('_private')) {
         // Name registation is enabled only for identity contracts
-        const cheloniaState = sbp('chelonia/private/state')
+        const cheloniaState = sbp('chelonia/rootState')
         if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
           const r = await sbp('backend/db/registerName', name, deserializedHEAD.contractID)
           if (Boom.isBoom(r)) {
