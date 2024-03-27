@@ -408,8 +408,9 @@ export default ({
         // NOTE: for the messages with only images, the text should be updated with file name
         if (!replyingMessage.text) {
           const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
-          const hasMoreThanTwoFiles = msg.attachments.length > 1
-          data.replyingMessage.text = msg.attachments[0].name + (hasMoreThanTwoFiles ? ' and more' : '')
+          if (msg) {
+            data.replyingMessage.text = msg.attachments[0].name
+          }
         }
       }
 
@@ -459,7 +460,7 @@ export default ({
           }
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert('Can\'t send message when offline, please connect to the Internet')
+            alert(L('Can\'t send message when offline, please connect to the Internet'))
           } else {
             const msgIndex = findMessageIdx(pendingMessageHash, this.messages)
             if (msgIndex > 0) {
