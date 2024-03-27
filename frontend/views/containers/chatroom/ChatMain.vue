@@ -115,7 +115,7 @@
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { mapGetters } from 'vuex'
-import { Vue } from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
@@ -460,7 +460,7 @@ export default ({
           }
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert(L('Can\'t send message when offline, please connect to the Internet'))
+            alert(L("Can't send message when offline, please connect to the Internet"))
           } else {
             const msgIndex = findMessageIdx(pendingMessageHash, this.messages)
             if (msgIndex > 0) {
