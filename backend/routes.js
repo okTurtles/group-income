@@ -39,25 +39,68 @@ route.POST('/event', {
   auth: 'gi-auth',
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
+  // TODO: Update this regex once `chel` uses prefixed manifests
+  const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
   try {
     console.debug('/event handler')
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
+      if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
+        return Boom.badData('Invalid manifest')
+      }
+      const credentials = request.auth.credentials
+      // Only allow identity contracts to be created without attribution
+      if (!credentials?.billableContractID && deserializedHEAD.contractID === deserializedHEAD.hash) {
+        const manifest = await sbp('chelonia/db/get', deserializedHEAD.head.manifest)
+        const parsedManifest = JSON.parse(manifest)
+        const { name } = JSON.parse(parsedManifest.body)
+        if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
+      }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
-      const name = request.headers['shelter-namespace-registration']
-      // If this is the first message in a contract and the
-      // `shelter-namespace-registration` header is present, proceed with also
-      // registering a name for the new contract
-      if (deserializedHEAD.contractID === deserializedHEAD.hash && name && !name.startsWith('_private')) {
+      if (deserializedHEAD.contractID === deserializedHEAD.hash) {
+        // Store attribution information
+        if (credentials?.billableContractID) {
+          // Store the owner for the current resource
+          await sbp('chelonia/db/set', `_private_owner_${deserializedHEAD.contractID}`, credentials.billableContractID)
+          const resourcesKey = `_private_resources_${credentials.billableContractID}`
+          // Store the resource in the resource index key
+          // This is done in a queue to handle several simultaneous requests
+          // reading and writing to the same key
+          await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
+            const existingResources = await sbp('chelonia/db/get', resourcesKey)
+            await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + deserializedHEAD.contractID)
+          })
+        // A billable entity has been created
+        } else {
+          // Use a queue to ensure atomic updates
+          await sbp('okTurtles.eventQueue/queueEvent', '_private_billable_entities', async () => {
+            const existingBillableEntities = await sbp('chelonia/db/get', '_private_billable_entities')
+            await sbp('chelonia/db/set', '_private_billable_entities', (existingBillableEntities ? existingBillableEntities + '\x00' : '') + deserializedHEAD.contractID)
+          })
+        }
+        // If this is the first message in a contract and the
+        // `shelter-namespace-registration` header is present, proceed with also
+        // registering a name for the new contract
+        const name = request.headers['shelter-namespace-registration']
+        if (name && !name.startsWith('_private')) {
         // Name registation is enabled only for identity contracts
-        const cheloniaState = sbp('chelonia/rootState')
-        if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
-          const r = await sbp('backend/db/registerName', name, deserializedHEAD.contractID)
-          if (Boom.isBoom(r)) {
-            return r
+          const cheloniaState = sbp('chelonia/rootState')
+          if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
+            const r = await sbp('backend/db/registerName', name, deserializedHEAD.contractID)
+            if (Boom.isBoom(r)) {
+              return r
+            }
           }
         }
       }
+      // Store size information
+      const sizeKey = `_private_size_${deserializedHEAD.contractID}`
+      // Use a queue to ensure atomic updates
+      await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
+        // Size is stored as a hex value
+        const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 16)) || 0
+        await sbp('chelonia/db/set', sizeKey, (existingSize + Buffer.byteLength(request.payload)).toString(16))
+      })
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {

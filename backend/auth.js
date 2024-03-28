@@ -21,8 +21,13 @@ exports.plugin = {
           if (!scheme || String(scheme[0]).toLowerCase() !== 'shelter') {
             return h.unauthenticated(Boom.badRequest('Bad authentication'))
           }
-          const billableContractID = verifyShelterAuthorizationHeader(authorization)
-          return h.authenticated({ credentials: { billableContractID } })
+          try {
+            const billableContractID = verifyShelterAuthorizationHeader(authorization)
+            return h.authenticated({ credentials: { billableContractID } })
+          } catch (e) {
+            console.warn(e, 'Shelter authorization failed')
+            return h.unauthenticated(Boom.unauthorized('Authentication failed', 'shelter'))
+          }
         }
       }
     })

@@ -253,6 +253,9 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifest = JSON.parse(manifestSource)
     const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
+    if (body.name !== contractName) {
+      throw new Error(`Mismatched contract name. Expected ${contractName} but got ${body.name}`)
+    }
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
