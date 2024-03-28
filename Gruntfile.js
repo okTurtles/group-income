@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { copyFile, cpSync, readFile, writeFile } = require('fs/promises')
+const { copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -59,7 +59,7 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Da
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
-const backendIndex = './backend/index.js'
+const backendIndex = 'backend/index.js'
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
@@ -523,14 +523,23 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
 
+  grunt.registerTask('postDeploy', async function () {
+    const commandsToCopyBackendAndContracts = `
+      cp -r backend ${distDir}/backend &
+      mkdir -p contracts/${packageJSON.contractsVersion} &&
+      cp -rf ${distDir}/contracts/* contracts/${packageJSON.contractsVersion} &&
+      rm -rf ${distDir}/contracts &&
+      cp -rf contracts ${distDir}
+    `
+    const { stdout } = await execWithErrMsg(commandsToCopyBackendAndContracts)
+    console.log(stdout)
+  })
   grunt.registerTask('deploy', function () {
-    grunt.task.run(['checkDependencies', 'build'])
-
-    // try {
-    //   cpSync(`${distDir}/*`, `${distDir}/frontend`, { recursive: true })
-    // } catch (e) {
-    //   throw new Error('copy files failed')
-    // }
+    grunt.task.run([
+      'checkDependencies', 'exec:eslint', 'exec:flow',
+      'exec:puglint', 'exec:stylelint', 'clean',
+      'copy', 'esbuild', 'postDeploy'
+    ])
   })
   grunt.registerTask('serve', function (target) {
     console.log(target)
@@ -577,12 +586,8 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => {
-        return genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
-      })
-      .then(() => {
-        return Promise.all([buildMain.run(), buildServiceWorkers.run()])
-      })
+      .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
+      .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
