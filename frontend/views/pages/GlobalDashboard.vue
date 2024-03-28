@@ -12,7 +12,7 @@ page(
 import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
 import DirectMessages from '@containers/global-dashboard/DirectMessages.vue'
-import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/router.js'
+import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/utils/misc.js'
 
 const contentComponentsMap = {
   'news-and-updates': NewsAndUpdates,
