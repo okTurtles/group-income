@@ -99,6 +99,7 @@ export default (sbp('sbp/selectors/register', {
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const PEK = keygen(CURVE25519XSALSA20POLY1305)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const IPKid = keyId(IPK)
@@ -106,6 +107,7 @@ export default (sbp('sbp/selectors/register', {
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const PEKid = keyId(PEK)
+    const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
     const IPKp = serializeKey(IPK, false)
@@ -113,15 +115,17 @@ export default (sbp('sbp/selectors/register', {
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const PEKp = serializeKey(PEK, false)
+    const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
 
     // Before creating the contract, put all keys into transient store
     sbp('chelonia/storeSecretKeys',
-      () => [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+      () => [IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true }))
     )
 
     let userID
@@ -205,6 +209,20 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: PEKp
+          },
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
           }
         ],
         data: {
@@ -606,7 +624,7 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    })
+    }, rootState.loggedIn.identityContractID)
 
     // Share the keys to the newly created chatroom with ourselves
     await sbp('gi.actions/out/shareVolatileKeys', {

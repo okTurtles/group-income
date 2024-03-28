@@ -12,7 +12,7 @@ import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/chatroom/create': async function (params: GIRegParams) {
+  'gi.actions/chatroom/create': async function (params: GIRegParams, billableContractID: string) {
     try {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
@@ -73,6 +73,10 @@ export default (sbp('sbp/selectors/register', {
 
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
+        publishOptions: {
+          billableContractID,
+          ...params.publishOptions
+        },
         signingKeyId: cskOpts.id,
         actionSigningKeyId: cskOpts.id,
         actionEncryptionKeyId: cekOpts.id,

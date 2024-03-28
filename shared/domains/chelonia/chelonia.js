@@ -40,7 +40,7 @@ export type ChelRegParams = {
     postpublish?: (GIMessage) => void;
     onprocessed?: (GIMessage) => void;
   };
-  publishOptions?: { headers: ?Object, maxAttempts: number };
+  publishOptions?: { headers: ?Object, billableContractID: ?string, maxAttempts: number };
 }
 
 export type ChelActionParams = {
