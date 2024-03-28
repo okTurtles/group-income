@@ -106,7 +106,7 @@ import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin } from '@view-utils/misc.js'
-import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/utils/misc.js'
+import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/router.js'
 import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({

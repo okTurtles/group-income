@@ -8,6 +8,20 @@ import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import { lazyPage } from '@utils/lazyLoadedView.js'
 
+// settings data for global dashboard
+export const GLOBAL_DASHBOARD_SETTINGS: {[string]: Object } = {
+  'news-and-updates': {
+    title: L('News & Updates'),
+    routeTo: '/global-dashboard/news-and-updates',
+    icon: 'newspaper'
+  },
+  'direct-messages': {
+    title: L('Direct Messages'),
+    routeTo: '/global-dashboard/direct-messages',
+    icon: 'comment'
+  }
+}
+
 /*
  * Lazy load all the pages that are not necessary at initial loading of the app.
  *
