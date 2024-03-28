@@ -202,6 +202,7 @@ page(
               i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
+              i.icon-newspaper newspaper
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus

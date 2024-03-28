@@ -198,7 +198,7 @@ describe('Group - Removing a member', () => {
     cy.giSwitchUser(`user2-${userId}`)
 
     // Change from groupB to groupA dashboard
-    cy.getByDT('groupsList').find('li:nth-child(1) button').click()
+    cy.getByDT('groupsList').find('li:nth-child(2) button').click()
 
     getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userbot-${userId} from the group.`)
