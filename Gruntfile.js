@@ -526,9 +526,10 @@ module.exports = (grunt) => {
   grunt.registerTask('postDeploy', async function () {
     const commandsToCopyBackendAndContracts = `
       cp -r backend ${distDir}/backend &
+      mkdir -p ${distDir}/data &
       mkdir -p contracts/${packageJSON.contractsVersion} &&
-      cp -rf ${distDir}/contracts/* contracts/${packageJSON.contractsVersion} &&
-      rm -rf ${distDir}/contracts &&
+      cp -rf ${distContracts}/* contracts/${packageJSON.contractsVersion} &&
+      rm -rf ${distContracts} &&
       cp -rf contracts ${distDir}
     `
     const { stdout } = await execWithErrMsg(commandsToCopyBackendAndContracts)
@@ -541,9 +542,7 @@ module.exports = (grunt) => {
       'copy', 'esbuild', 'postDeploy'
     ])
   })
-  grunt.registerTask('serve', function (target) {
-    console.log(target)
-
+  grunt.registerTask('serve', function () {
     grunt.task.run(['exec:chelDeployAll', 'backend:launch', 'keepalive'])
   })
 
