@@ -9,10 +9,23 @@ page(
 </template>
 
 <script>
+import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
 import DirectMessages from '@containers/global-dashboard/DirectMessages.vue'
-import { GLOBAL_DASHBOARD_SETTINGS } from '@controller/utils/misc.js'
+
+export const GLOBAL_DASHBOARD_SETTINGS: {[string]: Object } = {
+  'news-and-updates': {
+    title: L('News & Updates'),
+    routeTo: '/global-dashboard/news-and-updates',
+    icon: 'newspaper'
+  },
+  'direct-messages': {
+    title: L('Direct Messages'),
+    routeTo: '/global-dashboard/direct-messages',
+    icon: 'comment'
+  }
+}
 
 const contentComponentsMap = {
   'news-and-updates': NewsAndUpdates,
