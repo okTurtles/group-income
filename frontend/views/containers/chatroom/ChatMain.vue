@@ -466,7 +466,7 @@ export default ({
             const attachmentBlob = await objectURLtoBlob(url)
             const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
               type: mimeType, cipher: 'aes256gcm'
-            })
+            }, { billableContractID: contractID })
             return { name, mimeType, downloadData }
           }))
           data = { ...data, attachments: attachmentsToSend }

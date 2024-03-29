@@ -10,6 +10,8 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
+import { webcrypto } from 'node:crypto'
+
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
@@ -97,9 +99,9 @@ route.POST('/event', {
       const sizeKey = `_private_size_${deserializedHEAD.contractID}`
       // Use a queue to ensure atomic updates
       await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
-        // Size is stored as a hex value
-        const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 16)) || 0
-        await sbp('chelonia/db/set', sizeKey, (existingSize + Buffer.byteLength(request.payload)).toString(16))
+        // Size is stored as a decimal value
+        const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 10)) || 0
+        await sbp('chelonia/db/set', sizeKey, (existingSize + Buffer.byteLength(request.payload)).toString(10))
       })
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
@@ -233,7 +235,7 @@ function (request, h) {
 // File upload route.
 // If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
-  // TODO: only allow uploads from registered users
+  auth: 'gi-auth',
   payload: {
     parse: true,
     output: 'stream',
@@ -249,6 +251,10 @@ route.POST('/file', {
 }, async function (request, h) {
   try {
     console.info('FILE UPLOAD!')
+    const credentials = request.auth.credentials
+    if (!credentials?.billableContractID) {
+      return Boom.unauthorized('Uploading files requires ownership information', 'shelter')
+    }
     const manifestMeta = request.payload['manifest']
     if (typeof manifestMeta !== 'object') return Boom.badRequest('missing manifest')
     if (manifestMeta.filename !== 'manifest.json') return Boom.badRequest('wrong manifest filename')
@@ -300,6 +306,27 @@ route.POST('/file', {
     await Promise.all(chunks.map(([cid, data]) => sbp('chelonia/db/set', cid, data)))
     const manifestHash = createCID(manifestMeta.payload)
     await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
+    // Store attribution information
+    // Store the owner for the current resource
+    await sbp('chelonia/db/set', `_private_owner_${manifestHash}`, credentials.billableContractID)
+    const resourcesKey = `_private_resources_${credentials.billableContractID}`
+    // Store the resource in the resource index key
+    // This is done in a queue to handle several simultaneous requests
+    // reading and writing to the same key
+    await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
+      const existingResources = await sbp('chelonia/db/get', resourcesKey)
+      await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + manifestHash)
+    })
+    // Store size information
+    // Size is stored as a decimal value
+    await sbp('chelonia/db/set', `_private_size_${manifestHash}`, (manifest.size + manifestMeta.payload.byteLength).toString(10))
+    // Generate and store deletion token
+    const deletionTokenRaw = new Uint8Array(18)
+    // $FlowFixMe[cannot-resolve-name]
+    webcrypto.getRandomValues(deletionTokenRaw)
+    // $FlowFixMe[incompatible-call]
+    const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
+    await sbp('chelonia/db/set', `_private_deletionToken_${manifestHash}`, deletionToken)
     return manifestHash
   } catch (err) {
     logger.error(err, 'POST /file', err.message)
@@ -376,32 +403,60 @@ route.GET('/', {}, function (req, h) {
   return h.redirect(staticServeConfig.redirect)
 })
 
-route.POST('/zkpp/register/{contractID}', {
+route.POST('/zkpp/register/{name}', {
+  auth: 'gi-auth',
   validate: {
     payload: Joi.alternatives([
       {
-        // what b is
+        // b is a hash of a random public key (`g^r`) with secret key `r`,
+        // which is used by the requester to commit to that particular `r`
         b: Joi.string().required()
       },
       {
-        r: Joi.string().required(), // what r is
-        s: Joi.string().required(), // what s is
+        // `r` is the value used to derive `b` (in this case, it's the public
+        // key `g^r`)
+        r: Joi.string().required(),
+        // `s` is an opaque (to the client) value that was earlier returned by
+        // the server
+        s: Joi.string().required(),
+        // `sig` is an opaque (to the client) value returned by the server
+        // to validate the request (ensuring that (`r`, `s`) come from a
+        // previous request
         sig: Joi.string().required(),
+        // `Eh` is the  Eh = E_{S_A + S_C}(h), where S_A and S_C are salts and
+        //                                     h = H\_{S_A}(P)
         Eh: Joi.string().required()
       }
     ])
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
+  if (!req.payload['b']) {
+    const credentials = req.auth.credentials
+    if (!credentials?.billableContractID) {
+      return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
+    }
+    if (req.params['name'].startsWith('_private')) return Boom.notFound()
+    console.error({ name: req.params.name, x: 'foo' })
+    const contractID = await sbp('backend/db/lookupName', req.params['name'])
+    if (contractID !== credentials.billableContractID) {
+      // This ensures that only the owner of the contract can set a salt for it,
+      // closing a small window of opportunity(*) during which an attacker could
+      // potentially lock out a new user from their account by registering a
+      // different salt.
+      // (*) This is right between the moment an OP_CONTRACT is sent and the
+      // time this endpoint is called, which should follow almost immediately after.
+      return Boom.forbidden('Only the owner of this resource may set a password hash')
+    }
+  }
   try {
     if (req.payload['b']) {
-      const result = await registrationKey(req.params['contractID'], req.payload['b'])
+      const result = await registrationKey(req.params['name'], req.payload['b'])
 
       if (result) {
         return result
       }
     } else {
-      const result = await register(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+      const result = await register(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
 
       if (result) {
         return result
@@ -409,31 +464,31 @@ route.POST('/zkpp/register/{contractID}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/{contractID}: ' + e.message, { ip })
+    console.error(e, 'Error at POST /zkpp/{name}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contractID}/auth_hash', {
+route.GET('/zkpp/{name}/auth_hash', {
   validate: {
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.notFound()
   try {
-    const challenge = await getChallenge(req.params['contractID'], req.query['b'])
+    const challenge = await getChallenge(req.params['name'], req.query['b'])
 
     return challenge || Boom.notFound()
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{contractID}/auth_hash: ' + e.message, { ip })
+    console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contractID}/contract_hash', {
+route.GET('/zkpp/{name}/contract_hash', {
   validate: {
     query: Joi.object({
       r: Joi.string().required(),
@@ -443,22 +498,22 @@ route.GET('/zkpp/{contractID}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.notFound()
   try {
-    const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+    const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
       return salt
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{contractID}/contract_hash: ' + e.message, { ip })
+    console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/updatePasswordHash/{contractID}', {
+route.POST('/zkpp/updatePasswordHash/{name}', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -469,16 +524,16 @@ route.POST('/zkpp/updatePasswordHash/{contractID}', {
     })
   }
 }, async function (req, h) {
-  if (req.params['contractID'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.notFound()
   try {
-    const result = await updateContractSalt(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+    const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
       return result
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
+    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')

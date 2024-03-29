@@ -57,17 +57,17 @@ export default (sbp('sbp/selectors/register', {
   }) {
     let finalPicture = `${window.location.origin}/assets/images/group-avatar-default.png`
 
+    const rootState = sbp('state/vuex/state')
+    const userID = rootState.loggedIn.identityContractID
+
     if (picture) {
       try {
-        finalPicture = await imageUpload(picture)
+        finalPicture = await imageUpload(picture, { billableContractID: userID })
       } catch (e) {
         console.error('actions/group.js failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }
-
-    const rootState = sbp('state/vuex/state')
-    const userID = rootState.loggedIn.identityContractID
 
     // Create the necessary keys to initialise the contract
     // eslint-disable-next-line camelcase
@@ -180,8 +180,8 @@ export default (sbp('sbp/selectors/register', {
           {
             id: SAKid,
             name: '#sak',
-            purpose: ['sig'],
-            ringLevel: Number.MAX_SAFE_INTEGER,
+            purpose: ['sak'],
+            ringLevel: 0,
             permissions: [],
             allowedActions: [],
             meta: {

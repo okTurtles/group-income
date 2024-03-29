@@ -503,7 +503,7 @@ export default (sbp('sbp/selectors/register', {
           signal: this.abortController.signal
         })
         if (r.ok) {
-          hooks?.postpublish?.(entry)
+          await hooks?.postpublish?.(entry)
           return entry
         }
         try {

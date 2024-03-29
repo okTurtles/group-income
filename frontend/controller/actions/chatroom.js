@@ -71,6 +71,11 @@ export default (sbp('sbp/selectors/register', {
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
+      const SAK = keygen(EDWARDS25519SHA512BATCH)
+      const SAKid = keyId(SAK)
+      const SAKp = serializeKey(SAK, false)
+      const SAKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(SAK, true))
+
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
         publishOptions: {
@@ -85,7 +90,7 @@ export default (sbp('sbp/selectors/register', {
             id: cskOpts.id,
             name: 'csk',
             purpose: ['sig'],
-            ringLevel: 1,
+            ringLevel: 0,
             permissions: '*',
             allowedActions: '*',
             foreignKey: cskOpts.foreignKey,
@@ -96,7 +101,7 @@ export default (sbp('sbp/selectors/register', {
             id: cekOpts.id,
             name: 'cek',
             purpose: ['enc'],
-            ringLevel: 1,
+            ringLevel: 0,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
@@ -129,6 +134,20 @@ export default (sbp('sbp/selectors/register', {
                 }
               ]
             : []),
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sak'],
+            ringLevel: 0,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
+          },
           // TODO: Find a way to have this wrapping be done by Chelonia directly
           encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,

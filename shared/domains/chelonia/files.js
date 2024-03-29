@@ -5,6 +5,7 @@ import encrypt from '@exact-realty/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
+import { buildShelterAuthorizationHeader } from './utils.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
@@ -257,7 +258,7 @@ const cipherHandlers = {
 }
 
 export default (sbp('sbp/selectors/register', {
-  'chelonia/fileUpload': async function (chunks: Blob | Blob[], manifestOptions: Object) {
+  'chelonia/fileUpload': async function (chunks: Blob | Blob[], manifestOptions: Object, { billableContractID }: { billableContractID: string } = {}) {
     if (!Array.isArray(chunks)) chunks = [chunks]
     const chunkDescriptors: Promise<[number, string]>[] = []
     const cipherHandler = await cipherHandlers[manifestOptions.cipher]?.upload?.(this, manifestOptions)
@@ -319,7 +320,10 @@ export default (sbp('sbp/selectors/register', {
       method: 'POST',
       signal: this.abortController.signal,
       body: await ArrayBufferToUint8ArrayStream(this.config.connectionURL, stream),
-      headers: new Headers([['content-type', `multipart/form-data; boundary=${boundary}`]]),
+      headers: new Headers([
+        ...(billableContractID ? [['authorization', buildShelterAuthorizationHeader.call(this, billableContractID)]] : []),
+        ['content-type', `multipart/form-data; boundary=${boundary}`]
+      ]),
       duplex: 'half'
     })
 

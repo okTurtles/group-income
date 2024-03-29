@@ -150,8 +150,8 @@ describe('Full walkthrough', function () {
         {
           id: SAKid,
           name: '#sak',
-          purpose: ['sig'],
-          ringLevel: Number.MAX_SAFE_INTEGER,
+          purpose: ['sak'],
+          ringLevel: 0,
           permissions: [],
           allowedActions: [],
           data: SAKp
@@ -393,7 +393,15 @@ describe('Full walkthrough', function () {
           { type: 'application/vnd.shelter.manifest' }
         )
       )
-      await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
+      await fetch(`${process.env.API_URL}/file`,
+        {
+          method: 'POST',
+          headers: {
+            authorization: sbp('chelonia/shelterAuthorizationHeader', users.alice.contractID())
+          },
+          body: form
+        }
+      )
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(manifestCid))
     })
