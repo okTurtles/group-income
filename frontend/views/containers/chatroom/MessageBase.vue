@@ -58,6 +58,7 @@
           :variant='variant'
           :isForDownload='true'
           :isMsgCreator='isMsgSender'
+          @attachmentPreviewFinished='$emit("attachmentPreviewFinished")'
         )
 
       .c-failure-message-wrapper

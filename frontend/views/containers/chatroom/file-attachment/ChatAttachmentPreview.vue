@@ -138,6 +138,11 @@ export default {
           return this.getAttachmentObjectURL(attachment)
         }))
         this.$forceUpdate()
+        const isDownloadedFromServer = !this.attachmentList[0].url
+        if (isDownloadedFromServer) {
+          // NOTE: emit events only when the image attachments are downloaded from the server
+          this.$emit('attachmentPreviewFinished')
+        }
       })()
     }
   },

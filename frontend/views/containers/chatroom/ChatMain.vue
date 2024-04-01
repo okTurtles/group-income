@@ -84,6 +84,7 @@
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
+          @attachmentPreviewFinished='couldUpdateScroll(index)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -584,6 +585,12 @@ export default ({
             console.debug(`Message ${messageHash} is removed from ${contractID}`)
           }
         }
+      }
+    },
+    couldUpdateScroll (index) {
+      const isLastMessage = index === this.messages.length - 1
+      if (this.ephemeral.messagesInitiated && isLastMessage) {
+        this.jumpToLatest()
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
