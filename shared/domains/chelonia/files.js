@@ -329,8 +329,11 @@ export default (sbp('sbp/selectors/register', {
 
     if (!uploadResponse.ok) throw new Error('Error uploading file')
     return {
-      manifestCid: await uploadResponse.text(),
-      downloadParams: cipherHandler.downloadParams
+      download: {
+        manifestCid: await uploadResponse.text(),
+        downloadParams: cipherHandler.downloadParams
+      },
+      delete: uploadResponse.headers.get('shelter-deletion-token')
     }
   },
   'chelonia/fileDownload': async function ({ manifestCid, downloadParams }: { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
@@ -357,5 +360,23 @@ export default (sbp('sbp/selectors/register', {
     if (!cipherHandler) throw new Error('Unsupported cipher')
 
     return cipherHandler.payloadHandler()
+  },
+  'chelonia/fileDelete': async function ({ manifestCid }: { manifestCid: string }, { billableContractID, token }: { token: ?string, billableContractID: ?string } = {}) {
+    if (!manifestCid) {
+      throw new TypeError('A manifest CID must be provided')
+    }
+    if (!token !== !billableContractID) {
+      throw new TypeError('Either a token or a billable contract ID must be provided')
+    }
+    const response = await fetch(`${this.config.connectionURL}/deleteFile/${manifestCid}`, {
+      method: 'POST',
+      signal: this.abortController.signal,
+      headers: new Headers([
+        ['authorization', token ? `bearer ${token}` : buildShelterAuthorizationHeader.call(this, billableContractID)]
+      ])
+    })
+    if (!response.ok) {
+      throw new Error('Unable to delete file')
+    }
   }
 }): string[])

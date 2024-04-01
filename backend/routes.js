@@ -10,7 +10,15 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
-import { webcrypto } from 'node:crypto'
+
+// Constant-time equal
+const ctEq = (expected: string, actual: string) => {
+  let r = actual.length ^ expected.length
+  for (let i = 0; i < actual.length; i++) {
+    r |= actual.codePointAt(i) ^ expected.codePointAt(i)
+  }
+  return r === 0
+}
 
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
@@ -38,7 +46,10 @@ const route = new Proxy({}, {
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
 route.POST('/event', {
-  auth: 'gi-auth',
+  auth: {
+    strategy: 'gi-auth',
+    mode: 'optional'
+  },
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
   // TODO: Update this regex once `chel` uses prefixed manifests
@@ -62,23 +73,10 @@ route.POST('/event', {
       if (deserializedHEAD.contractID === deserializedHEAD.hash) {
         // Store attribution information
         if (credentials?.billableContractID) {
-          // Store the owner for the current resource
-          await sbp('chelonia/db/set', `_private_owner_${deserializedHEAD.contractID}`, credentials.billableContractID)
-          const resourcesKey = `_private_resources_${credentials.billableContractID}`
-          // Store the resource in the resource index key
-          // This is done in a queue to handle several simultaneous requests
-          // reading and writing to the same key
-          await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-            const existingResources = await sbp('chelonia/db/get', resourcesKey)
-            await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + deserializedHEAD.contractID)
-          })
+          await sbp('backend/server/saveOwner', credentials.billableContractID, deserializedHEAD.contractID)
         // A billable entity has been created
         } else {
-          // Use a queue to ensure atomic updates
-          await sbp('okTurtles.eventQueue/queueEvent', '_private_billable_entities', async () => {
-            const existingBillableEntities = await sbp('chelonia/db/get', '_private_billable_entities')
-            await sbp('chelonia/db/set', '_private_billable_entities', (existingBillableEntities ? existingBillableEntities + '\x00' : '') + deserializedHEAD.contractID)
-          })
+          await sbp('backend/server/registerBillableEntity', deserializedHEAD.contractID)
         }
         // If this is the first message in a contract and the
         // `shelter-namespace-registration` header is present, proceed with also
@@ -96,13 +94,7 @@ route.POST('/event', {
         }
       }
       // Store size information
-      const sizeKey = `_private_size_${deserializedHEAD.contractID}`
-      // Use a queue to ensure atomic updates
-      await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
-        // Size is stored as a decimal value
-        const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 10)) || 0
-        await sbp('chelonia/db/set', sizeKey, (existingSize + Buffer.byteLength(request.payload)).toString(10))
-      })
+      await sbp('backend/server/updateSize', deserializedHEAD.contractID, Buffer.byteLength(request.payload))
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
@@ -235,7 +227,10 @@ function (request, h) {
 // File upload route.
 // If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
-  auth: 'gi-auth',
+  auth: {
+    strategies: ['gi-auth'],
+    mode: 'required'
+  },
   payload: {
     parse: true,
     output: 'stream',
@@ -302,32 +297,29 @@ route.POST('/file', {
     // Finally, verify the size is correct
     if (ourSize !== manifest.size) return Boom.badRequest('Mismatched total size')
 
+    const manifestHash = createCID(manifestMeta.payload)
+
+    // Ensure that the manifest doesn't exist
+    if (await sbp('chelonia/db/get', manifestHash)) {
+      throw new Error(`Manifest ${manifestHash} already exists`)
+    }
+    // Ensure that the chunks do not exist
+    await Promise.all(chunks.map(async ([cid]) => {
+      const exists = !!(await sbp('chelonia/db/get', cid))
+      if (exists) {
+        throw new Error(`Chunk ${cid} already exists`)
+      }
+    }))
     // Now, store all chunks and the manifest
     await Promise.all(chunks.map(([cid, data]) => sbp('chelonia/db/set', cid, data)))
-    const manifestHash = createCID(manifestMeta.payload)
     await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
     // Store attribution information
-    // Store the owner for the current resource
-    await sbp('chelonia/db/set', `_private_owner_${manifestHash}`, credentials.billableContractID)
-    const resourcesKey = `_private_resources_${credentials.billableContractID}`
-    // Store the resource in the resource index key
-    // This is done in a queue to handle several simultaneous requests
-    // reading and writing to the same key
-    await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-      const existingResources = await sbp('chelonia/db/get', resourcesKey)
-      await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + manifestHash)
-    })
+    await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
-    // Size is stored as a decimal value
-    await sbp('chelonia/db/set', `_private_size_${manifestHash}`, (manifest.size + manifestMeta.payload.byteLength).toString(10))
+    await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
     // Generate and store deletion token
-    const deletionTokenRaw = new Uint8Array(18)
-    // $FlowFixMe[cannot-resolve-name]
-    webcrypto.getRandomValues(deletionTokenRaw)
-    // $FlowFixMe[incompatible-call]
-    const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
-    await sbp('chelonia/db/set', `_private_deletionToken_${manifestHash}`, deletionToken)
-    return manifestHash
+    const deletionToken = sbp('backend/server/saveDeletionToken', manifestHash)
+    return h.response(manifestHash).header('shelter-deletion-token', deletionToken)
   } catch (err) {
     logger.error(err, 'POST /file', err.message)
     return err
@@ -355,6 +347,91 @@ route.GET('/file/{hash}', {
     return Boom.notFound()
   }
   return h.response(blobOrString).etag(hash)
+})
+
+route.POST('/deleteFile/{hash}', {
+  auth: {
+    strategies: ['gi-auth', 'gi-bearer'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const { hash } = request.params
+  const strategy = request.auth.strategy
+  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+  const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
+  if (!owner) {
+    return Boom.notFound()
+  }
+
+  switch (strategy) {
+    case 'gi-auth': {
+      let ultimateOwner = owner
+      let count = 0
+      // Walk up the ownership tree
+      do {
+        const owner = await sbp('chelonia/db/get', `_private_owner_${ultimateOwner}`)
+        if (owner) {
+          ultimateOwner = owner
+          count++
+        } else {
+          break
+        }
+      // Prevent an infinite loop
+      } while (count < 128)
+      if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    case 'gi-bearer': {
+      const expectedToken = await sbp('chelonia/db/get', `_private_deletionToken_${hash}`)
+      if (!expectedToken) {
+        return Boom.notFound()
+      }
+      const token = request.auth.credentials.token
+      // Constant-time comparison
+      if (!ctEq(expectedToken, token)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    default:
+      return Boom.unauthorized('Missing or invalid auth strategy')
+  }
+
+  // Authentication passed, now proceed to delete the file and its associated
+  // keys
+  const rawManifest = await sbp('chelonia/db/get', hash)
+  if (!rawManifest) return Boom.notFound()
+  try {
+    const manifest = JSON.parse(rawManifest)
+    if (!manifest || typeof manifest !== 'object') return Boom.badData('manifest format is invalid')
+    if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
+    if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
+    // Delete all chunks
+    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia/db/delete', cid)))
+  } catch (e) {
+    console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
+    return Boom.notFound()
+  }
+  await sbp('chelonia/db/delete', hash)
+  await sbp('chelonia/db/delete', `_private_owner_${hash}`)
+  await sbp('chelonia/db/delete', `_private_size_${hash}`)
+  const resourcesKey = `_private_resources_${owner}`
+  // Use a queue for atomicity
+  await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
+    const existingResources = await sbp('chelonia/db/get', resourcesKey)
+    if (!existingResources) return
+    if (existingResources.endsWith(hash)) {
+      await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, hash.length + 1))
+      return
+    }
+    const hashIndex = existingResources.indexOf(hash + '\x00')
+    if (hashIndex === -1) return
+    await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
+  })
+
+  return h.response()
 })
 
 // SPA routes
@@ -404,7 +481,10 @@ route.GET('/', {}, function (req, h) {
 })
 
 route.POST('/zkpp/register/{name}', {
-  auth: 'gi-auth',
+  auth: {
+    strategy: 'gi-auth',
+    mode: 'optional'
+  },
   validate: {
     payload: Joi.alternatives([
       {

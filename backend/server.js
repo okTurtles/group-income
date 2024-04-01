@@ -17,6 +17,8 @@ import { pushServerActionhandlers } from './push.js'
 import chalk from 'chalk'
 import '~/shared/domains/chelonia/chelonia.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
+// $FlowFixMe[cannot-resolve-module]
+import { webcrypto } from 'node:crypto'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -131,6 +133,49 @@ sbp('sbp/selectors/register', {
     // Persist the Chelonia state after processing a message
     await sbp('backend/server/persistState', deserializedHEAD, entry)
     await sbp('backend/server/broadcastEntry', deserializedHEAD, entry)
+  },
+  'backend/server/saveOwner': async function (ownerID: string, resourceID: string) {
+    // Store the owner for the current resource
+    await sbp('chelonia/db/set', `_private_owner_${resourceID}`, ownerID)
+    const resourcesKey = `_private_resources_${ownerID}`
+    // Store the resource in the resource index key
+    // This is done in a queue to handle several simultaneous requests
+    // reading and writing to the same key
+    await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
+      const existingResources = await sbp('chelonia/db/get', resourcesKey)
+      await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + resourceID)
+    })
+  },
+  'backend/server/registerBillableEntity': async function (resourceID: string) {
+    // Use a queue to ensure atomic updates
+    await sbp('okTurtles.eventQueue/queueEvent', '_private_billable_entities', async () => {
+      const existingBillableEntities = await sbp('chelonia/db/get', '_private_billable_entities')
+      await sbp('chelonia/db/set', '_private_billable_entities', (existingBillableEntities ? existingBillableEntities + '\x00' : '') + resourceID)
+    })
+  },
+  'backend/server/updateSize': async function (resourceID: string, size: number) {
+    const sizeKey = `_private_size_${resourceID}`
+    if (!(size >= 0)) {
+      throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
+    }
+    // Use a queue to ensure atomic updates
+    await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
+      // Size is stored as a decimal value
+      const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 10) ?? '0')
+      if (!(existingSize >= 0)) {
+        throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
+      }
+      await sbp('chelonia/db/set', sizeKey, (existingSize + size).toString(10))
+    })
+  },
+  'backend/server/saveDeletionToken': async function (resourceID: string) {
+    const deletionTokenRaw = new Uint8Array(18)
+    // $FlowFixMe[cannot-resolve-name]
+    webcrypto.getRandomValues(deletionTokenRaw)
+    // $FlowFixMe[incompatible-call]
+    const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
+    await sbp('chelonia/db/set', `_private_deletionToken_${resourceID}`, deletionToken)
+    return deletionToken
   },
   'backend/server/stop': function () {
     return hapi.stop()
