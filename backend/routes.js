@@ -423,7 +423,7 @@ route.POST('/deleteFile/{hash}', {
     const existingResources = await sbp('chelonia/db/get', resourcesKey)
     if (!existingResources) return
     if (existingResources.endsWith(hash)) {
-      await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, hash.length + 1))
+      await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
       return
     }
     const hashIndex = existingResources.indexOf(hash + '\x00')
