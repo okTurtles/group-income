@@ -62,7 +62,6 @@
           :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
-          :hash='message.hash'
           :text='message.text'
           :attachments='message.attachments'
           :type='message.type'
@@ -70,7 +69,6 @@
           :proposal='message.proposal'
           :pollData='message.pollData'
           :replyingMessage='replyingMessageText(message)'
-          :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
           :emoticonsList='message.emoticons'
@@ -84,7 +82,6 @@
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
-          @attachmentPreviewFinished='couldUpdateScroll(index)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -197,6 +194,10 @@ const onChatScroll = function () {
     }
   }
 
+  if (!this.ephemeral.messagesInitiated && this.renderingChatRoomId) {
+    return
+  }
+
   if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
@@ -206,7 +207,7 @@ const onChatScroll = function () {
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
         sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-          chatRoomId: this.currentChatRoomId,
+          chatRoomId: this.renderingChatRoomId,
           messageHash: msg.hash
         })
         break
@@ -214,7 +215,7 @@ const onChatScroll = function () {
     }
   } else if (this.currentChatRoomScrollPosition) {
     sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-      chatRoomId: this.currentChatRoomId,
+      chatRoomId: this.renderingChatRoomId,
       messageHash: null
     })
   }
@@ -300,9 +301,8 @@ export default ({
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
     try {
-      // Before destroying the component and its state, we save the current
-      // scroll position if there's something so save.
-      this.ephemeral.onChatScroll.flush()
+      // NOTE: Same comment as the one of the function 'initializeState'
+      onChatScroll.call(this)
     } catch (e) {
       console.error('ChatMain.vue: Error while flushing onChatScroll in beforeDestroy', e)
     }
@@ -587,12 +587,6 @@ export default ({
         }
       }
     },
-    couldUpdateScroll (index) {
-      const isLastMessage = index === this.messages.length - 1
-      if (this.ephemeral.messagesInitiated && isLastMessage) {
-        this.jumpToLatest()
-      }
-    },
     updateScroll (scrollTargetMessage = null, effect = false) {
       const contractID = this.summary.chatRoomId
       if (contractID) {
@@ -674,9 +668,10 @@ export default ({
       // NOTE: this state is rendered using the chatroom contract functions
       // so should be CAREFUL of updating the fields
       try {
-        // Before initializing the state, we save the current scroll position
-        // if there's something so save.
-        this.ephemeral.onChatScroll.flush()
+        // NOTE: Before initializing the state, we save the current scroll position if there's something so save
+        //       Replaced this.ephemeral.onChatScroll.flush() with onChatScroll.call(this)
+        //       because the former doesn't work in synchronous
+        onChatScroll.call(this)
       } catch (e) {
         console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
       }

@@ -7,7 +7,6 @@ message-base(
   @reply-message-clicked='$emit("scroll-to-replying-message")'
   @message-edited='editMessage'
   @delete-message='$emit("delete-message")'
-  @attachmentPreviewFinished='$emit("attachmentPreviewFinished")'
   :convertTextToMarkdown='true'
 )
 
