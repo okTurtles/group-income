@@ -62,6 +62,7 @@
           :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
+          :hash='message.hash'
           :text='message.text'
           :attachments='message.attachments'
           :type='message.type'
@@ -133,6 +134,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
+import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
@@ -423,7 +425,7 @@ export default ({
 
           // IMPORTANT: This is executed *BEFORE* the message is received over
           // the network
-          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
             Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
             pendingMessageHash = message.hash()
@@ -436,7 +438,7 @@ export default ({
         }
         const beforeRequest = (message, oldMessage) => {
           if (!this.checkEventSourceConsistency(contractID)) return
-          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
             if (!this.checkEventSourceConsistency(contractID)) return
             const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) return
@@ -726,7 +728,7 @@ export default ({
         const prevLastEvent = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
         const newEventsStream = sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEvent.height, undefined, prevLastEvent.hash)
         const newEventsStreamReader = newEventsStream.getReader()
-        await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        await sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
           // NOTE: discard the first event, since it already exists in
           // this.latestEvents
           const { done } = await newEventsStreamReader.read()
@@ -797,7 +799,7 @@ export default ({
       this.initializeState()
 
       // This ensures that `this.latestEvents.push(event)` below happens in order
-      return sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+      return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (!this.checkEventSourceConsistency(contractID)) return
 
         const latestEvents = this.latestEvents
@@ -871,9 +873,7 @@ export default ({
       // when calling processMessage.
       // The watch is setup for this.summary and not for this.currentChatRoomId,
       // which is why this check must also check for this.summary.chatRoomId
-      if (contractID !== this.summary.chatRoomId) {
-        return
-      }
+      if (!this.checkEventSourceConsistency(contractID)) return
 
       if (message) {
         this.ephemeral.unprocessedEvents.push(message)
@@ -891,9 +891,25 @@ export default ({
         if (!value) throw new Error('Unable to decrypt message')
 
         const isMessageAddedOrDeleted = (message: GIMessage) => {
-          if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
+          const allowedActionType = [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED]
+          let action = null
+          if (message.opType() === GIMessage.OP_ATOMIC) {
+            const opTypes = value.map(([type, value]) => type)
+            for (let i = 0; i < opTypes.length; i++) {
+              if (allowedActionType.includes(opTypes[i])) {
+                // NOTE: choose the first action with allowed opType
+                //       which also would be the only child action of OP_ATOMIC message
+                const v = value[i][1].valueOf()
+                action = !Object.getPrototypeOf(v)?._isSignedData ? v.action : v?.valueOf()?.action
+                break
+              }
+            }
+          } else if (allowedActionType.includes(message.opType())) {
+            action = value.action
+          } else {
+            return {}
+          }
 
-          const { action } = value
           let addedOrDeleted = 'NONE'
 
           if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
@@ -912,7 +928,7 @@ export default ({
 
         // This ensures that `this.latestEvents.push(serializedMessage)` below
         // happens in order
-        sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
           // Messages are processed twice: before sending (outgoing direction,
@@ -956,7 +972,7 @@ export default ({
           if (this.ephemeral.scrolledDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
-              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+                this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
@@ -998,7 +1014,7 @@ export default ({
         return
       }
       const chatRoomId = this.currentChatRoomId
-      sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
         if (!this.checkEventSourceConsistency(chatRoomId)) return
 
         this.renderMoreMessages().then(completed => {
