@@ -1049,8 +1049,8 @@ export default ({
       this.ephemeral.onChatScroll()
     },
     archiveMessageState () {
-      // Copy of a reference to this.latestEvents to ensure it doesn't change
-      const latestEvents = this.latestEvents
+      // NOTE: Copy of a reference to this.latestEvents to ensure it doesn't change
+      const latestEvents = cloneDeep(this.latestEvents)
       if (latestEvents.length === 0) {
         return
       }
