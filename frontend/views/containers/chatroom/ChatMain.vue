@@ -402,7 +402,7 @@ export default ({
     },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
@@ -623,7 +623,7 @@ export default ({
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
@@ -636,9 +636,9 @@ export default ({
       })
     },
     deleteMessage (message) {
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/deleteMessage', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: { hash: message.hash }
       }).catch((e) => {
         console.error(`Error while deleting message for ${contractID}`, e)
@@ -656,9 +656,9 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: { hash: message.hash, emoticon }
       }).catch((e) => {
         console.error(`Error while adding emotion for ${contractID}`, e)
@@ -858,12 +858,9 @@ export default ({
       }
     },
     updateUnreadMessageHash ({ messageHash, createdDate }) {
-      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomReadUntil', {
-          chatRoomId: this.currentChatRoomId,
-          messageHash,
-          createdDate
-        })
+      const chatRoomId = this.renderingChatRoomId
+      if (chatRoomId && this.isJoinedChatRoom(chatRoomId)) {
+        sbp('state/vuex/commit', 'setChatRoomReadUntil', { chatRoomId, messageHash, createdDate })
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
