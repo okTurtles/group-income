@@ -3539,7 +3539,7 @@
         0,
         0
       ]);
-      function blake2bInit(outlen, key, salt, personal) {
+      function blake2bInit2(outlen, key, salt, personal) {
         if (outlen === 0 || outlen > 64) {
           throw new Error("Illegal output length, expected 0 < length <= 64");
         }
@@ -3573,12 +3573,12 @@
           ctx.h[i] = BLAKE2B_IV32[i] ^ B2B_GET32(parameterBlock, i * 4);
         }
         if (key) {
-          blake2bUpdate(ctx, key);
+          blake2bUpdate2(ctx, key);
           ctx.c = 128;
         }
         return ctx;
       }
-      function blake2bUpdate(ctx, input) {
+      function blake2bUpdate2(ctx, input) {
         for (let i = 0; i < input.length; i++) {
           if (ctx.c === 128) {
             ctx.t += ctx.c;
@@ -3588,7 +3588,7 @@
           ctx.b[ctx.c++] = input[i];
         }
       }
-      function blake2bFinal(ctx) {
+      function blake2bFinal2(ctx) {
         ctx.t += ctx.c;
         while (ctx.c < 128) {
           ctx.b[ctx.c++] = 0;
@@ -3600,7 +3600,7 @@
         }
         return out;
       }
-      function blake2b2(input, key, outlen, salt, personal) {
+      function blake2b3(input, key, outlen, salt, personal) {
         outlen = outlen || 64;
         input = util.normalizeInput(input);
         if (salt) {
@@ -3609,20 +3609,20 @@
         if (personal) {
           personal = util.normalizeInput(personal);
         }
-        const ctx = blake2bInit(outlen, key, salt, personal);
-        blake2bUpdate(ctx, input);
-        return blake2bFinal(ctx);
+        const ctx = blake2bInit2(outlen, key, salt, personal);
+        blake2bUpdate2(ctx, input);
+        return blake2bFinal2(ctx);
       }
       function blake2bHex(input, key, outlen, salt, personal) {
-        const output = blake2b2(input, key, outlen, salt, personal);
+        const output = blake2b3(input, key, outlen, salt, personal);
         return util.toHex(output);
       }
       module.exports = {
-        blake2b: blake2b2,
+        blake2b: blake2b3,
         blake2bHex,
-        blake2bInit,
-        blake2bUpdate,
-        blake2bFinal
+        blake2bInit: blake2bInit2,
+        blake2bUpdate: blake2bUpdate2,
+        blake2bFinal: blake2bFinal2
       };
     }
   });
@@ -14660,6 +14660,7 @@
     }
   };
   var ChelErrorWarning = ChelErrorGenerator("ChelErrorWarning");
+  var ChelErrorAlreadyProcessed = ChelErrorGenerator("ChelErrorAlreadyProcessed");
   var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
   var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
   var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
@@ -14667,6 +14668,7 @@
   var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
   var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
   var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyUnauthorized = ChelErrorGenerator("ChelErrorSignatureKeyUnauthorized", ChelErrorSignatureError);
   var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
 
   // frontend/common/errors.js
@@ -15461,6 +15463,14 @@ ${this.getErrorInfo()}`;
       type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
       params: mapOf(string, string)
     }),
+    attachments: arrayOf(objectOf({
+      name: string,
+      mimeType: string,
+      downloadData: objectOf({
+        manifestCid: string,
+        downloadParams: optional(object)
+      })
+    })),
     replyingMessage: objectOf({
       hash: string,
       text: string
@@ -15474,6 +15484,9 @@ ${this.getErrorInfo()}`;
 
   // shared/functions.js
   var import_tweetnacl = __toESM(require_nacl_fast());
+
+  // shared/blake2bstream.js
+  var import_blakejs = __toESM(require_blakejs());
 
   // shared/multiformats/bytes.js
   var empty = new Uint8Array(0);
@@ -15503,6 +15516,165 @@ ${this.getErrorInfo()}`;
     }
     throw new Error("Unknown type, must be binary type");
   }
+
+  // shared/multiformats/vendor/varint.js
+  var encode_1 = encode;
+  var MSB = 128;
+  var REST = 127;
+  var MSBALL = ~REST;
+  var INT = Math.pow(2, 31);
+  function encode(num, out, offset) {
+    out = out || [];
+    offset = offset || 0;
+    var oldOffset = offset;
+    while (num >= INT) {
+      out[offset++] = num & 255 | MSB;
+      num /= 128;
+    }
+    while (num & MSBALL) {
+      out[offset++] = num & 255 | MSB;
+      num >>>= 7;
+    }
+    out[offset] = num | 0;
+    encode.bytes = offset - oldOffset + 1;
+    return out;
+  }
+  var decode2 = read;
+  var MSB$1 = 128;
+  var REST$1 = 127;
+  function read(buf, offset) {
+    var res = 0, offset = offset || 0, shift = 0, counter = offset, b, l = buf.length;
+    do {
+      if (counter >= l) {
+        read.bytes = 0;
+        throw new RangeError("Could not decode varint");
+      }
+      b = buf[counter++];
+      res += shift < 28 ? (b & REST$1) << shift : (b & REST$1) * Math.pow(2, shift);
+      shift += 7;
+    } while (b >= MSB$1);
+    read.bytes = counter - offset;
+    return res;
+  }
+  var N1 = Math.pow(2, 7);
+  var N2 = Math.pow(2, 14);
+  var N3 = Math.pow(2, 21);
+  var N4 = Math.pow(2, 28);
+  var N5 = Math.pow(2, 35);
+  var N6 = Math.pow(2, 42);
+  var N7 = Math.pow(2, 49);
+  var N8 = Math.pow(2, 56);
+  var N9 = Math.pow(2, 63);
+  var length = function(value) {
+    return value < N1 ? 1 : value < N2 ? 2 : value < N3 ? 3 : value < N4 ? 4 : value < N5 ? 5 : value < N6 ? 6 : value < N7 ? 7 : value < N8 ? 8 : value < N9 ? 9 : 10;
+  };
+  var varint = {
+    encode: encode_1,
+    decode: decode2,
+    encodingLength: length
+  };
+  var _brrp_varint = varint;
+  var varint_default = _brrp_varint;
+
+  // shared/multiformats/varint.js
+  function decode3(data, offset = 0) {
+    const code = varint_default.decode(data, offset);
+    return [code, varint_default.decode.bytes];
+  }
+  function encodeTo(int, target2, offset = 0) {
+    varint_default.encode(int, target2, offset);
+    return target2;
+  }
+  function encodingLength(int) {
+    return varint_default.encodingLength(int);
+  }
+
+  // shared/multiformats/hashes/digest.js
+  function create2(code, digest) {
+    const size = digest.byteLength;
+    const sizeOffset = encodingLength(code);
+    const digestOffset = sizeOffset + encodingLength(size);
+    const bytes = new Uint8Array(digestOffset + size);
+    encodeTo(code, bytes, 0);
+    encodeTo(size, bytes, sizeOffset);
+    bytes.set(digest, digestOffset);
+    return new Digest(code, size, digest, bytes);
+  }
+  function decode4(multihash) {
+    const bytes = coerce(multihash);
+    const [code, sizeOffset] = decode3(bytes);
+    const [size, digestOffset] = decode3(bytes.subarray(sizeOffset));
+    const digest = bytes.subarray(sizeOffset + digestOffset);
+    if (digest.byteLength !== size) {
+      throw new Error("Incorrect length");
+    }
+    return new Digest(code, size, digest, bytes);
+  }
+  function equals2(a, b) {
+    if (a === b) {
+      return true;
+    } else {
+      const data = b;
+      return a.code === data.code && a.size === data.size && data.bytes instanceof Uint8Array && equals(a.bytes, data.bytes);
+    }
+  }
+  var Digest = class {
+    code;
+    size;
+    digest;
+    bytes;
+    constructor(code, size, digest, bytes) {
+      this.code = code;
+      this.size = size;
+      this.digest = digest;
+      this.bytes = bytes;
+    }
+  };
+
+  // shared/multiformats/hasher.js
+  function from({ name, code, encode: encode3 }) {
+    return new Hasher(name, code, encode3);
+  }
+  var Hasher = class {
+    name;
+    code;
+    encode;
+    constructor(name, code, encode3) {
+      this.name = name;
+      this.code = code;
+      this.encode = encode3;
+    }
+    digest(input) {
+      if (input instanceof Uint8Array || input instanceof ReadableStream) {
+        const result = this.encode(input);
+        return result instanceof Uint8Array ? create2(this.code, result) : result.then((digest) => create2(this.code, digest));
+      } else {
+        throw Error("Unknown type, must be binary type");
+      }
+    }
+  };
+
+  // shared/blake2bstream.js
+  var { blake2b, blake2bInit, blake2bUpdate, blake2bFinal } = import_blakejs.default;
+  var blake2b256stream = from({
+    name: "blake2b-256",
+    code: 45600,
+    encode: async (input) => {
+      if (input instanceof ReadableStream) {
+        const ctx = blake2bInit(32);
+        const reader = input.getReader();
+        for (; ; ) {
+          const result = await reader.read();
+          if (result.done)
+            break;
+          blake2bUpdate(ctx, coerce(result.value));
+        }
+        return blake2bFinal(ctx);
+      } else {
+        return coerce(blake2b(input, void 0, 32));
+      }
+    }
+  });
 
   // shared/multiformats/base-x.js
   function base(ALPHABET, name) {
@@ -15732,19 +15904,19 @@ ${this.getErrorInfo()}`;
       return this.decoder.decode(input);
     }
   };
-  function from({ name, prefix, encode: encode3, decode: decode6 }) {
+  function from2({ name, prefix, encode: encode3, decode: decode6 }) {
     return new Codec(name, prefix, encode3, decode6);
   }
   function baseX({ name, prefix, alphabet }) {
     const { encode: encode3, decode: decode6 } = base_x_default(alphabet, name);
-    return from({
+    return from2({
       prefix,
       name,
       encode: encode3,
       decode: (text2) => coerce(decode6(text2))
     });
   }
-  function decode2(string3, alphabet, bitsPerChar, name) {
+  function decode5(string3, alphabet, bitsPerChar, name) {
     const codes = {};
     for (let i = 0; i < alphabet.length; ++i) {
       codes[alphabet[i]] = i;
@@ -15774,7 +15946,7 @@ ${this.getErrorInfo()}`;
     }
     return out;
   }
-  function encode(data, alphabet, bitsPerChar) {
+  function encode2(data, alphabet, bitsPerChar) {
     const pad = alphabet[alphabet.length - 1] === "=";
     const mask = (1 << bitsPerChar) - 1;
     let out = "";
@@ -15799,17 +15971,353 @@ ${this.getErrorInfo()}`;
     return out;
   }
   function rfc4648({ name, prefix, bitsPerChar, alphabet }) {
-    return from({
+    return from2({
       prefix,
       name,
       encode(input) {
-        return encode(input, alphabet, bitsPerChar);
+        return encode2(input, alphabet, bitsPerChar);
       },
       decode(input) {
-        return decode2(input, alphabet, bitsPerChar, name);
+        return decode5(input, alphabet, bitsPerChar, name);
       }
     });
   }
+
+  // shared/multiformats/bases/base58.js
+  var base58btc = baseX({
+    name: "base58btc",
+    prefix: "z",
+    alphabet: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+  });
+  var base58flickr = baseX({
+    name: "base58flickr",
+    prefix: "Z",
+    alphabet: "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+  });
+
+  // shared/multiformats/blake2b.js
+  var import_blakejs2 = __toESM(require_blakejs());
+  var { blake2b: blake2b2 } = import_blakejs2.default;
+  var blake2b8 = from({
+    name: "blake2b-8",
+    code: 45569,
+    encode: (input) => coerce(blake2b2(input, void 0, 1))
+  });
+  var blake2b16 = from({
+    name: "blake2b-16",
+    code: 45570,
+    encode: (input) => coerce(blake2b2(input, void 0, 2))
+  });
+  var blake2b24 = from({
+    name: "blake2b-24",
+    code: 45571,
+    encode: (input) => coerce(blake2b2(input, void 0, 3))
+  });
+  var blake2b32 = from({
+    name: "blake2b-32",
+    code: 45572,
+    encode: (input) => coerce(blake2b2(input, void 0, 4))
+  });
+  var blake2b40 = from({
+    name: "blake2b-40",
+    code: 45573,
+    encode: (input) => coerce(blake2b2(input, void 0, 5))
+  });
+  var blake2b48 = from({
+    name: "blake2b-48",
+    code: 45574,
+    encode: (input) => coerce(blake2b2(input, void 0, 6))
+  });
+  var blake2b56 = from({
+    name: "blake2b-56",
+    code: 45575,
+    encode: (input) => coerce(blake2b2(input, void 0, 7))
+  });
+  var blake2b64 = from({
+    name: "blake2b-64",
+    code: 45576,
+    encode: (input) => coerce(blake2b2(input, void 0, 8))
+  });
+  var blake2b72 = from({
+    name: "blake2b-72",
+    code: 45577,
+    encode: (input) => coerce(blake2b2(input, void 0, 9))
+  });
+  var blake2b80 = from({
+    name: "blake2b-80",
+    code: 45578,
+    encode: (input) => coerce(blake2b2(input, void 0, 10))
+  });
+  var blake2b88 = from({
+    name: "blake2b-88",
+    code: 45579,
+    encode: (input) => coerce(blake2b2(input, void 0, 11))
+  });
+  var blake2b96 = from({
+    name: "blake2b-96",
+    code: 45580,
+    encode: (input) => coerce(blake2b2(input, void 0, 12))
+  });
+  var blake2b104 = from({
+    name: "blake2b-104",
+    code: 45581,
+    encode: (input) => coerce(blake2b2(input, void 0, 13))
+  });
+  var blake2b112 = from({
+    name: "blake2b-112",
+    code: 45582,
+    encode: (input) => coerce(blake2b2(input, void 0, 14))
+  });
+  var blake2b120 = from({
+    name: "blake2b-120",
+    code: 45583,
+    encode: (input) => coerce(blake2b2(input, void 0, 15))
+  });
+  var blake2b128 = from({
+    name: "blake2b-128",
+    code: 45584,
+    encode: (input) => coerce(blake2b2(input, void 0, 16))
+  });
+  var blake2b136 = from({
+    name: "blake2b-136",
+    code: 45585,
+    encode: (input) => coerce(blake2b2(input, void 0, 17))
+  });
+  var blake2b144 = from({
+    name: "blake2b-144",
+    code: 45586,
+    encode: (input) => coerce(blake2b2(input, void 0, 18))
+  });
+  var blake2b152 = from({
+    name: "blake2b-152",
+    code: 45587,
+    encode: (input) => coerce(blake2b2(input, void 0, 19))
+  });
+  var blake2b160 = from({
+    name: "blake2b-160",
+    code: 45588,
+    encode: (input) => coerce(blake2b2(input, void 0, 20))
+  });
+  var blake2b168 = from({
+    name: "blake2b-168",
+    code: 45589,
+    encode: (input) => coerce(blake2b2(input, void 0, 21))
+  });
+  var blake2b176 = from({
+    name: "blake2b-176",
+    code: 45590,
+    encode: (input) => coerce(blake2b2(input, void 0, 22))
+  });
+  var blake2b184 = from({
+    name: "blake2b-184",
+    code: 45591,
+    encode: (input) => coerce(blake2b2(input, void 0, 23))
+  });
+  var blake2b192 = from({
+    name: "blake2b-192",
+    code: 45592,
+    encode: (input) => coerce(blake2b2(input, void 0, 24))
+  });
+  var blake2b200 = from({
+    name: "blake2b-200",
+    code: 45593,
+    encode: (input) => coerce(blake2b2(input, void 0, 25))
+  });
+  var blake2b208 = from({
+    name: "blake2b-208",
+    code: 45594,
+    encode: (input) => coerce(blake2b2(input, void 0, 26))
+  });
+  var blake2b216 = from({
+    name: "blake2b-216",
+    code: 45595,
+    encode: (input) => coerce(blake2b2(input, void 0, 27))
+  });
+  var blake2b224 = from({
+    name: "blake2b-224",
+    code: 45596,
+    encode: (input) => coerce(blake2b2(input, void 0, 28))
+  });
+  var blake2b232 = from({
+    name: "blake2b-232",
+    code: 45597,
+    encode: (input) => coerce(blake2b2(input, void 0, 29))
+  });
+  var blake2b240 = from({
+    name: "blake2b-240",
+    code: 45598,
+    encode: (input) => coerce(blake2b2(input, void 0, 30))
+  });
+  var blake2b248 = from({
+    name: "blake2b-248",
+    code: 45599,
+    encode: (input) => coerce(blake2b2(input, void 0, 31))
+  });
+  var blake2b256 = from({
+    name: "blake2b-256",
+    code: 45600,
+    encode: (input) => coerce(blake2b2(input, void 0, 32))
+  });
+  var blake2b264 = from({
+    name: "blake2b-264",
+    code: 45601,
+    encode: (input) => coerce(blake2b2(input, void 0, 33))
+  });
+  var blake2b272 = from({
+    name: "blake2b-272",
+    code: 45602,
+    encode: (input) => coerce(blake2b2(input, void 0, 34))
+  });
+  var blake2b280 = from({
+    name: "blake2b-280",
+    code: 45603,
+    encode: (input) => coerce(blake2b2(input, void 0, 35))
+  });
+  var blake2b288 = from({
+    name: "blake2b-288",
+    code: 45604,
+    encode: (input) => coerce(blake2b2(input, void 0, 36))
+  });
+  var blake2b296 = from({
+    name: "blake2b-296",
+    code: 45605,
+    encode: (input) => coerce(blake2b2(input, void 0, 37))
+  });
+  var blake2b304 = from({
+    name: "blake2b-304",
+    code: 45606,
+    encode: (input) => coerce(blake2b2(input, void 0, 38))
+  });
+  var blake2b312 = from({
+    name: "blake2b-312",
+    code: 45607,
+    encode: (input) => coerce(blake2b2(input, void 0, 39))
+  });
+  var blake2b320 = from({
+    name: "blake2b-320",
+    code: 45608,
+    encode: (input) => coerce(blake2b2(input, void 0, 40))
+  });
+  var blake2b328 = from({
+    name: "blake2b-328",
+    code: 45609,
+    encode: (input) => coerce(blake2b2(input, void 0, 41))
+  });
+  var blake2b336 = from({
+    name: "blake2b-336",
+    code: 45610,
+    encode: (input) => coerce(blake2b2(input, void 0, 42))
+  });
+  var blake2b344 = from({
+    name: "blake2b-344",
+    code: 45611,
+    encode: (input) => coerce(blake2b2(input, void 0, 43))
+  });
+  var blake2b352 = from({
+    name: "blake2b-352",
+    code: 45612,
+    encode: (input) => coerce(blake2b2(input, void 0, 44))
+  });
+  var blake2b360 = from({
+    name: "blake2b-360",
+    code: 45613,
+    encode: (input) => coerce(blake2b2(input, void 0, 45))
+  });
+  var blake2b368 = from({
+    name: "blake2b-368",
+    code: 45614,
+    encode: (input) => coerce(blake2b2(input, void 0, 46))
+  });
+  var blake2b376 = from({
+    name: "blake2b-376",
+    code: 45615,
+    encode: (input) => coerce(blake2b2(input, void 0, 47))
+  });
+  var blake2b384 = from({
+    name: "blake2b-384",
+    code: 45616,
+    encode: (input) => coerce(blake2b2(input, void 0, 48))
+  });
+  var blake2b392 = from({
+    name: "blake2b-392",
+    code: 45617,
+    encode: (input) => coerce(blake2b2(input, void 0, 49))
+  });
+  var blake2b400 = from({
+    name: "blake2b-400",
+    code: 45618,
+    encode: (input) => coerce(blake2b2(input, void 0, 50))
+  });
+  var blake2b408 = from({
+    name: "blake2b-408",
+    code: 45619,
+    encode: (input) => coerce(blake2b2(input, void 0, 51))
+  });
+  var blake2b416 = from({
+    name: "blake2b-416",
+    code: 45620,
+    encode: (input) => coerce(blake2b2(input, void 0, 52))
+  });
+  var blake2b424 = from({
+    name: "blake2b-424",
+    code: 45621,
+    encode: (input) => coerce(blake2b2(input, void 0, 53))
+  });
+  var blake2b432 = from({
+    name: "blake2b-432",
+    code: 45622,
+    encode: (input) => coerce(blake2b2(input, void 0, 54))
+  });
+  var blake2b440 = from({
+    name: "blake2b-440",
+    code: 45623,
+    encode: (input) => coerce(blake2b2(input, void 0, 55))
+  });
+  var blake2b448 = from({
+    name: "blake2b-448",
+    code: 45624,
+    encode: (input) => coerce(blake2b2(input, void 0, 56))
+  });
+  var blake2b456 = from({
+    name: "blake2b-456",
+    code: 45625,
+    encode: (input) => coerce(blake2b2(input, void 0, 57))
+  });
+  var blake2b464 = from({
+    name: "blake2b-464",
+    code: 45626,
+    encode: (input) => coerce(blake2b2(input, void 0, 58))
+  });
+  var blake2b472 = from({
+    name: "blake2b-472",
+    code: 45627,
+    encode: (input) => coerce(blake2b2(input, void 0, 59))
+  });
+  var blake2b480 = from({
+    name: "blake2b-480",
+    code: 45628,
+    encode: (input) => coerce(blake2b2(input, void 0, 60))
+  });
+  var blake2b488 = from({
+    name: "blake2b-488",
+    code: 45629,
+    encode: (input) => coerce(blake2b2(input, void 0, 61))
+  });
+  var blake2b496 = from({
+    name: "blake2b-496",
+    code: 45630,
+    encode: (input) => coerce(blake2b2(input, void 0, 62))
+  });
+  var blake2b504 = from({
+    name: "blake2b-504",
+    code: 45631,
+    encode: (input) => coerce(blake2b2(input, void 0, 63))
+  });
+  var blake2b512 = from({
+    name: "blake2b-512",
+    code: 45632,
+    encode: (input) => coerce(blake2b2(input, void 0, 64))
+  });
 
   // shared/multiformats/bases/base32.js
   var base32 = rfc4648({
@@ -15866,132 +16374,6 @@ ${this.getErrorInfo()}`;
     alphabet: "ybndrfg8ejkmcpqxot1uwisza345h769",
     bitsPerChar: 5
   });
-
-  // shared/multiformats/bases/base58.js
-  var base58btc = baseX({
-    name: "base58btc",
-    prefix: "z",
-    alphabet: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-  });
-  var base58flickr = baseX({
-    name: "base58flickr",
-    prefix: "Z",
-    alphabet: "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-  });
-
-  // shared/multiformats/vendor/varint.js
-  var encode_1 = encode2;
-  var MSB = 128;
-  var REST = 127;
-  var MSBALL = ~REST;
-  var INT = Math.pow(2, 31);
-  function encode2(num, out, offset) {
-    out = out || [];
-    offset = offset || 0;
-    var oldOffset = offset;
-    while (num >= INT) {
-      out[offset++] = num & 255 | MSB;
-      num /= 128;
-    }
-    while (num & MSBALL) {
-      out[offset++] = num & 255 | MSB;
-      num >>>= 7;
-    }
-    out[offset] = num | 0;
-    encode2.bytes = offset - oldOffset + 1;
-    return out;
-  }
-  var decode3 = read;
-  var MSB$1 = 128;
-  var REST$1 = 127;
-  function read(buf, offset) {
-    var res = 0, offset = offset || 0, shift = 0, counter = offset, b, l = buf.length;
-    do {
-      if (counter >= l) {
-        read.bytes = 0;
-        throw new RangeError("Could not decode varint");
-      }
-      b = buf[counter++];
-      res += shift < 28 ? (b & REST$1) << shift : (b & REST$1) * Math.pow(2, shift);
-      shift += 7;
-    } while (b >= MSB$1);
-    read.bytes = counter - offset;
-    return res;
-  }
-  var N1 = Math.pow(2, 7);
-  var N2 = Math.pow(2, 14);
-  var N3 = Math.pow(2, 21);
-  var N4 = Math.pow(2, 28);
-  var N5 = Math.pow(2, 35);
-  var N6 = Math.pow(2, 42);
-  var N7 = Math.pow(2, 49);
-  var N8 = Math.pow(2, 56);
-  var N9 = Math.pow(2, 63);
-  var length = function(value) {
-    return value < N1 ? 1 : value < N2 ? 2 : value < N3 ? 3 : value < N4 ? 4 : value < N5 ? 5 : value < N6 ? 6 : value < N7 ? 7 : value < N8 ? 8 : value < N9 ? 9 : 10;
-  };
-  var varint = {
-    encode: encode_1,
-    decode: decode3,
-    encodingLength: length
-  };
-  var _brrp_varint = varint;
-  var varint_default = _brrp_varint;
-
-  // shared/multiformats/varint.js
-  function decode4(data, offset = 0) {
-    const code = varint_default.decode(data, offset);
-    return [code, varint_default.decode.bytes];
-  }
-  function encodeTo(int, target2, offset = 0) {
-    varint_default.encode(int, target2, offset);
-    return target2;
-  }
-  function encodingLength(int) {
-    return varint_default.encodingLength(int);
-  }
-
-  // shared/multiformats/hashes/digest.js
-  function create2(code, digest) {
-    const size = digest.byteLength;
-    const sizeOffset = encodingLength(code);
-    const digestOffset = sizeOffset + encodingLength(size);
-    const bytes = new Uint8Array(digestOffset + size);
-    encodeTo(code, bytes, 0);
-    encodeTo(size, bytes, sizeOffset);
-    bytes.set(digest, digestOffset);
-    return new Digest(code, size, digest, bytes);
-  }
-  function decode5(multihash) {
-    const bytes = coerce(multihash);
-    const [code, sizeOffset] = decode4(bytes);
-    const [size, digestOffset] = decode4(bytes.subarray(sizeOffset));
-    const digest = bytes.subarray(sizeOffset + digestOffset);
-    if (digest.byteLength !== size) {
-      throw new Error("Incorrect length");
-    }
-    return new Digest(code, size, digest, bytes);
-  }
-  function equals2(a, b) {
-    if (a === b) {
-      return true;
-    } else {
-      const data = b;
-      return a.code === data.code && a.size === data.size && data.bytes instanceof Uint8Array && equals(a.bytes, data.bytes);
-    }
-  }
-  var Digest = class {
-    code;
-    size;
-    digest;
-    bytes;
-    constructor(code, size, digest, bytes) {
-      this.code = code;
-      this.size = size;
-      this.digest = digest;
-      this.bytes = bytes;
-    }
-  };
 
   // shared/multiformats/cid.js
   function format(link, base2) {
@@ -16102,7 +16484,7 @@ ${this.getErrorInfo()}`;
         return new CID(version, code, multihash, bytes ?? encodeCID(version, code, multihash.bytes));
       } else if (value[cidSymbol] === true) {
         const { version, multihash, code } = value;
-        const digest = decode5(multihash);
+        const digest = decode4(multihash);
         return CID.create(version, code, digest);
       } else {
         return null;
@@ -16160,7 +16542,7 @@ ${this.getErrorInfo()}`;
     static inspectBytes(initialBytes) {
       let offset = 0;
       const next2 = () => {
-        const [i, length2] = decode4(initialBytes.subarray(offset));
+        const [i, length2] = decode3(initialBytes.subarray(offset));
         offset += length2;
         return i;
       };
@@ -16255,355 +16637,6 @@ ${this.getErrorInfo()}`;
   }
   var cidSymbol = Symbol.for("@ipld/js-cid/CID");
 
-  // shared/multiformats/blake2b.js
-  var import_blakejs = __toESM(require_blakejs());
-
-  // shared/multiformats/hasher.js
-  function from2({ name, code, encode: encode3 }) {
-    return new Hasher(name, code, encode3);
-  }
-  var Hasher = class {
-    name;
-    code;
-    encode;
-    constructor(name, code, encode3) {
-      this.name = name;
-      this.code = code;
-      this.encode = encode3;
-    }
-    digest(input) {
-      if (input instanceof Uint8Array) {
-        const result = this.encode(input);
-        return result instanceof Uint8Array ? create2(this.code, result) : result.then((digest) => create2(this.code, digest));
-      } else {
-        throw Error("Unknown type, must be binary type");
-      }
-    }
-  };
-
-  // shared/multiformats/blake2b.js
-  var { blake2b } = import_blakejs.default;
-  var blake2b8 = from2({
-    name: "blake2b-8",
-    code: 45569,
-    encode: (input) => coerce(blake2b(input, void 0, 1))
-  });
-  var blake2b16 = from2({
-    name: "blake2b-16",
-    code: 45570,
-    encode: (input) => coerce(blake2b(input, void 0, 2))
-  });
-  var blake2b24 = from2({
-    name: "blake2b-24",
-    code: 45571,
-    encode: (input) => coerce(blake2b(input, void 0, 3))
-  });
-  var blake2b32 = from2({
-    name: "blake2b-32",
-    code: 45572,
-    encode: (input) => coerce(blake2b(input, void 0, 4))
-  });
-  var blake2b40 = from2({
-    name: "blake2b-40",
-    code: 45573,
-    encode: (input) => coerce(blake2b(input, void 0, 5))
-  });
-  var blake2b48 = from2({
-    name: "blake2b-48",
-    code: 45574,
-    encode: (input) => coerce(blake2b(input, void 0, 6))
-  });
-  var blake2b56 = from2({
-    name: "blake2b-56",
-    code: 45575,
-    encode: (input) => coerce(blake2b(input, void 0, 7))
-  });
-  var blake2b64 = from2({
-    name: "blake2b-64",
-    code: 45576,
-    encode: (input) => coerce(blake2b(input, void 0, 8))
-  });
-  var blake2b72 = from2({
-    name: "blake2b-72",
-    code: 45577,
-    encode: (input) => coerce(blake2b(input, void 0, 9))
-  });
-  var blake2b80 = from2({
-    name: "blake2b-80",
-    code: 45578,
-    encode: (input) => coerce(blake2b(input, void 0, 10))
-  });
-  var blake2b88 = from2({
-    name: "blake2b-88",
-    code: 45579,
-    encode: (input) => coerce(blake2b(input, void 0, 11))
-  });
-  var blake2b96 = from2({
-    name: "blake2b-96",
-    code: 45580,
-    encode: (input) => coerce(blake2b(input, void 0, 12))
-  });
-  var blake2b104 = from2({
-    name: "blake2b-104",
-    code: 45581,
-    encode: (input) => coerce(blake2b(input, void 0, 13))
-  });
-  var blake2b112 = from2({
-    name: "blake2b-112",
-    code: 45582,
-    encode: (input) => coerce(blake2b(input, void 0, 14))
-  });
-  var blake2b120 = from2({
-    name: "blake2b-120",
-    code: 45583,
-    encode: (input) => coerce(blake2b(input, void 0, 15))
-  });
-  var blake2b128 = from2({
-    name: "blake2b-128",
-    code: 45584,
-    encode: (input) => coerce(blake2b(input, void 0, 16))
-  });
-  var blake2b136 = from2({
-    name: "blake2b-136",
-    code: 45585,
-    encode: (input) => coerce(blake2b(input, void 0, 17))
-  });
-  var blake2b144 = from2({
-    name: "blake2b-144",
-    code: 45586,
-    encode: (input) => coerce(blake2b(input, void 0, 18))
-  });
-  var blake2b152 = from2({
-    name: "blake2b-152",
-    code: 45587,
-    encode: (input) => coerce(blake2b(input, void 0, 19))
-  });
-  var blake2b160 = from2({
-    name: "blake2b-160",
-    code: 45588,
-    encode: (input) => coerce(blake2b(input, void 0, 20))
-  });
-  var blake2b168 = from2({
-    name: "blake2b-168",
-    code: 45589,
-    encode: (input) => coerce(blake2b(input, void 0, 21))
-  });
-  var blake2b176 = from2({
-    name: "blake2b-176",
-    code: 45590,
-    encode: (input) => coerce(blake2b(input, void 0, 22))
-  });
-  var blake2b184 = from2({
-    name: "blake2b-184",
-    code: 45591,
-    encode: (input) => coerce(blake2b(input, void 0, 23))
-  });
-  var blake2b192 = from2({
-    name: "blake2b-192",
-    code: 45592,
-    encode: (input) => coerce(blake2b(input, void 0, 24))
-  });
-  var blake2b200 = from2({
-    name: "blake2b-200",
-    code: 45593,
-    encode: (input) => coerce(blake2b(input, void 0, 25))
-  });
-  var blake2b208 = from2({
-    name: "blake2b-208",
-    code: 45594,
-    encode: (input) => coerce(blake2b(input, void 0, 26))
-  });
-  var blake2b216 = from2({
-    name: "blake2b-216",
-    code: 45595,
-    encode: (input) => coerce(blake2b(input, void 0, 27))
-  });
-  var blake2b224 = from2({
-    name: "blake2b-224",
-    code: 45596,
-    encode: (input) => coerce(blake2b(input, void 0, 28))
-  });
-  var blake2b232 = from2({
-    name: "blake2b-232",
-    code: 45597,
-    encode: (input) => coerce(blake2b(input, void 0, 29))
-  });
-  var blake2b240 = from2({
-    name: "blake2b-240",
-    code: 45598,
-    encode: (input) => coerce(blake2b(input, void 0, 30))
-  });
-  var blake2b248 = from2({
-    name: "blake2b-248",
-    code: 45599,
-    encode: (input) => coerce(blake2b(input, void 0, 31))
-  });
-  var blake2b256 = from2({
-    name: "blake2b-256",
-    code: 45600,
-    encode: (input) => coerce(blake2b(input, void 0, 32))
-  });
-  var blake2b264 = from2({
-    name: "blake2b-264",
-    code: 45601,
-    encode: (input) => coerce(blake2b(input, void 0, 33))
-  });
-  var blake2b272 = from2({
-    name: "blake2b-272",
-    code: 45602,
-    encode: (input) => coerce(blake2b(input, void 0, 34))
-  });
-  var blake2b280 = from2({
-    name: "blake2b-280",
-    code: 45603,
-    encode: (input) => coerce(blake2b(input, void 0, 35))
-  });
-  var blake2b288 = from2({
-    name: "blake2b-288",
-    code: 45604,
-    encode: (input) => coerce(blake2b(input, void 0, 36))
-  });
-  var blake2b296 = from2({
-    name: "blake2b-296",
-    code: 45605,
-    encode: (input) => coerce(blake2b(input, void 0, 37))
-  });
-  var blake2b304 = from2({
-    name: "blake2b-304",
-    code: 45606,
-    encode: (input) => coerce(blake2b(input, void 0, 38))
-  });
-  var blake2b312 = from2({
-    name: "blake2b-312",
-    code: 45607,
-    encode: (input) => coerce(blake2b(input, void 0, 39))
-  });
-  var blake2b320 = from2({
-    name: "blake2b-320",
-    code: 45608,
-    encode: (input) => coerce(blake2b(input, void 0, 40))
-  });
-  var blake2b328 = from2({
-    name: "blake2b-328",
-    code: 45609,
-    encode: (input) => coerce(blake2b(input, void 0, 41))
-  });
-  var blake2b336 = from2({
-    name: "blake2b-336",
-    code: 45610,
-    encode: (input) => coerce(blake2b(input, void 0, 42))
-  });
-  var blake2b344 = from2({
-    name: "blake2b-344",
-    code: 45611,
-    encode: (input) => coerce(blake2b(input, void 0, 43))
-  });
-  var blake2b352 = from2({
-    name: "blake2b-352",
-    code: 45612,
-    encode: (input) => coerce(blake2b(input, void 0, 44))
-  });
-  var blake2b360 = from2({
-    name: "blake2b-360",
-    code: 45613,
-    encode: (input) => coerce(blake2b(input, void 0, 45))
-  });
-  var blake2b368 = from2({
-    name: "blake2b-368",
-    code: 45614,
-    encode: (input) => coerce(blake2b(input, void 0, 46))
-  });
-  var blake2b376 = from2({
-    name: "blake2b-376",
-    code: 45615,
-    encode: (input) => coerce(blake2b(input, void 0, 47))
-  });
-  var blake2b384 = from2({
-    name: "blake2b-384",
-    code: 45616,
-    encode: (input) => coerce(blake2b(input, void 0, 48))
-  });
-  var blake2b392 = from2({
-    name: "blake2b-392",
-    code: 45617,
-    encode: (input) => coerce(blake2b(input, void 0, 49))
-  });
-  var blake2b400 = from2({
-    name: "blake2b-400",
-    code: 45618,
-    encode: (input) => coerce(blake2b(input, void 0, 50))
-  });
-  var blake2b408 = from2({
-    name: "blake2b-408",
-    code: 45619,
-    encode: (input) => coerce(blake2b(input, void 0, 51))
-  });
-  var blake2b416 = from2({
-    name: "blake2b-416",
-    code: 45620,
-    encode: (input) => coerce(blake2b(input, void 0, 52))
-  });
-  var blake2b424 = from2({
-    name: "blake2b-424",
-    code: 45621,
-    encode: (input) => coerce(blake2b(input, void 0, 53))
-  });
-  var blake2b432 = from2({
-    name: "blake2b-432",
-    code: 45622,
-    encode: (input) => coerce(blake2b(input, void 0, 54))
-  });
-  var blake2b440 = from2({
-    name: "blake2b-440",
-    code: 45623,
-    encode: (input) => coerce(blake2b(input, void 0, 55))
-  });
-  var blake2b448 = from2({
-    name: "blake2b-448",
-    code: 45624,
-    encode: (input) => coerce(blake2b(input, void 0, 56))
-  });
-  var blake2b456 = from2({
-    name: "blake2b-456",
-    code: 45625,
-    encode: (input) => coerce(blake2b(input, void 0, 57))
-  });
-  var blake2b464 = from2({
-    name: "blake2b-464",
-    code: 45626,
-    encode: (input) => coerce(blake2b(input, void 0, 58))
-  });
-  var blake2b472 = from2({
-    name: "blake2b-472",
-    code: 45627,
-    encode: (input) => coerce(blake2b(input, void 0, 59))
-  });
-  var blake2b480 = from2({
-    name: "blake2b-480",
-    code: 45628,
-    encode: (input) => coerce(blake2b(input, void 0, 60))
-  });
-  var blake2b488 = from2({
-    name: "blake2b-488",
-    code: 45629,
-    encode: (input) => coerce(blake2b(input, void 0, 61))
-  });
-  var blake2b496 = from2({
-    name: "blake2b-496",
-    code: 45630,
-    encode: (input) => coerce(blake2b(input, void 0, 62))
-  });
-  var blake2b504 = from2({
-    name: "blake2b-504",
-    code: 45631,
-    encode: (input) => coerce(blake2b(input, void 0, 63))
-  });
-  var blake2b512 = from2({
-    name: "blake2b-512",
-    code: 45632,
-    encode: (input) => coerce(blake2b(input, void 0, 64))
-  });
-
   // shared/functions.js
   if (typeof window === "object" && typeof Buffer === "undefined") {
     const { Buffer: Buffer2 } = require_buffer();
@@ -16633,6 +16666,7 @@ ${this.getErrorInfo()}`;
   });
 
   // shared/domains/chelonia/utils.js
+  var MAX_EVENTS_AFTER = Number.parseInt("", 10) || Infinity;
   var findKeyIdByName = (state, name) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).find((k) => k.name === name && k._notAfterHeight == null)?.id;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
@@ -16828,12 +16862,12 @@ ${this.getErrorInfo()}`;
       data: sendingData,
       ...extraParams
     }).catch((e) => {
-      if (leavingGroup && (e?.name === "ChelErrorSignatureKeyNotFound" || e?.name === "GIErrorUIRuntimeError" && ["ChelErrorSignatureKeyNotFound", "GIErrorMissingSigningKeyError"].includes(e?.cause?.name))) {
+      if (leavingGroup && (e?.name === "ChelErrorSignatureKeyNotFound" || e?.name === "GIErrorUIRuntimeError" && (["ChelErrorSignatureKeyNotFound", "GIErrorMissingSigningKeyError"].includes(e?.cause?.name) || e?.cause?.name === "Error" && e.cause.message.endsWith("is not part of")))) {
         return;
       }
       throw e;
     }).catch((e) => {
-      console.error("[gi.contracts/group] Error sending chatroom leave action", e);
+      console.warn("[gi.contracts/group] Error sending chatroom leave action", e);
     });
   };
   var leaveAllChatRoomsUponLeaving = (state, memberID, actorID) => {
@@ -17062,7 +17096,10 @@ ${this.getErrorInfo()}`;
         validate: objectMaybeOf({
           settings: objectMaybeOf({
             groupName: string,
-            groupPicture: string,
+            groupPicture: unionOf(string, objectOf({
+              manifestCid: string,
+              downloadParams: optional(object)
+            })),
             sharedValues: string,
             mincomeAmount: number,
             mincomeCurrency: string,
@@ -17409,7 +17446,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
           (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp7.default)("gi.contracts/group/leaveGroup", { data, meta, contractID, getters, height, innerSigningContractID })).catch((e) => {
-            console.error(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e);
+            console.warn(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e);
           });
         }
       },
@@ -17493,8 +17530,8 @@ ${this.getErrorInfo()}`;
                     memberID: innerSigningContractID
                   });
                 }
-              }).catch(() => {
-                console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`);
+              }).catch((e) => {
+                console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e);
               });
             }
           }).catch((e) => {
@@ -17689,7 +17726,7 @@ ${this.getErrorInfo()}`;
               (0, import_sbp7.default)("okTurtles.data/delete", `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`);
               (0, import_sbp7.default)("chelonia/contract/remove", data.chatRoomID).then(() => {
                 const rootState2 = (0, import_sbp7.default)("state/vuex/state");
-                if (rootState2.currentChatRoomIDs[contractID] === data.chatRoomID) {
+                if (rootState2.chatroom.currentChatRoomIDs[contractID] === data.chatRoomID) {
                   (0, import_sbp7.default)("state/vuex/commit", "setCurrentChatRoomId", {
                     groupId: contractID
                   });
@@ -17724,7 +17761,7 @@ ${this.getErrorInfo()}`;
           const memberID = data.memberID || innerSigningContractID;
           if (innerSigningContractID === rootState.loggedIn.identityContractID) {
             (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp7.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, memberID)).catch((e) => {
-              console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
+              console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
             });
           } else if (memberID === rootState.loggedIn.identityContractID) {
             (0, import_sbp7.default)("chelonia/queueInvocation", contractID, () => {
@@ -17732,7 +17769,7 @@ ${this.getErrorInfo()}`;
               if (rootState2[contractID]?.chatRooms[data.chatRoomID]?.members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
                 (0, import_sbp7.default)("okTurtles.data/set", `JOINING_CHATROOM-${data.chatRoomID}-${memberID}`, true);
                 (0, import_sbp7.default)("chelonia/contract/sync", data.chatRoomID).catch((e) => {
-                  console.error(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
+                  console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data });
                 });
               }
             });
@@ -17832,18 +17869,18 @@ ${this.getErrorInfo()}`;
             groupContractID: contractID
           }
         }).catch((e) => {
-          console.error(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e);
+          console.warn(`[gi.contracts/group/_cleanup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e);
         }).then(() => {
           const router = (0, import_sbp7.default)("controller/router");
           const switchFrom = router.currentRoute.path;
           const switchTo = rootState.currentGroupId ? "/dashboard" : "/";
           if (switchFrom !== "/join" && switchFrom !== switchTo) {
-            router.push({ path: switchTo }).catch(console.warn);
+            router.push({ path: switchTo }).catch((e) => console.error("Error switching groups", e));
           }
         }).catch((e) => {
           console.error(`gi.contracts/group/_cleanup: ${e.name} thrown updating routes:`, e);
         }).then(() => (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, true)).catch((e) => {
-          console.error(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
+          console.warn(`gi.contracts/group/_cleanup: ${e.name} thrown during revokeGroupKeyAndRotateOurPEK to ${contractID}:`, e);
         });
       },
       "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
@@ -17979,7 +18016,7 @@ ${this.getErrorInfo()}`;
               }
             }
           }).catch((e) => {
-            console.error(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e);
+            console.warn(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e);
           });
         } finally {
           await (0, import_sbp7.default)("chelonia/contract/remove", chatRoomId, { removeIfPending: true });
@@ -18009,9 +18046,14 @@ ${this.getErrorInfo()}`;
           }
         }
         leaveAllChatRoomsUponLeaving(state, memberID, innerSigningContractID).catch((e) => {
-          console.error("[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms", e);
+          console.warn("[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms", e);
         });
         if (memberID === identityContractID) {
+          const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter((cID) => cID !== identityContractID);
+          (0, import_sbp7.default)("gi.actions/group/removeUselessIdentityContracts", {
+            contractID,
+            possiblyUselessContractIDs
+          });
           (0, import_sbp7.default)("chelonia/contract/remove", contractID).catch((e) => {
             console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
           });
@@ -18024,10 +18066,8 @@ ${this.getErrorInfo()}`;
               groupID: contractID,
               memberID
             });
-            Promise.resolve().then(() => (0, import_sbp7.default)("gi.contracts/group/rotateKeys", contractID)).then(() => {
-              return (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false);
-            }).catch((e) => {
-              console.error(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e);
+            Promise.resolve().then(() => (0, import_sbp7.default)("gi.contracts/group/rotateKeys", contractID)).then(() => (0, import_sbp7.default)("gi.contracts/group/revokeGroupKeyAndRotateOurPEK", contractID, false)).catch((e) => {
+              console.warn(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e);
             });
             (0, import_sbp7.default)("gi.contracts/group/removeForeignKeys", contractID, memberID, state);
           }
@@ -18067,15 +18107,15 @@ ${this.getErrorInfo()}`;
               data: groupCSKids,
               signingKeyId: CSKid
             }]).catch((e) => {
-              console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
+              console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
             });
           }
           (0, import_sbp7.default)("chelonia/queueInvocation", identityContractID, ["chelonia/contract/disconnect", identityContractID, groupContractID]).catch((e) => {
-            console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
+            console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
           });
         }
         (0, import_sbp7.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
-          console.error(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
+          console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });
       },
       "gi.contracts/group/removeForeignKeys": (contractID, userID, state) => {

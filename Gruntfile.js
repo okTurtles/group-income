@@ -60,14 +60,14 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Da
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
 const backendIndex = 'backend/index.js'
-const distAssets = 'dist/assets'
-const distCSS = 'dist/assets/css'
 const distDir = 'dist'
-const distContracts = 'dist/contracts'
-const distJS = 'dist/assets/js'
-const serviceWorkerDir = 'frontend/controller/serviceworkers'
+const distAssets = `${distDir}assets`
+const distCSS = `${distDir}assets/css`
+const distContracts = `${distDir}contracts`
+const distJS = `${distDir}assets/js`
 const srcDir = 'frontend'
-const contractsDir = 'frontend/model/contracts'
+const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
+const contractsDir = `${srcDir}/model/contracts`
 const mainSrc = path.join(srcDir, 'main.js')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
 
@@ -536,6 +536,10 @@ module.exports = (grunt) => {
     console.log(stdout)
   })
   grunt.registerTask('deploy', function () {
+    if (!production) {
+      console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
+      process.exit(1)
+    }
     grunt.task.run([
       'checkDependencies', 'exec:eslint', 'exec:flow',
       'exec:puglint', 'exec:stylelint', 'clean',
@@ -543,6 +547,10 @@ module.exports = (grunt) => {
     ])
   })
   grunt.registerTask('serve', function () {
+    if (!production) {
+      console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
+      process.exit(1)
+    }
     grunt.task.run(['exec:chelDeployAll', 'backend:launch', 'keepalive'])
   })
 
