@@ -299,6 +299,12 @@ route.POST('/file', {
 
     const manifestHash = createCID(manifestMeta.payload)
 
+    // Check that we're not overwriting data. At best this is a useless operation
+    // since there is no need to write things that exist. However, overwriting
+    // data would also make it ambiguous in terms of ownership. For example,
+    // someone could upload a file F1 using some existing chunks (from a
+    // different file F2) and then request to delete their file F1, which would
+    // result in corrupting F2.
     // Ensure that the manifest doesn't exist
     if (await sbp('chelonia/db/get', manifestHash)) {
       throw new Error(`Manifest ${manifestHash} already exists`)
