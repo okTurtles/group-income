@@ -6,9 +6,9 @@ import { verifyShelterAuthorizationHeader } from '~/shared/domains/chelonia/util
 const Boom = require('@hapi/boom')
 
 exports.plugin = {
-  name: 'gi-auth',
+  name: 'chel-auth',
   register: function (server: Object, opts: Object) {
-    server.auth.scheme('gi-bearer', function (server, options) {
+    server.auth.scheme('chel-bearer', function (server, options) {
       return {
         authenticate: function (request, h) {
           const { authorization } = request.headers
@@ -26,7 +26,7 @@ exports.plugin = {
         }
       }
     })
-    server.auth.scheme('gi-auth', function (server, options) {
+    server.auth.scheme('chel-shelter', function (server, options) {
       return {
         authenticate: function (request, h) {
           const { authorization } = request.headers
@@ -50,7 +50,7 @@ exports.plugin = {
       }
     })
 
-    server.auth.strategy('gi-bearer', 'gi-bearer')
-    server.auth.strategy('gi-auth', 'gi-auth')
+    server.auth.strategy('chel-bearer', 'chel-bearer')
+    server.auth.strategy('chel-shelter', 'chel-shelter')
   }
 }

@@ -47,7 +47,7 @@ const route = new Proxy({}, {
 //       See related TODO in pubsub.js and the reddit discussion link.
 route.POST('/event', {
   auth: {
-    strategy: 'gi-auth',
+    strategy: 'chel-shelter',
     mode: 'optional'
   },
   validate: { payload: Joi.string().required() }
@@ -63,14 +63,14 @@ route.POST('/event', {
       }
       const credentials = request.auth.credentials
       // Only allow identity contracts to be created without attribution
-      if (!credentials?.billableContractID && deserializedHEAD.contractID === deserializedHEAD.hash) {
+      if (!credentials?.billableContractID && deserializedHEAD.isFirstMessage) {
         const manifest = await sbp('chelonia/db/get', deserializedHEAD.head.manifest)
         const parsedManifest = JSON.parse(manifest)
         const { name } = JSON.parse(parsedManifest.body)
         if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
       }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
-      if (deserializedHEAD.contractID === deserializedHEAD.hash) {
+      if (deserializedHEAD.isFirstMessage) {
         // Store attribution information
         if (credentials?.billableContractID) {
           await sbp('backend/server/saveOwner', credentials.billableContractID, deserializedHEAD.contractID)
@@ -228,7 +228,7 @@ function (request, h) {
 // If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
   auth: {
-    strategies: ['gi-auth'],
+    strategies: ['chel-shelter'],
     mode: 'required'
   },
   payload: {
@@ -351,7 +351,7 @@ route.GET('/file/{hash}', {
 
 route.POST('/deleteFile/{hash}', {
   auth: {
-    strategies: ['gi-auth', 'gi-bearer'],
+    strategies: ['chel-shelter', 'chel-bearer'],
     mode: 'required'
   }
 }, async function (request, h) {
@@ -364,7 +364,7 @@ route.POST('/deleteFile/{hash}', {
   }
 
   switch (strategy) {
-    case 'gi-auth': {
+    case 'chel-shelter': {
       let ultimateOwner = owner
       let count = 0
       // Walk up the ownership tree
@@ -383,7 +383,7 @@ route.POST('/deleteFile/{hash}', {
       }
       break
     }
-    case 'gi-bearer': {
+    case 'chel-bearer': {
       const expectedToken = await sbp('chelonia/db/get', `_private_deletionToken_${hash}`)
       if (!expectedToken) {
         return Boom.notFound()
@@ -482,7 +482,7 @@ route.GET('/', {}, function (req, h) {
 
 route.POST('/zkpp/register/{name}', {
   auth: {
-    strategy: 'gi-auth',
+    strategy: 'chel-shelter',
     mode: 'optional'
   },
   validate: {

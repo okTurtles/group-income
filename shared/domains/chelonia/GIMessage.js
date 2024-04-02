@@ -328,6 +328,9 @@ export class GIMessage {
       description (): string {
         const type = this.head.op
         return `<op_${type}|${this.hash} of ${this.contractID}>`
+      },
+      get isFirstMessage (): boolean {
+        return !result.head?.contractID
       }
     }
     return result
