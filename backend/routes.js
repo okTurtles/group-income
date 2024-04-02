@@ -384,6 +384,8 @@ route.POST('/deleteFile/{hash}', {
         }
       // Prevent an infinite loop
       } while (count < 128)
+      // Check that the user making the request is the ultimate owner (i.e.,
+      // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
         return Boom.unauthorized('Invalid token', 'bearer')
       }
@@ -396,6 +398,7 @@ route.POST('/deleteFile/{hash}', {
       }
       const token = request.auth.credentials.token
       // Constant-time comparison
+      // Check that the token provided matches the deletion token for this file
       if (!ctEq(expectedToken, token)) {
         return Boom.unauthorized('Invalid token', 'bearer')
       }
