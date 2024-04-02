@@ -18,6 +18,7 @@ import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import './files.js'
+import './time-sync.js'
 import { buildShelterAuthorizationHeader, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
@@ -328,6 +329,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/reset': async function (postCleanupFn) {
+    sbp('chelonia/private/stopClockSync')
     // wait for any pending sync operations to finish before saving
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
@@ -349,6 +351,7 @@ export default (sbp('sbp/selectors/register', {
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('chelonia/private/startClockSync')
   },
   'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
@@ -526,6 +529,7 @@ export default (sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
+    sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {

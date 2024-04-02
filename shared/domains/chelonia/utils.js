@@ -723,7 +723,7 @@ export function buildShelterAuthorizationHeader (contractID: string, state?: Obj
   globalThis.crypto.getRandomValues(nonceBytes)
 
   // <contractID> <UNIX time>.<nonce>
-  const data = `${contractID} ${Date.now() / 1e3 | 0}.${Buffer.from(nonceBytes).toString('base64')}`
+  const data = `${contractID} ${sbp('chelonia/time')}.${Buffer.from(nonceBytes).toString('base64')}`
 
   // shelter <contractID> <UNIX time>.<nonce>.<signature>
   return `shelter ${data}.${sign(deserializedSAK, data)}`

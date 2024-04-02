@@ -372,7 +372,11 @@ export default (sbp('sbp/selectors/register', {
       method: 'POST',
       signal: this.abortController.signal,
       headers: new Headers([
-        ['authorization', token ? `bearer ${token}` : buildShelterAuthorizationHeader.call(this, billableContractID)]
+        ['authorization',
+          token
+            ? `bearer ${token}`
+            // $FlowFixMe[incompatible-call]
+            : buildShelterAuthorizationHeader.call(this, billableContractID)]
       ])
     })
     if (!response.ok) {
