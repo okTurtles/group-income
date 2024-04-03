@@ -168,7 +168,7 @@ export function makeMentionFromUserID (userID: string): {
   }
 }
 
-export function swapUserIDForUsername (text: string) {
+export function swapUserIDForUsername (text: string): string {
   const rootGetters = sbp('state/vuex/getters')
   const possibleMentions = Object.keys(rootGetters.ourContactProfilesById)
     .map(u => makeMentionFromUserID(u).me).filter(v => !!v)
