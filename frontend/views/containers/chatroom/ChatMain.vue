@@ -891,24 +891,23 @@ export default ({
 
         const isMessageAddedOrDeleted = (message: GIMessage) => {
           const allowedActionType = [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED]
-          let action = null
-          if (message.opType() === GIMessage.OP_ATOMIC) {
-            const opTypes = value.map(([type, value]) => type)
-            for (let i = 0; i < opTypes.length; i++) {
-              if (allowedActionType.includes(opTypes[i])) {
-                // NOTE: choose the first action with allowed opType
-                //       which also would be the only child action of OP_ATOMIC message
-                const v = value[i][1].valueOf()
-                action = !Object.getPrototypeOf(v)?._isSignedData ? v.action : v?.valueOf()?.action
-                break
-              }
+          const getAllowedMessageAction = (opType, opValue) => {
+            if (opType === GIMessage.OP_ATOMIC) {
+              const actions = opValue
+                .map(([t, v]) => getAllowedMessageAction(t, v.valueOf().valueOf()))
+                .filter(Boolean)
+              // TODO: Now we return the first action of list
+              //       because there is only one allowedAction in OP_ATOMIC message now.
+              //       But later we need to consider several child actions for A OP_ATOMIC message
+              return actions[0]
+            } else if (allowedActionType.includes(opType)) {
+              return opValue.action
+            } else {
+              return undefined
             }
-          } else if (allowedActionType.includes(message.opType())) {
-            action = value.action
-          } else {
-            return {}
           }
 
+          const action = getAllowedMessageAction(message.opType(), value)
           let addedOrDeleted = 'NONE'
 
           if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
