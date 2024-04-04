@@ -123,7 +123,7 @@ module.exports = (grunt) => {
       }
       grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
       // TODO: do this with JS instead of POSIX commands for Windows support
-      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
       console.log(stdout)
     } else {
       // Only run these in NODE_ENV=development so that production servers

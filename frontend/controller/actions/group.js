@@ -57,38 +57,42 @@ export default (sbp('sbp/selectors/register', {
   }) {
     let finalPicture = `${window.location.origin}/assets/images/group-avatar-default.png`
 
+    const rootState = sbp('state/vuex/state')
+    const userID = rootState.loggedIn.identityContractID
+
     if (picture) {
       try {
-        finalPicture = await imageUpload(picture)
+        finalPicture = await imageUpload(picture, { billableContractID: userID })
       } catch (e) {
         console.error('actions/group.js failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }
 
-    const rootState = sbp('state/vuex/state')
-    const userID = rootState.loggedIn.identityContractID
-
     // Create the necessary keys to initialise the contract
     // eslint-disable-next-line camelcase
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const inviteKeyId = keyId(inviteKey)
+    const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const inviteKeyP = serializeKey(inviteKey, false)
+    const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
     const inviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(inviteKey, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(SAK, true))
 
     try {
       const proposalSettings = {
@@ -120,7 +124,10 @@ export default (sbp('sbp/selectors/register', {
 
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
-        publishOptions,
+        publishOptions: {
+          billableContractID: userID,
+          ...publishOptions
+        },
         signingKeyId: CSKid,
         actionSigningKeyId: CSKid,
         actionEncryptionKeyId: CEKid,
@@ -169,6 +176,20 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: inviteKeyP
+          },
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sak'],
+            ringLevel: 0,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
           }
         ],
         data: {
@@ -587,7 +608,7 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    })
+    }, params.contractID)
 
     // When creating a public chatroom, that chatroom's secret keys are shared
     // with the group (i.e., they are literally the same keys, using the

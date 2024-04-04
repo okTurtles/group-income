@@ -134,12 +134,10 @@ export default {
   },
   mounted () {
     if (this.shouldPreviewImages) {
-      (async () => {
-        this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
-          return this.getAttachmentObjectURL(attachment)
-        }))
-        this.$forceUpdate()
-      })()
+      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment))
+      Promise.all(promiseToRetrieveURLs).then(urls => {
+        this.objectURLList = urls
+      })
 
       if (this.isForDownload) {
         this.loadingBoxStyles = this.attachmentList.map(attachment => {
