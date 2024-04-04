@@ -236,6 +236,9 @@ export default (sbp('sbp/selectors/register', {
           }
         },
         data: {
+          // finalPicture is set after OP_CONTRACT is sent, which is after
+          // calling 'chelonia/out/registerContract' here. We use a getter for
+          // `picture` so that the action sent has the correct value
           attributes: { username, email, get picture () { return finalPicture } }
         },
         namespaceRegistration: username

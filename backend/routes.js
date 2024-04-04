@@ -357,6 +357,8 @@ route.GET('/file/{hash}', {
 
 route.POST('/deleteFile/{hash}', {
   auth: {
+    // Allow file deletion, and allow either the bearer of the deletion token or
+    // the file owner to delete it
     strategies: ['chel-shelter', 'chel-bearer'],
     mode: 'required'
   }
@@ -423,6 +425,8 @@ route.POST('/deleteFile/{hash}', {
     console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
     return Boom.notFound()
   }
+  // The keys to be deleted are not read from or updated, so they can be deleted
+  // without using a queue
   await sbp('chelonia/db/delete', hash)
   await sbp('chelonia/db/delete', `_private_owner_${hash}`)
   await sbp('chelonia/db/delete', `_private_size_${hash}`)
