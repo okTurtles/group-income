@@ -196,7 +196,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 creates several channels and logout', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel1'))) {
-      cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
+      cy.giAddNewChatroom({
+        name: c.name,
+        description: c.description,
+        isPrivate: c.isPrivate,
+        bypassUI: true
+      })
       cy.giCheckIfJoinedChatroom(c.name, me)
     }
     cy.giLogout()
@@ -234,7 +239,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user2 creates several channels', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel2'))) {
-      cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
+      cy.giAddNewChatroom({
+        name: c.name,
+        description: c.description,
+        isPrivate: c.isPrivate,
+        bypassUI: true
+      })
       cy.giCheckIfJoinedChatroom(c.name, me)
     }
   })

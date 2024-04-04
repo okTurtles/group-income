@@ -122,7 +122,11 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   })
 
   it('user2 creates a new channel and check how the scroll position is saved for each channel', () => {
-    cy.giAddNewChatroom(additionalChannelName, '', false)
+    cy.giAddNewChatroom({
+      name: additionalChannelName,
+      isPrivate: false,
+      bypassUI: true
+    })
     cy.giCheckIfJoinedChatroom(additionalChannelName, me)
 
     switchChannel(CHATROOM_GENERAL_NAME)
