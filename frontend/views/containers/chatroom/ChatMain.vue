@@ -664,6 +664,16 @@ export default ({
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
+    generateNewChatRoomState () {
+      return {
+        settings: cloneDeep(this.chatRoomSettings),
+        attributes: cloneDeep(this.chatRoomAttributes),
+        users: cloneDeep(this.chatRoomMembers),
+        _vm: cloneDeep(this.currentChatVm),
+        messages: [],
+        onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
+      }
+    },
     initializeState () {
       // NOTE: this state is rendered using the chatroom contract functions
       // so should be CAREFUL of updating the fields
@@ -675,14 +685,7 @@ export default ({
       } catch (e) {
         console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
       }
-      Vue.set(this.messageState, 'contract', {
-        settings: cloneDeep(this.chatRoomSettings),
-        attributes: cloneDeep(this.chatRoomAttributes),
-        users: cloneDeep(this.chatRoomMembers),
-        _vm: cloneDeep(this.currentChatVm),
-        messages: [],
-        onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
-      })
+      Vue.set(this.messageState, 'contract', this.generateNewChatRoomState())
     },
     /**
      * Load/render events for one or more pages
@@ -739,7 +742,6 @@ export default ({
 
           for (;;) {
             const { done, value: event } = await newEventsStreamReader.read()
-            console.error({ done, event })
             if (done) break
 
             const state = this.messageState.contract
@@ -750,8 +752,6 @@ export default ({
             Vue.set(this.messageState, 'contract', newState)
             this.latestEvents.push(event)
           }
-
-          this.$forceUpdate()
         }).catch(e => {
           console.error('[ChatMain.vue] Error processing events at renderMoreMessages', e)
         }).finally(() => {
@@ -798,23 +798,17 @@ export default ({
         this.latestEvents.unshift(...events)
       }
 
-      this.initializeState()
-
       // This ensures that `this.latestEvents.push(event)` below happens in order
       return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (!this.checkEventSourceConsistency(contractID)) return
 
-        const latestEvents = this.latestEvents
-        if (latestEvents.length > 0) {
-          for (const event of latestEvents) {
-            const state = this.messageState.contract
-            const newState = await sbp('chelonia/in/processMessage', event, state)
-
-            if (!this.checkEventSourceConsistency(contractID)) return
-
-            Vue.set(this.messageState, 'contract', newState)
+        if (this.latestEvents.length > 0) {
+          let state = this.generateNewChatRoomState()
+          for (const event of this.latestEvents) {
+            state = await sbp('chelonia/in/processMessage', event, state)
           }
-          this.$forceUpdate()
+          if (!this.checkEventSourceConsistency(contractID)) return
+          Vue.set(this.messageState, 'contract', state)
         }
       })
     },
@@ -964,8 +958,6 @@ export default ({
           Vue.set(this.messageState, 'contract', newContractState)
 
           this.latestEvents.push(serializedMessage)
-
-          this.$forceUpdate()
 
           if (this.ephemeral.scrolledDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {

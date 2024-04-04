@@ -101,7 +101,7 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
@@ -166,6 +166,7 @@ export default ({
   },
   methods: {
     humanDate,
+    swapUserIDForUsername,
     editMessage () {
       if (this.type === MESSAGE_TYPES.POLL) {
         alert('TODO: implement editting a poll')
@@ -204,13 +205,6 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
-    },
-    swapUserIDForUsername (text) {
-      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
-      return text
-        .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-        .map(t => !possibleMentions.includes(t) ? t : t[0] + this.usernameFromID(t.slice(1)))
-        .join('')
     },
     generateTextObjectsFromText (text) {
       if (!text) {
