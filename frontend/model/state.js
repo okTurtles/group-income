@@ -485,14 +485,12 @@ const getters = {
     return profiles
   },
   ourContactProfilesById (state, getters) {
-    const currentGroupProfileIds = Object.keys(getters.currentGroupState.profiles || {})
     const profiles = {}
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID].attributes
-        if (attributes && // NOTE: this is for fixing the error while syncing the identity contracts
-          currentGroupProfileIds.includes(contractID)) {
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
           const username = checkedUsername(state, attributes.username, contractID)
           profiles[contractID] = {
             ...attributes,
@@ -502,6 +500,17 @@ const getters = {
         }
       })
     return profiles
+  },
+  currentGroupContactProfilesById (state, getters) {
+    const currentGroupProfileIds = Object.keys(getters.currentGroupState.profiles || {})
+    const filtered = {}
+
+    for (const identityContractID in getters.ourContactProfilesById) {
+      if (currentGroupProfileIds.includes(identityContractID)) {
+        filtered[identityContractID] = getters.ourContactProfilesById[identityContractID]
+      }
+    }
+    return filtered
   },
   ourContactsById (state, getters) {
     return Object.keys(getters.ourContactProfilesById)
