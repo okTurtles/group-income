@@ -1,8 +1,13 @@
 import sbp from '@sbp/sbp'
 
-// `wallBase` is the base used to calculate wall time. Although optimistically
+// `wallBase` is the base used to calculate wall time (i.e., time elapsed as one
+// would get from, e.g., looking a clock hanging from a wall).
+// Although optimistically
 // it has a default value to local time, it'll be updated to the server's time
 // once `chelonia/private/startClockSync` is called
+// From Wikipedia: 'walltime is the actual time taken from the start of a
+// computer program to the end. In other words, it is the difference between
+// the time at which a task finishes and the time at which the task started.'
 let wallBase = Date.now()
 // `monotonicBase` is the base used to calculate an offset to apply to `wallBase`
 // to estimate the server's current wall time.
