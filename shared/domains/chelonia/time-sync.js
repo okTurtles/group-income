@@ -31,11 +31,11 @@ const syncServerTime = async function () {
   const serverTime = (new Date(await time.text())).valueOf()
   // If the value could not be parsed, report that as well
   if (Number.isNaN(serverTime)) throw new Error('Unable to parse server time')
-  wallBase = serverTime
-  // Adjust `newMonotonicBase` based on the elapsed request time. We can't know
+  // Adjust `wallBase` based on the elapsed request time. We can't know
   // how long it took for the server to respond, but we can estimate that it's
   // about half the time from the moment we made the request.
-  monotonicBase = newMonotonicBase + (requestTimeElapsed - newMonotonicBase) / 2
+  wallBase = serverTime + (requestTimeElapsed - newMonotonicBase) / 2
+  monotonicBase = newMonotonicBase
 }
 
 export default (sbp('sbp/selectors/register', {
