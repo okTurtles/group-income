@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-attachment-container(:class='{ "is-for-download": isForDownload }')
+.c-attachment-container(ref='container' :class='{ "is-for-download": isForDownload }')
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
@@ -21,7 +21,7 @@
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
         )
-        .loading-box(v-else)
+        .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
       .c-preview-pending-flag(v-if='isPending')
       .c-preview-failed-flag(v-else-if='isFailed')
@@ -86,7 +86,7 @@
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { getFileExtension } from '@view-utils/filters.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -115,7 +115,8 @@ export default {
   },
   data () {
     return {
-      objectURLList: []
+      objectURLList: [],
+      loadingBoxStyles: []
     }
   },
   computed: {
@@ -139,6 +140,12 @@ export default {
         }))
         this.$forceUpdate()
       })()
+
+      if (this.isForDownload) {
+        this.loadingBoxStyles = this.attachmentList.map(attachment => {
+          return this.getStretchedDimension(attachment.dimension)
+        })
+      }
     }
   },
   methods: {
@@ -146,7 +153,7 @@ export default {
       return getFileExtension(name, true)
     },
     fileType ({ mimeType }) {
-      return mimeType.match('image/') ? 'image' : 'non-image'
+      return getFileType(mimeType)
     },
     deleteAttachment (attachment) {
       alert('TODO - delete attachment')
@@ -176,6 +183,21 @@ export default {
         aTag.click()
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+      }
+    },
+    getStretchedDimension ({ width, height }) {
+      // NOTE: 320px = 20rem of max-height (.loading-box)
+      const maxHeight = 320
+      // NOTE: 16px = 2 * 0.5rem of padding (.c-preview-img)
+      //       2px = 2 * 1px of border width (.c-attachment-preview)
+      const maxWidth = this.$refs.container.clientWidth - 16 - 2
+      const zoomRatio = Math.min(maxWidth / width, maxHeight / height, 1)
+      const widthInPixel = zoomRatio * width
+      const heightInPixel = zoomRatio * height
+
+      return {
+        width: `${widthInPixel}px`,
+        height: `${heightInPixel}px`
       }
     }
   }
@@ -256,16 +278,10 @@ export default {
 
         .loading-box {
           border-radius: 0;
-          width: 24rem;
           margin-bottom: 0;
-
-          @include tablet {
-            width: 20rem;
-          }
-
-          @include phone {
-            width: 16rem;
-          }
+          max-height: 20rem;
+          min-height: unset;
+          max-width: 100%;
         }
       }
     }
@@ -303,7 +319,6 @@ export default {
   }
 
   .c-preview-img {
-    display: inline-block;
     object-fit: cover;
   }
 

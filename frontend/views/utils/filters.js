@@ -9,6 +9,12 @@ export const getFileExtension = (
   return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
 }
 
+export const getFileType = (
+  mimeType: string = ''
+): string => {
+  return mimeType.match('image/') ? 'image' : 'non-image'
+}
+
 /**
  * this function filters `list` by `keyword`
  * `list` should be an array of objects and strings

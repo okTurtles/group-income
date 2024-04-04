@@ -135,7 +135,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
+import { omit, cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { objectURLtoBlob } from '@utils/image.js'
 
@@ -472,13 +472,13 @@ export default ({
       const uploadAttachments = async () => {
         try {
           const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
-            const { mimeType, url, name } = attachment
+            const { mimeType, url } = attachment
             // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
             const attachmentBlob = await objectURLtoBlob(url)
             const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
               type: mimeType, cipher: 'aes256gcm'
             })
-            return { name, mimeType, downloadData }
+            return { ...omit(attachment, ['url']), downloadData }
           }))
           data.attachments = attachmentsToSend
 
