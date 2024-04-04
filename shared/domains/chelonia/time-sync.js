@@ -1,6 +1,11 @@
 import sbp from '@sbp/sbp'
 
+// `wallBase` is the base used to calculate wall time. Although optimistically
+// it has a default value to local time, it'll be updated to the server's time
+// once `chelonia/private/startClockSync` is called
 let wallBase = Date.now()
+// `monotonicBase` is the base used to calculate an offset to apply to `wallBase`
+// to estimate the server's current wall time.
 let monotonicBase = performance.now()
 // `undefined` means the sync process has been stopped, `null` that the current
 // request has finished
@@ -22,7 +27,10 @@ const syncServerTime = async function () {
   // If the value could not be parsed, report that as well
   if (Number.isNaN(serverTime)) throw new Error('Unable to parse server time')
   wallBase = serverTime
-  monotonicBase = newMonotonicBase
+  // Adjust `newMonotonicBase` based on the elapsed request time. We can't know
+  // how long it took for the server to respond, but we can estimate that it's
+  // about half the time from the moment we made the request.
+  monotonicBase = newMonotonicBase + (requestTimeElapsed - newMonotonicBase) / 2
 }
 
 export default (sbp('sbp/selectors/register', {
@@ -87,6 +95,10 @@ export default (sbp('sbp/selectors/register', {
       resyncTimeout = undefined
     }
   },
+  // Get an estimate of the server's current time based on the time elapsed as
+  // measured locally (using a monotonic clock), which is used as an offset, and
+  // a previously retrieved server time. The time value is returned as a UNIX
+  // timestamp (seconds since 1 Jan 1970 00:00:00 UTC)
   'chelonia/time': function () {
     const monotonicNow = performance.now()
     const wallNow = wallBase - monotonicBase + monotonicNow

@@ -296,6 +296,22 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
       }
     }
 
+    // Is this a #sak
+    if (key.name === '#sak') {
+      if (data.encryptionKeyId) {
+        throw new Error('#sak may not be encrypted')
+      }
+      if (key.permissions && (!Array.isArray(key.permissions) || key.permissions.length !== 0)) {
+        throw new Error('#sak may not have permissions')
+      }
+      if (!Array.isArray(key.purpose) || key.purpose.length !== 1 || key.purpose[0] !== 'sak') {
+        throw new Error("#sak must have exactly one purpose: 'sak'")
+      }
+      if (key.ringLevel !== 0) {
+        throw new Error('#sak must have ringLevel 0')
+      }
+    }
+
     // Is this a an invite key? If so, run logic for invite keys and invitation
     // accounting
     if (key.name.startsWith('#inviteKey-')) {
