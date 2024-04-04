@@ -169,7 +169,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it(`user1 creates '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
-    cy.giSignup(user1)
+    cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName1, { bypassUI: true })
@@ -408,7 +408,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // TODO: this test case is not necesasry but it is here
   // because of the issue #1176
   it('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
-    cy.giLogin(user3)
+    cy.giLogin(user3, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false // user3 has been kicked out from the group at this point, so cannot navigate to /dashboard.
+    })
     me = user3
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -417,7 +420,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user2 leaves the group by himself', () => {
-    cy.giLogin(user2)
+    cy.giLogin(user2, { bypassUI: true })
     me = user2
 
     cy.getByDT('groupSettingsLink').click()
@@ -465,7 +468,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
   // so the scenario could be updated later when e2e protocol would be ready
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
-    cy.giLogin(user3)
+    cy.giLogin(user3, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false // user-3 has no group to this account at this point.
+    })
     me = user3
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -485,7 +491,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
-    cy.giLogin(user2)
+    cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')

@@ -202,7 +202,8 @@ Cypress.Commands.add('giLogin', (username, {
   password = defaultPassword,
   bypassUI,
   // NOTE: the 'firstLoginAfterJoinGroup' attribute is true only when it's the FIRST login after joining group
-  firstLoginAfterJoinGroup = false
+  firstLoginAfterJoinGroup = false,
+  toGroupDashboardUponSuccess = true
 } = {}) => {
   if (bypassUI) {
     // Wait for the app to be ready
@@ -224,9 +225,11 @@ Cypress.Commands.add('giLogin', (username, {
       })
     })
 
-    cy.get('nav').within(() => {
-      cy.getByDT('dashboard').click()
-    })
+    if (toGroupDashboardUponSuccess) {
+      cy.get('nav').within(() => {
+        cy.getByDT('dashboard').click()
+      })
+    }
   } else {
     cy.getByDT('loginBtn').click()
     cy.getByDT('loginName').clear().type(username)

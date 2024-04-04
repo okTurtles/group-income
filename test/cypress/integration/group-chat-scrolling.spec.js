@@ -64,7 +64,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it(`user1 creates '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default and sends 15 messages`, () => {
     cy.visit('/')
-    cy.giSignup(user1)
+    cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName, { bypassUI: true })
