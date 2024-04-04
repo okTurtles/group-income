@@ -33,7 +33,7 @@ function getProposalItems () {
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   function switchUser (username) {
-    cy.giSwitchUser(username)
+    cy.giSwitchUser(username, { bypassUI: true })
     me = username
   }
 
@@ -207,7 +207,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       existingMemberUsername: user1,
       groupName: groupName1,
-      shouldLogoutAfter: true
+      shouldLogoutAfter: true,
+      bypassUI: true
     })
     me = undefined
   })
@@ -480,7 +481,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       groupName: groupName1,
       existingMemberUsername: user1,
       shouldLogoutAfter: false,
-      isLoggedIn: true
+      isLoggedIn: true,
+      bypassUI: true
     })
 
     cy.giRedirectToGroupChat()
@@ -500,7 +502,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       groupName: groupName1,
       existingMemberUsername: user3,
       shouldLogoutAfter: false,
-      isLoggedIn: true
+      isLoggedIn: true,
+      bypassUI: true
     })
 
     cy.giRedirectToGroupChat()
