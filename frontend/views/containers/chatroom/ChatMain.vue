@@ -475,9 +475,9 @@ export default ({
             const { mimeType, url, name } = attachment
             // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
             const attachmentBlob = await objectURLtoBlob(url)
-            const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+            const { download: downloadData } = await sbp('chelonia/fileUpload', attachmentBlob, {
               type: mimeType, cipher: 'aes256gcm'
-            })
+            }, { billableContractID: contractID })
             return { name, mimeType, downloadData }
           }))
           data.attachments = attachmentsToSend

@@ -51,7 +51,7 @@ export default ({
       let picture
 
       try {
-        picture = await imageUpload(blob)
+        picture = await imageUpload(blob, { billableContractID: this.sbpParams.contractID })
       } catch (e) {
         console.error('AvatarUpload imageUpload() error:', e)
         this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))

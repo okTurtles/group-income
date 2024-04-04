@@ -124,9 +124,12 @@ describe('Full walkthrough', function () {
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
+    const SAKid = keyId(SAK)
+    const SAKp = serializeKey(SAK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK].map(key => ({ key, transient: true }))
+      () => [CSK, SAK].map(key => ({ key, transient: true }))
     )
 
     // append random id to username to prevent conflict across runs
@@ -143,6 +146,15 @@ describe('Full walkthrough', function () {
           permissions: '*',
           allowedActions: '*',
           data: CSKp
+        },
+        {
+          id: SAKid,
+          name: '#sak',
+          purpose: ['sak'],
+          ringLevel: 0,
+          permissions: [],
+          allowedActions: [],
+          data: SAKp
         }
       ],
       data: {
@@ -225,7 +237,10 @@ describe('Full walkthrough', function () {
         }
       },
       signingKeyId: CSKid,
-      hooks
+      hooks,
+      publishOptions: {
+        billableContractID: creator.contractID()
+      }
     })
   }
   function createPaymentTo (from, to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
@@ -378,7 +393,15 @@ describe('Full walkthrough', function () {
           { type: 'application/vnd.shelter.manifest' }
         )
       )
-      await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
+      await fetch(`${process.env.API_URL}/file`,
+        {
+          method: 'POST',
+          headers: {
+            authorization: sbp('chelonia/shelterAuthorizationHeader', users.alice.contractID())
+          },
+          body: form
+        }
+      )
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(manifestCid))
     })

@@ -25,7 +25,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
     const r = randomNonce()
     const b = hash(r)
-    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
       .then(handleFetchResult('json'))
 
     const { authSalt, s, sig } = authHash
@@ -34,7 +34,7 @@ export default (sbp('sbp/selectors/register', {
 
     const [c, hc] = computeCAndHc(r, s, h)
 
-    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
+    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
       'r': r,
       's': s,
       'sig': sig,
@@ -50,20 +50,12 @@ export default (sbp('sbp/selectors/register', {
     const password = passwordFn()
     let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
 
-    if (picture) {
-      try {
-        finalPicture = await imageUpload(picture)
-      } catch (e) {
-        console.error('actions/identity.js picture upload error:', e)
-        throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
-      }
-    }
     // proceed with creation
     const keyPair = boxKeyPair()
     const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
     const b = hash(r)
     // TODO: use the contractID instead, and move this code down below the registration
-    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
+    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -75,23 +67,6 @@ export default (sbp('sbp/selectors/register', {
     const { p, s, sig } = registrationRes
 
     const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
-    // TODO: use the contractID instead, and move this code down below the registration
-    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        'r': r,
-        's': s,
-        'sig': sig,
-        'Eh': Eh
-      })
-    })
-
-    if (!res.ok) {
-      throw new Error('Unable to register hash')
-    }
 
     // Create the necessary keys to initialise the contract
     const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, contractSalt)
@@ -99,6 +74,7 @@ export default (sbp('sbp/selectors/register', {
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const PEK = keygen(CURVE25519XSALSA20POLY1305)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const IPKid = keyId(IPK)
@@ -106,6 +82,7 @@ export default (sbp('sbp/selectors/register', {
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const PEKid = keyId(PEK)
+    const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
     const IPKp = serializeKey(IPK, false)
@@ -113,21 +90,23 @@ export default (sbp('sbp/selectors/register', {
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const PEKp = serializeKey(PEK, false)
+    const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
 
     // Before creating the contract, put all keys into transient store
     sbp('chelonia/storeSecretKeys',
-      () => [IPK, IEK, CEK, CSK, PEK].map(key => ({ key, transient: true }))
+      () => [IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true }))
     )
 
     let userID
     // next create the identity contract itself
     try {
-      const user = await sbp('chelonia/out/registerContract', {
+      await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
         signingKeyId: IPKid,
@@ -205,15 +184,65 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: PEKp
+          },
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sak'],
+            ringLevel: 0,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
           }
         ],
+        hooks: {
+          postpublishContract: async (message) => {
+            // We need to get the contract state
+            await sbp('chelonia/contract/sync', message.contractID())
+
+            // Register password salt
+            const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
+              method: 'POST',
+              headers: {
+                'authorization': sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
+                'content-type': 'application/x-www-form-urlencoded'
+              },
+              body: new URLSearchParams({
+                'r': r,
+                's': s,
+                'sig': sig,
+                'Eh': Eh
+              })
+            })
+
+            if (!res.ok) {
+              throw new Error('Unable to register hash')
+            }
+
+            userID = message.contractID()
+            if (picture) {
+              try {
+                finalPicture = await imageUpload(picture, { billableContractID: userID })
+              } catch (e) {
+                console.error('actions/identity.js picture upload error:', e)
+                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
+              }
+            }
+          }
+        },
         data: {
-          attributes: { username, email, picture: finalPicture }
+          // finalPicture is set after OP_CONTRACT is sent, which is after
+          // calling 'chelonia/out/registerContract' here. We use a getter for
+          // `picture` so that the action sent has the correct value
+          attributes: { username, email, get picture () { return finalPicture } }
         },
         namespaceRegistration: username
       })
-
-      userID = user.contractID()
 
       // After the contract has been created, store pesistent keys
       sbp('chelonia/storeSecretKeys',
@@ -606,7 +635,7 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    })
+    }, rootState.loggedIn.identityContractID)
 
     // Share the keys to the newly created chatroom with ourselves
     await sbp('gi.actions/out/shareVolatileKeys', {
