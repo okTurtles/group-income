@@ -30,7 +30,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   function sendMessage (message) {
     cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').clear().type(`${message}{enter}`)
+      cy.get('textarea').clear().type(`${message}{enter}`, { delay: 0 })
       cy.get('textarea').should('be.empty')
     })
     cy.getByDT('conversationWrapper').within(() => {

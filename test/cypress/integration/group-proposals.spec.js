@@ -392,7 +392,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is not valid')
-    cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again. 404: Not Found')
+    cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again.')
     cy.get('button').click()
     cy.url().should('eq', `${API_URL}/app/`)
     cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
