@@ -6,7 +6,7 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_GENERAL_NAME, CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
 import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
@@ -202,7 +202,8 @@ Cypress.Commands.add('giLogin', (username, {
   password = defaultPassword,
   bypassUI,
   // NOTE: the 'firstLoginAfterJoinGroup' attribute is true only when it's the FIRST login after joining group
-  firstLoginAfterJoinGroup = false
+  firstLoginAfterJoinGroup = false,
+  toGroupDashboardUponSuccess = true
 } = {}) => {
   if (bypassUI) {
     // Wait for the app to be ready
@@ -224,9 +225,11 @@ Cypress.Commands.add('giLogin', (username, {
       })
     })
 
-    cy.get('nav').within(() => {
-      cy.getByDT('dashboard').click()
-    })
+    if (toGroupDashboardUponSuccess) {
+      cy.get('nav').within(() => {
+        cy.getByDT('dashboard').click()
+      })
+    }
   } else {
     cy.getByDT('loginBtn').click()
     cy.getByDT('loginName').clear().type(username)
@@ -605,27 +608,44 @@ Cypress.Commands.add('randomPaymentMethodInIncomeDetails', () => {
   })
 })
 
-Cypress.Commands.add('giAddNewChatroom', (
-  name, description = '', isPrivate = false
-) => {
+Cypress.Commands.add('giAddNewChatroom', ({
+  name, description = '', isPrivate = false, bypassUI = false
+}) => {
   // Needs to be in 'Group Chat' page
-  cy.getByDT('newChannelButton').click()
-  cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
-  cy.getByDT('modal').within(() => {
-    cy.getByDT('createChannelName').clear().type(name)
-    if (description) {
-      cy.getByDT('createChannelDescription').clear().type(description)
-    } else {
-      cy.getByDT('createChannelDescription').clear()
-    }
-    if (isPrivate) {
-      cy.getByDT('createChannelPrivate').check()
-    } else {
-      cy.getByDT('createChannelPrivate').uncheck()
-    }
-    cy.getByDT('createChannelSubmit').click()
-    cy.getByDT('closeModal').should('not.exist')
-  })
+  if (bypassUI) {
+    cy.window().its('sbp').then(sbp => {
+      sbp('gi.actions/group/addAndJoinChatRoom', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: {
+          attributes: {
+            name,
+            description,
+            privacyLevel: isPrivate ? CHATROOM_PRIVACY_LEVEL.PRIVATE : CHATROOM_PRIVACY_LEVEL.GROUP,
+            type: CHATROOM_TYPES.GROUP
+          }
+        }
+      })
+    })
+  } else {
+    cy.getByDT('newChannelButton').click()
+    cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('createChannelName').clear().type(name)
+      if (description) {
+        cy.getByDT('createChannelDescription').clear().type(description)
+      } else {
+        cy.getByDT('createChannelDescription').clear()
+      }
+      if (isPrivate) {
+        cy.getByDT('createChannelPrivate').check()
+      } else {
+        cy.getByDT('createChannelPrivate').uncheck()
+      }
+      cy.getByDT('createChannelSubmit').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+  }
+
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('channelName').should('contain', name)
   cy.getByDT('conversationWrapper').within(() => {

@@ -501,6 +501,17 @@ const getters = {
       })
     return profiles
   },
+  currentGroupContactProfilesById (state, getters) {
+    const currentGroupProfileIds = Object.keys(getters.currentGroupState.profiles || {})
+    const filtered = {}
+
+    for (const identityContractID in getters.ourContactProfilesById) {
+      if (currentGroupProfileIds.includes(identityContractID)) {
+        filtered[identityContractID] = getters.ourContactProfilesById[identityContractID]
+      }
+    }
+    return filtered
+  },
   ourContactsById (state, getters) {
     return Object.keys(getters.ourContactProfilesById)
       .sort((userIdA, userIdB) => {
