@@ -18,7 +18,13 @@ import {
   MESSAGE_TYPES,
   POLL_STATUS
 } from './shared/constants.js'
-import { createMessage, findMessageIdx, leaveChatRoom, makeMentionFromUserID } from './shared/functions.js'
+import {
+  createMessage,
+  findMessageIdx,
+  leaveChatRoom,
+  makeMentionFromUserID,
+  swapUserIDForUsername
+} from './shared/functions.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
@@ -99,7 +105,12 @@ function messageReceivePostEffect ({
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  shouldNotifyMessage && makeNotification({ title, body: text, icon, path })
+  shouldNotifyMessage && makeNotification({
+    title,
+    body: swapUserIDForUsername(text),
+    icon,
+    path
+  })
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 

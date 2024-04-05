@@ -11,9 +11,9 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed } from './errors.js'
+import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
-import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -253,6 +253,9 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifest = JSON.parse(manifestSource)
     const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
+    if (body.name !== contractName) {
+      throw new Error(`Mismatched contract name. Expected ${contractName} but got ${body.name}`)
+    }
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
@@ -358,13 +361,18 @@ export default (sbp('sbp/selectors/register', {
           : this.config.contracts.defaults.modules[dep]
       },
       sbp: contractSBP,
-      fetchServerTime: () => {
+      fetchServerTime: async () => {
         // If contracts need the current timestamp (for example, for metadata 'createdDate')
         // they must call this function so that clients are kept synchronized to the server's
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict
         // with other client's clocks.
         // See: https://github.com/okTurtles/group-income/issues/531
-        return fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        try {
+          const response = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
+          return handleFetchResult('text')(response)
+        } catch (e) {
+          throw new ChelErrorFetchServerTimeFailed('Can not fetch server time. Please check your internet connection.')
+        }
       }
     })
     if (contractName !== this.defContract.name) {
@@ -409,7 +417,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers } = {}, hooks) {
+  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers, billableContractID, bearer } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
 
@@ -489,13 +497,18 @@ export default (sbp('sbp/selectors/register', {
           body: entry.serialize(),
           headers: {
             ...headers,
-            'Content-Type': 'text/plain',
-            'Authorization': 'gi TODO - signature - if needed here - goes here'
+            ...bearer && {
+              'Authorization': `Bearer ${bearer}`
+            },
+            ...billableContractID && {
+              'Authorization': buildShelterAuthorizationHeader.call(this, billableContractID)
+            },
+            'Content-Type': 'text/plain'
           },
           signal: this.abortController.signal
         })
         if (r.ok) {
-          hooks?.postpublish?.(entry)
+          await hooks?.postpublish?.(entry)
           return entry
         }
         try {

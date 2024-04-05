@@ -27,3 +27,4 @@ export const ChelErrorDecryptionKeyNotFound: typeof Error = ChelErrorGenerator('
 export const ChelErrorSignatureError: typeof Error = ChelErrorGenerator('ChelErrorSignatureError')
 export const ChelErrorSignatureKeyUnauthorized: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyUnauthorized', ChelErrorSignatureError)
 export const ChelErrorSignatureKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyNotFound', ChelErrorSignatureError)
+export const ChelErrorFetchServerTimeFailed: typeof Error = ChelErrorGenerator('ChelErrorFetchServerTimeFailed')

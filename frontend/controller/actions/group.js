@@ -57,38 +57,42 @@ export default (sbp('sbp/selectors/register', {
   }) {
     let finalPicture = `${window.location.origin}/assets/images/group-avatar-default.png`
 
+    const rootState = sbp('state/vuex/state')
+    const userID = rootState.loggedIn.identityContractID
+
     if (picture) {
       try {
-        finalPicture = await imageUpload(picture)
+        finalPicture = await imageUpload(picture, { billableContractID: userID })
       } catch (e) {
         console.error('actions/group.js failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }
 
-    const rootState = sbp('state/vuex/state')
-    const userID = rootState.loggedIn.identityContractID
-
     // Create the necessary keys to initialise the contract
     // eslint-disable-next-line camelcase
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const inviteKeyId = keyId(inviteKey)
+    const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const inviteKeyP = serializeKey(inviteKey, false)
+    const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
     const inviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(inviteKey, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(SAK, true))
 
     try {
       const proposalSettings = {
@@ -120,7 +124,10 @@ export default (sbp('sbp/selectors/register', {
 
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
-        publishOptions,
+        publishOptions: {
+          billableContractID: userID,
+          ...publishOptions
+        },
         signingKeyId: CSKid,
         actionSigningKeyId: CSKid,
         actionEncryptionKeyId: CEKid,
@@ -169,6 +176,20 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: inviteKeyP
+          },
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sak'],
+            ringLevel: 0,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
           }
         ],
         data: {
@@ -587,7 +608,7 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    })
+    }, params.contractID)
 
     // When creating a public chatroom, that chatroom's secret keys are shared
     // with the group (i.e., they are literally the same keys, using the
@@ -896,6 +917,69 @@ export default (sbp('sbp/selectors/register', {
     } else {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
+  },
+  'gi.actions/group/removeUselessIdentityContracts': function ({ contractID, possiblyUselessContractIDs }) {
+    // NOTE: should remove the identity contracts which we don't need to sync anymore
+    //       for users who don't have any common groups, and any common DMs
+    const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
+    const me = rootGetters.ourIdentityContractId
+
+    const removeIdentityContracts = () => {
+      const chatRoomIDs = Object.keys(rootGetters.ourDirectMessages)
+      const groupIDs = Object.keys(rootState.contracts)
+        .filter(gID => rootState.contracts[gID].type === 'gi.contracts/group' && gID !== contractID)
+
+      if (!chatRoomIDs.length && !groupIDs.length) {
+        sbp('chelonia/contract/remove', possiblyUselessContractIDs).catch(e => {
+          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+        return
+      }
+
+      const waitFor = [...chatRoomIDs, ...groupIDs]
+      sbp('chelonia/contract/wait', waitFor).then(() => {
+        if (rootGetters.ourIdentityContractId && rootGetters.ourIdentityContractId !== me) {
+          return
+        }
+
+        const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+          .filter(([q]) => waitFor.includes(q))
+          .flatMap(([, list]) => list)
+
+        if (pending.length) {
+          return removeIdentityContracts()
+        }
+
+        const identityContractsMapToKeepSyncing = {}
+        // NOTE: contracts for the members from another groups should not be removed
+        groupIDs.forEach(gID => {
+          for (const [iID] of Object.entries((rootState[gID].profiles || {}))) {
+            identityContractsMapToKeepSyncing[iID] = true
+          }
+        })
+
+        // NOTE: contracts for the members from direct messages should not be removed
+        for (const chatRoomId of chatRoomIDs) {
+          const chatRoomState = rootState[chatRoomId]
+
+          if (!chatRoomState || !chatRoomState.members?.[me]) {
+            continue
+          }
+
+          Object.keys(chatRoomState.members).forEach(memberID => {
+            identityContractsMapToKeepSyncing[memberID] = true
+          })
+        }
+
+        const identityContractsToRemove = possiblyUselessContractIDs.filter(cID => !identityContractsMapToKeepSyncing[cID])
+        sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
+          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
+        })
+      })
+    }
+
+    removeIdentityContracts()
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),

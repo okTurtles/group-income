@@ -1,10 +1,20 @@
 <template lang='pug'>
 ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
+  li.c-group-list-item.group-badge(:class='{ "is-active": isInGlobalDashboard }')
+    tooltip(
+      direction='right'
+      :text='L("Global dashboard")'
+    )
+      button.c-group-picture.is-unstyled.c-global-dashboard-logo(@click='onGlobalDashboardClick')
+        avatar.c-avatar(
+          src='/assets/images/group-income-icon-transparent-circle.png'
+          alt='Global dashboard logo'
+        )
+
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
     :key='`group-${index}`'
-    tag='button'
-    :class='{ "is-active": currentGroupId === group.contractID}'
+    :class='{ "is-active": !isInGlobalDashboard && currentGroupId === group.contractID}'
   )
     tooltip(
       direction='right'
@@ -64,6 +74,9 @@ export default ({
           this.groupUnreadMessages(group.contractID) + this.unreadGroupNotificationCountFor(group.contractID) > 0
         ]))
       )
+    },
+    isInGlobalDashboard () {
+      return this.$route.path.startsWith('/global-dashboard')
     }
   },
   methods: {
@@ -72,6 +85,13 @@ export default ({
     },
     handleMenuSelect (id) {
       id && this.changeGroup(id)
+
+      if (this.isInGlobalDashboard) {
+        this.$router.push('/dashboard')
+      }
+    },
+    onGlobalDashboardClick () {
+      this.$router.push(({ path: '/global-dashboard' }))
     },
     changeGroup (hash) {
       const path = this.$route.path
@@ -174,5 +194,17 @@ export default ({
 
 .c-group-picture {
   display: flex;
+
+  &.c-global-dashboard-logo {
+    background-color: $background_0;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+
+    ::v-deep img.c-avatar {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
 }
 </style>

@@ -121,7 +121,7 @@ async function startApp () {
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
-          'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
+          'gi.actions/group/join', 'gi.actions/group/joinChatRoom', 'gi.actions/group/removeUselessIdentityContracts',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',

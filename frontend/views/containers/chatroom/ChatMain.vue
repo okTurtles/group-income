@@ -68,8 +68,7 @@
           :notification='message.notification'
           :proposal='message.proposal'
           :pollData='message.pollData'
-          :replyingMessage='replyingMessage(message)'
-          :from='message.from'
+          :replyingMessage='replyingMessageText(message)'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
           :emoticonsList='message.emoticons'
@@ -98,8 +97,8 @@
       ref='sendArea'
       v-if='summary.isJoined'
       :loading='!ephemeral.messagesInitiated'
-      :replying-message='ephemeral.replyingMessage'
-      :replying-to='ephemeral.replyingTo'
+      :replyingMessage='ephemeral.replyingMessage'
+      :replyingTo='ephemeral.replyingTo'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -134,6 +133,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
+import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
@@ -178,6 +178,7 @@ const onChatScroll = function () {
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
+    if (msg.pending || msg.hasFailed) continue
     const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
     const height = this.$refs[msg.hash][0].$el.clientHeight
@@ -194,15 +195,20 @@ const onChatScroll = function () {
     }
   }
 
+  if (!this.ephemeral.messagesInitiated && this.renderingChatRoomId) {
+    return
+  }
+
   if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
+      if (msg.pending || msg.hasFailed) continue
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
         sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-          chatRoomId: this.currentChatRoomId,
+          chatRoomId: this.renderingChatRoomId,
           messageHash: msg.hash
         })
         break
@@ -210,7 +216,7 @@ const onChatScroll = function () {
     }
   } else if (this.currentChatRoomScrollPosition) {
     sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-      chatRoomId: this.currentChatRoomId,
+      chatRoomId: this.renderingChatRoomId,
       messageHash: null
     })
   }
@@ -257,7 +263,6 @@ export default ({
         //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
         renderingChatRoomId: null,
         replyingMessage: null,
-        replyingMessageHash: null,
         replyingTo: null,
         unprocessedEvents: []
       },
@@ -297,9 +302,8 @@ export default ({
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
     try {
-      // Before destroying the component and its state, we save the current
-      // scroll position if there's something so save.
-      this.ephemeral.onChatScroll.flush()
+      // NOTE: Same comment as the one of the function 'initializeState'
+      onChatScroll.call(this)
     } catch (e) {
       console.error('ChatMain.vue: Error while flushing onChatScroll in beforeDestroy', e)
     }
@@ -364,16 +368,16 @@ export default ({
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
-      if (message.pending) {
-        return MESSAGE_VARIANTS.PENDING
-      } else if (message.hasFailed) {
+      if (message.hasFailed) {
         return MESSAGE_VARIANTS.FAILED
+      } else if (message.pending) {
+        return MESSAGE_VARIANTS.PENDING
       } else {
         return this.isMsgSender(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
-    replyingMessage (message) {
-      return message.replyingMessage ? message.replyingMessage.text : ''
+    replyingMessageText (message) {
+      return message.replyingMessage?.text || ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -395,24 +399,27 @@ export default ({
     },
     stopReplying () {
       this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingMessageHash = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments) {
+    handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
-      const contractID = this.currentChatRoomId
-      const replyingMessage = this.ephemeral.replyingMessageHash
-        ? { hash: this.ephemeral.replyingMessageHash, text: this.ephemeral.replyingMessage }
-        : null
+      const contractID = this.renderingChatRoomId
 
-      let data = { type: MESSAGE_TYPES.TEXT, text }
+      const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
-        // If not replying to a message, use original data; otherwise, append
-        // replyingMessage to data.
-        data = { ...data, replyingMessage }
+        // NOTE: If not replying to a message, use original data; otherwise, append replyingMessage to data.
+        data.replyingMessage = replyingMessage
+        // NOTE: for the messages with only images, the text should be updated with file name
+        if (!replyingMessage.text) {
+          const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
+          if (msg) {
+            data.replyingMessage.text = msg.attachments[0].name
+          }
+        }
       }
 
       const sendMessage = (beforePrePublish) => {
+        let pendingMessageHash = null
         const prepublish = (message) => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
@@ -420,9 +427,10 @@ export default ({
 
           // IMPORTANT: This is executed *BEFORE* the message is received over
           // the network
-          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
             Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+            pendingMessageHash = message.hash()
           }).catch((e) => {
             console.error('Error sending message during pre-publish: ' + e.message)
           })
@@ -432,13 +440,13 @@ export default ({
         }
         const beforeRequest = (message, oldMessage) => {
           if (!this.checkEventSourceConsistency(contractID)) return
-          sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
             if (!this.checkEventSourceConsistency(contractID)) return
-            const messageStateContract = this.messageState.contract
-            const msg = messageStateContract.messages.find(m => (m.hash === oldMessage.hash()))
+            const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) return
             msg.hash = message.hash()
             msg.height = message.height()
+            pendingMessageHash = message.hash()
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -455,8 +463,14 @@ export default ({
             beforeRequest
           }
         }).catch((e) => {
-          console.error(`Error while publishing message for ${contractID}`, e)
-          alert(e?.message || e)
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
+          } else {
+            const msgIndex = findMessageIdx(pendingMessageHash, this.messages)
+            if (msgIndex > 0) {
+              Vue.set(this.messages[msgIndex], 'hasFailed', true)
+            }
+          }
         })
       }
       const uploadAttachments = async () => {
@@ -465,12 +479,12 @@ export default ({
             const { mimeType, url, name } = attachment
             // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
             const attachmentBlob = await objectURLtoBlob(url)
-            const downloadData = await sbp('chelonia/fileUpload', attachmentBlob, {
+            const { download: downloadData } = await sbp('chelonia/fileUpload', attachmentBlob, {
               type: mimeType, cipher: 'aes256gcm'
-            })
+            }, { billableContractID: contractID })
             return { name, mimeType, downloadData }
           }))
-          data = { ...data, attachments: attachmentsToSend }
+          data.attachments = attachmentsToSend
 
           return true
         } catch (e) {
@@ -488,7 +502,7 @@ export default ({
           data,
           hooks: {
             preSendCheck: (message, state) => {
-              // NOTE: this preSendCheck does nothing except appending pending message
+              // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
               const [, opV] = message.op()
@@ -496,32 +510,33 @@ export default ({
 
               temporaryMessage = createMessage({
                 meta,
-                data,
+                data: { ...data, attachments },
                 hash: message.hash(),
                 height: message.height(),
                 state: this.messageState.contract,
                 pending: true,
                 innerSigningContractID: this.ourIdentityContractId
               })
-              this.messageState.contract.messages.push(temporaryMessage)
-              this.updateScroll()
+              this.messages.push(temporaryMessage)
 
+              this.stopReplying()
+              this.updateScroll()
               return false
             }
           }
-        })
-        uploadAttachments().then((isUploaded) => {
-          const removeTemporaryMessage = () => {
-            // NOTE: remove temporary message which is created before uploading attachments
-            if (temporaryMessage) {
-              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messageState.contract.messages)
-              this.messageState.contract.messages.splice(msgIndex, 1)
-            }
-          }
+        }).then(async () => {
+          const isUploaded = await uploadAttachments()
           if (isUploaded) {
+            const removeTemporaryMessage = () => {
+              // NOTE: remove temporary message which is created before uploading attachments
+              if (temporaryMessage) {
+                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+                this.messages.splice(msgIndex, 1)
+              }
+            }
             sendMessage(removeTemporaryMessage)
           } else {
-            removeTemporaryMessage()
+            Vue.set(temporaryMessage, 'hasFailed', true)
           }
         })
       }
@@ -597,18 +612,19 @@ export default ({
       }
     },
     retryMessage (index) {
-      // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-      console.log('TODO $store - retry sending a message')
+      const message = cloneDeep(this.messages[index])
+      this.messages.splice(index, 1)
+      this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {
-      this.ephemeral.replyingMessage = message.text
-      this.ephemeral.replyingMessageHash = message.hash
+      const { text, hash } = message
+      this.ephemeral.replyingMessage = { text, hash }
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
@@ -621,10 +637,10 @@ export default ({
       })
     },
     deleteMessage (message) {
-      const contractID = this.currentChatRoomId
-      const hash = message.hash
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/deleteMessage', {
-        contractID, data: { hash }
+        contractID,
+        data: { hash: message.hash }
       }).catch((e) => {
         console.error(`Error while deleting message(${hash}) for chatroom(${contractID})`, e)
       })
@@ -682,32 +698,36 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      const contractID = this.currentChatRoomId
+      const contractID = this.renderingChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
-        contractID: this.currentChatRoomId,
+        contractID,
         data: { hash: message.hash, emoticon }
       }).catch((e) => {
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
-    initializeState () {
-      // NOTE: this state is rendered using the chatroom contract functions
-      // so should be CAREFUL of updating the fields
-      try {
-        // Before initializing the state, we save the current scroll position
-        // if there's something so save.
-        this.ephemeral.onChatScroll.flush()
-      } catch (e) {
-        console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
-      }
-      Vue.set(this.messageState, 'contract', {
+    generateNewChatRoomState () {
+      return {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomMembers),
         _vm: cloneDeep(this.currentChatVm),
         messages: [],
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
-      })
+      }
+    },
+    initializeState () {
+      // NOTE: this state is rendered using the chatroom contract functions
+      // so should be CAREFUL of updating the fields
+      try {
+        // NOTE: Before initializing the state, we save the current scroll position if there's something so save
+        //       Replaced this.ephemeral.onChatScroll.flush() with onChatScroll.call(this)
+        //       because the former doesn't work in synchronous
+        onChatScroll.call(this)
+      } catch (e) {
+        console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
+      }
+      Vue.set(this.messageState, 'contract', this.generateNewChatRoomState())
     },
     /**
      * Load/render events for one or more pages
@@ -755,7 +775,7 @@ export default ({
         const prevLastEvent = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
         const newEventsStream = sbp('chelonia/out/eventsAfter', chatRoomId, prevLastEvent.height, undefined, prevLastEvent.hash)
         const newEventsStreamReader = newEventsStream.getReader()
-        await sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        await sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
           // NOTE: discard the first event, since it already exists in
           // this.latestEvents
           const { done } = await newEventsStreamReader.read()
@@ -774,8 +794,6 @@ export default ({
             Vue.set(this.messageState, 'contract', newState)
             this.latestEvents.push(event)
           }
-
-          this.$forceUpdate()
         }).catch(e => {
           console.error('[ChatMain.vue] Error processing events at renderMoreMessages', e)
         }).finally(() => {
@@ -822,23 +840,17 @@ export default ({
         this.latestEvents.unshift(...events)
       }
 
-      this.initializeState()
-
       // This ensures that `this.latestEvents.push(event)` below happens in order
-      return sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+      return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (!this.checkEventSourceConsistency(contractID)) return
 
-        const latestEvents = this.latestEvents
-        if (latestEvents.length > 0) {
-          for (const event of latestEvents) {
-            const state = this.messageState.contract
-            const newState = await sbp('chelonia/in/processMessage', event, state)
-
-            if (!this.checkEventSourceConsistency(contractID)) return
-
-            Vue.set(this.messageState, 'contract', newState)
+        if (this.latestEvents.length > 0) {
+          let state = this.generateNewChatRoomState()
+          for (const event of this.latestEvents) {
+            state = await sbp('chelonia/in/processMessage', event, state)
           }
-          this.$forceUpdate()
+          if (!this.checkEventSourceConsistency(contractID)) return
+          Vue.set(this.messageState, 'contract', state)
         }
       })
     },
@@ -882,12 +894,9 @@ export default ({
       }
     },
     updateUnreadMessageHash ({ messageHash, createdDate }) {
-      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomReadUntil', {
-          chatRoomId: this.currentChatRoomId,
-          messageHash,
-          createdDate
-        })
+      const chatRoomId = this.renderingChatRoomId
+      if (chatRoomId && this.isJoinedChatRoom(chatRoomId)) {
+        sbp('state/vuex/commit', 'setChatRoomReadUntil', { chatRoomId, messageHash, createdDate })
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
@@ -899,9 +908,7 @@ export default ({
       // when calling processMessage.
       // The watch is setup for this.summary and not for this.currentChatRoomId,
       // which is why this check must also check for this.summary.chatRoomId
-      if (contractID !== this.summary.chatRoomId) {
-        return
-      }
+      if (!this.checkEventSourceConsistency(contractID)) return
 
       if (message) {
         this.ephemeral.unprocessedEvents.push(message)
@@ -919,9 +926,24 @@ export default ({
         if (!value) throw new Error('Unable to decrypt message')
 
         const isMessageAddedOrDeleted = (message: GIMessage) => {
-          if (![GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) return {}
+          const allowedActionType = [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED]
+          const getAllowedMessageAction = (opType, opValue) => {
+            if (opType === GIMessage.OP_ATOMIC) {
+              const actions = opValue
+                .map(([t, v]) => getAllowedMessageAction(t, v.valueOf().valueOf()))
+                .filter(Boolean)
+              // TODO: Now we return the first action of list
+              //       because there is only one allowedAction in OP_ATOMIC message now.
+              //       But later we need to consider several child actions for A OP_ATOMIC message
+              return actions[0]
+            } else if (allowedActionType.includes(opType)) {
+              return opValue.action
+            } else {
+              return undefined
+            }
+          }
 
-          const { action } = value
+          const action = getAllowedMessageAction(message.opType(), value)
           let addedOrDeleted = 'NONE'
 
           if (/(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
@@ -940,7 +962,7 @@ export default ({
 
         // This ensures that `this.latestEvents.push(serializedMessage)` below
         // happens in order
-        sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', async () => {
+        sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
           if (!this.checkEventSourceConsistency(contractID)) return
 
           // Messages are processed twice: before sending (outgoing direction,
@@ -979,12 +1001,10 @@ export default ({
 
           this.latestEvents.push(serializedMessage)
 
-          this.$forceUpdate()
-
           if (this.ephemeral.scrolledDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
-              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+                this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
@@ -1026,7 +1046,7 @@ export default ({
         return
       }
       const chatRoomId = this.currentChatRoomId
-      sbp('okTurtles.eventQueue/queueEvent', 'chatroom-events', () => {
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
         if (!this.checkEventSourceConsistency(chatRoomId)) return
 
         this.renderMoreMessages().then(completed => {
@@ -1062,8 +1082,8 @@ export default ({
       this.ephemeral.onChatScroll()
     },
     archiveMessageState () {
-      // Copy of a reference to this.latestEvents to ensure it doesn't change
-      const latestEvents = this.latestEvents
+      // NOTE: Copy of a reference to this.latestEvents to ensure it doesn't change
+      const latestEvents = cloneDeep(this.latestEvents)
       if (latestEvents.length === 0) {
         return
       }

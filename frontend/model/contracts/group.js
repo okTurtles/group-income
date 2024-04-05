@@ -1897,6 +1897,12 @@ sbp('chelonia/defineContract', {
       })
 
       if (memberID === identityContractID) {
+        const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter(cID => cID !== identityContractID)
+        sbp('gi.actions/group/removeUselessIdentityContracts', {
+          contractID,
+          possiblyUselessContractIDs
+        })
+
         // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
         // this method on the eventqueue for this contractID, and /remove uses that same eventqueue
         sbp('chelonia/contract/remove', contractID).catch(e => {

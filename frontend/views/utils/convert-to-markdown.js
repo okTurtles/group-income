@@ -7,7 +7,7 @@ marked.use({
       level: 'inline',
       renderer (token) {
         // custom renderer for <a> tag for setting target='_blank' to the output HTML
-        return `<a href='${token.href}' target='_blank'>${token.text}</a>`
+        return `<a class='link' href='${token.href}' target='_blank'>${token.text}</a>`
       }
     }
   ]

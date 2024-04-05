@@ -2,11 +2,12 @@
 message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
-  @reply='reply'
-  @reply-message-clicked='scrollToReplyMessage'
+  @reply='$emit("reply")'
+  @retry='$emit("retry")'
+  @reply-message-clicked='$emit("scroll-to-replying-message")'
   @message-edited='editMessage'
   @delete-attachment='deleteAttachment'
-  @delete-message='deleteMessage'
+  @delete-message='$emit("delete-message")'
   :convertTextToMarkdown='true'
 )
 
@@ -43,11 +44,13 @@ export default ({
     },
     emoticonsList: {
       type: Object,
-      default: null
+      default: function () {
+        return null
+      }
     },
     isSameSender: Boolean,
     isMsgSender: Boolean,
-    replyingMessage: null
+    replyingMessage: String
   },
   constants: Object.freeze({
     variants: MESSAGE_VARIANTS
@@ -55,18 +58,6 @@ export default ({
   methods: {
     editMessage (newMessage) {
       this.$emit('edit-message', newMessage)
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
-    },
-    deleteAttachment (manifestCid) {
-      this.$emit('delete-attachment', manifestCid)
-    },
-    reply () {
-      this.$emit('reply')
-    },
-    scrollToReplyMessage () {
-      this.$emit('scroll-to-replying-message')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')
