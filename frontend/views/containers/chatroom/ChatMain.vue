@@ -642,7 +642,7 @@ export default ({
         contractID,
         data: { hash: message.hash }
       }).catch((e) => {
-        console.error(`Error while deleting message(${hash}) for chatroom(${contractID})`, e)
+        console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
       })
     },
     async deleteAttachment (message, manifestCid) {
