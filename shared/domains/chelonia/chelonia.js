@@ -554,7 +554,6 @@ export default (sbp('sbp/selectors/register', {
                   try {
                     (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
-                      contractName: rootState.contracts[msg.channelID].type,
                       serializedData: msg.data
                     }))
                   } catch (e) {
@@ -1249,14 +1248,12 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/out/encryptedOrUnencryptedPubMessage': function ({
     contractID,
-    contractName,
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId,
     data
   }: {
     contractID: string,
-    contractName: string,
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
     signingKeyId: string,
@@ -1264,7 +1261,6 @@ export default (sbp('sbp/selectors/register', {
   }) {
     const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
       contractID,
-      contractName,
       innerSigningKeyId,
       encryptionKeyId,
       signingKeyId,
@@ -1273,7 +1269,6 @@ export default (sbp('sbp/selectors/register', {
     this.pubsub.pub(contractID, serializedData)
   },
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
-    contractName,
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId
@@ -1285,7 +1280,6 @@ export default (sbp('sbp/selectors/register', {
   }) {
     const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
       contractID,
-      contractName,
       innerSigningKeyId,
       encryptionKeyId,
       signingKeyId,
@@ -1303,7 +1297,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Invalid response status: ' + response.status)
     }
   },
-  'chelonia/kv/get': async function (contractID: string, key: string, { contractName }: { contractName: string }) {
+  'chelonia/kv/get': async function (contractID: string, key: string) {
     const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
       headers: new Headers([[
         'authorization', buildShelterAuthorizationHeader.call(this, contractID)
@@ -1316,7 +1310,6 @@ export default (sbp('sbp/selectors/register', {
     const data = await response.json()
     return parseEncryptedOrUnencryptedMessage.call(this, {
       contractID,
-      contractName,
       serializedData: data
     })
   }
@@ -1331,22 +1324,18 @@ function contractNameFromAction (action: string): string {
 
 function outputEncryptedOrUnencryptedMessage ({
   contractID,
-  contractName,
   innerSigningKeyId,
   encryptionKeyId,
   signingKeyId,
   data
 }: {
   contractID: string,
-  contractName: string,
   innerSigningKeyId: ?string,
   encryptionKeyId: ?string,
   signingKeyId: string,
   data: Object
 }) {
-  const manifestHash = this.config.contracts.manifests[contractName]
-  const { contract } = this.manifestToContract[manifestHash]
-  const state = contract.state(contractID)
+  const state = sbp(this.config.stateSelector)[contractID]
   const signedMessage = innerSigningKeyId
     ? (state._vm.authorizedKeys[innerSigningKeyId] && state._vm.authorizedKeys[innerSigningKeyId]?._notAfterHeight == null)
         ? signedOutgoingData(contractID, innerSigningKeyId, (data: any), this.transientSecretKeys)
@@ -1364,19 +1353,15 @@ function outputEncryptedOrUnencryptedMessage ({
 
 function parseEncryptedOrUnencryptedMessage ({
   contractID,
-  contractName,
   serializedData
 }: {
   contractID: string,
-  contractName: string,
   serializedData: Object
 }) {
   if (!serializedData) {
     throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
   }
-  const manifestHash = this.config.contracts.manifests[contractName]
-  const { contract } = this.manifestToContract[manifestHash]
-  const state = contract.state(contractID)
+  const state = sbp(this.config.stateSelector)[contractID]
 
   const numericHeight = parseInt(serializedData.height)
   const rootState = sbp(this.config.stateSelector)
