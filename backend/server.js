@@ -155,7 +155,7 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/updateSize': async function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
-    if (!(size >= 0)) {
+    if (!Number.isSafeInteger(size)) {
       throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
     }
     // Use a queue to ensure atomic updates

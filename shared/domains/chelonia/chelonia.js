@@ -1247,7 +1247,79 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   },
-  'chelonia/out/encryptedOrUnencryptedPubMessage': outputEncryptedOrUnencryptedPubMessage
+  'chelonia/out/encryptedOrUnencryptedPubMessage': function ({
+    contractID,
+    contractName,
+    innerSigningKeyId,
+    encryptionKeyId,
+    signingKeyId,
+    data
+  }: {
+    contractID: string,
+    contractName: string,
+    innerSigningKeyId: ?string,
+    encryptionKeyId: ?string,
+    signingKeyId: string,
+    data: Object
+  }) {
+    const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      contractName,
+      innerSigningKeyId,
+      encryptionKeyId,
+      signingKeyId,
+      data
+    })
+    this.pubsub.pub(contractID, serializedData)
+  },
+  'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+    contractName,
+    innerSigningKeyId,
+    encryptionKeyId,
+    signingKeyId
+  }: {
+    contractName: string,
+    innerSigningKeyId: ?string,
+    encryptionKeyId: ?string,
+    signingKeyId: string
+  }) {
+    const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      contractName,
+      innerSigningKeyId,
+      encryptionKeyId,
+      signingKeyId,
+      data
+    })
+    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+      headers: new Headers([[
+        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+      ]]),
+      method: 'POST',
+      body: JSON.stringify(serializedData),
+      signal: this.abortController.signal
+    })
+    if (!response.ok) {
+      throw new Error('Invalid response status: ' + response.status)
+    }
+  },
+  'chelonia/kv/get': async function (contractID: string, key: string, { contractName }: { contractName: string }) {
+    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+      headers: new Headers([[
+        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+      ]]),
+      signal: this.abortController.signal
+    })
+    if (!response.ok) {
+      throw new Error('Invalid response status: ' + response.status)
+    }
+    const data = await response.json()
+    return parseEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      contractName,
+      serializedData: data
+    })
+  }
 }): string[])
 
 function contractNameFromAction (action: string): string {
@@ -1257,7 +1329,7 @@ function contractNameFromAction (action: string): string {
   return contractName
 }
 
-function outputEncryptedOrUnencryptedPubMessage ({
+function outputEncryptedOrUnencryptedMessage ({
   contractID,
   contractName,
   innerSigningKeyId,
@@ -1287,7 +1359,7 @@ function outputEncryptedOrUnencryptedPubMessage ({
   const rootState = sbp(this.config.stateSelector)
   const height = String(rootState.contracts[contractID].height)
   const serializedData = { ...message.serialize(height), height }
-  this.pubsub.pub(contractID, serializedData)
+  return serializedData
 }
 
 function parseEncryptedOrUnencryptedMessage ({

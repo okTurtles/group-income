@@ -447,6 +447,56 @@ route.POST('/deleteFile/{hash}', {
   return h.response()
 })
 
+route.POST('/kv/{contractID}/{key}', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  },
+  payload: {
+    parse: false,
+    maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
+    timeout: 10 * SECOND // TODO: make this a configurable setting
+  }
+}, async function (request, h) {
+  const { contractID, key } = request.params
+  console.debug(`POST /kv/${contractID}/${key}`)
+
+  if (key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
+  if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
+    return Boom.unauthorized(null, 'shelter')
+  }
+
+  const existingSize = Buffer.from(await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`) ?? '').byteLength
+  await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
+  await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+
+  return h.response().code(204)
+})
+
+route.GET('/kv/{contractID}/{key}', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  },
+  cache: { otherwise: 'no-store' }
+}, async function (request, h) {
+  const { contractID, key } = request.params
+  console.debug(`GET /kv/${contractID}/${key}`)
+
+  if (key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
+  if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
+    return Boom.unauthorized(null, 'shelter')
+  }
+
+  return await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+})
+
 // SPA routes
 
 route.GET('/assets/{subpath*}', {
