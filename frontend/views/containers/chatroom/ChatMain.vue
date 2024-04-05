@@ -310,7 +310,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings',
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
@@ -318,11 +317,9 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
-      'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
-      'currentChatVolatile',
       'currentChatVm',
       'chatRoomUnreadMentions'
     ]),
@@ -477,7 +474,7 @@ export default ({
         try {
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
-            billableContractID: this.groupSettings.groupCreatorID
+            billableContractID: contractID
           })
           return true
         } catch (e) {

@@ -717,7 +717,7 @@ export default (sbp('sbp/selectors/register', {
         }, { billableContractID })
         const { delete: token, download: downloadData } = response
         return {
-          downloadData: { name, mimeType, downloadData },
+          downloadData: { ...omit(attachment, ['url']), downloadData },
           deleteData: { token }
         }
       }))

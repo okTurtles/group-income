@@ -138,7 +138,10 @@ describe('Group Payments', () => {
   })
 
   it('user1 sends $250 to user3 (total)', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false
+    })
 
     // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
     //       REFERENCE IN CASE WE RUN INTO MORE!

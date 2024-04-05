@@ -250,7 +250,7 @@ import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
-import { getFileExtension } from '@view-utils/filters.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -627,12 +627,23 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
 
-        list.push({
+        const attachment = {
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
-        })
+        }
+
+        if (getFileType(file.type) === 'image') {
+          const img = new Image()
+          img.onload = function () {
+            const { width, height } = this
+            attachment.dimension = { width, height }
+          }
+          img.src = fileUrl
+        }
+
+        list.push(attachment)
       }
 
       this.ephemeral.attachments = list
