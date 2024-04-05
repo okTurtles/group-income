@@ -1164,7 +1164,8 @@ export default (sbp('sbp/selectors/register', {
         replyWith: signedOutgoingData(originatingContractID, innerSigningKeyId, {
           encryptionKeyId,
           responseKey: encryptedOutgoingData(contractID, innerEncryptionKeyId, keyRequestReplyKeyS)
-        }, this.transientSecretKeys)
+        }, this.transientSecretKeys),
+        request: '*'
       }: GIOpKeyRequest)
       let msg = GIMessage.createV1_0({
         contractID,

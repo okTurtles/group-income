@@ -47,7 +47,8 @@ export type ProtoGIOpKeyRequest = {
   replyWith: SignedData<{
     encryptionKeyId: string;
     responseKey: EncryptedData<string>;
-  }>
+  }>,
+  request: string;
 }
 export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
 export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };

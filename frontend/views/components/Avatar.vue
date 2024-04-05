@@ -69,7 +69,7 @@ export default ({
         return
       }
       try {
-        const blob = await sbp('chelonia/fileDownload', src)
+        const blob = await sbp('chelonia/fileDownload', () => src)
         sbp('gi.db/filesCache/save', src.manifestCid, blob).catch((e) => {
           console.error('[Avatar.vue] Error caching avatar blob', e)
         })
