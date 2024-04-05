@@ -74,7 +74,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
   it(`user1 creates "${groupName}" group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
-    cy.giSignup(user1)
+    cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName, { bypassUI: true })

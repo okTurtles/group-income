@@ -86,7 +86,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('user1 removes user2 from groupA', () => {
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
     assertMembersCount(2)
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
@@ -101,7 +101,10 @@ describe('Group - Removing a member', () => {
 
   it('user2 rejoins groupA', () => {
     // verify user2 (removed) has no group now.
-    cy.giLogin(`user2-${userId}`) // [*note_1*]
+    cy.giLogin(`user2-${userId}`, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false
+    }) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
@@ -139,14 +142,14 @@ describe('Group - Removing a member', () => {
   })
 
   it('user2 removes user1 from groupB - user1 is left with groupA.', () => {
-    cy.giLogin(`user2-${userId}`)
+    cy.giLogin(`user2-${userId}`, { bypassUI: true })
     assertMembersCount(2)
     openRemoveMemberModal('user1', 1)
     removeMemberNow('user1')
     cy.giLogout()
 
     // verify user1 (removed) still has group1.
-    cy.giLogin(`user1-${userId}`) // [*note_1*]
+    cy.giLogin(`user1-${userId}`, { bypassUI: true }) // [*note_1*]
     cy.getByDT('groupName').should('contain', groupNameA)
 
     cy.giLogout()
@@ -218,7 +221,10 @@ describe('Group - Removing a member', () => {
     cy.giLogout()
 
     // Verify userBot has no group now
-    cy.giLogin(`userbot-${userId}`) // [*note_1*]
+    cy.giLogin(`userbot-${userId}`, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false
+    }) // [*note_1*]
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })

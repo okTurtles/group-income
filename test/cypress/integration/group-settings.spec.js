@@ -15,7 +15,7 @@ describe('Changing Group Settings', () => {
     cy.visit('/')
     cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName, { mincome: groupMincome, sharedValues })
+    cy.giCreateGroup(groupName, { mincome: groupMincome, sharedValues, bypassUI: true })
   })
 
   it('user1 changes the group minimum income (increase it $100)', () => {
