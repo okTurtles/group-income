@@ -138,7 +138,6 @@ import { findMessageIdx, createMessage } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { objectURLtoBlob } from '@utils/image.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -311,6 +310,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'groupSettings',
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
@@ -475,17 +475,10 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
-          const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
-            const { mimeType, url, name } = attachment
-            // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-            const attachmentBlob = await objectURLtoBlob(url)
-            const { download: downloadData } = await sbp('chelonia/fileUpload', attachmentBlob, {
-              type: mimeType, cipher: 'aes256gcm'
-            }, { billableContractID: contractID })
-            return { name, mimeType, downloadData }
-          }))
-          data.attachments = attachmentsToSend
-
+          data.attachments = await sbp('gi.actions/identity/uploadFiles', {
+            attachments,
+            billableContractID: this.groupSettings.groupCreatorID
+          })
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)

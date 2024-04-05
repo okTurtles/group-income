@@ -59,6 +59,9 @@ export default ({
     editMessage (newMessage) {
       this.$emit('edit-message', newMessage)
     },
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
+    },
     moreOptions () {
       console.log('TODO MORE OPTIONS')
     },

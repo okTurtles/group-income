@@ -8,7 +8,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { has, omit } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
-import { imageUpload } from '@utils/image.js'
+import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -701,5 +701,42 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
-  ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.'))
+  ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
+  'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
+    attachments: Object, billableContractID: string
+  }) => {
+    const rootGetters = sbp('state/vuex/getters')
+
+    try {
+      const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
+        const { mimeType, url, name } = attachment
+        // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+        const attachmentBlob = await objectURLtoBlob(url)
+        const response = await sbp('chelonia/fileUpload', attachmentBlob, {
+          type: mimeType, cipher: 'aes256gcm'
+        }, { billableContractID })
+        const { delete: token, download: downloadData } = response
+        return {
+          downloadData: { name, mimeType, downloadData },
+          deleteData: { token }
+        }
+      }))
+
+      const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
+        manifestCid: downloadData.downloadData.manifestCid,
+        token: deleteData.token
+      }))
+
+      await sbp('gi.actions/identity/saveFileDeleteToken', {
+        contractID: rootGetters.ourIdentityContractId,
+        data: { tokensByManifestCid }
+      })
+
+      return attachmentsData.map(({ downloadData }) => downloadData)
+    } catch (err) {
+      console.error('Error during uploading files', err)
+    }
+  },
+  ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
+  ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
 }): string[])
