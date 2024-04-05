@@ -317,11 +317,9 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
-      'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
-      'currentChatVolatile',
       'currentChatVm',
       'chatRoomUnreadMentions'
     ]),
