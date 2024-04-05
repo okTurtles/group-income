@@ -709,7 +709,7 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
-        const { mimeType, url, name } = attachment
+        const { mimeType, url } = attachment
         // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
         const attachmentBlob = await objectURLtoBlob(url)
         const response = await sbp('chelonia/fileUpload', attachmentBlob, {
