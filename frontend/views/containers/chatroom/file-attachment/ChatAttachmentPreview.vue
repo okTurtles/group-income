@@ -153,7 +153,7 @@ export default {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
+        const blob = await sbp('chelonia/fileDownload', () => attachment.downloadData)
         return URL.createObjectURL(blob)
       }
     },

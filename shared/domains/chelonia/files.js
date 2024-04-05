@@ -336,7 +336,9 @@ export default (sbp('sbp/selectors/register', {
       delete: uploadResponse.headers.get('shelter-deletion-token')
     }
   },
-  'chelonia/fileDownload': async function ({ manifestCid, downloadParams }: { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
+  'chelonia/fileDownload': async function (downloadOptions: () => { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
+    // Using a function to prevent accidental logging
+    const { manifestCid, downloadParams } = downloadOptions()
     const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal

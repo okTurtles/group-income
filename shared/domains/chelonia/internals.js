@@ -840,6 +840,11 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
+        if (v.request !== '*') {
+          console.error('Ignoring OP_KEY_REQUEST because it has an unsupported request attribute', v.request)
+          return
+        }
+
         if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
 
         config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
