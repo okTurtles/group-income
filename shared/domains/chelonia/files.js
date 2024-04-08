@@ -6,6 +6,7 @@ import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
 import { buildShelterAuthorizationHeader } from './utils.js'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
@@ -363,26 +364,33 @@ export default (sbp('sbp/selectors/register', {
 
     return cipherHandler.payloadHandler()
   },
-  'chelonia/fileDelete': async function ({ manifestCid }: { manifestCid: string }, { billableContractID, token }: { token: ?string, billableContractID: ?string } = {}) {
+  'chelonia/fileDelete': async function (manifestCid: string | string[], credentials: { [manifestCid: string]: { token: ?string, billableContractID: ?string } } = {}) {
     if (!manifestCid) {
       throw new TypeError('A manifest CID must be provided')
     }
-    if (!token !== !billableContractID) {
-      throw new TypeError('Either a token or a billable contract ID must be provided')
-    }
-    const response = await fetch(`${this.config.connectionURL}/deleteFile/${manifestCid}`, {
-      method: 'POST',
-      signal: this.abortController.signal,
-      headers: new Headers([
-        ['authorization',
-          token
-            ? `bearer ${token}`
-            // $FlowFixMe[incompatible-call]
-            : buildShelterAuthorizationHeader.call(this, billableContractID)]
-      ])
+    if (!Array.isArray(manifestCid)) manifestCid = [manifestCid]
+    // Validation
+    manifestCid.forEach((cid) => {
+      if (!has(credentials, cid) || (has(credentials[cid], 'token') === has(credentials[cid], 'billableContractID'))) {
+        throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
+      }
     })
-    if (!response.ok) {
-      throw new Error('Unable to delete file')
-    }
+    return await Promise.all(manifestCid.map(async (cid) => {
+      const { token, billableContractID } = credentials[cid]
+      const response = await fetch(`${this.config.connectionURL}/deleteFile/${cid}`, {
+        method: 'POST',
+        signal: this.abortController.signal,
+        headers: new Headers([
+          ['authorization',
+            token
+              ? `bearer ${token}`
+              // $FlowFixMe[incompatible-call]
+              : buildShelterAuthorizationHeader.call(this, billableContractID)]
+        ])
+      })
+      if (!response.ok) {
+        throw new Error(`Unable to delete file ${cid}`)
+      }
+    }))
   }
 }): string[])
