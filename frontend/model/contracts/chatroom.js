@@ -114,7 +114,7 @@ function messageReceivePostEffect ({
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
-async function deleteEncryptedFilesByToken (manifestCids, innerSigningContractID) {
+async function deleteEncryptedFilesByToken (manifestCids: string[], innerSigningContractID: string) {
   try {
     const rootGetters = sbp('state/vuex/getters')
     const tokensMap = {}
@@ -614,7 +614,7 @@ sbp('chelonia/defineContract', {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         const { manifestCid } = data
         if (innerSigningContractID === me) {
-          deleteEncryptedFilesByToken({ innerSigningContractID, manifestCid })
+          deleteEncryptedFilesByToken([manifestCid], innerSigningContractID)
         }
       }
     },
