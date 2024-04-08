@@ -579,6 +579,10 @@ sbp('chelonia/defineContract', {
         }
 
         if (me === innerSigningContractID) {
+          const { manifestCids } = data
+          if (manifestCids?.length) {
+            deleteEncryptedFilesByToken(manifestCids, innerSigningContractID)
+          }
           return
         }
 
