@@ -995,6 +995,25 @@ export default (sbp('sbp/selectors/register', {
 
     return sendMessage(params)
   }),
+  'gi.actions/group/updateLastLoggedIn': async ({ contractID }: { contractID: string }) => {
+    try {
+      const rootState = sbp('state/vuex/state')
+      const userID = rootState.loggedIn?.identityContractID
+
+      if (!userID) {
+        throw new Error('Unable to update last logged in without an active session')
+      }
+
+      const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
+      current[userID] = new Date().toISOString()
+      await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+      })
+    } catch (e) {
+      L('Failed to update "lastLoggedIn" in a group profile.')
+    }
+  },
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
@@ -1004,7 +1023,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

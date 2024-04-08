@@ -469,9 +469,30 @@ route.POST('/kv/{contractID}/{key}', {
     return Boom.unauthorized(null, 'shelter')
   }
 
-  const existingSize = Buffer.from(await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`) ?? '').byteLength
+  const existing = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+
+  // Some protection against accidental overwriting by implementing the if-match
+  // header
+  if (request.headers['if-match']) {
+    if (!existing) {
+      return Boom.preconditionFailed()
+    }
+    const expectedEtag = request.headers['if-match']
+    if (expectedEtag === '*') {
+      // pass through
+    } else {
+      // "Quote" string
+      const cid = JSON.stringify(createCID(existing))
+      if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
+        return Boom.preconditionFailed()
+      }
+    }
+  }
+
+  const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+  await sbp('backend/server/broadcastKV', contractID, key, request.payload)
 
   return h.response().code(204)
 })
@@ -494,7 +515,12 @@ route.GET('/kv/{contractID}/{key}', {
     return Boom.unauthorized(null, 'shelter')
   }
 
-  return await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+  const result = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+  if (!result) {
+    return Boom.notFound()
+  }
+
+  return h.response(result).etag(createCID(result))
 })
 
 // SPA routes

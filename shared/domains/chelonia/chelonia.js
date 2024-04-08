@@ -546,21 +546,36 @@ export default (sbp('sbp/selectors/register', {
                     console.info(`[chelonia] Discarding pub event for ${msg.channelID} because it's not in the current subscriptionSet`)
                     return
                   }
-                  const rootState = sbp(this.config.stateSelector)
-                  if (!rootState.contracts[msg.channelID]?.type) {
-                    console.warn(`[chelonia] Discarding pub event for ${msg.channelID} because its contract name could not be determined`)
-                    return
-                  }
                   try {
                     (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       serializedData: msg.data
                     }))
                   } catch (e) {
-                    console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
+                    console.error(`[chelonia] Error processing kv event for ${msg.channelID}`, e)
                   }
                 }
-              : v
+              : k === NOTIFICATION_TYPE.KV
+                ? (msg) => {
+                    if (!msg.channelID || !msg.key) {
+                      console.info('[chelonia] Discarding kv event without channelID or key')
+                      return
+                    }
+                    if (!this.subscriptionSet.has(msg.channelID)) {
+                      console.info(`[chelonia] Discarding kv event for ${msg.channelID} because it's not in the current subscriptionSet`)
+                      return
+                    }
+                    try {
+                      (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
+                        contractID: msg.channelID,
+                        meta: msg.key,
+                        serializedData: JSON.parse(Buffer.from(msg.data).toString())
+                      })])
+                    } catch (e) {
+                      console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
+                    }
+                  }
+                : v
           ])
         )),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
@@ -1273,7 +1288,6 @@ export default (sbp('sbp/selectors/register', {
     encryptionKeyId,
     signingKeyId
   }: {
-    contractName: string,
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
     signingKeyId: string
@@ -1283,7 +1297,8 @@ export default (sbp('sbp/selectors/register', {
       innerSigningKeyId,
       encryptionKeyId,
       signingKeyId,
-      data
+      data,
+      meta: key
     })
     const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
       headers: new Headers([[
@@ -1304,13 +1319,17 @@ export default (sbp('sbp/selectors/register', {
       ]]),
       signal: this.abortController.signal
     })
+    if (response.status === 404) {
+      return null
+    }
     if (!response.ok) {
       throw new Error('Invalid response status: ' + response.status)
     }
     const data = await response.json()
     return parseEncryptedOrUnencryptedMessage.call(this, {
       contractID,
-      serializedData: data
+      serializedData: data,
+      meta: key
     })
   }
 }): string[])
@@ -1327,13 +1346,15 @@ function outputEncryptedOrUnencryptedMessage ({
   innerSigningKeyId,
   encryptionKeyId,
   signingKeyId,
-  data
+  data,
+  meta
 }: {
   contractID: string,
   innerSigningKeyId: ?string,
   encryptionKeyId: ?string,
   signingKeyId: string,
-  data: Object
+  data: Object,
+  meta: ?string
 }) {
   const state = sbp(this.config.stateSelector)[contractID]
   const signedMessage = innerSigningKeyId
@@ -1347,22 +1368,23 @@ function outputEncryptedOrUnencryptedMessage ({
   const message = signedOutgoingData(contractID, signingKeyId, (payload: any), this.transientSecretKeys)
   const rootState = sbp(this.config.stateSelector)
   const height = String(rootState.contracts[contractID].height)
-  const serializedData = { ...message.serialize(height), height }
+  const serializedData = { ...message.serialize((meta ?? '') + height), height }
   return serializedData
 }
 
 function parseEncryptedOrUnencryptedMessage ({
   contractID,
-  serializedData
+  serializedData,
+  meta
 }: {
   contractID: string,
-  serializedData: Object
+  serializedData: Object,
+  meta: ?string
 }) {
   if (!serializedData) {
     throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
   }
   const state = sbp(this.config.stateSelector)[contractID]
-
   const numericHeight = parseInt(serializedData.height)
   const rootState = sbp(this.config.stateSelector)
   const currentHeight = rootState.contracts[contractID].height
@@ -1370,8 +1392,11 @@ function parseEncryptedOrUnencryptedMessage ({
     throw new Error(`[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${serializedData.height}; it must be between 0 and ${currentHeight}`)
   }
 
-  const v = signedIncomingData(contractID, state, serializedData, numericHeight, serializedData.height, (message) => {
-    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, serializedData.height, undefined)
+  // Additional data used for verification
+  const aad = (meta ?? '') + serializedData.height
+
+  const v = signedIncomingData(contractID, state, serializedData, numericHeight, aad, (message) => {
+    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, aad, undefined)
   })
 
   const encryptedData = unwrapMaybeEncryptedData(v.valueOf())

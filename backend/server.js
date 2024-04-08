@@ -9,6 +9,7 @@ import {
   createMessage,
   createPushErrorResponse,
   createNotification,
+  createKvMessage,
   createServer,
   NOTIFICATION_TYPE,
   REQUEST_TYPE
@@ -118,6 +119,13 @@ sbp('sbp/selectors/register', {
         await sbp('chelonia/db/set', '_private_cheloniaState_index', updatedIndex)
       })
     }
+  },
+  'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const pubsubMessage = createKvMessage(contractID, key, entry)
+    const subscribers = pubsub.enumerateSubscribers(contractID)
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting KV change on ${contractID} to key ${key}`))
+    await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/broadcastEntry': async function (deserializedHEAD: Object, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
