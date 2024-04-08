@@ -1014,10 +1014,12 @@ export default (sbp('sbp/selectors/register', {
           signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
         })
       })
+      await sbp('gi.actions/group/noop', { contractID })
     } catch (e) {
       throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
   },
+  ...encryptedAction('gi.actions/group/noop', L('REMOVEME')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
