@@ -1608,6 +1608,9 @@ sbp('chelonia/defineContract', {
         sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
       }
 
+      // Remove last logged in information
+      Vue.delete(rootState.lastLoggedIn, contractID)
+
       // Destructors are synchronous
       sbp('gi.actions/identity/leaveGroup', {
         contractID: identityContractID,
