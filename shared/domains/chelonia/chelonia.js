@@ -1354,7 +1354,7 @@ function outputEncryptedOrUnencryptedMessage ({
   encryptionKeyId: ?string,
   signingKeyId: string,
   data: Object,
-  meta: ?string
+  meta?: ?string
 }) {
   const state = sbp(this.config.stateSelector)[contractID]
   const signedMessage = innerSigningKeyId
@@ -1379,7 +1379,7 @@ function parseEncryptedOrUnencryptedMessage ({
 }: {
   contractID: string,
   serializedData: Object,
-  meta: ?string
+  meta?: ?string
 }) {
   if (!serializedData) {
     throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
