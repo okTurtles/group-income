@@ -552,7 +552,7 @@ export default (sbp('sbp/selectors/register', {
                       serializedData: msg.data
                     }))
                   } catch (e) {
-                    console.error(`[chelonia] Error processing kv event for ${msg.channelID}`, e)
+                    console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
                   }
                 }
               : k === NOTIFICATION_TYPE.KV

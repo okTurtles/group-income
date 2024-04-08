@@ -1015,7 +1015,7 @@ export default (sbp('sbp/selectors/register', {
         })
       })
     } catch (e) {
-      L('Failed to update "lastLoggedIn" in a group profile.')
+      throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
   },
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
