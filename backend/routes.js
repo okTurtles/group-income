@@ -473,6 +473,20 @@ route.POST('/kv/{contractID}/{key}', {
 
   // Some protection against accidental overwriting by implementing the if-match
   // header
+  // If-Match contains a list of ETags or '*'
+  // If `If-Match` contains a known ETag, allow the request through, otherwise
+  // return 412 Precondition Failed.
+  // This is useful to clients to avoid accidentally overwriting existing data
+  // For example, client A and client B want to write to key 'K', which contains
+  // an array. Let's say that the array is originally empty (`[]`) and A and B
+  // want to append `A` and `B` to it, respectively. If both write at the same
+  // time, the following could happen:
+  // t = 0: A reads `K`, gets `[]`
+  // t = 1: B reads `K`, gets `[]`
+  // t = 2: A writes `['A']` to `K`
+  // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
+  // To avoid this situation, A and B could use `If-Match`, which would have
+  // given B a 412 response
   if (request.headers['if-match']) {
     if (!existing) {
       return Boom.preconditionFailed()
@@ -481,7 +495,7 @@ route.POST('/kv/{contractID}/{key}', {
     if (expectedEtag === '*') {
       // pass through
     } else {
-      // "Quote" string
+      // "Quote" string (to match ETag format)
       const cid = JSON.stringify(createCID(existing))
       if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
         return Boom.preconditionFailed()
@@ -492,7 +506,12 @@ route.POST('/kv/{contractID}/{key}', {
   try {
     const serializedData = JSON.parse(request.payload.toString())
     const { contracts } = sbp('chelonia/rootState')
-    // Check that the height is the latest value
+    // Check that the height is the latest value. Not only should the height be
+    // the latest, but also enforcing this lets us check that signatures are
+    // using the latest (cryptograhpic) keys. Since the KV is detached from the
+    // contract, in isolation it's impossible to know if an old signature is
+    // just because it was created in the past, or if it's because someone
+    // is reusing a previously good key that has since been revoked.
     if (contracts[contractID].height !== Number(serializedData.height)) {
       return Boom.conflict()
     }
