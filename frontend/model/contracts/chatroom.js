@@ -133,7 +133,7 @@ async function deleteEncryptedFilesByToken (manifestCids, innerSigningContractID
       data: { manifestCids }
     })
   } catch (err) {
-    console.error(`Missing delete token for file with manifestCid ${manifestCid}`, err?.message || err)
+    console.error(err?.message || err)
   }
 }
 
