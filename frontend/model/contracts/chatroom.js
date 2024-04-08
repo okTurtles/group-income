@@ -426,7 +426,7 @@ sbp('chelonia/defineContract', {
           state.messages.push(createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
-          delete existingMsg.pending
+          existingMsg.pending = false
         }
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {

@@ -52,9 +52,6 @@ export default ({
     isMsgSender: Boolean,
     replyingMessage: String
   },
-  constants: Object.freeze({
-    variants: MESSAGE_VARIANTS
-  }),
   methods: {
     editMessage (newMessage) {
       this.$emit('edit-message', newMessage)

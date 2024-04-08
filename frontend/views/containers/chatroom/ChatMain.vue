@@ -417,33 +417,25 @@ export default ({
 
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
-        const prepublish = (message) => {
-          if (!this.checkEventSourceConsistency(contractID)) return
-
-          beforePrePublish?.()
-
-          // IMPORTANT: This is executed *BEFORE* the message is received over
-          // the network
-          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-            if (!this.checkEventSourceConsistency(contractID)) return
-            Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
-            pendingMessageHash = message.hash()
-          }).catch((e) => {
-            console.error('Error sending message during pre-publish: ' + e.message)
-          })
-
-          this.stopReplying()
-          this.updateScroll()
-        }
         const beforeRequest = (message, oldMessage) => {
           if (!this.checkEventSourceConsistency(contractID)) return
-          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
+
+            beforePrePublish?.()
+
+            // IMPORTANT: This is executed *BEFORE* the message is received over
+            // the network
             const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
-            if (!msg) return
-            msg.hash = message.hash()
-            msg.height = message.height()
-            pendingMessageHash = message.hash()
+            if (!msg) {
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              this.stopReplying()
+              this.updateScroll()
+            } else {
+              msg.hash = message.hash()
+              msg.height = message.height()
+              pendingMessageHash = message.hash()
+            }
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -456,7 +448,6 @@ export default ({
             // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
             // message has been received. This is intentional to mark yet-unsent
             // messages as pending in the UI
-            prepublish,
             beforeRequest
           }
         }).catch((e) => {

@@ -153,12 +153,6 @@ export default {
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    async refreshObjectURLs () {
-      this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
-        return this.getAttachmentObjectURL(attachment)
-      }))
-      this.$forceUpdate()
-    },
     deleteAttachment (index) {
       const attachment = this.attachmentList[index]
       if (attachment.downloadData) {
@@ -220,7 +214,9 @@ export default {
           this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
         } else {
           // NOTE: this should not be caught, but considered for the error handler
-          this.refreshObjectURLs()
+          Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
+            this.objectURLList = urls
+          })
         }
       }
     }
