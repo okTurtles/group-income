@@ -1003,9 +1003,12 @@ export default (sbp('sbp/selectors/register', {
       if (!userID) {
         throw new Error('Unable to update last logged in without an active session')
       }
+      const now = new Date().toISOString()
 
+      // Wait for any pending operations (e.g., sync) to finish
+      await sbp('chelonia/contract/wait', contractID)
       const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
-      current[userID] = new Date().toISOString()
+      current[userID] = now
       await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
         encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
         signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
