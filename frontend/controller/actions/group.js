@@ -1006,12 +1006,13 @@ export default (sbp('sbp/selectors/register', {
       const now = new Date().toISOString()
 
       // Wait for any pending operations (e.g., sync) to finish
-      await sbp('chelonia/contract/wait', contractID)
-      const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
-      current[userID] = now
-      await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+      await sbp('chelonia/queueInvocation', contractID, async () => {
+        const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
+        current[userID] = now
+        await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
+          encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+        })
       })
     } catch (e) {
       L('Failed to update "lastLoggedIn" in a group profile.')
