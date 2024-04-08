@@ -371,7 +371,10 @@ export default (sbp('sbp/selectors/register', {
     if (!Array.isArray(manifestCid)) manifestCid = [manifestCid]
     // Validation
     manifestCid.forEach((cid) => {
-      if (!has(credentials, cid) || (has(credentials[cid], 'token') === has(credentials[cid], 'billableContractID'))) {
+      const hasCredential = has(credentials, cid)
+      const hasToken = has(credentials[cid], 'token')
+      const hasBillableContractID = has(credentials[cid], 'billableContractID')
+      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
     })

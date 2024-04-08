@@ -619,9 +619,10 @@ export default ({
     },
     deleteMessage (message) {
       const contractID = this.renderingChatRoomId
+      const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID,
-        data: { hash: message.hash }
+        data: { hash: message.hash, manifestCids }
       }).catch((e) => {
         console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
       })

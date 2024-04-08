@@ -114,6 +114,29 @@ function messageReceivePostEffect ({
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
+async function deleteEncryptedFilesByToken (manifestCids, innerSigningContractID) {
+  try {
+    const rootGetters = sbp('state/vuex/getters')
+    const tokensMap = {}
+    for (const manifestCid of manifestCids) {
+      const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
+      if (!token) {
+        console.error(`Missing delete token for file with manifestCid ${manifestCid}`)
+        return
+      }
+      tokensMap[manifestCid] = { token }
+    }
+
+    await sbp('chelonia/fileDelete', manifestCids, tokensMap)
+    await sbp('gi.actions/identity/removeFileDeleteToken', {
+      contractID: innerSigningContractID,
+      data: { manifestCids }
+    })
+  } catch (err) {
+    console.error(`Missing delete token for file with manifestCid ${manifestCid}`, err?.message || err)
+  }
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/chatroom',
   metadata: {
@@ -512,7 +535,12 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature(objectOf({ hash: string })),
+      validate: actionRequireInnerSignature(objectOf({
+        hash: string,
+        // NOTE: manifestCids of the attachments which belong to the message
+        //       if the message is deleted, those attachments should be deleted too
+        manifestCids: optional(arrayOf(string))
+      })),
       process ({ data, meta, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
@@ -580,6 +608,13 @@ sbp('chelonia/defineContract', {
             })
             Vue.set(state.messages[msgIndex], 'attachments', newAttachments)
           }
+        }
+      },
+      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
+        const me = sbp('state/vuex/state').loggedIn.identityContractID
+        const { manifestCid } = data
+        if (innerSigningContractID === me) {
+          deleteEncryptedFilesByToken({ innerSigningContractID, manifestCid })
         }
       }
     },
