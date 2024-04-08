@@ -737,6 +737,36 @@ export default (sbp('sbp/selectors/register', {
       console.error('Error during uploading files', err)
     }
   },
+  'gi.actions/identity/removeFiles': async ({ manifestCids, identityContractID }: {
+    manifestCids: string[], identityContractID: string, billableContractID?: string
+  }) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const me = sbp('state/vuex/state').loggedIn.identityContractID
+
+    if (me !== identityContractID) {
+      return
+    }
+
+    try {
+      const tokensMap = {}
+      for (const manifestCid of manifestCids) {
+        const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
+        if (!token) {
+          console.error(`Missing delete token for file with manifestCid ${manifestCid}`)
+          return
+        }
+        tokensMap[manifestCid] = { token }
+      }
+
+      await sbp('chelonia/fileDelete', manifestCids, tokensMap)
+      await sbp('gi.actions/identity/removeFileDeleteToken', {
+        contractID: identityContractID,
+        data: { manifestCids }
+      })
+    } catch (err) {
+      console.error(err?.message || err)
+    }
+  },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
 }): string[])
