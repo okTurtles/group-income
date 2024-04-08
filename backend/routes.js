@@ -489,6 +489,23 @@ route.POST('/kv/{contractID}/{key}', {
     }
   }
 
+  try {
+    const serializedData = JSON.parse(request.payload.toString())
+    const { contracts } = sbp('chelonia/rootState')
+    // Check that the height is the latest value
+    if (contracts[contractID].height !== Number(serializedData.height)) {
+      return Boom.conflict()
+    }
+    // Check that the signature is valid
+    sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
+      contractID,
+      serializedData,
+      meta: key
+    })
+  } catch (e) {
+    return Boom.badData()
+  }
+
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)

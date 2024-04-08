@@ -1331,6 +1331,13 @@ export default (sbp('sbp/selectors/register', {
       serializedData: data,
       meta: key
     })
+  },
+  'chelonia/parseEncryptedOrUnencryptedDetachedMessage': function ({ contractID, serializedData, meta }: { contractID: string, serializedData: Object, meta?: ?string }) {
+    return parseEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      serializedData,
+      meta
+    })
   }
 }): string[])
 
