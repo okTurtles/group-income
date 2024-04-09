@@ -435,6 +435,10 @@ export default ({
               msg.hash = message.hash()
               msg.height = message.height()
               pendingMessageHash = message.hash()
+
+              // NOTE: whenever the message.hash() is changed, we should update the related state too
+              //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
+              onChatScroll.call(this)
             }
           })
         }
@@ -868,10 +872,24 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime())
-        if (startUnreadMessage) {
-          this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
+        const checkByDate = (msg) => {
+          return new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime()
+        }
+        const index = this.messages.findIndex(msg => checkByDate(msg))
+        if (index >= 0) {
+          // NOTE: When the user switches channel before the message is not fully processed,
+          //       (in other words, until this.variant(msg) === 'sent')
+          //       the chatroomReadUntil position would not be saved correctly
+          //       because the pending messages could not be saved in state.
+          //       Considering those such cases, we shoud set 'isNew' position for the messages
+          //       only whose sender is not ourselves.
+          for (let i = index; i < this.messages.length; i++) {
+            const message = this.messages[i]
+            if (!this.isMsgSender(message.from)) {
+              this.ephemeral.startedUnreadMessageHash = message.hash
+              break
+            }
+          }
         }
       }
     },
