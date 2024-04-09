@@ -1014,7 +1014,8 @@ export default (sbp('sbp/selectors/register', {
           signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
         })
       })
-      await sbp('gi.actions/group/noop', { contractID })
+      // await sbp('gi.actions/group/noop', { contractID })
+      await sbp('chelonia/contract/sync', contractID)
     } catch (e) {
       throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
