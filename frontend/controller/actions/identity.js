@@ -752,19 +752,20 @@ export default (sbp('sbp/selectors/register', {
       for (const manifestCid of manifestCids) {
         const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
         if (!token) {
-          console.error(`Missing delete token for file with manifestCid ${manifestCid}`)
-          return
+          console.warn(`Missing delete token for file with manifestCid ${manifestCid}`)
+        } else {
+          tokensMap[manifestCid] = { token }
         }
-        tokensMap[manifestCid] = { token }
       }
+      const removableManifestCids = Object.keys(tokensMap)
 
-      await sbp('chelonia/fileDelete', manifestCids, tokensMap)
+      await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
       await sbp('gi.actions/identity/removeFileDeleteToken', {
         contractID: identityContractID,
-        data: { manifestCids }
+        data: { manifestCids: removableManifestCids }
       })
     } catch (err) {
-      console.error(err?.message || err)
+      console.warn(err?.message || err)
     }
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
