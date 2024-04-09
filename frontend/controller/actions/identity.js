@@ -757,13 +757,15 @@ export default (sbp('sbp/selectors/register', {
           tokensMap[manifestCid] = { token }
         }
       }
-      const removableManifestCids = Object.keys(tokensMap)
 
-      await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
-      await sbp('gi.actions/identity/removeFileDeleteToken', {
-        contractID: identityContractID,
-        data: { manifestCids: removableManifestCids }
-      })
+      const removableManifestCids = Object.keys(tokensMap)
+      if (removableManifestCids.length) {
+        await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
+        await sbp('gi.actions/identity/removeFileDeleteToken', {
+          contractID: identityContractID,
+          data: { manifestCids: removableManifestCids }
+        })
+      }
     } catch (err) {
       console.warn(err?.message || err)
     }
