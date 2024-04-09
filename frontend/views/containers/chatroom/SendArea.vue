@@ -216,6 +216,7 @@
                   ref='fileAttachmentInputEl'
                   type='file'
                   multiple
+                  data-test='attachments'
                   :accept='supportedFileExtensions'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
