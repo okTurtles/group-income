@@ -1015,7 +1015,7 @@ export default (sbp('sbp/selectors/register', {
         })
       })
       // await sbp('gi.actions/group/noop', { contractID })
-      await sbp('chelonia/contract/sync', contractID)
+      await sbp('chelonia/contract/sync', contractID, { force: true })
     } catch (e) {
       throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
