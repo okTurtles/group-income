@@ -114,16 +114,14 @@ function messageReceivePostEffect ({
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
-function deleteEncryptedFilesByToken (manifestCids: string | string[], innerSigningContractID: string) {
+async function deleteEncryptedFilesByToken (manifestCids: string | string[], innerSigningContractID: string) {
   if (typeof manifestCids === 'string') {
     manifestCids = [manifestCids]
   }
 
-  if (Array.isArray(manifestCids) && manifestCids.length) {
-    sbp('gi.actions/identity/removeFiles', {
-      manifestCids, identityContractID: innerSigningContractID
-    })
-  }
+  await sbp('gi.actions/identity/removeFiles', {
+    manifestCids, identityContractID: innerSigningContractID
+  })
 }
 
 sbp('chelonia/defineContract', {
@@ -438,7 +436,7 @@ sbp('chelonia/defineContract', {
           state.messages.push(createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
-          existingMsg.pending = false
+          delete existingMsg.pending
         }
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
@@ -568,7 +566,11 @@ sbp('chelonia/defineContract', {
         }
 
         if (me === innerSigningContractID) {
-          deleteEncryptedFilesByToken(data.manifestCids, innerSigningContractID)
+          if (data.manifestCids && data.manifestCids.length) {
+            deleteEncryptedFilesByToken(data.manifestCids, innerSigningContractID).catch(e => {
+              console.error(`[gi.contracts/chatroom/deleteMessage/sideEffect] (${contractID}):`, e)
+            })
+          }
           return
         }
 
@@ -603,7 +605,9 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (innerSigningContractID === me) {
-          deleteEncryptedFilesByToken(data.manifestCid, innerSigningContractID)
+          deleteEncryptedFilesByToken(data.manifestCid, innerSigningContractID).catch(e => {
+            console.error(`[gi.contracts/chatroom/deleteAttachment/sideEffect] (${contractID}):`, e)
+          })
         }
       }
     },

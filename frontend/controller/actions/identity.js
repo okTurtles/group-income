@@ -703,7 +703,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
-    attachments: Object, billableContractID: string
+    attachments: Array<Object>, billableContractID: string
   }) => {
     const rootGetters = sbp('state/vuex/getters')
 
@@ -717,13 +717,14 @@ export default (sbp('sbp/selectors/register', {
         }, { billableContractID })
         const { delete: token, download: downloadData } = response
         return {
-          downloadData: { ...omit(attachment, ['url']), downloadData },
+          attributes: omit(attachment, ['url']),
+          downloadData,
           deleteData: { token }
         }
       }))
 
       const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
-        manifestCid: downloadData.downloadData.manifestCid,
+        manifestCid: downloadData.manifestCid,
         token: deleteData.token
       }))
 
@@ -732,9 +733,10 @@ export default (sbp('sbp/selectors/register', {
         data: { tokensByManifestCid }
       })
 
-      return attachmentsData.map(({ downloadData }) => downloadData)
+      return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
     } catch (err) {
-      console.error('Error during uploading files', err)
+      const humanErr = L('Failed to upload files: {reportError}', LError(err))
+      throw new GIErrorUIRuntimeError(humanErr)
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, identityContractID }: {
@@ -744,30 +746,27 @@ export default (sbp('sbp/selectors/register', {
     const me = sbp('state/vuex/state').loggedIn.identityContractID
 
     if (me !== identityContractID) {
+      console.warn('[gi.actions/identity/removeFiles]: Avoid to remove files because the user has logged out or another user is logged in')
       return
     }
 
-    try {
-      const tokensMap = {}
-      for (const manifestCid of manifestCids) {
-        const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
-        if (!token) {
-          console.warn(`Missing delete token for file with manifestCid ${manifestCid}`)
-        } else {
-          tokensMap[manifestCid] = { token }
-        }
+    const tokensMap = {}
+    for (const manifestCid of manifestCids) {
+      const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
+      if (!token) {
+        console.warn(`Missing delete token for file with manifestCid ${manifestCid}`)
+      } else {
+        tokensMap[manifestCid] = { token }
       }
+    }
 
-      const removableManifestCids = Object.keys(tokensMap)
-      if (removableManifestCids.length) {
-        await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
-        await sbp('gi.actions/identity/removeFileDeleteToken', {
-          contractID: identityContractID,
-          data: { manifestCids: removableManifestCids }
-        })
-      }
-    } catch (err) {
-      console.warn(err?.message || err)
+    const removableManifestCids = Object.keys(tokensMap)
+    if (removableManifestCids.length) {
+      await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
+      await sbp('gi.actions/identity/removeFileDeleteToken', {
+        contractID: identityContractID,
+        data: { manifestCids: removableManifestCids }
+      })
     }
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
