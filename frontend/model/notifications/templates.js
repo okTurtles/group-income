@@ -266,8 +266,8 @@ export default ({
     const distPeriod = sbp('state/vuex/getters').groupSettings?.distributionDate
     const periodDisplay = humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
-      'pledger': L('A new distribution period({period}) has started. Please check Payment TODOs.', { period: periodDisplay }),
-      'receiver': L('A new distribution period({period}) has started. Please update your income details if they have changed.', { period: periodDisplay })
+      'pledger': L('A new distribution period ({period}) has started. Please check Payment TODOs.', { period: periodDisplay }),
+      'receiver': L('A new distribution period ({period}) has started. Please update your income details if they have changed.', { period: periodDisplay })
     }
 
     return {
