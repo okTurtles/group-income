@@ -49,6 +49,7 @@ export default ({
       }
     },
     isSameSender: Boolean,
+    isGroupCreator: Boolean,
     isMsgSender: Boolean,
     replyingMessage: String
   },

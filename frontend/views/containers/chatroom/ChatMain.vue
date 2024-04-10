@@ -78,6 +78,7 @@
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
           :isMsgSender='isMsgSender(message.from)'
+          :isGroupCreator='isGroupCreator'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
@@ -310,6 +311,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'groupSettings',
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
@@ -317,6 +319,7 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
+      'isDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
@@ -337,6 +340,12 @@ export default ({
     },
     messages () {
       return this.messageState.contract?.messages || []
+    },
+    isGroupCreator () {
+      if (!this.isDirectMessage(this.summary.chatRoomId)) {
+        return this.currentUserAttr.id === this.groupSettings.groupCreatorID
+      }
+      return false
     }
   },
   methods: {
@@ -622,6 +631,10 @@ export default ({
       })
     },
     deleteMessage (message) {
+      if (!this.isMsgSender(message.from)) {
+        alert('TODO: Coming soon...')
+        return
+      }
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       sbp('gi.actions/chatroom/deleteMessage', {
@@ -633,9 +646,14 @@ export default ({
     },
     async deleteAttachment (message, manifestCid) {
       const contractID = this.currentChatRoomId
-      const hash = message.hash
+      const { from, hash } = message
       const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
       let promptConfig = {}
+
+      if (!this.isMsgSender(from)) {
+        alert('TODO: Coming soon...')
+        return
+      }
 
       if (shouldDeleteMessageInstead) {
         promptConfig = {

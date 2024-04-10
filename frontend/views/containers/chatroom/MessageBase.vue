@@ -57,7 +57,8 @@
           :attachmentList='attachments'
           :variant='variant'
           :isForDownload='true'
-          :isMsgCreator='isMsgSender'
+          :isMsgSender='isMsgSender'
+          :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
         )
 
@@ -150,6 +151,7 @@ export default ({
       }
     },
     isSameSender: Boolean,
+    isGroupCreator: Boolean,
     isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },

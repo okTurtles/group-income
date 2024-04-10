@@ -41,7 +41,7 @@
             )
               i.icon-download
           tooltip(
-            v-if='isMsgCreator'
+            v-if='isMsgSender || isGroupCreator'
             direction='top'
             :text='L("Delete")'
           )
@@ -104,14 +104,9 @@ export default {
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    isForDownload: {
-      type: Boolean,
-      default: false
-    },
-    isMsgCreator: {
-      type: Boolean,
-      default: false
-    }
+    isGroupCreator: Boolean,
+    isForDownload: Boolean,
+    isMsgSender: Boolean
   },
   data () {
     return {

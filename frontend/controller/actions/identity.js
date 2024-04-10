@@ -740,7 +740,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, identityContractID }: {
-    manifestCids: string[], identityContractID: string, billableContractID?: string
+    manifestCids: string[], identityContractID: string
   }) => {
     const rootGetters = sbp('state/vuex/getters')
     const me = sbp('state/vuex/state').loggedIn.identityContractID
@@ -759,7 +759,6 @@ export default (sbp('sbp/selectors/register', {
         tokensMap[manifestCid] = { token }
       }
     }
-
     const removableManifestCids = Object.keys(tokensMap)
     if (removableManifestCids.length) {
       await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
