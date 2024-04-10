@@ -516,6 +516,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
+    await sbp('chelonia/contract/wait', [groupId, identityContractID])
     await sbp('gi.actions/identity/joinGroup', {
       contractID: identityContractID,
       contractName: 'gi.contracts/identity',
@@ -1014,8 +1015,6 @@ export default (sbp('sbp/selectors/register', {
           signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
         })
       })
-      // await sbp('gi.actions/group/noop', { contractID })
-      await sbp('chelonia/contract/sync', contractID, { force: true })
     } catch (e) {
       throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
