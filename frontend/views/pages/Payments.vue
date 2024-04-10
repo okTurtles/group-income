@@ -175,7 +175,7 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString, deepEqualJSONType, omit } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
@@ -272,8 +272,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupIncomeDistribution',
-      'currentPaymentPeriod',
+      'currentGroupState',
+      'thisPeriodPaymentInfo',
       'ourGroupProfile',
       'groupSettings',
       'userDisplayNameFromID',
@@ -289,7 +289,22 @@ export default ({
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
     },
     distributionLocked () {
-      return true
+      if (!this.thisPeriodPaymentInfo) {
+        return false
+      }
+      const { paymentsFrom } = this.thisPeriodPaymentInfo
+      const { payments } = this.currentGroupState
+
+      for (const fromMemberID of Object.keys(paymentsFrom)) {
+        for (const toMemberID of Object.keys(paymentsFrom[fromMemberID])) {
+          for (const hash of paymentsFrom[fromMemberID][toMemberID]) {
+            if (payments[hash].data.status === PAYMENT_COMPLETED) {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     tabItems () {
       const items = []
@@ -726,7 +741,7 @@ export default ({
       .pill {
         height: fit-content;
         margin: auto;
-        text-transform: uppercase;;
+        text-transform: uppercase;
       }
     }
   }
