@@ -6,6 +6,7 @@ import type {
 
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 import {
   STATUS_PASSED, STATUS_FAILED, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
@@ -262,9 +263,12 @@ export default ({
     }
   },
   NEW_DISTRIBUTION_PERIOD (data: { creatorID: string, memberType: string }) {
+    const distPeriod = sbp('state/vuex/getters').groupSettings?.distributionDate
+    const periodDisplay = humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
-      'pledger': L('A new distribution period has started. Please check Payment TODOs.'),
-      'receiver': L('A new distribution period has started. Please update your income details if they have changed.')
+      // Display the distribution period in the notification message (issue: https://github.com/okTurtles/group-income/issues/1903)
+      'pledger': L('A new distribution period ({period}) has started. Please check Payment TODOs.', { period: periodDisplay }),
+      'receiver': L('A new distribution period ({period}) has started. Please update your income details if they have changed.', { period: periodDisplay })
     }
 
     return {
@@ -276,7 +280,7 @@ export default ({
       scope: 'group',
       data: {
         // is used to check if a notification has already been sent for a particular dist-period
-        period: sbp('state/vuex/getters').groupSettings?.distributionDate
+        period: distPeriod
       }
     }
   },
