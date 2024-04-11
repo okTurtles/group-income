@@ -739,32 +739,27 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(humanErr)
     }
   },
-  'gi.actions/identity/removeFiles': async ({ manifestCids, identityContractID }: {
-    manifestCids: string[], identityContractID: string
+  'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
+    manifestCids: string[], option: Object
   }) => {
     const rootGetters = sbp('state/vuex/getters')
-    const me = sbp('state/vuex/state').loggedIn.identityContractID
+    const { identityContractID } = sbp('state/vuex/state').loggedIn
+    const { shouldDeleteFile, shouldDeleteToken } = option
 
-    if (me !== identityContractID) {
-      console.warn('[gi.actions/identity/removeFiles]: Avoid to remove files because the user has logged out or another user is logged in')
-      return
+    if (shouldDeleteFile) {
+      const credentials = Object.fromEntries(manifestCids.map(cid => {
+        const credential = shouldDeleteToken
+          ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
+          : { billableContractID: identityContractID }
+        return [cid, credential]
+      }))
+      await sbp('chelonia/fileDelete', manifestCids, credentials)
     }
 
-    const tokensMap = {}
-    for (const manifestCid of manifestCids) {
-      const token = rootGetters.currentIdentityState.fileDeleteTokens[manifestCid]
-      if (!token) {
-        console.warn(`Missing delete token for file with manifestCid ${manifestCid}`)
-      } else {
-        tokensMap[manifestCid] = { token }
-      }
-    }
-    const removableManifestCids = Object.keys(tokensMap)
-    if (removableManifestCids.length) {
-      await sbp('chelonia/fileDelete', removableManifestCids, tokensMap)
+    if (shouldDeleteToken) {
       await sbp('gi.actions/identity/removeFileDeleteToken', {
         contractID: identityContractID,
-        data: { manifestCids: removableManifestCids }
+        data: { manifestCids }
       })
     }
   },

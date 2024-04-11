@@ -639,7 +639,7 @@ export default ({
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID,
-        data: { hash: message.hash, manifestCids }
+        data: { hash: message.hash, manifestCids, messageSender: message.from }
       }).catch((e) => {
         console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
       })
@@ -649,11 +649,6 @@ export default ({
       const { from, hash } = message
       const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
       let promptConfig = {}
-
-      if (!this.isMsgSender(from)) {
-        alert('TODO: Coming soon...')
-        return
-      }
 
       if (shouldDeleteMessageInstead) {
         promptConfig = {
@@ -682,9 +677,8 @@ export default ({
         if (shouldDeleteMessageInstead) {
           this.deleteMessage(message)
         } else {
-          sbp('gi.actions/chatroom/deleteAttachment', {
-            contractID, data: { hash, manifestCid }
-          }).catch((e) => {
+          const data = { hash, manifestCid, messageSender: from }
+          sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
             console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
           })
         }

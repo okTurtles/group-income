@@ -114,14 +114,13 @@ function messageReceivePostEffect ({
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
-async function deleteEncryptedFiles (manifestCids: string | string[], innerSigningContractID: string) {
-  if (typeof manifestCids === 'string') {
-    manifestCids = [manifestCids]
+async function deleteEncryptedFiles (manifestCids: string | string[], option: Object) {
+  if (Object.values(option).reduce((a, c) => a || c, false)) {
+    if (typeof manifestCids === 'string') {
+      manifestCids = [manifestCids]
+    }
+    await sbp('gi.actions/identity/removeFiles', { manifestCids, option })
   }
-
-  await sbp('gi.actions/identity/removeFiles', {
-    manifestCids, identityContractID: innerSigningContractID
-  })
 }
 
 sbp('chelonia/defineContract', {
@@ -526,7 +525,8 @@ sbp('chelonia/defineContract', {
         hash: string,
         // NOTE: manifestCids of the attachments which belong to the message
         //       if the message is deleted, those attachments should be deleted too
-        manifestCids: optional(arrayOf(string))
+        manifestCids: arrayOf(string),
+        messageSender: string
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
@@ -565,12 +565,17 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        if (me === innerSigningContractID) {
-          if (data.manifestCids && data.manifestCids.length) {
-            deleteEncryptedFiles(data.manifestCids, innerSigningContractID).catch(e => {
-              console.error(`[gi.contracts/chatroom/deleteMessage/sideEffect] (${contractID}):`, e)
-            })
+        if (data.manifestCids.length) {
+          const option = {
+            shouldDeleteFile: me === innerSigningContractID,
+            shouldDeleteToken: me === data.messageSender
           }
+          deleteEncryptedFiles(data.manifestCids, option).catch(e => {
+            console.error(`[gi.contracts/chatroom/deleteMessage/sideEffect] (${contractID}):`, e)
+          })
+        }
+
+        if (me === innerSigningContractID) {
           return
         }
 
@@ -585,14 +590,16 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/deleteAttachment': {
       validate: actionRequireInnerSignature(objectOf({
         hash: string,
-        manifestCid: string
+        manifestCid: string,
+        messageSender: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
+
         const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
+        if (msgIndex >= 0) {
           const oldAttachments = state.messages[msgIndex].attachments
           if (Array.isArray(oldAttachments)) {
             const newAttachments = oldAttachments.filter(attachment => {
@@ -604,11 +611,13 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
-        if (innerSigningContractID === me) {
-          deleteEncryptedFiles(data.manifestCid, innerSigningContractID).catch(e => {
-            console.error(`[gi.contracts/chatroom/deleteAttachment/sideEffect] (${contractID}):`, e)
-          })
+        const option = {
+          shouldDeleteFile: me === innerSigningContractID,
+          shouldDeleteToken: me === data.messageSender
         }
+        deleteEncryptedFiles(data.manifestCid, option).catch(e => {
+          console.error(`[gi.contracts/chatroom/deleteAttachment/sideEffect] (${contractID}):`, e)
+        })
       }
     },
     'gi.contracts/chatroom/makeEmotion': {
