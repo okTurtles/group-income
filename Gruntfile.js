@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { cp, mkdir, rm, copyFile, readFile, writeFile } = require('fs/promises')
+const { readdir, cp, mkdir, rm, copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -421,10 +421,24 @@ module.exports = (grunt) => {
     const done = this.async()
     const { contractsVersion } = packageJSON
 
+    // NOTE: make the latest contract version
     await mkdir(`${distContracts}/${contractsVersion}`)
-    await cp(distContracts, `${distContracts}/${contractsVersion}`, { force: true, recursive: true })
+    for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
+      if (dirent.isFile()) {
+        const fileName = dirent.name
+        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${contractsVersion}/${fileName}`)
+        await rm(`${distContracts}/${fileName}`)
+      }
+    }
 
-    console.log(cp, mkdir, rm)
+    // NOTE: copy all the versions of contracts
+    const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
+      return dirent.isDirectory() && dirent.name !== contractsVersion
+    }).map(dirent => dirent.name)
+    for (const version of versions) {
+      await cp(`contracts/${version}`, `${distContracts}/${version}`, { force: true, recursive: true })
+    }
+
     done()
   })
 
