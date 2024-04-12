@@ -1,7 +1,6 @@
 # Build artifacts
 /node_modules/
 /dist/
-/build/
 /dist-dashboard/
 *?rollup-plugin-vue=script.js
 key.json
