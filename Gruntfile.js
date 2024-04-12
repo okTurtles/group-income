@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { copyFile, readFile, writeFile } = require('fs/promises')
+const { cp, mkdir, rm, copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -61,10 +61,11 @@ Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
 const backendIndex = 'backend/index.js'
 const distDir = 'dist'
-const distAssets = `${distDir}assets`
-const distCSS = `${distDir}assets/css`
-const distContracts = `${distDir}contracts`
-const distJS = `${distDir}assets/js`
+const distAssets = `${distDir}/assets`
+const distCSS = `${distDir}/assets/css`
+const distContracts = `${distDir}/contracts`
+const distBackend = `${distDir}/backend`
+const distJS = `${distDir}/assets/js`
 const srcDir = 'frontend'
 const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
 const contractsDir = `${srcDir}/model/contracts`
@@ -360,10 +361,13 @@ module.exports = (grunt) => {
 
     checkDependencies: { this: { options: { install: true } } },
 
-    clean: { dist: [`${distDir}/*`] },
+    clean: {
+      dist: [`${distDir}/*`],
+      distContracts: [`${distContracts}/*`]
+    },
 
     copy: {
-      html_files: {
+      htmlFiles: {
         src: 'frontend/index.html',
         dest: `${distDir}/index.html`
       },
@@ -376,6 +380,12 @@ module.exports = (grunt) => {
       strings: {
         src: ['strings/*.json'],
         dest: distAssets,
+        expand: true
+      },
+      backend: {
+        cwd: 'backend',
+        src: ['**/*'],
+        dest: distBackend,
         expand: true
       }
     },
@@ -402,6 +412,21 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
 
   let child = null
+
+  grunt.registerTask('copy:frontend', function () {
+    grunt.task.run(['copy:htmlFiles', 'copy:assets', 'copy:strings'])
+  })
+
+  grunt.registerTask('copy:contracts', async function () {
+    const done = this.async()
+    const { contractsVersion } = packageJSON
+
+    await mkdir(`${distContracts}/${contractsVersion}`)
+    await cp(distContracts, `${distContracts}/${contractsVersion}`, { force: true, recursive: true })
+
+    console.log(cp, mkdir, rm)
+    done()
+  })
 
   // Useful helper task for `grunt test`.
   grunt.registerTask('backend:launch', '[internal]', function () {
@@ -454,7 +479,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean:dist', 'copy:frontend', esbuild])
     }
   })
 
@@ -523,18 +548,6 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
 
-  grunt.registerTask('postDeploy', async function () {
-    const commandsToCopyBackendAndContracts = `
-      cp -r backend ${distDir}/backend &
-      mkdir -p ${distDir}/data &
-      mkdir -p contracts/${packageJSON.contractsVersion} &&
-      cp -rf ${distContracts}/* contracts/${packageJSON.contractsVersion} &&
-      rm -rf ${distContracts} &&
-      cp -rf contracts ${distDir}
-    `
-    const { stdout } = await execWithErrMsg(commandsToCopyBackendAndContracts)
-    console.log(stdout)
-  })
   grunt.registerTask('deploy', function () {
     if (!production) {
       console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
@@ -542,8 +555,8 @@ module.exports = (grunt) => {
     }
     grunt.task.run([
       'checkDependencies', 'exec:eslint', 'exec:flow',
-      'exec:puglint', 'exec:stylelint', 'clean',
-      'copy', 'esbuild', 'postDeploy'
+      'exec:puglint', 'exec:stylelint', 'clean:dist',
+      'copy:frontend', 'esbuild', 'copy:backend', 'copy:contracts'
     ])
   })
   grunt.registerTask('serve', function () {
