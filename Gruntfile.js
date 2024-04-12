@@ -421,7 +421,7 @@ module.exports = (grunt) => {
     const done = this.async()
     const { contractsVersion } = packageJSON
 
-    // NOTE: make the latest contract version
+    // NOTE: the latest version
     await mkdir(`${distContracts}/${contractsVersion}`)
     for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
       if (dirent.isFile()) {
@@ -431,12 +431,12 @@ module.exports = (grunt) => {
       }
     }
 
-    // NOTE: copy all the versions of contracts
+    // NOTE: all previously pinned versions
     const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
       return dirent.isDirectory() && dirent.name !== contractsVersion
     }).map(dirent => dirent.name)
     for (const version of versions) {
-      await cp(`contracts/${version}`, `${distContracts}/${version}`, { force: true, recursive: true })
+      await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
     }
 
     done()
