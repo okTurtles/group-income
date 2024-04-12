@@ -361,10 +361,7 @@ module.exports = (grunt) => {
 
     checkDependencies: { this: { options: { install: true } } },
 
-    clean: {
-      dist: [`${distDir}/*`],
-      distContracts: [`${distContracts}/*`]
-    },
+    clean: { dist: [`${distDir}/*`] },
 
     copy: {
       htmlFiles: {
