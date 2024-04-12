@@ -9156,7 +9156,6 @@
     }
   };
   var ChelErrorWarning = ChelErrorGenerator("ChelErrorWarning");
-  var ChelErrorAlreadyProcessed = ChelErrorGenerator("ChelErrorAlreadyProcessed");
   var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
   var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
   var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
@@ -9164,7 +9163,6 @@
   var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
   var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
   var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
-  var ChelErrorSignatureKeyUnauthorized = ChelErrorGenerator("ChelErrorSignatureKeyUnauthorized", ChelErrorSignatureError);
   var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
 
   // frontend/common/errors.js
@@ -9344,55 +9342,6 @@ ${this.getErrorInfo()}`;
   var IDENTITY_USERNAME_MAX_CHARS = 80;
 
   // frontend/model/contracts/identity.js
-  var attributesType = objectMaybeOf({
-    username: string,
-    email: string,
-    picture: unionOf(string, objectOf({
-      manifestCid: string,
-      downloadParams: optional(object)
-    }))
-  });
-  var validateUsername = (username) => {
-    if (!username) {
-      throw new TypeError("A username is required");
-    }
-    if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-      throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
-    }
-    if (!allowedUsernameCharacters(username)) {
-      throw new TypeError("A username cannot contain disallowed characters.");
-    }
-    if (!noConsecutiveHyphensOrUnderscores(username)) {
-      throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
-    }
-    if (!noLeadingOrTrailingHyphen(username)) {
-      throw new TypeError("A username cannot start or end with a hyphen.");
-    }
-    if (!noLeadingOrTrailingUnderscore(username)) {
-      throw new TypeError("A username cannot start or end with an underscore.");
-    }
-    if (!noUppercase(username)) {
-      throw new TypeError("A username cannot contain uppercase letters.");
-    }
-  };
-  var checkUsernameConsistency = async (contractID, username) => {
-    const lookupResult = await (0, import_sbp2.default)("namespace/lookup", username, { skipCache: true });
-    if (lookupResult === contractID)
-      return;
-    console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`);
-    (0, import_sbp2.default)("chelonia/queueInvocation", contractID, () => {
-      const rootState = (0, import_sbp2.default)("state/vuex/state");
-      if (!has2(rootState, contractID))
-        return;
-      const username2 = rootState[contractID].attributes.username;
-      if ((0, import_sbp2.default)("namespace/lookupCached", username2) !== contractID) {
-        (0, import_sbp2.default)("gi.notifications/emit", "WARNING", {
-          contractID,
-          message: L("Unable to confirm that the username {username} belongs to this identity contract", { username: username2 })
-        });
-      }
-    });
-  };
   (0, import_sbp2.default)("chelonia/defineContract", {
     name: "gi.contracts/identity",
     getters: {
@@ -9410,13 +9359,31 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity": {
         validate: (data, { state }) => {
           objectMaybeOf({
-            attributes: attributesType
+            attributes: objectMaybeOf({
+              username: string,
+              email: string,
+              picture: string
+            })
           })(data);
           const { username } = data.attributes;
-          if (!username) {
-            throw new TypeError("A username is required");
+          if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+            throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
           }
-          validateUsername(username);
+          if (!allowedUsernameCharacters(username)) {
+            throw new TypeError("A username cannot contain disallowed characters.");
+          }
+          if (!noConsecutiveHyphensOrUnderscores(username)) {
+            throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
+          }
+          if (!noLeadingOrTrailingHyphen(username)) {
+            throw new TypeError("A username cannot start or end with a hyphen.");
+          }
+          if (!noLeadingOrTrailingUnderscore(username)) {
+            throw new TypeError("A username cannot start or end with an underscore.");
+          }
+          if (!noUppercase(username)) {
+            throw new TypeError("A username cannot contain uppercase letters.");
+          }
         },
         process({ data }, { state }) {
           const initialState = merge({
@@ -9428,36 +9395,18 @@ ${this.getErrorInfo()}`;
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
           }
-        },
-        async sideEffect({ contractID, data }) {
-          await checkUsernameConsistency(contractID, data.attributes.username);
         }
       },
       "gi.contracts/identity/setAttributes": {
-        validate: (data) => {
-          attributesType(data);
-          if (has2(data, "username")) {
-            validateUsername(data.username);
-          }
-        },
+        validate: object,
         process({ data }, { state }) {
           for (const key in data) {
             vue_esm_default.set(state.attributes, key, data[key]);
           }
-        },
-        async sideEffect({ contractID, data }) {
-          if (has2(data, "username")) {
-            await checkUsernameConsistency(contractID, data.username);
-          }
         }
       },
       "gi.contracts/identity/deleteAttributes": {
-        validate: (data) => {
-          arrayOf(string)(data);
-          if (data.includes("username")) {
-            throw new Error("Username can't be deleted");
-          }
-        },
+        validate: arrayOf(string),
         process({ data }, { state }) {
           for (const attribute2 of data) {
             vue_esm_default.delete(state.attributes, attribute2);
@@ -9554,7 +9503,7 @@ ${this.getErrorInfo()}`;
               innerSigningKeyId: (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
               encryptionKeyId: (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "cek")
             }).catch((e) => {
-              console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e);
+              console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e);
             });
           }).catch((e) => {
             console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e);
@@ -9587,7 +9536,7 @@ ${this.getErrorInfo()}`;
               (0, import_sbp2.default)("gi.actions/group/removeOurselves", {
                 contractID: groupContractID
               }).catch((e) => {
-                console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
+                console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
               });
             }
           }).catch((e) => {
