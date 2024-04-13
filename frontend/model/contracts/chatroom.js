@@ -116,7 +116,7 @@ function messageReceivePostEffect ({
 
 async function deleteEncryptedFiles (manifestCids: string | string[], option: Object) {
   if (Object.values(option).reduce((a, c) => a || c, false)) {
-    if (typeof manifestCids === 'string') {
+    if (!Array.isArray(manifestCids)) {
       manifestCids = [manifestCids]
     }
     await sbp('gi.actions/identity/removeFiles', { manifestCids, option })
