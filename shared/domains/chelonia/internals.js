@@ -1087,15 +1087,16 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': async function (contractID: string, event: string) {
+  'chelonia/private/in/enqueueHandleEvent': function (contractID: string, event: string) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
-    const result = await sbp('chelonia/private/queueEvent', contractID, [
-      'chelonia/private/in/handleEvent', contractID, event
-    ])
-    sbp('chelonia/private/enqueuePostSyncOps', contractID)
-    return result
+    return sbp('chelonia/private/queueEvent', contractID, async () => {
+      await sbp('chelonia/private/in/handleEvent', contractID, event)
+      // Before the next operation is enqueued, enqueue post sync ops. This
+      // makes calling `/wait` more reliable
+      sbp('chelonia/private/enqueuePostSyncOps', contractID)
+    })
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)

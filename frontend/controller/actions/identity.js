@@ -440,11 +440,11 @@ export default (sbp('sbp/selectors/register', {
         )
 
         // update the 'lastLoggedIn' field in user's group profiles
-        sbp('state/vuex/getters').groupsByName
+        Object.keys(state[identityContractID].groups)
           .map(entry => entry.contractID)
           .forEach(cId => {
             // We send this action only for groups we have fully joined (i.e.,
-            // accepted an invite add added our profile)
+            // accepted an invite and added our profile)
             if (state[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
               sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
             }

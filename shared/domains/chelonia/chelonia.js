@@ -331,6 +331,16 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/reset': async function (postCleanupFn) {
     sbp('chelonia/private/stopClockSync')
     // wait for any pending sync operations to finish before saving
+    Object.keys(this.postSyncOperations).forEach(cID => {
+      sbp('chelonia/private/enqueuePostSyncOps', cID)
+    })
+    await sbp('chelonia/contract/waitPublish')
+    await sbp('chelonia/contract/wait')
+    // do this again to catch operations that are the result of side-effects
+    // or post sync ops
+    Object.keys(this.postSyncOperations).forEach(cID => {
+      sbp('chelonia/private/enqueuePostSyncOps', cID)
+    })
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
     await postCleanupFn?.()
