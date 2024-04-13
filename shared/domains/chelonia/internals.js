@@ -799,7 +799,7 @@ export default (sbp('sbp/selectors/register', {
 
         // If we're unable to decrypt the OP_KEY_REQUEST, then still
         // proceed to do accounting of invites
-        const v = data?.data || { contractID: '(private)', replyWith: { context: undefined } }
+        const v = data?.data || { contractID: '(private)', replyWith: { context: undefined }, request: '*' }
 
         const originatingContractID = v.contractID
 

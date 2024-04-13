@@ -516,6 +516,16 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
+    // This action (`joinWithInviteSecret`) can get invoked while there are
+    // events being processed in the group or identity contracts. This can cause
+    // issues when re-joining a group, because the logic that keeps track
+    // of adding or removing groups from the identity contract may interfere,
+    // making us leave the group that we're trying to rejoin (what happens is
+    // (1) old group leave (2) leave in identity contract (3) join in identity
+    // contract (4) because of some other sync in the group contract, leave again
+    // on the identity contract, which is an error)
+    // We can avoid this by waiting on both contracts, especially the group
+    // contract.
     await sbp('chelonia/contract/wait', [groupId, identityContractID])
     await sbp('gi.actions/identity/joinGroup', {
       contractID: identityContractID,
@@ -1019,7 +1029,6 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
     }
   },
-  ...encryptedAction('gi.actions/group/noop', L('REMOVEME')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),

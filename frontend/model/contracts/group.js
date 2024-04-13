@@ -1561,11 +1561,7 @@ sbp('chelonia/defineContract', {
           }, state)
         }
       }
-    }),
-    'gi.contracts/group/noop': {
-      validate: actionRequireActiveMember(() => {}),
-      process () { }
-    }
+    })
     // TODO: remove group profile when leave group is implemented
   },
   // methods are SBP selectors that are version-tracked for each contract.
