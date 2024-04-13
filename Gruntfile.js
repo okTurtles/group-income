@@ -524,8 +524,8 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
-  grunt.registerTask('dist', ['build'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
   // - Our esbuild task
