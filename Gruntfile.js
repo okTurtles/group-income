@@ -383,6 +383,7 @@ module.exports = (grunt) => {
     exec: {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
+      gitconfig: 'git config --local include.path ../.gitconfig',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test files:
