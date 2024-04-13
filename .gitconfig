@@ -1,0 +1,8 @@
+# For $deity's sake, check that anything we're getting is complete and sane on a regular basis.
+# https://groups.google.com/forum/#!topic/binary-transparency/f-BI4o8HZW0
+[transfer]
+    fsckObjects = true
+[fetch]
+    fsckoOjects = true
+[receive]
+    fsckObjects = true
