@@ -532,12 +532,13 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
+      // Map message handlers to transparently handle encryption and signatures
       messageHandlers: {
         ...(Object.fromEntries(
-          Object.entries(options.messageHandlers || {}).map(([k, v]) => [
-            k,
-            k === NOTIFICATION_TYPE.PUB
-              ? (msg) => {
+          Object.entries(options.messageHandlers || {}).map(([k, v]) => {
+            switch (k) {
+              case NOTIFICATION_TYPE.PUB:
+                return [k, (msg) => {
                   if (!msg.channelID) {
                     console.info('[chelonia] Discarding pub event without channelID')
                     return
@@ -554,29 +555,31 @@ export default (sbp('sbp/selectors/register', {
                   } catch (e) {
                     console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
                   }
-                }
-              : k === NOTIFICATION_TYPE.KV
-                ? (msg) => {
-                    if (!msg.channelID || !msg.key) {
-                      console.info('[chelonia] Discarding kv event without channelID or key')
-                      return
-                    }
-                    if (!this.subscriptionSet.has(msg.channelID)) {
-                      console.info(`[chelonia] Discarding kv event for ${msg.channelID} because it's not in the current subscriptionSet`)
-                      return
-                    }
-                    try {
-                      (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
-                        contractID: msg.channelID,
-                        meta: msg.key,
-                        serializedData: JSON.parse(Buffer.from(msg.data).toString())
-                      })])
-                    } catch (e) {
-                      console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
-                    }
+                }]
+              case NOTIFICATION_TYPE.KV:
+                return [k, (msg) => {
+                  if (!msg.channelID || !msg.key) {
+                    console.info('[chelonia] Discarding kv event without channelID or key')
+                    return
                   }
-                : v
-          ])
+                  if (!this.subscriptionSet.has(msg.channelID)) {
+                    console.info(`[chelonia] Discarding kv event for ${msg.channelID} because it's not in the current subscriptionSet`)
+                    return
+                  }
+                  try {
+                    (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
+                      contractID: msg.channelID,
+                      meta: msg.key,
+                      serializedData: JSON.parse(Buffer.from(msg.data).toString())
+                    })])
+                  } catch (e) {
+                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
+                  }
+                }]
+              default:
+                return [k, v]
+            }
+          })
         )),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
