@@ -736,7 +736,7 @@ export default ({
 
     .c-payment-info-wrapper {
       @include phone {
-        margin-bottom: 0.25rem;
+        margin-bottom: 1.5rem;
       }
 
       .c-distribution-locked-warning-wrapper {
