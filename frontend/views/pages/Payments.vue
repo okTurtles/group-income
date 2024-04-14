@@ -99,11 +99,20 @@ page(
           )
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
-              i18n.c-payment-info(
-                tag='b'
-                data-test='paymentInfo'
-                :args='footerTodoStatus'
-              ) {amount} in total, to {count} members
+              .c-payment-info-wrapper
+                i18n.c-payment-info(
+                  tag='b'
+                  data-test='paymentInfo'
+                  :args='footerTodoStatus'
+                ) {amount} in total, to {count} members
+
+                .c-distribution-locked-warning-wrapper(v-if='distributionLocked')
+                  span.pill.is-warning {{ config.paymentLockedWarningOptions.title }}
+                  tooltip(
+                    :text='config.paymentLockedWarningOptions.tooltip'
+                    :isTextCenter='true'
+                  )
+                    i.icon-info-circle.has-text-warning
 
               i18n.button(
                 tag='button'
@@ -157,6 +166,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
+import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
@@ -165,7 +175,7 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString, deepEqualJSONType, omit } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
@@ -183,6 +193,7 @@ export default ({
     Page,
     SvgContributions,
     Search,
+    Tooltip,
     PaymentsList,
     PaymentsPagination,
     NextDistributionPill,
@@ -209,6 +220,10 @@ export default ({
           'all': L('ALL'),
           'lightning': L('Lightning'),
           'manual': L('Manual')
+        },
+        paymentLockedWarningOptions: {
+          title: L('Distribution Locked'),
+          tooltip: L('First payment sent. Distribution is now locked.')
         }
       },
       historicalPayments: {
@@ -257,8 +272,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupIncomeDistribution',
-      'currentPaymentPeriod',
+      'currentGroupState',
+      'thisPeriodPaymentInfo',
       'ourGroupProfile',
       'groupSettings',
       'userDisplayNameFromID',
@@ -272,6 +287,24 @@ export default ({
     },
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
+    },
+    distributionLocked () {
+      if (!this.thisPeriodPaymentInfo) {
+        return false
+      }
+      const { paymentsFrom } = this.thisPeriodPaymentInfo
+      const { payments } = this.currentGroupState
+
+      for (const fromMemberID of Object.keys(paymentsFrom)) {
+        for (const toMemberID of Object.keys(paymentsFrom[fromMemberID])) {
+          for (const hash of paymentsFrom[fromMemberID][toMemberID]) {
+            if (payments[hash].data.status === PAYMENT_COMPLETED) {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     tabItems () {
       const items = []
@@ -699,6 +732,24 @@ export default ({
       justify-content: flex-start;
       align-items: flex-start;
       gap: 1rem;
+    }
+
+    .c-payment-info-wrapper {
+      @include phone {
+        margin-bottom: 1.5rem;
+      }
+
+      .c-distribution-locked-warning-wrapper {
+        display: flex;
+        gap: 0.25rem;
+        width: fit-content;
+
+        .pill {
+          height: fit-content;
+          margin: auto;
+          text-transform: uppercase;
+        }
+      }
     }
   }
 
