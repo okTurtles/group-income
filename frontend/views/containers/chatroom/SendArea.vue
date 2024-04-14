@@ -216,6 +216,7 @@
                   ref='fileAttachmentInputEl'
                   type='file'
                   multiple
+                  data-test='attachments'
                   :accept='supportedFileExtensions'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
@@ -605,6 +606,11 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
+      if (!filesList.length) {
+        // NOTE: user clicked Cancel button, so no action is needed
+        return
+      }
+
       const list = appendItems && this.hasAttachments
         ? [...this.ephemeral.attachments]
         : []

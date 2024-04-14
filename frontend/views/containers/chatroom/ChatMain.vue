@@ -78,12 +78,14 @@
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
           :isMsgSender='isMsgSender(message.from)'
+          :isGroupCreator='isGroupCreator'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
+          @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
           @add-emoticon='addEmoticon(message, $event)'
         )
 
@@ -135,9 +137,8 @@ import {
 import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { omit, cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { objectURLtoBlob } from '@utils/image.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -310,6 +311,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'groupSettings',
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
@@ -317,6 +319,7 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
+      'isDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
@@ -337,6 +340,12 @@ export default ({
     },
     messages () {
       return this.messageState.contract?.messages || []
+    },
+    isGroupCreator () {
+      if (!this.isDirectMessage(this.summary.chatRoomId)) {
+        return this.currentUserAttr.id === this.groupSettings.groupCreatorID
+      }
+      return false
     }
   },
   methods: {
@@ -417,33 +426,29 @@ export default ({
 
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
-        const prepublish = (message) => {
-          if (!this.checkEventSourceConsistency(contractID)) return
-
-          beforePrePublish?.()
-
-          // IMPORTANT: This is executed *BEFORE* the message is received over
-          // the network
-          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-            if (!this.checkEventSourceConsistency(contractID)) return
-            Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
-            pendingMessageHash = message.hash()
-          }).catch((e) => {
-            console.error('Error sending message during pre-publish: ' + e.message)
-          })
-
-          this.stopReplying()
-          this.updateScroll()
-        }
         const beforeRequest = (message, oldMessage) => {
           if (!this.checkEventSourceConsistency(contractID)) return
-          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
+          sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
+
+            beforePrePublish?.()
+
+            // IMPORTANT: This is executed *BEFORE* the message is received over
+            // the network
             const msg = this.messages.find(m => (m.hash === oldMessage.hash()))
-            if (!msg) return
-            msg.hash = message.hash()
-            msg.height = message.height()
-            pendingMessageHash = message.hash()
+            if (!msg) {
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              this.stopReplying()
+              this.updateScroll()
+            } else {
+              msg.hash = message.hash()
+              msg.height = message.height()
+              pendingMessageHash = message.hash()
+
+              // NOTE: whenever the message.hash() is changed, we should update the related state too
+              //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
+              onChatScroll.call(this)
+            }
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -456,7 +461,6 @@ export default ({
             // IMPORTANT: This will call 'chelonia/in/processMessage' *BEFORE* the
             // message has been received. This is intentional to mark yet-unsent
             // messages as pending in the UI
-            prepublish,
             beforeRequest
           }
         }).catch((e) => {
@@ -472,17 +476,10 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
-          const attachmentsToSend = await Promise.all(attachments.map(async (attachment) => {
-            const { mimeType, url } = attachment
-            // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-            const attachmentBlob = await objectURLtoBlob(url)
-            const { download: downloadData } = await sbp('chelonia/fileUpload', attachmentBlob, {
-              type: mimeType, cipher: 'aes256gcm'
-            }, { billableContractID: contractID })
-            return { ...omit(attachment, ['url']), downloadData }
-          }))
-          data.attachments = attachmentsToSend
-
+          data.attachments = await sbp('gi.actions/identity/uploadFiles', {
+            attachments,
+            billableContractID: contractID
+          })
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
@@ -630,17 +627,62 @@ export default ({
           text: newMessage
         }
       }).catch((e) => {
-        console.error(`Error while editing message for ${contractID}`, e)
+        console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
     deleteMessage (message) {
+      if (!this.isMsgSender(message.from)) {
+        alert('TODO: Coming soon...')
+        return
+      }
       const contractID = this.renderingChatRoomId
+      const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID,
-        data: { hash: message.hash }
+        data: { hash: message.hash, manifestCids, messageSender: message.from }
       }).catch((e) => {
-        console.error(`Error while deleting message for ${contractID}`, e)
+        console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
       })
+    },
+    async deleteAttachment (message, manifestCid) {
+      const contractID = this.currentChatRoomId
+      const { from, hash } = message
+      const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
+      let promptConfig = {}
+
+      if (shouldDeleteMessageInstead) {
+        promptConfig = {
+          heading: L('Delete message'),
+          question: L('Are you sure you want to delete this message permanently?'),
+          primaryButton: L('Yes'),
+          secondaryButton: L('Cancel')
+        }
+      } else {
+        const attachment = message.attachments.find(attachment => {
+          return attachment.downloadData.manifestCid === manifestCid
+        })
+        promptConfig = {
+          heading: L('Delete file'),
+          question: L('Are you sure you want to delete this file permanently?{filePreview}', {
+            filePreview: `<p>${attachment.name}</p>`
+          }),
+          primaryButton: L('Yes'),
+          secondaryButton: L('Cancel')
+        }
+      }
+
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+
+      if (primaryButtonSelected) {
+        if (shouldDeleteMessageInstead) {
+          this.deleteMessage(message)
+        } else {
+          const data = { hash, manifestCid, messageSender: from }
+          sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
+            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+          })
+        }
+      }
     },
     changeDay (index) {
       const conv = this.messages
@@ -842,10 +884,24 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime())
-        if (startUnreadMessage) {
-          this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
+        const checkByDate = (msg) => {
+          return new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime()
+        }
+        const index = this.messages.findIndex(msg => checkByDate(msg))
+        if (index >= 0) {
+          // NOTE: When the user switches channel before the message is not fully processed,
+          //       (in other words, until this.variant(msg) === 'sent')
+          //       the chatroomReadUntil position would not be saved correctly
+          //       because the pending messages could not be saved in state.
+          //       Considering those such cases, we shoud set 'isNew' position for the messages
+          //       only whose sender is not ourselves.
+          for (let i = index; i < this.messages.length; i++) {
+            const message = this.messages[i]
+            if (!this.isMsgSender(message.from)) {
+              this.ephemeral.startedUnreadMessageHash = message.hash
+              break
+            }
+          }
         }
       }
     },

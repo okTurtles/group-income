@@ -57,7 +57,9 @@
           :attachmentList='attachments'
           :variant='variant'
           :isForDownload='true'
-          :isMsgCreator='isMsgSender'
+          :isMsgSender='isMsgSender'
+          :isGroupCreator='isGroupCreator'
+          @delete-attachment='deleteAttachment'
         )
 
       .c-failure-message-wrapper
@@ -149,6 +151,7 @@ export default ({
       }
     },
     isSameSender: Boolean,
+    isGroupCreator: Boolean,
     isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },
@@ -179,6 +182,9 @@ export default ({
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
       }
+    },
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
       this.isEditing = false

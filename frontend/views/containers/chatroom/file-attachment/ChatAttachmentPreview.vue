@@ -41,7 +41,7 @@
             )
               i.icon-download
           tooltip(
-            v-if='isMsgCreator'
+            v-if='isMsgSender || isGroupCreator'
             direction='top'
             :text='L("Delete")'
           )
@@ -104,14 +104,9 @@ export default {
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    isForDownload: {
-      type: Boolean,
-      default: false
-    },
-    isMsgCreator: {
-      type: Boolean,
-      default: false
-    }
+    isGroupCreator: Boolean,
+    isForDownload: Boolean,
+    isMsgSender: Boolean
   },
   data () {
     return {
@@ -153,8 +148,11 @@ export default {
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment (attachment) {
-      alert('TODO - delete attachment')
+    deleteAttachment (index) {
+      const attachment = this.attachmentList[index]
+      if (attachment.downloadData) {
+        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+      }
     },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
@@ -196,6 +194,25 @@ export default {
       return {
         width: `${widthInPixel}px`,
         height: `${heightInPixel}px`
+      }
+    }
+  },
+  watch: {
+    attachmentList (to, from) {
+      if (from.length > to.length) {
+        // NOTE: this will be caught when user tries to delete attachments
+        const oldObjectURLMapping = {}
+        if (from.length === this.objectURLList.length) {
+          from.forEach((attachment, index) => {
+            oldObjectURLMapping[attachment.downloadData.manifestCid] = this.objectURLList[index]
+          })
+          this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+        } else {
+          // NOTE: this should not be caught, but considered for the error handler
+          Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
+            this.objectURLList = urls
+          })
+        }
       }
     }
   }

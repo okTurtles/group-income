@@ -215,6 +215,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
+  ...encryptedAction('gi.actions/chatroom/deleteAttachment', L('Failed to delete attachment of message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootState = sbp('state/vuex/state')

@@ -47,7 +47,7 @@ describe('Changing Group Settings', () => {
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
       groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
-      cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.getByDT('avatar').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')

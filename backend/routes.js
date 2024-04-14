@@ -323,7 +323,7 @@ route.POST('/file', {
     // Store size information
     await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
     // Generate and store deletion token
-    const deletionToken = sbp('backend/server/saveDeletionToken', manifestHash)
+    const deletionToken = await sbp('backend/server/saveDeletionToken', manifestHash)
     return h.response(manifestHash).header('shelter-deletion-token', deletionToken)
   } catch (err) {
     logger.error(err, 'POST /file', err.message)

@@ -6,6 +6,7 @@ message-base(
   @retry='$emit("retry")'
   @reply-message-clicked='$emit("scroll-to-replying-message")'
   @message-edited='editMessage'
+  @delete-attachment='deleteAttachment'
   @delete-message='$emit("delete-message")'
   :convertTextToMarkdown='true'
 )
@@ -48,15 +49,16 @@ export default ({
       }
     },
     isSameSender: Boolean,
+    isGroupCreator: Boolean,
     isMsgSender: Boolean,
     replyingMessage: String
   },
-  constants: Object.freeze({
-    variants: MESSAGE_VARIANTS
-  }),
   methods: {
     editMessage (newMessage) {
       this.$emit('edit-message', newMessage)
+    },
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

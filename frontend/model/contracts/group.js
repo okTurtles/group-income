@@ -1180,11 +1180,10 @@ sbp('chelonia/defineContract', {
               console.error('Error while syncing other members\' contracts at inviteAccept', e)
             })
 
-            // If we don't have a current group ID, select the group we've just
-            // joined
+            // If we don't have a current group ID, select the group we've just joined
             if (!rootState.currentGroupId) {
-              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
               sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
             }
           } else {
             // we're an existing member of the group getting notified that a
