@@ -55,7 +55,6 @@ route.POST('/event', {
   // TODO: Update this regex once `chel` uses prefixed manifests
   const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
   try {
-    console.debug('/event handler')
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
       if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
@@ -342,7 +341,6 @@ route.GET('/file/{hash}', {
   }
 }, async function (request, h) {
   const { hash } = request.params
-  console.debug(`GET /file/${hash}`)
 
   if (hash.startsWith('_private')) {
     return Boom.notFound()
@@ -459,7 +457,6 @@ route.POST('/kv/{contractID}/{key}', {
   }
 }, async function (request, h) {
   const { contractID, key } = request.params
-  console.debug(`POST /kv/${contractID}/${key}`)
 
   if (key.startsWith('_private')) {
     return Boom.notFound()
@@ -541,7 +538,6 @@ route.GET('/kv/{contractID}/{key}', {
   cache: { otherwise: 'no-store' }
 }, async function (request, h) {
   const { contractID, key } = request.params
-  console.debug(`GET /kv/${contractID}/${key}`)
 
   if (key.startsWith('_private')) {
     return Boom.notFound()
@@ -583,7 +579,6 @@ route.GET('/assets/{subpath*}', {
 }, function (request, h) {
   const { subpath } = request.params
   const basename = path.basename(subpath)
-  console.debug(`GET /assets/${subpath}`)
   // In the build config we told our bundler to use the `[name]-[hash]-cached` template
   // to name immutable assets. This is useful because `dist/assets/` currently includes
   // a few files without hash in their name.
