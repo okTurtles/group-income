@@ -228,6 +228,14 @@ async function startApp () {
               console.log(`[pubsub] Received data from channel ${contractID}:`, data)
             }
           }
+        },
+        [NOTIFICATION_TYPE.KV] ([key, data]) {
+          switch (key) {
+            case 'lastLoggedIn': {
+              const rootState = sbp('state/vuex/state')
+              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
+            }
+          }
         }
       }
     }))

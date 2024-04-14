@@ -11,6 +11,7 @@ import {
   RESPONSE_TYPE,
   createClient,
   createMessage,
+  createKvMessage,
   messageParser
 } from '~/shared/pubsub.js'
 
@@ -52,7 +53,7 @@ log.error = (error, ...args) => logger.error(error, bold.red(tag, ...args))
 // ====== API ====== //
 
 // Re-export some useful things from the shared module.
-export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
+export { createClient, createMessage, createKvMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
 
 export function createErrorResponse (data: JSONType): string {
   return JSON.stringify({ type: ERROR, data })

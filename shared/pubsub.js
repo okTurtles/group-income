@@ -95,6 +95,7 @@ export type UnsubMessage = {
 
 export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
+  KV: 'kv',
   PING: 'ping',
   PONG: 'pong',
   PUB: 'pub',
@@ -207,8 +208,12 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
+export function createKvMessage (channelID: string, key: string, data: JSONType): string {
+  return JSON.stringify({ type: NOTIFICATION_TYPE.KV, channelID, key, data })
+}
+
 export function createPubMessage (channelID: string, data: JSONType): string {
-  return JSON.stringify({ type: 'pub', channelID, data })
+  return JSON.stringify({ type: NOTIFICATION_TYPE.PUB, channelID, data })
 }
 
 export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
@@ -414,6 +419,11 @@ const defaultMessageHandlers = {
 
   [NOTIFICATION_TYPE.PUB] ({ channelID, data }) {
     console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+    // No need to reply.
+  },
+
+  [NOTIFICATION_TYPE.KV] ({ channelID, key, data }) {
+    console.log(`[pubsub] Received KV update from channel ${channelID} ${key}:`, data)
     // No need to reply.
   },
 

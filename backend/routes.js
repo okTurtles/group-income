@@ -55,7 +55,6 @@ route.POST('/event', {
   // TODO: Update this regex once `chel` uses prefixed manifests
   const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
   try {
-    console.debug('/event handler')
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
       if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
@@ -342,7 +341,6 @@ route.GET('/file/{hash}', {
   }
 }, async function (request, h) {
   const { hash } = request.params
-  console.debug(`GET /file/${hash}`)
 
   if (hash.startsWith('_private')) {
     return Boom.notFound()
@@ -447,6 +445,116 @@ route.POST('/deleteFile/{hash}', {
   return h.response()
 })
 
+route.POST('/kv/{contractID}/{key}', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  },
+  payload: {
+    parse: false,
+    maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
+    timeout: 10 * SECOND // TODO: make this a configurable setting
+  }
+}, async function (request, h) {
+  const { contractID, key } = request.params
+
+  if (key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
+  if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
+    return Boom.unauthorized(null, 'shelter')
+  }
+
+  const existing = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+
+  // Some protection against accidental overwriting by implementing the if-match
+  // header
+  // If-Match contains a list of ETags or '*'
+  // If `If-Match` contains a known ETag, allow the request through, otherwise
+  // return 412 Precondition Failed.
+  // This is useful to clients to avoid accidentally overwriting existing data
+  // For example, client A and client B want to write to key 'K', which contains
+  // an array. Let's say that the array is originally empty (`[]`) and A and B
+  // want to append `A` and `B` to it, respectively. If both write at the same
+  // time, the following could happen:
+  // t = 0: A reads `K`, gets `[]`
+  // t = 1: B reads `K`, gets `[]`
+  // t = 2: A writes `['A']` to `K`
+  // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
+  // To avoid this situation, A and B could use `If-Match`, which would have
+  // given B a 412 response
+  if (request.headers['if-match']) {
+    if (!existing) {
+      return Boom.preconditionFailed()
+    }
+    const expectedEtag = request.headers['if-match']
+    if (expectedEtag === '*') {
+      // pass through
+    } else {
+      // "Quote" string (to match ETag format)
+      const cid = JSON.stringify(createCID(existing))
+      if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
+        return Boom.preconditionFailed()
+      }
+    }
+  }
+
+  try {
+    const serializedData = JSON.parse(request.payload.toString())
+    const { contracts } = sbp('chelonia/rootState')
+    // Check that the height is the latest value. Not only should the height be
+    // the latest, but also enforcing this lets us check that signatures are
+    // using the latest (cryptograhpic) keys. Since the KV is detached from the
+    // contract, in isolation it's impossible to know if an old signature is
+    // just because it was created in the past, or if it's because someone
+    // is reusing a previously good key that has since been revoked.
+    if (contracts[contractID].height !== Number(serializedData.height)) {
+      return Boom.conflict()
+    }
+    // Check that the signature is valid
+    sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
+      contractID,
+      serializedData,
+      meta: key
+    })
+  } catch (e) {
+    return Boom.badData()
+  }
+
+  const existingSize = existing ? Buffer.from(existing).byteLength : 0
+  await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
+  await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+  await sbp('backend/server/broadcastKV', contractID, key, request.payload)
+
+  return h.response().code(204)
+})
+
+route.GET('/kv/{contractID}/{key}', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  },
+  cache: { otherwise: 'no-store' }
+}, async function (request, h) {
+  const { contractID, key } = request.params
+
+  if (key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
+  if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
+    return Boom.unauthorized(null, 'shelter')
+  }
+
+  const result = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+  if (!result) {
+    return Boom.notFound()
+  }
+
+  return h.response(result).etag(createCID(result))
+})
+
 // SPA routes
 
 route.GET('/assets/{subpath*}', {
@@ -471,7 +579,6 @@ route.GET('/assets/{subpath*}', {
 }, function (request, h) {
   const { subpath } = request.params
   const basename = path.basename(subpath)
-  console.debug(`GET /assets/${subpath}`)
   // In the build config we told our bundler to use the `[name]-[hash]-cached` template
   // to name immutable assets. This is useful because `dist/assets/` currently includes
   // a few files without hash in their name.
@@ -529,7 +636,6 @@ route.POST('/zkpp/register/{name}', {
       return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
     }
     if (req.params['name'].startsWith('_private')) return Boom.notFound()
-    console.error({ name: req.params.name, x: 'foo' })
     const contractID = await sbp('backend/db/lookupName', req.params['name'])
     if (contractID !== credentials.billableContractID) {
       // This ensures that only the owner of the contract can set a salt for it,

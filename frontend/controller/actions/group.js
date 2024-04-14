@@ -516,6 +516,17 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
+    // This action (`joinWithInviteSecret`) can get invoked while there are
+    // events being processed in the group or identity contracts. This can cause
+    // issues when re-joining a group, because the logic that keeps track
+    // of adding or removing groups from the identity contract may interfere,
+    // making us leave the group that we're trying to rejoin (what happens is
+    // (1) old group leave (2) leave in identity contract (3) join in identity
+    // contract (4) because of some other sync in the group contract, leave again
+    // on the identity contract, which is an error)
+    // We can avoid this by waiting on both contracts, especially the group
+    // contract.
+    await sbp('chelonia/contract/wait', [groupId, identityContractID])
     await sbp('gi.actions/identity/joinGroup', {
       contractID: identityContractID,
       contractName: 'gi.contracts/identity',
@@ -995,6 +1006,29 @@ export default (sbp('sbp/selectors/register', {
 
     return sendMessage(params)
   }),
+  'gi.actions/group/updateLastLoggedIn': async ({ contractID }: { contractID: string }) => {
+    try {
+      const rootState = sbp('state/vuex/state')
+      const userID = rootState.loggedIn?.identityContractID
+
+      if (!userID) {
+        throw new Error('Unable to update last logged in without an active session')
+      }
+      const now = new Date().toISOString()
+
+      // Wait for any pending operations (e.g., sync) to finish
+      await sbp('chelonia/queueInvocation', contractID, async () => {
+        const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
+        current[userID] = now
+        await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
+          encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+        })
+      })
+    } catch (e) {
+      throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
+    }
+  },
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
@@ -1004,7 +1038,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

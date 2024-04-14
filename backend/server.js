@@ -9,6 +9,7 @@ import {
   createMessage,
   createPushErrorResponse,
   createNotification,
+  createKvMessage,
   createServer,
   NOTIFICATION_TYPE,
   REQUEST_TYPE
@@ -119,6 +120,13 @@ sbp('sbp/selectors/register', {
       })
     }
   },
+  'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const pubsubMessage = createKvMessage(contractID, key, entry)
+    const subscribers = pubsub.enumerateSubscribers(contractID)
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting KV change on ${contractID} to key ${key}`))
+    await pubsub.broadcast(pubsubMessage, { to: subscribers })
+  },
   'backend/server/broadcastEntry': async function (deserializedHEAD: Object, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry)
@@ -155,7 +163,7 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/updateSize': async function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
-    if (!(size >= 0)) {
+    if (!Number.isSafeInteger(size)) {
       throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
     }
     // Use a queue to ensure atomic updates

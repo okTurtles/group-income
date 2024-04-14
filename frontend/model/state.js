@@ -27,7 +27,8 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
-  contractSiginingKeys: Object.create(null)
+  contractSiginingKeys: Object.create(null),
+  lastLoggedIn: {} // Group last logged in information
 }
 
 if (window.matchMedia) {
@@ -157,6 +158,9 @@ const getters = {
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
+  },
+  currentGroupLastLoggedIn (state) {
+    return state.lastLoggedIn[state.currentGroupId] || {}
   },
   // NOTE: since this getter is written using `getters.ourUsername`, which is based
   //       on vuexState.loggedIn (a user preference), we cannot use this getter
@@ -578,7 +582,7 @@ if (process.env.NODE_ENV === 'development') {
 // See the "IMPORTANT" comment above where the Vuex getters are defined for details.
 // handle contracts being registered
 const omitGetters = {
-  'gi.contracts/group': ['currentGroupState'],
+  'gi.contracts/group': ['currentGroupState', 'currentGroupLastLoggedIn'],
   'gi.contracts/identity': ['currentIdentityState'],
   'gi.contracts/chatroom': ['currentChatRoomState']
 }
