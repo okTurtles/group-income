@@ -636,7 +636,6 @@ route.POST('/zkpp/register/{name}', {
       return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
     }
     if (req.params['name'].startsWith('_private')) return Boom.notFound()
-    console.error({ name: req.params.name, x: 'foo' })
     const contractID = await sbp('backend/db/lookupName', req.params['name'])
     if (contractID !== credentials.billableContractID) {
       // This ensures that only the owner of the contract can set a salt for it,
