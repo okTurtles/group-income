@@ -99,11 +99,17 @@ page(
           )
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
-              i18n.c-payment-info(
-                tag='b'
-                data-test='paymentInfo'
-                :args='footerTodoStatus'
-              ) {amount} in total, to {count} members
+              .c-payment-info-wrapper
+                i18n.c-payment-info(
+                  tag='b'
+                  data-test='paymentInfo'
+                  :args='footerTodoStatus'
+                ) {amount} in total, to {count} members
+
+                .c-distribution-locked-warning-wrapper
+                  span.pill.is-warning DISTRIBUTION LOCKED
+                  tooltip(text='First payment sent. Distribution is now locked.' :isTextCenter='true')
+                    i.icon-info-circle.has-text-warning
 
               i18n.button(
                 tag='button'
@@ -157,6 +163,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
+import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
@@ -183,6 +190,7 @@ export default ({
     Page,
     SvgContributions,
     Search,
+    Tooltip,
     PaymentsList,
     PaymentsPagination,
     NextDistributionPill,
@@ -699,6 +707,16 @@ export default ({
       justify-content: flex-start;
       align-items: flex-start;
       gap: 1rem;
+    }
+
+    .c-distribution-locked-warning-wrapper {
+      display: flex;
+      gap: 0.25rem;
+
+      .pill {
+        height: fit-content;
+        margin: auto;
+      }
     }
   }
 
