@@ -261,7 +261,6 @@ export class GIMessage {
       op: op[0],
       manifest
     }
-    console.log('createV1_0', { op, head })
     return new this(messageToParams(head, op[1]))
   }
 
