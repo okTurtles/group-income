@@ -107,8 +107,11 @@ page(
                 ) {amount} in total, to {count} members
 
                 .c-distribution-locked-warning-wrapper
-                  span.pill.is-warning DISTRIBUTION LOCKED
-                  tooltip(text='First payment sent. Distribution is now locked.' :isTextCenter='true')
+                  span.pill.is-warning {{ config.paymentLockedWarningOptions.title }}
+                  tooltip(
+                    :text='config.paymentLockedWarningOptions.tooltip'
+                    :isTextCenter='true'
+                  )
                     i.icon-info-circle.has-text-warning
 
               i18n.button(
@@ -217,6 +220,10 @@ export default ({
           'all': L('ALL'),
           'lightning': L('Lightning'),
           'manual': L('Manual')
+        },
+        paymentLockedWarningOptions: {
+          title: L('Distribution Locked'),
+          tooltip: L('First payment sent. Distribution is now locked.')
         }
       },
       historicalPayments: {
@@ -716,6 +723,7 @@ export default ({
       .pill {
         height: fit-content;
         margin: auto;
+        text-transform: uppercase;;
       }
     }
   }
