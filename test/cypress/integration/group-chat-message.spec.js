@@ -62,6 +62,11 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       })
     })
 
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Delete message')
+      cy.getByDT('submitPrompt').click()
+    })
+
     cy.getByDT('conversationWrapper').within(() => {
       cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
     })
