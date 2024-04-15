@@ -106,7 +106,7 @@ page(
                   :args='footerTodoStatus'
                 ) {amount} in total, to {count} members
 
-                .c-distribution-locked-warning-wrapper
+                .c-distribution-locked-warning-wrapper(v-if='distributionLocked')
                   span.pill.is-warning {{ config.paymentLockedWarningOptions.title }}
                   tooltip(
                     :text='config.paymentLockedWarningOptions.tooltip'
@@ -287,6 +287,9 @@ export default ({
     },
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
+    },
+    distributionLocked () {
+      return true
     },
     tabItems () {
       const items = []
