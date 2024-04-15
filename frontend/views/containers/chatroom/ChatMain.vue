@@ -631,10 +631,6 @@ export default ({
       })
     },
     deleteMessage (message) {
-      if (!this.isMsgSender(message.from)) {
-        alert('TODO: Coming soon...')
-        return
-      }
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       sbp('gi.actions/chatroom/deleteMessage', {

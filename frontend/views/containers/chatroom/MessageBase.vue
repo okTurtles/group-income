@@ -83,6 +83,7 @@
     :variant='variant'
     :type='type'
     :isMsgSender='isMsgSender'
+    :isGroupCreator='isGroupCreator'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
