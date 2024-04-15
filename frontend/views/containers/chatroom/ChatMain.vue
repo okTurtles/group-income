@@ -114,8 +114,8 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { mapGetters } from 'vuex'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -135,7 +135,7 @@ import {
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
+import { findMessageIdx, createMessage, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -635,11 +635,12 @@ export default ({
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
 
-      const text = convertToMarkdown(message.text || (message.attachments?.[0].name || ''))
+      const originalText = message.text || (message.attachments?.[0].name || '')
+      const text = convertToMarkdown(swapUserIDForUsername(originalText))
       const promptConfig = {
         heading: L('Delete message'),
         question: L('Are you sure you want to delete this message permanently?{textPreview}', {
-          textPreview: `<span class="custom-markdown-content">${text}</span>`
+          textPreview: `<p><span class="custom-markdown-content">${text}</span></p>`
         }),
         primaryButton: L('Yes'),
         secondaryButton: L('Cancel')
