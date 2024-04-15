@@ -139,6 +139,7 @@ import { findMessageIdx, createMessage } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -634,11 +635,11 @@ export default ({
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
 
-      const text = message.text || (message.attachments?.[0].name || '')
+      const text = convertToMarkdown(message.text || (message.attachments?.[0].name || ''))
       const promptConfig = {
         heading: L('Delete message'),
         question: L('Are you sure you want to delete this message permanently?{textPreview}', {
-          textPreview: `<p>${text}</p>`
+          textPreview: `<span class="custom-markdown-content">${text}</span>`
         }),
         primaryButton: L('Yes'),
         secondaryButton: L('Cancel')
