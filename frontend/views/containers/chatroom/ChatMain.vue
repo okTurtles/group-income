@@ -630,54 +630,57 @@ export default ({
         console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
-    deleteMessage (message) {
+    async deleteMessage (message) {
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
-      sbp('gi.actions/chatroom/deleteMessage', {
-        contractID,
-        data: { hash: message.hash, manifestCids, messageSender: message.from }
-      }).catch((e) => {
-        console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
-      })
+
+      const text = message.text || (message.attachments?.[0].name || '')
+      const promptConfig = {
+        heading: L('Delete message'),
+        question: L('Are you sure you want to delete this message permanently?{textPreview}', {
+          textPreview: `<p>${text}</p>`
+        }),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
+      }
+
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      if (primaryButtonSelected) {
+        sbp('gi.actions/chatroom/deleteMessage', {
+          contractID,
+          data: { hash: message.hash, manifestCids, messageSender: message.from }
+        }).catch((e) => {
+          console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
+        })
+      }
     },
     async deleteAttachment (message, manifestCid) {
       const contractID = this.currentChatRoomId
       const { from, hash } = message
       const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
-      let promptConfig = {}
 
       if (shouldDeleteMessageInstead) {
-        promptConfig = {
-          heading: L('Delete message'),
-          question: L('Are you sure you want to delete this message permanently?'),
-          primaryButton: L('Yes'),
-          secondaryButton: L('Cancel')
-        }
-      } else {
-        const attachment = message.attachments.find(attachment => {
-          return attachment.downloadData.manifestCid === manifestCid
-        })
-        promptConfig = {
-          heading: L('Delete file'),
-          question: L('Are you sure you want to delete this file permanently?{filePreview}', {
-            filePreview: `<p>${attachment.name}</p>`
-          }),
-          primaryButton: L('Yes'),
-          secondaryButton: L('Cancel')
-        }
+        this.deleteMessage(message)
+        return
+      }
+
+      const { name } = message.attachments.find(attachment => attachment.downloadData.manifestCid === manifestCid)
+      const promptConfig = {
+        heading: L('Delete file'),
+        question: L('Are you sure you want to delete this file permanently?{filePreview}', {
+          filePreview: `<p>${name}</p>`
+        }),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
       }
 
       const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
 
       if (primaryButtonSelected) {
-        if (shouldDeleteMessageInstead) {
-          this.deleteMessage(message)
-        } else {
-          const data = { hash, manifestCid, messageSender: from }
-          sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
-            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
-          })
-        }
+        const data = { hash, manifestCid, messageSender: from }
+        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
+          console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+        })
       }
     },
     changeDay (index) {
