@@ -683,7 +683,6 @@ const publicMethods = {
 const pushClientErrorHandler = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
     // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
-    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
   },
   default (actionType) {
     console.error(`[push-error] Invalid request for the action type '${actionType}'`)
