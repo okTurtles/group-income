@@ -30,3 +30,14 @@ export async function readData (key: string): Promise<Buffer | string | void> {
 export async function writeData (key: string, value: Buffer | string): Promise<void> {
   return writeFile(join(dataFolder, key), value)
 }
+
+// eslint-disable-next-line require-await
+export async function deleteData (key: string): Promise<void> {
+  return unlink(join(dataFolder, key)).catch(e => {
+    // Ignore 'not found' errors
+    if (e?.code === 'ENOENT') {
+      return
+    }
+    throw e
+  })
+}

@@ -428,6 +428,7 @@ route.POST('/deleteFile/{hash}', {
   await sbp('chelonia/db/delete', hash)
   await sbp('chelonia/db/delete', `_private_owner_${hash}`)
   await sbp('chelonia/db/delete', `_private_size_${hash}`)
+  await sbp('chelonia/db/delete', `_private_deletionToken_${hash}`)
   const resourcesKey = `_private_resources_${owner}`
   // Use a queue for atomicity
   await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {

@@ -7,6 +7,7 @@ import sqlite3 from 'sqlite3'
 let db: any = null
 let readStatement: any = null
 let writeStatement: any = null
+let deleteStatement: any = null
 
 const run = (sql, args) => {
   return new Promise((resolve, reject) => {
@@ -42,6 +43,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
   console.info(`Connected to the ${filename} SQLite database.`)
   readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
   writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
+  deleteStatement = db.prepare('DELETE FROM Data WHERE key = ?')
 }
 
 // Useful in test hooks.
@@ -66,6 +68,18 @@ export function readData (key: string): Promise<Buffer | string | void> {
 export function writeData (key: string, value: Buffer | string): Promise<void> {
   return new Promise((resolve, reject) => {
     writeStatement.run([key, value], (err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+export function deleteData (key: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    deleteStatement.run([key], (err) => {
       if (err) {
         reject(err)
       } else {
