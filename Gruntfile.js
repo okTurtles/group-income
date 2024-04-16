@@ -558,7 +558,6 @@ module.exports = (grunt) => {
     grunt.task.run(`_pin:${version}`)
   })
 
-  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
   grunt.registerTask('deploy', function () {
     if (!production) {
       console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
