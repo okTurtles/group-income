@@ -38,7 +38,6 @@ function initGroupProfile (joinedDate: string, joinedHeight: number) {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     joinedDate,
     joinedHeight,
-    lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
@@ -413,6 +412,9 @@ sbp('chelonia/defineContract', {
     currentGroupState (state) {
       return state
     },
+    currentGroupLastLoggedIn () {
+      return {}
+    },
     groupSettings (state, getters) {
       return getters.currentGroupState.settings || {}
     },
@@ -431,7 +433,12 @@ sbp('chelonia/defineContract', {
     groupProfile (state, getters) {
       return member => {
         const profiles = getters.currentGroupState.profiles
-        return profiles && profiles[member]
+        return profiles && profiles[member] && {
+          ...profiles[member],
+          get lastLoggedIn () {
+            return getters.currentGroupLastLoggedIn[member] || this.joinedDate
+          }
+        }
       }
     },
     groupProfiles (state, getters) {
@@ -1173,11 +1180,10 @@ sbp('chelonia/defineContract', {
               console.error('Error while syncing other members\' contracts at inviteAccept', e)
             })
 
-            // If we don't have a current group ID, select the group we've just
-            // joined
+            // If we don't have a current group ID, select the group we've just joined
             if (!rootState.currentGroupId) {
-              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
               sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
             }
           } else {
             // we're an existing member of the group getting notified that a
@@ -1516,16 +1522,6 @@ sbp('chelonia/defineContract', {
         Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
       }
     },
-    'gi.contracts/group/updateLastLoggedIn': {
-      validate: actionRequireActiveMember(() => {}),
-      process ({ meta, innerSigningContractID }, { getters }) {
-        const profile = getters.groupProfiles[innerSigningContractID]
-
-        if (profile) {
-          Vue.set(profile, 'lastLoggedIn', meta.createdDate)
-        }
-      }
-    },
     'gi.contracts/group/updateDistributionDate': {
       validate: actionRequireActiveMember(optional),
       process ({ meta }, { state, getters }) {
@@ -1610,6 +1606,9 @@ sbp('chelonia/defineContract', {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
         sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
       }
+
+      // Remove last logged in information
+      Vue.delete(rootState.lastLoggedIn, contractID)
 
       // Destructors are synchronous
       sbp('gi.actions/identity/leaveGroup', {

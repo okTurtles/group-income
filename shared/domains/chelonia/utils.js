@@ -4,7 +4,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, serializeKey } from './crypto.js'
+import { deserializeKey, serializeKey, sign, verifySignature } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import { ChelErrorWarning } from './errors.js'
@@ -293,6 +293,22 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
           decryptedKeys.push([key.id, decryptedKey])
           storeSecretKey(key, decryptedKey)
         }
+      }
+    }
+
+    // Is this a #sak
+    if (key.name === '#sak') {
+      if (data.encryptionKeyId) {
+        throw new Error('#sak may not be encrypted')
+      }
+      if (key.permissions && (!Array.isArray(key.permissions) || key.permissions.length !== 0)) {
+        throw new Error('#sak may not have permissions')
+      }
+      if (!Array.isArray(key.purpose) || key.purpose.length !== 1 || key.purpose[0] !== 'sak') {
+        throw new Error("#sak must have exactly one purpose: 'sak'")
+      }
+      if (key.ringLevel !== 0) {
+        throw new Error('#sak must have ringLevel 0')
       }
     }
 
@@ -704,4 +720,60 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
       }
     }
   })
+}
+
+export function buildShelterAuthorizationHeader (contractID: string, state?: Object): string {
+  if (!state) state = sbp(this.config.stateSelector)[contractID]
+  const SAKid = findKeyIdByName(state, '#sak')
+  if (!SAKid) {
+    throw new Error(`Missing #sak in ${contractID}`)
+  }
+  const SAK = this.transientSecretKeys[SAKid]
+  if (!SAK) {
+    throw new Error(`Missing secret #sak (${SAKid}) in ${contractID}`)
+  }
+  const deserializedSAK = typeof SAK === 'string' ? deserializeKey(SAK) : SAK
+
+  const nonceBytes = new Uint8Array(15)
+  // $FlowFixMe[cannot-resolve-name]
+  globalThis.crypto.getRandomValues(nonceBytes)
+
+  // <contractID> <UNIX time>.<nonce>
+  const data = `${contractID} ${sbp('chelonia/time')}.${Buffer.from(nonceBytes).toString('base64')}`
+
+  // shelter <contractID> <UNIX time>.<nonce>.<signature>
+  return `shelter ${data}.${sign(deserializedSAK, data)}`
+}
+
+export function verifyShelterAuthorizationHeader (authorization: string, rootState?: Object): string {
+  const regex = /^shelter (([a-zA-Z0-9]+) ([0-9]+)\.([a-zA-Z0-9+/=]{20}))\.([a-zA-Z0-9+/=]+)$/i
+  if (authorization.length > 1024) {
+    throw new Error('Authorization header too long')
+  }
+  const matches = authorization.match(regex)
+  if (!matches) {
+    throw new Error('Unable to parse shelter authorization header')
+  }
+  // TODO: Remember nonces and reject already used ones
+  const [, data, contractID, timestamp, , signature] = matches
+  if (Math.abs(parseInt(timestamp) - (Date.now() / 1e3 | 0)) > 2) {
+    throw new Error('Invalid signature time range')
+  }
+  if (!rootState) rootState = sbp('chelonia/rootState')
+  if (!has(rootState, contractID)) {
+    throw new Error(`Contract ${contractID} from shelter authorization header not found`)
+  }
+  const SAKid = findKeyIdByName(rootState[contractID], '#sak')
+  if (!SAKid) {
+    throw new Error(`Missing #sak in ${contractID}`)
+  }
+  const SAK = rootState[contractID]._vm.authorizedKeys[SAKid].data
+  if (!SAK) {
+    throw new Error(`Missing secret #sak (${SAKid}) in ${contractID}`)
+  }
+  const deserializedSAK = deserializeKey(SAK)
+
+  verifySignature(deserializedSAK, data, signature)
+
+  return contractID
 }

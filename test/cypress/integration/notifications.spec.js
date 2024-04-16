@@ -184,7 +184,7 @@ describe('Notifications', () => {
     cy.giCreateGroup(dreamersGroupName, { bypassUI: true })
     cy.giCreateGroup(turtlesGroupName, { bypassUI: true })
     // The sidebar should now be visible and have two group buttons and one "+" button.
-    cy.getByDT('groupsList').find('button').should('have.length', 3)
+    cy.getByDT('groupsList').find('button').should('have.length', 4)
   })
 
   it('should not display any red badge yet', () => {

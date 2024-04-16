@@ -5,77 +5,93 @@ nav.c-navigation(
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive' data-test='NavigationToggleBtn')
     badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
-  groups-list(v-if='groupsByName.length > 1' :inert='isInert')
+  groups-list(v-if='groupsByName.length >= 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
-    .c-navigation-header
-      h1.sr-only Main Menu
+    template(v-if='isInGlobalDashboard')
+      .c-navigation-header
+        i18n.sr-only(tag='h1') Global Dashboard Menu
 
-      router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
+      .c-navigation-body
+        .c-navigation-body-top
+          ul.c-menu-list
+            list-item(v-for='entry in config.globalDashboard'
+              tag='router-link'
+              :key='entry.id'
+              :icon='entry.icon'
+              :to='entry.routeTo'
+              :data-test='"global-dashboard_" + entry.id'
+            ) {{ entry.title }}
 
-    .c-navigation-body(
-      @click.self='enableTimeTravel'
-      v-if='!notApprovedToGroupYet && groupsByName.length'
-    )
-      .c-navigation-body-top
-        ul.c-menu-list
-          list-item(tag='router-link' icon='columns' to='/dashboard' data-test='dashboard')
-            i18n Dashboard
-          list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
-            i18n Contributions
-          list-item(tag='router-link' icon='tag' to='/payments' data-test='paymentsLink')
-            i18n Payments
-          list-item(
-            tag='router-link'
-            icon='comments'
-            to='/group-chat'
-            :badgeCount='currentGroupUnreadMessagesCount'
-            data-test='groupChatLink'
-          )
-            i18n Chat
-          list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
-            i18n Group Settings
+    template(v-else)
+      .c-navigation-header
+        i18n.sr-only(tag='h1') Main Menu
 
-        .c-navigation-separator(v-if='groupsByName.length < 2')
-          button(
-            class='is-small is-outlined'
-            @click='openModal("GroupCreationModal")'
-            data-test='createGroup'
-            :aria-label='L("Add a group")'
-          )
-            i.icon-plus.is-prefix
-            i18n Add a group
+        router-link(to='/home')
+          img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      .c-navigation-bottom
-        ul.c-menu-list-bottom
-          i18n(
-            tag='a'
-            :href='ALLOWED_URLS.BLOG_PAGE'
-            target='_blank'
-            rel='noopener noreferrer'
-          ) Blog
+        notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
 
-          i18n(
-            tag='a'
-            :href='ALLOWED_URLS.COMMUNITY_PAGE'
-            target='_blank'
-            rel='noopener noreferrer'
-          ) Help &amp; Feedback
+      .c-navigation-body(
+        @click.self='enableTimeTravel'
+        v-if='!notApprovedToGroupYet && groupsByName.length'
+      )
+        .c-navigation-body-top
+          ul.c-menu-list
+            list-item(tag='router-link' icon='columns' to='/dashboard' data-test='dashboard')
+              i18n Dashboard
+            list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
+              i18n Contributions
+            list-item(tag='router-link' icon='tag' to='/payments' data-test='paymentsLink')
+              i18n Payments
+            list-item(
+              tag='router-link'
+              icon='comments'
+              to='/group-chat'
+              :badgeCount='currentGroupUnreadMessagesCount'
+              data-test='groupChatLink'
+            )
+              i18n Chat
+            list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
+              i18n Group Settings
 
-          i18n(
-            tag='a'
-            :href='ALLOWED_URLS.DONATE_PAGE'
-            target='_blank'
-            rel='noopener noreferrer'
-          ) Donate
+          .c-navigation-separator(v-if='groupsByName.length < 2')
+            button(
+              class='is-small is-outlined'
+              @click='openModal("GroupCreationModal")'
+              data-test='createGroup'
+              :aria-label='L("Add a group")'
+            )
+              i.icon-plus.is-prefix
+              i18n Add a group
 
-    //- .c-navigation-footer(v-if='groupsByName.length')
+        .c-navigation-bottom
+          ul.c-menu-list-bottom
+            i18n(
+              tag='a'
+              :href='ALLOWED_URLS.BLOG_PAGE'
+              target='_blank'
+              rel='noopener noreferrer'
+            ) Blog
+
+            i18n(
+              tag='a'
+              :href='ALLOWED_URLS.COMMUNITY_PAGE'
+              target='_blank'
+              rel='noopener noreferrer'
+            ) Help &amp; Feedback
+
+            i18n(
+              tag='a'
+              :href='ALLOWED_URLS.DONATE_PAGE'
+              target='_blank'
+              rel='noopener noreferrer'
+            ) Donate
+
     .c-navigation-footer(v-if='showNav')
       profile
-  //- component(:is='ephemeral.timeTravelComponentName')
 </template>
 
 <script>
@@ -90,6 +106,7 @@ import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin } from '@view-utils/misc.js'
+import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
@@ -106,7 +123,9 @@ export default ({
   data () {
     return {
       config: {
-        debounceResize: debounce(this.checkIsTouch, 250)
+        debounceResize: debounce(this.checkIsTouch, 250),
+        globalDashboard: Object.entries(GLOBAL_DASHBOARD_SETTINGS)
+          .map(([key, entry]) => ({ ...entry, id: key }))
       },
       ephemeral: {
         isActive: false,
@@ -154,6 +173,9 @@ export default ({
     notApprovedToGroupYet () {
       // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
       return this.$route.path === '/pending-approval'
+    },
+    isInGlobalDashboard () {
+      return this.$route.path.startsWith('/global-dashboard')
     }
   },
   methods: {

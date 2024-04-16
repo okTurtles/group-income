@@ -20,8 +20,8 @@
 
       slot(name='body')
         p.c-replying(
-          if='replyingMessage'
-          @click='onReplyMessageClicked'
+          v-if='replyingMessage'
+          @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
             span.custom-markdown-content(
@@ -55,9 +55,17 @@
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
+          :variant='variant'
           :isForDownload='true'
-          :isMsgCreator='isMsgSender'
+          :isMsgSender='isMsgSender'
+          :isGroupCreator='isGroupCreator'
+          @delete-attachment='deleteAttachment'
         )
+
+      .c-failure-message-wrapper
+        i18n(tag='span') Message failed to send.
+        i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
+
   .c-full-width-body
     slot(name='full-width-body')
 
@@ -78,9 +86,9 @@
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
-    @deleteMessage='deleteMessage'
+    @deleteMessage='$emit("delete-message")'
     @reply='reply'
-    @retry='retry'
+    @retry='$emit("retry")'
     @copyMessageLink='copyMessageLink'
   )
 </template>
@@ -95,8 +103,8 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
@@ -136,8 +144,14 @@ export default ({
       type: Object,
       default: null
     },
-    variant: String,
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     isSameSender: Boolean,
+    isGroupCreator: Boolean,
     isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },
@@ -155,6 +169,7 @@ export default ({
   },
   methods: {
     humanDate,
+    swapUserIDForUsername,
     editMessage () {
       if (this.type === MESSAGE_TYPES.POLL) {
         alert('TODO: implement editting a poll')
@@ -162,17 +177,14 @@ export default ({
         this.isEditing = true
       }
     },
-    onReplyMessageClicked () {
-      this.$emit('reply-message-clicked')
-    },
     onMessageEdited (newMessage) {
       this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
       }
     },
-    deleteMessage () {
-      this.$emit('delete-message')
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
       this.isEditing = false
@@ -191,9 +203,6 @@ export default ({
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
     },
-    retry () {
-      this.$emit('retry')
-    },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
     },
@@ -202,13 +211,6 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
-    },
-    swapUserIDForUsername (text) {
-      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
-      return text
-        .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-        .map(t => !possibleMentions.includes(t) ? t : t[0] + this.usernameFromID(t.slice(1)))
-        .join('')
     },
     generateTextObjectsFromText (text) {
       if (!text) {
@@ -265,14 +267,14 @@ export default ({
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
   }
 
-  &.pending {
+  &.pending,
+  &.failed {
     .c-text {
       color: $general_0;
     }
 
     .c-attachments-wrapper {
       pointer-events: none;
-      filter: blur(0.125rem);
     }
   }
 
@@ -288,11 +290,33 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  &:hover:not(.pending) {
+  &:hover {
     background-color: $general_2;
 
-    ::v-deep .c-actions {
-      display: flex;
+    &:not(.pending, .failed) {
+      ::v-deep .c-actions {
+        display: flex;
+      }
+    }
+  }
+
+  .c-failure-message-wrapper {
+    display: none;
+    margin-top: 0.25rem;
+    font-weight: bold;
+    font-size: 0.725rem;
+
+    .c-failure-link {
+      color: $primary_0;
+      margin-left: 0.1rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
+
+  &.failed {
+    .c-failure-message-wrapper {
+      display: block;
     }
   }
 }

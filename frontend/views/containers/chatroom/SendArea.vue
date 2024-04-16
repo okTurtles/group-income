@@ -38,7 +38,7 @@
 
     .c-replying-wrapper
       .c-replying(v-if='replyingMessage')
-        i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+        i18n(:args='{ replyingTo, text: replyingMessage.text }') Replying to {replyingTo}: "{text}"
         button.c-clear.is-icon-small(
           :aria-label='L("Stop replying")'
           @click='stopReplying'
@@ -216,6 +216,7 @@
                   ref='fileAttachmentInputEl'
                   type='file'
                   multiple
+                  data-test='attachments'
                   :accept='supportedFileExtensions'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
@@ -250,7 +251,7 @@ import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
-import { getFileExtension } from '@view-utils/filters.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -287,7 +288,12 @@ export default ({
       type: Boolean,
       default: false
     },
-    replyingMessage: String,
+    replyingMessage: {
+      type: Object, // { text: '', hash: '' }
+      default: function () {
+        return null
+      }
+    },
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -578,7 +584,8 @@ export default ({
       this.$emit(
         'send',
         msgToSend,
-        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : undefined
+        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : null,
+        this.replyingMessage
       ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
@@ -599,6 +606,11 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
+      if (!filesList.length) {
+        // NOTE: user clicked Cancel button, so no action is needed
+        return
+      }
+
       const list = appendItems && this.hasAttachments
         ? [...this.ephemeral.attachments]
         : []
@@ -621,12 +633,23 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
         }
 
-        list.push({
+        const attachment = {
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
-        })
+        }
+
+        if (getFileType(file.type) === 'image') {
+          const img = new Image()
+          img.onload = function () {
+            const { width, height } = this
+            attachment.dimension = { width, height }
+          }
+          img.src = fileUrl
+        }
+
+        list.push(attachment)
       }
 
       this.ephemeral.attachments = list

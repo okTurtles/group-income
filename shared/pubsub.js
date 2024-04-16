@@ -95,6 +95,7 @@ export type UnsubMessage = {
 
 export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
+  KV: 'kv',
   PING: 'ping',
   PONG: 'pong',
   PUB: 'pub',
@@ -207,8 +208,12 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
+export function createKvMessage (channelID: string, key: string, data: JSONType): string {
+  return JSON.stringify({ type: NOTIFICATION_TYPE.KV, channelID, key, data })
+}
+
 export function createPubMessage (channelID: string, data: JSONType): string {
-  return JSON.stringify({ type: 'pub', channelID, data })
+  return JSON.stringify({ type: NOTIFICATION_TYPE.PUB, channelID, data })
 }
 
 export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
@@ -414,6 +419,11 @@ const defaultMessageHandlers = {
 
   [NOTIFICATION_TYPE.PUB] ({ channelID, data }) {
     console.log(`[pubsub] Received data from channel ${channelID}:`, data)
+    // No need to reply.
+  },
+
+  [NOTIFICATION_TYPE.KV] ({ channelID, key, data }) {
+    console.log(`[pubsub] Received KV update from channel ${channelID} ${key}:`, data)
     // No need to reply.
   },
 
@@ -673,7 +683,6 @@ const publicMethods = {
 const pushClientErrorHandler = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
     // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
-    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
   },
   default (actionType) {
     console.error(`[push-error] Invalid request for the action type '${actionType}'`)

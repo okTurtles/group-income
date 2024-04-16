@@ -33,7 +33,7 @@ function getProposalItems () {
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   function switchUser (username) {
-    cy.giSwitchUser(username)
+    cy.giSwitchUser(username, { bypassUI: true })
     me = username
   }
 
@@ -169,7 +169,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it(`user1 creates '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
-    cy.giSignup(user1)
+    cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName1, { bypassUI: true })
@@ -196,7 +196,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 creates several channels and logout', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel1'))) {
-      cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
+      cy.giAddNewChatroom({
+        name: c.name,
+        description: c.description,
+        isPrivate: c.isPrivate,
+        bypassUI: true
+      })
       cy.giCheckIfJoinedChatroom(c.name, me)
     }
     cy.giLogout()
@@ -207,7 +212,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       existingMemberUsername: user1,
       groupName: groupName1,
-      shouldLogoutAfter: true
+      shouldLogoutAfter: true,
+      bypassUI: true
     })
     me = undefined
   })
@@ -233,7 +239,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user2 creates several channels', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel2'))) {
-      cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
+      cy.giAddNewChatroom({
+        name: c.name,
+        description: c.description,
+        isPrivate: c.isPrivate,
+        bypassUI: true
+      })
       cy.giCheckIfJoinedChatroom(c.name, me)
     }
   })
@@ -332,18 +343,18 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
     // Switch from group2 to group1 on the group chat page
-    cy.getByDT('groupsList').find('li:first-child button').click()
+    cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
     switchChannel(channelsOf2For1[0])
 
     // Switch from group1 to group2 on the group chat page
-    cy.getByDT('groupsList').find('li:nth-child(2) button').click()
+    cy.getByDT('groupsList').find('li:nth-child(3) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
 
     // Switch from group2 to group1 on the group chat page
-    cy.getByDT('groupsList').find('li:first-child button').click()
+    cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
   })
@@ -408,7 +419,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // TODO: this test case is not necesasry but it is here
   // because of the issue #1176
   it('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
-    cy.giLogin(user3)
+    cy.giLogin(user3, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false // user3 has been kicked out from the group at this point, so cannot navigate to /dashboard.
+    })
     me = user3
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -417,7 +431,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user2 leaves the group by himself', () => {
-    cy.giLogin(user2)
+    cy.giLogin(user2, { bypassUI: true })
     me = user2
 
     cy.getByDT('groupSettingsLink').click()
@@ -465,7 +479,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
   // so the scenario could be updated later when e2e protocol would be ready
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
-    cy.giLogin(user3)
+    cy.giLogin(user3, {
+      bypassUI: true,
+      toGroupDashboardUponSuccess: false // user-3 has no group to this account at this point.
+    })
     me = user3
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -474,7 +491,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       groupName: groupName1,
       existingMemberUsername: user1,
       shouldLogoutAfter: false,
-      isLoggedIn: true
+      isLoggedIn: true,
+      bypassUI: true
     })
 
     cy.giRedirectToGroupChat()
@@ -485,7 +503,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
-    cy.giLogin(user2)
+    cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -494,7 +512,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       groupName: groupName1,
       existingMemberUsername: user3,
       shouldLogoutAfter: false,
-      isLoggedIn: true
+      isLoggedIn: true,
+      bypassUI: true
     })
 
     cy.giRedirectToGroupChat()

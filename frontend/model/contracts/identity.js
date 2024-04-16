@@ -101,7 +101,8 @@ sbp('chelonia/defineContract', {
           settings: {},
           attributes: {},
           chatRooms: {},
-          groups: {}
+          groups: {},
+          fileDeleteTokens: {}
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -317,6 +318,29 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state, getters }) {
         Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
+      }
+    },
+    'gi.contracts/identity/saveFileDeleteToken': {
+      validate: objectOf({
+        tokensByManifestCid: arrayOf(objectOf({
+          manifestCid: string,
+          token: string
+        }))
+      }),
+      process ({ data }, { state, getters }) {
+        for (const { manifestCid, token } of data.tokensByManifestCid) {
+          Vue.set(state.fileDeleteTokens, manifestCid, token)
+        }
+      }
+    },
+    'gi.contracts/identity/removeFileDeleteToken': {
+      validate: objectOf({
+        manifestCids: arrayOf(string)
+      }),
+      process ({ data }, { state, getters }) {
+        for (const manifestCid of data.manifestCids) {
+          Vue.delete(state.fileDeleteTokens, manifestCid)
+        }
       }
     }
   }

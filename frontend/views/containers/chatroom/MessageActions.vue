@@ -34,7 +34,7 @@ menu-parent(ref='menu')
         i.icon-reply
 
     tooltip(
-      v-if='variant === "failed"'
+      v-if='variant==="failed"'
       direction='top'
       :text='L("Retry")'
     )
@@ -76,7 +76,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        v-if='variant === "failed"'
+        v-if='variant==="failed"'
         @click='action("retry")'
       )
         i.icon-undo
@@ -102,7 +102,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',
@@ -114,7 +114,12 @@ export default ({
     Tooltip
   },
   props: {
-    variant: String,
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     type: String,
     isMsgSender: Boolean
   },

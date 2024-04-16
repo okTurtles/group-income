@@ -11,9 +11,9 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed } from './errors.js'
+import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
-import { findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -253,6 +253,9 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifest = JSON.parse(manifestSource)
     const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
+    if (body.name !== contractName) {
+      throw new Error(`Mismatched contract name. Expected ${contractName} but got ${body.name}`)
+    }
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
@@ -358,13 +361,18 @@ export default (sbp('sbp/selectors/register', {
           : this.config.contracts.defaults.modules[dep]
       },
       sbp: contractSBP,
-      fetchServerTime: () => {
+      fetchServerTime: async () => {
         // If contracts need the current timestamp (for example, for metadata 'createdDate')
         // they must call this function so that clients are kept synchronized to the server's
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict
         // with other client's clocks.
         // See: https://github.com/okTurtles/group-income/issues/531
-        return fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        try {
+          const response = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
+          return handleFetchResult('text')(response)
+        } catch (e) {
+          throw new ChelErrorFetchServerTimeFailed('Can not fetch server time. Please check your internet connection.')
+        }
       }
     })
     if (contractName !== this.defContract.name) {
@@ -409,7 +417,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers } = {}, hooks) {
+  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers, billableContractID, bearer } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
 
@@ -489,13 +497,18 @@ export default (sbp('sbp/selectors/register', {
           body: entry.serialize(),
           headers: {
             ...headers,
-            'Content-Type': 'text/plain',
-            'Authorization': 'gi TODO - signature - if needed here - goes here'
+            ...bearer && {
+              'Authorization': `Bearer ${bearer}`
+            },
+            ...billableContractID && {
+              'Authorization': buildShelterAuthorizationHeader.call(this, billableContractID)
+            },
+            'Content-Type': 'text/plain'
           },
           signal: this.abortController.signal
         })
         if (r.ok) {
-          hooks?.postpublish?.(entry)
+          await hooks?.postpublish?.(entry)
           return entry
         }
         try {
@@ -786,7 +799,7 @@ export default (sbp('sbp/selectors/register', {
 
         // If we're unable to decrypt the OP_KEY_REQUEST, then still
         // proceed to do accounting of invites
-        const v = data?.data || { contractID: '(private)', replyWith: { context: undefined } }
+        const v = data?.data || { contractID: '(private)', replyWith: { context: undefined }, request: '*' }
 
         const originatingContractID = v.contractID
 
@@ -824,6 +837,11 @@ export default (sbp('sbp/selectors/register', {
 
         if (data && (!Array.isArray(context) || (context: any)[0] !== originatingContractID)) {
           console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
+          return
+        }
+
+        if (v.request !== '*') {
+          console.error('Ignoring OP_KEY_REQUEST because it has an unsupported request attribute', v.request)
           return
         }
 
@@ -1069,15 +1087,16 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': async function (contractID: string, event: string) {
+  'chelonia/private/in/enqueueHandleEvent': function (contractID: string, event: string) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
-    const result = await sbp('chelonia/private/queueEvent', contractID, [
-      'chelonia/private/in/handleEvent', contractID, event
-    ])
-    sbp('chelonia/private/enqueuePostSyncOps', contractID)
-    return result
+    return sbp('chelonia/private/queueEvent', contractID, async () => {
+      await sbp('chelonia/private/in/handleEvent', contractID, event)
+      // Before the next operation is enqueued, enqueue post sync ops. This
+      // makes calling `/wait` more reliable
+      sbp('chelonia/private/enqueuePostSyncOps', contractID)
+    })
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
     const state = sbp(this.config.stateSelector)

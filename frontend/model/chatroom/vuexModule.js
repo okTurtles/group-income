@@ -166,7 +166,7 @@ const mutations = {
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
     const rootState = sbp('state/vuex/state')
 
-    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+    if (chatRoomId && groupId && rootState[groupId]) { // useful when initialize when syncing in another device
       Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
     } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomId)

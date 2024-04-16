@@ -47,7 +47,8 @@ export type ProtoGIOpKeyRequest = {
   replyWith: SignedData<{
     encryptionKeyId: string;
     responseKey: EncryptedData<string>;
-  }>
+  }>,
+  request: string;
 }
 export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
 export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
@@ -260,7 +261,6 @@ export class GIMessage {
       op: op[0],
       manifest
     }
-    console.log('createV1_0', { op, head })
     return new this(messageToParams(head, op[1]))
   }
 
@@ -306,7 +306,7 @@ export class GIMessage {
     })
   }
 
-  static deserializeHEAD (value: string): { head: Object; hash: string; contractID: string } {
+  static deserializeHEAD (value: string): { head: Object; hash: string; contractID: string; isFirstMessage: boolean; description: () => string } {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     let head, hash
     const result = {
@@ -328,6 +328,9 @@ export class GIMessage {
       description (): string {
         const type = this.head.op
         return `<op_${type}|${this.hash} of ${this.contractID}>`
+      },
+      get isFirstMessage (): boolean {
+        return !result.head?.contractID
       }
     }
     return result

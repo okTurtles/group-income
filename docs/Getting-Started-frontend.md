@@ -178,7 +178,7 @@ Powers the backend API that the frontend talks to. It's responsible for managing
 
 ###### __[Rollup](https://rollupjs.org)__ - _Tree-Shaking Bundler_
 
-*Note: previously we used [browserify](http://browserify.org/), but have since switched to Rollup because vueify is no longer being supported, and rollup is a far more advanced bundler that uses [tree-shaking](https://rollupjs.org/guide/en#tree-shaking) to reduce the size of bundles. What follows below is the previous text that applied to browserify, but note that even browserify transforms are supported by rollup if you use the [`rollup-plugin-browserify-transform`](https://github.com/lautis/rollup-plugin-browserify-transform).*
+*Note: previously we used [browserify](http://browserify.org/), but have since switched to ~~Rollup~~ (Update: [esbuild](https://esbuild.github.io/)) because vueify is no longer being supported, and rollup is a far more advanced bundler that uses [tree-shaking](https://rollupjs.org/guide/en#tree-shaking) to reduce the size of bundles. What follows below is the previous text that applied to browserify, but note that even browserify transforms are supported by rollup if you use the [`rollup-plugin-browserify-transform`](https://github.com/lautis/rollup-plugin-browserify-transform).*
 
 Makes it possible to write front-end code in the same way Node.js backend code is written. Instead of including a library like jQuery using a `<script>` tag, you `npm install jquery --save`  it, and then `var $ = require('jquery')` it. Browserify is much more than that however, it also:
 

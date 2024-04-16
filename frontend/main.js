@@ -127,6 +127,7 @@ async function startApp () {
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
           'chelonia/contract/disconnect',
+          'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
           'chelonia/contract/hasKeysToPerformOperation'
         ],
@@ -226,6 +227,14 @@ async function startApp () {
             }
             default: {
               console.log(`[pubsub] Received data from channel ${contractID}:`, data)
+            }
+          }
+        },
+        [NOTIFICATION_TYPE.KV] ([key, data]) {
+          switch (key) {
+            case 'lastLoggedIn': {
+              const rootState = sbp('state/vuex/state')
+              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
             }
           }
         }

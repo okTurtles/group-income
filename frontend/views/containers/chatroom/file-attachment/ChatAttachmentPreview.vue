@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-attachment-container(:class='{ "is-for-download": isForDownload }')
+.c-attachment-container(ref='container' :class='{ "is-for-download": isForDownload }')
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
@@ -21,7 +21,11 @@
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
         )
-        .loading-box(v-else)
+        .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
+
+      .c-preview-pending-flag(v-if='isPending')
+      .c-preview-failed-flag(v-else-if='isFailed')
+        i.icon-exclamation-triangle
 
       .c-attachment-actions-wrapper(
         :class='{ "is-for-image": shouldPreviewImages }'
@@ -37,7 +41,7 @@
             )
               i.icon-download
           tooltip(
-            v-if='isMsgCreator'
+            v-if='isMsgSender || isGroupCreator'
             direction='top'
             :text='L("Delete")'
           )
@@ -81,7 +85,8 @@
 <script>
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
-import { getFileExtension } from '@view-utils/filters.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -93,18 +98,20 @@ export default {
       type: Array,
       required: true
     },
-    isForDownload: {
-      type: Boolean,
-      default: false
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
     },
-    isMsgCreator: {
-      type: Boolean,
-      default: false
-    }
+    isGroupCreator: Boolean,
+    isForDownload: Boolean,
+    isMsgSender: Boolean
   },
   data () {
     return {
-      objectURLList: []
+      objectURLList: [],
+      loadingBoxStyles: []
     }
   },
   computed: {
@@ -112,16 +119,26 @@ export default {
       return !this.attachmentList.some(attachment => {
         return this.fileType(attachment) === 'non-image'
       })
+    },
+    isPending () {
+      return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    isFailed () {
+      return this.variant === MESSAGE_VARIANTS.FAILED
     }
   },
   mounted () {
     if (this.shouldPreviewImages) {
-      (async () => {
-        this.objectURLList = await Promise.all(this.attachmentList.map(attachment => {
-          return this.getAttachmentObjectURL(attachment)
-        }))
-        this.$forceUpdate()
-      })()
+      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment))
+      Promise.all(promiseToRetrieveURLs).then(urls => {
+        this.objectURLList = urls
+      })
+
+      if (this.isForDownload) {
+        this.loadingBoxStyles = this.attachmentList.map(attachment => {
+          return this.getStretchedDimension(attachment.dimension)
+        })
+      }
     }
   },
   methods: {
@@ -129,16 +146,19 @@ export default {
       return getFileExtension(name, true)
     },
     fileType ({ mimeType }) {
-      return mimeType.match('image/') ? 'image' : 'non-image'
+      return getFileType(mimeType)
     },
-    deleteAttachment (attachment) {
-      alert('TODO - delete attachment')
+    deleteAttachment (index) {
+      const attachment = this.attachmentList[index]
+      if (attachment.downloadData) {
+        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+      }
     },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', attachment.downloadData)
+        const blob = await sbp('chelonia/fileDownload', () => attachment.downloadData)
         return URL.createObjectURL(blob)
       }
     },
@@ -159,6 +179,40 @@ export default {
         aTag.click()
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+      }
+    },
+    getStretchedDimension ({ width, height }) {
+      // NOTE: 320px = 20rem of max-height (.loading-box)
+      const maxHeight = 320
+      // NOTE: 16px = 2 * 0.5rem of padding (.c-preview-img)
+      //       2px = 2 * 1px of border width (.c-attachment-preview)
+      const maxWidth = this.$refs.container.clientWidth - 16 - 2
+      const zoomRatio = Math.min(maxWidth / width, maxHeight / height, 1)
+      const widthInPixel = zoomRatio * width
+      const heightInPixel = zoomRatio * height
+
+      return {
+        width: `${widthInPixel}px`,
+        height: `${heightInPixel}px`
+      }
+    }
+  },
+  watch: {
+    attachmentList (to, from) {
+      if (from.length > to.length) {
+        // NOTE: this will be caught when user tries to delete attachments
+        const oldObjectURLMapping = {}
+        if (from.length === this.objectURLList.length) {
+          from.forEach((attachment, index) => {
+            oldObjectURLMapping[attachment.downloadData.manifestCid] = this.objectURLList[index]
+          })
+          this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+        } else {
+          // NOTE: this should not be caught, but considered for the error handler
+          Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
+            this.objectURLList = urls
+          })
+        }
       }
     }
   }
@@ -239,16 +293,10 @@ export default {
 
         .loading-box {
           border-radius: 0;
-          width: 24rem;
           margin-bottom: 0;
-
-          @include tablet {
-            width: 20rem;
-          }
-
-          @include phone {
-            width: 16rem;
-          }
+          max-height: 20rem;
+          min-height: unset;
+          max-width: 100%;
         }
       }
     }
@@ -286,7 +334,6 @@ export default {
   }
 
   .c-preview-img {
-    display: inline-block;
     object-fit: cover;
   }
 
@@ -403,5 +450,30 @@ export default {
   left: -10rem;
   opacity: 0;
   pointer-events: none;
+}
+
+.c-preview-pending-flag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: $general_0;
+    animation: loadSpin 1.75s infinite linear;
+  }
+}
+
+.c-preview-failed-flag {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  color: $warning_0;
 }
 </style>

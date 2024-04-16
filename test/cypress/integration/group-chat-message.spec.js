@@ -108,7 +108,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it(`user1 creats '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
-    cy.giSignup(user1)
+    cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName, { bypassUI: true })
@@ -229,6 +229,36 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     // cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
     // cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('2')
+  })
+
+  it('user1 sends two messages with attachments, and deletes attachments', () => {
+    const fileNames = [
+      ['1.png', '2.png', '3.png'], // Prefix Path: cypress/fixtures/
+      ['imageTest.png', 'test.json']
+    ]
+
+    cy.getByDT('attachments').attachFile(fileNames[0])
+    sendMessage('Sending three profile pictures which are designed by Apple. Cute, right?')
+
+    cy.getByDT('attachments').attachFile(fileNames[1])
+    sendMessage('Sending two files; one is image, and the other is JSON file.')
+
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+      cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
+        cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
+        cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
+      })
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Delete file')
+      cy.get('legend.label').should('contain', 'Are you sure you want to delete this file permanently?2.png')
+      cy.getByDT('submitPrompt').click()
+    })
+
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+      cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
+    })
 
     cy.giLogout()
   })

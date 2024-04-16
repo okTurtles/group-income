@@ -49,29 +49,38 @@ sbp('sbp/selectors/register', {
     let counter = 0
     let currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
     let prefix = '['
+    let ended = false
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     const stream = new Readable({
       read (): void {
+        if (ended) {
+          this.destroy()
+          return
+        }
         if (currentHash && counter < limit) {
           sbp('chelonia/db/getEntry', currentHash).then(async entry => {
             if (entry) {
-              this.push(`${prefix}"${strToB64(entry.serialize())}"`)
+              const currentPrefix = prefix
               prefix = ','
               counter++
               currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
+              this.push(`${currentPrefix}"${strToB64(entry.serialize())}"`)
             } else {
               this.push(counter > 0 ? ']' : '[]')
               this.push(null)
+              ended = true
             }
           }).catch(e => {
             console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e)
             this.push(counter > 0 ? ']' : '[]')
             this.push(null)
+            ended = true
           })
         } else {
           this.push(counter > 0 ? ']' : '[]')
           this.push(null)
+          ended = true
         }
       }
     })
@@ -113,7 +122,7 @@ export default async () => {
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readData, writeData } = await import(`./database-${persistence}.js`)
+    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
 
     await initStorage(options[persistence])
 
@@ -139,7 +148,7 @@ export default async () => {
       },
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
         checkKey(key)
-        if (key.startsWith('_private_immutable_')) {
+        if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
           if (existingValue !== undefined) {
             throw new Error('Cannot set already set immutable key')
@@ -147,6 +156,14 @@ export default async () => {
         }
         await writeData(key, value)
         cache.set(key, value)
+      },
+      'chelonia/db/delete': async function (key: string): Promise<void> {
+        checkKey(key)
+        if (key.startsWith('_private_immutable')) {
+          throw new Error('Cannot delete immutable key')
+        }
+        await deleteData(key)
+        cache.delete(key)
       }
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])

@@ -124,7 +124,7 @@ module.exports = (grunt) => {
       }
       grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
       // TODO: do this with JS instead of POSIX commands for Windows support
-      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
       console.log(stdout)
     } else {
       // Only run these in NODE_ENV=development so that production servers
@@ -390,6 +390,7 @@ module.exports = (grunt) => {
     exec: {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
+      gitconfig: 'git config --local include.path ../.gitconfig',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test files:
@@ -557,15 +558,14 @@ module.exports = (grunt) => {
     grunt.task.run(`_pin:${version}`)
   })
 
-  grunt.registerTask('default', ['dev'])
-
+  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
   grunt.registerTask('deploy', function () {
     if (!production) {
       console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
       process.exit(1)
     }
     grunt.task.run([
-      'checkDependencies', 'exec:eslint', 'exec:flow',
+      'exec:gitconfig', 'checkDependencies', 'exec:eslint', 'exec:flow',
       'exec:puglint', 'exec:stylelint', 'clean:dist',
       'copy:frontend', 'esbuild', 'copy:backend', 'copy:contracts'
     ])
@@ -578,8 +578,9 @@ module.exports = (grunt) => {
     grunt.task.run(['exec:chelDeployAll', 'backend:launch', 'keepalive'])
   })
 
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
-  grunt.registerTask('dist', ['build'])
+  grunt.registerTask('default', ['dev'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
   // - Our esbuild task

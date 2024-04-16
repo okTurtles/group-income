@@ -47,6 +47,10 @@ export const messageType: any = objectMaybeOf({
   attachments: arrayOf(objectOf({
     name: string,
     mimeType: string,
+    dimension: optional(objectOf({
+      width: number,
+      height: number
+    })),
     downloadData: objectOf({
       manifestCid: string,
       downloadParams: optional(object)
