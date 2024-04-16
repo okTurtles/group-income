@@ -4,10 +4,10 @@ modal-template(
   :a11yTitle='L("Chat attachment too large modal")'
 )
   template(slot='title')
-    span {{ warningMessages.title }}
+    i18n File too large
 
   .c-content
-    span {{ warningMessages.content }}
+    i18n(:args='{ sizeLimit: config.sizeLimit }') That file is too large and cannot be uploaded. The limit is {sizeLimit} MB
 
   .buttons.is-centered
     button.is-primary.c-dismiss-btn(
@@ -19,7 +19,6 @@ modal-template(
 
 <script>
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { L } from '@common/common.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT } from '@utils/constants.js'
 
 export default {
@@ -27,21 +26,11 @@ export default {
   components: {
     ModalTemplate
   },
-  computed: {
-    warningMessages () {
-      const template = {
-        'large': {
-          title: L('File too large'),
-          // TODO: replace '1 GB' below with a value delivered from the server once implemented.
-          content: L('That file is too large and cannot be uploaded. The limit is {sizeLimit} MB', { sizeLimit: CHAT_ATTACHMENT_SIZE_LIMIT })
-        },
-        'unsupported': {
-          title: L('Unsupported file type'),
-          content: L('The file you just attached is not supported and cannot be uploaded to the chat.')
-        }
+  data () {
+    return {
+      config: {
+        sizeLimit: CHAT_ATTACHMENT_SIZE_LIMIT
       }
-
-      return template[this.$route.query.type]
     }
   }
 }

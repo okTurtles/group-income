@@ -625,7 +625,7 @@ export default ({
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
-          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
         const attachment = {
