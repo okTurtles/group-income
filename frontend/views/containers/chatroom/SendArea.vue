@@ -16,17 +16,18 @@
       v-if='ephemeral.mention.options.length'
       ref='mentionWrapper'
     )
-      template(v-for='(user, index) in ephemeral.mention.options')
-        .c-mention-user(
-          ref='mention'
-          :class='{"is-selected": index === ephemeral.mention.index}'
-          @click.stop='onClickMention(index)'
-        )
-          avatar(:src='user.picture' size='xs')
-          .c-username {{user.username}}
-          .c-display-name(
-            v-if='user.displayName !== user.username'
-          ) ({{user.displayName}})
+      .c-mention-user(
+        v-for='(user, index) in ephemeral.mention.options'
+        :key='user.memberID'
+        ref='mention'
+        :class='{"is-selected": index === ephemeral.mention.index}'
+        @click.stop='onClickMention(index)'
+      )
+        avatar(:src='user.picture' size='xs')
+        .c-username {{user.username}}
+        .c-display-name(
+          v-if='user.displayName !== user.username'
+        ) ({{user.displayName}})
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
