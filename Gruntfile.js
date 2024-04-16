@@ -437,6 +437,9 @@ module.exports = (grunt) => {
       await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
     }
 
+    // NOTE: destination of deployment
+    await mkdir(`${distDir}/data`)
+
     done()
   })
 
