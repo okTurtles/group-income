@@ -18,6 +18,7 @@ const lazyContributions = lazyPage(() => import('@pages/Contributions.vue'))
 const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
 const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
+const lazyGlobalDashboard = lazyPage(() => import('@pages/GlobalDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
@@ -97,6 +98,16 @@ const router: any = new Router({
       name: 'GroupDashboard',
       meta: { title: L('Group Dashboard') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
+    },
+    {
+      path: '/global-dashboard/:id',
+      component: lazyGlobalDashboard,
+      name: 'GlobalDashboard',
+      meta: { title: L('Global Dashboard') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/global-dashboard', redirect: '/global-dashboard/news-and-updates'
     },
     {
       path: '/contributions',

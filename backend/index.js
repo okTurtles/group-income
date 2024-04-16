@@ -6,27 +6,69 @@ import '@sbp/okturtles.events'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import chalk from 'chalk'
+import pino from 'pino'
 
-global.logger = function (err) {
-  console.error(err)
-  err.stack && console.error(err.stack)
-  return err // routes.js is written in a way that depends on this returning the error
+// NOTE: enabling pretty print does add a slight bit of overhead to logging and therefore is not recommended in production
+// Learn more about the Pino API here: https://github.com/pinojs/pino/blob/master/docs/api.md
+const prettyPrint = process.env.NODE_ENV === 'development' || process.env.CI || process.env.CYPRESS_RECORD_KEY || process.env.PRETTY
+// support regular console.log('asdf', 'adsf', 'adsf') style logging that might be used by libraries
+// https://github.com/pinojs/pino/blob/master/docs/api.md#interpolationvalues-any
+function logMethod (args, method) {
+  const stringIdx = typeof args[0] === 'string' ? 0 : 1
+  if (args.length > 1) {
+    for (let i = stringIdx + 1; i < args.length; ++i) {
+      args[stringIdx] += typeof args[i] === 'string' ? ' %s' : ' %o'
+    }
+  }
+  method.apply(this, args)
+}
+const logger = pino(prettyPrint
+  ? {
+      hooks: { logMethod },
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true
+        }
+      }
+    }
+  : { hooks: { logMethod } })
+
+const logLevel = process.env.LOG_LEVEL || (prettyPrint ? 'debug' : 'info')
+if (Object.keys(logger.levels.values).includes(logLevel)) {
+  logger.level = logLevel
+} else {
+  logger.warn(`Unknown log level: ${logLevel}`)
 }
 
-const dontLog = { 'backend/server/broadcastEntry': true }
+global.logger = logger // $FlowExpectedError
+console.debug = logger.debug.bind(logger) // $FlowExpectedError
+console.info = logger.info.bind(logger) // $FlowExpectedError
+console.log = logger.info.bind(logger) // $FlowExpectedError
+console.warn = logger.warn.bind(logger) // $FlowExpectedError
+console.error = logger.error.bind(logger)
 
-function logSBP (domain, selector, data) {
+console.info('NODE_ENV =', process.env.NODE_ENV)
+
+const dontLog = { 'backend/server/broadcastEntry': true, 'backend/server/broadcastKV': true }
+
+function logSBP (domain, selector, data: Array<*>) {
   if (!dontLog[selector]) {
-    console.log(chalk.bold(`[sbp] ${selector}`), data)
+    if (selector === 'backend/server/handleEntry') {
+      console.debug(chalk.bold(`[sbp] ${selector}`), data[0].description())
+    } else {
+      console.debug(chalk.bold(`[sbp] ${selector}`), data)
+    }
   }
 }
 
 ;['backend'].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
+// any specific selectors outside of backend namespace to log
 ;[].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
 
 module.exports = (new Promise((resolve, reject) => {
   sbp('okTurtles.events/on', SERVER_RUNNING, function () {
-    console.log(chalk.bold('backend startup sequence complete.'))
+    console.info(chalk.bold('backend startup sequence complete.'))
     resolve()
   })
   // call this after we've registered listener for SERVER_RUNNING
@@ -35,17 +77,17 @@ module.exports = (new Promise((resolve, reject) => {
 
 const shutdownFn = function (message) {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (pubsub) {
-    console.log('message received in child, shutting down...', message)
+    console.info('message received in child, shutting down...', message)
     pubsub.on('close', async function () {
       try {
         await sbp('backend/server/stop')
-        console.log('Hapi server down')
+        console.info('Hapi server down')
         // await db.stop()
-        // console.log('database stopped')
+        // console.info('database stopped')
         process.send({}) // tell grunt we've successfully shutdown the server
         process.nextTick(() => process.exit(0)) // triple-check we quit :P
       } catch (err) {
-        console.error('Error during shutdown:', err)
+        console.error(err, 'Error during shutdown')
         process.exit(1)
       }
     })
@@ -63,12 +105,12 @@ process.on('SIGUSR2', shutdownFn)
 process.on('message', shutdownFn)
 
 process.on('uncaughtException', (err) => {
-  console.error('[server] Unhandled exception:', err, err.stack)
+  console.error(err, '[server] Unhandled exception')
   process.exit(1)
 })
 
 process.on('unhandledRejection', (reason, p) => {
-  console.error('[server] Unhandled promise rejection:', p, 'reason:', reason)
+  console.error(reason, '[server] Unhandled promise rejection:', reason)
   process.exit(1)
 })
 

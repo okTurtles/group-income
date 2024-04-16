@@ -111,7 +111,7 @@ async function startApp () {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
-          'namespace/lookup',
+          'namespace/lookup', 'namespace/lookupCached',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/cancelRemove', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
@@ -121,12 +121,13 @@ async function startApp () {
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/chatroom/leave',
           'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
-          'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
+          'gi.actions/group/join', 'gi.actions/group/joinChatRoom', 'gi.actions/group/removeUselessIdentityContracts',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
           'chelonia/contract/disconnect',
+          'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
           'chelonia/contract/hasKeysToPerformOperation'
         ],
@@ -226,6 +227,14 @@ async function startApp () {
             }
             default: {
               console.log(`[pubsub] Received data from channel ${contractID}:`, data)
+            }
+          }
+        },
+        [NOTIFICATION_TYPE.KV] ([key, data]) {
+          switch (key) {
+            case 'lastLoggedIn': {
+              const rootState = sbp('state/vuex/state')
+              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
             }
           }
         }

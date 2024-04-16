@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
-import { createCircularList } from '~/frontend/utils/circularList.js'
+import CircularList from '~/shared/CircularList.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -28,7 +28,7 @@ const setItem = (key: string, value: any): void => {
 }
 
 function createLogger (config: Object): Object {
-  const entries = createCircularList(config.maxEntries)
+  const entries = new CircularList(config.maxEntries)
   const methods = loggingLevels.reduce(
     (acc, name) => {
       acc[name] = (...args) => {
@@ -61,7 +61,16 @@ function captureLogEntry (type, ...args) {
     msg: args.map((arg) => {
       try {
         return JSON.parse(
-          JSON.stringify(arg instanceof Error ? (arg.stack ?? arg.message) : arg)
+          JSON.stringify(arg, (_, v) => {
+            if (v instanceof Error) {
+              return {
+                name: v.name,
+                message: v.message,
+                stack: v.stack
+              }
+            }
+            return v
+          })
         )
       } catch (e) {
         return `[captureLogs failed to stringify argument of type '${typeof arg}'. Err: ${e.message}]`

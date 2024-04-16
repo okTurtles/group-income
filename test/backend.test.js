@@ -15,7 +15,7 @@ import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { SNULL, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -121,12 +121,15 @@ describe('Full walkthrough', function () {
   }
 
   async function createIdentity (username, email, testFn) {
-    const CSK = keygen(SNULL)
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
+    const SAKid = keyId(SAK)
+    const SAKp = serializeKey(SAK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK].map(key => ({ key, transient: true }))
+      () => [CSK, SAK].map(key => ({ key, transient: true }))
     )
 
     // append random id to username to prevent conflict across runs
@@ -143,6 +146,15 @@ describe('Full walkthrough', function () {
           permissions: '*',
           allowedActions: '*',
           data: CSKp
+        },
+        {
+          id: SAKid,
+          name: '#sak',
+          purpose: ['sak'],
+          ringLevel: 0,
+          permissions: [],
+          allowedActions: [],
+          data: SAKp
         }
       ],
       data: {
@@ -154,12 +166,13 @@ describe('Full walkthrough', function () {
         // TODO when merging: decryptedValue no longer takes an argument (was decryptedValue(JSON.parse))
         prepublish: (message) => { message.decryptedValue() },
         postpublish: (message) => { testFn && testFn(message) }
-      }
+      },
+      namespaceRegistration: username
     })
     return msg
   }
   function createGroup (name: string, creator: any, hooks: Object = {}): Promise {
-    const CSK = keygen(SNULL)
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
 
@@ -224,7 +237,10 @@ describe('Full walkthrough', function () {
         }
       },
       signingKeyId: CSKid,
-      hooks
+      hooks,
+      publishOptions: {
+        billableContractID: creator.contractID()
+      }
     })
   }
   function createPaymentTo (from, to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
@@ -253,7 +269,12 @@ describe('Full walkthrough', function () {
       users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 
-    it('Should register Alice and Bob in the namespace', async function () {
+    /*
+    // The following test is redundant because now namespace registration happens
+    // when registering a contract instead of after it's registered using
+    // 'namespace/register'. If we have no further use for 'namespace/register',
+    // consider removing this entirely
+    it.skip('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
       let res = await sbp('namespace/register', alice.decryptedValue().data.attributes.username, alice.contractID())
       // NOTE: don't rely on the return values for 'namespace/register'
@@ -264,6 +285,7 @@ describe('Full walkthrough', function () {
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
     })
+    */
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
@@ -371,7 +393,15 @@ describe('Full walkthrough', function () {
           { type: 'application/vnd.shelter.manifest' }
         )
       )
-      await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
+      await fetch(`${process.env.API_URL}/file`,
+        {
+          method: 'POST',
+          headers: {
+            authorization: sbp('chelonia/shelterAuthorizationHeader', users.alice.contractID())
+          },
+          body: form
+        }
+      )
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(manifestCid))
     })

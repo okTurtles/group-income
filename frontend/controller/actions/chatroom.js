@@ -12,7 +12,7 @@ import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/chatroom/create': async function (params: GIRegParams) {
+  'gi.actions/chatroom/create': async function (params: GIRegParams, billableContractID: string) {
     try {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
@@ -71,8 +71,17 @@ export default (sbp('sbp/selectors/register', {
       const userCSKid = findKeyIdByName(rootState[userID], 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
+      const SAK = keygen(EDWARDS25519SHA512BATCH)
+      const SAKid = keyId(SAK)
+      const SAKp = serializeKey(SAK, false)
+      const SAKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(SAK, true))
+
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
+        publishOptions: {
+          billableContractID,
+          ...params.publishOptions
+        },
         signingKeyId: cskOpts.id,
         actionSigningKeyId: cskOpts.id,
         actionEncryptionKeyId: cekOpts.id,
@@ -81,7 +90,7 @@ export default (sbp('sbp/selectors/register', {
             id: cskOpts.id,
             name: 'csk',
             purpose: ['sig'],
-            ringLevel: 1,
+            ringLevel: 0,
             permissions: '*',
             allowedActions: '*',
             foreignKey: cskOpts.foreignKey,
@@ -92,7 +101,7 @@ export default (sbp('sbp/selectors/register', {
             id: cekOpts.id,
             name: 'cek',
             purpose: ['enc'],
-            ringLevel: 1,
+            ringLevel: 0,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
@@ -125,6 +134,20 @@ export default (sbp('sbp/selectors/register', {
                 }
               ]
             : []),
+          {
+            id: SAKid,
+            name: '#sak',
+            purpose: ['sak'],
+            ringLevel: 0,
+            permissions: [],
+            allowedActions: [],
+            meta: {
+              private: {
+                content: SAKs
+              }
+            },
+            data: SAKp
+          },
           // TODO: Find a way to have this wrapping be done by Chelonia directly
           encryptedOutgoingDataWithRawKey(CEK, {
             foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
@@ -192,6 +215,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
+  ...encryptedAction('gi.actions/chatroom/deleteAttachment', L('Failed to delete attachment of message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootState = sbp('state/vuex/state')
@@ -248,9 +272,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
-    const rootGetters = sbp('state/vuex/getters')
-    const userID = rootGetters.ourContactProfiles[params.data.memberID]?.contractID
-
+    const userID = params.data.memberID
     const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
     if (keyIds?.length) {

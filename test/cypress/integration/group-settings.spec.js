@@ -15,7 +15,7 @@ describe('Changing Group Settings', () => {
     cy.visit('/')
     cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName, { mincome: groupMincome, sharedValues })
+    cy.giCreateGroup(groupName, { mincome: groupMincome, sharedValues, bypassUI: true })
   })
 
   it('user1 changes the group minimum income (increase it $100)', () => {
@@ -47,7 +47,7 @@ describe('Changing Group Settings', () => {
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
       groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
-      cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.getByDT('avatar').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')

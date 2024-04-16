@@ -18,7 +18,9 @@ type HEADInfo = { HEAD: string; height: number }
 
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
-  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
+  // Also disallow characters not allowed by Windows:
+  // <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
+  if (/[\x00-\x1f\x7f\t\\/<>:"|?*]/.test(key)) { // eslint-disable-line no-control-regex
     throw new Error(`bad key: ${JSON.stringify(key)}`)
   }
 }
@@ -149,6 +151,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       await sbp('chelonia/db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
+      await sbp('chelonia/db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {

@@ -77,8 +77,7 @@
     }
   }
 
-  a {
-    color: $primary_0;
-    text-decoration: underline;
+  .link {
+    border-bottom-color: currentColor;
   }
 }

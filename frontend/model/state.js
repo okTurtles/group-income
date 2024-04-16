@@ -8,7 +8,7 @@ import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { omit, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -27,7 +27,8 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
-  contractSiginingKeys: Object.create(null)
+  contractSiginingKeys: Object.create(null),
+  lastLoggedIn: {} // Group last logged in information
 }
 
 if (window.matchMedia) {
@@ -36,6 +37,12 @@ if (window.matchMedia) {
       store.commit('setTheme', 'system')
     }
   })
+}
+
+const checkedUsername = (state: Object, username: string, userID: string) => {
+  if (username && state.namespaceLookups[username] === userID) {
+    return username
+  }
 }
 
 const reactiveDate = Vue.observable({ date: new Date() })
@@ -152,6 +159,9 @@ const getters = {
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
   },
+  currentGroupLastLoggedIn (state) {
+    return state.lastLoggedIn[state.currentGroupId] || {}
+  },
   // NOTE: since this getter is written using `getters.ourUsername`, which is based
   //       on vuexState.loggedIn (a user preference), we cannot use this getter
   //       into group.js
@@ -227,12 +237,12 @@ const getters = {
     }
   },
   userDisplayNameFromID (state, getters) {
-    return (user) => {
-      if (user === getters.ourIdentityContractId) {
+    return (userID) => {
+      if (userID === getters.ourIdentityContractId) {
         return getters.ourUserDisplayName
       }
-      const profile = getters.ourContactProfilesById[user] || {}
-      return profile.displayName || profile.username || user
+      const profile = getters.ourContactProfilesById[userID] || {}
+      return profile.displayName || profile.username || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
@@ -392,6 +402,22 @@ const getters = {
       .filter(contractID => contracts[contractID].type === 'gi.contracts/group')
       .map(contractID => ({ groupName: state[contractID].settings?.groupName || L('Pending'), contractID }))
   },
+  profilesByGroup (state, getters) {
+    return groupID => {
+      const profiles = {}
+      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+        return profiles
+      }
+      const groupProfiles = state[groupID].profiles || {}
+      for (const member in groupProfiles) {
+        const profile = groupProfiles[member]
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[member] = profile
+        }
+      }
+      return profiles
+    }
+  },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
     if (!profiles || !profiles[getters.ourIdentityContractId]) return []
@@ -445,14 +471,19 @@ const getters = {
       return getters.ourContactProfilesById[memberID]
     }
   },
-  ourContactProfiles (state, getters) {
+  ourContactProfilesByUsername (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
-          profiles[attributes.username] = { ...attributes, contractID }
+          const username = checkedUsername(state, attributes.username, contractID)
+          profiles[attributes.username] = {
+            ...attributes,
+            username,
+            contractID
+          }
         }
       })
     return profiles
@@ -464,10 +495,26 @@ const getters = {
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
-          profiles[contractID] = { ...attributes, contractID }
+          const username = checkedUsername(state, attributes.username, contractID)
+          profiles[contractID] = {
+            ...attributes,
+            username,
+            contractID
+          }
         }
       })
     return profiles
+  },
+  currentGroupContactProfilesById (state, getters) {
+    const currentGroupProfileIds = Object.keys(getters.currentGroupState.profiles || {})
+    const filtered = {}
+
+    for (const identityContractID in getters.ourContactProfilesById) {
+      if (currentGroupProfileIds.includes(identityContractID)) {
+        filtered[identityContractID] = getters.ourContactProfilesById[identityContractID]
+      }
+    }
+    return filtered
   },
   ourContactsById (state, getters) {
     return Object.keys(getters.ourContactProfilesById)
@@ -477,11 +524,11 @@ const getters = {
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
-  ourContacts (state, getters) {
-    return Object.keys(getters.ourContactProfiles)
+  ourContactsByUsername (state, getters) {
+    return Object.keys(getters.ourContactProfilesByUsername)
       .sort((usernameA, usernameB) => {
-        const nameA = getters.ourContactProfiles[usernameA].displayName || usernameA
-        const nameB = getters.ourContactProfiles[usernameB].displayName || usernameB
+        const nameA = getters.ourContactProfilesByUsername[usernameA].displayName || usernameA
+        const nameB = getters.ourContactProfilesByUsername[usernameB].displayName || usernameB
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   }
@@ -535,7 +582,7 @@ if (process.env.NODE_ENV === 'development') {
 // See the "IMPORTANT" comment above where the Vuex getters are defined for details.
 // handle contracts being registered
 const omitGetters = {
-  'gi.contracts/group': ['currentGroupState'],
+  'gi.contracts/group': ['currentGroupState', 'currentGroupLastLoggedIn'],
   'gi.contracts/identity': ['currentIdentityState'],
   'gi.contracts/chatroom': ['currentChatRoomState']
 }

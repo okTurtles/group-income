@@ -1,5 +1,20 @@
 export const toPercent = (decimal: number): number => Math.floor(decimal * 100)
 
+export const getFileExtension = (
+  name: string,
+  toUppercase: boolean = false
+): string => {
+  const lastDotIndex = name.lastIndexOf('.')
+  const ext = lastDotIndex === -1 ? '' : name.substring(lastDotIndex + 1)
+  return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
+}
+
+export const getFileType = (
+  mimeType: string = ''
+): string => {
+  return mimeType.match('image/') ? 'image' : 'non-image'
+}
+
 /**
  * this function filters `list` by `keyword`
  * `list` should be an array of objects and strings

@@ -41,6 +41,7 @@ const packageJSON = require('./package.json')
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
+  MAX_EVENTS_AFTER = '',
   NODE_ENV = 'development',
   EXPOSE_SBP = '',
   ENABLE_UNSAFE_NULL_CRYPTO = 'false'
@@ -117,12 +118,12 @@ module.exports = (grunt) => {
         grunt.log.writeln(chalk.underline(`Key file ${keyFile} exists, using that.`))
       } else {
         grunt.log.writeln(chalk.underline(`\nRunning 'chel keygen --pubout ${pubKeyFile} --out ${keyFile}'`))
-        const { stdout } = await execWithErrMsg(`chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
+        const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
         console.log(stdout)
       }
       grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
       // TODO: do this with JS instead of POSIX commands for Windows support
-      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
       console.log(stdout)
     } else {
       // Only run these in NODE_ENV=development so that production servers
@@ -217,6 +218,7 @@ module.exports = (grunt) => {
         'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
         'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`
@@ -381,6 +383,7 @@ module.exports = (grunt) => {
     exec: {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
+      gitconfig: 'git config --local include.path ../.gitconfig',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test files:
@@ -389,7 +392,7 @@ module.exports = (grunt) => {
       // The `--require` flag ensures custom Babel support in our test files.
       test: {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: { ...process.env, ENABLE_UNSAFE_NULL_CRYPTO: 'true' } }
+        options: { env: process.env }
       },
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
@@ -417,7 +420,7 @@ module.exports = (grunt) => {
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork(backendIndex, process.argv, {
-        env: process.env,
+        env: { NODE_ENV, ...process.env },
         execArgv: ['--require', '@babel/register']
       })
       child.on('error', (err) => {
@@ -521,8 +524,8 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
-  grunt.registerTask('dist', ['build'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
   // - Our esbuild task
@@ -697,7 +700,7 @@ module.exports = (grunt) => {
   })
 
   process.on('unhandledRejection', (reason, p) => {
-    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason)
+    console.error('[gruntfile] Unhandled promise rejection:', p, 'reason:', reason.message, reason.stack)
     process.exit(1)
   })
 }

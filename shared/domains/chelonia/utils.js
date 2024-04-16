@@ -1,15 +1,18 @@
 import sbp from '@sbp/sbp'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { b64ToStr } from '~/shared/functions.js'
 import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, serializeKey } from './crypto.js'
+import { deserializeKey, serializeKey, sign, verifySignature } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
-import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import { ChelErrorWarning } from './errors.js'
+import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
+
+const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name && k._notAfterHeight == null)?.id
 
@@ -110,7 +113,7 @@ const validateActionPermissions = (signingKey: GIKey, state: Object, opT: string
   return true
 }
 
-export const validateKeyPermissions = (state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
+export const validateKeyPermissions = (config: Object, state: Object, signingKeyId: string, opT: string, opV: GIOpValue, direction?: string): boolean => {
   const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
   if (
     !signingKey ||
@@ -135,6 +138,7 @@ export const validateKeyPermissions = (state: Object, signingKeyId: string, opT:
   }
 
   if (
+    !config.skipActionProcessing &&
     opT === GIMessage.OP_ACTION_ENCRYPTED &&
     !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf(), direction)
   ) {
@@ -278,18 +282,33 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
         key.meta.private.content &&
         !sbp('chelonia/haveSecretKey', key.id, !key.meta.private.transient)
       ) {
-        try {
-          decryptedKey = key.meta.private.content.valueOf()
+        const decryptedKeyResult = unwrapMaybeEncryptedData(key.meta.private.content)
+        // Ignore data that couldn't be decrypted
+        if (decryptedKeyResult) {
+        // Data aren't encrypted
+          if (decryptedKeyResult.encryptionKeyId == null) {
+            throw new Error('Expected encrypted data but got unencrypted data for key with ID: ' + key.id)
+          }
+          decryptedKey = decryptedKeyResult.data
           decryptedKeys.push([key.id, decryptedKey])
           storeSecretKey(key, decryptedKey)
-        } catch (e) {
-          console.warn(`Secret key decryption error '${e.message || e}':`, e)
-          // Ricardo feels this is an ambiguous situation, however if we rethrow it will
-          // render the contract unusable because it will undo all our changes to the state,
-          // and it's possible that an error here shouldn't necessarily break the entire
-          // contract. For example, in some situations we might read a contract as
-          // read-only and not have the key to write to it.
         }
+      }
+    }
+
+    // Is this a #sak
+    if (key.name === '#sak') {
+      if (data.encryptionKeyId) {
+        throw new Error('#sak may not be encrypted')
+      }
+      if (key.permissions && (!Array.isArray(key.permissions) || key.permissions.length !== 0)) {
+        throw new Error('#sak may not have permissions')
+      }
+      if (!Array.isArray(key.purpose) || key.purpose.length !== 1 || key.purpose[0] !== 'sak') {
+        throw new Error("#sak must have exactly one purpose: 'sak'")
+      }
+      if (key.ringLevel !== 0) {
+        throw new Error('#sak must have ringLevel 0')
       }
     }
 
@@ -529,4 +548,232 @@ export const getContractIDfromKeyId = (contractID: string, signingKeyId: ?string
   return signingKeyId && state._vm.authorizedKeys[signingKeyId].foreignKey
     ? new URL(state._vm.authorizedKeys[signingKeyId].foreignKey).pathname
     : contractID
+}
+
+export function eventsAfter (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string): ReadableStream {
+  const fetchEventsStreamReader = async () => {
+    requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
+    const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`, { signal })
+    if (!eventsResponse.ok) throw new Error('Unexpected status code')
+    if (!eventsResponse.body) throw new Error('Missing body')
+    latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
+    if (!Number.isSafeInteger(latestHeight)) throw new Error('Invalid latest height')
+    requestCount++
+    // $FlowFixMe[incompatible-use]
+    return eventsResponse.body.getReader()
+  }
+  if (!Number.isSafeInteger(sinceHeight) || sinceHeight < 0) {
+    throw new TypeError('Invalid since height value. Expected positive integer.')
+  }
+  const signal = this.abortController.signal
+  let requestCount = 0
+  let remainingEvents = limit ?? Number.POSITIVE_INFINITY
+  let eventsStreamReader
+  let latestHeight
+  let state: 'fetch' | 'read-eos' | 'read-new-response' | 'read' | 'events' = 'fetch'
+  let requestLimit: number
+  let count: number
+  let buffer: string = ''
+  let currentEvent: string
+  // return ReadableStream with a custom pull function to handle streamed data
+  return new ReadableStream({
+    // The pull function is called whenever the internal buffer of the stream
+    // becomes empty and needs more data.
+    async pull (controller) {
+      for (;;) {
+        // Handle different states of the stream reading process.
+        switch (state) {
+          // When in 'fetch' state, initiate a new fetch request to obtain a
+          // stream reader for events.
+          case 'fetch': {
+            eventsStreamReader = await fetchEventsStreamReader()
+            // Transition to reading the new response and reset the processed
+            // events counter
+            state = 'read-new-response'
+            count = 0
+            break
+          }
+          case 'read-eos': // End of stream case
+          case 'read-new-response': // Just started reading a new response
+          case 'read': { // Reading from the response stream
+            const { done, value } = await eventsStreamReader.read()
+            // If done, determine if the stream should close or fetch more
+            // data by making a new request
+            if (done) {
+              // No more events to process or reached the latest event
+              if (remainingEvents === 0 || sinceHeight === latestHeight) {
+                controller.close()
+                return
+              } else if (state === 'read-new-response' || buffer) {
+                // If done prematurely, throw an error
+                controller.error(new Error('Invalid response: done too early'))
+                return
+              } else {
+                // If there are still events to fetch, switch state to fetch
+                state = 'fetch'
+                break
+              }
+            }
+            if (!value) {
+              // If there's no value (e.g., empty response), throw an error
+              controller.error(new Error('Invalid response: missing body'))
+              return
+            }
+            // Concatenate new data to the buffer, trimming any
+            // leading/trailing whitespace (the response is a JSON array of
+            // base64-encoded data, meaning that whitespace is not significant)
+            buffer = buffer + Buffer.from(value).toString().trim()
+            // If there was only whitespace, try reading again
+            if (!buffer) break
+            if (state === 'read-new-response') {
+              // Response is in JSON format, so we look for the start of an
+              // array (`[`)
+              if (buffer[0] !== '[') {
+                controller.error(new Error('Invalid response: no array start delimiter'))
+                return
+              }
+              // Trim the array start delimiter from the buffer
+              buffer = buffer.slice(1)
+            } else if (state === 'read-eos') {
+              // If in 'read-eos' state and still reading data, it's an error
+              // because the response isn't valid JSON (there should be
+              // nothing other than whitespace after `]`)
+              controller.error(new Error('Invalid data at the end of response'))
+              return
+            }
+            // If not handling new response or end-of-stream, switch to
+            // processing events
+            state = 'events'
+            break
+          }
+          case 'events': {
+            // Process events by looking for a comma or closing bracket that
+            // indicates the end of an event
+            const nextIdx = buffer.search(/(?<=\s*)[,\]]/)
+            // If the end of the event isn't found, go back to reading more
+            // data
+            if (nextIdx < 0) {
+              state = 'read'
+              break
+            }
+            let enqueued = false
+            try {
+              // Extract the current event's value and trim whitespace
+              const eventValue = buffer.slice(0, nextIdx).trim()
+              if (eventValue) {
+                // Check if the event limit is reached; if so, throw an error
+                if (count === requestLimit) {
+                  controller.error(new Error('Received too many events'))
+                  return
+                }
+                currentEvent = b64ToStr(JSON.parse(eventValue))
+                if (count === 0) {
+                  const hash = GIMessage.deserializeHEAD(currentEvent).hash
+                  const height = GIMessage.deserializeHEAD(currentEvent).head.height
+                  if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
+                    controller.error(new Error('hash() !== since'))
+                    return
+                  }
+                }
+                // If this is the first event in a second or later request,
+                // drop the event because it's already been included in
+                // a previous response
+                if (count++ !== 0 || requestCount !== 0) {
+                  controller.enqueue(currentEvent)
+                  enqueued = true
+                  remainingEvents--
+                }
+              }
+              // If the stream is finished (indicated by a closing bracket),
+              // update `since` (to make the next request if needed) and
+              // switch to 'read-eos'.
+              if (buffer[nextIdx] === ']') {
+                if (currentEvent) {
+                  const deserialized = GIMessage.deserializeHEAD(currentEvent)
+                  sinceHeight = deserialized.head.height
+                  sinceHash = deserialized.hash
+                }
+                state = 'read-eos'
+                // This should be an empty string now
+                buffer = buffer.slice(nextIdx + 1).trim()
+              } else if (currentEvent) {
+                // Otherwise, move the buffer pointer to the next event
+                buffer = buffer.slice(nextIdx + 1).trimStart()
+              } else {
+                // If the end delimiter (`]`) is missing, throw an error
+                controller.error(new Error('Missing end delimiter'))
+                return
+              }
+              // If an event was successfully enqueued, exit the loop to wait
+              // for the next pull request
+              if (enqueued) {
+                return
+              }
+            } catch (e) {
+              console.error('[chelonia] Error during event parsing', e)
+              controller.error(e)
+              return
+            }
+            break
+          }
+        }
+      }
+    }
+  })
+}
+
+export function buildShelterAuthorizationHeader (contractID: string, state?: Object): string {
+  if (!state) state = sbp(this.config.stateSelector)[contractID]
+  const SAKid = findKeyIdByName(state, '#sak')
+  if (!SAKid) {
+    throw new Error(`Missing #sak in ${contractID}`)
+  }
+  const SAK = this.transientSecretKeys[SAKid]
+  if (!SAK) {
+    throw new Error(`Missing secret #sak (${SAKid}) in ${contractID}`)
+  }
+  const deserializedSAK = typeof SAK === 'string' ? deserializeKey(SAK) : SAK
+
+  const nonceBytes = new Uint8Array(15)
+  // $FlowFixMe[cannot-resolve-name]
+  globalThis.crypto.getRandomValues(nonceBytes)
+
+  // <contractID> <UNIX time>.<nonce>
+  const data = `${contractID} ${sbp('chelonia/time')}.${Buffer.from(nonceBytes).toString('base64')}`
+
+  // shelter <contractID> <UNIX time>.<nonce>.<signature>
+  return `shelter ${data}.${sign(deserializedSAK, data)}`
+}
+
+export function verifyShelterAuthorizationHeader (authorization: string, rootState?: Object): string {
+  const regex = /^shelter (([a-zA-Z0-9]+) ([0-9]+)\.([a-zA-Z0-9+/=]{20}))\.([a-zA-Z0-9+/=]+)$/i
+  if (authorization.length > 1024) {
+    throw new Error('Authorization header too long')
+  }
+  const matches = authorization.match(regex)
+  if (!matches) {
+    throw new Error('Unable to parse shelter authorization header')
+  }
+  // TODO: Remember nonces and reject already used ones
+  const [, data, contractID, timestamp, , signature] = matches
+  if (Math.abs(parseInt(timestamp) - (Date.now() / 1e3 | 0)) > 2) {
+    throw new Error('Invalid signature time range')
+  }
+  if (!rootState) rootState = sbp('chelonia/rootState')
+  if (!has(rootState, contractID)) {
+    throw new Error(`Contract ${contractID} from shelter authorization header not found`)
+  }
+  const SAKid = findKeyIdByName(rootState[contractID], '#sak')
+  if (!SAKid) {
+    throw new Error(`Missing #sak in ${contractID}`)
+  }
+  const SAK = rootState[contractID]._vm.authorizedKeys[SAKid].data
+  if (!SAK) {
+    throw new Error(`Missing secret #sak (${SAKid}) in ${contractID}`)
+  }
+  const deserializedSAK = deserializeKey(SAK)
+
+  verifySignature(deserializedSAK, data, signature)
+
+  return contractID
 }

@@ -120,10 +120,12 @@ export default ({
       'ourContactProfilesById',
       'ourIdentityContractId',
       'ourUnreadMessages',
-      'ourContactsById'
+      'currentGroupContactProfilesById'
     ]),
     ourNewDMContacts () {
-      return this.ourContactsById
+      const currentGroupUserIds = Object.keys(this.currentGroupContactProfilesById)
+
+      return currentGroupUserIds
         .filter(userID => {
           if (userID === this.ourIdentityContractId) {
             return false
@@ -131,7 +133,7 @@ export default ({
           const chatRoomId = this.ourGroupDirectMessageFromUserIds(userID)
           return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
         })
-        .map(userID => this.ourContactProfilesById[userID])
+        .map(userID => this.currentGroupContactProfilesById[userID])
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)

@@ -5,6 +5,8 @@ import encrypt from '@exact-realty/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
+import { buildShelterAuthorizationHeader } from './utils.js'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
@@ -48,11 +50,12 @@ const streamToUint8Array = async (s: ReadableStream) => {
 // Check for streaming support, as of today (Feb 2024) only Blink-
 // based browsers support this (i.e., Firefox and Safari don't).
 const ArrayBufferToUint8ArrayStream = async (connectionURL: string, s: ReadableStream) => {
-  // Even if the browser supports streams, the server must support HTTP/2
+  // Even if the browser supports streams, some browsers (e.g., Chrome) also
+  // require that the server support HTTP/2
   if (supportsRequestStreams === true) {
     await fetch(`${connectionURL}/streams-test`, {
       method: 'POST',
-      body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')) } }),
+      body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')); c.close() } }),
       duplex: 'half'
     }).then((r) => {
       if (!r.ok) throw new Error('Unexpected response')
@@ -256,7 +259,7 @@ const cipherHandlers = {
 }
 
 export default (sbp('sbp/selectors/register', {
-  'chelonia/fileUpload': async function (chunks: Blob | Blob[], manifestOptions: Object) {
+  'chelonia/fileUpload': async function (chunks: Blob | Blob[], manifestOptions: Object, { billableContractID }: { billableContractID: string } = {}) {
     if (!Array.isArray(chunks)) chunks = [chunks]
     const chunkDescriptors: Promise<[number, string]>[] = []
     const cipherHandler = await cipherHandlers[manifestOptions.cipher]?.upload?.(this, manifestOptions)
@@ -318,17 +321,25 @@ export default (sbp('sbp/selectors/register', {
       method: 'POST',
       signal: this.abortController.signal,
       body: await ArrayBufferToUint8ArrayStream(this.config.connectionURL, stream),
-      headers: new Headers([['content-type', `multipart/form-data; boundary=${boundary}`]]),
+      headers: new Headers([
+        ...(billableContractID ? [['authorization', buildShelterAuthorizationHeader.call(this, billableContractID)]] : []),
+        ['content-type', `multipart/form-data; boundary=${boundary}`]
+      ]),
       duplex: 'half'
     })
 
     if (!uploadResponse.ok) throw new Error('Error uploading file')
     return {
-      manifestCid: await uploadResponse.text(),
-      downloadParams: cipherHandler.downloadParams
+      download: {
+        manifestCid: await uploadResponse.text(),
+        downloadParams: cipherHandler.downloadParams
+      },
+      delete: uploadResponse.headers.get('shelter-deletion-token')
     }
   },
-  'chelonia/fileDownload': async function ({ manifestCid, downloadParams }: { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
+  'chelonia/fileDownload': async function (downloadOptions: () => { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
+    // Using a function to prevent accidental logging
+    const { manifestCid, downloadParams } = downloadOptions()
     const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal
@@ -352,5 +363,37 @@ export default (sbp('sbp/selectors/register', {
     if (!cipherHandler) throw new Error('Unsupported cipher')
 
     return cipherHandler.payloadHandler()
+  },
+  'chelonia/fileDelete': async function (manifestCid: string | string[], credentials: { [manifestCid: string]: { token: ?string, billableContractID: ?string } } = {}) {
+    if (!manifestCid) {
+      throw new TypeError('A manifest CID must be provided')
+    }
+    if (!Array.isArray(manifestCid)) manifestCid = [manifestCid]
+    // Validation
+    manifestCid.forEach((cid) => {
+      const hasCredential = has(credentials, cid)
+      const hasToken = has(credentials[cid], 'token')
+      const hasBillableContractID = has(credentials[cid], 'billableContractID')
+      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
+        throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
+      }
+    })
+    return await Promise.all(manifestCid.map(async (cid) => {
+      const { token, billableContractID } = credentials[cid]
+      const response = await fetch(`${this.config.connectionURL}/deleteFile/${cid}`, {
+        method: 'POST',
+        signal: this.abortController.signal,
+        headers: new Headers([
+          ['authorization',
+            token
+              ? `bearer ${token}`
+              // $FlowFixMe[incompatible-call]
+              : buildShelterAuthorizationHeader.call(this, billableContractID)]
+        ])
+      })
+      if (!response.ok) {
+        throw new Error(`Unable to delete file ${cid}`)
+      }
+    }))
   }
 }): string[])

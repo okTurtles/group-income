@@ -5,7 +5,6 @@ import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
-import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
@@ -19,7 +18,8 @@ import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import './files.js'
-import { findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
+import './time-sync.js'
+import { buildShelterAuthorizationHeader, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -31,6 +31,7 @@ export type ChelRegParams = {
   actionSigningKeyId: string;
   actionEncryptionKeyId: ?string;
   keys: (GIKey | EncryptedData<GIKey>)[];
+  namespaceRegistration: ?string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     postpublishContract?: (GIMessage) => void;
@@ -40,7 +41,7 @@ export type ChelRegParams = {
     postpublish?: (GIMessage) => void;
     onprocessed?: (GIMessage) => void;
   };
-  publishOptions?: { maxAttempts: number };
+  publishOptions?: { headers: ?Object, billableContractID: ?string, maxAttempts: number };
 }
 
 export type ChelActionParams = {
@@ -205,8 +206,19 @@ export default (sbp('sbp/selectors/register', {
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
+      // acceptAllMessages disables checking whether we are expecting a message
+      // or not for processing
+      acceptAllMessages: false,
       skipActionProcessing: false,
       skipSideEffects: false,
+      // Strict processing will treat all processing errors as unrecoverable
+      // This is useful, e.g., in the server, to prevent invalid messages from
+      // being added to the database
+      strictProcessing: false,
+      // Strict ordering will throw on past events with ChelErrorAlreadyProcessed
+      // Similarly, future events will not be reingested and will throw
+      // with ChelErrorDBBadPreviousHEAD
+      strictOrdering: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
         reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets
@@ -317,7 +329,18 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/reset': async function (postCleanupFn) {
+    sbp('chelonia/private/stopClockSync')
     // wait for any pending sync operations to finish before saving
+    Object.keys(this.postSyncOperations).forEach(cID => {
+      sbp('chelonia/private/enqueuePostSyncOps', cID)
+    })
+    await sbp('chelonia/contract/waitPublish')
+    await sbp('chelonia/contract/wait')
+    // do this again to catch operations that are the result of side-effects
+    // or post sync ops
+    Object.keys(this.postSyncOperations).forEach(cID => {
+      sbp('chelonia/private/enqueuePostSyncOps', cID)
+    })
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
     await postCleanupFn?.()
@@ -338,6 +361,7 @@ export default (sbp('sbp/selectors/register', {
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('chelonia/private/startClockSync')
   },
   'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
     const rootState = sbp(this.config.stateSelector)
@@ -491,6 +515,9 @@ export default (sbp('sbp/selectors/register', {
     const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel, allowedActions)
     return keyId
   },
+  'chelonia/shelterAuthorizationHeader' (contractID: string) {
+    return buildShelterAuthorizationHeader.call(this, contractID)
+  },
   // The purpose of the 'chelonia/crypto/*' selectors is so that they can be called
   // from contracts without including the crypto code (i.e., importing crypto.js)
   // This function takes a function as a parameter that returns a string
@@ -512,14 +539,16 @@ export default (sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
+    sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
+      // Map message handlers to transparently handle encryption and signatures
       messageHandlers: {
         ...(Object.fromEntries(
-          Object.entries(options.messageHandlers || {}).map(([k, v]) => [
-            k,
-            k === NOTIFICATION_TYPE.PUB
-              ? (msg) => {
+          Object.entries(options.messageHandlers || {}).map(([k, v]) => {
+            switch (k) {
+              case NOTIFICATION_TYPE.PUB:
+                return [k, (msg) => {
                   if (!msg.channelID) {
                     console.info('[chelonia] Discarding pub event without channelID')
                     return
@@ -528,23 +557,39 @@ export default (sbp('sbp/selectors/register', {
                     console.info(`[chelonia] Discarding pub event for ${msg.channelID} because it's not in the current subscriptionSet`)
                     return
                   }
-                  const rootState = sbp(this.config.stateSelector)
-                  if (!rootState.contracts[msg.channelID]?.type) {
-                    console.warn(`[chelonia] Discarding pub event for ${msg.channelID} because its contract name could not be determined`)
-                    return
-                  }
                   try {
                     (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
-                      contractName: rootState.contracts[msg.channelID].type,
                       serializedData: msg.data
                     }))
                   } catch (e) {
                     console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
                   }
-                }
-              : v
-          ])
+                }]
+              case NOTIFICATION_TYPE.KV:
+                return [k, (msg) => {
+                  if (!msg.channelID || !msg.key) {
+                    console.info('[chelonia] Discarding kv event without channelID or key')
+                    return
+                  }
+                  if (!this.subscriptionSet.has(msg.channelID)) {
+                    console.info(`[chelonia] Discarding kv event for ${msg.channelID} because it's not in the current subscriptionSet`)
+                    return
+                  }
+                  try {
+                    (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
+                      contractID: msg.channelID,
+                      meta: msg.key,
+                      serializedData: JSON.parse(Buffer.from(msg.data).toString())
+                    })])
+                  } catch (e) {
+                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
+                  }
+                }]
+              default:
+                return [k, v]
+            }
+          })
         )),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
@@ -815,45 +860,52 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
-  // TODO: r.body is a stream.Transform, should we use a callback to process
-  //       the events one-by-one instead of converting to giant json object?
-  //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
-  },
+  'chelonia/out/eventsAfter': eventsAfter,
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
-  'chelonia/out/eventsBefore': async function (before: string, limit: number) {
+  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
-      return
     }
-
-    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
+    const offset = Math.max(0, beforeHeight - limit + 1)
+    const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
+    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit)
   },
-  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0) {
+  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0) {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
     }
-
-    const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
+    let reader: ReadableStreamReader
+    return new ReadableStream({
+      start: async (controller) => {
+        const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        const deserializedHEAD = GIMessage.deserializeHEAD(first)
+        if (deserializedHEAD.contractID !== contractID) {
+          controller.error(new Error('Mismatched contract ID'))
+          return
+        }
+        const startOffset = Math.max(0, deserializedHEAD.head.height - offset)
+        const limit = endHeight - startOffset + 1
+        if (limit < 1) {
+          controller.close()
+          return
+        }
+        reader = sbp('chelonia/out/eventsAfter', contractID, startOffset, limit).getReader()
+      },
+      async pull (controller) {
+        const { done, value } = await reader.read()
+        if (done) {
+          controller.close()
+        } else {
+          controller.enqueue(value)
+        }
+      }
+    })
   },
   'chelonia/rootState': function () { return sbp(this.config.stateSelector) },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
@@ -863,22 +915,13 @@ export default (sbp('sbp/selectors/register', {
     if (!options.forceSync && rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
-    const events = await sbp('chelonia/private/out/eventsAfter', contractID, contractID)
     let state = Object.create(null)
+    const eventsStream = sbp('chelonia/out/eventsAfter', contractID, 0, undefined, contractID)
+    const eventsStreamReader = eventsStream.getReader()
     if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
-    // fast-path
-    try {
-      for (const event of events) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
-      }
-      return state
-    } catch (e) {
-      console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`, e.stack)
-      state = Object.create(null)
-      if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
-    }
-    // more error-tolerant but slower due to cloning state on each message
-    for (const event of events) {
+    for (;;) {
+      const { value: event, done } = await eventsStreamReader.read()
+      if (done) return state
       const stateCopy = cloneDeep(state)
       try {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
@@ -888,11 +931,9 @@ export default (sbp('sbp/selectors/register', {
         state = stateCopy
       }
     }
-    return state
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
-    console.log('Register contract', { params })
     const { contractName, keys, hooks, publishOptions, signingKeyId, actionSigningKeyId, actionEncryptionKeyId } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const contractInfo = this.manifestToContract[manifestHash]
@@ -912,7 +953,15 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash
     })
     const contractID = contractMsg.hash()
-    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, hooks && {
+    await sbp('chelonia/private/out/publishEvent', contractMsg, (params.namespaceRegistration
+      ? {
+          ...publishOptions,
+          headers: {
+            ...publishOptions?.headers,
+            'shelter-namespace-registration': params.namespaceRegistration
+          }
+        }
+      : publishOptions), hooks && {
       prepublish: hooks.prepublishContract,
       postpublish: hooks.postpublishContract
     })
@@ -1141,7 +1190,8 @@ export default (sbp('sbp/selectors/register', {
         replyWith: signedOutgoingData(originatingContractID, innerSigningKeyId, {
           encryptionKeyId,
           responseKey: encryptedOutgoingData(contractID, innerEncryptionKeyId, keyRequestReplyKeyS)
-        }, this.transientSecretKeys)
+        }, this.transientSecretKeys),
+        request: '*'
       }: GIOpKeyRequest)
       let msg = GIMessage.createV1_0({
         contractID,
@@ -1223,7 +1273,84 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   },
-  'chelonia/out/encryptedOrUnencryptedPubMessage': outputEncryptedOrUnencryptedPubMessage
+  'chelonia/out/encryptedOrUnencryptedPubMessage': function ({
+    contractID,
+    innerSigningKeyId,
+    encryptionKeyId,
+    signingKeyId,
+    data
+  }: {
+    contractID: string,
+    innerSigningKeyId: ?string,
+    encryptionKeyId: ?string,
+    signingKeyId: string,
+    data: Object
+  }) {
+    const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      innerSigningKeyId,
+      encryptionKeyId,
+      signingKeyId,
+      data
+    })
+    this.pubsub.pub(contractID, serializedData)
+  },
+  'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+    innerSigningKeyId,
+    encryptionKeyId,
+    signingKeyId
+  }: {
+    innerSigningKeyId: ?string,
+    encryptionKeyId: ?string,
+    signingKeyId: string
+  }) {
+    const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      innerSigningKeyId,
+      encryptionKeyId,
+      signingKeyId,
+      data,
+      meta: key
+    })
+    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+      headers: new Headers([[
+        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+      ]]),
+      method: 'POST',
+      body: JSON.stringify(serializedData),
+      signal: this.abortController.signal
+    })
+    if (!response.ok) {
+      throw new Error('Invalid response status: ' + response.status)
+    }
+  },
+  'chelonia/kv/get': async function (contractID: string, key: string) {
+    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+      headers: new Headers([[
+        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+      ]]),
+      signal: this.abortController.signal
+    })
+    if (response.status === 404) {
+      return null
+    }
+    if (!response.ok) {
+      throw new Error('Invalid response status: ' + response.status)
+    }
+    const data = await response.json()
+    return parseEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      serializedData: data,
+      meta: key
+    })
+  },
+  'chelonia/parseEncryptedOrUnencryptedDetachedMessage': function ({ contractID, serializedData, meta }: { contractID: string, serializedData: Object, meta?: ?string }) {
+    return parseEncryptedOrUnencryptedMessage.call(this, {
+      contractID,
+      serializedData,
+      meta
+    })
+  }
 }): string[])
 
 function contractNameFromAction (action: string): string {
@@ -1233,24 +1360,22 @@ function contractNameFromAction (action: string): string {
   return contractName
 }
 
-function outputEncryptedOrUnencryptedPubMessage ({
+function outputEncryptedOrUnencryptedMessage ({
   contractID,
-  contractName,
   innerSigningKeyId,
   encryptionKeyId,
   signingKeyId,
-  data
+  data,
+  meta
 }: {
   contractID: string,
-  contractName: string,
   innerSigningKeyId: ?string,
   encryptionKeyId: ?string,
   signingKeyId: string,
-  data: Object
+  data: Object,
+  meta?: ?string
 }) {
-  const manifestHash = this.config.contracts.manifests[contractName]
-  const { contract } = this.manifestToContract[manifestHash]
-  const state = contract.state(contractID)
+  const state = sbp(this.config.stateSelector)[contractID]
   const signedMessage = innerSigningKeyId
     ? (state._vm.authorizedKeys[innerSigningKeyId] && state._vm.authorizedKeys[innerSigningKeyId]?._notAfterHeight == null)
         ? signedOutgoingData(contractID, innerSigningKeyId, (data: any), this.transientSecretKeys)
@@ -1262,26 +1387,23 @@ function outputEncryptedOrUnencryptedPubMessage ({
   const message = signedOutgoingData(contractID, signingKeyId, (payload: any), this.transientSecretKeys)
   const rootState = sbp(this.config.stateSelector)
   const height = String(rootState.contracts[contractID].height)
-  const serializedData = { ...message.serialize(height), height }
-  this.pubsub.pub(contractID, serializedData)
+  const serializedData = { ...message.serialize((meta ?? '') + height), height }
+  return serializedData
 }
 
 function parseEncryptedOrUnencryptedMessage ({
   contractID,
-  contractName,
-  serializedData
+  serializedData,
+  meta
 }: {
   contractID: string,
-  contractName: string,
-  serializedData: Object
+  serializedData: Object,
+  meta?: ?string
 }) {
   if (!serializedData) {
     throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
   }
-  const manifestHash = this.config.contracts.manifests[contractName]
-  const { contract } = this.manifestToContract[manifestHash]
-  const state = contract.state(contractID)
-
+  const state = sbp(this.config.stateSelector)[contractID]
   const numericHeight = parseInt(serializedData.height)
   const rootState = sbp(this.config.stateSelector)
   const currentHeight = rootState.contracts[contractID].height
@@ -1289,8 +1411,11 @@ function parseEncryptedOrUnencryptedMessage ({
     throw new Error(`[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${serializedData.height}; it must be between 0 and ${currentHeight}`)
   }
 
-  const v = signedIncomingData(contractID, state, serializedData, numericHeight, serializedData.height, (message) => {
-    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, serializedData.height, undefined)
+  // Additional data used for verification
+  const aad = (meta ?? '') + serializedData.height
+
+  const v = signedIncomingData(contractID, state, serializedData, numericHeight, aad, (message) => {
+    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, aad, undefined)
   })
 
   const encryptedData = unwrapMaybeEncryptedData(v.valueOf())

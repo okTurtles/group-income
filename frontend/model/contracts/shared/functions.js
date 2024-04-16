@@ -51,34 +51,44 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
 // chatroom.js related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
-  meta: Object, data: Object, hash: string, height: number, state?: Object, pending?: boolean, innerSigningContractID?: String
+  meta: Object,
+  data: Object,
+  hash: string,
+  height: number,
+  state?: Object,
+  pending?: boolean,
+  innerSigningContractID?: String
 }): Object {
-  const { type, text, replyingMessage } = data
+  const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
-  let newMessage = {
+  const newMessage: any = {
     type,
     hash,
     height,
     from: innerSigningContractID,
-    datetime: new Date(createdDate).toISOString(),
-    pending
+    datetime: new Date(createdDate).toISOString()
+  }
+
+  if (pending) {
+    newMessage.pending = true
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
-    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
+    newMessage.text = text
+    if (replyingMessage) {
+      newMessage.replyingMessage = replyingMessage
+    }
+    if (attachments) {
+      newMessage.attachments = attachments
+    }
   } else if (type === MESSAGE_TYPES.POLL) {
-    const pollData = data.pollData
-
-    newMessage = {
-      ...newMessage,
-      pollData: {
-        ...pollData,
-        creatorID: innerSigningContractID,
-        status: POLL_STATUS.ACTIVE,
-        // 'voted' field below will contain the user names of the users who has voted for this option
-        options: pollData.options.map(opt => ({ ...opt, voted: [] }))
-      }
+    newMessage.pollData = {
+      ...data.pollData,
+      creatorID: innerSigningContractID,
+      status: POLL_STATUS.ACTIVE,
+      // 'voted' field below will contain the user names of the users who has voted for this option
+      options: data.pollData.options.map(opt => ({ ...opt, voted: [] }))
     }
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
     const params = {
@@ -87,15 +97,9 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
       ...data.notification
     }
     delete params.type
-    newMessage = {
-      ...newMessage,
-      notification: { type: data.notification.type, params }
-    }
+    newMessage.notification = { type: data.notification.type, params }
   } else if (type === MESSAGE_TYPES.INTERACTIVE) {
-    newMessage = {
-      ...newMessage,
-      proposal: data.proposal
-    }
+    newMessage.proposal = data.proposal
   }
   return newMessage
 }
@@ -143,7 +147,7 @@ export function makeMentionFromUsername (username: string, forceUsername: ?boole
   const rootGetters = sbp('state/vuex/getters')
   // Even if forceUsername is true, we want to look up the contract ID to ensure
   // that it exists, so that we know it'll later succeed.
-  const userID = rootGetters.ourContactProfiles[username]?.contractID
+  const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
   return makeMentionFromUserID(forceUsername && userID ? username : userID)
 }
 
@@ -154,4 +158,14 @@ export function makeMentionFromUserID (userID: string): {
     me: userID ? `@${userID}` : '',
     all: '@all'
   }
+}
+
+export function swapUserIDForUsername (text: string): string {
+  const rootGetters = sbp('state/vuex/getters')
+  const possibleMentions = Object.keys(rootGetters.ourContactProfilesById)
+    .map(u => makeMentionFromUserID(u).me).filter(v => !!v)
+  return text
+    .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+    .map(t => !possibleMentions.includes(t) ? t : t[0] + rootGetters.usernameFromID(t.slice(1)))
+    .join('')
 }

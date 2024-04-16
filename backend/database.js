@@ -37,107 +37,59 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
+// Streams stored contract log entries since the given entry hash (inclusive!).
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
+    const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
-    let { HEAD: currentHEAD } = latestHEADinfo
+    // Number of entries pushed.
+    let counter = 0
+    let currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
     let prefix = '['
+    let ended = false
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
-      async read (): any {
-        try {
-          const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-          const json = `"${strToB64(entry.serialize())}"`
-          if (currentHEAD !== hash) {
-            this.push(prefix + json)
-            currentHEAD = entry.head().previousHEAD
-            prefix = ','
-          } else {
-            this.push(prefix + json + ']')
+    const stream = new Readable({
+      read (): void {
+        if (ended) {
+          this.destroy()
+          return
+        }
+        if (currentHash && counter < limit) {
+          sbp('chelonia/db/getEntry', currentHash).then(async entry => {
+            if (entry) {
+              const currentPrefix = prefix
+              prefix = ','
+              counter++
+              currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
+              this.push(`${currentPrefix}"${strToB64(entry.serialize())}"`)
+            } else {
+              this.push(counter > 0 ? ']' : '[]')
+              this.push(null)
+              ended = true
+            }
+          }).catch(e => {
+            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e)
+            this.push(counter > 0 ? ']' : '[]')
             this.push(null)
-          }
-        } catch (e) {
-          console.error(`read(): ${e.message}:`, e)
-          this.push(']')
+            ended = true
+          })
+        } else {
+          this.push(counter > 0 ? ']' : '[]')
           this.push(null)
+          ended = true
         }
       }
     })
-  },
-  'backend/db/streamEntriesBefore': async function (before: string, limit: number): Promise<*> {
-    let prefix = '['
-    let currentHEAD = before
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
-    if (!entry) {
-      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
+    // $FlowFixMe[prop-missing]
+    stream.headers = {
+      'shelter-headinfo-head': latestHEADinfo.HEAD,
+      'shelter-headinfo-height': latestHEADinfo.height
     }
-    limit++ // to return `before` apart from the `limit` number of events
-    // NOTE: if this ever stops working you can also try Readable.from():
-    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
-      async read (): any {
-        try {
-          if (!currentHEAD || !limit) {
-            this.push(']')
-            this.push(null)
-          } else {
-            entry = await sbp('chelonia/db/getEntry', currentHEAD)
-            const json = `"${strToB64(entry.serialize())}"`
-            this.push(prefix + json)
-            prefix = ','
-            limit--
-            currentHEAD = entry.head().previousHEAD
-          }
-        } catch (e) {
-          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(`read(): ${e.message}:`, e)
-          this.push(']')
-          this.push(null)
-        }
-      }
-    })
-  },
-  'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<*> {
-    let prefix = '['
-    let isMet = false
-    let currentHEAD = endHash
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
-    if (!entry) {
-      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
-    }
-    // NOTE: if this ever stops working you can also try Readable.from():
-    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    return new Readable({
-      async read (): any {
-        try {
-          entry = await sbp('chelonia/db/getEntry', currentHEAD)
-          const json = `"${strToB64(entry.serialize())}"`
-          this.push(prefix + json)
-          prefix = ','
-
-          if (currentHEAD === startHash) {
-            isMet = true
-          } else if (isMet) {
-            offset--
-          }
-
-          currentHEAD = entry.head().previousHEAD
-          if (!currentHEAD || (isMet && !offset)) {
-            this.push(']')
-            this.push(null)
-          }
-        } catch (e) {
-          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
-          console.error(`read(): ${e.message}:`, e)
-          this.push(']')
-          this.push(null)
-        }
-      }
-    })
+    return stream
   },
   // =======================
   // wrapper methods to add / lookup names
@@ -170,7 +122,7 @@ export default async () => {
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readData, writeData } = await import(`./database-${persistence}.js`)
+    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
 
     await initStorage(options[persistence])
 
@@ -196,7 +148,7 @@ export default async () => {
       },
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
         checkKey(key)
-        if (key.startsWith('_private_immutable_')) {
+        if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
           if (existingValue !== undefined) {
             throw new Error('Cannot set already set immutable key')
@@ -204,6 +156,14 @@ export default async () => {
         }
         await writeData(key, value)
         cache.set(key, value)
+      },
+      'chelonia/db/delete': async function (key: string): Promise<void> {
+        checkKey(key)
+        if (key.startsWith('_private_immutable')) {
+          throw new Error('Cannot delete immutable key')
+        }
+        await deleteData(key)
+        cache.delete(key)
       }
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
@@ -227,7 +187,7 @@ export default async () => {
     let numVisitedKeys = 0
     let numNewKeys = 0
 
-    console.log('[chelonia.db] Preloading...')
+    console.info('[chelonia.db] Preloading...')
     for (const key of keys) {
       // Skip keys which are already in the DB.
       if (!persistence || !await sbp('chelonia/db/get', key)) {
@@ -240,10 +200,10 @@ export default async () => {
       }
       numVisitedKeys++
       if (numVisitedKeys % Math.floor(numKeys / 10) === 0) {
-        console.log(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
+        console.info(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
       }
     }
-    numNewKeys && console.log(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
+    numNewKeys && console.info(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
   await initZkpp()
 }

@@ -2,44 +2,55 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-import { verify, b64ToStr } from '~/shared/functions.js'
-
+import { verifyShelterAuthorizationHeader } from '~/shared/domains/chelonia/utils.js'
 const Boom = require('@hapi/boom')
 
 exports.plugin = {
-  name: 'gi-auth',
+  name: 'chel-auth',
   register: function (server: Object, opts: Object) {
-    server.auth.scheme('gi-auth', function (server, options) {
+    server.auth.scheme('chel-bearer', function (server, options) {
       return {
         authenticate: function (request, h) {
           const { authorization } = request.headers
-          if (!authorization) h.unauthenticated(Boom.unauthorized('Missing authorization'))
-
-          let [scheme, json] = authorization.split(/\s+/)
-          // NOTE: if you want to add any signature verification, do it here
-          // eslint-disable-next-line no-constant-condition
-          if (false) {
-            if (!scheme.includes('gi')) h.unauthenticated(Boom.badRequest('Bad authentication'))
-
-            try {
-              json = JSON.parse(b64ToStr(json))
-            } catch (e) {
-              return h.unauthenticated(Boom.badRequest('Invalid token format'))
-            }
-            // http://hapijs.com/api/#serverauthschemename-scheme
-            const isValid = verify(json.msg, json.key, json.sig)
-            json.userId = json.key
-            const credentials = { credentials: json }
-            if (!isValid) return h.unauthenticated(Boom.unauthorized('Bad credentials'), credentials)
-            return h.authenticated(credentials)
-          } else {
-            // remove this if you decide to implement it
-            return h.authenticated({ credentials: 'TODO: delete me' })
+          if (!authorization) {
+            return h.unauthenticated(Boom.unauthorized(null, 'bearer'))
+          }
+          // Space after 'bearer' is intentional and must be there as it
+          // acts as a separator
+          const thisScheme = 'bearer '
+          if (authorization.slice(0, thisScheme.length) !== thisScheme) {
+            return h.unauthenticated(Boom.unauthorized(null, 'bearer'))
+          }
+          const token = authorization.slice(thisScheme.length)
+          return h.authenticated({ credentials: { token } })
+        }
+      }
+    })
+    server.auth.scheme('chel-shelter', function (server, options) {
+      return {
+        authenticate: function (request, h) {
+          const { authorization } = request.headers
+          if (!authorization) {
+            return h.unauthenticated(Boom.unauthorized(null, 'shelter'))
+          }
+          // Space after 'shelter' is intentional and must be there as it
+          // acts as a separator
+          const thisScheme = 'shelter '
+          if (authorization.slice(0, thisScheme.length) !== thisScheme) {
+            return h.unauthenticated(Boom.unauthorized(null, 'shelter'))
+          }
+          try {
+            const billableContractID = verifyShelterAuthorizationHeader(authorization)
+            return h.authenticated({ credentials: { billableContractID } })
+          } catch (e) {
+            console.warn(e, 'Shelter authorization failed')
+            return h.unauthenticated(Boom.unauthorized('Authentication failed', 'shelter'))
           }
         }
       }
     })
 
-    server.auth.strategy('gi-auth', 'gi-auth')
+    server.auth.strategy('chel-bearer', 'chel-bearer')
+    server.auth.strategy('chel-shelter', 'chel-shelter')
   }
 }

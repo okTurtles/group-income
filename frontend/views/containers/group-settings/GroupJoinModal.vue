@@ -9,22 +9,15 @@ modal-base-template(:fullscreen='true' :a11yTitle='L("How to join a group")')
           svg-invitation
 
         i18n.is-title-4(tag='h4') 1. Get an invitation
-        i18n(tag='p') For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
+        i18n(tag='p') Click on the individual link you received from an existing group. Don't have an invite?
         i18n(tag='button' class='link' @click='showCreateModal') Create your own group
 
       .slide(v-observer:1='updateIndicator' :id='config[1]')
         .slide-img
-          svg-proposal
-
-        i18n.is-title-4(tag='h4') 2. Wait for the group vote
-        i18n(tag='p') On Group Income, every major decision goes through a voting process. This includes adding new members.
-
-      .slide(v-observer:2='updateIndicator' :id='config[2]')
-        .slide-img
           svg-access
 
-        i18n.is-title-4(tag='h4') 3. Use your unique access link
-        i18n(tag='p') Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group
+        i18n.is-title-4(tag='h4') 2. Wait for an existing member to use the app
+        i18n(tag='p') Because Group Income is end-to-end encrypted, an existing member must send you the secret keys to access the group. They will automatically do this when they load the app.
 
     .dots
       a.dot(
@@ -58,7 +51,6 @@ export default ({
       },
       config: [
         'get-an-invitation',
-        'wait-for-you-group-vote',
         'use-your-unique-access-link'
       ]
     }
@@ -68,7 +60,7 @@ export default ({
     observer: {
       inserted: (el, { value, arg }) => {
         try {
-          const io = new window.IntersectionObserver(
+          const io = new window.IntersectionObserver( // Intersection Observer API: https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
             (elements) => {
               if (elements[0].intersectionRatio >= 0.5) { // Wait for the middle of the screen
                 value(parseInt(arg))
@@ -132,7 +124,7 @@ export default ({
   /* make it smooth on iOS */
   -webkit-overflow-scrolling: touch;
   scroll-snap-points-x: repeat(100vw);
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x mandatory; // a helpful article for what this property does: https://developer.mozilla.org/en-US/docs/Web/CSS/scroll-snap-type
   scrollbar-width: none;
 
   &::-webkit-scrollbar {

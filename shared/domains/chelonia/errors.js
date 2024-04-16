@@ -17,6 +17,7 @@ export const ChelErrorGenerator = (
   }: any): typeof Error)
 
 export const ChelErrorWarning: typeof Error = ChelErrorGenerator('ChelErrorWarning')
+export const ChelErrorAlreadyProcessed: typeof Error = ChelErrorGenerator('ChelErrorAlreadyProcessed')
 export const ChelErrorDBBadPreviousHEAD: typeof Error = ChelErrorGenerator('ChelErrorDBBadPreviousHEAD')
 export const ChelErrorDBConnection: typeof Error = ChelErrorGenerator('ChelErrorDBConnection')
 export const ChelErrorUnexpected: typeof Error = ChelErrorGenerator('ChelErrorUnexpected')
@@ -24,4 +25,6 @@ export const ChelErrorUnrecoverable: typeof Error = ChelErrorGenerator('ChelErro
 export const ChelErrorDecryptionError: typeof Error = ChelErrorGenerator('ChelErrorDecryptionError')
 export const ChelErrorDecryptionKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorDecryptionKeyNotFound', ChelErrorDecryptionError)
 export const ChelErrorSignatureError: typeof Error = ChelErrorGenerator('ChelErrorSignatureError')
+export const ChelErrorSignatureKeyUnauthorized: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyUnauthorized', ChelErrorSignatureError)
 export const ChelErrorSignatureKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorSignatureKeyNotFound', ChelErrorSignatureError)
+export const ChelErrorFetchServerTimeFailed: typeof Error = ChelErrorGenerator('ChelErrorFetchServerTimeFailed')

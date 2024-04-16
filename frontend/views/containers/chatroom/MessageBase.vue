@@ -20,8 +20,8 @@
 
       slot(name='body')
         p.c-replying(
-          if='replyingMessage'
-          @click='onReplyMessageClicked'
+          v-if='replyingMessage'
+          @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
             span.custom-markdown-content(
@@ -34,14 +34,14 @@
             ) {{ objReplyMessage.text }}
         send-area(
           v-if='isEditing'
-          :defaultText='text'
+          :defaultText='swapUserIDForUsername(text)'
           :isEditing='true'
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
 
         p.c-text(v-else-if='text')
-          template(v-for='(objText, index) in textObjects')
+          template(v-for='objText in textObjects')
             span.custom-markdown-content(
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
@@ -51,6 +51,20 @@
               :class='{"c-mention-to-me": objText.toMe}'
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
+
+      .c-attachments-wrapper(v-if='hasAttachments')
+        chat-attachment-preview(
+          :attachmentList='attachments'
+          :variant='variant'
+          :isForDownload='true'
+          :isMsgSender='isMsgSender'
+          :isGroupCreator='isGroupCreator'
+          @delete-attachment='deleteAttachment'
+        )
+
+      .c-failure-message-wrapper
+        i18n(tag='span') Message failed to send.
+        i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
   .c-full-width-body
     slot(name='full-width-body')
@@ -68,13 +82,13 @@
     v-if='!isEditing'
     :variant='variant'
     :type='type'
-    :isCurrentUser='isCurrentUser'
+    :isMsgSender='isMsgSender'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
-    @deleteMessage='deleteMessage'
+    @deleteMessage='$emit("delete-message")'
     @reply='reply'
-    @retry='retry'
+    @retry='$emit("retry")'
     @copyMessageLink='copyMessageLink'
   )
 </template>
@@ -82,13 +96,15 @@
 <script>
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import Tooltip from '@components/Tooltip.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
@@ -97,9 +113,11 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
+    Tooltip,
     MessageActions,
     MessageReactions,
-    SendArea
+    SendArea,
+    ChatAttachmentPreview
   },
   data () {
     return {
@@ -109,6 +127,7 @@ export default ({
   props: {
     height: Number,
     text: String,
+    attachments: Array,
     messageHash: String,
     replyingMessage: String,
     who: String,
@@ -125,9 +144,15 @@ export default ({
       type: Object,
       default: null
     },
-    variant: String,
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     isSameSender: Boolean,
-    isCurrentUser: Boolean,
+    isGroupCreator: Boolean,
+    isMsgSender: Boolean,
     convertTextToMarkdown: Boolean
   },
   computed: {
@@ -137,10 +162,14 @@ export default ({
     },
     replyMessageObjects () {
       return this.generateTextObjectsFromText(this.replyingMessage)
+    },
+    hasAttachments () {
+      return Boolean(this.attachments?.length)
     }
   },
   methods: {
     humanDate,
+    swapUserIDForUsername,
     editMessage () {
       if (this.type === MESSAGE_TYPES.POLL) {
         alert('TODO: implement editting a poll')
@@ -148,17 +177,14 @@ export default ({
         this.isEditing = true
       }
     },
-    onReplyMessageClicked () {
-      this.$emit('reply-message-clicked')
-    },
     onMessageEdited (newMessage) {
       this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
       }
     },
-    deleteMessage () {
-      this.$emit('delete-message')
+    deleteAttachment (manifestCid) {
+      this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
       this.isEditing = false
@@ -176,9 +202,6 @@ export default ({
     },
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
-    },
-    retry () {
-      this.$emit('retry')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
@@ -237,7 +260,6 @@ export default ({
     padding: 0.5rem 1.25rem;
   }
   position: relative;
-  max-height: 100%;
 
   &.removed {
     background-color: $danger_2;
@@ -245,9 +267,14 @@ export default ({
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
   }
 
-  &.pending {
+  &.pending,
+  &.failed {
     .c-text {
       color: $general_0;
+    }
+
+    .c-attachments-wrapper {
+      pointer-events: none;
     }
   }
 
@@ -266,8 +293,30 @@ export default ({
   &:hover {
     background-color: $general_2;
 
-    ::v-deep .c-actions {
-      display: flex;
+    &:not(.pending, .failed) {
+      ::v-deep .c-actions {
+        display: flex;
+      }
+    }
+  }
+
+  .c-failure-message-wrapper {
+    display: none;
+    margin-top: 0.25rem;
+    font-weight: bold;
+    font-size: 0.725rem;
+
+    .c-failure-link {
+      color: $primary_0;
+      margin-left: 0.1rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
+
+  &.failed {
+    .c-failure-message-wrapper {
+      display: block;
     }
   }
 }
@@ -307,6 +356,11 @@ export default ({
   &:first-child:last-child {
     margin-bottom: 0.5rem;
   }
+}
+
+.c-attachments-wrapper {
+  position: relative;
+  margin-top: 0.25rem;
 }
 
 .c-focused {
@@ -351,6 +405,5 @@ export default ({
 
 .c-mention.c-mention-to-me {
   background-color: $warning_1;
-  // background-color: #f2c74466;
 }
 </style>
