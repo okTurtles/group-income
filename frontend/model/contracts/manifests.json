@@ -1,0 +1,7 @@
+{
+  "manifests": {
+    "gi.contracts/chatroom": "z9brRu3VQeSP1LaQiXp7p55UkU4rfrSBzkYeEyDQ4daQYyoQcSsg",
+    "gi.contracts/group": "z9brRu3VQNkUoLZMkfua3BSv43iw27hdd5wEJFPxWdz3bKFqy7v9",
+    "gi.contracts/identity": "z9brRu3VGYfowcUQNaaohE8vU4AJSjREwPrLtaBEgfpkSjcfeC2p"
+  }
+}
