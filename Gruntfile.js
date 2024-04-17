@@ -401,7 +401,8 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
+      chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./${distDir}/data`
     }
   })
 
@@ -440,6 +441,35 @@ module.exports = (grunt) => {
     // NOTE: destination of deployment
     await mkdir(`${distDir}/data`)
 
+    done()
+  })
+
+  grunt.registerTask('chelDeploy', function () {
+    const tasks = !production ? ['exec:chelDevDeploy'] : ['exec:chelProdDeploy']
+    grunt.task.run(tasks)
+  })
+
+  grunt.registerTask('backend:run', function () {
+    const done = this.async() // Tell Grunt we're async.
+
+    grunt.log.writeln('backend: forking...')
+    const child = fork(backendIndex, process.argv, {
+      env: { NODE_ENV, ...process.env },
+      execArgv: ['--require', '@babel/register']
+    })
+    child.on('error', (err) => {
+      if (err) {
+        console.error('error starting or sending message to child:', err)
+        process.exit(1)
+      }
+    })
+    child.on('exit', (c) => {
+      if (c !== 0) {
+        grunt.log.error(`child exited with error code: ${c}`.bold)
+        // ^C can cause c to be null, which is an OK error.
+        process.exit(c || 0)
+      }
+    })
     done()
   })
 
@@ -577,11 +607,11 @@ module.exports = (grunt) => {
       console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
       process.exit(1)
     }
-    grunt.task.run(['exec:chelDeployAll', 'backend:launch', 'keepalive'])
+    grunt.task.run(['chelDeploy', 'backend:run', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
@@ -723,9 +753,9 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'exec:chelDeployAll', 'backend:launch', 'cypress'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
