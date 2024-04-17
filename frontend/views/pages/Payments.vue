@@ -751,7 +751,6 @@ export default ({
         }
       }
     }
-
   }
 
   @include phone {
