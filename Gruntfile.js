@@ -449,10 +449,10 @@ module.exports = (grunt) => {
     grunt.task.run(tasks)
   })
 
-  grunt.registerTask('backend:run', function () {
+  grunt.registerTask('run', function () {
     const done = this.async() // Tell Grunt we're async.
 
-    grunt.log.writeln('backend: forking...')
+    grunt.log.writeln('backend: running...')
     const child = fork(backendIndex, process.argv, {
       env: { NODE_ENV, ...process.env },
       execArgv: ['--require', '@babel/register']
@@ -607,7 +607,7 @@ module.exports = (grunt) => {
       console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
       process.exit(1)
     }
-    grunt.task.run(['chelDeploy', 'backend:run', 'keepalive'])
+    grunt.task.run(['chelDeploy', 'run', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])

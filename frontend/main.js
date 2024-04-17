@@ -201,12 +201,16 @@ async function startApp () {
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
       messageHandlers: {
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
+          const isProduction = process.env.NODE_ENV === 'production'
           const ourVersion = process.env.GI_VERSION
           const theirVersion = msg.data.GI_VERSION
 
           const ourContractsVersion = process.env.CONTRACTS_VERSION
           const theirContractsVersion = msg.data.CONTRACTS_VERSION
-          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+
+          const isContractVersionDiff = ourContractsVersion !== theirContractsVersion
+          const isGIVersionDiff = ourVersion !== theirVersion
+          if (isContractVersionDiff || (!isProduction && isGIVersionDiff)) {
             sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         },
