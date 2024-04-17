@@ -734,16 +734,24 @@ export default ({
       gap: 1rem;
     }
 
-    .c-distribution-locked-warning-wrapper {
-      display: flex;
-      gap: 0.25rem;
+    .c-payment-info-wrapper {
+      @include phone {
+        margin-bottom: 0.25rem;
+      }
 
-      .pill {
-        height: fit-content;
-        margin: auto;
-        text-transform: uppercase;
+      .c-distribution-locked-warning-wrapper {
+        display: flex;
+        gap: 0.25rem;
+        width: fit-content;
+
+        .pill {
+          height: fit-content;
+          margin: auto;
+          text-transform: uppercase;
+        }
       }
     }
+
   }
 
   @include phone {
