@@ -39,28 +39,6 @@ export default ({
     window.removeEventListener('keyup', this.handleKeyUp)
     window.removeEventListener('resize', this.setPosition)
   },
-  computed: {
-    position () {
-      const winWidth = window.innerWidth
-      const winHeight = window.innerHeight
-      if (winWidth < TABLET) return
-      const emotiWidth = 353
-      const emotiHeight = 440
-      const padding = 16
-      const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
-      let top = this.pos_y - emotiHeight - padding
-      if (top < 0) {
-        top = this.pos_y + padding
-      }
-      if (top + emotiHeight > winHeight) {
-        top = winHeight - emotiHeight
-      }
-      return {
-        left: `${left}px`,
-        top: `${top}px`
-      }
-    }
-  },
   methods: {
     handleKeyUp (e) {
       if (this.content && e.key === 'Escape') {
