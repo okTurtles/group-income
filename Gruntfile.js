@@ -393,7 +393,7 @@ module.exports = (grunt) => {
 
   let child = null
 
-  grunt.registerTask('copy:frontend', async function () {
+  grunt.registerTask('copy:frontend', function () {
     const done = this.async()
     grunt.task.run(['copy:htmlFiles', 'copy:assets', 'copy:strings'])
     mkdir(`${distDir}/data`).then(done)
