@@ -18,12 +18,13 @@ const production = process.env.NODE_ENV === 'production'
 const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 
 // Default database options. Other values may be used e.g. in tests.
+const dbRootPath = process.env.DB_ROOT_PATH || ''
 const options = {
   fs: {
-    dirname: './data'
+    dirname: `.${dbRootPath}/data`
   },
   sqlite: {
-    dirname: './data',
+    dirname: `.${dbRootPath}/data`,
     filename: 'groupincome.db'
   }
 }
@@ -169,7 +170,7 @@ export default async () => {
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
   }
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
-  if (persistence !== 'fs' || options.fs.dirname !== './data') {
+  if (persistence !== 'fs' || options.fs.dirname !== `.${dbRootPath}/data`) {
     // Remember to keep these values up-to-date.
     const HASH_LENGTH = 52
     const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
