@@ -9,7 +9,7 @@ import sbp from '@sbp/sbp'
 // TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
 import data from 'emoji-mart-vue-fast/data/apple.json'
-import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 
 export default ({
@@ -19,6 +19,7 @@ export default ({
   },
   data () {
     return {
+      position: undefined,
       emoji: new EmojiIndex(data),
       pos_x: Number,
       pos_y: Number,
@@ -31,11 +32,12 @@ export default ({
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
     window.addEventListener('resize', this.closeEmoticonDlg)
+    window.addEventListener('resize', this.setPosition)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
-    window.removeEventListener('resize', this.closeEmoticonDlg)
+    window.removeEventListener('resize', this.setPosition)
   },
   computed: {
     position () {
@@ -45,12 +47,8 @@ export default ({
       const emotiWidth = 353
       const emotiHeight = 440
       const padding = 16
-      // let left = winWidth / 2 - emotiWidth / 2
-      let left = '50%'
+      const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
       let top = this.pos_y - emotiHeight - padding
-      if (winWidth > DESKTOP) {
-        left = this.pos_x - emotiWidth / 2
-      }
       if (top < 0) {
         top = this.pos_y + padding
       }
@@ -98,6 +96,33 @@ export default ({
         this.lastFocus.focus()
         this.lastFocus = null
       }
+    },
+    setPosition () {
+      const winWidth = window.innerWidth
+      const winHeight = window.innerHeight
+      if (winWidth < TABLET) {
+        this.position = undefined
+        return
+      }
+      const emotiWidth = 353
+      const emotiHeight = 440
+      const padding = 16
+      const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
+      let top = this.pos_y - emotiHeight - padding
+      if (top < 0) {
+        top = this.pos_y + padding
+      } else if (top + emotiHeight > winHeight) {
+        top = winHeight - emotiHeight
+      }
+      this.position = { left: `${left}px`, top: `${top}px` }
+    }
+  },
+  watch: {
+    'pos_x' (to, from) {
+      this.setPosition()
+    },
+    'pos_y' (to, from) {
+      this.setPosition()
     }
   }
 }: Object)
