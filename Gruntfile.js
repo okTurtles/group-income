@@ -59,7 +59,7 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Da
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
-const backendIndex = 'backend/index.js'
+const backendIndex = './backend/index.js'
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
