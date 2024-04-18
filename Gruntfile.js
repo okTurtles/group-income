@@ -395,13 +395,8 @@ module.exports = (grunt) => {
 
   grunt.registerTask('copy:frontend', async function () {
     const done = this.async()
-
     grunt.task.run(['copy:htmlFiles', 'copy:assets', 'copy:strings'])
-
-    // NOTE: destination of deployment
-    await mkdir(`${distDir}/data`)
-
-    done()
+    mkdir(`${distDir}/data`).then(done)
   })
 
   grunt.registerTask('copy:contracts', async function () {
