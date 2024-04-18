@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, rm, copyFile, readFile, writeFile } = require('fs/promises')
+const { readdir, cp, mkdir, access, rm, copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -128,6 +128,7 @@ module.exports = (grunt) => {
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
     grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
+    await access(dest).catch(async () => await mkdir(dest))
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
@@ -394,9 +395,7 @@ module.exports = (grunt) => {
   let child = null
 
   grunt.registerTask('copy:frontend', function () {
-    const done = this.async()
     grunt.task.run(['copy:htmlFiles', 'copy:assets', 'copy:strings'])
-    mkdir(`${distDir}/data`).then(done)
   })
 
   grunt.registerTask('copy:contracts', async function () {
