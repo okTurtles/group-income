@@ -11,6 +11,7 @@ import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
 import data from 'emoji-mart-vue-fast/data/apple.json'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Emoticons',
@@ -19,6 +20,10 @@ export default ({
   },
   data () {
     return {
+      config: {
+        debouncedCloseEmoticonDlg: debounce(this.closeEmoticonDlg, 250),
+        debouncedSetPosition: debounce(this.setPosition, 250)
+      },
       position: undefined,
       emoji: new EmojiIndex(data),
       pos_x: Number,
@@ -31,13 +36,14 @@ export default ({
     sbp('okTurtles.events/on', OPEN_EMOTICON, this.openEmoticon)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
-    window.addEventListener('resize', this.closeEmoticonDlg)
-    window.addEventListener('resize', this.setPosition)
+    window.addEventListener('resize', this.config.debouncedCloseEmoticonDlg)
+    window.addEventListener('resize', this.config.debouncedSetPosition)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
-    window.removeEventListener('resize', this.setPosition)
+    window.removeEventListener('resize', this.config.debouncedCloseEmoticonDlg)
+    window.removeEventListener('resize', this.config.debouncedSetPosition)
   },
   methods: {
     handleKeyUp (e) {
