@@ -106,7 +106,7 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
@@ -220,7 +220,7 @@ export default ({
         return [
           {
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+            text: this.convertTextToMarkdown ? renderMarkdown(text) : text
           }
         ]
       }
@@ -242,7 +242,7 @@ export default ({
             ? { type: TextObjectType.Mention, text: t[0] + this.usernameFromID(t.slice(1)) }
             : {
                 type: TextObjectType.Text,
-                text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
+                text: this.convertTextToMarkdown ? renderMarkdown(t) : t
               }
         })
     }

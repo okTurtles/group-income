@@ -135,11 +135,10 @@ import {
   CHATROOM_MAX_ARCHIVE_ACTION_PAGES
 } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
+import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -634,14 +633,13 @@ export default ({
     async deleteMessage (message) {
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
+      const question = message.attachments?.length
+        ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
+        : L('Are you sure you want to delete this message permanently?')
 
-      const originalText = message.text || (message.attachments?.[0].name || '')
-      const text = convertToMarkdown(swapUserIDForUsername(originalText))
       const promptConfig = {
         heading: L('Delete message'),
-        question: L('Are you sure you want to delete this message permanently?{textPreview}', {
-          textPreview: `<p><span class="custom-markdown-content">${text}</span></p>`
-        }),
+        question,
         primaryButton: L('Yes'),
         secondaryButton: L('Cancel')
       }
@@ -666,12 +664,9 @@ export default ({
         return
       }
 
-      const { name } = message.attachments.find(attachment => attachment.downloadData.manifestCid === manifestCid)
       const promptConfig = {
         heading: L('Delete file'),
-        question: L('Are you sure you want to delete this file permanently?{filePreview}', {
-          filePreview: `<p>${name}</p>`
-        }),
+        question: L('Are you sure you want to delete this file permanently?'),
         primaryButton: L('Yes'),
         secondaryButton: L('Cancel')
       }
