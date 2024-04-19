@@ -133,13 +133,14 @@ export default function L (
 
 export function LError (error: Error): {|reportError: any|} {
   let url = `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
+  const target = !sbp('state/vuex/state').loggedIn ? 'target="_blank"' : ''
   if (!sbp('state/vuex/state').loggedIn) {
     url = 'https://github.com/okTurtles/group-income/issues'
   }
   return {
     reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
       errorMsg: error.message,
-      'a_': `<a class="link" target="_blank" href="${url}">`,
+      'a_': `<a class="link" ${target} href="${url}">`,
       '_a': '</a>'
     })
   }
