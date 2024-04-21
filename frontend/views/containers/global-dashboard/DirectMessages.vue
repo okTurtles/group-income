@@ -7,20 +7,27 @@
       v-model='form.search'
     )
 
+  // Below UI is temporarily hidden
   p.c-no-items
     i.icon-info-circle.is-prefix
     i18n.has-text-1 No DMs to display..
+
+  ul.c-dm-list
+    direct-message-list-item(
+      v-for='dm in dmList'
+      :key='dm.id'
+      :data='dm'
+    )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
-import Search from '@components/Search.vue'
 import { CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
-// DEV_NOTE - fetching DM message data
-// 1. refer to 'loadMessagesFromStorage' method in ChatMain.vue
-// 2. L805
+import dummyDMs from './dm-dummy-data.js'
+import Search from '@components/Search.vue'
+import DirectMessageListItem from './DirectMessageListItem.vue'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -36,7 +43,8 @@ const collectEventStream = async (s: ReadableStream) => {
 export default ({
   name: 'DirectMessages',
   components: {
-    Search
+    Search,
+    DirectMessageListItem
   },
   data () {
     return {
@@ -46,7 +54,8 @@ export default ({
       config: {
         searchPlaceholder: L('Find a DM'),
         searchLabel: L('Search a DM')
-      }
+      },
+      dmList: null
     }
   },
   computed: {
@@ -79,6 +88,12 @@ export default ({
   },
   created () {
     this.loadDMs()
+
+    this.dmList = dummyDMs.map(entry => ({
+      avatar: this.ourIdentityContractId, // for now use the avatar for the logged-in user
+      ...entry
+    }))
+    console.log('!@# dummy dm data: ', this.dmList)
   }
 }: Object)
 </script>
@@ -92,6 +107,7 @@ export default ({
 }
 
 .c-no-items {
+  display: none;
   padding-left: 1.5rem;
 }
 </style>
