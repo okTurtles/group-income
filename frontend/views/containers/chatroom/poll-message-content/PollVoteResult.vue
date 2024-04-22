@@ -2,7 +2,9 @@
 .c-poll-voted
   .c-content-header
     .c-label-container
-      i18n.c-poll-label(tag='label') poll
+      label.c-poll-label
+        i18n poll
+        i18n.c-anonymous-postfix(v-if='isAnonymousPoll') (anonymous)
       i18n.pill.is-primary.c-expiry-badge(v-if='!isPollExpired' :args='{ expiry: pollExpiryDate }') Expires on: {expiry}
     h3.is-title-4 {{ pollData.question }}
 
@@ -30,7 +32,7 @@
             :style='{ width: option.percent }'
           )
 
-    .c-voters
+    .c-voters(v-if='!isAnonymousPoll')
       .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
         voter-avatars(:voters='entry.users' :optionName='entry.optionName')
 </template>
@@ -65,6 +67,9 @@ export default ({
     },
     pollExpiryDate () {
       return humanDate(new Date(this.pollData.expires_date_ms))
+    },
+    isAnonymousPoll () {
+      return !!this.pollData.hideVoters
     },
     list () {
       const percents = []
@@ -120,6 +125,12 @@ export default ({
   color: $text_1;
   font-size: $size_5;
   margin-right: 0.25rem;
+}
+
+.c-anonymous-postfix {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-weight: bold;
 }
 
 .c-poll-closed-badge {

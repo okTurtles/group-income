@@ -70,6 +70,10 @@
           input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
 
+        label.checkbox
+          input.input(type='checkbox' v-model='form.hideVoters' @click.stop='')
+          i18n hide Voters
+
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
@@ -128,6 +132,7 @@ export default {
         disabled: false,
         question: '',
         allowMultipleChoice: false,
+        hideVoters: false,
         duration: 7,
         options: [
           { id: createRandomId(), value: '' }
@@ -213,6 +218,7 @@ export default {
             question: this.form.question,
             options: this.form.options,
             expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
+            hideVoters: this.form.hideVoters,
             pollType: this.form.allowMultipleChoice
               ? POLL_TYPES.MULTIPLE_CHOICES
               : POLL_TYPES.SINGLE_CHOICE
@@ -224,6 +230,7 @@ export default {
         this.form = {
           question: '',
           allowMultipleChoice: false,
+          hideVoters: false,
           options: [
             { id: createRandomId(), value: '' }
           ],

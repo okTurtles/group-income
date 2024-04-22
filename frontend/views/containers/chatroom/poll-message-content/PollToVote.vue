@@ -1,6 +1,8 @@
 <template lang='pug'>
 form(@submit.prevent='')
-  i18n.c-poll-label(tag='label') poll
+  label.c-poll-label
+    i18n poll
+    i18n.c-anonymous-postfix(v-if='isAnonymousPoll') (anonymous)
   h3.is-title-4.c-poll-title {{ pollData.question }}
 
   i18n.pill.is-primary.c-poll-expiry-badge(:args='{ expiry: pollExpiryDate }') Expires on: {expiry}
@@ -84,7 +86,12 @@ export default ({
           : Boolean(this.form.selectedOptions)
       }
     },
+    isAnonymousPoll () {
+      return !!this.pollData.hideVoters
+    },
     selectedVotesAsString () {
+      if (this.isAnonymousPoll) { return '' }
+
       return this.allowMultipleChoices
         ? this.form.selectedOptions.map(id => this.getOptValue(id)).join(', ')
         : this.getOptValue(this.form.selectedOptions)
@@ -101,7 +108,7 @@ export default ({
           data: {
             hash: this.messageHash,
             votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
-            votesAsString: `"${this.selectedVotesAsString}"`
+            votesAsString: this.isAnonymousPoll ? '' : `"${this.selectedVotesAsString}"`
           }
         })
       } catch (e) {
@@ -116,7 +123,7 @@ export default ({
           data: {
             hash: this.messageHash,
             votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
-            votesAsString: `"${this.selectedVotesAsString}"`
+            votesAsString: this.isAnonymousPoll ? '' : `"${this.selectedVotesAsString}"`
           }
         })
 
@@ -164,6 +171,12 @@ export default ({
   text-transform: uppercase;
   color: $text_1;
   font-size: $size_5;
+}
+
+.c-anonymous-postfix {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-weight: bold;
 }
 
 .c-poll-title {

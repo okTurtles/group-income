@@ -52,10 +52,13 @@ export default ({
       const {
         memberID,
         channelName,
-        channelDescription,
-        votedOptions
+        channelDescription
       } = this.notification.params
       const displayName = this.userDisplayNameFromID(memberID)
+      const isPollRelatedNotification = [
+        MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
+        MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL
+      ].includes(this.notification.type)
 
       const notificationTemplates = {
         // NOTE: 'onDirectMessage' is not being used at the moment
@@ -73,15 +76,28 @@ export default ({
           [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
           [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]:
             L('Updated the channel description to: {description}', { description: channelDescription }),
-          [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
-          [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on {options}', { options: votedOptions }),
-          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed vote to {options}', { options: votedOptions })
+          [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName })
         }
       }
 
-      const notificationSelector = this.isDirectMessage() ? 'onDirectMessage' : 'default'
-      const text = notificationTemplates[notificationSelector][this.notification.type]
-      return { text }
+      if (isPollRelatedNotification) {
+        const { votedOptions } = this.notification.params
+        const isAnonymousPoll = !votedOptions // For anonymous poll, the 'votedOptions' is always an empty string.
+        const pollNotificationTemplates = {
+          [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: isAnonymousPoll
+            ? L('Voted')
+            : L('Voted on {options}', { options: votedOptions }),
+          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: isAnonymousPoll
+            ? L('Changed vote')
+            : L('Changed vote to {options}', { options: votedOptions })
+        }
+
+        return { text: pollNotificationTemplates[this.notification.type] }
+      } else {
+        const notificationSelector = this.isDirectMessage() ? 'onDirectMessage' : 'default'
+        const text = notificationTemplates[notificationSelector][this.notification.type]
+        return { text }
+      }
     },
     isPollNotification () {
       return [
