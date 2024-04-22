@@ -66,13 +66,17 @@
                 :value='n'
               ) {{ n }}
 
-        label.checkbox
+        label.checkbox.c-checkbox
           input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
 
-        label.checkbox
+        label.checkbox.c-checkbox.c-hide-voters-check
           input.input(type='checkbox' v-model='form.hideVoters' @click.stop='')
           i18n hide Voters
+
+        .c-hide-voters-disclaimer
+          i.icon-exclamation-triangle
+          i18n Note: it is possible for a group member to "hack" the app to figure out who voted on what.
 
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
@@ -384,6 +388,26 @@ export default {
   > button {
     align-self: stretch;
     margin-right: 0;
+  }
+}
+
+.c-checkbox {
+  display: block;
+
+  &.c-hide-voters-check {
+    margin-top: 0.75rem;
+  }
+}
+
+.c-hide-voters-disclaimer {
+  display: block;
+  color: $text_1;
+  font-size: $size_5;
+  margin-top: 0.2rem;
+
+  i {
+    font-size: 0.8em;
+    margin-right: 4px;
   }
 }
 </style>
