@@ -72,7 +72,7 @@
 
         label.checkbox.c-checkbox.c-hide-voters-check
           input.input(type='checkbox' v-model='form.hideVoters' @click.stop='')
-          i18n hide Voters
+          i18n Hide who voted
 
         .c-hide-voters-disclaimer
           i.icon-exclamation-triangle
