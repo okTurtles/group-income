@@ -309,7 +309,7 @@ export default ({
         if (
           this.currentGroupState._vm.invites?.[inviteKeyId]?.status === INVITE_STATUS.VALID &&
           this.currentGroupState._vm.authorizedKeys?.[inviteKeyId] &&
-          this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight != null &&
+          this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notBeforeHeight != null &&
           this.currentGroupState._vm.invites[inviteKeyId].inviteSecret
         ) {
           return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourIdentityContractId)
@@ -326,7 +326,7 @@ export default ({
         !this.currentGroupState._vm?.authorizedKeys?.[inviteKeyId] ||
         // If _notAfterHeight is *not* undefined, it means that the key has been
         // revoked. Hence, it cannot be used
-        this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight !== undefined ||
+        this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notBeforeHeight !== undefined ||
         // If the expiration date is less than the current date, it means that
         // the invite can no longer be used
         this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()
