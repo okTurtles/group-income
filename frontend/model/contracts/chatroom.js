@@ -521,13 +521,29 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature(objectOf({
-        hash: string,
-        // NOTE: manifestCids of the attachments which belong to the message
-        //       if the message is deleted, those attachments should be deleted too
-        manifestCids: arrayOf(string),
-        messageSender: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, meta, message, contractID }) => {
+        objectOf({
+          hash: string,
+          // NOTE: manifestCids of the attachments which belong to the message
+          //       if the message is deleted, those attachments should be deleted too
+          manifestCids: arrayOf(string),
+          messageSender: string
+        })(data)
+
+        const rootGetters = sbp('state/vuex/getters')
+        const { innerSigningContractID } = message
+
+        if (innerSigningContractID !== data.messageSender) {
+          if (rootGetters.isDirectMessage(contractID)) {
+            throw new TypeError(L('Only the person who sent the message can delete it.'))
+          } else {
+            const groupID = rootGetters.groupIdFromChatRoomId(contractID)
+            if (sbp('state/vuex/state')[groupID]?.settings.groupCreatorID !== innerSigningContractID) {
+              throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))
+            }
+          }
+        }
+      }),
       process ({ data, meta, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
