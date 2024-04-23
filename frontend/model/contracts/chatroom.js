@@ -270,9 +270,13 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/rename': {
-      validate: actionRequireInnerSignature(objectOf({
-        name: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+        objectOf({ name: string })(data)
+
+        if (state.attributes.creatorID !== innerSigningContractID) {
+          throw new TypeError(L('Only the channel creator can rename.'))
+        }
+      }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
@@ -289,9 +293,13 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/changeDescription': {
-      validate: actionRequireInnerSignature(objectOf({
-        description: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+        objectOf({ description: string })(data)
+
+        if (state.attributes.creatorID !== innerSigningContractID) {
+          throw new TypeError(L('Only the channel creator can change description.'))
+        }
+      }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
@@ -521,7 +529,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature((data, { state, meta, message, contractID }) => {
+      validate: actionRequireInnerSignature((data, { state, meta, message: { innerSigningContractID }, contractID }) => {
         objectOf({
           hash: string,
           // NOTE: manifestCids of the attachments which belong to the message
@@ -531,7 +539,6 @@ sbp('chelonia/defineContract', {
         })(data)
 
         const rootGetters = sbp('state/vuex/getters')
-        const { innerSigningContractID } = message
 
         if (innerSigningContractID !== data.messageSender) {
           if (rootGetters.isDirectMessage(contractID)) {
