@@ -52,7 +52,8 @@ export default ({
       const {
         memberID,
         channelName,
-        channelDescription
+        channelDescription,
+        votedOptions
       } = this.notification.params
       const displayName = this.userDisplayNameFromID(memberID)
       const isPollRelatedNotification = [
@@ -79,25 +80,16 @@ export default ({
           [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName })
         }
       }
-
-      if (isPollRelatedNotification) {
-        const { votedOptions } = this.notification.params
-        const isAnonymousPoll = !votedOptions // For anonymous poll, the 'votedOptions' is always an empty string.
-        const pollNotificationTemplates = {
-          [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: isAnonymousPoll
-            ? L('Voted')
-            : L('Voted on {options}', { options: votedOptions }),
-          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: isAnonymousPoll
-            ? L('Changed vote')
-            : L('Changed vote to {options}', { options: votedOptions })
-        }
-
-        return { text: pollNotificationTemplates[this.notification.type] }
-      } else {
-        const notificationSelector = this.isDirectMessage() ? 'onDirectMessage' : 'default'
-        const text = notificationTemplates[notificationSelector][this.notification.type]
-        return { text }
+      const pollNotificationTemplates = {
+        [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on {options}', { options: votedOptions }),
+        [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed vote to {options}', { options: votedOptions })
       }
+
+      const templates = isPollRelatedNotification
+        ? pollNotificationTemplates
+        : notificationTemplates[this.isDirectMessage() ? 'onDirectMessage' : 'default']
+      const text = templates[this.notification.type]
+      return { text }
     },
     isPollNotification () {
       return [

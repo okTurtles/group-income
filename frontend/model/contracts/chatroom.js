@@ -686,6 +686,8 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          if (pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having voted.
@@ -738,6 +740,8 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          if (pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having update his/her votes.

@@ -4,7 +4,7 @@
     .c-label-container
       label.c-poll-label
         i18n poll
-        i18n.c-anonymous-postfix(v-if='isAnonymousPoll') (anonymous)
+        i18n.c-anonymous-postfix(v-if='isAnonymousPoll') (Votes Hidden)
       i18n.pill.is-primary.c-expiry-badge(v-if='!isPollExpired' :args='{ expiry: pollExpiryDate }') Expires on: {expiry}
     h3.is-title-4 {{ pollData.question }}
 
