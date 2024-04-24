@@ -107,7 +107,7 @@ function messageReceivePostEffect ({
 
   shouldNotifyMessage && makeNotification({
     title,
-    body: swapUserIDForUsername(text),
+    body: messageType === MESSAGE_TYPES.TEXT ? swapUserIDForUsername(text) : L('New message'),
     icon,
     path
   })
@@ -451,18 +451,16 @@ sbp('chelonia/defineContract', {
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
-        if (data.type === MESSAGE_TYPES.TEXT) {
-          messageReceivePostEffect({
-            contractID,
-            messageHash: newMessage.hash,
-            datetime: newMessage.datetime,
-            text: newMessage.text,
-            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
-            messageType: data.type,
-            memberID: innerSigningContractID,
-            chatRoomName: getters.chatRoomAttributes.name
-          })
-        }
+        messageReceivePostEffect({
+          contractID,
+          messageHash: newMessage.hash,
+          datetime: newMessage.datetime,
+          text: newMessage.text,
+          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+          messageType: data.type,
+          memberID: innerSigningContractID,
+          chatRoomName: getters.chatRoomAttributes.name
+        })
       }
     },
     'gi.contracts/chatroom/editMessage': {
