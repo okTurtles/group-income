@@ -451,16 +451,18 @@ sbp('chelonia/defineContract', {
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
-        messageReceivePostEffect({
-          contractID,
-          messageHash: newMessage.hash,
-          datetime: newMessage.datetime,
-          text: newMessage.text,
-          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
-          messageType: data.type,
-          memberID: innerSigningContractID,
-          chatRoomName: getters.chatRoomAttributes.name
-        })
+        if (data.type === MESSAGE_TYPES.TEXT) {
+          messageReceivePostEffect({
+            contractID,
+            messageHash: newMessage.hash,
+            datetime: newMessage.datetime,
+            text: newMessage.text,
+            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+            messageType: data.type,
+            memberID: innerSigningContractID,
+            chatRoomName: getters.chatRoomAttributes.name
+          })
+        }
       }
     },
     'gi.contracts/chatroom/editMessage': {
