@@ -733,7 +733,7 @@ export default ({
           this.ephemeral.mention.options = this.myJoinnedChannels.filter(channel => checkIfContainsKeyword(channel.name))
         }
       }
-      
+
       this.ephemeral.mention.type = mentionType
       this.ephemeral.mention.position = position
       this.ephemeral.mention.index = 0
