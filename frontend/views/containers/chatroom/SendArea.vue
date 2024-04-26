@@ -441,16 +441,27 @@ export default ({
     },
     updateMentionKeyword () {
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
-      const lastIndex = value.lastIndexOf('@')
-      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
-      if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
+      const channelCharIndex = value.lastIndexOf('#')
+      const memberCharIndex = value.lastIndexOf('@')
+
+      if (channelCharIndex === -1 && memberCharIndex === -1) {
         return this.endMention()
       }
+
+      const lastIndex = Math.max(channelCharIndex, memberCharIndex)
+      const mentionType = channelCharIndex > memberCharIndex ? 'channel' : 'member'
+      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
+
+      if (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1])) {
+        return this.endMention()
+      }
+
       value = value.slice(lastIndex + 1)
       if (regExWordStart.test(value)) {
         return this.endMention()
       }
-      this.startMention(value, lastIndex)
+
+      this.startMention(value, lastIndex, mentionType)
     },
     handleKeydown (e) {
       if (caretKeyCodeValues[e.keyCode]) {
