@@ -312,7 +312,8 @@ export default ({
         mention: {
           position: -1,
           options: [],
-          index: -1
+          index: -1,
+          type: 'member' // enum of ['member', 'channel']
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
@@ -368,7 +369,9 @@ export default ({
       'chatRoomAttributes',
       'ourContactProfilesById',
       'globalProfile',
-      'ourIdentityContractId'
+      'ourIdentityContractId',
+      'ourGroupDirectMessages',
+      'chatRoomsInDetail'
     ]),
     members () {
       return Object.keys(this.chatRoomMembers)
@@ -685,7 +688,7 @@ export default ({
       this.closeEmoticon()
       this.updateTextWithLines()
     },
-    startMention (keyword, position) {
+    startMention (keyword, position, mentionType = 'member') {
       const all = makeMentionFromUsername('').all
       const availableMentions = Array.from(this.members)
       // NOTE: '@all' mention should only be needed when the members are more than 3
@@ -700,6 +703,8 @@ export default ({
       this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username?.normalize().toUpperCase().includes(normalKeyword) ||
         user.displayName?.normalize().toUpperCase().includes(normalKeyword))
+
+      this.ephemeral.mention.type = mentionType
       this.ephemeral.mention.position = position
       this.ephemeral.mention.index = 0
     },
