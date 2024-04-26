@@ -16,18 +16,30 @@
       v-if='ephemeral.mention.options.length'
       ref='mentionWrapper'
     )
-      .c-mention-user(
-        v-for='(user, index) in ephemeral.mention.options'
-        :key='user.memberID'
-        ref='mention'
-        :class='{"is-selected": index === ephemeral.mention.index}'
-        @click.stop='onClickMention(index)'
-      )
-        avatar(:src='user.picture' size='xs')
-        .c-username {{user.username}}
-        .c-display-name(
-          v-if='user.displayName !== user.username'
-        ) ({{user.displayName}})
+      template(v-if='ephemeral.mention.type === "member"')
+        .c-mention-user(
+          v-for='(user, index) in ephemeral.mention.options'
+          :key='user.memberID'
+          ref='mention'
+          :class='{"is-selected": index === ephemeral.mention.index}'
+          @click.stop='onClickMention(index)'
+        )
+          avatar(:src='user.picture' size='xs')
+          .c-username {{user.username}}
+          .c-display-name(
+            v-if='user.displayName !== user.username'
+          ) ({{user.displayName}})
+
+      template(v-else-if='ephemeral.mention.type ==="channel"')
+        .c-mention-channel(
+          v-for='(channel, index) in ephemeral.mention.options'
+          :key='channel.id'
+          ref='mention'
+          :class='{"is-selected": index === ephemeral.mention.index}'
+          @click.stop='onClickMention(index)'
+        )
+          i(:class='[channel.privacyLevel === "private" ? "icon-lock" : "icon-hashtag", "c-channel-icon"]')
+          .c-channel-name {{ channel.name }}
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -370,7 +382,6 @@ export default ({
       'ourContactProfilesById',
       'globalProfile',
       'ourIdentityContractId',
-      'ourGroupDirectMessages',
       'chatRoomsInDetail'
     ]),
     members () {
@@ -384,6 +395,9 @@ export default ({
             picture
           }
         })
+    },
+    myJoinnedChannels () {
+      return Object.values(this.chatRoomsInDetail).filter(details => details.joined)
     },
     isActive () {
       return this.hasAttachments || this.ephemeral.textWithLines
@@ -689,21 +703,37 @@ export default ({
       this.updateTextWithLines()
     },
     startMention (keyword, position, mentionType = 'member') {
-      const all = makeMentionFromUsername('').all
-      const availableMentions = Array.from(this.members)
-      // NOTE: '@all' mention should only be needed when the members are more than 3
-      if (availableMentions.length > 2) {
-        availableMentions.push({
-          memberID: all,
-          displayName: all.slice(1),
-          picture: '/assets/images/horn.png'
-        })
-      }
-      const normalKeyword = keyword.normalize().toUpperCase()
-      this.ephemeral.mention.options = availableMentions.filter(user =>
-        user.username?.normalize().toUpperCase().includes(normalKeyword) ||
-        user.displayName?.normalize().toUpperCase().includes(normalKeyword))
+      const checkIfContainsKeyword = str => {
+        if (typeof str !== 'string') { return false }
 
+        const normalKeyword = keyword.normalize().toUpperCase()
+        return str.normalize().toUpperCase().includes(normalKeyword)
+      }
+
+      switch (mentionType) {
+        case 'member': {
+          const all = makeMentionFromUsername('').all
+          const availableMentions = Array.from(this.members)
+          // NOTE: '@all' mention should only be needed when the members are more than 3
+          if (availableMentions.length > 2) {
+            availableMentions.push({
+              memberID: all,
+              displayName: all.slice(1),
+              picture: '/assets/images/horn.png'
+            })
+          }
+
+          this.ephemeral.mention.options = availableMentions.filter(
+            user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
+          )
+
+          break
+        }
+        case 'channel': {
+          this.ephemeral.mention.options = this.myJoinnedChannels.filter(channel => checkIfContainsKeyword(channel.name))
+        }
+      }
+      
       this.ephemeral.mention.type = mentionType
       this.ephemeral.mention.position = position
       this.ephemeral.mention.index = 0
@@ -1023,23 +1053,31 @@ export default ({
   max-height: 12rem;
 }
 
-.c-mentions .c-mention-user {
-  display: flex;
-  align-items: center;
-  padding: 0.2rem;
-  cursor: pointer;
+.c-mentions {
+  .c-mention-user,
+  .c-mention-channel {
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
 
-  &.is-selected {
-    background-color: $primary_2;
+    &.is-selected {
+      background-color: $primary_2;
+    }
   }
 
-  .c-username {
+  .c-username,
+  .c-display-name,
+  .c-channel-name {
     margin-left: 0.3rem;
   }
 
   .c-display-name {
-    margin-left: 0.3rem;
     color: $text_1;
+  }
+
+  .c-channel-icon {
+    font-size: 0.875em;
   }
 }
 
