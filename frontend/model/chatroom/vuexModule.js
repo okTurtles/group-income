@@ -5,7 +5,7 @@ import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 const defaultState = {
-  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
+  currentChatRoomIDs: {}, // { [groupID]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   chatRoomUnread: {}, // [chatRoomID]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {} // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
@@ -163,16 +163,18 @@ const getters = {
 
 // mutations
 const mutations = {
-  setCurrentChatRoomId (state, { groupId, chatRoomID }) {
+  setCurrentChatRoomId (state, { groupID, chatRoomID }) {
     const rootState = sbp('state/vuex/state')
 
-    if (chatRoomID && groupId && rootState[groupId]) { // useful when initialize when syncing in another device
-      Vue.set(state.currentChatRoomIDs, groupId, chatRoomID)
-    } else if (chatRoomID) { // set chatRoomID as the current chatroomId of current group
+    if (groupID && rootState[groupID]) {
+      if (chatRoomID) {
+        Vue.set(state.currentChatRoomIDs, groupID, chatRoomID)
+      } else {
+        Vue.set(state.currentChatRoomIDs, groupID, rootState[groupID].generalChatRoomId || null)
+      }
+    } else if (chatRoomID) {
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomID)
-    } else if (groupId && rootState[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
-      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, rootState[groupId].generalChatRoomId || null)
-    } else { // reset
+    } else {
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
     }
   },

@@ -692,7 +692,7 @@ export default (sbp('sbp/selectors/register', {
           const fnEventHandled = (cID, message) => {
             if (cID === chatRoomID) {
               if (sbp('state/vuex/getters').isJoinedChatRoom(chatRoomID)) {
-                sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID, groupId: msg.contractID() })
+                sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID, groupID: msg.contractID() })
                 sbp('okTurtles.events/off', EVENT_HANDLED, fnEventHandled)
               }
             }

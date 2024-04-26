@@ -355,9 +355,10 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
     ) {
       // This is fine; it just means we were removed by someone else
       return
-    } else {
-      console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
     }
+    throw e
+  }).catch((e) => {
+    console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
 }
 
@@ -366,7 +367,13 @@ const leaveAllChatRoomsUponLeaving = (state, memberID, actorID) => {
 
   return Promise.all(Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].members?.[memberID]?.status === PROFILE_STATUS.REMOVED)
-    .map((chatRoomID) => leaveChatRoomAction(state, chatRoomID, memberID, actorID, true))
+    .map((chatRoomID) => leaveChatRoomAction(
+      state,
+      chatRoomID,
+      memberID,
+      actorID,
+      true
+    ))
   )
 }
 
@@ -1135,13 +1142,11 @@ sbp('chelonia/defineContract', {
               if (state.chatRooms[generalChatRoomId]?.members?.[loggedIn.identityContractID]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
-                  data: {
-                    chatRoomID: generalChatRoomId
-                  },
+                  data: { chatRoomID: generalChatRoomId },
                   hooks: {
                     onprocessed: () => {
                       sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-                        groupId: contractID,
+                        groupID: contractID,
                         chatRoomID: generalChatRoomId
                       })
                     }
@@ -1366,7 +1371,7 @@ sbp('chelonia/defineContract', {
         if (Object.keys(state.chatRooms).length === 1) {
           // NOTE: only general chatroom exists, meaning group has just been created
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: contractID,
+            groupID: contractID,
             chatRoomID: state.generalChatRoomId
           })
         }
@@ -1395,7 +1400,7 @@ sbp('chelonia/defineContract', {
         }
         const memberID = data.memberID || innerSigningContractID
         if (state.chatRooms[data.chatRoomID].members[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
-          throw new Error(`Cannot leave a chatroom that ${memberID} is not part of`)
+          throw new Error('Cannot leave a chatroom that you\'re not part of')
         }
         removeGroupChatroomProfile(state, data.chatRoomID, memberID)
       },
@@ -1418,9 +1423,7 @@ sbp('chelonia/defineContract', {
             sbp('chelonia/contract/remove', data.chatRoomID).then(() => {
               const rootState = sbp('state/vuex/state')
               if (rootState.chatroom.currentChatRoomIDs[contractID] === data.chatRoomID) {
-                sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-                  groupId: contractID
-                })
+                sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: contractID })
               }
             }).catch((e) => {
               console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error calling remove for ${contractID} on chatroom ${data.chatRoomID}`, e)

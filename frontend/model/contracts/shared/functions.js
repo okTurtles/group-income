@@ -111,7 +111,7 @@ export async function leaveChatRoom ({ contractID }: {
   const rootGetters = sbp('state/vuex/getters')
   if (contractID === rootGetters.currentChatRoomId) {
     sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-      groupId: rootState.currentGroupId
+      groupID: rootState.currentGroupId
     })
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {

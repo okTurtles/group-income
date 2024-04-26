@@ -124,13 +124,13 @@ const ChatMixin: Object = {
         if (this.isDirectMessage(chatRoomID)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID })
         } else {
-          const groupId = this.groupIdFromChatRoomId(chatRoomID)
-          // NOTE: groupId could be undefined if the incorrect chatRoomID is passed
-          if (groupId) {
-            if (this.currentGroupId !== groupId) {
-              sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+          const groupID = this.groupIdFromChatRoomId(chatRoomID)
+          // NOTE: groupID could be undefined if the incorrect chatRoomID is passed
+          if (groupID) {
+            if (this.currentGroupId !== groupID) {
+              sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
             }
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId, chatRoomID })
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID, chatRoomID })
           }
         }
       }
