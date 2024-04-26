@@ -32,7 +32,7 @@ import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
-import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
+import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
@@ -686,12 +686,18 @@ export default (sbp('sbp/selectors/register', {
 
     await sbp('gi.actions/group/joinChatRoom', {
       ...omit(params, ['options', 'data', 'hooks']),
-      data: {
-        chatRoomID
-      },
+      data: { chatRoomID },
       hooks: {
         onprocessed: (msg) => {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: msg.contractID() })
+          const fnEventHandled = (cID, message) => {
+            if (cID === chatRoomID) {
+              if (sbp('state/vuex/getters').isJoinedChatRoom(chatRoomID)) {
+                sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID, groupId: msg.contractID() })
+                sbp('okTurtles.events/off', EVENT_HANDLED, fnEventHandled)
+              }
+            }
+          }
+          sbp('okTurtles.events/on', EVENT_HANDLED, fnEventHandled)
         },
         postpublish: params.hooks?.postpublish
       }
@@ -971,8 +977,8 @@ export default (sbp('sbp/selectors/register', {
         })
 
         // NOTE: contracts for the members from direct messages should not be removed
-        for (const chatRoomId of chatRoomIDs) {
-          const chatRoomState = rootState[chatRoomId]
+        for (const chatRoomID of chatRoomIDs) {
+          const chatRoomState = rootState[chatRoomID]
 
           if (!chatRoomState || !chatRoomState.members?.[me]) {
             continue

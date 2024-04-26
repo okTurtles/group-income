@@ -45,8 +45,8 @@ export const STREAK_NOT_LOGGED_IN_DAYS = 14
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
+export const CHATROOM_MAX_MESSAGES = 20
 export const CHATROOM_ACTIONS_PER_PAGE = 40
-export const CHATROOM_MAX_ARCHIVE_ACTION_PAGES = 2 // 2 pages of actions
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const MESSAGE_RECEIVE = 'message-receive'

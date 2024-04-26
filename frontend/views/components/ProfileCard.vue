@@ -163,14 +163,14 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.contractID)
-      if (!chatRoomId) {
+      const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
+      if (!chatRoomID) {
         this.createDirectMessage(this.contractID)
       } else {
-        if (!this.ourGroupDirectMessages[chatRoomId].visible) {
-          this.setDMVisibility(chatRoomId, true)
+        if (!this.ourGroupDirectMessages[chatRoomID].visible) {
+          this.setDMVisibility(chatRoomID, true)
         } else {
-          this.redirect(chatRoomId)
+          this.redirect(chatRoomID)
         }
       }
       this.toggleTooltip()

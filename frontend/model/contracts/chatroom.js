@@ -10,6 +10,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_MAX_MESSAGES,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
   MESSAGE_NOTIFICATIONS,
@@ -49,7 +50,7 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
 }): void {
   if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     sbp('state/vuex/commit', 'setChatRoomReadUntil', {
-      chatRoomId: contractID,
+      chatRoomID: contractID,
       messageHash: hash,
       createdDate: createdDate
     })
@@ -82,7 +83,7 @@ function messageReceivePostEffect ({
 
   if (unreadMessageType) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMessage', {
-      chatRoomId: contractID,
+      chatRoomID: contractID,
       messageHash,
       createdDate: datetime,
       type: unreadMessageType
@@ -120,6 +121,17 @@ async function deleteEncryptedFiles (manifestCids: string | string[], option: Ob
       manifestCids = [manifestCids]
     }
     await sbp('gi.actions/identity/removeFiles', { manifestCids, option })
+  }
+}
+
+function cutMessagesIfOverflow (state) {
+  // NOTE: 'shouldSaveMessages' attribute is not original attribute
+  //       and it is set in Chat page only to save all messages
+  if (state.shouldSaveMessages) {
+    return
+  }
+  while (state.messages.length > CHATROOM_MAX_MESSAGES) {
+    state.messages.shift()
   }
 }
 
@@ -188,23 +200,17 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
-        if (!memberID) {
-          throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
-        }
-        if (!state.onlyRenderMessage) {
-          // For private chatrooms, group members can see the '/join' actions
-          // but nothing else. Because of this, `state.members` may be missing
-          if (!state.members) {
-            Vue.set(state, 'members', {})
-          } else if (state.members[memberID]) {
+
+        if (!state.shouldSaveMessages) {
+          if (state.members[memberID]) {
             throw new Error(`Can not join the chatroom which ${memberID} is already part of`)
           }
-
-          Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
-          return
         }
 
+        Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
+
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+          // NOTE: we don't make notification message for joining in direct messages
           return
         }
 
@@ -213,11 +219,11 @@ sbp('chelonia/defineContract', {
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { memberID, actorID: innerSigningContractID } : { memberID }
         )
-        const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
-        state.messages.push(newMessage)
+        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
-        if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
@@ -244,7 +250,7 @@ sbp('chelonia/defineContract', {
             // NOTE: To ignore scroll to the message of this hash
             //       since we don't create notification when join the direct message
               sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
-                chatRoomId: contractID,
+                chatRoomID: contractID,
                 deletedDate: meta.createdDate
               })
             }
@@ -276,13 +282,10 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
-        const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
-        state.messages.push(newMessage)
+        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -295,15 +298,10 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
-        if (!state.onlyRenderMessage) {
-          return
-        }
+        const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {})
+        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
 
-        const notificationData = createNotificationData(
-          MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
-        )
-        const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
-        state.messages.push(newMessage)
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -321,26 +319,22 @@ sbp('chelonia/defineContract', {
         // innerSigningContractID !== contractID is the special case of a member
         // being removed using the group's CSK (usually when a member is removed)
         const isKicked = innerSigningContractID && memberID !== innerSigningContractID
-        if (!state.onlyRenderMessage) {
-          if (!state.members) {
-            console.error('Missing state.members: ' + JSON.stringify(state))
-            throw new Error('Missing members state')
-          }
+        if (!state.shouldSaveMessages) {
           if (!state.members[memberID]) {
             throw new Error(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
-
-          Vue.delete(state.members, memberID)
-          return
         }
 
+        Vue.delete(state.members, memberID)
+
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+          // NOTE: we don't make notification message for leaving in direct messages
           return
         }
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(notificationType, { memberID })
-        const newMessage = createMessage({
+        state.messages.push(createMessage({
           meta,
           hash,
           height,
@@ -350,11 +344,11 @@ sbp('chelonia/defineContract', {
           // This way, we show the 'Member left' notification instead of the
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
-        })
-        state.messages.push(newMessage)
+        }))
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
-        if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
@@ -407,9 +401,8 @@ sbp('chelonia/defineContract', {
         if (sbp('chelonia/contract/isSyncing', contractID)) {
           return
         }
-        // NOTE: make sure *not* to await on this, since that can cause
-        //       a potential deadlock. See same warning in sideEffect for
-        //       'gi.contracts/group/removeMember'
+        // NOTE: make sure *not* to await on this, since that can cause a potential deadlock.
+        //       See same warning in sideEffect for 'gi.contracts/group/removeMember'
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
         })
@@ -422,11 +415,6 @@ sbp('chelonia/defineContract', {
       // these situations especially, and it's meant to mark sent-by-the-user
       // but not-yet-received-over-the-network messages.
       process ({ direction, data, meta, hash, height, innerSigningContractID }, { state }) {
-        // Exit early if we're only supposed to render messages.
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const existingMsg = state.messages.find(msg => (msg.hash === hash))
 
         if (!existingMsg) {
@@ -437,6 +425,8 @@ sbp('chelonia/defineContract', {
           // If an existing message is found, it's no longer pending.
           delete existingMsg.pending
         }
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -470,15 +460,13 @@ sbp('chelonia/defineContract', {
         text: string
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
-        // NOTE: edit message whose type is MESSAGE_TYPES.TEXT
-        if (!state.onlyRenderMessage) {
-          return
-        }
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.onlyRenderMessage && state.messages[msgIndex].pending) {
+          if (state.shouldSaveMessages && state.messages[msgIndex].pending) {
+            // NOTE: 'pending' message attribute is not the original message attribute
+            //       and it is only set and used in Chat page
             delete state.messages[msgIndex].pending
           }
         }
@@ -514,7 +502,7 @@ sbp('chelonia/defineContract', {
           })
         } else if (!isMentionedMe) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
-            chatRoomId: contractID,
+            chatRoomID: contractID,
             messageHash: data.hash
           })
         }
@@ -529,9 +517,6 @@ sbp('chelonia/defineContract', {
         messageSender: string
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           state.messages.splice(msgIndex, 1)
@@ -552,7 +537,7 @@ sbp('chelonia/defineContract', {
 
         if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-            chatRoomId: contractID, messageHash: null
+            chatRoomID: contractID, messageHash: null
           })
         }
 
@@ -560,7 +545,7 @@ sbp('chelonia/defineContract', {
         //       while syncing the contracts events especially join, addMessage, ...
         if (rootState.chatroom.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
           sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
-            chatRoomId: contractID,
+            chatRoomID: contractID,
             deletedDate: meta.createdDate
           })
         }
@@ -582,7 +567,7 @@ sbp('chelonia/defineContract', {
         // NOTE: ignore to check if the existance of current message (data.hash)
         //       because if not exist, deleteChatRoomUnreadMessage won't do anything
         sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
-          chatRoomId: contractID,
+          chatRoomID: contractID,
           messageHash: data.hash
         })
       }
@@ -594,10 +579,6 @@ sbp('chelonia/defineContract', {
         messageSender: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           const oldAttachments = state.messages[msgIndex].attachments
@@ -626,9 +607,6 @@ sbp('chelonia/defineContract', {
         emoticon: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
         const { hash, emoticon } = data
         const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0) {
@@ -664,12 +642,7 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const msgIndex = findMessageIdx(data.hash, state.messages)
-
         if (msgIndex >= 0) {
           const myVotes = data.votes
           const pollData = state.messages[msgIndex].pollData
@@ -696,8 +669,9 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
-        state.messages.push(newMessage)
+        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -710,12 +684,7 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const msgIndex = findMessageIdx(data.hash, state.messages)
-
         if (msgIndex >= 0) {
           const me = innerSigningContractID
           const myUpdatedVotes = data.votes
@@ -748,8 +717,9 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
-        state.messages.push(newMessage)
+        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+
+        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -760,17 +730,12 @@ sbp('chelonia/defineContract', {
         hash: string
       })),
       process ({ data }, { state }) {
-        if (!state.onlyRenderMessage) {
-          return
-        }
-
         const msgIndex = findMessageIdx(data.hash, state.messages)
-
         if (msgIndex >= 0) {
-          const pollData = state.messages[msgIndex].pollData
-
-          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, status: POLL_STATUS.CLOSED })
+          Vue.set(state.messages[msgIndex].pollData, 'status', POLL_STATUS.CLOSED)
         }
+
+        cutMessagesIfOverflow(state)
       }
     }
   },

@@ -4,7 +4,7 @@ import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
-  chatRoomId: undefined,
+  chatRoomID: undefined,
   title: '',
   picture: undefined,
   attributes: {},
@@ -23,10 +23,10 @@ const ChatMixin: Object = {
     }
   },
   mounted () {
-    const { chatRoomId } = this.$route.params
-    if (chatRoomId && this.isJoinedChatRoom(chatRoomId)) {
+    const { chatRoomID } = this.$route.params
+    if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
       this.refreshTitle()
-      this.updateCurrentChatRoomID(chatRoomId)
+      this.updateCurrentChatRoomID(chatRoomID)
     } else {
       this.redirectChat()
     }
@@ -35,6 +35,7 @@ const ChatMixin: Object = {
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
+      'ourIdentityContractId',
       'currentGroupState',
       'groupIdFromChatRoomId',
       'ourGroupDirectMessages',
@@ -60,7 +61,7 @@ const ChatMixin: Object = {
       }
 
       return {
-        chatRoomId: this.currentChatRoomId,
+        chatRoomID: this.currentChatRoomId,
         title,
         picture,
         attributes: Object.assign({}, this.currentChatRoomState.attributes),
@@ -77,23 +78,23 @@ const ChatMixin: Object = {
     }
   },
   methods: {
-    redirectChat (chatRoomId: string) {
+    redirectChat (chatRoomID: string) {
       const name = 'GroupChatConversation'
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
-      chatRoomId = chatRoomId || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
+      chatRoomID = chatRoomID || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
 
       this.$router.push({
         name,
-        params: { chatRoomId },
+        params: { chatRoomID },
         query: { ...this.$route.query }
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
       document.title = title || this.summary.title
     },
-    loadLatestState (chatRoomId: string): void {
-      const summarizedAttr = this.getGroupChatRooms[chatRoomId]
+    loadLatestState (chatRoomID: string): void {
+      const summarizedAttr = this.getGroupChatRooms[chatRoomID]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, members } = summarizedAttr
         const activeMembers = Object
@@ -103,9 +104,10 @@ const ChatMixin: Object = {
             const { displayName, picture, email } = this.globalProfile(username) || {}
             return [username, { displayName, picture, email }]
           })
+
         this.loadedSummary = {
           ...initSummary,
-          chatRoomId,
+          chatRoomID,
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
           members: activeMembers,
@@ -117,18 +119,18 @@ const ChatMixin: Object = {
         this.redirectChat()
       }
     },
-    updateCurrentChatRoomID (chatRoomId: string) {
-      if (chatRoomId !== this.currentChatRoomId) {
-        if (this.isDirectMessage(chatRoomId)) {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
+    updateCurrentChatRoomID (chatRoomID: string) {
+      if (chatRoomID !== this.currentChatRoomId) {
+        if (this.isDirectMessage(chatRoomID)) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID })
         } else {
-          const groupId = this.groupIdFromChatRoomId(chatRoomId)
-          // NOTE: groupId could be undefined if the incorrect chatRoomId is passed
+          const groupId = this.groupIdFromChatRoomId(chatRoomID)
+          // NOTE: groupId could be undefined if the incorrect chatRoomID is passed
           if (groupId) {
             if (this.currentGroupId !== groupId) {
               sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
             }
-            sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId, chatRoomId })
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId, chatRoomID })
           }
         }
       }

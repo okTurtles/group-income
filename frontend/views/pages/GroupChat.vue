@@ -139,11 +139,11 @@ export default ({
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
-        name: this.getGroupChatRooms[chatRoomID].name,
-        privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
-        joined: this.isJoinedChatRoom(chatRoomID),
-        id: chatRoomID
+      return Object.keys(this.getGroupChatRooms || {}).map(cID => ({
+        name: this.getGroupChatRooms[cID].name,
+        privacyLevel: this.getGroupChatRooms[cID].privacyLevel,
+        joined: this.isJoinedChatRoom(cID),
+        id: cID
       })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
         const formerName = former.name
         const latterName = latter.name
@@ -178,13 +178,13 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      const { chatRoomId } = to.params
-      const prevChatRoomId = from.params.chatRoomId || ''
-      if (chatRoomId && chatRoomId !== prevChatRoomId) {
-        this.updateCurrentChatRoomID(chatRoomId)
+      const { chatRoomID } = to.params
+      const prevChatRoomId = from.params.chatRoomID || ''
+      if (chatRoomID && chatRoomID !== prevChatRoomId) {
+        this.updateCurrentChatRoomID(chatRoomID)
         // NOTE: No need to consider not-joined private chatroom because it's impossible
-        if (!this.isJoinedChatRoom(chatRoomId)) {
-          this.loadLatestState(chatRoomId)
+        if (!this.isJoinedChatRoom(chatRoomID)) {
+          this.loadLatestState(chatRoomID)
         }
       }
     }

@@ -70,12 +70,12 @@ export default ({
       }[this.list.channels[id].privacyLevel]
       return this.list.channels[id].joined ? channelIcon : 'plus'
     },
-    buildUrl (chatRoomId) {
+    buildUrl (chatRoomID) {
       // NOTE - This should be $store responsability
       // ...but for now I've used the $route params just for mocked layout purposes
       return {
         name: this.routeName,
-        params: { chatRoomId }
+        params: { chatRoomID }
       }
 
       // ... once $store is implement, we can just pass the following:

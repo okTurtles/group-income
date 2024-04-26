@@ -116,13 +116,13 @@ export async function leaveChatRoom ({ contractID }: {
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
       await sbp('controller/router')
-        .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
+        .push({ name: 'GroupChatConversation', params: { chatRoomID: rootGetters.currentChatRoomId } })
         .catch(logExceptNavigationDuplicated)
     }
   }
 
-  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
-  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomID: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
 }
 
 export function findMessageIdx (hash: string, messages: Array<Object>): number {
