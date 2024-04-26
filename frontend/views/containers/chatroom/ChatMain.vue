@@ -585,15 +585,19 @@ export default ({
     updateScroll (scrollTargetMessage = null, effect = false) {
       const contractID = this.summary.chatRoomID
       if (contractID) {
-        // force conversation viewport to be at the bottom (most recent messages)
-        setTimeout(() => {
-          if (scrollTargetMessage) {
-            if (!this.checkEventSourceConsistency(contractID)) return
-            this.scrollToMessage(scrollTargetMessage, effect)
-          } else {
-            this.jumpToLatest()
-          }
-        }, 100)
+        return new Promise((resolve) => {
+          // force conversation viewport to be at the bottom (most recent messages)
+          setTimeout(async () => {
+            if (scrollTargetMessage) {
+              if (!this.checkEventSourceConsistency(contractID)) return
+              await this.scrollToMessage(scrollTargetMessage, effect)
+            } else {
+              this.jumpToLatest()
+            }
+
+            resolve()
+          }, 100)
+        })
       }
     },
     jumpToLatest (behavior = 'smooth') {
@@ -793,11 +797,19 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
-        this.updateScroll(messageHashToScroll, Boolean(mhash)) // We do want the 'c-focused' animation if there is a message-scroll query.
-        return false
+
+        // NOTE: we do want the 'c-focused' animation if there is a message-scroll query.
+        if (events.length) {
+          // NOTE: if 'messageHashToScroll' was not there in the messages of the contract state
+          //       we need to retrieve more events, and render to scroll to that message
+          this.updateScroll(messageHashToScroll, Boolean(mhash))
+        } else {
+          // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
+          await this.updateScroll(messageHashToScroll, Boolean(mhash))
+        }
       }
 
-      return events.length < limit
+      return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
     },
     rerenderEvents (events) {
       if (!this.latestEvents.length) {
