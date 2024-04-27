@@ -309,7 +309,7 @@ export default ({
         if (
           this.currentGroupState._vm.invites?.[inviteKeyId]?.status === INVITE_STATUS.VALID &&
           this.currentGroupState._vm.authorizedKeys?.[inviteKeyId] &&
-          this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notBeforeHeight != null &&
+          this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight == null &&
           this.currentGroupState._vm.invites[inviteKeyId].inviteSecret
         ) {
           return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourIdentityContractId)

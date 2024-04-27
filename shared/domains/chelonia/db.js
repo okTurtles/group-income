@@ -62,7 +62,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         const id = getContractIdFromLogHead(key)
         if (!id) return Promise.resolve()
         const state = sbp(this.config.stateSelector).contracts[id]
-        const value = (state
+        const value = (state?.HEAD
           ? JSON.stringify({
             HEAD: state.HEAD,
             height: state.height

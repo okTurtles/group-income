@@ -332,8 +332,6 @@ export default (sbp('sbp/selectors/register', {
       const loginAttributes = { identityContractID, encryptionParams, username }
 
       // If username was not provided, retrieve it from the state
-      // TODO: This is temporary until username is no longer needed internally
-      // in contracts
       if (!loginAttributes.username) {
         loginAttributes.username = Object.entries(state.namespaceLookups)
           .find(([k, v]) => v === identityContractID)
@@ -360,9 +358,19 @@ export default (sbp('sbp/selectors/register', {
       }
 
       //            loading the website instead of stalling out.
-      // See the TODO note in startApp (main.js) for why this is not awaited
       try {
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        if (!state) {
+          // Make sure we don't unsubscribe from our own identity contract
+          // Note that this should be done _after_ calling
+          // `chelonia/storeSecretKeys`: If the following line results in
+          // syncing the identity contract and fetching events, the secret keys
+          // for processing them will not be available otherwise.
+          await sbp('chelonia/contract/retain', identityContractID)
+        } else {
+          // If there is a state, we've already retained the identity contract
+          // but might need to fetch the latest events
+          await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        }
       } catch (err) {
         sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
         const errMessage = err?.message || String(err)
