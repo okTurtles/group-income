@@ -614,16 +614,34 @@ export default ({
 
       let msgToSend = this.$refs.textarea.value || ''
 
-      /* Process mentions in the form @username => @userID */
-      const mentionStart = makeMentionFromUsername('').all[0]
-      const availableMentions = this.members.map(memberID => memberID.username)
+      /* 
+        Process member/channel mentions in the form:
+          member - @username => @userID
+          channel - #channel-name => #channelID
+      */
+      const genMentionRegExp = (type = 'member') => {
+        // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
+        const mentionStart = type === 'member' ? makeMentionFromUsername('').all[0] : '#'
+        const availableMentions = type === 'member'
+          ? this.members.map(memberID => memberID.username)
+          : this.myJoinnedChannels.map(channel => channel.name)
+
+        return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
+      }
+      const convertChannelMentionToId = name => {
+        const found = this.myJoinnedChannels.find(entry => entry.name === name)
+        return found ? `#${found.id}` : ''
+      }
+
+      // 1. replace all member mentions.
       msgToSend = msgToSend.replace(
-        // This regular expression matches all @username mentions that are
-        // standing alone between spaces
-        new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g'),
-        (_, username) => {
-          return makeMentionFromUsername(username).me
-        }
+        genMentionRegExp('member'),
+        (_, username) => makeMentionFromUsername(username).me
+      )
+      // 2. replace all channel mentions.
+      msgToSend = msgToSend.replace(
+        genMentionRegExp('channel'),
+        (_, channelName) => convertChannelMentionToId(channelName)
       )
 
       this.$emit(
