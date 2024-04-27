@@ -5,6 +5,7 @@
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { objectOf, optional, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -28,6 +29,9 @@ import {
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
+
+export const GIChatroomAlreadyMemberError: typeof Error = ChelErrorGenerator('GIChatroomAlreadyMemberError')
+export const GIChatroomNotMemberError: typeof Error = ChelErrorGenerator('GIChatroomNotMemberError')
 
 function createNotificationData (
   notificationType: string,
@@ -176,7 +180,12 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID }) {
-        Vue.set(sbp('state/vuex/state')?.chatroom?.chatRoomUnread, contractID, {
+        const chatroomUnread = sbp('state/vuex/state').chatroom?.chatRoomUnread
+        if (!chatroomUnread) {
+          console.warn('[gi.contracts/chatroom] rootState.chatroom?.chatRoomUnread is not an object')
+          return
+        }
+        Vue.set(chatroomUnread, contractID, {
           readUntil: undefined,
           messages: []
         })
@@ -197,7 +206,7 @@ sbp('chelonia/defineContract', {
           if (!state.members) {
             Vue.set(state, 'members', {})
           } else if (state.members[memberID]) {
-            throw new Error(`Can not join the chatroom which ${memberID} is already part of`)
+            throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
 
           Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
@@ -233,13 +242,6 @@ sbp('chelonia/defineContract', {
           setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
           if (memberID === loggedIn.identityContractID) {
-            // The join process is now complete, so we can remove this key if
-            // it was set. This key is used to prevent us from calling `/remove`
-            // when the join process is incomplete. See the comment on group.js
-            // (joinChatRoom sideEffect) for a more detailed explanation of
-            // what this does.
-            sbp('okTurtles.data/delete', `JOINING_CHATROOM-${contractID}-${memberID}`)
-
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             // NOTE: To ignore scroll to the message of this hash
             //       since we don't create notification when join the direct message
@@ -327,7 +329,7 @@ sbp('chelonia/defineContract', {
             throw new Error('Missing members state')
           }
           if (!state.members[memberID]) {
-            throw new Error(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
+            throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
 
           Vue.delete(state.members, memberID)
@@ -365,18 +367,9 @@ sbp('chelonia/defineContract', {
           }
 
           if (memberID === rootState.loggedIn.identityContractID) {
-            // If we're in the process of joining this chatroom, don't call
-            // /remove, as we're still waiting to be added to the chatroom.
-            // See group.js (joinChatRoom sideEffect) for a more detailed
-            // explanation of why we need this
-            if (!sbp('okTurtles.data/get', `JOINING_CHATROOM-${contractID}-${memberID}`)) {
-            // NOTE: make sure *not* to await on this, since that can cause
-            //       a potential deadlock. See same warning in sideEffect for
-            //       'gi.contracts/group/removeMember'
-              sbp('chelonia/contract/remove', contractID).catch(e => {
-                console.error(`[gi.contracts/chatroom/leave/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
-              })
-            }
+            leaveChatRoom({ contractID }).catch((e) => {
+              console.error(`[gi.contracts/chatroom/leave/sideEffect] Error for ${contractID}`, e)
+            })
           } else {
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
@@ -404,12 +397,12 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          return
-        }
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
+        leaveChatRoom({ contractID }).catch((e) => {
+          console.error(`[gi.contracts/chatroom/delete/sideEffect] Error for ${contractID}`, e)
+        })
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
         })
@@ -775,15 +768,6 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
-    'gi.contracts/chatroom/_cleanup': ({ contractID, resync }) => {
-      // If we're resyncing after having received new keys, we're not actually
-      // leaving the chatroom, and there are no cleanup actions
-      if (resync) return
-
-      leaveChatRoom({ contractID }).catch((e) => {
-        console.error(`[gi.contracts/chatroom/_cleanup] Error for ${contractID}`, e)
-      })
-    },
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
