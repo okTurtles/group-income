@@ -535,14 +535,30 @@ export default ({
     addSelectedMention (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
-      const selection = this.ephemeral.mention.options[index]
+      const {
+        options,
+        position: mentionStartPosition,
+        type: mentionType
+      } = this.ephemeral.mention
+      const selection = options[index]
+      let mentionString = ''
 
-      const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
-      const mention = selection.memberID === mentionObj.all ? mentionObj.all : mentionObj.me
-      const value = curValue.slice(0, this.ephemeral.mention.position) +
-         mention + ' ' + curValue.slice(curPosition)
+      if (mentionType === 'member') {
+        const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
+        mentionString = selection.memberID === mentionObj.all
+          ? mentionObj.all
+          : mentionObj.me
+      } else if (mentionType === 'channel') {
+        mentionString = `#${selection.name}`
+      }
+
+      // Insert the selected mention into the input text.
+      const value = curValue.slice(0, mentionStartPosition) +
+        mentionString + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
-      const selectionStart = this.ephemeral.mention.position + mention.length + 1
+
+      // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
+      const selectionStart = mentionStartPosition + mentionString.length + 1
       this.moveCursorTo(selectionStart)
       this.endMention()
     },
@@ -1051,9 +1067,7 @@ export default ({
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 12rem;
-}
 
-.c-mentions {
   .c-mention-user,
   .c-mention-channel {
     display: flex;
