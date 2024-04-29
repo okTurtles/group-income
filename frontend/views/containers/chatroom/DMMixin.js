@@ -23,7 +23,10 @@ const DMMixin: Object = {
           data: { memberIDs },
           hooks: {
             onprocessed: (message) => {
-              this.redirect(message.decryptedValue().data.contractID)
+              const dmID = message.decryptedValue().data.contractID
+              // The logic for updating paths will not work until the DM chatroom
+              // has been synced
+              sbp('chelonia/queueInvocation', dmID, () => this.redirect(dmID))
             }
           }
         })

@@ -187,7 +187,7 @@ const mutations = {
   setChatRoomReadUntil (state, { chatRoomID, messageHash, createdDate }) {
     Vue.set(state.chatRoomUnread, chatRoomID, {
       readUntil: { messageHash, createdDate, deletedDate: null },
-      messages: state.chatRoomUnread[chatRoomID].messages
+      messages: state.chatRoomUnread[chatRoomID]?.messages
         ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
     })
   },

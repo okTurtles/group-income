@@ -280,13 +280,10 @@ export default (sbp('sbp/selectors/register', {
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
-    // We want to process any current events first, before setting
-    // JOINING_GROUP, so that we process leave actions and don't interfere
-    // with the leaving process (otherwise, the side-effects will prevent
-    // us from fully leaving).
+    // We want to process any current events first, so that we process leave
+    // actions and don't interfere with the leaving process (otherwise, the
+    // side-effects could prevent us from fully leaving).
     await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
-    // TODO: See if we can remove the need for okTurtles.data/set
-    sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, true)
     try {
       const { loggedIn } = sbp('state/vuex/state')
       if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
@@ -295,16 +292,9 @@ export default (sbp('sbp/selectors/register', {
 
       // When syncing the group contract, the contract might call /remove on
       // itself if we had previously joined and left the group. By using
-      // deferredRemove we ensure that it's not deleted until we've finished
+      // ephemeral we ensure that it's not deleted until we've finished
       // trying to join.
-      // When we are re-joinining, this function will call /cancelRemove to
-      // ensure that the contract isn't removed, and if we're not re-joining,
-      // the call at the end to /remove with removeIfPending will remove the
-      // group contract.
-      // Part of this same functionality is what `sbp('okTurtles.data/set', 'JOINING_GROUP-'`
-      // does. In a later improvement, we could remove that and handle re-joinining
-      // within the contract state.
-      await sbp('chelonia/contract/sync', params.contractID, { deferredRemove: true })
+      await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
       const rootState = sbp('state/vuex/state')
       if (!rootState.contracts[params.contractID]) {
         console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
@@ -408,9 +398,6 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
           throw e
         })
-        // While we're waiting for keys, we should not remove the group contract
-        // (if had previously left) because we're re-joining
-        sbp('chelonia/contract/cancelRemove', params.contractID)
 
         // Nothing left to do until the keys are received
 
@@ -476,7 +463,6 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
         sbp('okTurtles.events/emit', JOINED_GROUP, { contractID: params.contractID })
       // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
       // This means that we've been removed from the group
@@ -485,27 +471,20 @@ export default (sbp('sbp/selectors/register', {
         // do much at this point, so we do nothing.
         // This could happen, for example, after logging in if we still haven't
         // received a response to the key request.
-        sbp('okTurtles.data/set', 'JOINING_GROUP-' + params.contractID, false)
       } else if (pendingKeyShares) {
         console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
-        // If we're waiting on keys to be shared with us, we need to cancel any
-        // pending removal while we're waiting
-        sbp('chelonia/contract/cancelRemove', params.contractID)
       } else {
         console.error('Requested to join group but the state appears invalid. This should be unreachable. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
-      // If an error occurred, the join process is incomplete and we should not
-      // remove the group contract.
-      sbp('chelonia/contract/cancelRemove', params.contractID)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove
       // actions on the contract. This will have no side-effects if /remove on
       // the group contract hasn't been called.
-      await sbp('chelonia/contract/remove', params.contractID, { removeIfPending: true })
+      await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
@@ -527,16 +506,29 @@ export default (sbp('sbp/selectors/register', {
     // We can avoid this by waiting on both contracts, especially the group
     // contract.
     await sbp('chelonia/contract/wait', [groupId, identityContractID])
-    await sbp('gi.actions/identity/joinGroup', {
-      contractID: identityContractID,
-      contractName: 'gi.contracts/identity',
-      data: {
-        groupContractID: groupId,
-        inviteSecret: secret
-      }
-    }).then(() => {
-      return sbp('gi.actions/group/switch', groupId)
-    })
+    try {
+      // Similarly, because not all events may have been processed, including
+      // side-effects, the group contract may be released too early (when
+      // re-joining a group, there could be an action for leaving the
+      // group that is pending processing). The following pattern (ephemeral
+      // retain + ephemeral release) ensures that we won't unsubscribe to it
+      // until we know what the next step is.
+      // Because the retain is paired with a release, at worst this will have
+      // no effect on the lifetime of the group contract.
+      await sbp('chelonia/contract/retain', groupId, { ephemeral: true })
+      await sbp('gi.actions/identity/joinGroup', {
+        contractID: identityContractID,
+        contractName: 'gi.contracts/identity',
+        data: {
+          groupContractID: groupId,
+          inviteSecret: secret
+        }
+      }).then(() => {
+        return sbp('gi.actions/group/switch', groupId)
+      })
+    } finally {
+      await sbp('chelonia/contract/release', groupId, { ephemeral: true })
+    }
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
@@ -934,69 +926,6 @@ export default (sbp('sbp/selectors/register', {
     } else {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
-  },
-  'gi.actions/group/removeUselessIdentityContracts': function ({ contractID, possiblyUselessContractIDs }) {
-    // NOTE: should remove the identity contracts which we don't need to sync anymore
-    //       for users who don't have any common groups, and any common DMs
-    const rootState = sbp('state/vuex/state')
-    const rootGetters = sbp('state/vuex/getters')
-    const me = rootGetters.ourIdentityContractId
-
-    const removeIdentityContracts = () => {
-      const chatRoomIDs = Object.keys(rootGetters.ourDirectMessages)
-      const groupIDs = Object.keys(rootState.contracts)
-        .filter(gID => rootState.contracts[gID].type === 'gi.contracts/group' && gID !== contractID)
-
-      if (!chatRoomIDs.length && !groupIDs.length) {
-        sbp('chelonia/contract/remove', possiblyUselessContractIDs).catch(e => {
-          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
-        })
-        return
-      }
-
-      const waitFor = [...chatRoomIDs, ...groupIDs]
-      sbp('chelonia/contract/wait', waitFor).then(() => {
-        if (rootGetters.ourIdentityContractId && rootGetters.ourIdentityContractId !== me) {
-          return
-        }
-
-        const pending = Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
-          .filter(([q]) => waitFor.includes(q))
-          .flatMap(([, list]) => list)
-
-        if (pending.length) {
-          return removeIdentityContracts()
-        }
-
-        const identityContractsMapToKeepSyncing = {}
-        // NOTE: contracts for the members from another groups should not be removed
-        groupIDs.forEach(gID => {
-          for (const [iID] of Object.entries((rootState[gID].profiles || {}))) {
-            identityContractsMapToKeepSyncing[iID] = true
-          }
-        })
-
-        // NOTE: contracts for the members from direct messages should not be removed
-        for (const chatRoomID of chatRoomIDs) {
-          const chatRoomState = rootState[chatRoomID]
-
-          if (!chatRoomState || !chatRoomState.members?.[me]) {
-            continue
-          }
-
-          Object.keys(chatRoomState.members).forEach(memberID => {
-            identityContractsMapToKeepSyncing[memberID] = true
-          })
-        }
-
-        const identityContractsToRemove = possiblyUselessContractIDs.filter(cID => !identityContractsMapToKeepSyncing[cID])
-        sbp('chelonia/contract/remove', identityContractsToRemove).catch(e => {
-          console.error(`[gi.actions/group/removeUselessIdentityContracts]: ${e.name} thrown by /remove useless identity contracts:`, e)
-        })
-      })
-    }
-
-    removeIdentityContracts()
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
