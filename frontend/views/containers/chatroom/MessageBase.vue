@@ -32,9 +32,13 @@
               v-else-if='isMemberMention(objReplyMessage)'
               :class='{"c-mention-to-me": objReplyMessage.toMe}'
             ) {{ objReplyMessage.text }}
-            span.c-member-mention(
-              v-else-if='isChannelMention(objText)'
-            ) {{ objText.text }}
+            span.c-channel-mention(
+              v-else-if='isChannelMention(objReplyMessage)'
+              :class='{ "is-disabled": objReplyMessage.disabled }'
+              @click='navigateToChatroom(objReplyMessage)'
+            )
+              i(:class='"icon-" + objText.icon')
+              span {{ objText.text }}
         send-area(
           v-if='isEditing'
           :defaultText='swapUserIDForUsername(text)'
@@ -53,9 +57,13 @@
               v-else-if='isMemberMention(objText)'
               :class='{"c-mention-to-me": objText.toMe}'
             ) {{ objText.text }}
-            span.c-member-mention(
+            span.c-channel-mention(
               v-else-if='isChannelMention(objText)'
-            ) {{ objText.text }}
+              :class='{ "is-disabled": objText.disabled }'
+              @click='navigateToChatroom(objText)'
+            )
+              i(:class='"icon-" + objText.icon')
+              span {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
       .c-attachments-wrapper(v-if='hasAttachments')
@@ -113,6 +121,7 @@ import { makeMentionFromUserID, swapUserIDForUsername, makeChannelMention } from
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
+  CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
@@ -264,10 +273,24 @@ export default ({
         // a letter or a number (so `Hi @user!` works).
         .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
-          const defaultTextObj = () => ({
+          const genDefaultTextObj = (text) => ({
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
+            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
           })
+          const genChannelMentionObj = (text) => {
+            const chatroomId = text.slice(1)
+            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatroomId)
+
+            return found
+              ? {
+                  type: TextObjectType.ChannelMention,
+                  text: found.name,
+                  icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
+                  disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
+                  chatroomId: found.id
+                }
+              : genDefaultTextObj(text)
+          }
 
           if (t === allMention) {
             return { type: TextObjectType.MemberMention, text: t }
@@ -279,12 +302,18 @@ export default ({
                   type: TextObjectType.MemberMention,
                   text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
                 }
-              : {
-                  type: TextObjectType.ChannelMention,
-                  text: CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR + this.getChatroomNameById(t.slice(1))
-                }
-            : defaultTextObj()
+              : genChannelMentionObj(t)
+            : genDefaultTextObj(t)
         })
+    },
+    navigateToChatroom (obj) {
+      if (obj.disabled ||
+      obj.chatroomId === this.$route.params?.chatRoomId) { return }
+
+      this.$router.push({
+        name: 'GroupChatConversation',
+        params: { chatRoomId: obj.chatroomId }
+      })
     }
   }
 }: Object)
@@ -427,7 +456,8 @@ export default ({
     border-color: var(--text_1); // var(--text_2);
   }
 
-  .c-member-mention {
+  .c-member-mention,
+  .c-channel-mention {
     background-color: transparent;
   }
 }
@@ -438,13 +468,40 @@ export default ({
   color: var(--text_1);
 }
 
-.c-member-mention {
+.c-member-mention,
+.c-channel-mention {
   background-color: $primary_2;
   color: $primary_0;
-  padding: 0 0.1rem;
+  padding: 0 0.1rem 0.1rem;
+}
 
-  &.c-mention-to-me {
+.c-member-mention.c-mention-to-me {
+  background-color: $warning_1;
+}
+
+.c-channel-mention {
+  cursor: pointer;
+  transition: background-color 120ms;
+
+  &:hover,
+  &:focus {
     background-color: $warning_1;
+  }
+
+  &.is-disabled {
+    cursor: inherit;
+    background-color: $general_1;
+    color: $text_1;
+
+    &:hover,
+    &:focus {
+      background-color: $general_1;
+    }
+  }
+
+  i {
+    font-size: 0.75em;
+    margin-right: 2px;
   }
 }
 </style>
