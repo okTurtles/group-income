@@ -184,7 +184,6 @@ export function swapMentionIDForDisplayname (text: string): string {
     ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
   ]
 
-  console.log('!@# possibleMentions: ', possibleMentions)
   return text
     .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
     .map(t => {
