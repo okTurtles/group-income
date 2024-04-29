@@ -34,14 +34,16 @@
             ) {{ objReplyMessage.text }}
             span.c-channel-mention(
               v-else-if='isChannelMention(objReplyMessage)'
+              :tabindex='objReplyMessage.disabled ? undefined : 0'
               :class='{ "is-disabled": objReplyMessage.disabled }'
               @click='navigateToChatroom(objReplyMessage)'
+              @keyup.enter='navigateToChatroom(objReplyMessage)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
         send-area(
           v-if='isEditing'
-          :defaultText='swapUserIDForUsername(text)'
+          :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
@@ -59,8 +61,10 @@
             ) {{ objText.text }}
             span.c-channel-mention(
               v-else-if='isChannelMention(objText)'
+              :tabindex='objText.disabled ? undefined : 0'
               :class='{ "is-disabled": objText.disabled }'
               @click='navigateToChatroom(objText)'
+              @keyup.enter='navigateToChatroom(objText)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
@@ -117,7 +121,7 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID, swapUserIDForUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, swapMentionIDForDisplayname, makeChannelMention } from '@model/contracts/shared/functions.js'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -183,8 +187,7 @@ export default ({
     ...mapGetters([
       'ourContactProfilesById',
       'usernameFromID',
-      'chatRoomsInDetail',
-      'getChatroomNameById'
+      'chatRoomsInDetail'
     ]),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
@@ -204,7 +207,7 @@ export default ({
   },
   methods: {
     humanDate,
-    swapUserIDForUsername,
+    swapMentionIDForDisplayname,
     editMessage () {
       if (this.type === MESSAGE_TYPES.POLL) {
         alert('TODO: implement editting a poll')
@@ -481,11 +484,16 @@ export default ({
 
 .c-channel-mention {
   cursor: pointer;
-  transition: background-color 120ms;
+  transition: color 150ms;
+  outline: none;
 
   &:hover,
   &:focus {
-    background-color: $warning_1;
+    text-decoration: underline;
+  }
+
+  &:focus {
+    color: $text_1;
   }
 
   &.is-disabled {
@@ -495,6 +503,7 @@ export default ({
 
     &:hover,
     &:focus {
+      text-decoration: none;
       background-color: $general_1;
     }
   }
