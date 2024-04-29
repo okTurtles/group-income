@@ -243,7 +243,7 @@ export default ({
     },
     generateTextObjectsFromText (text) {
       const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
-  
+
       if (!text) {
         return []
       } else if (!containsMentionChar(text)) {
@@ -256,7 +256,6 @@ export default ({
       }
       const allMention = makeMentionFromUserID('').all
 
-      console.log('!@# splitted: ', text.split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`)))
       return text
         // We try to find all the mentions and render them as mentions instead
         // of regular text. The `(?<=\\s|^)` part ensures that a mention is
@@ -276,11 +275,11 @@ export default ({
 
           return this.possibleMentions.includes(t)
             ? t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
-              ? { 
+              ? {
                   type: TextObjectType.MemberMention,
                   text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
                 }
-              : { 
+              : {
                   type: TextObjectType.ChannelMention,
                   text: CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR + this.getChatroomNameById(t.slice(1))
                 }

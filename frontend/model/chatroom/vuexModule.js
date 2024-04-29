@@ -159,13 +159,13 @@ const getters = {
     //       1. All public/group channels (regardless of whether joined or not).
     //       2. A private channel that he/she has joined.
     return Object.values(getters.chatRoomsInDetail).filter(
-      details => [CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(details.privacyLevel)
-        || (details.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && details.joined)
+      (details: any) => [CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(details.privacyLevel) ||
+      (details.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && details.joined)
     )
   },
   getChatroomNameById (state, getters) {
     return chatroomId => {
-      const found: any = Object.values(getters.chatRoomsInDetail).find(details => details.id === chatroomId)
+      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatroomId)
       return found ? found.name : null
     }
   },
