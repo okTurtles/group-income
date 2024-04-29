@@ -258,8 +258,12 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import {
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
@@ -382,7 +386,7 @@ export default ({
       'ourContactProfilesById',
       'globalProfile',
       'ourIdentityContractId',
-      'chatRoomsInDetail'
+      'mentionableChatroomsInDetails'
     ]),
     members () {
       return Object.keys(this.chatRoomMembers)
@@ -395,9 +399,6 @@ export default ({
             picture
           }
         })
-    },
-    myJoinnedChannels () {
-      return Object.values(this.chatRoomsInDetail).filter(details => details.joined)
     },
     isActive () {
       return this.hasAttachments || this.ephemeral.textWithLines
@@ -458,8 +459,8 @@ export default ({
     },
     updateMentionKeyword () {
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
-      const channelCharIndex = value.lastIndexOf('#')
-      const memberCharIndex = value.lastIndexOf('@')
+      const channelCharIndex = value.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
+      const memberCharIndex = value.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
 
       if (channelCharIndex === -1 && memberCharIndex === -1) {
         return this.endMention()
@@ -549,7 +550,7 @@ export default ({
           ? mentionObj.all
           : mentionObj.me
       } else if (mentionType === 'channel') {
-        mentionString = `#${selection.name}`
+        mentionString = makeChannelMention(selection.name)
       }
 
       // Insert the selected mention into the input text.
@@ -614,23 +615,23 @@ export default ({
 
       let msgToSend = this.$refs.textarea.value || ''
 
-      /* 
+      /*
         Process member/channel mentions in the form:
           member - @username => @userID
           channel - #channel-name => #channelID
       */
       const genMentionRegExp = (type = 'member') => {
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
-        const mentionStart = type === 'member' ? makeMentionFromUsername('').all[0] : '#'
+        const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
         const availableMentions = type === 'member'
           ? this.members.map(memberID => memberID.username)
-          : this.myJoinnedChannels.map(channel => channel.name)
+          : this.mentionableChatroomsInDetails.map(channel => channel.name)
 
         return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
       }
       const convertChannelMentionToId = name => {
-        const found = this.myJoinnedChannels.find(entry => entry.name === name)
-        return found ? `#${found.id}` : ''
+        const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
+        return found ? makeChannelMention(found.id) : ''
       }
 
       // 1. replace all member mentions.
@@ -764,7 +765,7 @@ export default ({
           break
         }
         case 'channel': {
-          this.ephemeral.mention.options = this.myJoinnedChannels.filter(channel => checkIfContainsKeyword(channel.name))
+          this.ephemeral.mention.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
         }
       }
 

@@ -28,10 +28,13 @@
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
-            span.c-mention(
-              v-else-if='isMention(objReplyMessage)'
+            span.c-member-mention(
+              v-else-if='isMemberMention(objReplyMessage)'
               :class='{"c-mention-to-me": objReplyMessage.toMe}'
             ) {{ objReplyMessage.text }}
+            span.c-member-mention(
+              v-else-if='isChannelMention(objText)'
+            ) {{ objText.text }}
         send-area(
           v-if='isEditing'
           :defaultText='swapUserIDForUsername(text)'
@@ -46,9 +49,12 @@
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
-            span.c-mention(
-              v-else-if='isMention(objText)'
+            span.c-member-mention(
+              v-else-if='isMemberMention(objText)'
               :class='{"c-mention-to-me": objText.toMe}'
+            ) {{ objText.text }}
+            span.c-member-mention(
+              v-else-if='isChannelMention(objText)'
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
@@ -103,11 +109,20 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUserID, swapUserIDForUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_VARIANTS,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
-const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
+const TextObjectType = {
+  Text: 'TEXT',
+  MemberMention: 'MEMBER_MENTION',
+  ChannelMention: 'CHANNEL_MENTION'
+}
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -156,7 +171,12 @@ export default ({
     convertTextToMarkdown: Boolean
   },
   computed: {
-    ...mapGetters(['ourContactProfilesById', 'usernameFromID']),
+    ...mapGetters([
+      'ourContactProfilesById',
+      'usernameFromID',
+      'chatRoomsInDetail',
+      'getChatroomNameById'
+    ]),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
     },
@@ -165,6 +185,12 @@ export default ({
     },
     hasAttachments () {
       return Boolean(this.attachments?.length)
+    },
+    possibleMentions () {
+      return [
+        ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+        ...Object.values(this.chatRoomsInDetail).map(details => makeChannelMention(details.id))
+      ]
     }
   },
   methods: {
@@ -209,13 +235,18 @@ export default ({
     isText (o) {
       return o.type === TextObjectType.Text
     },
-    isMention (o) {
-      return o.type === TextObjectType.Mention
+    isMemberMention (o) {
+      return o.type === TextObjectType.MemberMention
+    },
+    isChannelMention (o) {
+      return o.type === TextObjectType.ChannelMention
     },
     generateTextObjectsFromText (text) {
+      const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
+  
       if (!text) {
         return []
-      } else if (!text.includes('@')) {
+      } else if (!containsMentionChar(text)) {
         return [
           {
             type: TextObjectType.Text,
@@ -224,25 +255,36 @@ export default ({
         ]
       }
       const allMention = makeMentionFromUserID('').all
-      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
+      console.log('!@# splitted: ', text.split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`)))
       return text
         // We try to find all the mentions and render them as mentions instead
         // of regular text. The `(?<=\\s|^)` part ensures that a mention is
         // preceded by a space or is the start of a line and the `(?=[^\\w\\d]|$)`
         // ensures that it's followed by an end-of-line or a character that's not
         // a letter or a number (so `Hi @user!` works).
-        .split(new RegExp(`(?<=\\s|^)(${allMention}|${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
+          const defaultTextObj = () => ({
+            type: TextObjectType.Text,
+            text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
+          })
+
           if (t === allMention) {
-            return { type: TextObjectType.Mention, text: t }
+            return { type: TextObjectType.MemberMention, text: t }
           }
-          return possibleMentions.includes(t)
-            ? { type: TextObjectType.Mention, text: t[0] + this.usernameFromID(t.slice(1)) }
-            : {
-                type: TextObjectType.Text,
-                text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
-              }
+
+          return this.possibleMentions.includes(t)
+            ? t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
+              ? { 
+                  type: TextObjectType.MemberMention,
+                  text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
+                }
+              : { 
+                  type: TextObjectType.ChannelMention,
+                  text: CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR + this.getChatroomNameById(t.slice(1))
+                }
+            : defaultTextObj()
         })
     }
   }
@@ -386,7 +428,7 @@ export default ({
     border-color: var(--text_1); // var(--text_2);
   }
 
-  .c-mention {
+  .c-member-mention {
     background-color: transparent;
   }
 }
@@ -397,13 +439,13 @@ export default ({
   color: var(--text_1);
 }
 
-.c-mention {
+.c-member-mention {
   background-color: $primary_2;
   color: $primary_0;
   padding: 0 0.1rem;
-}
 
-.c-mention.c-mention-to-me {
-  background-color: $warning_1;
+  &.c-mention-to-me {
+    background-color: $warning_1;
+  }
 }
 </style>

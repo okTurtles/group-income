@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
-import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
@@ -153,6 +153,21 @@ const getters = {
       }
     }
     return chatRoomsInDetail
+  },
+  mentionableChatroomsInDetails (state, getters) {
+    // NOTE: Channel types a user can mention
+    //       1. All public/group channels (regardless of whether joined or not).
+    //       2. A private channel that he/she has joined.
+    return Object.values(getters.chatRoomsInDetail).filter(
+      details => [CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(details.privacyLevel)
+        || (details.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && details.joined)
+    )
+  },
+  getChatroomNameById (state, getters) {
+    return chatroomId => {
+      const found: any = Object.values(getters.chatRoomsInDetail).find(details => details.id === chatroomId)
+      return found ? found.name : null
+    }
   },
   chatRoomMembersInSort (state, getters) {
     return getters.groupMembersSorted

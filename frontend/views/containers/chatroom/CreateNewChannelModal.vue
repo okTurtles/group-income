@@ -15,7 +15,7 @@
           :class='{ error: $v.form.name.$error }'
           v-model='form.name'
           data-test='createChannelName'
-          @input='debounceField("name")'
+          @input='onNameInput'
           @blur='updateField("name")'
           v-error:name=''
         )
@@ -203,6 +203,20 @@ export default ({
     },
     handlePrivacyLevel (e) {
       this.form.privacy = e.target.value
+    },
+    onNameInput (e) {
+      const newVal = e.target.value
+      const currVal = this.form.name
+
+      if (newVal.length) {
+        if (newVal === `${currVal} `) {
+          this.form.name = `${currVal}-`
+        } else {
+          this.form.name = newVal.toLowerCase()
+        }
+      }
+
+      this.debounceField('name')
     }
   },
   validations: {
