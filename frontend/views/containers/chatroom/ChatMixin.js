@@ -35,7 +35,6 @@ const ChatMixin: Object = {
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
-      'ourIdentityContractId',
       'currentGroupState',
       'groupIdFromChatRoomId',
       'ourGroupDirectMessages',

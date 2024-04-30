@@ -302,7 +302,6 @@ export default ({
       'chatRoomAttributes',
       'chatRoomMembers',
       'chatRoomLatestMessages',
-      'currentChatVm',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
@@ -310,6 +309,7 @@ export default ({
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
+      'currentChatVm',
       'chatRoomUnreadMentions'
     ]),
     currentUserAttr () {
@@ -702,8 +702,8 @@ export default ({
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         members: cloneDeep(this.chatRoomMembers),
-        messages: shouldClearMessages ? [] : cloneDeep(this.chatRoomLatestMessages),
         _vm: cloneDeep(this.currentChatVm),
+        messages: shouldClearMessages ? [] : cloneDeep(this.chatRoomLatestMessages),
         shouldSaveMessages: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
@@ -726,12 +726,11 @@ export default ({
     async renderMoreMessages () {
       // NOTE: 'this.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
-      const chatRoomID = this.renderingChatRoomId
-      // NOTE: messagesInitiated describes if the messages should be fully removed and re-rendered
+      //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
-      if (!this.ephemeral.messagesInitiated) {
-        if (!this.checkEventSourceConsistency(chatRoomID)) return
-      }
+      const chatRoomID = this.renderingChatRoomId
+      if (!this.checkEventSourceConsistency(chatRoomID)) return
+
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
        * if the removed message was the first unread messages(currentChatRoomReadUntil)
