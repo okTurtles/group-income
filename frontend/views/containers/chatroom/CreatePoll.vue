@@ -232,6 +232,14 @@ export default {
         this.$v.form.$reset()
         this.close()
       })
+    },
+    resizeHandler () {
+      if (window.matchMedia('(hover: hover)').matches) {
+        // This is a fix for the issue #1954(https://github.com/okTurtles/group-income/issues/1954)
+        // -> closes the pop-up if the viewport size changes only when it's NOT a touch device.
+        //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
+        this.close()
+      }
     }
   },
   created () {
@@ -241,11 +249,11 @@ export default {
     }
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
 
-    window.addEventListener('resize', this.close)
+    window.addEventListener('resize', this.resizeHandler)
     document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
-    window.removeEventListener('resize', this.close)
+    window.removeEventListener('resize', this.resizeHandler)
     document.removeEventListener('keydown', this.trapFocus)
 
     this.matchMediaDesktop.onchange = null
