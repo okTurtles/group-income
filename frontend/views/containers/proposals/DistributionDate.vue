@@ -104,6 +104,7 @@ export default ({
       'ourIdentityContractId',
       'groupShouldPropose',
       'groupSettings',
+      'currentGroupOwnerID',
       'groupMembersCount'
     ]),
     currentDistributionDate () {
@@ -113,7 +114,7 @@ export default ({
       return this.groupDistributionStarted(new Date().toISOString())
     },
     shouldImmediateChangeDistributionDate () {
-      return !this.distributionStarted && this.ourIdentityContractId === this.groupSettings.groupCreatorID
+      return !this.distributionStarted && this.ourIdentityContractId === this.currentGroupOwnerID
     }
   },
   beforeMount () {
