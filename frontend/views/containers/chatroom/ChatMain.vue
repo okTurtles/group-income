@@ -158,22 +158,14 @@ const ignorableScrollDistanceInPixel = 500
 // inaccessible. So, instead we define these methods outside the component and
 // manually bind them in `mounted`.
 const onChatScroll = function () {
-  if (!this.$refs.conversation) {
+  if (!this.$refs.conversation || !this.summary.isJoined) {
     return
   }
+
   const curScrollTop = this.$refs.conversation.scrollTop
   const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-
-  if (!this.$refs.conversation) {
-    this.ephemeral.scrolledDistance = 0
-  } else {
-    const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-    this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
-  }
-
-  if (!this.summary.isJoined) {
-    return
-  }
+  const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+  this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
@@ -251,6 +243,7 @@ export default ({
       ephemeral: {
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
+        onChatScroll: null,
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
@@ -298,12 +291,6 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
-    try {
-      // NOTE: Same comment as the one of the function 'initializeState'
-      onChatScroll.call(this)
-    } catch (e) {
-      console.error('ChatMain.vue: Error while flushing onChatScroll in beforeDestroy', e)
-    }
   },
   computed: {
     ...mapGetters([
@@ -444,7 +431,7 @@ export default ({
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
               //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
-              onChatScroll.call(this)
+              this.onChatScroll()
             }
           })
         }
@@ -720,15 +707,7 @@ export default ({
     },
     initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
-      // so should be CAREFUL of updating the fields
-      try {
-        // NOTE: Before initializing the state, we save the current scroll position if there's something so save
-        //       Replaced this.ephemeral.onChatScroll.flush() with onChatScroll.call(this)
-        //       because the former doesn't work in synchronous
-        onChatScroll.call(this)
-      } catch (e) {
-        console.error('ChatMain.vue: Error while flushing onChatScroll in initializeState', e)
-      }
+      //       so should be CAREFUL of updating the fields
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', this.generateNewChatRoomState(forceClearMessages))
     },
@@ -1063,9 +1042,9 @@ export default ({
         })
       })
     },
-    // We need this method wrapper to avoid ephemeral.onChatScroll being undefined
     onChatScroll () {
-      this.ephemeral.onChatScroll()
+      // NOTE: We need this method wrapper to avoid ephemeral.onChatScroll being null
+      this.ephemeral.onChatScroll?.()
     },
     // This debounced method is debounced precisely while switching groups
     // to avoid unnecessary re-rendering, and therefore is fine as is and
