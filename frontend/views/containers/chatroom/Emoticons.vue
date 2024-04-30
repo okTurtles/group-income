@@ -30,12 +30,12 @@ export default ({
     sbp('okTurtles.events/on', OPEN_EMOTICON, this.openEmoticon)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
-    window.addEventListener('resize', this.closeEmoticonDlg)
+    window.addEventListener('resize', this.resizeHandler)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
-    window.removeEventListener('resize', this.closeEmoticonDlg)
+    window.removeEventListener('resize', this.resizeHandler)
   },
   computed: {
     position () {
@@ -97,6 +97,14 @@ export default ({
       if (this.lastFocus) {
         this.lastFocus.focus()
         this.lastFocus = null
+      }
+    },
+    resizeHandler () {
+      if (window.matchMedia('(hover: hover)').matches) {
+        // This is a fix for the issue #1954 (https://github.com/okTurtles/group-income/issues/1954)
+        // -> closes the pop-up if the viewport size changes only when it's NOT a touch device.
+        //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
+        this.closeEmoticonDlg()
       }
     }
   }
