@@ -329,7 +329,10 @@ sbp('chelonia/defineContract', {
         // being removed using the group's CSK (usually when a member is removed)
         const isKicked = innerSigningContractID && memberID !== innerSigningContractID
         if (!state.shouldSaveMessages) {
-          if (!state.members[memberID]) {
+          if (!state.members) {
+            console.error('Missing state.members: ' + JSON.stringify(state))
+            throw new Error('Missing members state')
+          } else if (!state.members[memberID]) {
             throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
         }
