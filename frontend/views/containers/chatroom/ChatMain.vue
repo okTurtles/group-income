@@ -158,6 +158,8 @@ const ignorableScrollDistanceInPixel = 500
 // inaccessible. So, instead we define these methods outside the component and
 // manually bind them in `mounted`.
 const onChatScroll = function () {
+  // NOTE: Should be careful of using the currentChatRoomState
+  //       since those states are depends on the currentChatRoomId, not renderingChatRoomId
   if (!this.$refs.conversation || !this.summary.isJoined) {
     return
   }
