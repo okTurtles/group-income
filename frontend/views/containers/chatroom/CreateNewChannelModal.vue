@@ -246,13 +246,6 @@ export default ({
         }
       }
     }
-  },
-  watch: {
-    'form.name' (newVal, oldVal) {
-      if (newVal.length && newVal === `${oldVal} `) {
-        this.form.name = `${oldVal}-`
-      }
-    }
   }
 }: Object)
 </script>
