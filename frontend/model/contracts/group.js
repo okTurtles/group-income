@@ -425,6 +425,9 @@ sbp('chelonia/defineContract', {
     currentGroupLastLoggedIn () {
       return {}
     },
+    currentGroupOwnerID (state, getters) {
+      return getters.currentGroupState.groupOwnerID
+    },
     groupSettings (state, getters) {
       return getters.currentGroupState.settings || {}
     },
@@ -462,8 +465,7 @@ sbp('chelonia/defineContract', {
       return profiles
     },
     groupCreatedDate (state, getters) {
-      const creator = getters.groupSettings.groupCreatorID
-      return getters.groupProfile(creator).joinedDate
+      return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
     },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
@@ -1046,7 +1048,7 @@ sbp('chelonia/defineContract', {
 
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
-        const isGroupCreator = innerSigningContractID === state.settings.groupCreatorID
+        const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
 
         if (!state.profiles[memberToRemove]) {
           throw new TypeError(L('Not part of the group.'))
@@ -1248,7 +1250,7 @@ sbp('chelonia/defineContract', {
           allowPublicChannels: x => typeof x === 'boolean'
         })(data)
 
-        const isGroupCreator = innerSigningContractID === getters.groupSettings.groupCreatorID
+        const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
         if ('allowPublicChannels' in data && !isGroupCreator) {
           throw new TypeError(L('Only group creator can allow public channels.'))
         } else if ('distributionDate' in data && !isGroupCreator) {
