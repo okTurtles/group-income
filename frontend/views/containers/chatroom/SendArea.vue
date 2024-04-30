@@ -128,7 +128,7 @@
       .c-edit-actions(v-if='isEditing')
         i18n.is-small.is-outlined(
           tag='button'
-          @click='$emit("cancelEdit")'
+          @click='cancelEditing'
         ) Cancel
 
         i18n.button.is-small(
@@ -529,11 +529,7 @@ export default ({
 
       if (!newValue) {
         // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
-        sbp('gi.actions/chatroom/user-stop-typing-event', {
-          contractID: this.currentChatRoomId
-        }).catch(e => {
-          console.error('Error emitting user stopped typing event', e)
-        })
+        this.emitUserStopTypingEvent()
       } else if (this.ephemeral.textWithLines.length < newValue.length) {
         // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
         this.throttledEmitUserTypingEvent()
@@ -771,6 +767,17 @@ export default ({
         contractID: this.currentChatRoomId
       }).catch(e => {
         console.error('Error emitting user typing event', e)
+      })
+    },
+    cancelEditing () {
+      this.emitUserStopTypingEvent()
+      this.$emit('cancelEdit')
+    },
+    emitUserStopTypingEvent () {
+      sbp('gi.actions/chatroom/user-stop-typing-event', {
+        contractID: this.currentChatRoomId
+      }).catch(e => {
+        console.error('Error emitting user stopped typing event', e)
       })
     }
   }
