@@ -214,11 +214,7 @@ sbp('chelonia/defineContract', {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
         }
         if (!state.shouldSaveMessages) {
-          // For private chatrooms, group members can see the '/join' actions
-          // but nothing else. Because of this, `state.members` may be missing
-          if (!state.members) {
-            Vue.set(state, 'members', {})
-          } else if (state.members[memberID]) {
+          if (state.members[memberID]) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
@@ -329,10 +325,7 @@ sbp('chelonia/defineContract', {
         // being removed using the group's CSK (usually when a member is removed)
         const isKicked = innerSigningContractID && memberID !== innerSigningContractID
         if (!state.shouldSaveMessages) {
-          if (!state.members) {
-            console.error('Missing state.members: ' + JSON.stringify(state))
-            throw new Error('Missing members state')
-          } else if (!state.members[memberID]) {
+          if (!state.members[memberID]) {
             throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
         }
