@@ -202,7 +202,6 @@ export default (sbp('sbp/selectors/register', {
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: name,
-            groupCreatorID: userID,
             groupPicture: finalPicture,
             sharedValues,
             mincomeAmount: +mincomeAmount,
@@ -231,7 +230,8 @@ export default (sbp('sbp/selectors/register', {
                 proposalSettings
               )
             }
-          }
+          },
+          groupOwnerID: userID
         }
       })
 
