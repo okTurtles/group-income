@@ -645,11 +645,13 @@ export default (sbp('sbp/selectors/register', {
         [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
-          const gProxy = gettersProxy(state, contract.getters)
-          state = state || contract.state(contractID)
-          contract.metadata.validate(meta, { state, ...gProxy, contractID })
-          contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
-          contract.actions[action].process(message, { state, ...gProxy })
+          // TODO: Copy to simulate a sandbox boundary without direct access
+          const stateCopy = cloneDeep(state || contract.state(contractID))
+          const gProxy = gettersProxy(stateCopy, contract.getters)
+          contract.metadata.validate(meta, { state: stateCopy, ...gProxy, contractID })
+          contract.actions[action].validate(data, { state: stateCopy, ...gProxy, meta, message, contractID })
+          contract.actions[action].process(message, { state: stateCopy, ...gProxy })
+          Object.assign(state, stateCopy)
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
@@ -659,8 +661,12 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`[${contract.manifest}/${action}/sideEffect]: Skipping side-effect since there is no contract state for contract ${mutation.contractID}`)
               return
             }
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+            // TODO: Copy to simulate a sandbox boundary without direct access
+            // as well as to enforce the rule that side-effects must not mutate
+            // state
+            const stateCopy = cloneDeep(state)
+            const gProxy = gettersProxy(stateCopy, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state: stateCopy, ...gProxy })
           }
           // since both /process and /sideEffect could call /pushSideEffect, we make sure
           // to process the side effects on the stack after calling /sideEffect.
@@ -993,6 +999,9 @@ export default (sbp('sbp/selectors/register', {
         state = stateCopy
       }
     }
+  },
+  'chelonia/contract/state': async function (contractID: string) {
+    return await sbp(this.config.stateSelector)[contractID]
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {

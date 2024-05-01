@@ -58,11 +58,11 @@ const checkUsernameConsistency = async (contractID: string, username: string) =>
   // If there was a mismatch, wait until the contract is finished processing
   // (because the username could have been updated), and if the situation
   // persists, warn the user
-  sbp('chelonia/queueInvocation', contractID, () => {
-    const rootState = sbp('state/vuex/state')
-    if (!has(rootState, contractID)) return
+  sbp('chelonia/queueInvocation', contractID, async () => {
+    const state = await sbp('chelonia/contract/state', contractID)
+    if (!state) return
 
-    const username = rootState[contractID].attributes.username
+    const username = state[contractID].attributes.username
     if (sbp('namespace/lookupCached', username) !== contractID) {
       sbp('gi.notifications/emit', 'WARNING', {
         contractID,
@@ -216,12 +216,11 @@ sbp('chelonia/defineContract', {
           key: inviteSecret, transient: true
         }])
 
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
 
           // If we've logged out, return
-          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+          if (!state || contractID !== sbp('state/vuex/state').loggedIn.identityContractID) {
             return
           }
 
@@ -285,12 +284,11 @@ sbp('chelonia/defineContract', {
         Vue.delete(state.groups, groupContractID)
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
 
           // If we've logged out, return
-          if (!state || contractID !== rootState.loggedIn.identityContractID) {
+          if (!state || contractID !== sbp('state/vuex/state').loggedIn.identityContractID) {
             return
           }
 
@@ -301,33 +299,32 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          if (has(rootState.contracts, groupContractID)) {
-            sbp('gi.actions/group/removeOurselves', {
-              contractID: groupContractID
-            }).catch(e => {
-              console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
-            })
-          }
+          sbp('gi.actions/group/removeOurselves', {
+            contractID: groupContractID
+          }).catch(e => {
+            if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupNotJoinedError') return
+            console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
+          })
 
           sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
             console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
           })
 
           // grab the groupID of any group that we're a part of
-          if (!rootState.currentGroupId || rootState.currentGroupId === data.groupContractID) {
+          if (!sbp('state/vuex/state').currentGroupId || sbp('state/vuex/state').currentGroupId === data.groupContractID) {
             const groupIdToSwitch = Object.keys(state.groups)
               .filter(cID =>
                 cID !== data.groupContractID
               ).sort(cID =>
               // prefer successfully joined groups
-                rootState[cID]?.profiles?.[contractID] ? -1 : 1
+                sbp('state/vuex/state')[cID]?.profiles?.[contractID] ? -1 : 1
               )[0] || null
             sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
             sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           }
 
           // Remove last logged in information
-          Vue.delete(rootState.lastLoggedIn, contractID)
+          Vue.delete(sbp('state/vuex/state').lastLoggedIn, contractID)
 
           // this looks crazy, but doing this was necessary to fix a race condition in the
           // group-member-removal Cypress tests where due to the ordering of asynchronous events
@@ -337,7 +334,7 @@ sbp('chelonia/defineContract', {
           try {
             const router = sbp('controller/router')
             const switchFrom = router.currentRoute.path
-            const switchTo = rootState.currentGroupId ? '/dashboard' : '/'
+            const switchTo = sbp('state/vuex/state').currentGroupId ? '/dashboard' : '/'
             if (switchFrom !== '/join' && switchFrom !== switchTo) {
               router.push({ path: switchTo }).catch((e) => console.error('Error switching groups', e))
             }

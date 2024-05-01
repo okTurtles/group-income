@@ -4,6 +4,35 @@ import sbp from '@sbp/sbp'
 import localforage from 'localforage'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '../../shared/domains/chelonia/crypto.js'
 
+const generateEncryptionParams = async (stateKeyEncryptionKeyFn?: (stateEncryptionKeyId: string, salt: string) => Promise<*>) => {
+  // Create the necessary keys
+  // First, we generate the state encryption key
+  const stateEncryptionKey = keygen(CURVE25519XSALSA20POLY1305)
+  const stateEncryptionKeyId = keyId(stateEncryptionKey)
+  const stateEncryptionKeyS = serializeKey(stateEncryptionKey, true)
+
+  // Once we have the state encryption key, we generate a salt
+  const salt = generateSalt()
+
+  // We use the salt, the state encryption key ID and the password to
+  // derive a key to encrypt the state encryption key
+  // This key is not stored anywhere, but is used for reconstructing
+  // the state on a fresh session
+  const stateKeyEncryptionKey = await stateKeyEncryptionKeyFn(stateEncryptionKeyId, salt)
+
+  // Once everything is place, encrypt the state encryption key
+  const encryptedStateEncryptionKey = encrypt(stateKeyEncryptionKey, stateEncryptionKeyS, stateEncryptionKeyId)
+
+  return {
+    encryptionParams: {
+      stateEncryptionKeyId,
+      salt,
+      encryptedStateEncryptionKey
+    },
+    stateEncryptionKeyS
+  }
+}
+
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   const log = localforage.createInstance({
     name: 'Group Income',
@@ -54,20 +83,21 @@ sbp('sbp/selectors/register', {
     if (!stateEncryptionKeyS) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
     // Encrypt the current state
     const encryptedState = encrypt(stateEncryptionKeyS, JSON.stringify(value), user)
-    // Save the three fields of the encrypted state:
+    // Save the four fields of the encrypted state. We use base64 encoding to
+    // allow saving any incoming data.
     //   (1) stateEncryptionKeyId
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem(user, `${stateEncryptionKeyId}.${salt}.${encryptedStateEncryptionKey}.${encryptedState}}`)
+    return appSettings.setItem(user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`)
   },
-  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn): Promise<*> {
+  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn?: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
     return appSettings.getItem(user).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
         throw new EmptyValue(`Unable to retrive state for ${user || ''}`)
       }
       // Split the encrypted state into its constituent parts
-      const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.')
+      const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.').map(x => atob(x))
 
       // If the state encryption key is in appSettings, retrieve it
       let stateEncryptionKeyS = await appSettings.getItem(stateEncryptionKeyId)
@@ -116,33 +146,13 @@ sbp('sbp/selectors/register', {
         console.warn('Error while retrieving local state', e)
       }
 
-      // Create the necessary keys
-      // First, we generate the state encryption key
-      const stateEncryptionKey = keygen(CURVE25519XSALSA20POLY1305)
-      const stateEncryptionKeyId = keyId(stateEncryptionKey)
-      const stateEncryptionKeyS = serializeKey(stateEncryptionKey, true)
-
-      // Once we have the state encryption key, we generate a salt
-      const salt = generateSalt()
-
-      // We use the salt, the state encryption key ID and the password to
-      // derive a key to encrypt the state encryption key
-      // This key is not stored anywhere, but is used for reconstructing
-      // the state on a fresh session
-      const stateKeyEncryptionKey = await stateKeyEncryptionKeyFn(stateEncryptionKeyId, salt)
-
-      // Once everything is place, encrypt the state encryption key
-      const encryptedStateEncryptionKey = encrypt(stateKeyEncryptionKey, stateEncryptionKeyS, stateEncryptionKeyId)
+      const { encryptionParams, stateEncryptionKeyS } = await generateEncryptionParams(stateKeyEncryptionKeyFn)
 
       // Save the state encryption key to local storage
-      await appSettings.setItem(stateEncryptionKeyId, stateEncryptionKeyS)
+      await appSettings.setItem(encryptionParams.stateEncryptionKeyId, stateEncryptionKeyS)
 
       return {
-        encryptionParams: {
-          stateEncryptionKeyId,
-          salt,
-          encryptedStateEncryptionKey
-        },
+        encryptionParams,
         value: null
       }
     })

@@ -10,7 +10,7 @@ import 'wicg-inert'
 import '@model/captureLogs.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
 import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
@@ -101,11 +101,41 @@ async function startApp () {
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save')
   }
+  await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
+    // TODO: PLACEHOLDER TO SIMULATE CHELONIA IN A SW
+    if (!cheloniaState) return
+    const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    if (!identityContractID) return
+    Object.assign(sbp('chelonia/rootState'), cheloniaState)
+    console.error('@@@@SET CHELONIA STATE[main.js]', identityContractID, sbp('chelonia/rootState'), cheloniaState)
+  })
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    /*
     stateSelector: 'state/vuex/state',
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
+    */
+    reactiveSet: (o: Object, k: string, v: string) => {
+      // TODO: PLACEHOLDER TO SIMULATE CHELONIA SERVICE WORKER SAVING STATE
+      // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
+      if (o[k] !== v) {
+        o[k] = v
+        sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+          return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
+        })
+      }
+    },
+    reactiveDel: (o: Object, k: string) => {
+      // TODO: PLACEHOLDER TO SIMULATE CHELONIA SERVICE WORKER SAVING STATE
+      // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
+      if (Object.prototype.hasOwnProperty.call(o, k)) {
+        delete o[k]
+        sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+          return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
+        })
+      }
+    },
     contracts: {
       ...manifests,
       defaults: {
@@ -113,6 +143,7 @@ async function startApp () {
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/state',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
@@ -168,6 +199,54 @@ async function startApp () {
         errorNotification('sideEffect', e, message)
       }
     }
+  })
+
+  sbp('okTurtles.events/on', EVENT_HANDLED, (contractID) => {
+    const cheloniaState = sbp('chelonia/rootState')
+    const state = cheloniaState[contractID]
+    const contractState = cheloniaState.contracts[contractID]
+    const vuexState = sbp('state/vuex/state')
+    if (contractState) {
+      if (!vuexState.contracts) {
+        Vue.set(vuexState, 'contracts', Object.create(null))
+      }
+      Vue.set(vuexState.contracts, contractID, JSON.parse(JSON.stringify(contractState)))
+    } else if (vuexState.contracts) {
+      Vue.delete(vuexState.contracts, contractState)
+    }
+    if (state) {
+      Vue.set(vuexState, contractID, JSON.parse(JSON.stringify(state)))
+    } else {
+      Vue.delete(vuexState, contractID)
+    }
+  })
+
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
+    const cheloniaState = sbp('chelonia/rootState')
+    const vuexState = sbp('state/vuex/state')
+
+    if (!vuexState.contracts) {
+      Vue.set(vuexState, 'contracts', Object.create(null))
+    }
+
+    const oldContracts = Object.keys(vuexState.contracts)
+    const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.has(x))
+    const newContracts = Array.from(subscriptionSet).filter(x => !oldContracts.includes(x))
+
+    oldContractsToRemove.forEach(x => {
+      Vue.delete(vuexState.contracts, x)
+      Vue.delete(vuexState, x)
+    })
+    newContracts.forEach(x => {
+      const state = cheloniaState[x]
+      const contractState = cheloniaState.contracts[x]
+      if (contractState) {
+        Vue.set(vuexState.contracts, x, JSON.parse(JSON.stringify(contractState)))
+      }
+      if (state) {
+        Vue.set(vuexState, x, JSON.parse(JSON.stringify(state)))
+      }
+    })
   })
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
@@ -379,18 +458,40 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
-        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
-          console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
-          console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        })
-      }).catch(e => {
-        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-      }).finally(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
-      })
+      sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
+        // TODO: PLACEHOLDER TO SIMULATE CHELONIA IN A SW
+        const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+        if (!cheloniaState || !identityContractID) return
+        const contractSyncPriorityList = [
+          'gi.contracts/identity',
+          'gi.contracts/group',
+          'gi.contracts/chatroom'
+        ]
+        const getContractSyncPriority = (key) => {
+          const index = contractSyncPriorityList.indexOf(key)
+          return index === -1 ? contractSyncPriorityList.length : index
+        }
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        const contractIDs = Object.keys(cheloniaState.contracts)
+        await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
+          // Sync contracts in order based on type
+          return getContractSyncPriority(a) - getContractSyncPriority(b)
+        }).map(([, ids]) => {
+          return sbp('okTurtles.eventQueue/queueEvent', `appStart:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+        }))
+      }).then(() =>
+        sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
+          if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
+          return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
+            console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
+            console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+          })
+        }).catch(e => {
+          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+        }).finally(() => {
+          this.ephemeral.ready = true
+          this.removeLoadingAnimation()
+        }))
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),

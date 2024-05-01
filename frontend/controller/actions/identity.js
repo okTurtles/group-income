@@ -13,7 +13,6 @@ import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -306,40 +305,47 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       sbp('appLogs/startCapture', identityContractID)
-      const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
+      const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, (stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
-      }))
+      })
 
+      const cheloniaState = state?.cheloniaState
+      if (cheloniaState) {
+        delete state.cheloniaState
+      }
+
+      // TODO: The following is needed only if `!!password`
       const contractIDs = Object.create(null)
       // login can be called when no settings are saved (e.g. from Signup.vue)
-      if (state) {
+      if (cheloniaState) {
         // The retrieved local data might need to be completed in case it was originally saved
         // under an older version of the app where fewer/other Vuex modules were implemented.
-        sbp('state/vuex/postUpgradeVerification', state)
-        sbp('state/vuex/replace', state)
+        Object.assign(sbp('chelonia/rootState'), cheloniaState)
+        console.error('@@@@SET CHELONIA STATE[identity.js]', { cRS: sbp('chelonia/rootState'), cheloniaState, stateC: JSON.parse(JSON.stringify(state)), state })
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         // $FlowFixMe[incompatible-use]
-        Object.entries(state.contracts).forEach(([id, { type }]) => {
+        Object.entries(cheloniaState.contracts).forEach(([id, { type }]) => {
           if (!contractIDs[type]) {
             contractIDs[type] = []
           }
           contractIDs[type].push(id)
         })
       }
+      if (state) {
+        // The retrieved local data might need to be completed in case it was originally saved
+        // under an older version of the app where fewer/other Vuex modules were implemented.
+        sbp('state/vuex/postUpgradeVerification', state)
+        sbp('state/vuex/replace', state)
+      }
 
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
 
-      const loginAttributes = { identityContractID, encryptionParams, username }
-
-      // If username was not provided, retrieve it from the state
-      if (!loginAttributes.username) {
-        loginAttributes.username = Object.entries(state.namespaceLookups)
-          .find(([k, v]) => v === identityContractID)
-          ?.[0]
-      }
+      const loginAttributes = { identityContractID, encryptionParams }
 
       sbp('state/vuex/commit', 'login', loginAttributes)
-      await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
+      if (password) {
+        await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
+      }
 
       // We need to sync contracts in this order to ensure that we have all the
       // corresponding secret keys. Group chatrooms use group keys but there's
@@ -359,7 +365,7 @@ export default (sbp('sbp/selectors/register', {
 
       //            loading the website instead of stalling out.
       try {
-        if (!state) {
+        if (!cheloniaState) {
           // Make sure we don't unsubscribe from our own identity contract
           // Note that this should be done _after_ calling
           // `chelonia/storeSecretKeys`: If the following line results in
@@ -517,6 +523,8 @@ export default (sbp('sbp/selectors/register', {
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
+        sbp('state/vuex/state').cheloniaState = sbp('chelonia/rootState')
+        await sbp('gi.db/settings/delete', 'CHELONIA_STATE')
         await sbp('state/vuex/save')
 
         // If there is a state encryption key in the app settings, remove it
@@ -572,15 +580,15 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
-    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
-      const CEKid = findKeyIdByName(rootState[groupID], 'cek')
-      const CSKid = findKeyIdByName(rootState[groupID], 'csk')
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(async groupID => {
+      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
 
       if (!CEKid || !CSKid) {
         console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
         // We intentionally don't throw here to be able to share keys with the
         // remaining groups
-        return Promise.resolve()
+        return
       }
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,

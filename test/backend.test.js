@@ -53,7 +53,7 @@ const vuexState = {
   namespaceLookups: Object.create(null),
   reducedMotion: false,
   appLogsFilter: ['error', 'info', 'warn'],
-  contractSiginingKeys: Object.create(null)
+  contractSigningKeys: Object.create(null)
 }
 
 // this is to ensure compatibility between frontend and test/backend.test.js

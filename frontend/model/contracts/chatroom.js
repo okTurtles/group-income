@@ -227,9 +227,8 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
         if (state.onlyRenderMessage) return
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           const memberID = data.memberID || innerSigningContractID
 
           if (!state?.members?.[memberID]) {
@@ -357,16 +356,15 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
         if (state.onlyRenderMessage) return
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           const memberID = data.memberID || innerSigningContractID
 
           if (!state || !!state.members?.[data.memberID]) {
             return
           }
 
-          if (memberID === rootState.loggedIn.identityContractID) {
+          if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
             leaveChatRoom({ contractID }).catch((e) => {
               console.error(`[gi.contracts/chatroom/leave/sideEffect] Error for ${contractID}`, e)
             })
@@ -477,8 +475,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
-        const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.identityContractID
+        const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }

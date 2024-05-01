@@ -27,7 +27,7 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
-  contractSiginingKeys: Object.create(null),
+  contractSigningKeys: Object.create(null),
   lastLoggedIn: {} // Group last logged in information
 }
 
@@ -81,11 +81,13 @@ sbp('sbp/selectors/register', {
     const state = store.state
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
-    if (state.loggedIn) {
-      const { identityContractID, encryptionParams } = state.loggedIn
-      state.notifications = applyStorageRules(state.notifications || [])
-      await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
+    if (!state.loggedIn) {
+      return
     }
+
+    const { identityContractID, encryptionParams } = state.loggedIn
+    state.notifications = applyStorageRules(state.notifications || [])
+    await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
   }
 })
 
@@ -139,8 +141,8 @@ const getters = {
   currentIdentityState (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
-  ourUsername (state) {
-    return state.loggedIn && state.loggedIn.username
+  ourUsername (state, getters) {
+    return state.loggedIn && getters.usernameFromID(state.loggedIn.identityContractID)
   },
   ourProfileActive (state, getters) {
     return getters.profileActive(getters.ourIdentityContractId)

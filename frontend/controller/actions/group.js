@@ -30,7 +30,6 @@ import {
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -116,10 +115,10 @@ export default (sbp('sbp/selectors/register', {
         () => [CEK, CSK].map(key => ({ key, transient: true }))
       )
 
-      const userCSKid = findKeyIdByName(rootState[userID], 'csk')
+      const userCSKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
-      const userCEKid = findKeyIdByName(rootState[userID], 'cek')
+      const userCEKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'cek')
       if (!userCEKid) throw new Error('User CEK id not found')
 
       const message = await sbp('chelonia/out/registerContract', {
@@ -322,7 +321,7 @@ export default (sbp('sbp/selectors/register', {
       // perform all operations in the group? If we haven't, we are not
       // able to participate in the group yet and may need to send a key
       // request.
-      const hasSecretKeys = sbp('chelonia/contract/receivedKeysToPerformOperation', userID, state, '*')
+      const hasSecretKeys = sbp('chelonia/contract/receivedKeysToPerformOperation', userID, params.contractID, '*')
 
       // Do we need to send a key request?
       // If we don't have the group contract in our state and
@@ -330,7 +329,7 @@ export default (sbp('sbp/selectors/register', {
       // through an invite link, and we must send a key request to complete
       // the joining process.
       const sendKeyRequest = (!hasKeyShareBeenRespondedBy && !hasSecretKeys && params.originatingContractID)
-      const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, userID, params.reference)
+      const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', params.contractID, userID, params.reference)
 
       // If we are expecting to receive keys, set up an event listener
       // We are expecting to receive keys if:
