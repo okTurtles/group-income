@@ -46,7 +46,7 @@ export function makeNotification ({ title, body, icon, path }: {
           registration.showNotification(title, { body, icon })
         }).catch(console.warn)
       } catch (error) {
-        console.debug('makeNotification: ', error.message)
+        console.error('makeNotification: ', error.message)
       }
     }
   }
