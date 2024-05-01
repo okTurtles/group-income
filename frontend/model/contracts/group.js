@@ -1147,7 +1147,7 @@ sbp('chelonia/defineContract', {
             const generalChatRoomId = state.generalChatRoomId
             if (generalChatRoomId) {
               // Join the general chatroom
-              if (state.chatRooms[generalChatRoomId]?.members?.[loggedIn.identityContractID]?.status !== PROFILE_STATUS.ACTIVE) {
+              if (state.chatRooms[generalChatRoomId]?.members?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
                   data: { chatRoomID: generalChatRoomId },
@@ -1180,10 +1180,7 @@ sbp('chelonia/defineContract', {
 
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(profiles)
-              .filter((id) =>
-                id !== loggedIn.identityContractID &&
-                !rootGetters.ourContactProfilesById[id]
-              )
+              .filter((id) => id !== userID && !rootGetters.ourContactProfilesById[id])
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
@@ -1202,7 +1199,7 @@ sbp('chelonia/defineContract', {
             // are indexed by contract ID
             sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
               const { profiles = {} } = state
-              const myProfile = profiles[loggedIn.identityContractID]
+              const myProfile = profiles[userID]
 
               if (isActionYoungerThanUser(contractID, height, myProfile)) {
                 sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
@@ -1438,13 +1435,15 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
+        const { chatRoomID } = data
+
         if (state.profiles[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
           throw new Error('Cannot join a chatroom for a group you\'re not a member of')
         }
-        if (!state.chatRooms[data.chatRoomID]) {
+        if (!state.chatRooms[chatRoomID]) {
           throw new Error('Cannot join a chatroom which isn\'t part of the group')
         }
-        if (state.chatRooms[data.chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
+        if (state.chatRooms[chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new GIGroupAlreadyJoinedError('Cannot join a chatroom that you\'re already part of')
         }
         // Here, we could use a list of active members or we could use a
@@ -1458,7 +1457,7 @@ sbp('chelonia/defineContract', {
         // removed members, we would need to possibly fetch every chatroom
         // contract to account for chatrooms for which the removed member is
         // a part of.
-        Vue.set(state.chatRooms[data.chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
+        Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
         const rootState = sbp('state/vuex/state')
