@@ -15,7 +15,7 @@
           :class='{ error: $v.form.name.$error }'
           v-model='form.name'
           data-test='createChannelName'
-          @input='onNameInput'
+          @input='debounceField("name")'
           @blur='updateField("name")'
           v-error:name=''
         )
@@ -203,20 +203,6 @@ export default ({
     },
     handlePrivacyLevel (e) {
       this.form.privacy = e.target.value
-    },
-    onNameInput (e) {
-      const newVal = e.target.value
-      const currVal = this.form.name
-
-      if (newVal.length) {
-        if (newVal === `${currVal} `) {
-          this.form.name = `${currVal}-`
-        } else {
-          this.form.name = newVal.toLowerCase()
-        }
-      }
-
-      this.debounceField('name')
     }
   },
   validations: {
@@ -243,6 +229,17 @@ export default ({
       privacy: {
         [L('This field is required')]: function (value) {
           return !this.isPublicChannelCreateAllowed || !!value
+        }
+      }
+    }
+  },
+  watch: {
+    'form.name' (newVal, oldVal) {
+      if (newVal.length) {
+        if (newVal === `${oldVal} `) {
+          this.form.name = `${oldVal}-`
+        } else {
+          this.form.name = newVal.toLowerCase()
         }
       }
     }
