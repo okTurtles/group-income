@@ -477,7 +477,7 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('build', function () {
-    const esbuild = this.flags.deploy ? 'esbuild:deploy' : (this.flags.watch ? 'esbuild:watch' : 'esbuild')
+    const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
       grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
@@ -551,7 +551,7 @@ module.exports = (grunt) => {
     if (!production) {
       console.warn(chalk.yellow('Please run with NODE_ENV=production'))
     }
-    grunt.task.run(['checkDependencies', 'build:deploy', 'copyAndMoveContracts'])
+    grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
   })
   grunt.registerTask('serve', function () {
     if (!production) {
