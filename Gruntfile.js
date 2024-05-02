@@ -75,7 +75,7 @@ const development = NODE_ENV === 'development'
 const production = !development
 
 // Make database path available to subprocess
-const dbPath = production ? `./${distDir}/data` : './data'
+const dbPath = process.env.DB_PATH || (production ? `./${distDir}/data` : './data')
 if (!process.env.DB_PATH) {
   Object.assign(process.env, { DB_PATH: dbPath })
 }
@@ -429,30 +429,6 @@ module.exports = (grunt) => {
     grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
   })
 
-  grunt.registerTask('run', function () {
-    const done = this.async() // Tell Grunt we're async.
-
-    grunt.log.writeln('backend: running...')
-    const child = fork(backendIndex, process.argv, {
-      env: { NODE_ENV, ...process.env },
-      execArgv: ['--require', '@babel/register']
-    })
-    child.on('error', (err) => {
-      if (err) {
-        console.error('error starting or sending message to child:', err)
-        process.exit(1)
-      }
-    })
-    child.on('exit', (c) => {
-      if (c !== 0) {
-        grunt.log.error(`child exited with error code: ${c}`.bold)
-        // ^C can cause c to be null, which is an OK error.
-        process.exit(c || 0)
-      }
-    })
-    done()
-  })
-
   // Useful helper task for `grunt test`.
   grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async()
@@ -585,7 +561,7 @@ module.exports = (grunt) => {
     if (!production) {
       console.warn(chalk.yellow('Please run with NODE_ENV=production'))
     }
-    grunt.task.run(['chelDeploy', 'run', 'keepalive'])
+    grunt.task.run(['chelDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
