@@ -74,6 +74,12 @@ const manifestJSON = path.join(contractsDir, 'manifests.json')
 const development = NODE_ENV === 'development'
 const production = !development
 
+// Make database path available to subprocess
+const dbPath = production ? `./${distDir}/data` : './data'
+if (!process.env.DB_PATH) {
+  Object.assign(process.env, { DB_PATH: dbPath })
+}
+
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
@@ -139,7 +145,7 @@ module.exports = (grunt) => {
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest = './data') {
+  async function genManifestsAndDeploy (dir, version, dest = dbPath) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir, dest)
   }
@@ -188,10 +194,10 @@ module.exports = (grunt) => {
 
   const databaseOptionBags = {
     fs: {
-      dest: './data/'
+      dest: dbPath
     },
     sqlite: {
-      dest: './data/groupincome.db'
+      dest: `${dbPath}/groupincome.db`
     }
   }
 
@@ -383,8 +389,8 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
-      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./${distDir}/data`
+      chelDevDeploy: `find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`,
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`
     }
   })
 
@@ -394,11 +400,7 @@ module.exports = (grunt) => {
 
   let child = null
 
-  grunt.registerTask('copy:frontend', function () {
-    grunt.task.run(['copy:htmlFiles', 'copy:assets', 'copy:strings'])
-  })
-
-  grunt.registerTask('copy:contracts', async function () {
+  grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
     const { contractsVersion } = packageJSON
 
@@ -424,8 +426,7 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('chelDeploy', function () {
-    const tasks = !production ? ['exec:chelDevDeploy'] : ['exec:chelProdDeploy']
-    grunt.task.run(tasks)
+    grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
   })
 
   grunt.registerTask('run', function () {
@@ -433,7 +434,7 @@ module.exports = (grunt) => {
 
     grunt.log.writeln('backend: running...')
     const child = fork(backendIndex, process.argv, {
-      env: { NODE_ENV, ...process.env, DB_ROOT_PATH: `/${distDir}` },
+      env: { NODE_ENV, ...process.env },
       execArgv: ['--require', '@babel/register']
     })
     child.on('error', (err) => {
@@ -503,7 +504,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean:dist', 'copy:frontend', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
     }
   })
 
@@ -572,19 +573,17 @@ module.exports = (grunt) => {
 
   grunt.registerTask('deploy', function () {
     if (!production) {
-      console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
-      process.exit(1)
+      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
     }
     grunt.task.run([
-      'exec:gitconfig', 'checkDependencies', 'exec:eslint', 'exec:flow',
-      'exec:puglint', 'exec:stylelint', 'clean:dist',
-      'copy:frontend', 'esbuild:deploy', 'copy:contracts'
+      'checkDependencies', 'exec:eslint', 'exec:flow',
+      'exec:puglint', 'exec:stylelint', 'clean',
+      'copy', 'esbuild:deploy', 'copyAndMoveContracts'
     ])
   })
   grunt.registerTask('serve', function () {
     if (!production) {
-      console.log(chalk.yellow('The command has some requirements in setting environment variables.\nNODE_ENV=production'))
-      process.exit(1)
+      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
     }
     grunt.task.run(['chelDeploy', 'run', 'keepalive'])
   })
@@ -629,10 +628,7 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => {
-        const dest = !this.flags.deploy ? undefined : `./${distDir}/data`
-        return genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
-      })
+      .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
