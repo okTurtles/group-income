@@ -18,7 +18,9 @@ type HEADInfo = { HEAD: string; height: number }
 
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
-  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
+  // Also disallow characters not allowed by Windows:
+  // <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
+  if (/[\x00-\x1f\x7f\t\\/<>:"|?*]/.test(key)) { // eslint-disable-line no-control-regex
     throw new Error(`bad key: ${JSON.stringify(key)}`)
   }
 }
@@ -60,7 +62,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         const id = getContractIdFromLogHead(key)
         if (!id) return Promise.resolve()
         const state = sbp(this.config.stateSelector).contracts[id]
-        const value = (state
+        const value = (state?.HEAD
           ? JSON.stringify({
             HEAD: state.HEAD,
             height: state.height

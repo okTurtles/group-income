@@ -311,7 +311,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings',
+      'currentGroupOwnerID',
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
@@ -343,7 +343,7 @@ export default ({
     },
     isGroupCreator () {
       if (!this.isDirectMessage(this.summary.chatRoomId)) {
-        return this.currentUserAttr.id === this.groupSettings.groupCreatorID
+        return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
     }

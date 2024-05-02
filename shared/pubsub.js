@@ -453,14 +453,7 @@ const defaultMessageHandlers = {
       }
       case REQUEST_TYPE.PUSH_ACTION: {
         const { actionType, message } = data
-        const errorHandler = actionType ? pushClientErrorHandler[actionType] : null
-
         console.warn(`[pubsub] Received ERROR for PUSH_ACTION request with the action type '${actionType}' and the following message: ${message}`)
-        if (errorHandler) {
-          errorHandler()
-        } else {
-          pushClientErrorHandler.default(actionType)
-        }
         break
       }
       default: {
@@ -677,16 +670,6 @@ const publicMethods = {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { channelID }))
       }
     }
-  }
-}
-
-const pushClientErrorHandler = {
-  [PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION] () {
-    // TODO: Add a logic here that unregisters from the old subscription and then re-generates it.
-    console.log('TODO: destroy the old push-subscription and regenerate the fresh one.')
-  },
-  default (actionType) {
-    console.error(`[push-error] Invalid request for the action type '${actionType}'`)
   }
 }
 

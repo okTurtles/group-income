@@ -11,6 +11,7 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase
 } from './shared/validators.js'
+import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
@@ -163,8 +164,10 @@ sbp('chelonia/defineContract', {
           visible: true // NOTE: this attr is used to hide/show direct message
         })
       },
-      async sideEffect ({ contractID, data }) {
-        await sbp('chelonia/contract/sync', data.contractID)
+      sideEffect ({ contractID, data }) {
+        sbp('chelonia/contract/retain', data.contractID).catch((e) => {
+          console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
+        })
       }
     },
     'gi.contracts/identity/joinDirectMessage': {
@@ -182,9 +185,11 @@ sbp('chelonia/defineContract', {
           visible: true
         })
       },
-      async sideEffect ({ data }, { getters }) {
+      sideEffect ({ data }, { getters }) {
         if (getters.ourDirectMessages[data.contractID].visible) {
-          await sbp('chelonia/contract/sync', data.contractID)
+          sbp('chelonia/contract/retain', data.contractID).catch((e) => {
+            console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
+          })
         }
       }
     },
@@ -245,6 +250,10 @@ sbp('chelonia/defineContract', {
           // a deadlock.
           if (!inviteSecretId) return
 
+          sbp('chelonia/contract/retain', data.groupContractID).catch((e) => {
+            console.error('[gi.contracts/identity/joinGroup/sideEffect] Error calling retain', e)
+          })
+
           sbp('gi.actions/group/join', {
             originatingContractID: contractID,
             originatingContractName: 'gi.contracts/identity',
@@ -300,7 +309,43 @@ sbp('chelonia/defineContract', {
             })
           }
 
-          // TODO disconnect, key rotations (PEK), etc.
+          sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
+            console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
+          })
+
+          // grab the groupID of any group that we're a part of
+          if (!rootState.currentGroupId || rootState.currentGroupId === data.groupContractID) {
+            const groupIdToSwitch = Object.keys(state.groups)
+              .filter(cID =>
+                cID !== data.groupContractID
+              ).sort(cID =>
+              // prefer successfully joined groups
+                rootState[cID]?.profiles?.[contractID] ? -1 : 1
+              )[0] || null
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+            sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+          }
+
+          // Remove last logged in information
+          Vue.delete(rootState.lastLoggedIn, contractID)
+
+          // this looks crazy, but doing this was necessary to fix a race condition in the
+          // group-member-removal Cypress tests where due to the ordering of asynchronous events
+          // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
+          // We add it to the same queue as '/release' above gets run on so that it is run after
+          // contractID is removed. See also comments in 'gi.actions/identity/login'.
+          try {
+            const router = sbp('controller/router')
+            const switchFrom = router.currentRoute.path
+            const switchTo = rootState.currentGroupId ? '/dashboard' : '/'
+            if (switchFrom !== '/join' && switchFrom !== switchTo) {
+              router.push({ path: switchTo }).catch((e) => console.error('Error switching groups', e))
+            }
+          } catch (e) {
+            console.error(`[gi.contracts/identity/leaveGroup/sideEffect]: ${e.name} thrown updating routes:`, e)
+          }
+
+          sbp('gi.contracts/identity/revokeGroupKeyAndRotateOurPEK', contractID, state, data.groupContractID)
         }).catch(e => {
           console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e)
         })
@@ -342,6 +387,44 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.fileDeleteTokens, manifestCid)
         }
       }
+    }
+  },
+  methods: {
+    'gi.contracts/identity/revokeGroupKeyAndRotateOurPEK': (identityContractID, state, groupContractID) => {
+      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
+      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+      const PEKid = findKeyIdByName(state, 'pek')
+
+      Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
+
+      const groupCSKids = findForeignKeysByContractID(state, groupContractID)
+
+      if (groupCSKids?.length) {
+        if (!CEKid) {
+          throw new Error('Identity CEK not found')
+        }
+
+        sbp('chelonia/queueInvocation', identityContractID, ['chelonia/out/keyDel', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          data: groupCSKids,
+          signingKeyId: CSKid
+        }])
+          .catch(e => {
+            console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e)
+          })
+      }
+
+      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
+        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
+
+      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
+      })
     }
   }
 })

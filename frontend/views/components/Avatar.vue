@@ -8,6 +8,7 @@
     @error='revokeObjectURL'
     ref='img'
     v-on='$listeners'
+    draggable='false'
   )
   .c-avatar.is-empty(v-else :class='`is-${size}`')
 </template>

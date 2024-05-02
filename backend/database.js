@@ -122,7 +122,7 @@ export default async () => {
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readData, writeData } = await import(`./database-${persistence}.js`)
+    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
 
     await initStorage(options[persistence])
 
@@ -148,7 +148,7 @@ export default async () => {
       },
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
         checkKey(key)
-        if (key.startsWith('_private_immutable_')) {
+        if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
           if (existingValue !== undefined) {
             throw new Error('Cannot set already set immutable key')
@@ -156,6 +156,14 @@ export default async () => {
         }
         await writeData(key, value)
         cache.set(key, value)
+      },
+      'chelonia/db/delete': async function (key: string): Promise<void> {
+        checkKey(key)
+        if (key.startsWith('_private_immutable')) {
+          throw new Error('Cannot delete immutable key')
+        }
+        await deleteData(key)
+        cache.delete(key)
       }
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])

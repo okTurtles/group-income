@@ -16,8 +16,10 @@
       v-if='ephemeral.mention.options.length'
       ref='mentionWrapper'
     )
-      template(v-for='(user, index) in ephemeral.mention.options')
+      template(v-if='ephemeral.mention.type === "member"')
         .c-mention-user(
+          v-for='(user, index) in ephemeral.mention.options'
+          :key='user.memberID'
           ref='mention'
           :class='{"is-selected": index === ephemeral.mention.index}'
           @click.stop='onClickMention(index)'
@@ -27,6 +29,17 @@
           .c-display-name(
             v-if='user.displayName !== user.username'
           ) ({{user.displayName}})
+
+      template(v-else-if='ephemeral.mention.type ==="channel"')
+        .c-mention-channel(
+          v-for='(channel, index) in ephemeral.mention.options'
+          :key='channel.id'
+          ref='mention'
+          :class='{"is-selected": index === ephemeral.mention.index}'
+          @click.stop='onClickMention(index)'
+        )
+          i(:class='[channel.privacyLevel === "private" ? "icon-lock" : "icon-hashtag", "c-channel-icon"]')
+          .c-channel-name {{ channel.name }}
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -127,7 +140,7 @@
       .c-edit-actions(v-if='isEditing')
         i18n.is-small.is-outlined(
           tag='button'
-          @click='$emit("cancelEdit")'
+          @click='cancelEditing'
         ) Cancel
 
         i18n.button.is-small(
@@ -245,8 +258,12 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import {
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
@@ -311,7 +328,8 @@ export default ({
         mention: {
           position: -1,
           options: [],
-          index: -1
+          index: -1,
+          type: 'member' // enum of ['member', 'channel']
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
@@ -367,7 +385,8 @@ export default ({
       'chatRoomAttributes',
       'ourContactProfilesById',
       'globalProfile',
-      'ourIdentityContractId'
+      'ourIdentityContractId',
+      'mentionableChatroomsInDetails'
     ]),
     members () {
       return Object.keys(this.chatRoomMembers)
@@ -440,16 +459,27 @@ export default ({
     },
     updateMentionKeyword () {
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
-      const lastIndex = value.lastIndexOf('@')
-      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
-      if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
+      const channelCharIndex = value.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
+      const memberCharIndex = value.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
+
+      if (channelCharIndex === -1 && memberCharIndex === -1) {
         return this.endMention()
       }
+
+      const lastIndex = Math.max(channelCharIndex, memberCharIndex)
+      const mentionType = channelCharIndex > memberCharIndex ? 'channel' : 'member'
+      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
+
+      if (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1])) {
+        return this.endMention()
+      }
+
       value = value.slice(lastIndex + 1)
       if (regExWordStart.test(value)) {
         return this.endMention()
       }
-      this.startMention(value, lastIndex)
+
+      this.startMention(value, lastIndex, mentionType)
     },
     handleKeydown (e) {
       if (caretKeyCodeValues[e.keyCode]) {
@@ -506,14 +536,30 @@ export default ({
     addSelectedMention (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
-      const selection = this.ephemeral.mention.options[index]
+      const {
+        options,
+        position: mentionStartPosition,
+        type: mentionType
+      } = this.ephemeral.mention
+      const selection = options[index]
+      let mentionString = ''
 
-      const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
-      const mention = selection.memberID === mentionObj.all ? mentionObj.all : mentionObj.me
-      const value = curValue.slice(0, this.ephemeral.mention.position) +
-         mention + ' ' + curValue.slice(curPosition)
+      if (mentionType === 'member') {
+        const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
+        mentionString = selection.memberID === mentionObj.all
+          ? mentionObj.all
+          : mentionObj.me
+      } else if (mentionType === 'channel') {
+        mentionString = makeChannelMention(selection.name)
+      }
+
+      // Insert the selected mention into the input text.
+      const value = curValue.slice(0, mentionStartPosition) +
+        mentionString + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
-      const selectionStart = this.ephemeral.mention.position + mention.length + 1
+
+      // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
+      const selectionStart = mentionStartPosition + mentionString.length + 1
       this.moveCursorTo(selectionStart)
       this.endMention()
     },
@@ -528,11 +574,7 @@ export default ({
 
       if (!newValue) {
         // if the textarea has become empty, emit CHATROOM_USER_STOP_TYPING event.
-        sbp('gi.actions/chatroom/user-stop-typing-event', {
-          contractID: this.currentChatRoomId
-        }).catch(e => {
-          console.error('Error emitting user stopped typing event', e)
-        })
+        this.emitUserStopTypingEvent()
       } else if (this.ephemeral.textWithLines.length < newValue.length) {
         // if the user is typing and the textarea value is growing, emit CHATROOM_USER_TYPING event.
         this.throttledEmitUserTypingEvent()
@@ -569,16 +611,34 @@ export default ({
 
       let msgToSend = this.$refs.textarea.value || ''
 
-      /* Process mentions in the form @username => @userID */
-      const mentionStart = makeMentionFromUsername('').all[0]
-      const availableMentions = this.members.map(memberID => memberID.username)
+      /*
+        Process member/channel mentions in the form:
+          member - @username => @userID
+          channel - #channel-name => #channelID
+      */
+      const genMentionRegExp = (type = 'member') => {
+        // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
+        const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+        const availableMentions = type === 'member'
+          ? this.members.map(memberID => memberID.username)
+          : this.mentionableChatroomsInDetails.map(channel => channel.name)
+
+        return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
+      }
+      const convertChannelMentionToId = name => {
+        const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
+        return found ? makeChannelMention(found.id) : ''
+      }
+
+      // 1. replace all member mentions.
       msgToSend = msgToSend.replace(
-        // This regular expression matches all @username mentions that are
-        // standing alone between spaces
-        new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g'),
-        (_, username) => {
-          return makeMentionFromUsername(username).me
-        }
+        genMentionRegExp('member'),
+        (_, username) => makeMentionFromUsername(username).me
+      )
+      // 2. replace all channel mentions.
+      msgToSend = msgToSend.replace(
+        genMentionRegExp('channel'),
+        (_, channelName) => convertChannelMentionToId(channelName)
       )
 
       this.$emit(
@@ -673,21 +733,39 @@ export default ({
       this.closeEmoticon()
       this.updateTextWithLines()
     },
-    startMention (keyword, position) {
-      const all = makeMentionFromUsername('').all
-      const availableMentions = Array.from(this.members)
-      // NOTE: '@all' mention should only be needed when the members are more than 3
-      if (availableMentions.length > 2) {
-        availableMentions.push({
-          memberID: all,
-          displayName: all.slice(1),
-          picture: '/assets/images/horn.png'
-        })
+    startMention (keyword, position, mentionType = 'member') {
+      const checkIfContainsKeyword = str => {
+        if (typeof str !== 'string') { return false }
+
+        const normalKeyword = keyword.normalize().toUpperCase()
+        return str.normalize().toUpperCase().includes(normalKeyword)
       }
-      const normalKeyword = keyword.normalize().toUpperCase()
-      this.ephemeral.mention.options = availableMentions.filter(user =>
-        user.username?.normalize().toUpperCase().includes(normalKeyword) ||
-        user.displayName?.normalize().toUpperCase().includes(normalKeyword))
+
+      switch (mentionType) {
+        case 'member': {
+          const all = makeMentionFromUsername('').all
+          const availableMentions = Array.from(this.members)
+          // NOTE: '@all' mention should only be needed when the members are more than 3
+          if (availableMentions.length > 2) {
+            availableMentions.push({
+              memberID: all,
+              displayName: all.slice(1),
+              picture: '/assets/images/horn.png'
+            })
+          }
+
+          this.ephemeral.mention.options = availableMentions.filter(
+            user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
+          )
+
+          break
+        }
+        case 'channel': {
+          this.ephemeral.mention.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
+        }
+      }
+
+      this.ephemeral.mention.type = mentionType
       this.ephemeral.mention.position = position
       this.ephemeral.mention.index = 0
     },
@@ -770,6 +848,17 @@ export default ({
         contractID: this.currentChatRoomId
       }).catch(e => {
         console.error('Error emitting user typing event', e)
+      })
+    },
+    cancelEditing () {
+      this.emitUserStopTypingEvent()
+      this.$emit('cancelEdit')
+    },
+    emitUserStopTypingEvent () {
+      sbp('gi.actions/chatroom/user-stop-typing-event', {
+        contractID: this.currentChatRoomId
+      }).catch(e => {
+        console.error('Error emitting user stopped typing event', e)
       })
     }
   }
@@ -1004,25 +1093,31 @@ export default ({
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 12rem;
-}
 
-.c-mentions .c-mention-user {
-  display: flex;
-  align-items: center;
-  padding: 0.2rem;
-  cursor: pointer;
+  .c-mention-user,
+  .c-mention-channel {
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
 
-  &.is-selected {
-    background-color: $primary_2;
+    &.is-selected {
+      background-color: $primary_2;
+    }
   }
 
-  .c-username {
+  .c-username,
+  .c-display-name,
+  .c-channel-name {
     margin-left: 0.3rem;
   }
 
   .c-display-name {
-    margin-left: 0.3rem;
     color: $text_1;
+  }
+
+  .c-channel-icon {
+    font-size: 0.875em;
   }
 }
 
