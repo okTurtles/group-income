@@ -346,13 +346,13 @@ export default (sbp('sbp/selectors/register', {
     await postCleanupFn?.()
     // The following are all synchronous operations
     const rootState = sbp(this.config.stateSelector)
-    const contracts = rootState.contracts
     // Cancel all outgoing messages by replacing this._instance
     this._instance = Object.create(null)
     this.abortController.abort()
     this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
-    reactiveClearObject(contracts, this.config.reactiveDel)
+    reactiveClearObject(rootState, this.config.reactiveDel)
+    this.config.reactiveSet(rootState, 'contracts', Object.create(null))
     clearObject(this.ephemeralReferenceCount)
     this.pending.splice(0)
     clearObject(this.currentSyncs)

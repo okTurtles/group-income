@@ -63,6 +63,9 @@ class EmptyValue extends Error {}
 export const SETTING_CURRENT_USER = '@settings/currentUser'
 
 sbp('sbp/selectors/register', {
+  'gi.db/ready': function () {
+    return localforage.ready()
+  },
   'gi.db/settings/save': function (user: string, value: any): Promise<*> {
     return appSettings.setItem(user, value)
   },

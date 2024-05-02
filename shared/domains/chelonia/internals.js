@@ -1166,6 +1166,7 @@ export default (sbp('sbp/selectors/register', {
         let latestHashFound = false
         const eventReader = eventsStream.getReader()
         // remove the first element in cases where we are not getting the contract for the first time
+        console.error('@@@sync, just before process', contractID, { recentHeight, currentHeight: state.contracts[contractID]?.height || '-', state: state[contractID] || '-' })
         for (let skip = has(state.contracts, contractID) && has(state.contracts[contractID], 'HEAD'); ; skip = false) {
           const { done, value: event } = await eventReader.read()
           if (done) {
@@ -1861,6 +1862,7 @@ const handleEvent = {
       // Allow having _volatile but nothing else if this is the first message,
       // as we should be starting off with a clean state
       if (Object.keys(state).some(k => k !== '_volatile')) {
+        console.error('@@@@', state)
         throw new ChelErrorUnrecoverable(`state for ${contractID} is already set`)
       }
     }

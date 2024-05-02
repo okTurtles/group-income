@@ -41,6 +41,7 @@ import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import { showNavMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 const { Vue, L } = Common
 
@@ -61,6 +62,9 @@ async function startApp () {
   //       In the future we might move it elsewhere.
   // ?debug=true
   // force debug output even in production
+  // @@@@ TODO: Wait for db to be ready
+  await sbp('gi.db/ready')
+
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
     const reducer = (o, v) => { o[v] = true; return o }
@@ -109,6 +113,11 @@ async function startApp () {
     Object.assign(sbp('chelonia/rootState'), cheloniaState)
     console.error('@@@@SET CHELONIA STATE[main.js]', identityContractID, sbp('chelonia/rootState'), cheloniaState)
   })
+  console.error('@@@@@@@@')
+  const save = debounce(() => sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+    return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
+  }))
+
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     /*
@@ -121,9 +130,7 @@ async function startApp () {
       // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
       if (o[k] !== v) {
         o[k] = v
-        sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
-          return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
-        })
+        save()
       }
     },
     reactiveDel: (o: Object, k: string) => {
@@ -131,9 +138,7 @@ async function startApp () {
       // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
       if (Object.prototype.hasOwnProperty.call(o, k)) {
         delete o[k]
-        sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
-          return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
-        })
+        save()
       }
     },
     contracts: {

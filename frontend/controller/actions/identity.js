@@ -318,8 +318,6 @@ export default (sbp('sbp/selectors/register', {
       const contractIDs = Object.create(null)
       // login can be called when no settings are saved (e.g. from Signup.vue)
       if (cheloniaState) {
-        // The retrieved local data might need to be completed in case it was originally saved
-        // under an older version of the app where fewer/other Vuex modules were implemented.
         Object.assign(sbp('chelonia/rootState'), cheloniaState)
         console.error('@@@@SET CHELONIA STATE[identity.js]', { cRS: sbp('chelonia/rootState'), cheloniaState, stateC: JSON.parse(JSON.stringify(state)), state })
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
@@ -523,8 +521,9 @@ export default (sbp('sbp/selectors/register', {
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
-        sbp('state/vuex/state').cheloniaState = sbp('chelonia/rootState')
+        await sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {})
         await sbp('gi.db/settings/delete', 'CHELONIA_STATE')
+        sbp('state/vuex/state').cheloniaState = sbp('chelonia/rootState')
         await sbp('state/vuex/save')
 
         // If there is a state encryption key in the app settings, remove it
