@@ -268,8 +268,7 @@ sbp('chelonia/defineContract', {
 
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(state.members).filter((id) =>
-              id !== loggedIn.identityContractID &&
-              !rootGetters.ourContactProfilesById[id]
+              id !== loggedIn.identityContractID &&!rootGetters.ourContactProfilesById[id]
             )
             sbp('chelonia/contract/sync', profileIds).catch((e) => {
               console.error('Error while syncing other members\' contracts at chatroom join', e)
