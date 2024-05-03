@@ -25,7 +25,7 @@ import {
   findMessageIdx,
   leaveChatRoom,
   makeMentionFromUserID,
-  swapUserIDForUsername
+  swapMentionIDForDisplayname
 } from './shared/functions.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
@@ -112,7 +112,7 @@ function messageReceivePostEffect ({
 
   shouldNotifyMessage && makeNotification({
     title,
-    body: swapUserIDForUsername(text),
+    body: swapMentionIDForDisplayname(text),
     icon,
     path
   })

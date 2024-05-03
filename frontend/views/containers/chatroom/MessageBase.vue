@@ -28,13 +28,22 @@
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
-            span.c-mention(
-              v-else-if='isMention(objReplyMessage)'
+            span.c-member-mention(
+              v-else-if='isMemberMention(objReplyMessage)'
               :class='{"c-mention-to-me": objReplyMessage.toMe}'
             ) {{ objReplyMessage.text }}
+            span.c-channel-mention(
+              v-else-if='isChannelMention(objReplyMessage)'
+              :tabindex='objReplyMessage.disabled ? undefined : 0'
+              :class='{ "is-disabled": objReplyMessage.disabled }'
+              @click='navigateToChatroom(objReplyMessage)'
+              @keyup.enter='navigateToChatroom(objReplyMessage)'
+            )
+              i(:class='"icon-" + objText.icon')
+              span {{ objText.text }}
         send-area(
           v-if='isEditing'
-          :defaultText='swapUserIDForUsername(text)'
+          :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
@@ -46,10 +55,19 @@
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
-            span.c-mention(
-              v-else-if='isMention(objText)'
+            span.c-member-mention(
+              v-else-if='isMemberMention(objText)'
               :class='{"c-mention-to-me": objText.toMe}'
             ) {{ objText.text }}
+            span.c-channel-mention(
+              v-else-if='isChannelMention(objText)'
+              :tabindex='objText.disabled ? undefined : 0'
+              :class='{ "is-disabled": objText.disabled }'
+              @click='navigateToChatroom(objText)'
+              @keyup.enter='navigateToChatroom(objText)'
+            )
+              i(:class='"icon-" + objText.icon')
+              span {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
       .c-attachments-wrapper(v-if='hasAttachments')
@@ -103,11 +121,21 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { makeMentionFromUserID, swapUserIDForUsername } from '@model/contracts/shared/functions.js'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { makeMentionFromUserID, swapMentionIDForDisplayname, makeChannelMention } from '@model/contracts/shared/functions.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_VARIANTS,
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
 import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
 
-const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
+const TextObjectType = {
+  Text: 'TEXT',
+  MemberMention: 'MEMBER_MENTION',
+  ChannelMention: 'CHANNEL_MENTION'
+}
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -156,7 +184,11 @@ export default ({
     convertTextToMarkdown: Boolean
   },
   computed: {
-    ...mapGetters(['ourContactProfilesById', 'usernameFromID']),
+    ...mapGetters([
+      'ourContactProfilesById',
+      'usernameFromID',
+      'chatRoomsInDetail'
+    ]),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
     },
@@ -165,11 +197,17 @@ export default ({
     },
     hasAttachments () {
       return Boolean(this.attachments?.length)
+    },
+    possibleMentions () {
+      return [
+        ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+        ...Object.values(this.chatRoomsInDetail).map(details => makeChannelMention(details.id))
+      ]
     }
   },
   methods: {
     humanDate,
-    swapUserIDForUsername,
+    swapMentionIDForDisplayname,
     editMessage () {
       if (this.type === MESSAGE_TYPES.POLL) {
         alert('TODO: implement editting a poll')
@@ -209,13 +247,18 @@ export default ({
     isText (o) {
       return o.type === TextObjectType.Text
     },
-    isMention (o) {
-      return o.type === TextObjectType.Mention
+    isMemberMention (o) {
+      return o.type === TextObjectType.MemberMention
+    },
+    isChannelMention (o) {
+      return o.type === TextObjectType.ChannelMention
     },
     generateTextObjectsFromText (text) {
+      const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
+
       if (!text) {
         return []
-      } else if (!text.includes('@')) {
+      } else if (!containsMentionChar(text)) {
         return [
           {
             type: TextObjectType.Text,
@@ -224,7 +267,6 @@ export default ({
         ]
       }
       const allMention = makeMentionFromUserID('').all
-      const possibleMentions = Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v)
 
       return text
         // We try to find all the mentions and render them as mentions instead
@@ -232,18 +274,49 @@ export default ({
         // preceded by a space or is the start of a line and the `(?=[^\\w\\d]|$)`
         // ensures that it's followed by an end-of-line or a character that's not
         // a letter or a number (so `Hi @user!` works).
-        .split(new RegExp(`(?<=\\s|^)(${allMention}|${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
-          if (t === allMention) {
-            return { type: TextObjectType.Mention, text: t }
+          const genDefaultTextObj = (text) => ({
+            type: TextObjectType.Text,
+            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+          })
+          const genChannelMentionObj = (text) => {
+            const chatroomId = text.slice(1)
+            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatroomId)
+
+            return found
+              ? {
+                  type: TextObjectType.ChannelMention,
+                  text: found.name,
+                  icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
+                  disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
+                  chatroomId: found.id
+                }
+              : genDefaultTextObj(text)
           }
-          return possibleMentions.includes(t)
-            ? { type: TextObjectType.Mention, text: t[0] + this.usernameFromID(t.slice(1)) }
-            : {
-                type: TextObjectType.Text,
-                text: this.convertTextToMarkdown ? convertToMarkdown(t) : t
-              }
+
+          if (t === allMention) {
+            return { type: TextObjectType.MemberMention, text: t }
+          }
+
+          return this.possibleMentions.includes(t)
+            ? t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
+              ? {
+                  type: TextObjectType.MemberMention,
+                  text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
+                }
+              : genChannelMentionObj(t)
+            : genDefaultTextObj(t)
         })
+    },
+    navigateToChatroom (obj) {
+      if (obj.disabled ||
+      obj.chatroomId === this.$route.params?.chatRoomId) { return }
+
+      this.$router.push({
+        name: 'GroupChatConversation',
+        params: { chatRoomId: obj.chatroomId }
+      })
     }
   }
 }: Object)
@@ -386,7 +459,8 @@ export default ({
     border-color: var(--text_1); // var(--text_2);
   }
 
-  .c-mention {
+  .c-member-mention,
+  .c-channel-mention {
     background-color: transparent;
   }
 }
@@ -397,13 +471,46 @@ export default ({
   color: var(--text_1);
 }
 
-.c-mention {
+.c-member-mention,
+.c-channel-mention {
   background-color: $primary_2;
   color: $primary_0;
-  padding: 0 0.1rem;
+  padding: 0 0.1rem 0.1rem;
 }
 
-.c-mention.c-mention-to-me {
+.c-member-mention.c-mention-to-me {
   background-color: $warning_1;
+}
+
+.c-channel-mention {
+  cursor: pointer;
+  transition: color 150ms;
+  outline: none;
+
+  &:hover,
+  &:focus {
+    text-decoration: underline;
+  }
+
+  &:focus {
+    color: $text_1;
+  }
+
+  &.is-disabled {
+    cursor: inherit;
+    background-color: $general_1;
+    color: $text_1;
+
+    &:hover,
+    &:focus {
+      text-decoration: none;
+      background-color: $general_1;
+    }
+  }
+
+  i {
+    font-size: 0.75em;
+    margin-right: 2px;
+  }
 }
 </style>
