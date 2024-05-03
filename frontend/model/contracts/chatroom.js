@@ -213,13 +213,19 @@ sbp('chelonia/defineContract', {
         if (!memberID) {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
         }
+
         if (!state.shouldSaveMessages) {
+          if (!state.members) {
+            Vue.set(state, 'members', {})
+          }
           if (state.members[memberID]) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
 
         Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
+
+        if (!state.attributes) return
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for joining in direct messages
@@ -325,7 +331,9 @@ sbp('chelonia/defineContract', {
         // being removed using the group's CSK (usually when a member is removed)
         const isKicked = innerSigningContractID && memberID !== innerSigningContractID
         if (!state.shouldSaveMessages) {
-          if (!state.members[memberID]) {
+          if (!state.members) {
+            throw new Error('Missing members state')
+          } else if (!state.members[memberID]) {
             throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
         }
