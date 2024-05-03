@@ -184,7 +184,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, s
   Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
 }
 
-function isActionYoungerThanUser (contractID: string, height: number, userProfile: ?Object): boolean {
+function isActionOlderThanUser (contractID: string, height: number, userProfile: ?Object): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
@@ -840,12 +840,16 @@ sbp('chelonia/defineContract', {
           const payment = state.payments[data.paymentHash]
 
           if (loggedIn.identityContractID === payment.data.toMemberID) {
-            sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              creatorID: innerSigningContractID,
-              paymentHash: data.paymentHash,
-              amount: getters.withGroupCurrency(payment.data.amount)
+            sbp('chelonia/queueInvocation', contractID, () => {
+              sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+                sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
+                  createdDate: meta.createdDate,
+                  groupID: contractID,
+                  creatorID: innerSigningContractID,
+                  paymentHash: data.paymentHash,
+                  amount: getters.withGroupCurrency(payment.data.amount)
+                })
+              })
             })
           }
         }
@@ -864,11 +868,15 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
 
         if (data.toMemberID === loggedIn.identityContractID) {
-          sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            fromMemberID: innerSigningContractID,
-            toMemberID: data.toMemberID
+          sbp('chelonia/queueInvocation', contractID, () => {
+            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+              sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                fromMemberID: innerSigningContractID,
+                toMemberID: data.toMemberID
+              })
+            })
           })
         }
       }
@@ -928,12 +936,16 @@ sbp('chelonia/defineContract', {
 
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
-        if (isActionYoungerThanUser(contractID, height, myProfile)) {
-          sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            creatorID: innerSigningContractID,
-            subtype: typeToSubTypeMap[data.proposalType]
+        if (isActionOlderThanUser(contractID, height, myProfile)) {
+          sbp('chelonia/queueInvocation', contractID, () => {
+            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+              sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                creatorID: innerSigningContractID,
+                subtype: typeToSubTypeMap[data.proposalType]
+              })
+            })
           })
         }
       }
@@ -982,13 +994,16 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
-        if (proposal?.dateClosed &&
-          isActionYoungerThanUser(contractID, height, myProfile)) {
-          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            creatorID: innerSigningContractID,
-            proposalStatus: proposal.status
+        if (proposal?.dateClosed && isActionOlderThanUser(contractID, height, myProfile)) {
+          sbp('chelonia/queueInvocation', contractID, () => {
+            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+              sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                creatorID: innerSigningContractID,
+                proposalStatus: proposal.status
+              })
+            })
           })
         }
       }
@@ -1206,7 +1221,7 @@ sbp('chelonia/defineContract', {
               const { profiles = {} } = state
               const myProfile = profiles[loggedIn.identityContractID]
 
-              if (isActionYoungerThanUser(contractID, height, myProfile)) {
+              if (isActionOlderThanUser(contractID, height, myProfile)) {
                 sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
                   createdDate: meta.createdDate,
                   groupID: contractID,
@@ -1683,7 +1698,7 @@ sbp('chelonia/defineContract', {
       //   3) and send 'MINCOME_CHANGED' notification.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
 
-      if (isActionYoungerThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
+      if (isActionOlderThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
         const mincomeIncreased = data.toAmount > data.fromAmount
         const actionNeeded = mincomeIncreased ||
@@ -1713,12 +1728,16 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
-          groupID: contractID,
-          creatorID: innerSigningContractID,
-          to: data.toAmount,
-          memberType,
-          increased: mincomeIncreased
+        sbp('chelonia/queueInvocation', contractID, () => {
+          sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+            sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              to: data.toAmount,
+              memberType,
+              increased: mincomeIncreased
+            })
+          })
         })
       }
     },
@@ -1861,16 +1880,17 @@ sbp('chelonia/defineContract', {
         // somewhere in the state or local storage and remove the contract
         // // sbp('chelonia/contract/release', memberID)
 
-        if (isActionYoungerThanUser(contractID, height, myProfile)) {
-          const memberRemovedThemselves = memberID === innerSigningContractID
-
-          sbp('gi.notifications/emit', // emit a notification for a member removal.
-            memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
-            {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              memberID
-            })
+        if (isActionOlderThanUser(contractID, height, myProfile)) {
+          sbp('chelonia/queueInvocation', memberID, () => {
+            const memberRemovedThemselves = memberID === innerSigningContractID
+            sbp('gi.notifications/emit', // emit a notification for a member removal.
+              memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                memberID
+              })
+          })
 
           Promise.resolve()
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))

@@ -13,7 +13,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
-const usernameFromID = (userID) => sbp('state/vuex/getters').usernameFromID(userID)
+const userDisplayNameFromID = (userID) => sbp('state/vuex/getters').userDisplayNameFromID(userID)
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
 // To guard against XSS when rendering usernames, use the `v-safe-html` directive.
@@ -101,7 +101,7 @@ export default ({
   },
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
 
     return {
       avatarUserID: data.memberID,
@@ -113,7 +113,7 @@ export default ({
     }
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
       body: L('{name} has left your group. Contributions were updated accordingly.', {
@@ -126,7 +126,7 @@ export default ({
     }
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
@@ -140,7 +140,7 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
-    const name = strong(usernameFromID(data.creatorID))
+    const name = strong(userDisplayNameFromID(data.creatorID))
     const bodyTemplateMap = {
       ADD_MEMBER: () => L('{name} proposed to add a member to the group. Vote now!', { name }),
       CHANGE_MINCOME: () => L('{name} proposed to change the group mincome. Vote now!', { name }),
@@ -196,7 +196,7 @@ export default ({
     }
   },
   PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposalStatus: string }) {
-    const name = strong(usernameFromID(data.creatorID))
+    const name = strong(userDisplayNameFromID(data.creatorID))
     const bodyTemplateMap = {
       // TODO: needs various messages depending on the proposal type? TBD by team.
       [STATUS_PASSED]: () => L("{name}'s proposal has passed.", { name }),
@@ -233,7 +233,7 @@ export default ({
     return {
       avatarUserID: data.creatorID,
       body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: strong(usernameFromID(data.fromMemberID)),
+        name: strong(userDisplayNameFromID(data.fromMemberID)),
         ...LTags('strong')
       }),
       creatorID: data.creatorID,

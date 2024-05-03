@@ -116,7 +116,6 @@ export default ({
       'currentGroupState',
       'groupMembersCount',
       'userDisplayNameFromID',
-      'usernameFromID',
       'ourIdentityContractId',
       'ourUserDisplayName'
     ]),
@@ -129,7 +128,7 @@ export default ({
     },
     subtitle () {
       const creatorID = this.proposal.creatorID
-      const username = this.usernameFromID(creatorID)
+      const username = this.userDisplayNameFromID(creatorID)
       const isOwnProposal = creatorID === this.ourIdentityContractId
 
       if (this.proposal.data.proposalData.automated) {
@@ -159,7 +158,7 @@ export default ({
     typeDescription () {
       return {
         [PROPOSAL_INVITE_MEMBER]: () => L('Add {user} to group.', {
-          user: this.usernameFromID(this.proposal.data.proposalData.memberName)
+          user: this.userDisplayNameFromID(this.proposal.data.proposalData.memberName)
         }),
         [PROPOSAL_REMOVE_MEMBER]: () => {
           const user = this.userDisplayNameFromID(this.proposal.data.proposalData.memberID)
