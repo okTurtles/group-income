@@ -327,7 +327,7 @@ export default ({
       } else {
         this.openMenu()
       }
-    } 
+    }
   }
 }: Object)
 </script>
