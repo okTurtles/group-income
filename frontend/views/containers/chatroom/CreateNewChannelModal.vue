@@ -232,6 +232,17 @@ export default ({
         }
       }
     }
+  },
+  watch: {
+    'form.name' (newVal, oldVal) {
+      if (newVal.length) {
+        if (newVal === `${oldVal} `) {
+          this.form.name = `${oldVal}-`
+        } else {
+          this.form.name = newVal.toLowerCase()
+        }
+      }
+    }
   }
 }: Object)
 </script>
