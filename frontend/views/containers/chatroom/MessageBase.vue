@@ -321,9 +321,11 @@ export default ({
       })
     },
     longPressHandler (e) {
+      console.log('!@# asfasadf')
       const targetEl = e.target
       if (targetEl.matches('a.link[href]')) {
-        sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER)
+        const url = targetEl.getAttribute('href')
+        sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
       } else {
         this.openMenu()
       }
