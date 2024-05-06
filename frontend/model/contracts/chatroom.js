@@ -226,6 +226,11 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
 
+        // NOTE: this patch solves the issue of the action failing to process.
+        //       when the contract was not fully synced because some encryption keys are missing.
+        //       this normally happens when the user (not a member of PRIVATE chatroom)
+        //       is trying to sync the contract.
+        //       this comment works same for another checks like `if (!state.members)` of above and below codes
         if (!state.attributes) return
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
