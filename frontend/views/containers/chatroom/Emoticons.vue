@@ -39,32 +39,6 @@ export default ({
     window.removeEventListener('keyup', this.handleKeyUp)
     window.removeEventListener('resize', this.resizeHandler)
   },
-  computed: {
-    position () {
-      const winWidth = window.innerWidth
-      const winHeight = window.innerHeight
-      if (winWidth < TABLET) return
-      const emotiWidth = 353
-      const emotiHeight = 440
-      const padding = 16
-      // let left = winWidth / 2 - emotiWidth / 2
-      let left = '50%'
-      let top = this.pos_y - emotiHeight - padding
-      if (winWidth > DESKTOP) {
-        left = this.pos_x - emotiWidth / 2
-      }
-      if (top < 0) {
-        top = this.pos_y + padding
-      }
-      if (top + emotiHeight > winHeight) {
-        top = winHeight - emotiHeight
-      }
-      return {
-        left: `${left}px`,
-        top: `${top}px`
-      }
-    }
-  },
   methods: {
     handleKeyUp (e) {
       if (this.content && e.key === 'Escape') {
@@ -101,7 +75,7 @@ export default ({
         this.lastFocus = null
       }
     },
-    setPosition: debounce(function () {
+    setPosition () {
       const winWidth = window.innerWidth
       const winHeight = window.innerHeight
       if (winWidth < TABLET) {
@@ -119,6 +93,9 @@ export default ({
         top = winHeight - emotiHeight
       }
       this.position = { left: `${left}px`, top: `${top}px` }
+    },
+    debouncedSetPosition: debounce(function () {
+      this.setPosition()
     }, 250),
     resizeHandler () {
       if (window.matchMedia('(hover: hover)').matches) {
@@ -127,7 +104,7 @@ export default ({
         //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
         this.closeEmoticonDlg()
       }
-      this.setPosition()
+      this.debouncedSetPosition()
     }
   },
   watch: {
