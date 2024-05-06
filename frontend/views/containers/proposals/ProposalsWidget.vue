@@ -79,7 +79,7 @@ export default ({
       'currentIdentityState',
       'groupDistributionStarted',
       'groupShouldPropose',
-      'groupSettings',
+      'currentGroupOwnerID',
       'ourIdentityContractId',
       'groupMembersCount'
     ]),
@@ -110,7 +110,7 @@ export default ({
       }
     },
     proposalOptions () {
-      const isUserGroupCreator = this.ourIdentityContractId === this.groupSettings.groupCreatorID
+      const isUserGroupCreator = this.ourIdentityContractId === this.currentGroupOwnerID
       const defaultDisableConfig = !this.groupShouldPropose && !isUserGroupCreator
 
       return [

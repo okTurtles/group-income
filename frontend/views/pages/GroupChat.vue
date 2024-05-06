@@ -241,7 +241,6 @@ export default ({
 }
 
 .c-header {
-  text-transform: capitalize;
   display: flex;
   align-items: center;
   position: relative;

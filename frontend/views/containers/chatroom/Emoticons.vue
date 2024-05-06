@@ -20,10 +20,6 @@ export default ({
   },
   data () {
     return {
-      config: {
-        debouncedCloseEmoticonDlg: debounce(this.closeEmoticonDlg, 250),
-        debouncedSetPosition: debounce(this.setPosition, 250)
-      },
       position: undefined,
       emoji: new EmojiIndex(data),
       pos_x: Number,
@@ -36,14 +32,38 @@ export default ({
     sbp('okTurtles.events/on', OPEN_EMOTICON, this.openEmoticon)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
-    window.addEventListener('resize', this.config.debouncedCloseEmoticonDlg)
-    window.addEventListener('resize', this.config.debouncedSetPosition)
+    window.addEventListener('resize', this.resizeHandler)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
-    window.removeEventListener('resize', this.config.debouncedCloseEmoticonDlg)
-    window.removeEventListener('resize', this.config.debouncedSetPosition)
+    window.removeEventListener('resize', this.resizeHandler)
+  },
+  computed: {
+    position () {
+      const winWidth = window.innerWidth
+      const winHeight = window.innerHeight
+      if (winWidth < TABLET) return
+      const emotiWidth = 353
+      const emotiHeight = 440
+      const padding = 16
+      // let left = winWidth / 2 - emotiWidth / 2
+      let left = '50%'
+      let top = this.pos_y - emotiHeight - padding
+      if (winWidth > DESKTOP) {
+        left = this.pos_x - emotiWidth / 2
+      }
+      if (top < 0) {
+        top = this.pos_y + padding
+      }
+      if (top + emotiHeight > winHeight) {
+        top = winHeight - emotiHeight
+      }
+      return {
+        left: `${left}px`,
+        top: `${top}px`
+      }
+    }
   },
   methods: {
     handleKeyUp (e) {
@@ -81,7 +101,7 @@ export default ({
         this.lastFocus = null
       }
     },
-    setPosition () {
+    setPosition: debounce(function () {
       const winWidth = window.innerWidth
       const winHeight = window.innerHeight
       if (winWidth < TABLET) {
@@ -99,6 +119,15 @@ export default ({
         top = winHeight - emotiHeight
       }
       this.position = { left: `${left}px`, top: `${top}px` }
+    }, 250),
+    resizeHandler () {
+      if (window.matchMedia('(hover: hover)').matches) {
+        // This is a fix for the issue #1954 (https://github.com/okTurtles/group-income/issues/1954)
+        // -> closes the pop-up if the viewport size changes only when it's NOT a touch device.
+        //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
+        this.closeEmoticonDlg()
+      }
+      this.setPosition()
     }
   },
   watch: {
