@@ -1275,7 +1275,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Can\'t change distribution date because distribution period has already started.'))
         }
       }),
-      process ({ contractID, meta, data, height, innerSigningContractID }, { state, getters }) {
+      process ({ contractID, meta, data, height, innerSigningContractID, proposalHash }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
         const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
 
@@ -1288,6 +1288,7 @@ sbp('chelonia/defineContract', {
           initFetchPeriodPayments({ contractID, meta, state, getters })
         }
 
+        const proposal = state.proposals[proposalHash]
         if (mincomeCache !== null) {
           sbp('gi.contracts/group/pushSideEffect', contractID,
             ['gi.contracts/group/sendMincomeChangedNotification',
@@ -1295,7 +1296,8 @@ sbp('chelonia/defineContract', {
               meta,
               {
                 toAmount: data.mincomeAmount,
-                fromAmount: mincomeCache
+                fromAmount: mincomeCache,
+                proposalCreatorID: proposal?.creatorID
               },
               height,
               innerSigningContractID
@@ -1697,15 +1699,16 @@ sbp('chelonia/defineContract', {
       //   2) pop out the prompt message notifying them of this automatic change,
       //   3) and send 'MINCOME_CHANGED' notification.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
+      const { proposalCreatorID, fromAmount, toAmount } = data
 
       if (isActionOlderThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
-        const mincomeIncreased = data.toAmount > data.fromAmount
+        const mincomeIncreased = toAmount > fromAmount
         const actionNeeded = mincomeIncreased ||
           (memberType === 'receiving' &&
           !mincomeIncreased &&
-          myProfile.incomeAmount < data.fromAmount &&
-          myProfile.incomeAmount > data.toAmount)
+          myProfile.incomeAmount < fromAmount &&
+          myProfile.incomeAmount > toAmount)
 
         if (!actionNeeded) { return }
 
@@ -1721,7 +1724,7 @@ sbp('chelonia/defineContract', {
           await sbp('gi.actions/group/displayMincomeChangedPrompt', {
             contractID,
             data: {
-              amount: data.toAmount,
+              amount: toAmount,
               memberType,
               increased: mincomeIncreased
             }
@@ -1729,11 +1732,13 @@ sbp('chelonia/defineContract', {
         }
 
         sbp('chelonia/queueInvocation', contractID, () => {
-          sbp('chelonia/queueInvocation', innerSigningContractID, () => {
+          const contractsToWait = [proposalCreatorID, innerSigningContractID].filter(cID => !!cID)
+          sbp('chelonia/contract/wait', contractsToWait).then(() => {
             sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
               groupID: contractID,
+              avatarUserID: proposalCreatorID,
               creatorID: innerSigningContractID,
-              to: data.toAmount,
+              to: toAmount,
               memberType,
               increased: mincomeIncreased
             })

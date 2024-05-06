@@ -243,13 +243,13 @@ export default ({
       scope: 'group'
     }
   },
-  MINCOME_CHANGED (data: { creatorID: string, to: number, memberType: string, increased: boolean }) {
+  MINCOME_CHANGED (data: { avatarUserID: string, creatorID: string, to: number, memberType: string, increased: boolean }) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
     return {
-      avatarUserID: data.creatorID,
+      avatarUserID: data.avatarUserID || data.creatorID,
       body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
       creatorID: data.creatorID,
-      icon: '',
+      icon: 'dollar-sign',
       level: 'info',
       scope: 'group',
       sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {

@@ -116,7 +116,7 @@ async function startApp () {
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
-          'chelonia/queueInvocation',
+          'chelonia/queueInvocation', 'chelonia/contract/wait',
           'chelonia/contract/waitingForKeyShareTo',
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/chatroom/leave',
