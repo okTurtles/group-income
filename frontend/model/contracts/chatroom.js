@@ -128,7 +128,8 @@ async function deleteEncryptedFiles (manifestCids: string | string[], option: Ob
   }
 }
 
-function cutMessagesIfOverflow (state) {
+function addMessage (state, message) {
+  state.messages.push(message)
   // NOTE: 'shouldSaveMessages' attribute is not original attribute
   //       and it is set in Chat page only to save all messages
   if (state.shouldSaveMessages) {
@@ -237,9 +238,7 @@ sbp('chelonia/defineContract', {
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { memberID, actorID: innerSigningContractID } : { memberID }
         )
-        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-
-        cutMessagesIfOverflow(state)
+        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
         sbp('chelonia/queueInvocation', contractID, () => {
@@ -293,9 +292,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.attributes, 'name', data.name)
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
-        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-
-        cutMessagesIfOverflow(state)
+        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -309,9 +306,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.attributes, 'description', data.description)
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {})
-        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-
-        cutMessagesIfOverflow(state)
+        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -346,7 +341,7 @@ sbp('chelonia/defineContract', {
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(notificationType, { memberID })
-        state.messages.push(createMessage({
+        addMessage(state, createMessage({
           meta,
           hash,
           height,
@@ -357,8 +352,6 @@ sbp('chelonia/defineContract', {
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
-
-        cutMessagesIfOverflow(state)
       },
       sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
         sbp('chelonia/queueInvocation', contractID, () => {
@@ -424,13 +417,11 @@ sbp('chelonia/defineContract', {
         if (!existingMsg) {
           // If no existing message, simply add it to the messages array.
           const pending = direction === 'outgoing'
-          state.messages.push(createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
+          addMessage(state, createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
           delete existingMsg.pending
         }
-
-        cutMessagesIfOverflow(state)
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -673,9 +664,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-
-        cutMessagesIfOverflow(state)
+        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -721,9 +710,7 @@ sbp('chelonia/defineContract', {
             pollMessageHash: data.hash
           }
         )
-        state.messages.push(createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-
-        cutMessagesIfOverflow(state)
+        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ contractID, hash, meta }) {
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -738,8 +725,6 @@ sbp('chelonia/defineContract', {
         if (msgIndex >= 0) {
           Vue.set(state.messages[msgIndex].pollData, 'status', POLL_STATUS.CLOSED)
         }
-
-        cutMessagesIfOverflow(state)
       }
     }
   },
