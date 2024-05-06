@@ -31,10 +31,22 @@ export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
 }): void {
   if (Notification?.permission === 'granted' && sbp('state/vuex/settings').notificationEnabled) {
-    const notification = new Notification(title, { body, icon })
-    if (path) {
-      notification.onclick = function (event) {
-        sbp('controller/router').push({ path }).catch(console.warn)
+    try {
+      const notification = new Notification(title, { body, icon })
+      if (path) {
+        notification.onclick = (event) => {
+          sbp('controller/router').push({ path }).catch(console.warn)
+        }
+      }
+    } catch {
+      try {
+        // FIXME: find a cross-browser way to pass the 'path' parameter when the notification is clicked.
+        navigator.serviceWorker?.ready.then(registration => {
+          // $FlowFixMe
+          registration.showNotification(title, { body, icon })
+        }).catch(console.warn)
+      } catch (error) {
+        console.error('makeNotification: ', error.message)
       }
     }
   }

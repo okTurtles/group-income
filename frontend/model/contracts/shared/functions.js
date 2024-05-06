@@ -1,7 +1,12 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { MESSAGE_TYPES, POLL_STATUS } from './constants.js'
+import {
+  MESSAGE_TYPES,
+  POLL_STATUS,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -158,17 +163,35 @@ export function makeMentionFromUserID (userID: string): {
   me: string, all: string
 } {
   return {
-    me: userID ? `@${userID}` : '',
-    all: '@all'
+    me: userID ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${userID}` : '',
+    all: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}all`
   }
 }
 
-export function swapUserIDForUsername (text: string): string {
-  const rootGetters = sbp('state/vuex/getters')
-  const possibleMentions = Object.keys(rootGetters.ourContactProfilesById)
-    .map(u => makeMentionFromUserID(u).me).filter(v => !!v)
+export function makeChannelMention (string: string): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${string}`
+}
+
+export function swapMentionIDForDisplayname (text: string): string {
+  const {
+    chatRoomsInDetail,
+    ourContactProfilesById,
+    getChatroomNameById,
+    usernameFromID
+  } = sbp('state/vuex/getters')
+  const possibleMentions = [
+    ...Object.keys(ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+    ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
+  ]
+
   return text
     .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-    .map(t => !possibleMentions.includes(t) ? t : t[0] + rootGetters.usernameFromID(t.slice(1)))
+    .map(t => {
+      return possibleMentions.includes(t)
+        ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
+          ? t[0] + usernameFromID(t.slice(1))
+          : t[0] + getChatroomNameById(t.slice(1))
+        : t
+    })
     .join('')
 }
