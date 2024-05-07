@@ -1,9 +1,15 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import {
   MESSAGE_TYPES,
   POLL_STATUS,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from './constants.js'
@@ -51,6 +57,41 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
     isLate: !!payment.data.isLate,
     when: payment.data.completedDate
   }
+}
+
+export function getProposalDetails (proposal: Object): Object {
+  const { creatorID, status } = proposal
+  const { proposalType, proposalData } = proposal.data
+
+  const settingsTranslationMap = {
+    'mincomeAmount': L('mincome'),
+    'distributionDate': L('distribution date'),
+    'votingSystem': L('voting system'),
+    'votingRule': L('voting rules')
+  }
+  const options = {}
+  if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
+    if (proposalData.ruleName !== proposalData.current.ruleName) {
+      options['settingType'] = 'votingSystem'
+    } else if (proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
+      options['settingType'] = 'votingRule'
+    }
+  } else if (proposalType === PROPOSAL_GROUP_SETTING_CHANGE) {
+    options['settingType'] = proposalData.setting
+  } else if (proposalType === PROPOSAL_GENERIC) {
+    options['title'] = proposalData.name
+  } else if ([PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER].includes(proposalType)) {
+    options['member'] = proposalData.memberID
+  }
+
+  if (proposalData.proposedValue) {
+    options['value'] = proposalData.proposedValue
+  }
+  if (options.settingType) {
+    options['setting'] = settingsTranslationMap[options.settingType]
+  }
+
+  return { creatorID, status, type: proposalType, options }
 }
 
 // chatroom.js related

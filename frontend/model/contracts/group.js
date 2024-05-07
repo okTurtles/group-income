@@ -976,8 +976,8 @@ sbp('chelonia/defineContract', {
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
-          proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
+          proposals[proposal.data.proposalType][result](state, message)
 
           // update 'streaks.noVotes' which records the number of proposals that each member did NOT vote for
           const votedMemberIDs = Object.keys(proposal.votes)
@@ -988,31 +988,13 @@ sbp('chelonia/defineContract', {
             Vue.set(getters.groupStreaks.noVotes, memberID, memberHasVoted ? 0 : memberCurrentStreak + 1)
           }
         }
-      },
-      sideEffect ({ contractID, data, meta, height, innerSigningContractID }, { state, getters }) {
-        const proposal = state.proposals[data.proposalHash]
-        const { loggedIn } = sbp('state/vuex/state')
-        const myProfile = getters.groupProfile(loggedIn.identityContractID)
-
-        if (proposal?.dateClosed && isActionOlderThanUser(contractID, height, myProfile)) {
-          sbp('chelonia/queueInvocation', contractID, () => {
-            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
-              sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                creatorID: innerSigningContractID,
-                proposalStatus: proposal.status
-              })
-            })
-          })
-        }
       }
     },
     'gi.contracts/group/proposalCancel': {
       validate: actionRequireActiveMember(objectOf({
         proposalHash: string
       })),
-      process ({ data, meta, contractID, innerSigningContractID }, { state }) {
+      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
@@ -1024,14 +1006,14 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         Vue.set(proposal, 'dateClosed', meta.createdDate)
-        archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
+        archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID }, { state }) {
+      process ({ data, meta, contractID, height }, { state }) {
         if (data.proposalIds.length) {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
@@ -1039,7 +1021,7 @@ sbp('chelonia/defineContract', {
             if (proposal) {
               Vue.set(proposal, 'status', STATUS_EXPIRED)
               Vue.set(proposal, 'dateClosed', meta.createdDate)
-              archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
+              archiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
             }
           }
         }
@@ -1691,6 +1673,15 @@ sbp('chelonia/defineContract', {
       }
       await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
       await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
+    },
+    'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposal) {
+      const { loggedIn } = sbp('state/vuex/state')
+      const { createdDate } = meta
+      if (isActionOlderThanUser(contractID, height, state.profiles[loggedIn.identityContractID])) {
+        sbp('chelonia/queueInvocation', contractID, () => {
+          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', { createdDate, groupID: contractID, proposal })
+        })
+      }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
       // NOTE: When group's mincome has changed, below actions should be taken.

@@ -107,7 +107,7 @@ export default ({
         if (oneVoteToPass(proposalHash)) {
           if (this.type === PROPOSAL_INVITE_MEMBER) {
             passPayload = await createInvite({
-              invitee: this.proposal.data.proposalData.memberName,
+              invitee: this.proposal.data.proposalData.memberID,
               creatorID: this.proposal.creatorID,
               expires: this.currentGroupState.settings.inviteExpiryProposal
             })

@@ -8,9 +8,11 @@ import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import {
-  STATUS_PASSED, STATUS_FAILED, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
+  STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
+import { getProposalDetails } from '@model/contracts/shared/functions.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
 const userDisplayNameFromID = (userID) => sbp('state/vuex/getters').userDisplayNameFromID(userID)
@@ -195,19 +197,38 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposalStatus: string }) {
-    const name = strong(userDisplayNameFromID(data.creatorID))
+  PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposal: Object }) {
+    const { creatorID, status, type, options } = getProposalDetails(data.proposal)
+
     const bodyTemplateMap = {
-      // TODO: needs various messages depending on the proposal type? TBD by team.
-      [STATUS_PASSED]: () => L("{name}'s proposal has passed.", { name }),
-      [STATUS_FAILED]: () => L("{name}'s proposal has failed.", { name })
+      [PROPOSAL_INVITE_MEMBER]:
+        (opts) => L('{creator} proposal to add {member} to the group was {result}.', opts),
+      [PROPOSAL_REMOVE_MEMBER]:
+        (opts) => L('{creator} proposal to remove {member} from the group was {result}.', opts),
+      [PROPOSAL_GROUP_SETTING_CHANGE]:
+        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {result}.', opts),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
+        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {result}.', opts),
+      [PROPOSAL_GENERIC]:
+        (opts) => L('{creator} proposal "{title}" was {result}.', opts)
     }
+    const iconTemplateMap = { [STATUS_PASSED]: 'check', [STATUS_FAILED]: 'times' }
+    const levelTemplateMap = { [STATUS_PASSED]: 'success', [STATUS_FAILED]: 'danger' }
 
     return {
-      avatarUserID: data.creatorID,
-      body: bodyTemplateMap[data.proposalStatus](),
-      icon: 'cog', // TODO : to be decided.
-      level: 'info',
+      avatarUserID: creatorID,
+      body: bodyTemplateMap[type]({
+        ...options,
+        creator: L('{name}\'s', { name: strong(userDisplayNameFromID(creatorID)) }), // TODO: display YOUR
+        result: {
+          [STATUS_PASSED]: 'accepted',
+          [STATUS_FAILED]: 'rejected',
+          [STATUS_CANCELLED]: 'cancelled',
+          [STATUS_EXPIRED]: 'expired'
+        }[status]
+      }),
+      icon: iconTemplateMap[status],
+      level: levelTemplateMap[status],
       linkTo: '/dashboard#proposals',
       scope: 'group'
     }

@@ -103,6 +103,7 @@ export const PROPOSAL_VARIANTS = {
   EXPIRING: 'expiring',
   ACCEPTED: 'accepted',
   REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
   EXPIRED: 'expired'
 }
 
