@@ -19,7 +19,7 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function archiveProposal (
+export function notifyAndArchiveProposal (
   { state, proposalHash, proposal, contractID, meta, height }: {
     state: Object, proposalHash: string, proposal: any, contractID: string, meta: Object, height: number
   }) {
@@ -80,7 +80,7 @@ function voteAgainst (state: any, { meta, data, contractID, height }: any) {
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
   sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_AGAINST, data)
-  archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+  notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
 }
 
 // NOTE: The code is ready to receive different proposals settings,
@@ -108,7 +108,7 @@ const proposals: Object = {
       const forMessage = { ...message, data: data.passPayload }
       sbp('gi.contracts/group/invite/process', forMessage, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+      notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
       // TODO: for now, generate the link and send it to the user's inbox
       //       however, we cannot send GIMessages in any way from here
       //       because that means each time someone synchronizes this contract
@@ -156,7 +156,7 @@ const proposals: Object = {
       sbp('gi.contracts/group/pushSideEffect', contractID,
         ['gi.contracts/group/removeMember/sideEffect', forMessage]
       )
-      archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+      notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -178,7 +178,7 @@ const proposals: Object = {
       sbp('gi.contracts/group/updateSettings/process', forMessage, state)
       sbp('gi.contracts/group/pushSideEffect', contractID,
         ['gi.contracts/group/updateSettings/sideEffect', forMessage])
-      archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+      notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -195,7 +195,7 @@ const proposals: Object = {
         proposalHash
       }
       sbp('gi.contracts/group/updateAllVotingRules/process', forMessage, state)
-      archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+      notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -206,7 +206,7 @@ const proposals: Object = {
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      archiveProposal({ state, proposalHash, proposal, contractID, meta, height })
+      notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   }

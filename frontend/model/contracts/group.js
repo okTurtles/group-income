@@ -5,7 +5,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, notifyAndArchiveProposal } from './shared/voting/proposals.js'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import {
@@ -1006,7 +1006,7 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         Vue.set(proposal, 'dateClosed', meta.createdDate)
-        archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
+        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
@@ -1021,7 +1021,7 @@ sbp('chelonia/defineContract', {
             if (proposal) {
               Vue.set(proposal, 'status', STATUS_EXPIRED)
               Vue.set(proposal, 'dateClosed', meta.createdDate)
-              archiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
+              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
             }
           }
         }
