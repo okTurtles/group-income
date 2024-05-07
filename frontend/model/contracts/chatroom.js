@@ -272,9 +272,13 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/rename': {
-      validate: actionRequireInnerSignature(objectOf({
-        name: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+        objectOf({ name: string })(data)
+
+        if (state.attributes.creatorID !== innerSigningContractID) {
+          throw new TypeError(L('Only the channel creator can rename.'))
+        }
+      }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
@@ -291,9 +295,13 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/changeDescription': {
-      validate: actionRequireInnerSignature(objectOf({
-        description: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+        objectOf({ description: string })(data)
+
+        if (state.attributes.creatorID !== innerSigningContractID) {
+          throw new TypeError(L('Only the channel creator can change description.'))
+        }
+      }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
@@ -514,13 +522,26 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature(objectOf({
-        hash: string,
-        // NOTE: manifestCids of the attachments which belong to the message
-        //       if the message is deleted, those attachments should be deleted too
-        manifestCids: arrayOf(string),
-        messageSender: string
-      })),
+      validate: actionRequireInnerSignature((data, { state, meta, message: { innerSigningContractID }, contractID }) => {
+        objectOf({
+          hash: string,
+          // NOTE: manifestCids of the attachments which belong to the message
+          //       if the message is deleted, those attachments should be deleted too
+          manifestCids: arrayOf(string),
+          messageSender: string
+        })(data)
+
+        if (innerSigningContractID !== data.messageSender) {
+          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+            throw new TypeError(L('Only the person who sent the message can delete it.'))
+          } else {
+            const groupID = sbp('state/vuex/getters').groupIdFromChatRoomId(contractID)
+            if (sbp('state/vuex/state')[groupID]?.groupOwnerID !== innerSigningContractID) {
+              throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))
+            }
+          }
+        }
+      }),
       process ({ data, meta, innerSigningContractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
