@@ -326,7 +326,7 @@ export default ({
         !this.currentGroupState._vm?.authorizedKeys?.[inviteKeyId] ||
         // If _notAfterHeight is *not* undefined, it means that the key has been
         // revoked. Hence, it cannot be used
-        this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notBeforeHeight !== undefined ||
+        this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight !== undefined ||
         // If the expiration date is less than the current date, it means that
         // the invite can no longer be used
         this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()
