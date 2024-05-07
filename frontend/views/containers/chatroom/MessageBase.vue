@@ -132,7 +132,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
-import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 const TextObjectType = {
   Text: 'TEXT',

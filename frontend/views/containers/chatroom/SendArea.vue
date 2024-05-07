@@ -267,7 +267,7 @@ import {
 import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
-import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
+import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/markdown-utils.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
