@@ -5,7 +5,8 @@
   .c-panel-content(tabindex='0' ref='contentEl')
     .c-panel-header
       i.icon-link.c-header-icon
-      .c-link-content.has-text-1 {{ ephemeral.linkUrl }}
+      .c-link-content.has-text-1
+        span.c-inner {{ ephemeral.linkUrl }}
       button.is-icon.has-background.c-close-btn(@click='close')
         i.icon-times
 
@@ -57,6 +58,7 @@ export default ({
     close () {
       if (this.ephemeral.isActive) {
         this.ephemeral.isActive = false
+        this.ephemeral.linkUrl = ''
       }
     },
     open (linkUrl = '') {
@@ -179,15 +181,23 @@ export default ({
   }
 
   .c-link-content {
-    --lh: 18px;
+    --lh: 16px;
     --max-lines: 2;
-    font-size: $size_5;
+    position: relative;
+    font-size: 13px;
     flex-grow: 1;
     word-break: break-all;
     line-height: var(--lh);
     max-height: calc(var(--lh) * var(--max-lines));
-    overflow: hidden;
     user-select: none;
+    display: -webkit-box;
+    -webkit-line-clamp: var(--max-lines);
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+    .c-inner {
+      display: block;
+    }
   }
 
   .c-close-btn {
