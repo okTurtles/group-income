@@ -12,12 +12,12 @@
         )
       .c-post-content
         h3.is-title-4 {{ post.title }}
-        p(v-safe-html:a='convertToMarkdown(post.content)')
+        p(v-safe-html:a='renderMarkdown(post.content)')
 </template>
 
 <script>
 import { humanDate } from '@model/contracts/shared/time.js'
-import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
 import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
@@ -53,7 +53,7 @@ export default ({
   },
   methods: {
     humanDate,
-    convertToMarkdown
+    renderMarkdown
   }
 }: Object)
 </script>
