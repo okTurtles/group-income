@@ -18,6 +18,13 @@
       )
         i(:class='"icon-" + entry.icon')
         span.c-menu-text {{ entry.name }}
+
+    input.c-invisible-input(
+      v-if='ephemeral.isActive'
+      type='text'
+      ref='input'
+      :value='ephemeral.linkUrl'
+    )
 </template>
 
 <script>
@@ -27,7 +34,7 @@ import { L } from '@common/common.js'
 
 const menuList = [
   { id: 'open', name: L('Open in browser'), icon: 'external-link-alt', enableCheck: () => true },
-  { id: 'copy', name: L('Copy link'), icon: 'paper-clip', enableCheck: () => 'clipboard' in navigator },
+  { id: 'copy', name: L('Copy link'), icon: 'paper-clip', enableCheck: () => true },
   { id: 'share', name: L('Share'), icon: 'share-alt', enableCheck: () => 'share' in navigator }
 ]
 
@@ -57,7 +64,7 @@ export default ({
         this.ephemeral.linkUrl = linkUrl
         this.ephemeral.isActive = true
 
-        this.$refs.contentEl.focus()
+        this.$refs.contentEl?.focus()
       }
     },
     onClickMenu (id) {
@@ -69,12 +76,19 @@ export default ({
           break
         }
         case 'copy': {
-          navigator.clipboard.writeText(linkUrl).then(() => {
+          const postCopyAction = () => {
             this.close()
-
             sbp('gi.ui/showBanner', L('Copied to clipboard'), 'check-circle')
             setTimeout(() => { sbp('gi.ui/clearBanner') }, 1500)
-          })
+          }
+
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(linkUrl).then(postCopyAction)
+          } else {
+            this.$refs.input.select()
+            document.execCommand('copy')
+            postCopyAction()
+          }
           break
         }
         case 'share': {
@@ -173,6 +187,7 @@ export default ({
     line-height: var(--lh);
     max-height: calc(var(--lh) * var(--max-lines));
     overflow: hidden;
+    user-select: none;
   }
 
   .c-close-btn {
@@ -195,5 +210,11 @@ export default ({
   &:focus {
     background-color: $general_1;
   }
+}
+
+.c-invisible-input {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
 }
 </style>
