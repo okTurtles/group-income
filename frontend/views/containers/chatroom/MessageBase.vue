@@ -101,6 +101,7 @@
     :variant='variant'
     :type='type'
     :isMsgSender='isMsgSender'
+    :isGroupCreator='isGroupCreator'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
@@ -131,7 +132,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
-import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -183,7 +184,7 @@ export default ({
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
-    convertTextToMarkdown: Boolean
+    shouldRenderMarkdown: Boolean
   },
   computed: {
     ...mapGetters([
@@ -264,7 +265,7 @@ export default ({
         return [
           {
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           }
         ]
       }
@@ -280,7 +281,7 @@ export default ({
         .map(t => {
           const genDefaultTextObj = (text) => ({
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           })
           const genChannelMentionObj = (text) => {
             const chatroomId = text.slice(1)
