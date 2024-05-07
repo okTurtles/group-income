@@ -29,7 +29,7 @@ export default {
   data () {
     return {
       config: {
-        sizeLimit: CHAT_ATTACHMENT_SIZE_LIMIT
+        sizeLimit: (CHAT_ATTACHMENT_SIZE_LIMIT / Math.pow(10, 6)).toFixed(2)
       }
     }
   }
