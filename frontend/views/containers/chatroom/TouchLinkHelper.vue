@@ -35,7 +35,7 @@ import { L } from '@common/common.js'
 const menuList = [
   { id: 'open', name: L('Open in browser'), icon: 'external-link-alt', enableCheck: () => true },
   { id: 'copy', name: L('Copy link'), icon: 'paper-clip', enableCheck: () => true },
-  { id: 'share', name: L('Share'), icon: 'share-alt', enableCheck: () => 'share' in navigator }
+  { id: 'share', name: L('Share'), icon: 'share-alt', enableCheck: () => 'share' in window.navigator }
 ]
 
 export default ({
@@ -82,8 +82,8 @@ export default ({
             setTimeout(() => { sbp('gi.ui/clearBanner') }, 1500)
           }
 
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(linkUrl).then(postCopyAction)
+          if (window.navigator.clipboard) {
+            window.navigator.clipboard.writeText(linkUrl).then(postCopyAction)
           } else {
             this.$refs.input.select()
             document.execCommand('copy')
