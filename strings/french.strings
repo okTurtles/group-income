@@ -429,6 +429,12 @@
 /* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
 "That file is too large and cannot be uploaded. The limit is {sizeLimit} MB" = "That file is too large and cannot be uploaded. The limit is {sizeLimit} MB";
 
+/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"The file you just attached is not supported and cannot be uploaded to the chat." = "The file you just attached is not supported and cannot be uploaded to the chat.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
+"Unsupported file type" = "Unsupported file type";
+
 /* MISSING TRANSLATION - views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
 "Upload attachment" = "Upload attachment";
 
@@ -833,6 +839,9 @@
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
 "Other Proposals" = "Other Proposals";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"There are no open proposals." = "There are no open proposals.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
 "Voting Systems" = "Voting Systems";
@@ -1720,9 +1729,6 @@
 "Save changes" = "Enregistrer les changements";
 
 /* views/containers/chatroom/ViewArea.vue */
-"Channel Description" = "Description du salon";
-
-/* views/containers/chatroom/ViewArea.vue */
 "Join Channel" = "Rejoindre le salon";
 
 /* views/containers/chatroom/ViewArea.vue */
@@ -2568,9 +2574,6 @@
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "Sur Group Income, chaque membre du groupe peut voter lors des décisions importantes, comme par exemple l’ajout ou l’exclusion d’un membre, ou la modification du revenu mimimum.";
 
-/* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
-"No one has created a proposal yet." = "Personne n’a encore créé de proposition.";
-
 /* views/containers/proposals/RemoveMember.vue */
 "Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir exclure {name} de votre groupe ?";
 
@@ -2761,6 +2764,9 @@
 "You need {amount}" = "Vous avez besoin de {amount}";
 
 /* views/pages/DesignSystem.vue */
+"No one has created a proposal yet." = "Personne n’a encore créé de proposition.";
+
+/* views/pages/DesignSystem.vue */
 "Send donation" = "Envoyer un don";
 
 /* views/pages/DesignSystem.vue */
@@ -2942,6 +2948,9 @@
 
 /* Not currently used */
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
+
+/* Not currently used */
+"Channel Description" = "Description du salon";
 
 /* Not currently used */
 "Compose:" = "Composer :";

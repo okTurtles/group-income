@@ -201,12 +201,19 @@ async function startApp () {
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
       messageHandlers: {
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
+          const isDevelopment = process.env.NODE_ENV === 'development'
           const ourVersion = process.env.GI_VERSION
           const theirVersion = msg.data.GI_VERSION
 
           const ourContractsVersion = process.env.CONTRACTS_VERSION
           const theirContractsVersion = msg.data.CONTRACTS_VERSION
-          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+
+          const isContractVersionDiff = ourContractsVersion !== theirContractsVersion
+          const isGIVersionDiff = ourVersion !== theirVersion
+          // We only compare GI_VERSION in development mode so that the page auto-refreshes if `grunt dev` is re-run
+          // This check cannot be done in production mode as it would lead to an infinite page refresh bug
+          // when using `grunt deploy` with `grunt serve`
+          if (isContractVersionDiff || (isDevelopment && isGIVersionDiff)) {
             sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         },

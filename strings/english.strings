@@ -474,9 +474,6 @@
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
 
-/* views/containers/chatroom/ViewArea.vue */
-"Channel Description" = "Channel Description";
-
 /* views/pages/GroupChat.vue */
 "Channel Options" = "Channel Options";
 
@@ -1428,7 +1425,7 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "No members were removed." = "No members were removed.";
 
-/* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
+/* views/pages/DesignSystem.vue */
 "No one has created a proposal yet." = "No one has created a proposal yet.";
 
 /* views/pages/Contributions.vue */
@@ -2159,6 +2156,9 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "There are no non-monetary contributions." = "There are no non-monetary contributions.";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"There are no open proposals." = "There are no open proposals.";
 
 /* views/containers/proposals/MemberRequest.vue */
 "There are no open requests right now." = "There are no open requests right now.";
