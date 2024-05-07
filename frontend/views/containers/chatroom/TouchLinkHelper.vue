@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-touch-link-helper(:class='{ "is-active": ephemeral.isActive }')
-  .c-overlay-background
+  .c-overlay-background(@click='close')
 
   .c-panel-content(tabindex='0' ref='contentEl')
     .c-panel-header
@@ -8,11 +8,28 @@
       .c-link-content.has-text-1 {{ ephemeral.linkUrl }}
       button.is-icon.has-background.c-close-btn(@click='close')
         i.icon-times
+
+    ul.c-panel-menu
+      li.c-panel-menu-item(
+        v-for='entry in menuDisplay'
+        tabindex='0'
+        :key='entry.id'
+        @click='onClickMenu(entry.id)'
+      )
+        i(:class='"icon-" + entry.icon')
+        span.c-menu-text {{ entry.name }}
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { L } from '@common/common.js'
+
+const menuList = [
+  { id: 'open', name: L('Open in browser'), icon: 'external-link-alt', enableCheck: () => true },
+  { id: 'copy', name: L('Copy link'), icon: 'paper-clip', enableCheck: () => 'clipboard' in navigator },
+  { id: 'share', name: L('Share'), icon: 'share-alt', enableCheck: () => 'share' in navigator }
+]
 
 export default ({
   name: 'TouchLinkHelper',
@@ -22,6 +39,11 @@ export default ({
         isActive: false,
         linkUrl: ''
       }
+    }
+  },
+  computed: {
+    menuDisplay () {
+      return menuList.filter(entry => entry.enableCheck())
     }
   },
   methods: {
@@ -36,6 +58,31 @@ export default ({
         this.ephemeral.isActive = true
 
         this.$refs.contentEl.focus()
+      }
+    },
+    onClickMenu (id) {
+      const linkUrl = this.ephemeral.linkUrl
+
+      switch (id) {
+        case 'open': {
+          window.open(linkUrl, '_blank').focus()
+          break
+        }
+        case 'copy': {
+          navigator.clipboard.writeText(linkUrl).then(() => {
+            this.close()
+
+            sbp('gi.ui/showBanner', L('Copied to clipboard'), 'check-circle')
+            setTimeout(() => { sbp('gi.ui/clearBanner') }, 1500)
+          })
+          break
+        }
+        case 'share': {
+          navigator.share({
+            title: L('Share link'),
+            url: linkUrl
+          }).then(() => this.close())
+        }
       }
     }
   },
@@ -92,6 +139,7 @@ export default ({
   border-radius: 1rem 1rem 0 0;
   background-color: $general_2;
   overflow: hidden;
+  outline: none;
   z-index: 1;
 }
 
@@ -101,7 +149,7 @@ export default ({
   display: flex;
   align-items: center;
   background-color: $general_1;
-  gap: 0.75rem;
+  gap: 1rem;
 
   .c-header-icon {
     display: inline-flex;
@@ -110,19 +158,42 @@ export default ({
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
-    background-color: $text_1;
+    background-color: $text_0;
     color: $general_2;
     flex-shrink: 0;
     font-size: $size_4;
   }
 
   .c-link-content {
+    --lh: 18px;
+    --max-lines: 2;
+    font-size: $size_5;
     flex-grow: 1;
+    word-break: break-all;
+    line-height: var(--lh);
+    max-height: calc(var(--lh) * var(--max-lines));
+    overflow: hidden;
   }
 
   .c-close-btn {
     width: 2rem;
     height: 2rem;
+  }
+}
+
+.c-panel-menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  gap: 0.75rem;
+  color: $text_0;
+  outline: none;
+  background-color: rgba(0, 0, 0, 0);
+  transition: background-color 200ms linear;
+
+  &:focus {
+    background-color: $general_1;
   }
 }
 </style>
