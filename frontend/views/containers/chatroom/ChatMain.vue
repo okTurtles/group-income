@@ -704,7 +704,7 @@ export default ({
         members: cloneDeep(this.chatRoomMembers),
         _vm: cloneDeep(this.currentChatVm),
         messages: shouldClearMessages ? [] : cloneDeep(this.chatRoomLatestMessages),
-        shouldSaveMessages: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
+        renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
     initializeState (forceClearMessages = false) {

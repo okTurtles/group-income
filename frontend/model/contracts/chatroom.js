@@ -130,9 +130,8 @@ async function deleteEncryptedFiles (manifestCids: string | string[], option: Ob
 
 function addMessage (state, message) {
   state.messages.push(message)
-  // NOTE: 'shouldSaveMessages' attribute is not original attribute
-  //       and it is set in Chat page only to save all messages
-  if (state.shouldSaveMessages) {
+  // NOTE: 'renderingContext' attribute is not original attribute which is set in Chat page
+  if (state.renderingContext) {
     return
   }
   while (state.messages.length > CHATROOM_MAX_MESSAGES) {
@@ -215,7 +214,7 @@ sbp('chelonia/defineContract', {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
         }
 
-        if (!state.shouldSaveMessages) {
+        if (!state.renderingContext) {
           if (!state.members) {
             Vue.set(state, 'members', {})
           }
@@ -329,7 +328,7 @@ sbp('chelonia/defineContract', {
         // innerSigningContractID !== contractID is the special case of a member
         // being removed using the group's CSK (usually when a member is removed)
         const isKicked = innerSigningContractID && memberID !== innerSigningContractID
-        if (!state.shouldSaveMessages) {
+        if (!state.renderingContext) {
           if (!state.members) {
             throw new Error('Missing members state')
           } else if (!state.members[memberID]) {
@@ -464,7 +463,7 @@ sbp('chelonia/defineContract', {
         if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.shouldSaveMessages && state.messages[msgIndex].pending) {
+          if (state.renderingContext && state.messages[msgIndex].pending) {
             // NOTE: 'pending' message attribute is not the original message attribute
             //       and it is only set and used in Chat page
             delete state.messages[msgIndex].pending
