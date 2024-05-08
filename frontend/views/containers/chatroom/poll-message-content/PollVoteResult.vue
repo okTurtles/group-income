@@ -97,7 +97,10 @@ export default ({
   },
   methods: {
     getPercent (votes) {
-      return `${Math.round(votes.length / this.pollUtils.totalVoteCount() * 100)}%`
+      const total = this.pollUtils.totalVoteCount()
+      return total === 0
+        ? `0%`
+        : `${Math.round(votes.length / this.pollUtils.totalVoteCount() * 100)}%`
     }
   }
 }: Object)

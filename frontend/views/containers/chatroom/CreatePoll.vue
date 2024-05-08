@@ -235,6 +235,7 @@ export default {
           question: '',
           allowMultipleChoice: false,
           hideVoters: false,
+          duration: 7,
           options: [
             { id: createRandomId(), value: '' }
           ],
