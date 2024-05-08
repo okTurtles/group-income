@@ -31,7 +31,6 @@ sbp('sbp/selectors/register', {
       type
     }
 
-    console.log('+++++++ CREATED A NOTIFICATION ++++++++', type, notification)
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
   },
 
