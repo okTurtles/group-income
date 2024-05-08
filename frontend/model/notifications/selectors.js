@@ -30,7 +30,6 @@ sbp('sbp/selectors/register', {
       timestamp: data.createdDate ? new Date(data.createdDate).getTime() : Date.now(),
       type
     }
-
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
   },
 
