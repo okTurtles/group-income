@@ -99,7 +99,7 @@ export default ({
     getPercent (votes) {
       const total = this.pollUtils.totalVoteCount()
       return total === 0
-        ? `0%`
+        ? '0%'
         : `${Math.round(votes.length / this.pollUtils.totalVoteCount() * 100)}%`
     }
   }
