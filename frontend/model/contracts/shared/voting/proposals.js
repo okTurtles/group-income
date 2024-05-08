@@ -25,6 +25,10 @@ export function notifyAndArchiveProposal (
   }) {
   Vue.delete(state.proposals, proposalHash)
 
+  // NOTE: we can not make notification for the proposal closal
+  //       in the /proposalVote/sideEffect
+  //       because we remove the state.proposals[proposalHash] in the process function
+  //       and can not access the proposal data in the sideEffect
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposal]
   )
