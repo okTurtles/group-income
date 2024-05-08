@@ -8,7 +8,7 @@ message-base(
   @message-edited='editMessage'
   @delete-attachment='deleteAttachment'
   @delete-message='$emit("delete-message")'
-  :convertTextToMarkdown='true'
+  :shouldRenderMarkdown='true'
 )
 
 </template>

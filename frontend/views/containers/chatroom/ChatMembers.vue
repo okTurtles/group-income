@@ -5,7 +5,7 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='headerButtonAction'
+      @click='onClickNewDirectMessage'
     )
       i.icon-plus.is-prefix
       i18n New
@@ -17,6 +17,7 @@
       :to='buildUrl(chatRoomID)'
       :data-test='chatRoomID'
       :key='chatRoomID'
+      @click='$emit("redirect")'
     )
       .profile-wrapper(v-if='partners.length === 1')
         profile-card(:contractID='partners[0]' deactivated)
@@ -87,11 +88,12 @@ export default ({
         params: { chatRoomID }
       }
     },
-    headerButtonAction () {
+    onClickNewDirectMessage () {
       let modalAction = ''
       if (this.action === 'addDirectMessage') modalAction = 'NewDirectMessageModal'
       if (modalAction) {
         this.openModal(modalAction)
+        this.$emit('new')
       }
     },
     getUnreadMsgCount (chatRoomID) {

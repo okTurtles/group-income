@@ -101,6 +101,7 @@
     :variant='variant'
     :type='type'
     :isMsgSender='isMsgSender'
+    :isGroupCreator='isGroupCreator'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
@@ -129,7 +130,7 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { convertToMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -181,7 +182,7 @@ export default ({
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
-    convertTextToMarkdown: Boolean
+    shouldRenderMarkdown: Boolean
   },
   computed: {
     ...mapGetters([
@@ -262,7 +263,7 @@ export default ({
         return [
           {
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           }
         ]
       }
@@ -278,7 +279,7 @@ export default ({
         .map(t => {
           const genDefaultTextObj = (text) => ({
             type: TextObjectType.Text,
-            text: this.convertTextToMarkdown ? convertToMarkdown(text) : text
+            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           })
           const genChannelMentionObj = (text) => {
             const chatroomId = text.slice(1)
@@ -311,11 +312,11 @@ export default ({
     },
     navigateToChatroom (obj) {
       if (obj.disabled ||
-      obj.chatroomId === this.$route.params?.chatRoomId) { return }
+      obj.chatroomId === this.$route.params?.chatRoomID) { return }
 
       this.$router.push({
         name: 'GroupChatConversation',
-        params: { chatRoomId: obj.chatroomId }
+        params: { chatRoomID: obj.chatroomId }
       })
     }
   }

@@ -9,8 +9,9 @@ import sbp from '@sbp/sbp'
 // TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
 import data from 'emoji-mart-vue-fast/data/apple.json'
-import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Emoticons',
@@ -19,6 +20,7 @@ export default ({
   },
   data () {
     return {
+      position: undefined,
       emoji: new EmojiIndex(data),
       pos_x: Number,
       pos_y: Number,
@@ -36,32 +38,6 @@ export default ({
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
     window.removeEventListener('resize', this.resizeHandler)
-  },
-  computed: {
-    position () {
-      const winWidth = window.innerWidth
-      const winHeight = window.innerHeight
-      if (winWidth < TABLET) return
-      const emotiWidth = 353
-      const emotiHeight = 440
-      const padding = 16
-      // let left = winWidth / 2 - emotiWidth / 2
-      let left = '50%'
-      let top = this.pos_y - emotiHeight - padding
-      if (winWidth > DESKTOP) {
-        left = this.pos_x - emotiWidth / 2
-      }
-      if (top < 0) {
-        top = this.pos_y + padding
-      }
-      if (top + emotiHeight > winHeight) {
-        top = winHeight - emotiHeight
-      }
-      return {
-        left: `${left}px`,
-        top: `${top}px`
-      }
-    }
   },
   methods: {
     handleKeyUp (e) {
@@ -99,6 +75,28 @@ export default ({
         this.lastFocus = null
       }
     },
+    setPosition () {
+      const winWidth = window.innerWidth
+      const winHeight = window.innerHeight
+      if (winWidth < TABLET) {
+        this.position = undefined
+        return
+      }
+      const emotiWidth = 353
+      const emotiHeight = 440
+      const padding = 16
+      const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
+      let top = this.pos_y - emotiHeight - padding
+      if (top < 0) {
+        top = this.pos_y + padding
+      } else if (top + emotiHeight > winHeight) {
+        top = winHeight - emotiHeight
+      }
+      this.position = { left: `${left}px`, top: `${top}px` }
+    },
+    debouncedSetPosition: debounce(function () {
+      this.setPosition()
+    }, 250),
     resizeHandler () {
       if (window.matchMedia('(hover: hover)').matches) {
         // This is a fix for the issue #1954 (https://github.com/okTurtles/group-income/issues/1954)
@@ -106,6 +104,15 @@ export default ({
         //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
         this.closeEmoticonDlg()
       }
+      this.debouncedSetPosition()
+    }
+  },
+  watch: {
+    'pos_x' (to, from) {
+      this.setPosition()
+    },
+    'pos_y' (to, from) {
+      this.setPosition()
     }
   }
 }: Object)
