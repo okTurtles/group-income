@@ -25,7 +25,7 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
     i18n.sr-only(tag='h2') Page details
     toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     .p-sidebar-inner(:inert='isInert')
-      slot(name='sidebar')
+      slot(name='sidebar' :toggle='toggleMenuIfTouch')
 </template>
 
 <script>
@@ -74,6 +74,11 @@ export default ({
     }
   },
   methods: {
+    toggleMenuIfTouch () {
+      if (this.ephemeral.isTouch) {
+        this.toggleMenu()
+      }
+    },
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
