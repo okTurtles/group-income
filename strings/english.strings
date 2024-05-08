@@ -2112,9 +2112,6 @@
 /* views/pages/Payments.vue */
 "The distribution period begins on: {startDate}" = "The distribution period begins on: {startDate}";
 
-/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"The file you just attached is not supported and cannot be uploaded to the chat." = "The file you just attached is not supported and cannot be uploaded to the chat.";
-
 /* views/containers/proposals/DistributionDate.vue */
 "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).";
 
@@ -2321,9 +2318,6 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Undo";
-
-/* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
-"Unsupported file type" = "Unsupported file type";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Update Password" = "Update Password";

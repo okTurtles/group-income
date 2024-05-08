@@ -230,7 +230,6 @@
                   type='file'
                   multiple
                   data-test='attachments'
-                  :accept='supportedFileExtensions'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
 
@@ -264,11 +263,11 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS, CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
-import { getFileExtension, getFileType } from '@view-utils/filters.js'
+import { getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -410,9 +409,6 @@ export default ({
     },
     isPublicChannel () {
       return this.chatRoomAttributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PUBLIC
-    },
-    supportedFileExtensions () {
-      return CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.join(',')
     },
     typingIndicatorSentence () {
       const userArr = this.ephemeral.typingUsers
@@ -666,8 +662,13 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
+      const containsExtension = v => /.+\.\w+$/.test(v) // check if a entry name ends with a file extension.
+      const isDirectory = entry => entry.type === '' && !containsExtension(entry.name)
+
+      filesList = Array.from(filesList).filter(entry => !isDirectory(entry)) // filter all directories from attachments first.
       if (!filesList.length) {
-        // NOTE: user clicked Cancel button, so no action is needed
+        // NOTE: it's either that user clicked 'Cancel button' or  anything that is not a file (e.g. directory) has been attached.
+        //       no action is needed in these cases.
         return
       }
 
@@ -681,16 +682,11 @@ export default ({
       }
 
       for (const file of filesList) {
-        const fileExt = getFileExtension(file.name)
         const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
-          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'large' })
-        } else if (!fileExt || !CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS.includes(fileExt)) {
-          console.log(fileExt, CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS)
-          // Give users a warning about unsupported file types
-          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal', { type: 'unsupported' })
+          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
         const attachment = {
