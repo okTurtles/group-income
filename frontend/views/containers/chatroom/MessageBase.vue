@@ -131,6 +131,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -317,7 +318,7 @@ export default ({
       this.$router.push({
         name: 'GroupChatConversation',
         params: { chatRoomID: obj.chatroomId }
-      })
+      }).catch(logExceptNavigationDuplicated)
     }
   }
 }: Object)
