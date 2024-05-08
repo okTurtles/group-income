@@ -197,38 +197,37 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposal: Object }) {
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
 
     const bodyTemplateMap = {
       [PROPOSAL_INVITE_MEMBER]:
-        (opts) => L('{creator} proposal to add {member} to the group was {result}.', opts),
+        (opts) => L('{creator} proposal to add {member} to the group was {closedWith}.', opts),
       [PROPOSAL_REMOVE_MEMBER]:
-        (opts) => L('{creator} proposal to remove {member} from the group was {result}.', opts),
+        (opts) => L('{creator} proposal to remove {member} from the group was {closedWith}.', opts),
       [PROPOSAL_GROUP_SETTING_CHANGE]:
-        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {result}.', opts),
+        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {closedWith}.', opts),
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
-        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {result}.', opts),
+        (opts) => L('{creator} proposal to change group\'s {setting} was {closedWith}.', opts), // TODO: define message
       [PROPOSAL_GENERIC]:
-        (opts) => L('{creator} proposal "{title}" was {result}.', opts)
+        (opts) => L('{creator} proposal "{title}" was {closedWith}.', opts)
     }
-    const iconTemplateMap = { [STATUS_PASSED]: 'check', [STATUS_FAILED]: 'times' }
-    const levelTemplateMap = { [STATUS_PASSED]: 'success', [STATUS_FAILED]: 'danger' }
+    const statusMap = {
+      [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
+      [STATUS_FAILED]: { icon: 'times', level: 'danger', closedWith: L('rejected') },
+      [STATUS_CANCELLED]: { icon: 'times', level: 'danger', closedWith: L('cancelled') }, // TODO: define icon, level
+      [STATUS_EXPIRED]: { icon: 'times', level: 'danger', closedWith: L('expired') } // TODO: define icon, level
+    }
 
     return {
       avatarUserID: creatorID,
       body: bodyTemplateMap[type]({
         ...options,
         creator: L('{name}\'s', { name: strong(userDisplayNameFromID(creatorID)) }), // TODO: display YOUR
-        result: {
-          [STATUS_PASSED]: 'accepted',
-          [STATUS_FAILED]: 'rejected',
-          [STATUS_CANCELLED]: 'cancelled',
-          [STATUS_EXPIRED]: 'expired'
-        }[status]
+        closedWith: strong(statusMap[status].closedWith)
       }),
-      icon: iconTemplateMap[status],
-      level: levelTemplateMap[status],
+      icon: statusMap[status].icon,
+      level: statusMap[status].level,
       linkTo: '/dashboard#proposals',
       scope: 'group'
     }

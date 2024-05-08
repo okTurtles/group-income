@@ -13,6 +13,7 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from './constants.js'
+import { humanDate } from './time.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -81,11 +82,17 @@ export function getProposalDetails (proposal: Object): Object {
   } else if (proposalType === PROPOSAL_GENERIC) {
     options['title'] = proposalData.name
   } else if ([PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER].includes(proposalType)) {
-    options['member'] = proposalData.memberID
+    options['memberID'] = proposalData.memberID
+    options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
   }
 
-  if (proposalData.proposedValue) {
-    options['value'] = proposalData.proposedValue
+  const { proposedValue } = proposalData
+  if (proposedValue) {
+    if (options.settingType === 'distributionDate') {
+      options['value'] = humanDate(proposedValue, { month: 'long', year: 'numeric', day: 'numeric' })
+    } else {
+      options['value'] = proposedValue
+    }
   }
   if (options.settingType) {
     options['setting'] = settingsTranslationMap[options.settingType]
