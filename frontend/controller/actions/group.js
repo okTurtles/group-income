@@ -680,6 +680,11 @@ export default (sbp('sbp/selectors/register', {
       ...omit(params, ['options', 'data', 'hooks']),
       data: { chatRoomID },
       hooks: {
+        // joinChatRoom sideEffect will trigger a call to 'gi.actions/chatroom/join', we want
+        // to wait for that action to be received and processed, and then switch the UI to the
+        // new chatroom. We do this here instead of in the sideEffect for chatroom/join to
+        // avoid causing the UI to change in other open tabs/windows, as per bug:
+        // https://github.com/okTurtles/group-income/issues/1960
         onprocessed: (msg) => {
           const fnEventHandled = (cID, message) => {
             if (cID === chatRoomID) {
