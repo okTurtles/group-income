@@ -25,6 +25,7 @@ export default ({
   props: {
     height: Number,
     messageHash: String,
+    from: String,
     type: String,
     text: String,
     attachments: Array,
