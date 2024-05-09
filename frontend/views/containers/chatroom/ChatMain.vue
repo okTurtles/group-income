@@ -64,6 +64,7 @@
           :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
+          :from='message.from'
           :text='message.text'
           :attachments='message.attachments'
           :type='message.type'

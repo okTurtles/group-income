@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-item
+li.c-item(@click='$emit("click")')
   component.c-item-link.is-unstyled(
     :is='tag'
     :class='itemLinkClasses'
