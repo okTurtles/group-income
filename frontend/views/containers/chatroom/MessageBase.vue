@@ -300,12 +300,12 @@ export default ({
           }
 
           const genMemberMentionObj = (text) => {
-            const userIDInsideText = text.slice(1)
+            const userID = text.slice(1)
             return {
               type: TextObjectType.MemberMention,
-              text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(userIDInsideText),
-              userID: userIDInsideText,
-              toMe: userIDInsideText === this.currentUserID
+              text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(userID),
+              userID,
+              toMe: userID === this.currentUserID
             }
           }
 
