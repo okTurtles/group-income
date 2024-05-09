@@ -24,6 +24,7 @@ export default ({
     id: String,
     messageHash: String,
     type: String,
+    from: String,
     text: String,
     notification: Object, // { type, params }
     who: String,
