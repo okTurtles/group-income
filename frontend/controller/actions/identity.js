@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
@@ -378,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
 
         const promptOptions = {
           heading: L('Login error'),
-          question: L('Do you want to log out? Error details: {err}.', { err: err.message }),
+          question: L('Do you want to log out? {br_}Error details: {err}.', { err: err.message, ...LTags() }),
           primaryButton: L('No'),
           secondaryButton: L('Yes')
         }

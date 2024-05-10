@@ -21,7 +21,7 @@
   "No": "No",
   "Yes": "Yes",
   "OK": "OK",
-  "Do you want to log out? Error details: {err}.": "Do you want to log out? Error details: {err}.",
+  "Do you want to log out? Error details: {err}.": "Voulez-vous vous déconnecter ? Détails de l'erreur : {err}.",
   "Error during login: {msg}": "Error during login: {msg}",
   "Failed to create a new direct message channel.": "Failed to create a new direct message channel.",
   "Failed to join a group.": "Failed to join a group.",

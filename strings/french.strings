@@ -67,7 +67,7 @@
 "OK" = "OK";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
-"Do you want to log out? Error details: {err}." = "Do you want to log out? Error details: {err}.";
+"Do you want to log out? Error details: {err}." = "Voulez-vous vous déconnecter ? Détails de l'erreur : {err}.";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Error during login: {msg}" = "Error during login: {msg}";
