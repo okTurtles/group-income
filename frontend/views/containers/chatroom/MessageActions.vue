@@ -92,7 +92,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
-        v-if='isEditable'
+        v-if='isDeletable'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -121,7 +121,8 @@ export default ({
       }
     },
     type: String,
-    isMsgSender: Boolean
+    isMsgSender: Boolean,
+    isGroupCreator: Boolean
   },
   computed: {
     isText () {
@@ -130,8 +131,11 @@ export default ({
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
     },
-    isEditable (): Boolean {
+    isEditable () {
       return this.isMsgSender && (this.isText || this.isPoll)
+    },
+    isDeletable () {
+      return this.isEditable || this.isGroupCreator
     }
   },
   methods: {

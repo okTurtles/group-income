@@ -33,7 +33,7 @@ component(
 
   .c-description(v-else)
     i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-    i18n.has-text-1(tag='p') No one has created a proposal yet.
+    i18n.has-text-1(tag='p') There are no open proposals.
 </template>
 
 <script>

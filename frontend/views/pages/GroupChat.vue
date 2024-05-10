@@ -82,16 +82,23 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           @click='editDescription'
         ) Add description
 
-  template(#sidebar='')
+  template(#sidebar='{ toggle }')
     chat-nav(:title='L("Chat")')
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
+        @new='toggle'
+        @redirect='toggle'
       )
 
-      chat-members(:title='L("Direct Messages")' action='addDirectMessage')
+      chat-members(
+        action='addDirectMessage'
+        :title='L("Direct Messages")'
+        @new='toggle'
+        @redirect='toggle'
+      )
 
   .card.c-card
     chat-main(:summary='summary')
@@ -234,7 +241,6 @@ export default ({
 }
 
 .c-header {
-  text-transform: capitalize;
   display: flex;
   align-items: center;
   position: relative;

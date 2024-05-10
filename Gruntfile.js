@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { copyFile, readFile, writeFile } = require('fs/promises')
+const { readdir, cp, mkdir, access, rm, copyFile, readFile, writeFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -60,19 +60,25 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Da
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
 const backendIndex = './backend/index.js'
-const distAssets = 'dist/assets'
-const distCSS = 'dist/assets/css'
 const distDir = 'dist'
-const distContracts = 'dist/contracts'
-const distJS = 'dist/assets/js'
-const serviceWorkerDir = 'frontend/controller/serviceworkers'
+const distAssets = `${distDir}/assets`
+const distCSS = `${distDir}/assets/css`
+const distContracts = `${distDir}/contracts`
+const distJS = `${distDir}/assets/js`
 const srcDir = 'frontend'
-const contractsDir = 'frontend/model/contracts'
+const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
+const contractsDir = `${srcDir}/model/contracts`
 const mainSrc = path.join(srcDir, 'main.js')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
 
 const development = NODE_ENV === 'development'
 const production = !development
+
+// Make database path available to subprocess
+const dbPath = process.env.DB_PATH || (production ? `./${distDir}/data` : './data')
+if (!process.env.DB_PATH) {
+  Object.assign(process.env, { DB_PATH: dbPath })
+}
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -111,46 +117,35 @@ module.exports = (grunt) => {
   }
 
   async function generateManifests (dir, version) {
-    if (development) {
-      const keyFile = process.env.KEY_FILE || 'key.json'
-      const pubKeyFile = process.env.PUB_KEY_FILE || 'key.pub.json'
-      if (fs.existsSync(keyFile)) {
-        grunt.log.writeln(chalk.underline(`Key file ${keyFile} exists, using that.`))
-      } else {
-        grunt.log.writeln(chalk.underline(`\nRunning 'chel keygen --pubout ${pubKeyFile} --out ${keyFile}'`))
-        const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
-        console.log(stdout)
-      }
-      grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
-      // TODO: do this with JS instead of POSIX commands for Windows support
-      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
-      console.log(stdout)
+    const keyFile = process.env.KEY_FILE || 'key.json'
+    const pubKeyFile = process.env.PUB_KEY_FILE || 'key.pub.json'
+    if (fs.existsSync(keyFile)) {
+      grunt.log.writeln(chalk.underline(`Key file ${keyFile} exists, using that.`))
     } else {
-      // Only run these in NODE_ENV=development so that production servers
-      // don't overwrite manifests.json
-      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel manifest'"))
+      grunt.log.writeln(chalk.underline(`\nRunning 'chel keygen --pubout ${pubKeyFile} --out ${keyFile}'`))
+      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
+      console.log(stdout)
     }
+    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    // TODO: do this with JS instead of POSIX commands for Windows support
+    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+    console.log(stdout)
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
-    if (development) {
-      grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
-      console.log(stdout)
-      const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
-      const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
-      fs.writeFileSync(manifestJSON,
-        JSON.stringify({ manifests }, null, 2) + '\n',
-        'utf8')
-      console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
-    } else {
-      // Only run these in NODE_ENV=development so that production servers
-      // don't overwrite manifests.json
-      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel deploy'"))
-    }
+    grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
+    await access(dest).catch(async () => await mkdir(dest))
+    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+    console.log(stdout)
+    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
+    const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    fs.writeFileSync(manifestJSON,
+      JSON.stringify({ manifests }, null, 2) + '\n',
+      'utf8')
+    console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest = './data') {
+  async function genManifestsAndDeploy (dir, version, dest = dbPath) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir, dest)
   }
@@ -199,10 +194,10 @@ module.exports = (grunt) => {
 
   const databaseOptionBags = {
     fs: {
-      dest: './data/'
+      dest: dbPath
     },
     sqlite: {
-      dest: './data/groupincome.db'
+      dest: `${dbPath}/groupincome.db`
     }
   }
 
@@ -363,7 +358,7 @@ module.exports = (grunt) => {
     clean: { dist: [`${distDir}/*`] },
 
     copy: {
-      html_files: {
+      htmlFiles: {
         src: 'frontend/index.html',
         dest: `${distDir}/index.html`
       },
@@ -394,7 +389,8 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
+      chelDevDeploy: `find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`,
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`
     }
   })
 
@@ -403,6 +399,35 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
 
   let child = null
+
+  grunt.registerTask('copyAndMoveContracts', async function () {
+    const done = this.async()
+    const { contractsVersion } = packageJSON
+
+    // NOTE: the latest version
+    await mkdir(`${distContracts}/${contractsVersion}`)
+    for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
+      if (dirent.isFile()) {
+        const fileName = dirent.name
+        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${contractsVersion}/${fileName}`)
+        await rm(`${distContracts}/${fileName}`)
+      }
+    }
+
+    // NOTE: all previously pinned versions
+    const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
+      return dirent.isDirectory() && dirent.name !== contractsVersion
+    }).map(dirent => dirent.name)
+    for (const version of versions) {
+      await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
+    }
+
+    done()
+  })
+
+  grunt.registerTask('chelDeploy', function () {
+    grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
+  })
 
   // Useful helper task for `grunt test`.
   grunt.registerTask('backend:launch', '[internal]', function () {
@@ -522,9 +547,21 @@ module.exports = (grunt) => {
     grunt.task.run(`_pin:${version}`)
   })
 
+  grunt.registerTask('deploy', function () {
+    if (!production) {
+      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
+    }
+    grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
+  })
+  grunt.registerTask('serve', function () {
+    if (!production) {
+      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
+    }
+    grunt.task.run(['chelDeploy', 'backend:launch', 'keepalive'])
+  })
+
   grunt.registerTask('default', ['dev'])
-  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
@@ -563,12 +600,8 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => {
-        return genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
-      })
-      .then(() => {
-        return Promise.all([buildMain.run(), buildServiceWorkers.run()])
-      })
+      .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
+      .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
@@ -670,9 +703,9 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'exec:chelDeployAll', 'backend:launch', 'cypress'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
