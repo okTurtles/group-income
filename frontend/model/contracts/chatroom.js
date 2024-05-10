@@ -376,7 +376,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (memberID === rootState.loggedIn.identityContractID) {
-            leaveChatRoom({ contractID }).catch((e) => {
+            leaveChatRoom(contractID).catch((e) => {
               console.error(`[gi.contracts/chatroom/leave/sideEffect] Error for ${contractID}`, e)
             })
           } else {
@@ -409,7 +409,7 @@ sbp('chelonia/defineContract', {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
-        leaveChatRoom({ contractID }).catch((e) => {
+        leaveChatRoom(contractID).catch((e) => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] Error for ${contractID}`, e)
         })
         sbp('chelonia/contract/remove', contractID).catch(e => {
