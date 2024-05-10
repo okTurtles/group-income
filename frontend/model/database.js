@@ -1,15 +1,117 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import localforage from 'localforage'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '../../shared/domains/chelonia/crypto.js'
 
-const generateEncryptionParams = async (stateKeyEncryptionKeyFn?: (stateEncryptionKeyId: string, salt: string) => Promise<*>) => {
+const _instances = []
+// Localforage-like API for IndexedDB
+const localforage = {
+  ready () {
+    return Promise.all(_instances).then(() => {})
+  },
+  createInstance ({ name, storeName }: { name: string, storeName: string }) {
+    // Open the IndexedDB database
+    const db = new Promise((resolve, reject) => {
+      if (name.includes('-') || storeName.includes('-')) {
+        reject(new Error('Unsupported characters in name: -'))
+        return
+      }
+      const request = self.indexedDB.open(name + '--' + storeName)
+
+      // Create the object store if it doesn't exist
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result
+        db.createObjectStore(storeName)
+      }
+
+      request.onsuccess = (event) => {
+        const db = event.target.result
+        resolve(db)
+      }
+
+      request.onerror = (error) => {
+        reject(error)
+      }
+
+      request.onblocked = (event) => {
+        reject(new Error('DB is blocked'))
+      }
+    })
+
+    _instances.push(db)
+
+    return {
+      clear () {
+        return db.then(db => {
+          const transaction = db.transaction([storeName], 'readwrite')
+          const objectStore = transaction.objectStore(storeName)
+          const request = objectStore.clear()
+          return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+              resolve()
+            }
+            request.onerror = (e) => {
+              reject(e)
+            }
+          })
+        })
+      },
+      getItem (key: string) {
+        return db.then(db => {
+          const transaction = db.transaction([storeName], 'readonly')
+          const objectStore = transaction.objectStore(storeName)
+          const request = objectStore.get(key)
+          return new Promise((resolve, reject) => {
+            request.onsuccess = (event) => {
+              resolve(event.target.result)
+            }
+            request.onerror = (e) => {
+              reject(e)
+            }
+          })
+        })
+      },
+      removeItem (key: string) {
+        return db.then(db => {
+          const transaction = db.transaction([storeName], 'readwrite')
+          const objectStore = transaction.objectStore(storeName)
+          const request = objectStore.delete(key)
+          return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+              resolve()
+            }
+            request.onerror = (e) => {
+              reject(e.target.error)
+            }
+          })
+        })
+      },
+      setItem (key: string, value: any) {
+        return db.then(db => {
+          const transaction = db.transaction([storeName], 'readwrite')
+          const objectStore = transaction.objectStore(storeName)
+          const request = objectStore.put(value, key)
+          return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+              resolve()
+            }
+            request.onerror = (e) => {
+              reject(e.target.error)
+            }
+          })
+        })
+      }
+    }
+  }
+}
+
+export const generateEncryptionParams = async (stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>) => {
   // Create the necessary keys
   // First, we generate the state encryption key
   const stateEncryptionKey = keygen(CURVE25519XSALSA20POLY1305)
   const stateEncryptionKeyId = keyId(stateEncryptionKey)
   const stateEncryptionKeyS = serializeKey(stateEncryptionKey, true)
+  const stateEncryptionKeyP = serializeKey(stateEncryptionKey, false)
 
   // Once we have the state encryption key, we generate a salt
   const salt = generateSalt()
@@ -29,7 +131,7 @@ const generateEncryptionParams = async (stateKeyEncryptionKeyFn?: (stateEncrypti
       salt,
       encryptedStateEncryptionKey
     },
-    stateEncryptionKeyS
+    stateEncryptionKeyP
   }
 }
 
@@ -67,13 +169,13 @@ sbp('sbp/selectors/register', {
     return localforage.ready()
   },
   'gi.db/settings/save': function (user: string, value: any): Promise<*> {
-    return appSettings.setItem(user, value)
+    return appSettings.setItem('u' + user, value)
   },
   'gi.db/settings/load': function (user: string): Promise<any> {
-    return appSettings.getItem(user)
+    return appSettings.getItem('u' + user)
   },
   'gi.db/settings/delete': function (user: string): Promise<Object> {
-    return appSettings.removeItem(user)
+    return appSettings.removeItem('u' + user)
   },
   'gi.db/settings/saveEncrypted': async function (user: string, value: any, encryptionParams: any): Promise<*> {
     const {
@@ -82,46 +184,38 @@ sbp('sbp/selectors/register', {
       encryptedStateEncryptionKey
     } = encryptionParams
     // Fetch the session encryption key
-    const stateEncryptionKeyS = await appSettings.getItem(stateEncryptionKeyId)
-    if (!stateEncryptionKeyS) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
+    const stateEncryptionKeyP = await appSettings.getItem('k' + stateEncryptionKeyId)
+    if (!stateEncryptionKeyP) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
     // Encrypt the current state
-    const encryptedState = encrypt(stateEncryptionKeyS, JSON.stringify(value), user)
+    const encryptedState = encrypt(stateEncryptionKeyP, JSON.stringify(value), user)
     // Save the four fields of the encrypted state. We use base64 encoding to
     // allow saving any incoming data.
     //   (1) stateEncryptionKeyId
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem(user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`)
+    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`)
   },
-  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn?: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
-    return appSettings.getItem(user).then(async (encryptedValue) => {
+  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
+    return appSettings.getItem('e' + user).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
         throw new EmptyValue(`Unable to retrive state for ${user || ''}`)
       }
       // Split the encrypted state into its constituent parts
       const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.').map(x => atob(x))
 
-      // If the state encryption key is in appSettings, retrieve it
-      let stateEncryptionKeyS = await appSettings.getItem(stateEncryptionKeyId)
+      // Derive a temporary key from the password to decrypt the state
+      // encryption key
+      const stateKeyEncryptionKey = await stateKeyEncryptionKeyFn(stateEncryptionKeyId, salt)
 
-      // If the state encryption key wasn't in appSettings but we have a state
-      // state key encryption derivation function (stateKeyEncryptionKeyFn),
-      // call it
-      if (!stateEncryptionKeyS && stateKeyEncryptionKeyFn) {
-        // Derive a temporary key from the password to decrypt the state
-        // encryption key
-        const stateKeyEncryptionKey = await stateKeyEncryptionKeyFn(stateEncryptionKeyId, salt)
+      // Decrypt the state encryption key
+      const stateEncryptionKeyS = decrypt(stateKeyEncryptionKey, encryptedStateEncryptionKey, stateEncryptionKeyId)
 
-        // Decrypt the state encryption key
-        stateEncryptionKeyS = decrypt(stateKeyEncryptionKey, encryptedStateEncryptionKey, stateEncryptionKeyId)
-
-        // Compute the key ID of the decrypted key and verify that it holds
-        // the expected value
-        const stateEncryptionKeyIdActual = keyId(stateEncryptionKeyS)
-        if (stateEncryptionKeyIdActual !== stateEncryptionKeyId) {
-          throw new Error(`Invalid state key ID: expected ${stateEncryptionKeyId} but got ${stateEncryptionKeyIdActual}`)
-        }
+      // Compute the key ID of the decrypted key and verify that it holds
+      // the expected value
+      const stateEncryptionKeyIdActual = keyId(stateEncryptionKeyS)
+      if (stateEncryptionKeyIdActual !== stateEncryptionKeyId) {
+        throw new Error(`Invalid state key ID: expected ${stateEncryptionKeyId} but got ${stateEncryptionKeyIdActual}`)
       }
 
       // Now, attempt to decrypt the state
@@ -129,7 +223,7 @@ sbp('sbp/selectors/register', {
 
       // Saving the state encryption key in appSettings is necessary for
       // functionality such as refreshing the page to work
-      await appSettings.setItem(stateEncryptionKeyId, stateEncryptionKeyS)
+      await appSettings.setItem('k' + stateEncryptionKeyId, stateEncryptionKeyS)
 
       return {
         encryptionParams: {
@@ -149,10 +243,10 @@ sbp('sbp/selectors/register', {
         console.warn('Error while retrieving local state', e)
       }
 
-      const { encryptionParams, stateEncryptionKeyS } = await generateEncryptionParams(stateKeyEncryptionKeyFn)
+      const { encryptionParams, stateEncryptionKeyP } = await generateEncryptionParams(stateKeyEncryptionKeyFn)
 
       // Save the state encryption key to local storage
-      await appSettings.setItem(encryptionParams.stateEncryptionKeyId, stateEncryptionKeyS)
+      await appSettings.setItem('k' + encryptionParams.stateEncryptionKeyId, stateEncryptionKeyP)
 
       return {
         encryptionParams,
@@ -161,7 +255,10 @@ sbp('sbp/selectors/register', {
     })
   },
   'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<Object> {
-    return appSettings.removeItem(stateEncryptionKeyId)
+    return appSettings.removeItem('k' + stateEncryptionKeyId)
+  },
+  'gi.db/settings/deleteEncrypted': function (user: string): Promise<Object> {
+    return appSettings.removeItem('e' + user)
   }
 })
 

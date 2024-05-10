@@ -34,6 +34,10 @@ sbp('sbp/selectors/register', {
               sbp('service-worker/resubscribe-push', data.subscription)
               break
             }
+            case 'event': {
+              sbp('okTurtles.events/emit', event.data.subtype, ...event.data.data)
+              break
+            }
             default:
               console.error('[sw] Received unknown message type from the service worker:', data)
               break

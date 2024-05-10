@@ -13,6 +13,7 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
+import type { Secret } from './Secret.js'
 import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -343,7 +344,7 @@ export default (sbp('sbp/selectors/register', {
     })
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
-    await postCleanupFn?.()
+    const result = await postCleanupFn?.()
     // The following are all synchronous operations
     const rootState = sbp(this.config.stateSelector)
     // Cancel all outgoing messages by replacing this._instance
@@ -362,11 +363,12 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
     sbp('chelonia/private/startClockSync')
+    return result
   },
-  'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
+  'chelonia/storeSecretKeys': function (wkeys: Secret<{key: Key | string, transient?: boolean}[]>) {
     const rootState = sbp(this.config.stateSelector)
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
-    let keys = keysFn?.()
+    let keys = wkeys.valueOf()
     if (!keys) return
     if (!Array.isArray(keys)) keys = [keys]
     keys.forEach(({ key, transient }) => {
@@ -523,8 +525,8 @@ export default (sbp('sbp/selectors/register', {
   // This function takes a function as a parameter that returns a string
   // It does not a string directly to prevent accidentally logging the value,
   // which is a secret
-  'chelonia/crypto/keyId': (inKeyFn: { (): Key | string }) => {
-    return keyId(inKeyFn())
+  'chelonia/crypto/keyId': (inKey: Secret<Key | string>) => {
+    return keyId(inKey.valueOf())
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (options = {}): Object {

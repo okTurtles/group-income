@@ -1,5 +1,6 @@
 /* eslint-env mocha */
 import '~/shared/domains/chelonia/chelonia.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import sbp from '@sbp/sbp'
 import manifests from '~/frontend/model/contracts/manifests.json'
 import * as Common from '@common/common.js'
@@ -20,7 +21,7 @@ async function createIdentity (username) {
   const SAKp = serializeKey(SAK, false)
 
   sbp('chelonia/storeSecretKeys',
-    () => [CSK, SAK].map(key => ({ key, transient: true }))
+    new Secret([CSK, SAK].map(key => ({ key, transient: true })))
   )
 
   // append random id to username to prevent conflict across runs

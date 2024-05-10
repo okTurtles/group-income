@@ -43,7 +43,7 @@ sbp('sbp/selectors/register', {
       }
 
       // TODO: Use 'chelonia/haveSecretKey'
-      const secretKeys = sbp('chelonia/rootState')['secretKeys']
+      const secretKeys = await sbp('chelonia/rootState')['secretKeys']
 
       const keysToShare = Array.isArray(keyIds)
         ? pick(secretKeys, keyIds)

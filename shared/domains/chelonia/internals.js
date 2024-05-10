@@ -15,6 +15,7 @@ import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, C
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
+import { Secret } from './Secret.js'
 // import 'ses'
 
 const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
@@ -738,10 +739,10 @@ export default (sbp('sbp/selectors/register', {
               ) {
                 try {
                   const decrypted = key.meta.private.content.valueOf()
-                  sbp('chelonia/storeSecretKeys', () => [{
+                  sbp('chelonia/storeSecretKeys', new Secret([{
                     key: deserializeKey(decrypted),
                     transient
-                  }])
+                  }]))
                   if (
                     targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
@@ -1520,9 +1521,9 @@ export default (sbp('sbp/selectors/register', {
 
       // We don't need to worry about persistence (if it was an outgoing
       // message) here as this is done from an internal side-effect.
-      sbp('chelonia/storeSecretKeys', () => [
+      sbp('chelonia/storeSecretKeys', new Secret([
         { key: deserializedResponseKey }
-      ])
+      ]))
 
       const keys = pick(
         state.secretKeys,

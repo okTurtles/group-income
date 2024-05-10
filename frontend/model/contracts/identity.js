@@ -12,6 +12,7 @@ import {
   noUppercase
 } from './shared/validators.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
@@ -63,7 +64,7 @@ const checkUsernameConsistency = async (contractID: string, username: string) =>
     if (!state) return
 
     const username = state[contractID].attributes.username
-    if (sbp('namespace/lookupCached', username) !== contractID) {
+    if (await sbp('namespace/lookupCached', username) !== contractID) {
       sbp('gi.notifications/emit', 'WARNING', {
         contractID,
         message: L('Unable to confirm that the username {username} belongs to this identity contract', { username })
@@ -74,17 +75,7 @@ const checkUsernameConsistency = async (contractID: string, username: string) =>
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
-  getters: {
-    currentIdentityState (state) {
-      return state
-    },
-    loginState (state, getters) {
-      return getters.currentIdentityState.loginState
-    },
-    ourDirectMessages (state, getters) {
-      return getters.currentIdentityState.chatRooms || {}
-    }
-  },
+  getters: {},
   actions: {
     'gi.contracts/identity': {
       validate: (data, { state }) => {
@@ -153,7 +144,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/createDirectMessage': {
-      validate: (data, { state, getters }) => {
+      validate: (data, { state }) => {
         objectOf({
           contractID: string // NOTE: chatroom contract id
         })(data)
@@ -174,10 +165,10 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         contractID: string
       }),
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         // NOTE: this method is always created by another
         const { contractID } = data
-        if (getters.ourDirectMessages[contractID]) {
+        if (state.chatRooms[contractID]) {
           throw new TypeError(L('Already joined direct message.'))
         }
 
@@ -185,8 +176,8 @@ sbp('chelonia/defineContract', {
           visible: true
         })
       },
-      sideEffect ({ data }, { getters }) {
-        if (getters.ourDirectMessages[data.contractID].visible) {
+      sideEffect ({ data }, { state }) {
+        if (state.chatRooms[data.contractID].visible) {
           sbp('chelonia/contract/retain', data.contractID).catch((e) => {
             console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
           })
@@ -199,22 +190,22 @@ sbp('chelonia/defineContract', {
         inviteSecret: string,
         creatorID: optional(boolean)
       }),
-      process ({ hash, data, meta }, { state }) {
+      async process ({ hash, data, meta }, { state }) {
         const { groupContractID, inviteSecret } = data
         if (has(state.groups, groupContractID)) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
         }
 
-        const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
+        const inviteSecretId = await sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
 
         Vue.set(state.groups, groupContractID, { hash, inviteSecretId })
       },
-      sideEffect ({ hash, data, contractID }, { state }) {
+      async sideEffect ({ hash, data, contractID }, { state }) {
         const { groupContractID, inviteSecret } = data
 
-        sbp('chelonia/storeSecretKeys', () => [{
+        await sbp('chelonia/storeSecretKeys', new Secret([{
           key: inviteSecret, transient: true
-        }])
+        }]))
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
@@ -229,7 +220,7 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const inviteSecretId = sbp('chelonia/crypto/keyId', () => inviteSecret)
+          const inviteSecretId = await sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
 
           // If the hash doesn't match (could happen after re-joining), return
           if (state.groups[groupContractID].hash !== hash) {
@@ -237,7 +228,7 @@ sbp('chelonia/defineContract', {
           }
 
           return inviteSecretId
-        }).then((inviteSecretId) => {
+        }).then(async (inviteSecretId) => {
           // Calling 'gi.actions/group/join' here _after_ queueInvoication
           // and not inside of it.
           // This is because 'gi.actions/group/join' might (depending on
@@ -260,8 +251,8 @@ sbp('chelonia/defineContract', {
             contractName: 'gi.contracts/group',
             reference: hash,
             signingKeyId: inviteSecretId,
-            innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
-            encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+            innerSigningKeyId: await sbp('chelonia/contract/currentKeyIdByName', state, 'csk'),
+            encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
           }).catch(e => {
             console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e)
           })
@@ -349,18 +340,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/setDirectMessageVisibility': {
-      validate: (data, { state, getters }) => {
+      validate: (data, { state }) => {
         objectOf({
           contractID: string,
           visible: boolean
         })(data)
-        if (!getters.ourDirectMessages[data.contractID]) {
+        if (!state.chatRooms[data.contractID]) {
           throw new TypeError(L('Not existing direct message.'))
         }
       },
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
       }
+      // TODO: Side-effect to retain or release accordingly
     },
     'gi.contracts/identity/saveFileDeleteToken': {
       validate: objectOf({
@@ -369,7 +361,7 @@ sbp('chelonia/defineContract', {
           token: string
         }))
       }),
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         for (const { manifestCid, token } of data.tokensByManifestCid) {
           Vue.set(state.fileDeleteTokens, manifestCid, token)
         }
@@ -379,7 +371,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         manifestCids: arrayOf(string)
       }),
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         for (const manifestCid of data.manifestCids) {
           Vue.delete(state.fileDeleteTokens, manifestCid)
         }

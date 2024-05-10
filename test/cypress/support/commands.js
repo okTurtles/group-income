@@ -167,7 +167,7 @@ Cypress.Commands.add('giSignup', (username, {
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { username, email, passwordFn: () => password })
+      await sbp('gi.app/identity/signupAndLogin', { username, email, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -221,7 +221,7 @@ Cypress.Commands.add('giLogin', (username, {
             resolve()
           }
         })
-        sbp('gi.actions/identity/login', { username, passwordFn: () => password })
+        sbp('gi.app/identity/login', { username, password })
       })
     })
 
@@ -259,7 +259,7 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
+    cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()

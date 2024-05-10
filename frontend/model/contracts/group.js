@@ -24,6 +24,7 @@ import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
+import { JOINED_GROUP } from '@utils/events.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -302,7 +303,7 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
   )
 }
 
-const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup) => {
+const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leavingGroup) => {
   const sendingData = leavingGroup || actorID !== memberID
     ? { memberID }
     : {}
@@ -319,8 +320,8 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
   // unconditionally in this situation, which should be a key in the
   // chatroom (either the CSK or the groupKey)
   if (leavingGroup) {
-    const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
-    const signingKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+    const encryptionKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const signingKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
     // If we don't have a CSK, it is because we've already been removed.
     // Proceeding would cause an error
@@ -715,7 +716,9 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+        console.error('CALLING INIT FETCH PERIOD PAYMENTS')
         initFetchPeriodPayments({ contractID, meta, state, getters })
+        console.error('/CALLING INIT FETCH PERIOD PAYMENTS')
       },
       sideEffect ({ contractID }, { state }) {
         if (!state.generalChatRoomId) {
@@ -728,7 +731,7 @@ sbp('chelonia/defineContract', {
             const CEKid = findKeyIdByName(state, 'cek')
 
             // create a 'General' chatroom contract
-            return sbp('gi.actions/group/addChatRoom', {
+            sbp('gi.actions/group/addChatRoom', {
               contractID,
               data: {
                 attributes: {
@@ -743,6 +746,8 @@ sbp('chelonia/defineContract', {
               // The #General chatroom does not have an inner signature as it's part
               // of the group creation process
               innerSigningContractID: null
+            }).catch((e) => {
+              console.error(`[gi.contracts/group/sideEffect] Error creating #General chatroom for ${contractID} (unable to send action)`, e)
             })
           }).catch((e) => {
             console.error(`[gi.contracts/group/sideEffect] Error creating #General chatroom for ${contractID}`, e)
@@ -1119,9 +1124,7 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
 
         sbp('chelonia/queueInvocation', contractID, async () => {
-          const rootState = sbp('state/vuex/state')
-          const rootGetters = sbp('state/vuex/getters')
-          const state = rootState[contractID]
+          const state = await sbp('chelonia/contract/state', contractID)
 
           if (!state) {
             console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`)
@@ -1183,8 +1186,7 @@ sbp('chelonia/defineContract', {
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(profiles)
               .filter((id) =>
-                id !== loggedIn.identityContractID &&
-                !rootGetters.ourContactProfilesById[id]
+                id !== loggedIn.identityContractID
               )
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
@@ -1192,11 +1194,7 @@ sbp('chelonia/defineContract', {
               })
             }
 
-            // If we don't have a current group ID, select the group we've just joined
-            if (!rootState.currentGroupId) {
-              sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
-              sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
-            }
+            sbp('okTurtles.events/emit', JOINED_GROUP, { contractID })
           } else {
             // we're an existing member of the group getting notified that a
             // new member has joined, so subscribe to their identity contract
@@ -1381,12 +1379,31 @@ sbp('chelonia/defineContract', {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
       },
-      sideEffect ({ contractID }, { state }) {
+      sideEffect ({ contractID, data }, { state }) {
         if (Object.keys(state.chatRooms).length === 1) {
           // NOTE: only general chatroom exists, meaning group has just been created
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             groupId: contractID,
             chatRoomId: state.generalChatRoomId
+          })
+        }
+        // If it's the #General chatroom being added, add ourselves to it
+        if (data.chatRoomID === state.generalChatRoomId) {
+          sbp('chelonia/queueInvocation', contractID, () => {
+            const { identityContractID } = sbp('state/vuex/state').loggedIn
+            if (
+              state.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
+              state.chatRooms?.[contractID]?.members[identityContractID]?.status !== PROFILE_STATUS.ACTIVE
+            ) {
+              sbp('gi.actions/group/joinChatRoom', {
+                contractID,
+                data: {
+                  chatRoomID: data.chatRoomID
+                }
+              }).catch(e => {
+                console.error('Unable to add ourselves to the #General chatroom', e)
+              })
+            }
           })
         }
       }
@@ -1679,7 +1696,8 @@ sbp('chelonia/defineContract', {
       //   1) automatically switch that user to a 'pledging' member with 0 contribution,
       //   2) pop out the prompt message notifying them of this automatic change,
       //   3) and send 'MINCOME_CHANGED' notification.
-      const myProfile = sbp('state/vuex/getters').ourGroupProfile
+      const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+      const myProfile = sbp('chelonia/rootState')[contractID].profiles[identityContractID]
 
       if (isActionYoungerThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
@@ -1731,7 +1749,7 @@ sbp('chelonia/defineContract', {
       try {
         await sbp('chelonia/contract/retain', chatRoomId, { ephemeral: true })
 
-        if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomId, 'gi.contracts/chatroom/join')) {
+        if (!await sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomId, 'gi.contracts/chatroom/join')) {
           throw new Error(`Missing keys to join chatroom ${chatRoomId}`)
         }
 
@@ -1773,7 +1791,7 @@ sbp('chelonia/defineContract', {
     },
     // eslint-disable-next-line require-await
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID }) => {
-      const rootGetters = sbp('state/vuex/getters')
+      // const rootGetters = sbp('state/vuex/getters')
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const memberID = data.memberID || innerSigningContractID
       const state = await sbp('chelonia/contract/state', contractID)
@@ -1790,9 +1808,12 @@ sbp('chelonia/defineContract', {
 
       if (memberID === identityContractID) {
         // NOTE: remove all notifications whose scope is in this group
+        /* TODO: FIND ANOTHER WAY OF DOING THIS WITHOUT ROOTGETTERS
         for (const notification of rootGetters.notificationsByGroup(contractID)) {
           sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
         }
+        */
+        if (!isNaN(REMOVE_NOTIFICATION)) { console.error('REMOVEME') }
 
         // The following detects whether we're in the process of joining, and if
         // we are, it doesn't remove the contract and calls /join to complete
@@ -1806,14 +1827,14 @@ sbp('chelonia/defineContract', {
         // the new keys or not.
 
         // First, we check if there are no pending key requests for us
-        const areWeRejoining = () => {
-          const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, identityContractID)
+        const areWeRejoining = async () => {
+          const pendingKeyShares = await sbp('chelonia/contract/waitingForKeyShareTo', state, identityContractID)
           if (pendingKeyShares) {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has a pending key share for ourselves', contractID)
             return true
           }
           // Now, let's see if we had a key request that's been answered
-          const sentKeyShares = sbp('chelonia/contract/successfulKeySharesByContractID', state, identityContractID)
+          const sentKeyShares = await sbp('chelonia/contract/successfulKeySharesByContractID', state, identityContractID)
           // We received a key share after the last time we left
           if (sentKeyShares?.[identityContractID]?.[0].height > state.profiles[memberID].departedHeight) {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has shared keys with ourselves after we left', contractID)
@@ -1822,7 +1843,7 @@ sbp('chelonia/defineContract', {
           return false
         }
 
-        if (areWeRejoining()) {
+        if (await areWeRejoining()) {
           console.info('[gi.contracts/group/leaveGroup] aborting as we\'re rejoining', contractID)
           // Previously we called `gi.actions/group/join` here, but it doesn't
           // seem necessary

@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
@@ -129,7 +130,7 @@ describe('Full walkthrough', function () {
     const SAKp = serializeKey(SAK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK, SAK].map(key => ({ key, transient: true }))
+      new Secret([CSK, SAK].map(key => ({ key, transient: true })))
     )
 
     // append random id to username to prevent conflict across runs
@@ -177,7 +178,7 @@ describe('Full walkthrough', function () {
     const CSKp = serializeKey(CSK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK].map(key => ({ key, transient: true }))
+      new Secret([CSK].map(key => ({ key, transient: true })))
     )
 
     /* const initialInvite = createInvite({
