@@ -81,7 +81,9 @@ export function getProposalDetails (proposal: Object): Object {
     options['settingType'] = proposalData.setting
   } else if (proposalType === PROPOSAL_GENERIC) {
     options['title'] = proposalData.name
-  } else if ([PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER].includes(proposalType)) {
+  } else if (proposalType === PROPOSAL_INVITE_MEMBER) {
+    options['member'] = proposalData.memberName
+  } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
     options['memberID'] = proposalData.memberID
     options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
   }

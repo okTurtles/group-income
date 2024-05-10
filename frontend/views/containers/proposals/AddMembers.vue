@@ -121,7 +121,7 @@ export default ({
             data: {
               proposalType: PROPOSAL_INVITE_MEMBER,
               proposalData: {
-                memberID: invitee,
+                memberName: invitee,
                 reason: form.reason
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,

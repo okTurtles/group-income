@@ -43,7 +43,7 @@ li.c-item-wrapper(data-test='proposalItem')
         banner-scoped(ref='voteMsg' data-test='voteMsg')
         p.c-sendLink(v-if='invitationLink' data-test='sendLink')
           i18n(
-            :args='{ user: proposal.data.proposalData.memberID}'
+            :args='{ user: proposal.data.proposalData.memberName}'
           ) Please send the following link to {user} so they can join the group:
 
           link-to-copy.c-invite-link(
@@ -158,7 +158,7 @@ export default ({
     typeDescription () {
       return {
         [PROPOSAL_INVITE_MEMBER]: () => L('Add {user} to group.', {
-          user: this.userDisplayNameFromID(this.proposal.data.proposalData.memberID)
+          user: this.proposal.data.proposalData.memberName
         }),
         [PROPOSAL_REMOVE_MEMBER]: () => {
           const user = this.userDisplayNameFromID(this.proposal.data.proposalData.memberID)

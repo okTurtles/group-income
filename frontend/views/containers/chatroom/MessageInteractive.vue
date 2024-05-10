@@ -49,18 +49,18 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
 
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add new members is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Added members to this group: {group}', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('No members were added.'),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were added.')
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add {member} to the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to add {member} is accepted.', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
     },
     [PROPOSAL_REMOVE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove members from the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove members is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Left {member}', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('No members were removed.'),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were removed.')
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove {member} from the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to remove {member} is accepted.', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: settingChangeMessages(options),
@@ -123,13 +123,10 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID', 'groupSettings']),
+    ...mapGetters(['userDisplayNameFromID']),
     interactiveMessage () {
       const { variant, creator } = this.proposal
-      const baseOptions = {
-        from: this.userDisplayNameFromID(creator),
-        group: this.groupSettings.groupName
-      }
+      const baseOptions = { from: this.userDisplayNameFromID(creator) }
 
       return {
         text: interactiveMessage(this.proposal, baseOptions),
