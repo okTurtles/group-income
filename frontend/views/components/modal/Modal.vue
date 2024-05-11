@@ -144,14 +144,20 @@ export default ({
       }
     },
     replaceModal (componentName, queries = null) {
-      this.replacement = componentName
-      // At the moment you can only replace a modal if it's the main one by design
-      // Use direct children instead of sbp to wait for animation out
-      if (queries) {
-        this.replacementQueries[componentName] = queries
-      }
+      const modalToReplace = this.$refs[this.activeSubcontent() ? 'subcontent' : 'content']
 
-      this.$refs[this.activeSubcontent() ? 'subcontent' : 'content'].$children[0].close()
+      if (modalToReplace) {
+        this.replacement = componentName
+        // At the moment you can only replace a modal if it's the main one by design
+        // Use direct children instead of sbp to wait for animation out
+        if (queries) {
+          this.replacementQueries[componentName] = queries
+        }
+
+        modalToReplace.$children[0].close()
+      } else {
+        this.openModal(componentName, queries)
+      }
     },
     setModalQueries (componentName, queries) {
       this.queries[componentName] = queries
