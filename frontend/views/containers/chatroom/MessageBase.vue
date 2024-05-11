@@ -332,7 +332,6 @@ export default ({
       })
     },
     longPressHandler (e) {
-      console.log('!@# asfasadf')
       const targetEl = e.target
       if (targetEl.matches('a.link[href]')) {
         const url = targetEl.getAttribute('href')
