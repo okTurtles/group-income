@@ -17,7 +17,7 @@
 
 <script>
 import { humanDate } from '@model/contracts/shared/time.js'
-import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
