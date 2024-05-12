@@ -376,8 +376,9 @@ sbp('chelonia/defineContract', {
           }
 
           if (memberID === rootState.loggedIn.identityContractID) {
-            leaveChatRoom(contractID).catch((e) => {
-              console.error(`[gi.contracts/chatroom/leave/sideEffect] Error for ${contractID}`, e)
+            leaveChatRoom(contractID)
+            sbp('chelonia/contract/release', contractID).catch(e => {
+              console.error(`[gi.contracts/chatroom/leave/sideEffect] Error releasing chatroom ${contractID}`, e)
             })
           } else {
             setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
@@ -409,9 +410,7 @@ sbp('chelonia/defineContract', {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
-        leaveChatRoom(contractID).catch((e) => {
-          console.error(`[gi.contracts/chatroom/delete/sideEffect] Error for ${contractID}`, e)
-        })
+        leaveChatRoom(contractID)
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
         })

@@ -361,13 +361,6 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
   }).catch((e) => {
     console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
-
-  const rootState = sbp('state/vuex/state')
-  if (memberID === rootState.loggedIn.identityContractID) {
-    sbp('chelonia/contract/release', chatRoomID).catch(e => {
-      console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
-    })
-  }
 }
 
 const leaveAllChatRoomsUponLeaving = (state, memberID, actorID) => {
