@@ -698,13 +698,14 @@ export default ({
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
-    generateNewChatRoomState (shouldClearMessages = false) {
+    generateNewChatRoomState (shouldClearMessages = false, height) {
+      const state = sbp('chelonia/contract/state', this.renderingChatRoomId, height) || {}
       return {
-        settings: cloneDeep(this.chatRoomSettings),
-        attributes: cloneDeep(this.chatRoomAttributes),
-        members: cloneDeep(this.chatRoomMembers),
-        _vm: cloneDeep(this.currentChatVm),
-        messages: shouldClearMessages ? [] : cloneDeep(this.chatRoomLatestMessages),
+        settings: state.settings || {},
+        attributes: state.attributes || {},
+        members: state.members || {},
+        _vm: state._vm,
+        messages: shouldClearMessages ? [] : state.messages,
         renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
@@ -805,17 +806,8 @@ export default ({
         if (!this.checkEventSourceConsistency(contractID)) return
 
         if (this.latestEvents.length > 0) {
-          let state = this.generateNewChatRoomState(true)
           const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-          if (entryHeight > 0) {
-            // NOTE: considering the KeyAdd GI event
-            //       authorizedKeys should not exist before _notBeforeHeight
-            Object.keys(state._vm.authorizedKeys).forEach(keyId => {
-              if (state._vm.authorizedKeys[keyId]._notBeforeHeight >= entryHeight) {
-                delete state._vm.authorizedKeys[keyId]
-              }
-            })
-          }
+          let state = this.generateNewChatRoomState(true, entryHeight)
 
           for (const event of this.latestEvents) {
             state = await sbp('chelonia/in/processMessage', event, state)
