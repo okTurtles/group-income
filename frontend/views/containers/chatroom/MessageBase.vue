@@ -2,20 +2,19 @@
 .c-message(
   :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
-  v-touch:touchhold='openMenu'
+  v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
   .c-message-wrapper
     slot(name='image')
-      avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
+      profile-card(:contractID='from' direction='top-left')
+        avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
     .c-body
       slot(name='header')
-        .c-who(
-          v-if='!isEditing'
-          :class='{ "sr-only": isSameSender }'
-        )
-          span.is-title-4 {{ who }}
+        .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
+          profile-card(:contractID='from' direction='top-left')
+            span.is-title-4 {{ who }}
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
@@ -55,10 +54,11 @@
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
-            span.c-member-mention(
-              v-else-if='isMemberMention(objText)'
-              :class='{"c-mention-to-me": objText.toMe}'
-            ) {{ objText.text }}
+            template(v-else-if='isMemberMention')
+              span.c-mention-profile-card-wrapper(v-if='objText.userID')
+                profile-card(:contractID='objText.userID' direction='top-left')
+                  span.c-member-mention(:class='{"c-mention-to-me": objText.toMe}') {{ objText.text }}
+              span.c-member-mention(v-else class='c-mention-to-me') {{ objText.text }}
             span.c-channel-mention(
               v-else-if='isChannelMention(objText)'
               :tabindex='objText.disabled ? undefined : 0'
@@ -113,9 +113,11 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
@@ -130,7 +132,8 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -143,6 +146,7 @@ export default ({
   components: {
     Avatar,
     Tooltip,
+    ProfileCard,
     MessageActions,
     MessageReactions,
     SendArea,
@@ -158,6 +162,7 @@ export default ({
     text: String,
     attachments: Array,
     messageHash: String,
+    from: String,
     replyingMessage: String,
     who: String,
     currentUserID: String,
@@ -296,16 +301,23 @@ export default ({
               : genDefaultTextObj(text)
           }
 
+          const genMemberMentionObj = (text) => {
+            const userID = text.slice(1)
+            return {
+              type: TextObjectType.MemberMention,
+              text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(userID),
+              userID,
+              toMe: userID === this.currentUserID
+            }
+          }
+
           if (t === allMention) {
-            return { type: TextObjectType.MemberMention, text: t }
+            return { type: TextObjectType.MemberMention, text: t, toMe: true }
           }
 
           return this.possibleMentions.includes(t)
             ? t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
-              ? {
-                  type: TextObjectType.MemberMention,
-                  text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
-                }
+              ? genMemberMentionObj(t)
               : genChannelMentionObj(t)
             : genDefaultTextObj(t)
         })
@@ -318,6 +330,15 @@ export default ({
         name: 'GroupChatConversation',
         params: { chatRoomId: obj.chatroomId }
       })
+    },
+    longPressHandler (e) {
+      const targetEl = e.target
+      if (targetEl.matches('a.link[href]')) {
+        const url = targetEl.getAttribute('href')
+        sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
+      } else {
+        this.openMenu()
+      }
     }
   }
 }: Object)
@@ -414,7 +435,7 @@ export default ({
 }
 
 .c-who {
-  display: block;
+  display: flex;
 
   span {
     padding-right: 0.25rem;
@@ -470,6 +491,10 @@ export default ({
   margin-left: 0.2rem;
   font-size: 0.7rem;
   color: var(--text_1);
+}
+
+.c-mention-profile-card-wrapper {
+  display: inline-block;
 }
 
 .c-member-mention,

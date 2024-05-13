@@ -192,6 +192,7 @@ page(
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
               i.icon-envelope-open-text icon-envelope-open-text
+              i.icon-external-link-alt icon-external-link-alt
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
@@ -225,6 +226,7 @@ page(
               i.icon-hashtag icon-hashtag
               i.icon-grin-beam icon-grin-beam
               i.icon-smile-beam icon-smile-beam
+              i.icon-share-alt icon-share-alt
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
               i.icon-magnifying-plus icon-magnifying-plus
