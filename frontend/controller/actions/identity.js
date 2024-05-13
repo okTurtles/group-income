@@ -329,17 +329,6 @@ export default (sbp('sbp/selectors/register', {
               sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
             }
           })
-
-        // NOTE: users could notice that they leave the group by someone
-        // else when they log in
-        if (!cheloniaState.currentGroupId) {
-          const gId = Object.keys(cheloniaState.contracts)
-            .find(cID => has(cheloniaState[identityContractID].groups, cID))
-
-          if (gId) {
-            sbp('gi.actions/group/switch', gId)
-          }
-        }
       } catch (e) {
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
         throw e

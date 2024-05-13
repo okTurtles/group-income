@@ -45,7 +45,7 @@ sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 sbp('sbp/selectors/register', {
   'state/vuex/state': () => {
     // TODO: Remove this selector once it's removed from contracts
-    sbp('chelonia/rootState')
+    return sbp('chelonia/rootState')
   },
   'state/vuex/reset': () => {
     console.error('[sw] CALLED state/vuex/reset WHICH IS UNDEFINED')

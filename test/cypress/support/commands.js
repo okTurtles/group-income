@@ -302,7 +302,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         (async () => {
-          const message = await sbp('gi.actions/group/createAndSwitch', {
+          const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
               sharedValues,
@@ -314,7 +314,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
           })
 
           const eventHandler = async ({ contractID }) => {
-            if (contractID === message.contractID()) {
+            if (contractID === cID) {
               await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
               resolve()
@@ -454,7 +454,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     }
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+      await sbp('gi.app/group/joinWithInviteSecret', groupId, inviteSecret)
       await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
     })
   } else {
@@ -528,7 +528,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     if (bypassUI) {
       cy.giSignup(username, { bypassUI })
       cy.window().its('sbp').then(async sbp => {
-        await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+        await sbp('gi.app/group/joinWithInviteSecret', groupId, inviteSecret)
         await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
       })
     } else {

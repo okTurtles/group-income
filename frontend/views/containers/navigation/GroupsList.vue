@@ -97,7 +97,7 @@ export default ({
       const path = this.$route.path
       const emptyGroupPicture = this.groupPictureForContract(hash) === ''
       if (hash !== this.currentGroupId) {
-        sbp('gi.actions/group/switch', hash)
+        sbp('gi.app/group/switch', hash)
       }
       if (emptyGroupPicture && path !== '/pending-approval') {
         this.$router.push(({ path: '/pending-approval' }))

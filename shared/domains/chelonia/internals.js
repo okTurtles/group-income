@@ -431,7 +431,7 @@ export default (sbp('sbp/selectors/register', {
 
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -1185,7 +1185,7 @@ export default (sbp('sbp/selectors/register', {
         }
       } else if (!isSubcribed) {
         this.subscriptionSet.add(contractID)
-        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
         const entryIndex = this.pending.findIndex((entry) => entry?.contractID === contractID)
         if (entryIndex !== -1) {
           this.pending.splice(entryIndex, 1)
@@ -1978,7 +1978,7 @@ const handleEvent = {
         }
       }
       this.subscriptionSet.add(contractID)
-      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     }
 
     if (!processingErrored) {

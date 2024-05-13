@@ -17,16 +17,15 @@ import {
   STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
 import {
+  JOINED_GROUP,
   LOGOUT,
   OPEN_MODAL,
-  REPLACE_MODAL,
-  SWITCH_GROUP,
-  JOINED_GROUP
+  REPLACE_MODAL
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -37,7 +36,7 @@ import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -253,16 +252,11 @@ export default (sbp('sbp/selectors/register', {
         })
       })
 
-      return message
+      return message.contractID()
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {reportError}', LError(e)))
     }
-  },
-  'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/create', params)
-    sbp('gi.actions/group/switch', message.contractID())
-    return message
   },
   // The 'gi.actions/group/join' selector handles joining a group. It can be
   // called from a variety of places: when accepting an invite, when logging
@@ -489,11 +483,6 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
-    await sbp('gi.actions/group/join', params)
-    // after joining, we can set the current group
-    return sbp('gi.actions/group/switch', params.contractID)
-  },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
@@ -525,16 +514,10 @@ export default (sbp('sbp/selectors/register', {
           groupContractID: groupId,
           inviteSecret: secret
         }
-      }).then(() => {
-        return sbp('gi.actions/group/switch', groupId)
       })
     } finally {
       await sbp('chelonia/contract/release', groupId, { ephemeral: true })
     }
-  },
-  'gi.actions/group/switch': function (groupId) {
-    sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
-    sbp('okTurtles.events/emit', SWITCH_GROUP, { contractID: groupId })
   },
   'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')

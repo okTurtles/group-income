@@ -292,13 +292,9 @@ async function startApp () {
       Vue.set(vuexState, 'contracts', Object.create(null))
     }
 
-    if (!subscriptionSet.has) {
-      console.error('@@@@@CM NO SUBS.HAS', subscriptionSet)
-    }
-
     const oldContracts = Object.keys(vuexState.contracts)
-    const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.has(x))
-    const newContracts = Array.from(subscriptionSet).filter(x => !oldContracts.includes(x))
+    const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.includes(x))
+    const newContracts = subscriptionSet.filter(x => !oldContracts.includes(x))
 
     oldContractsToRemove.forEach(x => {
       Vue.delete(vuexState.contracts, x)
@@ -457,7 +453,6 @@ async function startApp () {
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) return
         this.ephemeral.finishedLogin = 'no'
-        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
         sbp('gi.db/settings/delete', state.loggedIn.identityContractID).catch(e => {
@@ -467,6 +462,7 @@ async function startApp () {
         /*
         sbp('chelonia.persistentActions/unload')
         */
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
         // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
@@ -666,7 +662,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
 
     if (gId) {
       // TODO: This should be gi.app/group/switch once implemented
-      sbp('gi.actions/group/switch', gId)
+      sbp('gi.app/group/switch', gId)
     }
   }
 
