@@ -12,6 +12,8 @@
 
   emoticons
 
+  touch-link-helper
+
   .c-body
     .c-body-conversation(
       ref='conversation'
@@ -62,6 +64,7 @@
           :height='message.height'
           :messageId='message.id'
           :messageHash='message.hash'
+          :from='message.from'
           :text='message.text'
           :attachments='message.attachments'
           :type='message.type'
@@ -127,6 +130,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import {
   MESSAGE_TYPES,
@@ -221,6 +225,7 @@ export default ({
     Avatar,
     ConversationGreetings,
     Emoticons,
+    TouchLinkHelper,
     InfiniteLoading,
     Message,
     MessageInteractive,

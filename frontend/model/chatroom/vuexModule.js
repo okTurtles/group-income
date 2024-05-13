@@ -164,8 +164,8 @@ const getters = {
     )
   },
   getChatroomNameById (state, getters) {
-    return chatroomId => {
-      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatroomId)
+    return chatRoomID => {
+      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatRoomID)
       return found ? found.name : null
     }
   },

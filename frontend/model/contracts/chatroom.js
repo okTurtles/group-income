@@ -112,7 +112,7 @@ function messageReceivePostEffect ({
 
   shouldNotifyMessage && makeNotification({
     title,
-    body: swapMentionIDForDisplayname(text),
+    body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
     icon,
     path
   })
@@ -676,6 +676,8 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          if (pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having voted.
@@ -722,6 +724,8 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          if (pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having update his/her votes.
