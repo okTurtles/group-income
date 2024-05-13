@@ -236,11 +236,7 @@ export default ({
   watch: {
     'form.name' (newVal, oldVal) {
       if (newVal.length) {
-        if (newVal === `${oldVal} `) {
-          this.form.name = `${oldVal}-`
-        } else {
-          this.form.name = newVal.toLowerCase()
-        }
+        this.form.name = newVal.replaceAll(/\s/g, '-').toLowerCase()
       }
     }
   }
