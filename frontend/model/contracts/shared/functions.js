@@ -109,6 +109,9 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
 }
 
 export function leaveChatRoom (contractID: string) {
+  if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
+    return
+  }
   const rootState = sbp('state/vuex/state')
   const rootGetters = sbp('state/vuex/getters')
   if (contractID === rootGetters.currentChatRoomId) {

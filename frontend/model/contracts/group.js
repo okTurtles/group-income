@@ -342,7 +342,19 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
-    ...extraParams
+    ...extraParams,
+    hooks: {
+      onprocessed: () => {
+        const rootState = sbp('state/vuex/state')
+        if (memberID === rootState.loggedIn.identityContractID) {
+          sbp('chelonia/queueInvocation', chatRoomID, () => {
+            sbp('chelonia/contract/release', chatRoomID).catch(e => {
+              console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
+            })
+          })
+        }
+      }
+    }
   }).catch((e) => {
     if (
       leavingGroup &&

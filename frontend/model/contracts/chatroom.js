@@ -365,27 +365,25 @@ sbp('chelonia/defineContract', {
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
       },
-      sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootState = sbp('state/vuex/state')
-          const state = rootState[contractID]
-          const memberID = data.memberID || innerSigningContractID
+      sideEffect ({ data, hash, contractID, meta, innerSigningContractID }) {
+        const rootState = sbp('state/vuex/state')
+        const memberID = data.memberID || innerSigningContractID
+        const itsMe = memberID === rootState.loggedIn.identityContractID
 
+        if (itsMe) {
+          leaveChatRoom(contractID)
+        } else {
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+        }
+
+        sbp('chelonia/queueInvocation', contractID, () => {
+          const state = rootState[contractID]
           if (!state || !!state.members?.[data.memberID]) {
             return
           }
 
-          if (memberID === rootState.loggedIn.identityContractID) {
-            leaveChatRoom(contractID)
-            sbp('chelonia/contract/release', contractID).catch(e => {
-              console.error(`[gi.contracts/chatroom/leave/sideEffect] Error releasing chatroom ${contractID}`, e)
-            })
-          } else {
-            setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-
-            if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-              sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
-            }
+          if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+            sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
           }
 
           sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state)
@@ -406,7 +404,7 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.members, memberID)
         }
       },
-      sideEffect ({ meta, contractID }, { state }) {
+      sideEffect ({ meta, contractID }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
