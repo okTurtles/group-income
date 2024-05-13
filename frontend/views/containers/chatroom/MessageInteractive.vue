@@ -42,9 +42,9 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
   const settingChangeMessages = (options) => ({
     [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups {setting}.', options),
     [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups {setting} changed.'),
-    [PROPOSAL_VARIANTS.REJECTED]: L('The group {setting} hasn"t changed.'),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('The group {setting} hasn"t changed.')
+    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to change the {setting} is accepted.', options),
+    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to change the {setting} is rejected.', options),
+    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options)
   })
 
   const interactiveMessages = {
@@ -73,9 +73,9 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     [PROPOSAL_GENERIC]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
       [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('{from}\'s proposal is accepted. "{title}"', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('{from}\'s proposal is rejected. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('{from}\'s proposal is expired. "{title}"', options)
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} is accepted. "{title}"', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} is rejected. "{title}"', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} is expired. "{title}"', options)
     }
   }
 
