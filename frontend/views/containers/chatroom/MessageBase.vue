@@ -2,7 +2,7 @@
 .c-message(
   :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
-  v-touch:touchhold='openMenu'
+  v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
   .c-message-wrapper
@@ -113,6 +113,7 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -131,7 +132,8 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -328,6 +330,15 @@ export default ({
         name: 'GroupChatConversation',
         params: { chatRoomId: obj.chatroomId }
       })
+    },
+    longPressHandler (e) {
+      const targetEl = e.target
+      if (targetEl.matches('a.link[href]')) {
+        const url = targetEl.getAttribute('href')
+        sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
+      } else {
+        this.openMenu()
+      }
     }
   }
 }: Object)
