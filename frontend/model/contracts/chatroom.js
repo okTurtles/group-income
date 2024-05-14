@@ -370,6 +370,8 @@ sbp('chelonia/defineContract', {
         const memberID = data.memberID || innerSigningContractID
         const itsMe = memberID === rootState.loggedIn.identityContractID
 
+        // NOTE: we don't add this 'if' statement in the queuedInvocation
+        //       because these should not be running while rejoining
         if (itsMe) {
           leaveChatRoom(contractID)
         } else {
