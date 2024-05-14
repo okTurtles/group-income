@@ -1358,10 +1358,26 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/addChatRoom': {
       // The #General chatroom is added without an inner signature
-      validate: objectOf({
-        chatRoomID: string,
-        attributes: chatRoomAttributesType
-      }),
+      validate: (data) => {
+        objectOf({
+          chatRoomID: string,
+          attributes: chatRoomAttributesType
+        })(data)
+
+        // Validation on the chatroom name (reference: https://github.com/okTurtles/group-income/issues/1987)
+        const chatroomName = data.attributes.name
+        const nameValidationMap: {[string]: Function} = {
+          [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
+          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v)
+        }
+
+        for (const key in nameValidationMap) {
+          const check = nameValidationMap[key]
+          if (check(chatroomName)) {
+            throw new TypeError(key)
+          }
+        }
+      },
       process ({ data, meta, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes
         // XOR: has(innerSigningContractID) XOR #General
