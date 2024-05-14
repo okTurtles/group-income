@@ -1702,15 +1702,6 @@ sbp('chelonia/defineContract', {
               pledgeAmount: 0
             }
           })
-
-          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
-            contractID,
-            data: {
-              amount: data.toAmount,
-              memberType,
-              increased: mincomeIncreased
-            }
-          })
         }
 
         await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
@@ -1719,6 +1710,19 @@ sbp('chelonia/defineContract', {
           to: data.toAmount,
           memberType,
           increased: mincomeIncreased
+        })
+
+        // At the same time the 'MINCOME_CHANGED' in-app notification is emitted,
+        // display the prompt pop-up informing its change.
+        // (reference: https://github.com/okTurtles/group-income/issues/1973)
+        sbp('gi.actions/group/displayMincomeChangedPrompt', {
+          contractID,
+          data: {
+            amount: data.toAmount,
+            memberType,
+            increased: mincomeIncreased,
+            delay: 300
+          }
         })
       }
     },
