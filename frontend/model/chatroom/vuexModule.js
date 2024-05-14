@@ -203,13 +203,6 @@ const mutations = {
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
-    Vue.set(state.chatRoomUnread, chatRoomId, {
-      readUntil: { messageHash, createdDate, deletedDate: null },
-      messages: state.chatRoomUnread[chatRoomId]?.messages
-        ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
-    })
-  },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
     if (state.chatRoomUnread[chatRoomId].readUntil) {
       Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)

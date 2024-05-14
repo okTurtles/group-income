@@ -46,16 +46,14 @@ function createNotificationData (
   }
 }
 
-function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
+function setReadUntilWhileJoining ({ contractID, hash, createdHeight }: {
   contractID: string,
   hash: string,
-  createdDate: string
+  createdHeight: number
 }): void {
   if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
-    sbp('state/vuex/commit', 'setChatRoomReadUntil', {
-      chatRoomId: contractID,
-      messageHash: hash,
-      createdDate: createdDate
+    return sbp('gi.actions/identity/setChatRoomReadUntil', {
+      contractID, messageHash: hash, createdHeight
     })
   }
 }
@@ -225,7 +223,7 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }, { state }) {
         if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
@@ -239,7 +237,7 @@ sbp('chelonia/defineContract', {
           const rootGetters = sbp('state/vuex/getters')
           const loggedIn = sbp('state/vuex/state').loggedIn
 
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+          setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
 
           if (memberID === loggedIn.identityContractID) {
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -290,8 +288,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash, meta }) {
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      sideEffect ({ contractID, hash, height }) {
+        setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -315,8 +313,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash, meta }) {
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      sideEffect ({ contractID, hash, height }) {
+        setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -363,7 +361,7 @@ sbp('chelonia/defineContract', {
         })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
+      sideEffect ({ data, hash, contractID, height, innerSigningContractID }, { state }) {
         if (state.onlyRenderMessage) return
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
@@ -379,7 +377,7 @@ sbp('chelonia/defineContract', {
               console.error(`[gi.contracts/chatroom/leave/sideEffect] Error for ${contractID}`, e)
             })
           } else {
-            setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+            setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
 
             if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
               sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
@@ -440,7 +438,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+        setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
 
         const me = sbp('state/vuex/state').loggedIn.identityContractID
 
@@ -715,8 +713,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash, meta }) {
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      sideEffect ({ contractID, hash, height }) {
+        setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
       }
     },
     'gi.contracts/chatroom/changeVoteOnPoll': {
@@ -769,8 +767,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash, meta }) {
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+      sideEffect ({ contractID, hash, height }) {
+        setReadUntilWhileJoining({ contractID, hash, createdHeight: height })
       }
     },
     'gi.contracts/chatroom/closePoll': {

@@ -192,7 +192,7 @@ const onChatScroll = function () {
       if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
         this.updateUnreadMessageHash({
           messageHash: msg.hash,
-          createdDate: msg.datetime
+          createdHeight: msg.height
         })
       }
       break
@@ -906,10 +906,12 @@ export default ({
         }
       }
     },
-    updateUnreadMessageHash ({ messageHash, createdDate }) {
+    updateUnreadMessageHash ({ messageHash, createdHeight }) {
       const chatRoomId = this.renderingChatRoomId
       if (chatRoomId && this.isJoinedChatRoom(chatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomReadUntil', { chatRoomId, messageHash, createdDate })
+        sbp('gi.actions/identity/setChatRoomReadUntil', {
+          contractID: chatRoomId, messageHash: hash, createdHeight
+        })
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
@@ -1025,7 +1027,7 @@ export default ({
                 const msg = this.messages[this.messages.length - 1]
                 this.updateUnreadMessageHash({
                   messageHash: msg.hash,
-                  createdDate: msg.datetime
+                  createdHeight: msg.height
                 })
               }
             }
@@ -1073,7 +1075,7 @@ export default ({
               if (msg) {
                 this.updateUnreadMessageHash({
                   messageHash: msg.hash,
-                  createdDate: msg.datetime
+                  createdHeight: msg.height
                 })
               }
             }
