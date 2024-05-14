@@ -7,6 +7,7 @@ import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, CHATROOM_PRIVACY_LEVEL } from '
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
+  chatRoomLogs: {}, // [chatRoomId]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
   chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {} // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
 }
@@ -26,6 +27,9 @@ const getters = {
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       }
     }, state.chatNotificationSettings || {})
+  },
+  ourChatRoomLogs (state) {
+    return state.chatRoomLogs
   },
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {

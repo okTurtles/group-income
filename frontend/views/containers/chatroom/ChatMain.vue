@@ -318,6 +318,7 @@ export default ({
     ...mapGetters([
       'currentGroupOwnerID',
       'currentChatRoomId',
+      'ourChatRoomLogs',
       'chatRoomSettings',
       'chatRoomAttributes',
       'chatRoomMembers',
@@ -413,6 +414,16 @@ export default ({
       this.ephemeral.replyingTo = null
     },
     handleSendMessage (text, attachments, replyingMessage) {
+      try {
+        console.log('Current ChatRoom Logs Data:', this.ourChatRoomLogs)
+        sbp('chelonia/kv/set', this.currentUserAttr.id, 'chatRoomLogs', { now: Date.now() }, {
+          encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', this.currentUserAttr.id, 'cek'),
+          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', this.currentUserAttr.id, 'csk')
+        })
+      } catch (e) {
+        console.log(e)
+      }
+
       const hasAttachments = attachments?.length > 0
       const contractID = this.renderingChatRoomId
 

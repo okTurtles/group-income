@@ -238,10 +238,21 @@ async function startApp () {
           }
         },
         [NOTIFICATION_TYPE.KV] ([key, data]) {
+          const rootState = sbp('state/vuex/state')
+          const rootGetters = sbp('state/vuex/getters')
+          const { contractID, data: value } = data
+
           switch (key) {
             case 'lastLoggedIn': {
-              const rootState = sbp('state/vuex/state')
-              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
+              Vue.set(rootState.lastLoggedIn, contractID, value)
+              break
+            }
+            case 'chatRoomLogs': {
+              console.log('KV: chatRoomLogs', contractID, value)
+              if (value && rootGetters.ourIdentityContractId === contractID) {
+                Vue.set(rootState.chatroom, 'chatRoomLogs', value)
+              }
+              break
             }
           }
         }
