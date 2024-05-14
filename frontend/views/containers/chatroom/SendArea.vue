@@ -1085,10 +1085,11 @@ export default ({
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 5rem;
+  top: 0;
+  transform: translateY(-100%);
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 12rem;
+  max-height: 12.25rem;
 
   .c-mention-user,
   .c-mention-channel {
