@@ -7,9 +7,11 @@ import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, CHATROOM_PRIVACY_LEVEL } from '
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
-  chatRoomLogs: {}, // [chatRoomId]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
+  // NOTE: chatRoomLogs format
+  // [chatRoomId]: { readUntil: { messageHash, createdHeight, deletedHeight? }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
+  chatRoomLogs: null,
   chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
-  chatNotificationSettings: {} // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
+  chatNotificationSettings: {} // { [chatRoomId]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 
 // getters
@@ -29,7 +31,7 @@ const getters = {
     }, state.chatNotificationSettings || {})
   },
   ourChatRoomLogs (state) {
-    return state.chatRoomLogs
+    return state.chatRoomLogs || {}
   },
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {
