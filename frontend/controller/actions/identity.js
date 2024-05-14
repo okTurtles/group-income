@@ -770,6 +770,74 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
+  'gi.actions/identity/loadChatRoomLogs': async () => {
+    const rootGetters = sbp('state/vuex/getters')
+    const { ourIdentityContractId } = rootGetters
+    const { chatRoomLogs } = sbp('state/vuex/state').chatroom
+
+    if (chatRoomLogs) {
+      return cloneDeep(chatRoomLogs)
+    }
+    return await sbp('chelonia/kv/get', ourIdentityContractId, 'chatRoomLogs')?.data || {}
+  },
+  'gi.actions/identity/saveChatRoomLogs': (contractID: string, newLogs: Object) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const { ourIdentityContractId } = rootGetters
+
+    return sbp('chelonia/kv/set', ourIdentityContractId, 'chatRoomLogs', newLogs, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk')
+    })
+  },
+  'gi.actions/identity/setChatRoomReadUntil': async ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
+    const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+
+    const exUnreadMessages = currentChatRoomLogs[contractID]?.unreadMessages || []
+    currentChatRoomLogs[contractID] = {
+      readUntil: { messageHash, createdHeight },
+      unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+    }
+
+    return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+  },
+  'gi.actions/identity/deleteChatRoomReadUntil': async ({ contractID, deletedHeight }: {
+    contractID: string, deletedHeight: number
+  }) => {
+    const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+
+    if (currentChatRoomLogs[contractID]?.readUntil) {
+      currentChatRoomLogs[contractID].readUntil['deletedHeight'] = deletedHeight
+      await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+    }
+  },
+  'gi.actions/identity/addChatRoomUnreadMessage': async ({ contractID, messageHash, type, createdHeight }: {
+    contractID: string, messageHash: string, type: string, createdHeight: number
+  }) => {
+    const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+
+    currentChatRoomLogs[contractID].unreadMessages.push({ messageHash, type, createdHeight })
+
+    return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+  },
+  'gi.actions/identity/deleteChatRoomUnreadMessage': async ({ contractID, messageHash }: {
+    contractID: string, messageHash: string
+  }) => {
+    const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+
+    const exUnreadMessages = currentChatRoomLogs[contractID].unreadMessages
+    currentChatRoomLogs[contractID].unreadMessages = exUnreadMessages.filter(msg => msg.messageHash !== messageHash)
+
+    return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+  },
+  'gi.actions/identity/deleteChatRoomLog': async ({ contractID }: { contractID: string }) => {
+    const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+
+    delete currentChatRoomLogs[contractID]
+
+    return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+  },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
 }): string[])
