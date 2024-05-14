@@ -347,6 +347,9 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
       onprocessed: () => {
         const rootState = sbp('state/vuex/state')
         if (memberID === rootState.loggedIn.identityContractID) {
+          // NOTE: since the gi.contracts/chatroom/leave/sideEffect appends invocation in the queue
+          //       the chatroom contract should be released after the queued invocation
+          //       would be fully executed
           sbp('chelonia/queueInvocation', chatRoomID, () => {
             sbp('chelonia/contract/release', chatRoomID).catch(e => {
               console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
