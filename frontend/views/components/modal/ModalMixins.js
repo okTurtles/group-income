@@ -46,8 +46,8 @@ const modalMixins = {
     close (e: any) {
       this.modalIsActive = false
     },
-    unload () {
-      if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL)
+    unload (componentName: string) {
+      if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL, componentName)
     }
   }
 }

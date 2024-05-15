@@ -84,19 +84,21 @@ export default ({
       return this.subcontent[this.subcontent.length - 1]
     },
     updateUrl () {
-      if (this.content) {
+      const subContentLen = this.subcontent.length
+
+      if (this.content || subContentLen > 0) {
         const contentQueries = this.queries[this.content] || {}
-        const subContentQueries = this.queries[this.subcontent[this.subcontent.length - 1]] || {}
+        const subContentQueries = this.queries[this.subcontent[subContentLen - 1]] || {}
         this.$router.push({
           query: {
             ...this.$route.query,
             ...contentQueries,
             ...subContentQueries,
             modal: this.content,
-            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
+            subcontent: subContentLen ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
-      } else if (this.$route.query.modal) {
+      } else if (this.$route.query.modal || this.$route.query.subcontent) {
         const rQueries = { ...this.$route.query }
         const queriesToDelete = {
           modal: true,
@@ -125,22 +127,41 @@ export default ({
       this.updateUrl()
       this.childData = childData
     },
-    unloadModal () {
-      if (this.subcontent.length) {
-        this.subcontent.pop()
-      } else {
+    unloadModal (componentName) {
+      const hasSubContent = this.subcontent.length > 0
+      let unloadDone = false
+      const removeContentAndRefocus = () => {
         this.content = null
+        unloadDone = true
         // Refocus on the button that opened this modal, if any.
         // TODO - find a way to support lastFocus when opened through profile|notifications card.
         if (this.lastFocus) this.lastFocus.focus()
       }
+
+      if (componentName) { // if a specific modal has been queried, find/unload it.
+        if (hasSubContent && this.subcontent.indexOf(componentName) >= 0) {
+          this.subcontent = this.subcontent.filter(x => x !== componentName)
+          unloadDone = true
+        } else if (this.content === componentName) {
+          removeContentAndRefocus()
+        }
+      } else { // if no target modal given, unload the latest one.
+        if (hasSubContent) {
+          this.subcontent.pop()
+          unloadDone = true
+        } else {
+          removeContentAndRefocus()
+        }
+      }
+
       if (this.replacement) {
         this.openModal(this.replacement, this.replacementQueries[this.replacement])
 
         delete this.replacementQueries[this.replacement]
         this.replacement = null
       } else {
-        this.updateUrl()
+        // No need to update the query string in the url if nothing has been unloaded.
+        unloadDone && this.updateUrl()
       }
     },
     replaceModal (componentName, queries = null) {

@@ -202,7 +202,8 @@ export default ({
   },
   methods: {
     close () {
-      this.$refs.modal.unload()
+      const propoalModalName = this.$parent?.$options?._componentTag || undefined
+      this.$refs.modal.unload(propoalModalName)
     },
     next () {
       // TODO/BUG - we must clear formMsg (if visible) when changing steps.

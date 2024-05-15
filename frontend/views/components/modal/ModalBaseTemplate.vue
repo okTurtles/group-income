@@ -10,7 +10,7 @@
       data-test='modal'
       @close='close'
     )
-      modal-close(@close='close' :fullscreen='fullscreen' v-if='!modalForceAction')
+      modal-close(@close='unload' :fullscreen='fullscreen' v-if='!modalForceAction')
       slot
 </template>
 

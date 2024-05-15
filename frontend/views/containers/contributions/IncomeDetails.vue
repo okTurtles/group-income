@@ -160,7 +160,7 @@ export default ({
       this.$v.form.$reset()
     },
     closeModal () {
-      this.$refs.modal.close()
+      this.$refs.modal.unload()
     },
     async submit () {
       if (this.$v.form.$invalid) {

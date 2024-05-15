@@ -1720,8 +1720,7 @@ sbp('chelonia/defineContract', {
           data: {
             amount: data.toAmount,
             memberType,
-            increased: mincomeIncreased,
-            delay: 300
+            increased: mincomeIncreased
           }
         })
       }

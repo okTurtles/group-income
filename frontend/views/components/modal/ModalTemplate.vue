@@ -9,13 +9,13 @@
     transition(name='fade' appear)
       .c-modal-background(@click='closeModal' v-if='modalIsActive')
 
-    transition(name='slide-left' appear @after-leave='unload')
+    transition(name='slide-left' appear @after-leave='onAfterLeave')
       .c-modal-content(ref='card' v-if='modalIsActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subtitle'
         )
-          modal-close(@close='close' :back-on-mobile='backOnMobile' v-if='!modalForceAction')
+          modal-close(@close='unload' :back-on-mobile='backOnMobile' v-if='!modalForceAction')
           h2.is-subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.is-title-1(v-if='$scopedSlots.title' data-test='modal-header-title')
@@ -38,8 +38,11 @@ export default ({
   methods: {
     closeModal () {
       if (!this.modalForceAction) {
-        this.close()
+        this.unload()
       }
+    },
+    onAfterLeave () {
+      this.unload()
     }
   }
 }: Object)
