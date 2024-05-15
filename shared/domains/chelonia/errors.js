@@ -10,6 +10,12 @@ export const ChelErrorGenerator = (
     constructor (...params: any[]) {
       super(...params)
       this.name = name // string literal so minifier doesn't overwrite
+      // Polyfill for cause property
+      // $FlowFixMe[prop-missing]
+      if (params[1]?.cause !== this.cause) {
+        // $FlowFixMe[prop-missing]
+        Object.defineProperty(this, 'cause', { value: params[1].cause })
+      }
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, this.constructor)
       }

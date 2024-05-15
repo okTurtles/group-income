@@ -408,9 +408,26 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    this.config.reactiveDel(state.contracts, contractID)
-    this.config.reactiveDel(state, contractID)
-    delete this.removeCount[contractID]
+    if (params?.resync) {
+      // If re-syncing, keep the reference count
+      Object.keys(state.contracts[contractID])
+        .filter((k) => k !== 'references')
+        .forEach((k) => this.config.reactiveDel(state.contracts[contractID], k))
+      // If re-syncing, keep state._volatile.watch
+      Object.keys(state[contractID])
+        .filter((k) => k !== '_volatile')
+        .forEach((k) => this.config.reactiveDel(state[contractID], k))
+      if (state[contractID]._volatile) {
+        Object.keys(state[contractID]._volatile)
+          .filter((k) => k !== 'watch')
+          .forEach((k) => this.config.reactiveDel(state[contractID]._volatile, k))
+      }
+    } else {
+      delete this.ephemeralReferenceCount[contractID]
+      this.config.reactiveDel(state.contracts, contractID)
+      this.config.reactiveDel(state, contractID)
+    }
+
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
@@ -958,7 +975,16 @@ export default (sbp('sbp/selectors/register', {
                 const rootState = sbp(config.stateSelector)
                 if (Array.isArray(rootState[foreignContract]?._volatile?.watch)) {
                   // Stop watching events for this key
-                  rootState[foreignContract]._volatile.watch = rootState[foreignContract]._volatile.watch.filter(([name, cID]) => name !== foreignKeyName || cID !== contractID)
+                  const oldWatch = rootState[foreignContract]._volatile.watch
+                  rootState[foreignContract]._volatile.watch = oldWatch.filter(([name, cID]) => name !== foreignKeyName || cID !== contractID)
+                  if (oldWatch.length !== rootState[foreignContract]._volatile.watch.length) {
+                    // If the number of foreign keys changed, maybe there's no
+                    // reason to remain subscribed to this contract. In this
+                    // case, attempt to release it.
+                    sbp('chelonia/contract/release', foreignContract, { try: true }).catch(e => {
+                      console.error(`[chelonia] Error at OP_KEY_DEL internalSideEffectStack while attempting to release foreign contract ${foreignContract}`, e)
+                    })
+                  }
                 }
               }).catch((e) => {
                 console.error('Error stopping watching events after removing key', { contractID, foreignContract, foreignKeyName, fkUrl })
@@ -1098,14 +1124,14 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/private/enqueuePostSyncOps', contractID)
     })
   },
-  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, deferredRemove?: boolean }) {
+  'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
     // If the dirty flag is set (indicating that new encryption keys were received),
     // we remove the current state before syncing (this has the effect of syncing
     // from the beginning, recreating the entire state). When this is the case,
     // the _volatile state is preserved
-    if (currentVolatileState?.dirty) {
+    if (currentVolatileState?.dirty || params?.resync) {
       delete currentVolatileState.dirty
       currentVolatileState.resyncing = true
       sbp('chelonia/private/removeImmediately', contractID, { resync: true })
@@ -1117,18 +1143,12 @@ export default (sbp('sbp/selectors/register', {
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
     const isSubcribed = this.subscriptionSet.has(contractID)
-    if (isSubcribed) {
-      if (params?.deferredRemove) {
-        this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
-      }
-    } else {
+    if (!isSubcribed) {
       const entry = this.pending.find((entry) => entry?.contractID === contractID)
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
       if (!entry) {
-        this.pending.push({ contractID, deferredRemove: params?.deferredRemove ? 1 : 0 })
-      } else {
-        entry.deferredRemove += 1
+        this.pending.push({ contractID })
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
@@ -1144,10 +1164,9 @@ export default (sbp('sbp/selectors/register', {
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
-        // state.contracts[contractID] && events.shift()
         const eventReader = eventsStream.getReader()
         // remove the first element in cases where we are not getting the contract for the first time
-        for (let skip = !!state.contracts[contractID]; ; skip = false) {
+        for (let skip = has(state.contracts, contractID) && has(state.contracts[contractID], 'HEAD'); ; skip = false) {
           const { done, value: event } = await eventReader.read()
           if (done) {
             if (!latestHashFound) {
@@ -1277,13 +1296,9 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    // We check rootState.contracts[contractID] to see if we're already
+    // We check this.subscriptionSet to see if we're already
     // subscribed to the contract; if not, we call sync.
-    // If we're subscribed, we don't call sync because we should have the latest
-    // state
-    // Checking rootState[contractID] instead of rootState.contracts[contractID]
-    // could give us an incomplete state
-    if (!has(rootState.contracts, contractID)) {
+    if (!this.subscriptionSet.has(contractID)) {
       await sbp('chelonia/private/in/syncContract', contractID)
     }
 
@@ -1939,23 +1954,19 @@ const handleEvent = {
     }
     // whether or not there was an exception, we proceed ahead with updating the head
     // you can prevent this by throwing an exception in the processError hook
-    if (has(state.contracts, contractID)) {
-      this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
-      this.config.reactiveSet(state.contracts[contractID], 'height', height)
-    } else {
+    if (message.isFirstMessage()) {
       const { type } = ((message.opValue(): any): GIOpContract)
-      this.config.reactiveSet(state.contracts, contractID, {
-        HEAD: hash,
-        height,
-        type
-      })
+      if (!has(state.contracts, contractID)) {
+        this.config.reactiveSet(state.contracts, contractID, Object.create(null))
+      }
+      this.config.reactiveSet(state.contracts[contractID], 'type', type)
       console.debug(`contract ${type} registered for ${contractID}`)
     }
+    this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
+    this.config.reactiveSet(state.contracts[contractID], 'height', height)
+
     if (!this.subscriptionSet.has(contractID)) {
       const entry = this.pending.find((entry) => entry?.contractID === contractID)
-      if (entry?.deferredRemove) {
-        this.removeCount[contractID] = entry?.deferredRemove
-      }
       // we've successfully received it back, so remove it from expectation pending
       if (entry) {
         const index = this.pending.indexOf(entry)

@@ -13,19 +13,19 @@ let me
 // since we are differentiate channels by their names in test mode
 // of course, we can create same name in production
 const chatRooms = [
-  { name: 'Channel12', description: 'Description for Channel12', isPrivate: false, members: [user1, user2] },
-  { name: 'Channel14', description: 'Description for Channel14', isPrivate: true, members: [user1] },
-  { name: 'Channel13', description: '', isPrivate: true, members: [user1, user2] },
-  { name: 'Channel11', description: '', isPrivate: false, members: [user1] },
-  { name: 'Channel15', description: '', isPrivate: false, members: [user1, user2] },
-  { name: 'Channel23', description: 'Description for Channel23', isPrivate: false, members: [user2] },
-  { name: 'Channel22', description: 'Description for Channel22', isPrivate: true, members: [user2, user1, user3] },
-  { name: 'Channel24', description: '', isPrivate: true, members: [user2, user3] },
-  { name: 'Channel21', description: '', isPrivate: false, members: [user2, user1] }
+  { name: 'channel12', description: 'Description for channel12', isPrivate: false, members: [user1, user2] },
+  { name: 'channel14', description: 'Description for channel14', isPrivate: true, members: [user1] },
+  { name: 'channel13', description: '', isPrivate: true, members: [user1, user2] },
+  { name: 'channel11', description: '', isPrivate: false, members: [user1] },
+  { name: 'channel15', description: '', isPrivate: false, members: [user1, user2] },
+  { name: 'channel23', description: 'Description for channel23', isPrivate: false, members: [user2] },
+  { name: 'channel22', description: 'Description for channel22', isPrivate: true, members: [user2, user1, user3] },
+  { name: 'channel24', description: '', isPrivate: true, members: [user2, user3] },
+  { name: 'channel21', description: '', isPrivate: false, members: [user2, user1] }
 ]
-const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('Channel1') && c.members.includes(user2)).map(c => c.name)
-const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.members.includes(user1)).map(c => c.name)
-const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.members.includes(user3)).map(c => c.name)
+const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('channel1') && c.members.includes(user2)).map(c => c.name)
+const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('channel2') && c.members.includes(user1)).map(c => c.name)
+const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('channel2') && c.members.includes(user3)).map(c => c.name)
 
 function getProposalItems () {
   return cy.getByDT('proposalsWidget').children()
@@ -195,7 +195,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user1 creates several channels and logout', () => {
-    for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel1'))) {
+    for (const c of chatRooms.filter(cr => cr.name.startsWith('channel1'))) {
       cy.giAddNewChatroom({
         name: c.name,
         description: c.description,
@@ -229,7 +229,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = user2
     cy.giRedirectToGroupChat()
 
-    const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.isPrivate).map(c => c.name)
+    const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('channel1') && !c.isPrivate).map(c => c.name)
     const channels = channelsOf1For2.filter(cn => publicUser1Channels.includes(cn))
     for (const cn of channels) {
       switchChannel(cn)
@@ -238,7 +238,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user2 creates several channels', () => {
-    for (const c of chatRooms.filter(cr => cr.name.startsWith('Channel2'))) {
+    for (const c of chatRooms.filter(cr => cr.name.startsWith('channel2'))) {
       cy.giAddNewChatroom({
         name: c.name,
         description: c.description,
@@ -262,10 +262,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
     cy.log('Users can update details(name, description) of the channels they created.')
-    const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
-    const detailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && c.description)[0]
-    const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.description && c.members.includes(me))[0]
-    const notJoinedChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.members.includes(me))[0]
+    const undetailedChannel = chatRooms.filter(c => c.name.startsWith('channel1') && !c.description)[0]
+    const detailedChannel = chatRooms.filter(c => c.name.startsWith('channel1') && c.description)[0]
+    const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('channel1') && !c.description && c.members.includes(me))[0]
+    const notJoinedChannel = chatRooms.filter(c => !c.name.startsWith('channel1') && !c.members.includes(me))[0]
 
     cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
     cy.log('"Add Description" button is visible because no description is added')
@@ -273,7 +273,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('exist')
     })
-    const newName1 = 'Updated-' + undetailedChannel.name
+    const newName1 = 'updated-' + undetailedChannel.name
     updateName(newName1)
     undetailedChannel.name = newName1
     const newDescription1 = 'Description for ' + undetailedChannel.name
@@ -361,7 +361,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
     const leavingChannels = chatRooms
-      .filter(c => c.name.includes('Channel1') && c.members.includes(user2) && !c.isPrivate).map(c => c.name)
+      .filter(c => c.name.includes('channel1') && c.members.includes(user2) && !c.isPrivate).map(c => c.name)
 
     // User1 kicks user2
     kickMemberFromChannel(leavingChannels[0], user2)
@@ -465,12 +465,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user1 leaves chatroom by himself', () => {
-    const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
+    const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
     leaveChannel(channel, 'Leave Channel')
   })
 
   it('user1 deletes a channel and logout', () => {
-    const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[1]
+    const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
     deleteChannel(channel)
 
     cy.giLogout()
@@ -527,7 +527,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // NOTE: temporarily comment this out since the following issues are not resolved yet
   //       https://github.com/okTurtles/group-income/issues/202
   // it('Only group admin can allow to create public channel', () => {
-  //   const publicChannelName = 'Bulgaria Hackathon'
+  //   const publicChannelName = 'bulgaria-hackathon'
   //   cy.getByDT('groupSettingsLink').click()
   //   cy.get('.p-title').should('contain', 'Group Settings')
   //   cy.getByDT('allowPublicChannels').should('not.exist')
@@ -539,7 +539,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   //   cy.getByDT('groupSettingsLink').click()
   //   cy.get('.p-title').should('contain', 'Group Settings')
   //   cy.get('section:nth-child(4)').within(() => {
-  //     cy.get('h2.is-title-3').should('contain', 'Public Channels')
+  //     cy.get('h2.is-title-3').should('contain', 'public-channels')
   //     cy.getByDT('allowPublicChannels').within(() => {
   //       cy.get('.c-smaller-title').should('contain', 'Allow members to create public channels')
   //       cy.get('input[type=checkbox]').check()

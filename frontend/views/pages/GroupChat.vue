@@ -82,16 +82,23 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           @click='editDescription'
         ) Add description
 
-  template(#sidebar='')
+  template(#sidebar='{ toggle }')
     chat-nav(:title='L("Chat")')
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
+        @new='toggle'
+        @redirect='toggle'
       )
 
-      chat-members(:title='L("Direct Messages")' action='addDirectMessage')
+      chat-members(
+        action='addDirectMessage'
+        :title='L("Direct Messages")'
+        @new='toggle'
+        @redirect='toggle'
+      )
 
   .card.c-card
     chat-main(:summary='summary')
@@ -139,11 +146,11 @@ export default ({
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
-        name: this.getGroupChatRooms[chatRoomID].name,
-        privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
-        joined: this.isJoinedChatRoom(chatRoomID),
-        id: chatRoomID
+      return Object.keys(this.getGroupChatRooms || {}).map(cID => ({
+        name: this.getGroupChatRooms[cID].name,
+        privacyLevel: this.getGroupChatRooms[cID].privacyLevel,
+        joined: this.isJoinedChatRoom(cID),
+        id: cID
       })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
         const formerName = former.name
         const latterName = latter.name
@@ -178,13 +185,13 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      const { chatRoomId } = to.params
-      const prevChatRoomId = from.params.chatRoomId || ''
-      if (chatRoomId && chatRoomId !== prevChatRoomId) {
-        this.updateCurrentChatRoomID(chatRoomId)
+      const { chatRoomID } = to.params
+      const prevChatRoomId = from.params.chatRoomID || ''
+      if (chatRoomID && chatRoomID !== prevChatRoomId) {
+        this.updateCurrentChatRoomID(chatRoomID)
         // NOTE: No need to consider not-joined private chatroom because it's impossible
-        if (!this.isJoinedChatRoom(chatRoomId)) {
-          this.loadLatestState(chatRoomId)
+        if (!this.isJoinedChatRoom(chatRoomID)) {
+          this.loadLatestState(chatRoomID)
         }
       }
     }
@@ -234,7 +241,6 @@ export default ({
 }
 
 .c-header {
-  text-transform: capitalize;
   display: flex;
   align-items: center;
   position: relative;

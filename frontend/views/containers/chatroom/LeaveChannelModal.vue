@@ -63,6 +63,7 @@ export default ({
             chatRoomID: this.currentChatRoomId
           }
         })
+        this.close()
       } catch (e) {
         console.error('LeaveChannelModal submit() error:', e)
       }

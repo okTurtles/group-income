@@ -101,6 +101,7 @@ export default ({
             }
           }
         })
+        this.close()
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

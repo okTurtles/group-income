@@ -94,7 +94,7 @@ describe('Group - Removing a member', () => {
 
     cy.giRedirectToGroupChat()
     cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', `user2-${userId}`)
-    cy.get('div.c-message:last-child .c-notification').should('contain', 'Left General')
+    cy.get('div.c-message:last-child .c-notification').should('contain', 'Left general')
 
     cy.giLogout()
   })

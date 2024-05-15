@@ -66,6 +66,11 @@ self.addEventListener('message', function (event) {
   }
 })
 
+// Handle clicks on notifications issued via registration.showNotification().
+self.addEventListener('notificationclick', event => {
+  console.debug('[sw] Notification clicked:', event.notification)
+})
+
 self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
 

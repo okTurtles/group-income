@@ -392,15 +392,15 @@ const getters = {
     return { inviteId, expires }
   },
   // list of group names and contractIDs
-  groupsByName (state) {
-    const contracts = state.contracts
+  groupsByName (state, getters) {
+    const groups = state[getters.ourIdentityContractId]?.groups
+    if (!groups) return []
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     // we return event pending groups that we haven't finished joining so that we are not stuck
     // on the /pending-approval page if we are part of another working group already
-    return Object.keys(contracts || {})
-      .filter(contractID => contracts[contractID].type === 'gi.contracts/group')
-      .map(contractID => ({ groupName: state[contractID].settings?.groupName || L('Pending'), contractID }))
+    return Object.keys(groups)
+      .map(contractID => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
   },
   profilesByGroup (state, getters) {
     return groupID => {

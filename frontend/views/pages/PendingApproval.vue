@@ -33,7 +33,6 @@ export default ({
       ephemeral: {
         groupIdWhenMounted: null,
         groupJoined: false,
-        isJoining: false,
         settings: {}
       }
     }
@@ -45,9 +44,6 @@ export default ({
       if (!this.ephemeral.groupIdWhenMounted) return
       return this.$store.state[this.ephemeral.groupIdWhenMounted]
     },
-    isJoining () {
-      return this.ephemeral.isJoining && sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
-    },
     haveActiveGroupProfile () {
       const state = this.groupState
       return (
@@ -55,27 +51,13 @@ export default ({
         state?.profiles?.[this.ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
         // And we don't want to be in the process of re-syncing (i.e., re-building
         // the state after receiving new private keys)
-        !sbp('chelonia/contract/isResyncing', state) &&
-        // And finally, we want the join process to be complete
-        !this.isJoining
+        !sbp('chelonia/contract/isResyncing', state)
       )
     }
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
     this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
-    this.ephemeral.isJoining = sbp('okTurtles.data/get', 'JOINING_GROUP-' + this.ephemeral.groupIdWhenMounted)
-    if (this.ephemeral.isJoining) {
-      const handler = ({ contractID }) => {
-        if (contractID === this.ephemeral.groupIdWhenMounted) {
-          this.ephemeral.isJoining = false
-          delete this.ephemeral.handler
-          sbp('okTurtles.events/off', JOINED_GROUP, handler)
-        }
-      }
-      this.ephemeral.handler = handler
-      sbp('okTurtles.events/on', JOINED_GROUP, handler)
-    }
   },
   beforeDestroy () {
     if (this.ephemeral.handler) {

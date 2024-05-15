@@ -66,9 +66,17 @@
                 :value='n'
               ) {{ n }}
 
-        label.checkbox
+        label.checkbox.c-checkbox
           input.input(type='checkbox' v-model='form.allowMultipleChoice' @click.stop='')
           i18n Allow multiple choice
+
+        label.checkbox.c-checkbox.c-hide-voters-check
+          input.input(type='checkbox' v-model='form.hideVoters' @click.stop='')
+          i18n Hide who voted
+
+        .c-hide-voters-disclaimer
+          i.icon-exclamation-triangle
+          i18n Note: it is possible for a group member to "hack" the app to figure out who voted on what.
 
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
@@ -128,6 +136,7 @@ export default {
         disabled: false,
         question: '',
         allowMultipleChoice: false,
+        hideVoters: false,
         duration: 7,
         options: [
           { id: createRandomId(), value: '' }
@@ -213,6 +222,7 @@ export default {
             question: this.form.question,
             options: this.form.options,
             expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
+            hideVoters: this.form.hideVoters,
             pollType: this.form.allowMultipleChoice
               ? POLL_TYPES.MULTIPLE_CHOICES
               : POLL_TYPES.SINGLE_CHOICE
@@ -224,6 +234,8 @@ export default {
         this.form = {
           question: '',
           allowMultipleChoice: false,
+          hideVoters: false,
+          duration: 7,
           options: [
             { id: createRandomId(), value: '' }
           ],
@@ -232,6 +244,14 @@ export default {
         this.$v.form.$reset()
         this.close()
       })
+    },
+    resizeHandler () {
+      if (window.matchMedia('(hover: hover)').matches) {
+        // This is a fix for the issue #1954(https://github.com/okTurtles/group-income/issues/1954)
+        // -> closes the pop-up if the viewport size changes only when it's NOT a touch device.
+        //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
+        this.close()
+      }
     }
   },
   created () {
@@ -241,11 +261,11 @@ export default {
     }
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
 
-    window.addEventListener('resize', this.close)
+    window.addEventListener('resize', this.resizeHandler)
     document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
-    window.removeEventListener('resize', this.close)
+    window.removeEventListener('resize', this.resizeHandler)
     document.removeEventListener('keydown', this.trapFocus)
 
     this.matchMediaDesktop.onchange = null
@@ -377,6 +397,26 @@ export default {
   > button {
     align-self: stretch;
     margin-right: 0;
+  }
+}
+
+.c-checkbox {
+  display: block;
+
+  &.c-hide-voters-check {
+    margin-top: 0.75rem;
+  }
+}
+
+.c-hide-voters-disclaimer {
+  display: block;
+  color: $text_1;
+  font-size: $size_5;
+  margin-top: 0.2rem;
+
+  i {
+    font-size: 0.8em;
+    margin-right: 4px;
   }
 }
 </style>

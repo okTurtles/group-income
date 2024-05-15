@@ -13,7 +13,7 @@ marked.use({
   ]
 })
 
-export function convertToMarkdown (str: string): any {
+export function renderMarkdown (str: string): any {
   let converted = marked.parse(str, { gfm: true, breaks: true })
 
   // remove unecessary line-breaks from the converted markdown outcome.

@@ -147,18 +147,7 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: SAKp
-          },
-          // TODO: Find a way to have this wrapping be done by Chelonia directly
-          encryptedOutgoingDataWithRawKey(CEK, {
-            foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-            id: userCSKid,
-            data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-            allowedActions: '*',
-            purpose: ['sig'],
-            ringLevel: Number.MAX_SAFE_INTEGER,
-            name: `${userID}/${userCSKid}`
-          })
+          }
         ],
         data: {
           ...params.data,
@@ -230,18 +219,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
-    const isCurrentUserJoining = rootState.loggedIn.identityContractID === userID
-
-    if (isCurrentUserJoining) {
-      // Cancel remove when sending this (join) action. This is because if we're
-      // trying to join a chatroom that we've previously left, it'll be removed
-      // by its side-effects. Calling 'chelonia/contract/cancelRemove' clears
-      // the pendingRemove flag in the contract, preventing it from being
-      // removed (which is the intent here, as we're re-joining)
-      sbp('chelonia/contract/cancelRemove', params.contractID)
-    }
-
-    const CEKid = sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+    const CEKid = params.encryptionKeyId || sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
     const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
     return await sbp('chelonia/out/atomic', {

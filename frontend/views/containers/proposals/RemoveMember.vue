@@ -74,6 +74,7 @@ export default ({
     ]),
     ...mapGetters([
       'currentGroupState',
+      'currentGroupOwnerID',
       'globalProfile',
       'groupProfiles',
       'groupSettings',
@@ -86,7 +87,7 @@ export default ({
       return this.globalProfile(this.memberID) || {}
     },
     isGroupCreator () {
-      return this.ourIdentityContractId === this.groupSettings.groupCreatorID
+      return this.ourIdentityContractId === this.currentGroupOwnerID
     }
   },
   methods: {

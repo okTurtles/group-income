@@ -62,6 +62,11 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       })
     })
 
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Delete message')
+      cy.getByDT('submitPrompt').click()
+    })
+
     cy.getByDT('conversationWrapper').within(() => {
       cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
     })
@@ -252,7 +257,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
     cy.getByDT('modal').within(() => {
       cy.getByDT('modal-header-title').should('contain', 'Delete file')
-      cy.get('legend.label').should('contain', 'Are you sure you want to delete this file permanently?2.png')
+      cy.get('legend.label').should('contain', 'Are you sure you want to delete this file permanently?')
       cy.getByDT('submitPrompt').click()
     })
 

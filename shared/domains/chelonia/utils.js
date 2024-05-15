@@ -777,3 +777,11 @@ export function verifyShelterAuthorizationHeader (authorization: string, rootSta
 
   return contractID
 }
+
+export const clearObject = (o: Object) => {
+  Object.keys(o).forEach((k) => delete o[k])
+}
+
+export const reactiveClearObject = (o: Object, fn: (o: Object, k: string | number) => any) => {
+  Object.keys(o).forEach((k) => fn(o, k))
+}

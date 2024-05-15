@@ -69,7 +69,7 @@ export const encryptedAction = (
 
       try {
         // Writing to a contract requires being subscribed to it
-        await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+        await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
@@ -138,7 +138,7 @@ export const encryptedAction = (
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
         finished()
-        await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
       }
     }
   }
@@ -175,7 +175,7 @@ export const encryptedNotification = (
 
       try {
         // Writing to a contract requires being subscribed to it
-        await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+        await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
@@ -243,7 +243,7 @@ export const encryptedNotification = (
           : humanError(params, e)
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
-        await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
       }
     }
   }

@@ -32,7 +32,7 @@ sbp('sbp/selectors/register', {
     const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
     try {
-      await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+      await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
       const state = await sbp('chelonia/latestContractState', contractID)
 
       const CEKid = findKeyIdByName(state, 'cek')
@@ -78,7 +78,7 @@ sbp('sbp/selectors/register', {
         signingKeyId
       })
     } finally {
-      await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+      await sbp('chelonia/contract/release', contractID, { ephemeral: true })
     }
   },
   // TODO: Move to chelonia

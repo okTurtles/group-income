@@ -303,9 +303,9 @@ export default ({
     async addToChannel (contractID: string, undoing = false) {
       if (this.isDirectMessage()) {
         const usernames = uniq(this.ourGroupDirectMessages[this.currentChatRoomId].partners.concat(contractID))
-        const chatRoomId = this.ourGroupDirectMessageFromUserIds(usernames)
-        if (chatRoomId) {
-          this.redirect(chatRoomId)
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(usernames)
+        if (chatRoomID) {
+          this.redirect(chatRoomID)
         } else {
           this.createDirectMessage(usernames)
         }

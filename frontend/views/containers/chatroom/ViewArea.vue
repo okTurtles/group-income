@@ -5,11 +5,6 @@
       :args='{title: title, ...LTags("b")}'
     ) You are viewing {b_} # {title}{_b}
   .c-view-actions-wrapper
-    button.button.is-small.is-outlined(
-      @click='see'
-      data-test='channelDescription'
-    )
-      i18n Channel Description
     button-submit.is-success.is-small(
       @click='join'
       data-test='joinChannel'
@@ -50,9 +45,6 @@ export default ({
         alert(e.message)
         console.error('ViewArea join() error:', e)
       }
-    },
-    see: function () {
-      console.log('TODO')
     }
   }
 })

@@ -23,7 +23,10 @@ const DMMixin: Object = {
           data: { memberIDs },
           hooks: {
             onprocessed: (message) => {
-              this.redirect(message.decryptedValue().data.contractID)
+              const dmID = message.decryptedValue().data.contractID
+              // The logic for updating paths will not work until the DM chatroom
+              // has been synced
+              sbp('chelonia/queueInvocation', dmID, () => this.redirect(dmID))
             }
           }
         })
@@ -31,20 +34,20 @@ const DMMixin: Object = {
         alert(err.message)
       }
     },
-    async setDMVisibility (chatRoomId: string, visible: boolean) {
+    async setDMVisibility (chatRoomID: string, visible: boolean) {
       try {
         await sbp('gi.actions/identity/setDirectMessageVisibility', {
           contractID: this.ourIdentityContractId,
-          data: { contractID: chatRoomId, visible }
+          data: { contractID: chatRoomID, visible }
         })
       } catch (err) {
         alert(err.message)
       }
     },
-    redirect (chatRoomId: string) {
+    redirect (chatRoomID: string) {
       this.$router.push({
         name: 'GroupChatConversation',
-        params: { chatRoomId }
+        params: { chatRoomID }
       }).catch(logExceptNavigationDuplicated)
     }
   }

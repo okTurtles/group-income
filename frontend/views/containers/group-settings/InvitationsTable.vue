@@ -159,7 +159,7 @@ export default ({
       'currentGroupState',
       'ourIdentityContractId',
       'ourUserDisplayName',
-      'groupSettings',
+      'currentGroupOwnerID',
       'currentWelcomeInvite',
       'groupShouldPropose'
     ]),
@@ -185,7 +185,7 @@ export default ({
       return options[this.ephemeral.selectbox.selectedOption]()
     },
     isUserGroupCreator () {
-      return this.ourIdentityContractId === this.groupSettings.groupCreatorID
+      return this.ourIdentityContractId === this.currentGroupOwnerID
     }
   },
   methods: {
