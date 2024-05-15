@@ -2,7 +2,7 @@
 .c-message(
   :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
-  v-touch:touchhold='openMenu'
+  v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
   .c-message-wrapper
@@ -35,8 +35,8 @@
               v-else-if='isChannelMention(objReplyMessage)'
               :tabindex='objReplyMessage.disabled ? undefined : 0'
               :class='{ "is-disabled": objReplyMessage.disabled }'
-              @click='navigateToChatroom(objReplyMessage)'
-              @keyup.enter='navigateToChatroom(objReplyMessage)'
+              @click='navigateToChatRoom(objReplyMessage)'
+              @keyup.enter='navigateToChatRoom(objReplyMessage)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
@@ -63,8 +63,8 @@
               v-else-if='isChannelMention(objText)'
               :tabindex='objText.disabled ? undefined : 0'
               :class='{ "is-disabled": objText.disabled }'
-              @click='navigateToChatroom(objText)'
-              @keyup.enter='navigateToChatroom(objText)'
+              @click='navigateToChatRoom(objText)'
+              @keyup.enter='navigateToChatRoom(objText)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
@@ -113,6 +113,7 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -131,7 +132,8 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { renderMarkdown } from '@view-utils/convert-to-markdown.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -285,8 +287,8 @@ export default ({
             text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           })
           const genChannelMentionObj = (text) => {
-            const chatroomId = text.slice(1)
-            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatroomId)
+            const chatRoomID = text.slice(1)
+            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
             return found
               ? {
@@ -294,7 +296,7 @@ export default ({
                   text: found.name,
                   icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
                   disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
-                  chatroomId: found.id
+                  chatRoomID: found.id
                 }
               : genDefaultTextObj(text)
           }
@@ -320,14 +322,21 @@ export default ({
             : genDefaultTextObj(t)
         })
     },
-    navigateToChatroom (obj) {
-      if (obj.disabled ||
-      obj.chatroomId === this.$route.params?.chatRoomId) { return }
-
+    navigateToChatRoom (obj) {
+      if (obj.disabled || obj.chatRoomID === this.$route.params?.chatRoomID) { return }
       this.$router.push({
         name: 'GroupChatConversation',
-        params: { chatRoomId: obj.chatroomId }
+        params: { chatRoomID: obj.chatRoomID }
       })
+    },
+    longPressHandler (e) {
+      const targetEl = e.target
+      if (targetEl.matches('a.link[href]')) {
+        const url = targetEl.getAttribute('href')
+        sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
+      } else {
+        this.openMenu()
+      }
     }
   }
 }: Object)

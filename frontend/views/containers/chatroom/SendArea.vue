@@ -266,7 +266,7 @@ import {
 import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
-import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/convert-to-markdown.js'
+import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
@@ -1085,10 +1085,11 @@ export default ({
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 5rem;
+  top: 0;
+  transform: translateY(-100%);
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 12rem;
+  max-height: 12.25rem;
 
   .c-mention-user,
   .c-mention-channel {
