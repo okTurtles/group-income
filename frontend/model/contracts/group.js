@@ -840,16 +840,12 @@ sbp('chelonia/defineContract', {
           const payment = state.payments[data.paymentHash]
 
           if (loggedIn.identityContractID === payment.data.toMemberID) {
-            sbp('chelonia/queueInvocation', contractID, () => {
-              sbp('chelonia/queueInvocation', innerSigningContractID, () => {
-                sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
-                  createdDate: meta.createdDate,
-                  groupID: contractID,
-                  creatorID: innerSigningContractID,
-                  paymentHash: data.paymentHash,
-                  amount: getters.withGroupCurrency(payment.data.amount)
-                })
-              })
+            sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_RECEIVED', {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              paymentHash: data.paymentHash,
+              amount: getters.withGroupCurrency(payment.data.amount)
             })
           }
         }
@@ -868,15 +864,11 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
 
         if (data.toMemberID === loggedIn.identityContractID) {
-          sbp('chelonia/queueInvocation', contractID, () => {
-            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
-              sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                fromMemberID: innerSigningContractID,
-                toMemberID: data.toMemberID
-              })
-            })
+          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_THANKYOU_SENT', {
+            createdDate: meta.createdDate,
+            groupID: contractID,
+            fromMemberID: innerSigningContractID,
+            toMemberID: data.toMemberID
           })
         }
       }
@@ -937,15 +929,11 @@ sbp('chelonia/defineContract', {
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (isActionOlderThanUser(contractID, height, myProfile)) {
-          sbp('chelonia/queueInvocation', contractID, () => {
-            sbp('chelonia/queueInvocation', innerSigningContractID, () => {
-              sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                creatorID: innerSigningContractID,
-                subtype: typeToSubTypeMap[data.proposalType]
-              })
-            })
+          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'NEW_PROPOSAL', {
+            createdDate: meta.createdDate,
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            subtype: typeToSubTypeMap[data.proposalType]
           })
         }
       }
@@ -1678,8 +1666,8 @@ sbp('chelonia/defineContract', {
       const { loggedIn } = sbp('state/vuex/state')
       const { createdDate } = meta
       if (isActionOlderThanUser(contractID, height, state.profiles[loggedIn.identityContractID])) {
-        sbp('chelonia/queueInvocation', contractID, () => {
-          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', { createdDate, groupID: contractID, proposal })
+        sbp('gi.contracts/group/emitNotificationAfterSyncing', contractID, 'PROPOSAL_CLOSED', {
+          createdDate, groupID: contractID, proposal
         })
       }
     },
@@ -1723,16 +1711,12 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        sbp('chelonia/queueInvocation', contractID, () => {
-          sbp('chelonia/queueInvocation', innerSigningContractID, () => {
-            sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
-              groupID: contractID,
-              creatorID: innerSigningContractID,
-              to: toAmount,
-              memberType,
-              increased: mincomeIncreased
-            })
-          })
+        sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'MINCOME_CHANGED', {
+          groupID: contractID,
+          creatorID: innerSigningContractID,
+          to: toAmount,
+          memberType,
+          increased: mincomeIncreased
         })
       }
     },
@@ -1878,15 +1862,12 @@ sbp('chelonia/defineContract', {
         if (isActionOlderThanUser(contractID, height, myProfile)) {
           if (!proposalHash) {
             // NOTE: Do not make notification when the member is removed by proposal
-            sbp('chelonia/queueInvocation', memberID, () => {
-              const memberRemovedThemselves = memberID === innerSigningContractID
-              sbp('gi.notifications/emit', // emit a notification for a member removal.
-                memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
-                {
-                  createdDate: meta.createdDate,
-                  groupID: contractID,
-                  memberID
-                })
+            const memberRemovedThemselves = memberID === innerSigningContractID
+            const notificationName = memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED'
+            sbp('gi.contracts/group/emitNotificationAfterSyncing', memberID, notificationName, {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              memberID
             })
           }
 
@@ -1945,6 +1926,14 @@ sbp('chelonia/defineContract', {
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
+    },
+    'gi.contracts/group/emitNotificationAfterSyncing': async (contractIDs, notificationName, notificationData) => {
+      const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+      for (const id of listOfIds) {
+        await sbp('chelonia/queueInvocation', id, ['chelonia/private/noop'])
+      }
+
+      sbp('gi.notifications/emit', notificationName, notificationData)
     }
   }
 })
