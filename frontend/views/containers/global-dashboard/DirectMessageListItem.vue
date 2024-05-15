@@ -27,7 +27,7 @@ export default ({
   computed: {
     dmContent () {
       const msg = this.data.message
-      return this.data.isYou ? `You: ${msg}`: msg
+      return this.data.isYou ? `You: ${msg}` : msg
     }
   },
   methods: {
