@@ -34,20 +34,20 @@ const DMMixin: Object = {
         alert(err.message)
       }
     },
-    async setDMVisibility (chatRoomId: string, visible: boolean) {
+    async setDMVisibility (chatRoomID: string, visible: boolean) {
       try {
         await sbp('gi.actions/identity/setDirectMessageVisibility', {
           contractID: this.ourIdentityContractId,
-          data: { contractID: chatRoomId, visible }
+          data: { contractID: chatRoomID, visible }
         })
       } catch (err) {
         alert(err.message)
       }
     },
-    redirect (chatRoomId: string) {
+    redirect (chatRoomID: string) {
       this.$router.push({
         name: 'GroupChatConversation',
-        params: { chatRoomId }
+        params: { chatRoomID }
       }).catch(logExceptNavigationDuplicated)
     }
   }

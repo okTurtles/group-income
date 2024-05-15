@@ -35,8 +35,8 @@
               v-else-if='isChannelMention(objReplyMessage)'
               :tabindex='objReplyMessage.disabled ? undefined : 0'
               :class='{ "is-disabled": objReplyMessage.disabled }'
-              @click='navigateToChatroom(objReplyMessage)'
-              @keyup.enter='navigateToChatroom(objReplyMessage)'
+              @click='navigateToChatRoom(objReplyMessage)'
+              @keyup.enter='navigateToChatRoom(objReplyMessage)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
@@ -63,8 +63,8 @@
               v-else-if='isChannelMention(objText)'
               :tabindex='objText.disabled ? undefined : 0'
               :class='{ "is-disabled": objText.disabled }'
-              @click='navigateToChatroom(objText)'
-              @keyup.enter='navigateToChatroom(objText)'
+              @click='navigateToChatRoom(objText)'
+              @keyup.enter='navigateToChatRoom(objText)'
             )
               i(:class='"icon-" + objText.icon')
               span {{ objText.text }}
@@ -287,8 +287,8 @@ export default ({
             text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
           })
           const genChannelMentionObj = (text) => {
-            const chatroomId = text.slice(1)
-            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatroomId)
+            const chatRoomID = text.slice(1)
+            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
             return found
               ? {
@@ -296,7 +296,7 @@ export default ({
                   text: found.name,
                   icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
                   disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
-                  chatroomId: found.id
+                  chatRoomID: found.id
                 }
               : genDefaultTextObj(text)
           }
@@ -322,13 +322,11 @@ export default ({
             : genDefaultTextObj(t)
         })
     },
-    navigateToChatroom (obj) {
-      if (obj.disabled ||
-      obj.chatroomId === this.$route.params?.chatRoomId) { return }
-
+    navigateToChatRoom (obj) {
+      if (obj.disabled || obj.chatRoomID === this.$route.params?.chatRoomID) { return }
       this.$router.push({
         name: 'GroupChatConversation',
-        params: { chatRoomId: obj.chatroomId }
+        params: { chatRoomID: obj.chatRoomID }
       })
     },
     longPressHandler (e) {
