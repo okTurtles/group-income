@@ -6,6 +6,9 @@
 /* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". You can {a_}report the error{_a}.";
 
+/* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"(Votes Hidden)" = "(Votes Hidden)";
+
 /* views/containers/chatroom/MessageBase.vue */
 "(edited)" = "(edited)";
 
@@ -304,10 +307,13 @@
 "Are you sure you want to cancel this proposal?" = "Are you sure you want to cancel this proposal?";
 
 /* views/containers/chatroom/ChatMain.vue */
-"Are you sure you want to delete this file permanently?{filePreview}" = "Are you sure you want to delete this file permanently?{filePreview}";
+"Are you sure you want to delete this file permanently?" = "Are you sure you want to delete this file permanently?";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Are you sure you want to delete this group?" = "Are you sure you want to delete this group?";
+
+/* views/containers/chatroom/ChatMain.vue */
+"Are you sure you want to delete this message and it's file attachments permanently?" = "Are you sure you want to delete this message and it's file attachments permanently?";
 
 /* views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to delete this message permanently?" = "Are you sure you want to delete this message permanently?";
@@ -706,7 +712,7 @@
 "Do you make at least {groupMincomeFormatted} per month?" = "Do you make at least {groupMincomeFormatted} per month?";
 
 /* controller/actions/identity.js */
-"Do you want to log out? Error details: {err}." = "Do you want to log out? Error details: {err}.";
+"Do you want to log out? {br_}Error details: {err}." = "Do you want to log out? {br_}Error details: {err}.";
 
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Does not match" = "Does not match";
@@ -1101,6 +1107,9 @@
 /* views/containers/contributions/ContributionItem.vue, views/containers/proposals/ProposalItem.vue */
 "Hide" = "Hide";
 
+/* views/containers/chatroom/CreatePoll.vue */
+"Hide who voted" = "Hide who voted";
+
 /* views/containers/contributions/IncomeDetails.vue */
 "How much do you want to pledge?" = "How much do you want to pledge?";
 
@@ -1383,6 +1392,9 @@
 /* views/containers/proposals/DistributionDate.vue */
 "New distribution date" = "New distribution date";
 
+/* model/contracts/chatroom.js */
+"New message" = "New message";
+
 /* views/containers/proposals/Mincome.vue */
 "New minimum income" = "New minimum income";
 
@@ -1461,6 +1473,9 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Not used yet" = "Not used yet";
 
+/* views/containers/chatroom/CreatePoll.vue */
+"Note: it is possible for a group member to \"hack\" the app to figure out who voted on what." = "Note: it is possible for a group member to \"hack\" the app to figure out who voted on what.";
+
 /* views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
 
@@ -1509,11 +1524,23 @@
 /* model/contracts/group.js */
 "Only group creator can update distribution date." = "Only group creator can update distribution date.";
 
+/* model/contracts/chatroom.js */
+"Only the channel creator can change description." = "Only the channel creator can change description.";
+
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
 
+/* model/contracts/chatroom.js */
+"Only the channel creator can rename." = "Only the channel creator can rename.";
+
+/* model/contracts/chatroom.js */
+"Only the group creator and the person who sent the message can delete it." = "Only the group creator and the person who sent the message can delete it.";
+
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Only the group creator can remove members.";
+
+/* model/contracts/chatroom.js */
+"Only the person who sent the message can delete it." = "Only the person who sent the message can delete it.";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Oops, you entered a negative number" = "Oops, you entered a negative number";

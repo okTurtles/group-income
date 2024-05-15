@@ -14,7 +14,6 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from './constants.js'
 import { humanDate } from './time.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
 // !! IMPORTANT !!
@@ -159,25 +158,18 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function leaveChatRoom ({ contractID }: {
-  contractID: string
-}) {
+export function leaveChatRoom (contractID: string) {
+  if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
+    return
+  }
   const rootState = sbp('state/vuex/state')
   const rootGetters = sbp('state/vuex/getters')
   if (contractID === rootGetters.currentChatRoomId) {
-    sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-      groupId: rootState.currentGroupId
-    })
-    const curRouteName = sbp('controller/router').history.current.name
-    if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      await sbp('controller/router')
-        .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
-        .catch(logExceptNavigationDuplicated)
-    }
+    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: rootState.currentGroupId })
   }
 
-  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
-  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomID: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
   // contract (for DMs).

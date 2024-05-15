@@ -71,7 +71,7 @@
 
         .helper(tag='p') {{ privacyLevelDescription }}
 
-      banner-scoped(ref='formMsg')
+      banner-scoped(ref='formMsg' :allowA='true')
 
       .buttons
         i18n.button.is-outlined(@click='close') Cancel
@@ -193,10 +193,12 @@ export default ({
             }
           }
         })
+        this.close()
       } catch (e) {
-        this.$refs.formMsg.danger(L('Failed to create chat channel. {reportError}', LError(e)))
+        this.$refs.formMsg.danger(
+          e?.message ? e.message : L('Failed to create chat channel. {reportError}', LError(e))
+        )
       }
-      this.close()
     },
     toggleChannelPrivate (e) {
       this.form.private = e.target.checked
@@ -236,11 +238,7 @@ export default ({
   watch: {
     'form.name' (newVal, oldVal) {
       if (newVal.length) {
-        if (newVal === `${oldVal} `) {
-          this.form.name = `${oldVal}-`
-        } else {
-          this.form.name = newVal.toLowerCase()
-        }
+        this.form.name = newVal.replaceAll(/\s/g, '-').toLowerCase()
       }
     }
   }

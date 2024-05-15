@@ -41,9 +41,9 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{chatRoomId, partners, lastJoinedPartner, title, picture} in filteredRecents'
+          v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
           @click='onAddSelection(partners)'
-          :key='chatRoomId'
+          :key='chatRoomID'
         )
           profile-card(
             :contractID='lastJoinedPartner'
@@ -130,22 +130,22 @@ export default ({
           if (userID === this.ourIdentityContractId) {
             return false
           }
-          const chatRoomId = this.ourGroupDirectMessageFromUserIds(userID)
-          return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
+          const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
+          return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
         .map(userID => this.currentGroupContactProfilesById[userID])
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
-        .filter(chatRoomId => {
-          return this.ourGroupDirectMessages[chatRoomId].visible &&
-            // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new partner made direct message with me
+        .filter(chatRoomID => {
+          return this.ourGroupDirectMessages[chatRoomID].visible &&
+            // NOTE: this.ourUnreadMessages[chatRoomID] could be undefined just after new partner made direct message with me
             // it's when the identity contract is updated, but chatroom contract is not fully synced yet
-            this.ourUnreadMessages[chatRoomId]
-        }).map(chatRoomId => {
-          const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomId]
-          const lastMessageDate = this.ourUnreadMessages[chatRoomId].readUntil?.createdDate
-          return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDate }
+            this.ourUnreadMessages[chatRoomID]
+        }).map(chatRoomID => {
+          const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomID]
+          const lastMessageDate = this.ourUnreadMessages[chatRoomID].readUntil?.createdDate
+          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMessageDate }
         })
         .sort((former, latter) => {
           if (former.lastMessageDate > latter.lastMessageDate) {
@@ -204,15 +204,15 @@ export default ({
     },
     async onSubmit () {
       if (this.selections.length) {
-        const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.selections)
-        if (chatRoomId) {
-          this.redirect(chatRoomId)
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.selections)
+        if (chatRoomID) {
+          this.redirect(chatRoomID)
         } else {
           await this.createDirectMessage(this.selections)
         }
       } else if (this.searchText) {
         if (this.filteredRecents.length) {
-          this.redirect(this.filteredRecents[0].chatRoomId)
+          this.redirect(this.filteredRecents[0].chatRoomID)
         } else if (this.filteredOthers.length) {
           await this.createDirectMessage(this.filteredOthers[0].contractID)
         }

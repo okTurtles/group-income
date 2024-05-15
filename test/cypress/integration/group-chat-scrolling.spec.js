@@ -1,7 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
 const groupName = 'Dreamers'
-const additionalChannelName = 'Bulgaria Hackathon'
+const additionalChannelName = 'bulgaria-hackathon'
 const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
