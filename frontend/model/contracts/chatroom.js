@@ -163,15 +163,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID }) {
-        const chatroomUnread = sbp('state/vuex/state').chatroom?.chatRoomUnread
-        if (!chatroomUnread) {
-          console.warn('[gi.contracts/chatroom] rootState.chatroom?.chatRoomUnread is not an object')
-          return
-        }
-        Vue.set(chatroomUnread, contractID, {
-          readUntil: undefined,
-          messages: []
-        })
+        sbp('gi.actions/identity/addChatRoomLog', contractID)
       }
     },
     'gi.contracts/chatroom/join': {
