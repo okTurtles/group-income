@@ -203,24 +203,6 @@ const mutations = {
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
-    if (state.chatRoomUnread[chatRoomId].readUntil) {
-      Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
-    }
-  },
-  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, type }) {
-    state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
-  },
-  deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
-    Vue.set(
-      state.chatRoomUnread[chatRoomId],
-      'messages',
-      state.chatRoomUnread[chatRoomId].messages.filter(m => m.messageHash !== messageHash)
-    )
-  },
-  deleteChatRoomUnread (state, { chatRoomId }) {
-    Vue.delete(state.chatRoomUnread, chatRoomId)
-  },
   setChatroomNotificationSettings (state, { chatRoomId, settings }) {
     if (chatRoomId) {
       if (!state.chatNotificationSettings[chatRoomId]) {

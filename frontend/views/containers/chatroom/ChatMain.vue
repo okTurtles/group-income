@@ -628,7 +628,7 @@ export default ({
         contractID,
         data: {
           hash: message.hash,
-          createdDate: message.datetime,
+          createdHeight: message.height,
           text: newMessage
         }
       }).catch((e) => {

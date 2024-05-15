@@ -10,7 +10,7 @@ import { has, omit } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT, CHATROOM_LOGS } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -770,23 +770,27 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
-  'gi.actions/identity/loadChatRoomLogs': async () => {
-    const rootGetters = sbp('state/vuex/getters')
-    const { ourIdentityContractId } = rootGetters
-    const { chatRoomLogs } = sbp('state/vuex/state').chatroom
+  'gi.actions/identity/loadChatRoomLogs': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
+      const rootGetters = sbp('state/vuex/getters')
+      const { ourIdentityContractId } = rootGetters
+      const { chatRoomLogs } = sbp('state/vuex/state').chatroom
 
-    if (chatRoomLogs) {
-      return cloneDeep(chatRoomLogs)
-    }
-    return await sbp('chelonia/kv/get', ourIdentityContractId, 'chatRoomLogs')?.data || {}
+      if (chatRoomLogs) {
+        return cloneDeep(chatRoomLogs)
+      }
+      return await sbp('chelonia/kv/get', ourIdentityContractId, 'chatRoomLogs')?.data || {}
+    })
   },
   'gi.actions/identity/saveChatRoomLogs': (contractID: string, newLogs: Object) => {
-    const rootGetters = sbp('state/vuex/getters')
-    const { ourIdentityContractId } = rootGetters
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
+      const rootGetters = sbp('state/vuex/getters')
+      const { ourIdentityContractId } = rootGetters
 
-    return sbp('chelonia/kv/set', ourIdentityContractId, 'chatRoomLogs', newLogs, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk')
+      return sbp('chelonia/kv/set', ourIdentityContractId, 'chatRoomLogs', newLogs, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk')
+      })
     })
   },
   'gi.actions/identity/setChatRoomReadUntil': async ({ contractID, messageHash, createdHeight }: {
@@ -826,10 +830,11 @@ export default (sbp('sbp/selectors/register', {
   }) => {
     const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-    const exUnreadMessages = currentChatRoomLogs[contractID].unreadMessages
-    currentChatRoomLogs[contractID].unreadMessages = exUnreadMessages.filter(msg => msg.messageHash !== messageHash)
-
-    return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+    const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash !== messageHash)
+    if (index >= 0) {
+      currentChatRoomLogs[contractID].unreadMessages.splice(index, 1)
+      return sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+    }
   },
   'gi.actions/identity/deleteChatRoomLog': async ({ contractID }: { contractID: string }) => {
     const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
