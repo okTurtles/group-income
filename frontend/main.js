@@ -20,6 +20,7 @@ import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/service-worker.js'
 // import '~/shared/domains/chelonia/persistent-actions.js'
+import { serializer, deserializer } from '~/shared/serdes/index.js'
 import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -43,6 +44,7 @@ import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import { showNavMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import { has } from '@model/contracts/shared/giLodash.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
 const { Vue, L } = Common
 
@@ -56,6 +58,8 @@ Vue.config.errorHandler = function (err, vm, info) {
   // Fix for https://github.com/okTurtles/group-income/issues/684
   if (process.env.CI) throw err
 }
+
+deserializer.register(Secret)
 
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
@@ -131,10 +135,11 @@ async function startApp () {
       messageChannel.port1.addEventListener('message', (event) => {
         console.error('@@@RECEIVED', event)
         if (event.data && Array.isArray(event.data)) {
+          const r = deserializer(event.data[1])
           if (event.data[0] === true) {
-            resolve(event.data[1])
+            resolve(r)
           } else {
-            reject(event.data[1])
+            reject(r)
           }
           messageChannel.port1.close()
         }
@@ -147,7 +152,7 @@ async function startApp () {
       navigator.serviceWorker.controller.postMessage({
         type: 'sbp',
         port: messageChannel.port2,
-        data: args
+        data: serializer(args)
       }, [messageChannel.port2])
     })
   }

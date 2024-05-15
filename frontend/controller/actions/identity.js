@@ -197,7 +197,7 @@ export default (sbp('sbp/selectors/register', {
                 finalPicture = await imageUpload(picture, { billableContractID: userID })
               } catch (e) {
                 console.error('actions/identity.js picture upload error:', e)
-                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
+                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }), { cause: e })
               }
             }
           }
@@ -217,7 +217,7 @@ export default (sbp('sbp/selectors/register', {
       )
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
+      throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)), { cause: e })
     } finally {
       // And remove transient keys, which require a user password
       await sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
@@ -228,6 +228,24 @@ export default (sbp('sbp/selectors/register', {
     transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k), transient: true }))
 
     await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
+
+    try {
+      if (!state) {
+        // Make sure we don't unsubscribe from our own identity contract
+        // Note that this should be done _after_ calling
+        // `chelonia/storeSecretKeys`: If the following line results in
+        // syncing the identity contract and fetching events, the secret keys
+        // for processing them will not be available otherwise.
+        await sbp('chelonia/contract/retain', identityContractID)
+      } else {
+        // If there is a state, we've already retained the identity contract
+        // but might need to fetch the latest events
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+      }
+    } catch (e) {
+      console.error('Error during login contract sync', e)
+      throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
+    }
 
     try {
       const contractIDs = Object.create(null)
@@ -315,7 +333,6 @@ export default (sbp('sbp/selectors/register', {
                 encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
               }).catch((e) => {
                 console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
-                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
               })
           ))
         )
@@ -351,7 +368,7 @@ export default (sbp('sbp/selectors/register', {
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })
-      throw new GIErrorUIRuntimeError(humanErr)
+      throw new GIErrorUIRuntimeError(humanErr, { cause: e })
     }
   },
   'gi.actions/identity/logout': async function () {

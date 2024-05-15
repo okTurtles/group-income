@@ -21,17 +21,10 @@ import '@sbp/okturtles.data'
 import '../namespace.js'
 import '../actions/index.js'
 import '../../views/utils/avatar.js'
+import { serializer, deserializer } from '~/shared/serdes/index.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
-// TODO: Temporary serializer. Ideally, we'd use a lightweight implementation
-// that gives out objects that can be passed around as messages that
-// structuredClone supports
-function serializer (x: any) {
-  if (x === undefined) return x
-  // This coerces types into types that can be passed using structuredClone
-  // However, it also destroys information about the types, which means that
-  // things like 'Set', which are supported by structuredClone, no longer work
-  return JSON.parse(JSON.stringify(x))
-}
+deserializer.register(Secret)
 
 sbp('sbp/filters/global/add', (domain, selector, data) => {
   // if (domainBlacklist[domain] || selectorBlacklist[selector]) return
@@ -287,11 +280,11 @@ self.addEventListener('message', function (event) {
         break
       case 'sbp': {
         console.error('@@@@[sw] sbp', event)
-        const port = event.data.port
-        Promise.resolve(sbp(...event.data.data)).then((r) => {
+        const port = event.data.port;
+        (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           port.postMessage([true, serializer(r)])
         }).catch((e) => {
-          port.postMessage([false, e])
+          port.postMessage([false, serializer(e)])
         })
         break
       }

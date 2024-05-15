@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { deserializer } from '~/shared/serdes/index.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
@@ -35,7 +36,7 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'event': {
-              sbp('okTurtles.events/emit', event.data.subtype, ...event.data.data)
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }
             default:

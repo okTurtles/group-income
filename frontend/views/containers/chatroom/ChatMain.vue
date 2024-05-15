@@ -1085,7 +1085,7 @@ export default ({
             this.listenChatRoomActions(chatRoomId)
           }
         }).catch(e => {
-          console.error('ChatMain infiniteHandler() error:', e)
+          console.error('ChatMain infiniteHandler() error:', e, e?.stack)
         })
       })
     },
