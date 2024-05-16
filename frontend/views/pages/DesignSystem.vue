@@ -149,7 +149,7 @@ page(
     section.card
       h2.is-title-2.card-header Icons
       p
-        | This is only the currently used icons (at _icons.scss). A complete list can be find here:&nbsp;
+        | This is only the currently used icons at (_icons.scss). A complete list can be find here:&nbsp;
         br
         a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank') fortawesome 5 solid
         |  or&nbsp;
