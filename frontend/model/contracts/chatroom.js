@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, optional, number, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -204,14 +204,14 @@ sbp('chelonia/defineContract', {
         if (state.onlyRenderMessage) return
 
         sbp('chelonia/queueInvocation', contractID, () => {
+          const rootGetters = sbp('state/vuex/getters')
           const state = sbp('state/vuex/state')[contractID]
+          const loggedIn = sbp('state/vuex/state').loggedIn
+          const memberID = data.memberID || innerSigningContractID
+
           if (!state?.members?.[memberID]) {
             return
           }
-
-          const rootGetters = sbp('state/vuex/getters')
-          const loggedIn = sbp('state/vuex/state').loggedIn
-          const memberID = data.memberID || innerSigningContractID
 
           if (memberID === loggedIn.identityContractID) {
             sbp('gi.actions/identity/setChatRoomReadUntil', {

@@ -947,7 +947,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Wait for any pending operations (e.g., sync) to finish
       await sbp('chelonia/queueInvocation', contractID, async () => {
-        const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
+        const current = (await sbp('chelonia/kv/get', contractID, 'lastLoggedIn'))?.data || {}
         current[userID] = now
         await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
           encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),

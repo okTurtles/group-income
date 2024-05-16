@@ -107,32 +107,29 @@ const getters = {
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
   },
-  ourUnreadMessages (state, getters) {
-    return state.chatRoomUnread
-  },
   currentChatRoomReadUntil (state, getters) {
     // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
+    return getters.ourChatRoomLogs[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
   chatRoomUnreadMessages (state, getters) {
     return (chatRoomId: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return getters.ourUnreadMessages[chatRoomId]?.messages || []
+      return getters.ourChatRoomLogs[chatRoomId]?.unreadMessages || []
     }
   },
   chatRoomUnreadMentions (state, getters) {
     return (chatRoomId: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return (getters.ourUnreadMessages[chatRoomId]?.messages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
+      return (getters.ourChatRoomLogs[chatRoomId]?.unreadMessages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
     }
   },
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)
       const isGroupChatroom = cID => Object.keys(state[groupID]?.chatRooms || {}).includes(cID)
-      return Object.keys(getters.ourUnreadMessages)
+      return Object.keys(getters.ourChatRoomLogs)
         .filter(cID => isGroupDirectMessage(cID) || isGroupChatroom(cID))
-        .map(cID => getters.ourUnreadMessages[cID].messages.length)
+        .map(cID => getters.ourChatRoomLogs[cID].unreadMessages.length)
         .reduce((sum, n) => sum + n, 0)
     }
   },
@@ -196,6 +193,9 @@ const mutations = {
     } else { // reset
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
     }
+  },
+  setChatRoomLogs (state, newLogs) {
+    Vue.set(state, 'chatRoomLogs', newLogs)
   },
   setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)

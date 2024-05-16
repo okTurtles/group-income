@@ -129,7 +129,9 @@ async function startApp () {
           'chelonia/contract/disconnect',
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
-          'chelonia/contract/hasKeysToPerformOperation'
+          'chelonia/contract/hasKeysToPerformOperation',
+          'gi.actions/identity/addChatRoomLog', 'gi.actions/identity/setChatRoomReadUntil', 'gi.actions/identity/deleteChatRoomReadUntil',
+          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/deleteChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -244,7 +246,7 @@ async function startApp () {
           if (key === 'lastLoggedIn' && value) {
             Vue.set(rootState.lastLoggedIn, contractID, value)
           } else if (key === 'chatRoomLogs' && value) {
-            Vue.set(rootState.chatroom, 'chatRoomLogs', value)
+            sbp('state/vuex/commit', 'setChatRoomLogs', value)
           }
         }
       }
@@ -402,12 +404,12 @@ async function startApp () {
       })
     },
     computed: {
-      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters(['groupsByName', 'ourChatRoomLogs', 'totalUnreadNotificationCount']),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
-        return Object.keys(this.ourUnreadMessages)
+        return Object.keys(this.ourChatRoomLogs)
           // TODO: need to remove the '|| []' after we release 0.2.*
-          .map(cId => (this.ourUnreadMessages[cId].messages || []).length)
+          .map(cId => (this.ourChatRoomLogs[cId].unreadMessages || []).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {
