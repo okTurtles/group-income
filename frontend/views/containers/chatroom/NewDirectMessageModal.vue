@@ -119,7 +119,7 @@ export default ({
       'usernameFromID',
       'ourContactProfilesById',
       'ourIdentityContractId',
-      'ourUnreadMessages',
+      'ourChatRoomLogs',
       'currentGroupContactProfilesById'
     ]),
     ourNewDMContacts () {
@@ -139,12 +139,12 @@ export default ({
       return Object.keys(this.ourGroupDirectMessages)
         .filter(chatRoomId => {
           return this.ourGroupDirectMessages[chatRoomId].visible &&
-            // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new partner made direct message with me
+            // NOTE: this.ourChatRoomLogs[chatRoomId] could be undefined just after new partner made direct message with me
             // it's when the identity contract is updated, but chatroom contract is not fully synced yet
-            this.ourUnreadMessages[chatRoomId]
+            this.ourChatRoomLogs[chatRoomId]
         }).map(chatRoomId => {
           const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomId]
-          const lastMessageDate = this.ourUnreadMessages[chatRoomId].readUntil?.createdDate
+          const lastMessageDate = this.ourChatRoomLogs[chatRoomId].readUntil?.createdDate
           return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDate }
         })
         .sort((former, latter) => {

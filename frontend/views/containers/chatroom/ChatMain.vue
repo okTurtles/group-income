@@ -187,13 +187,10 @@ const onChatScroll = function () {
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
     const height = this.$refs[msg.hash][0].$el.clientHeight
     if (offsetTop + height <= curScrollBottom) {
-      const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-      const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
-      if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
-        this.updateUnreadMessageHash({
-          messageHash: msg.hash,
-          createdHeight: msg.height
-        })
+      const bottomMessageCreatedHeight = msg.height
+      const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
+      if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
+        this.updateUnreadMessageHash({ messageHash: msg.hash, createdHeight: msg.height })
       }
       break
     }
@@ -885,10 +882,7 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        const checkByDate = (msg) => {
-          return new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime()
-        }
-        const index = this.messages.findIndex(msg => checkByDate(msg))
+        const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
         if (index >= 0) {
           // NOTE: When the user switches channel before the message is not fully processed,
           //       (in other words, until this.variant(msg) === 'sent')
@@ -910,7 +904,7 @@ export default ({
       const chatRoomId = this.renderingChatRoomId
       if (chatRoomId && this.isJoinedChatRoom(chatRoomId)) {
         sbp('gi.actions/identity/setChatRoomReadUntil', {
-          contractID: chatRoomId, messageHash: hash, createdHeight
+          contractID: chatRoomId, messageHash, createdHeight
         })
       }
     },
