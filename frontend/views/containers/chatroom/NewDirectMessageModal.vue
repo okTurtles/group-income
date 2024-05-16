@@ -119,7 +119,6 @@ export default ({
       'usernameFromID',
       'ourContactProfilesById',
       'ourIdentityContractId',
-      'ourChatRoomLogs',
       'currentGroupContactProfilesById'
     ]),
     ourNewDMContacts () {
@@ -137,20 +136,15 @@ export default ({
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
-        .filter(chatRoomId => {
-          return this.ourGroupDirectMessages[chatRoomId].visible &&
-            // NOTE: this.ourChatRoomLogs[chatRoomId] could be undefined just after new partner made direct message with me
-            // it's when the identity contract is updated, but chatroom contract is not fully synced yet
-            this.ourChatRoomLogs[chatRoomId]
-        }).map(chatRoomId => {
-          const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomId]
-          const lastMessageDate = this.ourChatRoomLogs[chatRoomId].readUntil?.createdDate
-          return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDate }
+        .filter(chatRoomId => this.ourGroupDirectMessages[chatRoomId].visible)
+        .map(chatRoomId => {
+          const { title, partners, lastJoinedPartner, picture, lastMessageDateInTimeStamp } = this.ourGroupDirectMessages[chatRoomId]
+          return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDateInTimeStamp }
         })
         .sort((former, latter) => {
-          if (former.lastMessageDate > latter.lastMessageDate) {
+          if (former.lastMessageDateInTimeStamp < latter.lastMessageDateInTimeStamp) {
             return -1
-          } else if (former.lastMessageDate < latter.lastMessageDate) {
+          } else if (former.lastMessageDateInTimeStamp < latter.lastMessageDateInTimeStamp) {
             return 1
           }
           return former.title > latter.title ? 1 : -1

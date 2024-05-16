@@ -10,7 +10,6 @@ const defaultState = {
   // NOTE: chatRoomLogs format
   // [chatRoomId]: { readUntil: { messageHash, createdHeight, deletedHeight? }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
   chatRoomLogs: null,
-  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {} // { [chatRoomId]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 
@@ -59,6 +58,10 @@ const getters = {
           //       His profile picture can be used as the picture of the direct message
           //       possibly with the badge of the number of partners.
           const lastJoinedPartner = partners[partners.length - 1]
+          const lastMessageDateInTimeStamp = chatRoomState.messages?.length > 0
+            ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
+            : 0
+
           currentGroupDirectMessages[chatRoomId] = {
             ...directMessageSettings,
             members,
@@ -69,6 +72,7 @@ const getters = {
             // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
             // users (e.g., 'user1' changing their display name to 'user2')
             title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+            lastMessageDateInTimeStamp,
             picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture
           }
         }

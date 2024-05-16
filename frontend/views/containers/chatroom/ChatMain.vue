@@ -190,7 +190,10 @@ const onChatScroll = function () {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
       if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
-        this.updateUnreadMessageHash({ messageHash: msg.hash, createdHeight: msg.height })
+        this.updateUnreadMessageHash({
+          messageHash: msg.hash,
+          createdHeight: msg.height
+        })
       }
       break
     }
