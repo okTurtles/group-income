@@ -1311,6 +1311,7 @@ sbp('chelonia/defineContract', {
         )
       })),
       process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
+        console.log(`!@# here!!! - aaaa, contractID: ${contractID}`)
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -1330,6 +1331,7 @@ sbp('chelonia/defineContract', {
           }
         }
         if (data.incomeDetailsType) {
+          console.log('!@# here!!! - bbbb')
           // someone updated their income details, create a snapshot of the haveNeeds
           Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
           updateCurrentDistribution({ contractID, meta, state, getters })
@@ -1697,14 +1699,11 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
       // NOTE: When group's mincome has changed, below actions should be taken.
-      // - When mincome has increased then,
-      //   1) emit 'MINCOME_CHANGED' in-app notification to both receiving/pledging members
-      //   2) display the 'Mincome changed' prompt immediately to both members too.
-      // - When mincome has decreased and the changed mincome is below the monthly income of a receiving member then,
+      // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.
+      // - When mincome has decreased, and the changed mincome is below the monthly income of a receiving member, then
       //   1) automatically switch that user to a 'pledging' member with 0 contribution,
-      //   2) and send 'MINCOME_CHANGED' notification.
-      //   3) display the prompt message notifying them of this automatic change.
-
+      //   2) pop out the prompt message notifying them of this automatic change,
+      //   3) and send 'MINCOME_CHANGED' notification.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
 
       if (isActionYoungerThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
@@ -1726,6 +1725,15 @@ sbp('chelonia/defineContract', {
               pledgeAmount: 0
             }
           })
+
+          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
+            contractID,
+            data: {
+              amount: data.toAmount,
+              memberType,
+              increased: mincomeIncreased
+            }
+          })
         }
 
         await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
@@ -1734,18 +1742,6 @@ sbp('chelonia/defineContract', {
           to: data.toAmount,
           memberType,
           increased: mincomeIncreased
-        })
-
-        // At the same time the 'MINCOME_CHANGED' in-app notification is emitted,
-        // display the prompt pop-up informing its change.
-        // (reference: https://github.com/okTurtles/group-income/issues/1973)
-        sbp('gi.actions/group/displayMincomeChangedPrompt', {
-          contractID,
-          data: {
-            amount: data.toAmount,
-            memberType,
-            increased: mincomeIncreased
-          }
         })
       }
     },
