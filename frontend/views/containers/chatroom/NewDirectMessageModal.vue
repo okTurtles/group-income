@@ -41,9 +41,9 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{chatRoomId, partners, lastJoinedPartner, title, picture} in filteredRecents'
+          v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
           @click='onAddSelection(partners)'
-          :key='chatRoomId'
+          :key='chatRoomID'
         )
           profile-card(
             :contractID='lastJoinedPartner'
@@ -129,20 +129,20 @@ export default ({
           if (userID === this.ourIdentityContractId) {
             return false
           }
-          const chatRoomId = this.ourGroupDirectMessageFromUserIds(userID)
-          return !chatRoomId || !this.ourGroupDirectMessages[chatRoomId].visible
+          const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
+          return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
         .map(userID => this.currentGroupContactProfilesById[userID])
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
-        .filter(chatRoomId => this.ourGroupDirectMessages[chatRoomId].visible)
-        .map(chatRoomId => {
-          const { title, partners, lastJoinedPartner, picture, lastMessageDateInTimeStamp } = this.ourGroupDirectMessages[chatRoomId]
-          return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDateInTimeStamp }
+        .filter(chatRoomID => this.ourGroupDirectMessages[chatRoomID].visible)
+        .map(chatRoomID => {
+          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp } = this.ourGroupDirectMessages[chatRoomID]
+          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp }
         })
         .sort((former, latter) => {
-          const diff = former.lastMessageDateInTimeStamp - latter.lastMessageDateInTimeStamp
+          const diff = former.lastMsgTimeStamp - latter.lastMsgTimeStamp
           return diff > 0 ? -1 : (diff < 0 ? 1 : (former.title > latter.title ? 1 : -1))
         })
     },
@@ -194,15 +194,15 @@ export default ({
     },
     async onSubmit () {
       if (this.selections.length) {
-        const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.selections)
-        if (chatRoomId) {
-          this.redirect(chatRoomId)
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.selections)
+        if (chatRoomID) {
+          this.redirect(chatRoomID)
         } else {
           await this.createDirectMessage(this.selections)
         }
       } else if (this.searchText) {
         if (this.filteredRecents.length) {
-          this.redirect(this.filteredRecents[0].chatRoomId)
+          this.redirect(this.filteredRecents[0].chatRoomID)
         } else if (this.filteredOthers.length) {
           await this.createDirectMessage(this.filteredOthers[0].contractID)
         }

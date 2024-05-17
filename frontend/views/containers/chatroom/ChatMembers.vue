@@ -82,10 +82,10 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    buildUrl (chatRoomId) {
+    buildUrl (chatRoomID) {
       return {
         name: 'GroupChatConversation',
-        params: { chatRoomId }
+        params: { chatRoomID }
       }
     },
     onClickNewDirectMessage () {
@@ -96,8 +96,8 @@ export default ({
         this.$emit('new')
       }
     },
-    getUnreadMsgCount (chatRoomId) {
-      return this.chatRoomUnreadMentions(chatRoomId).length
+    getUnreadMsgCount (chatRoomID) {
+      return this.chatRoomUnreadMentions(chatRoomID).length
     },
     limitedUnreadCount (n) {
       const nLimit = 99

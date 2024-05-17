@@ -130,7 +130,8 @@ async function startApp () {
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
           'chelonia/contract/hasKeysToPerformOperation',
-          'gi.actions/identity/addChatRoomLog', 'gi.actions/identity/setChatRoomReadUntil', 'gi.actions/identity/deleteChatRoomReadUntil',
+          'gi.actions/identity/addChatRoomLog', 'gi.actions/identity/deleteChatRoomLog',
+          'gi.actions/identity/setChatRoomReadUntil', 'gi.actions/identity/deleteChatRoomReadUntil',
           'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/deleteChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],

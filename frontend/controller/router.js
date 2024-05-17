@@ -131,13 +131,13 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
-      path: '/group-chat/:chatRoomId',
+      path: '/group-chat/:chatRoomID',
       component: lazyGroupChat,
       name: 'GroupChatConversation',
       meta: { title: L('Loading') },
       /**
        * The weird title `Loading` is used as title until the page is loaded
-       * Chatroom details could be retrieved from the backend using it's id(chatRoomId)
+       * Chatroom details could be retrieved from the backend using it's id(chatRoomID)
        * So until that time, chatroom name is unknown and could display `Loading`
        */
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)

@@ -6,11 +6,11 @@ import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
-  chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
+  chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   // NOTE: chatRoomLogs format
-  // [chatRoomId]: { readUntil: { messageHash, createdHeight, deletedHeight? }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
+  // [chatRoomID]: { readUntil: { messageHash, createdHeight, deletedHeight? }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
   chatRoomLogs: null,
-  chatNotificationSettings: {} // { [chatRoomId]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
+  chatNotificationSettings: {} // { [chatRoomID]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 
 // getters
@@ -35,9 +35,9 @@ const getters = {
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {
       const currentGroupDirectMessages = {}
-      for (const chatRoomId of Object.keys(getters.ourDirectMessages)) {
-        const chatRoomState = rootState[chatRoomId]
-        const directMessageSettings = getters.ourDirectMessages[chatRoomId]
+      for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
+        const chatRoomState = rootState[chatRoomID]
+        const directMessageSettings = getters.ourDirectMessages[chatRoomID]
 
         // NOTE: skip DMs whose chatroom contracts are not synced yet
         if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
@@ -58,11 +58,11 @@ const getters = {
           //       His profile picture can be used as the picture of the direct message
           //       possibly with the badge of the number of partners.
           const lastJoinedPartner = partners[partners.length - 1]
-          const lastMessageDateInTimeStamp = chatRoomState.messages?.length > 0
+          const lastMsgTimeStamp = chatRoomState.messages?.length > 0
             ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
             : 0
 
-          currentGroupDirectMessages[chatRoomId] = {
+          currentGroupDirectMessages[chatRoomID] = {
             ...directMessageSettings,
             members,
             partners,
@@ -72,7 +72,7 @@ const getters = {
             // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
             // users (e.g., 'user1' changing their display name to 'user2')
             title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
-            lastMessageDateInTimeStamp,
+            lastMsgTimeStamp,
             picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture
           }
         }
@@ -92,18 +92,18 @@ const getters = {
         partners = [partners]
       }
       const currentGroupDirectMessages = getters.ourGroupDirectMessages
-      return Object.keys(currentGroupDirectMessages).find(chatRoomId => {
-        const cPartners = currentGroupDirectMessages[chatRoomId].partners
+      return Object.keys(currentGroupDirectMessages).find(chatRoomID => {
+        const cPartners = currentGroupDirectMessages[chatRoomID].partners
         return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
       })
     }
   },
   isDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
-    return chatRoomId => !!getters.ourGroupDirectMessages[chatRoomId || getters.currentChatRoomId]
+    return chatRoomID => !!getters.ourGroupDirectMessages[chatRoomID || getters.currentChatRoomId]
   },
   isJoinedChatRoom (state, getters, rootState) {
-    return (chatRoomId: string, memberID?: string) => !!rootState[chatRoomId]?.members?.[memberID || getters.ourIdentityContractId]
+    return (chatRoomID: string, memberID?: string) => !!rootState[chatRoomID]?.members?.[memberID || getters.ourIdentityContractId]
   },
   currentChatVm (state, getters, rootState) {
     return rootState?.[getters.currentChatRoomId]?._vm || null
@@ -116,15 +116,15 @@ const getters = {
     return getters.ourChatRoomLogs[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
   chatRoomUnreadMessages (state, getters) {
-    return (chatRoomId: string) => {
+    return (chatRoomID: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return getters.ourChatRoomLogs[chatRoomId]?.unreadMessages || []
+      return getters.ourChatRoomLogs[chatRoomID]?.unreadMessages || []
     }
   },
   chatRoomUnreadMentions (state, getters) {
-    return (chatRoomId: string) => {
+    return (chatRoomID: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return (getters.ourChatRoomLogs[chatRoomId]?.unreadMessages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
+      return (getters.ourChatRoomLogs[chatRoomID]?.unreadMessages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
     }
   },
   groupUnreadMessages (state, getters, rootState) {
@@ -138,9 +138,9 @@ const getters = {
     }
   },
   groupIdFromChatRoomId (state, getters, rootState) {
-    return (chatRoomId: string) => Object.keys(rootState.contracts)
+    return (chatRoomID: string) => Object.keys(rootState.contracts)
       .find(cId => rootState.contracts[cId].type === 'gi.contracts/group' &&
-        Object.keys(rootState[cId].chatRooms).includes(chatRoomId))
+        Object.keys(rootState[cId].chatRooms).includes(chatRoomID))
   },
   chatRoomsInDetail (state, getters, rootState) {
     const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
@@ -171,8 +171,8 @@ const getters = {
     )
   },
   getChatroomNameById (state, getters) {
-    return chatroomId => {
-      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatroomId)
+    return chatRoomID => {
+      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatRoomID)
       return found ? found.name : null
     }
   },
@@ -185,35 +185,37 @@ const getters = {
 
 // mutations
 const mutations = {
-  setCurrentChatRoomId (state, { groupId, chatRoomId }) {
+  setCurrentChatRoomId (state, { groupID, chatRoomID }) {
     const rootState = sbp('state/vuex/state')
 
-    if (chatRoomId && groupId && rootState[groupId]) { // useful when initialize when syncing in another device
-      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
-    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
-      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomId)
-    } else if (groupId && rootState[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
-      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, rootState[groupId].generalChatRoomId || null)
-    } else { // reset
+    if (groupID && rootState[groupID]) {
+      if (chatRoomID) {
+        Vue.set(state.currentChatRoomIDs, groupID, chatRoomID)
+      } else {
+        Vue.set(state.currentChatRoomIDs, groupID, rootState[groupID].generalChatRoomId || null)
+      }
+    } else if (chatRoomID) {
+      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomID)
+    } else {
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
     }
   },
   setChatRoomLogs (state, newLogs) {
     Vue.set(state, 'chatRoomLogs', newLogs)
   },
-  setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
-    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)
+  setChatRoomScrollPosition (state, { chatRoomID, messageHash }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomID, messageHash)
   },
-  deleteChatRoomScrollPosition (state, { chatRoomId }) {
-    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  deleteChatRoomScrollPosition (state, { chatRoomID }) {
+    Vue.delete(state.chatRoomScrollPosition, chatRoomID)
   },
-  setChatroomNotificationSettings (state, { chatRoomId, settings }) {
-    if (chatRoomId) {
-      if (!state.chatNotificationSettings[chatRoomId]) {
-        Vue.set(state.chatNotificationSettings, chatRoomId, {})
+  setChatroomNotificationSettings (state, { chatRoomID, settings }) {
+    if (chatRoomID) {
+      if (!state.chatNotificationSettings[chatRoomID]) {
+        Vue.set(state.chatNotificationSettings, chatRoomID, {})
       }
       for (const key in settings) {
-        Vue.set(state.chatNotificationSettings[chatRoomId], key, settings[key])
+        Vue.set(state.chatNotificationSettings[chatRoomID], key, settings[key])
       }
     }
   }
