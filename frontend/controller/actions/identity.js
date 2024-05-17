@@ -21,6 +21,22 @@ import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction } from './utils.js'
 
+const requireToSuccess = async (fnToSuccess) => {
+  if (typeof fnToSuccess !== 'function') {
+    return
+  }
+
+  let failureCount = 0
+  do {
+    try {
+      return await fnToSuccess()
+    } catch (err) {
+      console.log('[requireToSuccess:]', err)
+      failureCount++
+    }
+  } while (failureCount < 10)
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
     const r = randomNonce()
@@ -792,82 +808,94 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/addChatRoomLog': (contractID: string) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-      if (!currentChatRoomLogs[contractID]) {
-        currentChatRoomLogs[contractID] = { readUntil: null, unreadMessages: [] }
-        await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
-      }
+        if (!currentChatRoomLogs[contractID]) {
+          currentChatRoomLogs[contractID] = { readUntil: null, unreadMessages: [] }
+          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+        }
+      })
     })
   },
   'gi.actions/identity/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-      const exReadUntil = currentChatRoomLogs[contractID].readUntil
-      if (exReadUntil === null || exReadUntil.createdHeight < createdHeight) {
-        const exUnreadMessages = currentChatRoomLogs[contractID]?.unreadMessages || []
-        currentChatRoomLogs[contractID] = {
-          readUntil: { messageHash, createdHeight },
-          unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+        const exReadUntil = currentChatRoomLogs[contractID].readUntil
+        if (exReadUntil === null || exReadUntil.createdHeight < createdHeight) {
+          const exUnreadMessages = currentChatRoomLogs[contractID]?.unreadMessages || []
+          currentChatRoomLogs[contractID] = {
+            readUntil: { messageHash, createdHeight },
+            unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+          }
+
+          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
         }
-
-        await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
-      }
+      })
     })
   },
   'gi.actions/identity/deleteChatRoomReadUntil': ({ contractID, deletedHeight }: {
     contractID: string, deletedHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-      if (currentChatRoomLogs[contractID].readUntil.deletedHeight === undefined) {
-        currentChatRoomLogs[contractID].readUntil['deletedHeight'] = deletedHeight
-        await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
-      }
+        if (currentChatRoomLogs[contractID].readUntil.deletedHeight === undefined) {
+          currentChatRoomLogs[contractID].readUntil['deletedHeight'] = deletedHeight
+          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+        }
+      })
     })
   },
   'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, type, createdHeight }: {
     contractID: string, messageHash: string, type: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-      // NOTE: should ignore to add unreadMessages before joining chatroom
-      if (currentChatRoomLogs[contractID].readUntil) {
-        const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
-        if (index < 0) {
-          currentChatRoomLogs[contractID].unreadMessages.push({ messageHash, type, createdHeight })
-          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+        // NOTE: should ignore to add unreadMessages before joining chatroom
+        if (currentChatRoomLogs[contractID].readUntil) {
+          const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+          if (index < 0) {
+            currentChatRoomLogs[contractID].unreadMessages.push({ messageHash, type, createdHeight })
+            await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+          }
         }
-      }
+      })
     })
   },
   'gi.actions/identity/deleteChatRoomUnreadMessage': ({ contractID, messageHash }: {
     contractID: string, messageHash: string
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
 
-      // NOTE: should ignore to delete unreadMessages before joining chatroom
-      if (currentChatRoomLogs[contractID].readUntil) {
-        const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash !== messageHash)
-        if (index >= 0) {
-          currentChatRoomLogs[contractID].unreadMessages.splice(index, 1)
-          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+        // NOTE: should ignore to delete unreadMessages before joining chatroom
+        if (currentChatRoomLogs[contractID].readUntil) {
+          const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash !== messageHash)
+          if (index >= 0) {
+            currentChatRoomLogs[contractID].unreadMessages.splice(index, 1)
+            await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+          }
         }
-      }
+      })
     })
   },
   'gi.actions/identity/deleteChatRoomLog': ({ contractID }: { contractID: string }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, async () => {
-      const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
-      delete currentChatRoomLogs[contractID]
-      await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
+        delete currentChatRoomLogs[contractID]
+        await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
+      })
     })
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),

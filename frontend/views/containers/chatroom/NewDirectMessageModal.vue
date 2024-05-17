@@ -142,12 +142,8 @@ export default ({
           return { chatRoomId, title, partners, lastJoinedPartner, picture, lastMessageDateInTimeStamp }
         })
         .sort((former, latter) => {
-          if (former.lastMessageDateInTimeStamp < latter.lastMessageDateInTimeStamp) {
-            return -1
-          } else if (former.lastMessageDateInTimeStamp < latter.lastMessageDateInTimeStamp) {
-            return 1
-          }
-          return former.title > latter.title ? 1 : -1
+          const diff = former.lastMessageDateInTimeStamp - latter.lastMessageDateInTimeStamp
+          return diff > 0 ? -1 : (diff < 0 ? 1 : (former.title > latter.title ? 1 : -1))
         })
     },
     filteredRecents () {
