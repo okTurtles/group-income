@@ -81,6 +81,28 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           data-test='updateDescription'
           @click='editDescription'
         ) Add description
+    .c-header-shortcuts
+      tooltip(:manual='true' :opacity='1')
+        span.c-pin-wrapper
+          i.icon-thumbtack
+          span 2 Pinned
+        template(slot='tooltip')
+          .card.c-pinned-messages
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
 
   template(#sidebar='{ toggle }')
     chat-nav(:title='L("Chat")')
@@ -107,8 +129,9 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import Page from '@components/Page.vue'
 import Avatar from '@components/Avatar.vue'
+import Page from '@components/Page.vue'
+import Tooltip from '@components/Tooltip.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
@@ -124,8 +147,9 @@ export default ({
     ChatMixin
   ],
   components: {
-    Page,
     Avatar,
+    Page,
+    Tooltip,
     ChatNav,
     ChatMain,
     ConversationsList,
@@ -210,8 +234,8 @@ export default ({
   border-radius: 0.625rem;
 
   @include tablet {
-    height: calc(100% - 3rem);
-    margin-top: 1.5rem;
+    height: calc(100% - 2rem);
+    margin-top: 0.5rem;
     margin-bottom: 1rem;
   }
 
@@ -338,6 +362,35 @@ export default ({
 
   .is-unstyled {
     margin: 0 0.2rem;
+  }
+}
+
+.c-header-shortcuts {
+  padding: 0 0.2rem;
+
+  .c-pin-wrapper {
+    span {
+      margin-left: 0.25rem;
+    }
+  }
+}
+
+.c-pinned-messages {
+  margin: 0;
+  padding: 1rem;
+  max-height: 45rem;
+  max-width: 25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: auto;
+
+  .c-pinned-message {
+    padding: 0.5rem;
+    color: $text_0;
+    border-radius: 0.3rem;
+    background-color: $general_2;
+    cursor: pointer;
   }
 }
 

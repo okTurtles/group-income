@@ -116,7 +116,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
-import Tooltip from '@components/Tooltip.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
@@ -145,7 +144,6 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
-    Tooltip,
     ProfileCard,
     MessageActions,
     MessageReactions,

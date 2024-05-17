@@ -263,7 +263,7 @@ export default ({
   }
 
   &.manual {
-    max-width: auto;
+    max-width: unset;
   }
 
   &.is-dark-theme {

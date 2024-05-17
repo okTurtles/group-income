@@ -215,6 +215,7 @@ page(
               i.icon-sort-down sort-down
               i.icon-star icon-star
               i.icon-strikethrough icon-strikethrough
+              i.icon-thumbtack icon-thumbtack
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
