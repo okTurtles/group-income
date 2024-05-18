@@ -797,16 +797,15 @@ export default ({
           case 'code':
           case 'strikethrough': {
             result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
-            inputEl.value = result.output
-            this.moveCursorTo(result.focusIndex)
             break
           }
           case 'link': {
             result = injectOrStripLink(inputValue, selStart, selEnd)
-            inputEl.value = result.output
-            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
           }
         }
+
+        inputEl.value = result.output
+        this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
       }
     },
     onUserTyping (data) {
@@ -913,6 +912,7 @@ export default ({
     background-color: transparent;
     border: none;
     padding: 0.5rem;
+    padding-bottom: 1.25rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -1154,5 +1154,9 @@ export default ({
   display: block;
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
+}
+
+.c-send-textarea {
+
 }
 </style>

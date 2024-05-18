@@ -48,10 +48,14 @@ export function injectOrStripSpecialChar (
   let segment = str.slice(startIndex, endIndex)
   let before = str.slice(0, startIndex)
   let after = str.slice(endIndex)
+  let focusStart = startIndex, focusEnd = endIndex
   const specialChar = charMap[type]
 
   if (!specialChar) {
-    return { output: str, focusIndex: str.length }
+    return {
+      output: str,
+      focusIndex: { start: focusStart, end: focusEnd }
+    }
   }
 
   if (before.endsWith(specialChar) && after.startsWith(specialChar)) {
@@ -59,18 +63,24 @@ export function injectOrStripSpecialChar (
     const len = specialChar.length
     before = before.slice(0, before.length - len)
     after = after.slice(len)
+
+    focusStart -= len
+    focusEnd -= len * 2
   } else if (segment.startsWith(specialChar) && segment.endsWith(specialChar)) {
     // Stripping condition No 2. - when the selected segment itself contains the special character at both start/end of the string.
     const len = specialChar.length
     segment = segment.slice(len, segment.length - len)
+    focusEnd -= len * 2
   } else {
+    const len = specialChar.length
     // Otherwise, let's wrap the selected segment with the speical character.
     segment = `${specialChar}${segment}${specialChar}`
+    focusEnd += len * 2
   }
 
   const output = before + segment + after
   const focusIndex = (before + segment).length
-  return { output, focusIndex }
+  return { output, focusIndex: { start: focusStart, end: focusEnd } }
 }
 
 export function injectOrStripLink (
