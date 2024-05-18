@@ -48,7 +48,8 @@ export function injectOrStripSpecialChar (
   let segment = str.slice(startIndex, endIndex)
   let before = str.slice(0, startIndex)
   let after = str.slice(endIndex)
-  let focusStart = startIndex, focusEnd = endIndex
+  let focusStart = startIndex
+  let focusEnd = endIndex
   const specialChar = charMap[type]
 
   if (!specialChar) {
@@ -79,7 +80,6 @@ export function injectOrStripSpecialChar (
   }
 
   const output = before + segment + after
-  const focusIndex = (before + segment).length
   return { output, focusIndex: { start: focusStart, end: focusEnd } }
 }
 

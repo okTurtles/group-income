@@ -1155,8 +1155,4 @@ export default ({
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
 }
-
-.c-send-textarea {
-
-}
 </style>
