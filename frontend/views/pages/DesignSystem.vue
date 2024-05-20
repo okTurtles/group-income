@@ -668,7 +668,7 @@ page(
               | tooltip(triggerElementCss='.trigger-target')
               |   i.icon-* Basic
           td
-            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
+            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-right')
               span
                 span.link.trigger-target 5 members
                 | &nbsp;have&nbsp;

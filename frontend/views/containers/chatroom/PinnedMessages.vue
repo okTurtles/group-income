@@ -1,0 +1,95 @@
+<template lang='pug'>
+.card.c-pinned-messages-wrapper
+  template(v-for='(msg, index) in fakeMessageList')
+    .c-pinned-message(:key='msg.hash')
+      .c-pinned-message-header
+        .c-sender-profile
+          profile-card(:contractID='msg.from')
+            avatar-user(:contractID='msg.from' size='xs')
+            .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
+        i.icon-times
+      .c-pinned-message-content
+        span.custom-markdown-content(
+          v-safe-html:a='renderMarkdown(msg.text)'
+        )
+      p.c-pinned-message-footer {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
+
+</template>
+
+<script>
+import { mapGetters } from 'vuex'
+import ProfileCard from '@components/ProfileCard.vue'
+import AvatarUser from '@components/AvatarUser.vue'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.js'
+
+export default ({
+  name: 'PinnedMessage',
+  components: {
+    ProfileCard,
+    AvatarUser
+  },
+  props: {},
+  data () {
+    return {}
+  },
+  computed: {
+    ...mapGetters(['ourIdentityContractId', 'chatRoomLatestMessages', 'userDisplayNameFromID']),
+    fakeMessageList () {
+      return this.chatRoomLatestMessages.filter(msg => msg.type === MESSAGE_TYPES.TEXT)
+    }
+  },
+  methods: {
+    humanDate,
+    renderMarkdown
+  }
+}: Object)
+</script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-pinned-messages-wrapper {
+  margin: -0.5rem;
+  padding: 1rem;
+  max-height: 40rem;
+  max-width: 25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: auto;
+
+  .c-pinned-message {
+    padding: 0.5rem;
+    color: $text_0;
+    border-radius: 0.3rem;
+    background-color: $general_2;
+    cursor: pointer;
+
+    .c-pinned-message-header {
+      display: flex;
+      justify-content: space-between;
+
+      .c-sender-profile {
+        max-width: calc(100% - 1rem);
+
+        .c-message-sender-name {
+          // xs avatar size is 1.5rem
+          max-width: calc(100% - 1.5rem);
+          margin-left: 0.25rem;
+        }
+      }
+    }
+
+    .c-pinned-message-content {
+      margin: 0.5rem 0;
+    }
+
+    .c-pinned-message-footer {
+      font-size: 0.7rem;
+      color: $text_1;
+    }
+  }
+}
+</style>

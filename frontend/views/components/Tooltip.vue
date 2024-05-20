@@ -46,7 +46,7 @@ export default ({
     },
     direction: {
       type: String,
-      validator: (value) => ['bottom', 'bottom-end', 'right', 'left', 'top', 'top-left'].includes(value),
+      validator: (value) => ['bottom', 'bottom-left', 'bottom-right', 'right', 'left', 'top', 'top-left'].includes(value),
       default: 'bottom'
     },
     opacity: {
@@ -132,7 +132,11 @@ export default ({
           case 'left':
             x = scrollX + left - spacing - this.tooltipWidth
             break
-          case 'bottom-end':
+          case 'bottom-left':
+            x = scrollX + left
+            y = scrollY + top + height + spacing
+            break
+          case 'bottom-right':
             x = scrollX + left + width - this.tooltipWidth
             y = scrollY + top + height + spacing
             break

@@ -82,27 +82,12 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           @click='editDescription'
         ) Add description
     .c-header-shortcuts
-      tooltip(:manual='true' :opacity='1')
+      tooltip(:manual='true' :opacity='1' direction='bottom-left')
         span.c-pin-wrapper
           i.icon-thumbtack
           span 2 Pinned
         template(slot='tooltip')
-          .card.c-pinned-messages
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdfasdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
-            .c-pinned-message asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf asdfasdf
+          pinned-messages
 
   template(#sidebar='{ toggle }')
     chat-nav(:title='L("Chat")')
@@ -137,6 +122,7 @@ import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import ChatMixin from '@containers/chatroom/ChatMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
@@ -154,6 +140,7 @@ export default ({
     ChatMain,
     ConversationsList,
     ChatMembers,
+    PinnedMessages,
     MenuParent,
     MenuHeader,
     MenuTrigger,
@@ -372,25 +359,6 @@ export default ({
     span {
       margin-left: 0.25rem;
     }
-  }
-}
-
-.c-pinned-messages {
-  margin: 0;
-  padding: 1rem;
-  max-height: 45rem;
-  max-width: 25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow: auto;
-
-  .c-pinned-message {
-    padding: 0.5rem;
-    color: $text_0;
-    border-radius: 0.3rem;
-    background-color: $general_2;
-    cursor: pointer;
   }
 }
 
