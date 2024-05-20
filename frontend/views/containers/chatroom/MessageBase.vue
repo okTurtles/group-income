@@ -380,7 +380,7 @@ export default ({
   }
 
   .c-avatar {
-    margin-right: 0.5rem;
+    max-width: unset;
   }
 
   &:hover {
@@ -417,6 +417,7 @@ export default ({
 .c-message-wrapper {
   display: flex;
   align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .c-avatar {
