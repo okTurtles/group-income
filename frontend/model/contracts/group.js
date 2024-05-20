@@ -1951,7 +1951,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/emitNotificationAfterSyncing': async (contractIDs, notificationName, notificationData) => {
       const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
       for (const id of listOfIds) {
-        await sbp('chelonia/queueInvocation', id, ['chelonia/private/noop'])
+        await sbp('chelonia/contract/wait', id)
       }
 
       sbp('gi.notifications/emit', notificationName, notificationData)
