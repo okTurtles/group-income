@@ -806,6 +806,15 @@ export default ({
 
         inputEl.value = result.output
         this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
+
+        this.$nextTick(() => {
+          // make sure the button is blurred after the text-transformation.
+          // (Github reference: https://github.com/okTurtles/group-income/pull/1999#issuecomment-2119466437)
+          const btnEl = e.target.closest('button.is-icon')
+          if (btnEl) {
+            btnEl.blur()
+          }
+        })
       }
     },
     onUserTyping (data) {
