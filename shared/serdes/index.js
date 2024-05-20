@@ -24,7 +24,8 @@ const rawResult = (obj: Object) => {
 // The `serializer` function prepares data before sending it as a message
 export const serializer = (data: any) => {
   const verbatim: any[] = []
-  return JSON.parse(JSON.stringify(data, (_key: string, value: any) => {
+  const transferables = new Set()
+  const result = JSON.parse(JSON.stringify(data, (_key: string, value: any) => {
     if (value && value[raw]) return value
     if (value === undefined) return rawResult(['_', '_'])
     if (!value) return value
@@ -35,13 +36,19 @@ export const serializer = (data: any) => {
     if (value instanceof Set) {
       return rawResult(['_', 'Set', Array.from(value.entries())])
     }
-    if (value instanceof MessagePort || value instanceof Error || value instanceof Blob || value instanceof File) {
+    if (value instanceof Error || value instanceof Blob || value instanceof File) {
       const pos = verbatim.length
       verbatim[verbatim.length] = value
       return rawResult(['_', '_ref', pos])
     }
+    if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || ArrayBuffer.isView(value) || value instanceof ArrayBuffer) {
+      const pos = verbatim.length
+      verbatim[verbatim.length] = value
+      transferables.add(value)
+      return rawResult(['_', '_ref', pos])
+    }
     const proto = Object.getPrototypeOf(value)
-    if (proto && proto.constructor[serdesTagSymbol] && proto.constructor[serdesSerializeSymbol]) {
+    if (proto?.constructor?.[serdesTagSymbol] && proto.constructor[serdesSerializeSymbol]) {
       return rawResult(['_', '_custom', proto.constructor[serdesTagSymbol], proto.constructor[serdesSerializeSymbol](value)])
     }
     return value
@@ -51,6 +58,11 @@ export const serializer = (data: any) => {
     }
     return value
   })
+
+  return {
+    data: result,
+    transferables: Array.from(transferables)
+  }
 }
 
 // Internal lookup table for registered deserializers

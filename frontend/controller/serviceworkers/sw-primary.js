@@ -170,10 +170,11 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
 
 [CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, JOINED_GROUP, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
+    const { data } = serializer(args)
     const message = {
       type: 'event',
       subtype: et,
-      data: serializer(args)
+      data
     }
     self.clients.matchAll()
       .then((clientList) => {
@@ -282,9 +283,11 @@ self.addEventListener('message', function (event) {
         console.error('@@@@[sw] sbp', event)
         const port = event.data.port;
         (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
-          port.postMessage([true, serializer(r)])
+          const { data, transferables } = serializer(r)
+          port.postMessage([true, data], transferables)
         }).catch((e) => {
-          port.postMessage([false, serializer(e)])
+          const { data, transferables } = serializer(e)
+          port.postMessage([false, data], transferables)
         })
         break
       }

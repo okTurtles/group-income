@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,

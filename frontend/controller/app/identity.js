@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { LOGIN, LOGIN_ERROR } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
@@ -205,7 +205,7 @@ export default (sbp('sbp/selectors/register', {
 
         const promptOptions = {
           heading: L('Login error'),
-          question: L('Do you want to log out? Error details: {err}.', { err: errMessage }),
+          question: L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
           primaryButton: L('No'),
           secondaryButton: L('Yes')
         }

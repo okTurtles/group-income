@@ -149,11 +149,12 @@ async function startApp () {
         messageChannel.port1.close()
       })
       messageChannel.port1.start()
+      const { data, transferables } = serializer(args)
       navigator.serviceWorker.controller.postMessage({
         type: 'sbp',
         port: messageChannel.port2,
-        data: serializer(args)
-      }, [messageChannel.port2])
+        data
+      }, [messageChannel.port2, ...transferables])
     })
   }
 
