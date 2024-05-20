@@ -90,9 +90,8 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           pinned-messages
 
   template(#sidebar='{ toggle }')
-    chat-nav(:title='L("Chat")')
+    chat-nav
       conversations-list(
-        :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
@@ -102,7 +101,6 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
       chat-members(
         action='addDirectMessage'
-        :title='L("Direct Messages")'
         @new='toggle'
         @redirect='toggle'
       )

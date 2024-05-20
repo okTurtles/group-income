@@ -59,7 +59,7 @@ export default ({
   props: {
     title: {
       type: String,
-      default: L('Members')
+      default: L('Direct Messages')
     },
     action: {
       type: String,

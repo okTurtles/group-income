@@ -11,7 +11,8 @@
         span.custom-markdown-content(
           v-safe-html:a='renderMarkdown(msg.text)'
         )
-      p.c-pinned-message-footer {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
+      .c-pinned-message-footer
+        span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 
 </template>
 
@@ -92,6 +93,10 @@ export default ({
     .c-pinned-message-footer {
       font-size: 0.7rem;
       color: $text_1;
+
+      span:hover {
+        text-decoration: underline;
+      }
     }
   }
 }
