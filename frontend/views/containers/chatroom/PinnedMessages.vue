@@ -1,12 +1,11 @@
 <template lang='pug'>
 .card.c-pinned-messages-wrapper
-  template(v-for='(msg, index) in fakeMessageList')
+  template(v-for='(msg, index) in fakeMessages')
     .c-pinned-message(:key='msg.hash')
       .c-pinned-message-header
         .c-sender-profile
-          profile-card(:contractID='msg.from')
-            avatar-user(:contractID='msg.from' size='xs')
-            .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
+          avatar-user(:contractID='msg.from' size='xs')
+          .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
         i.icon-times
       .c-pinned-message-content
         span.custom-markdown-content(
@@ -18,7 +17,6 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.js'
@@ -27,7 +25,6 @@ import { renderMarkdown } from '@view-utils/markdown-utils.js'
 export default ({
   name: 'PinnedMessage',
   components: {
-    ProfileCard,
     AvatarUser
   },
   props: {},
@@ -36,7 +33,7 @@ export default ({
   },
   computed: {
     ...mapGetters(['ourIdentityContractId', 'chatRoomLatestMessages', 'userDisplayNameFromID']),
-    fakeMessageList () {
+    fakeMessages () {
       return this.chatRoomLatestMessages.filter(msg => msg.type === MESSAGE_TYPES.TEXT)
     }
   },
@@ -73,12 +70,18 @@ export default ({
 
       .c-sender-profile {
         max-width: calc(100% - 1rem);
+        display: flex;
+        align-items: center;
 
         .c-message-sender-name {
           // xs avatar size is 1.5rem
           max-width: calc(100% - 1.5rem);
           margin-left: 0.25rem;
         }
+      }
+
+      & > i {
+        margin-right: 0.25rem;
       }
     }
 
