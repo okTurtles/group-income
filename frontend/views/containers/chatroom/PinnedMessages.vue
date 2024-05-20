@@ -6,7 +6,8 @@
         .c-sender-profile
           avatar-user(:contractID='msg.from' size='xs')
           .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
-        i.icon-times
+        tooltip(:text='L("Unpin this message")')
+          i.icon-times
       .c-pinned-message-content
         span.custom-markdown-content(
           v-safe-html:a='renderMarkdown(msg.text)'
@@ -19,6 +20,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
+import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
@@ -26,7 +28,8 @@ import { renderMarkdown } from '@view-utils/markdown-utils.js'
 export default ({
   name: 'PinnedMessage',
   components: {
-    AvatarUser
+    AvatarUser,
+    Tooltip
   },
   props: {},
   data () {
@@ -81,7 +84,7 @@ export default ({
         }
       }
 
-      & > i {
+      i.icon-times {
         margin-right: 0.25rem;
       }
     }
