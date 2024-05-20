@@ -313,7 +313,6 @@ export default ({
       'isDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
-      'currentGroupNotifications',
       'currentChatVm',
       'chatRoomUnreadMentions'
     ]),

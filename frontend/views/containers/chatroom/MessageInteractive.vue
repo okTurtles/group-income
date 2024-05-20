@@ -17,7 +17,7 @@ message-base(v-bind='$props' @wrapperAction='action')
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import {
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -27,6 +27,7 @@ import {
   PROPOSAL_GENERIC,
   PROPOSAL_VARIANTS
 } from '@model/contracts/shared/constants.js'
+import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
@@ -34,55 +35,32 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
 const interactiveMessage = (proposal, baseOptions = {}) => {
-  const options = Object.assign({}, baseOptions)
-  const { proposalType, proposalData, variant } = proposal
-
-  const groupSettingType = proposalData.setting
-  let proposalSettingType
-  if (proposalData.ruleName !== proposalData.current.ruleName) {
-    proposalSettingType = 'votingSystem'
-  } else if (proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
-    proposalSettingType = 'votingRule'
-  }
-
-  if (proposalType === PROPOSAL_GENERIC) {
-    options['title'] = proposalData.name
-  } else if (proposalType === PROPOSAL_GROUP_SETTING_CHANGE) {
-    if (groupSettingType === 'mincomeAmount') {
-      options['setting'] = L('mincome')
-    } else if (groupSettingType === 'distributionDate') {
-      options['setting'] = L('distribution date')
-    }
-  } else if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
-    if (groupSettingType === 'votingSystem') {
-      options['setting'] = L('voting system')
-    } else if (groupSettingType === 'votingRule') {
-      options['setting'] = L('voting rules')
-    }
-  }
+  const { proposalType, variant } = proposal
+  const { options: proposalDetails } = getProposalDetails({ data: proposal })
+  const options = Object.assign(proposalDetails, baseOptions)
 
   const settingChangeMessages = (options) => ({
     [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups {setting}.', options),
     [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups {setting} changed.'),
-    [PROPOSAL_VARIANTS.REJECTED]: L('The group {setting} hasn"t changed.'),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('The group {setting} hasn"t changed.')
+    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to change the {setting} is accepted.', options),
+    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to change the {setting} is rejected.', options),
+    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options)
   })
 
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add new members is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Added members to this group: {to}', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('No members were added.'),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were added.')
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add {member} to the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to add {member} is accepted.', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
     },
     [PROPOSAL_REMOVE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove members from the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove members is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Left {title}', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('No members were removed.'),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were removed.')
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove {member} from the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to remove {member} is accepted.', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: settingChangeMessages(options),
@@ -95,13 +73,13 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     [PROPOSAL_GENERIC]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
       [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('{from}\'s proposal is accepted. "{title}"', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('{from}\'s proposal is rejected. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('{from}\'s proposal is rejected. "{title}"', options)
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} is accepted. "{title}"', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} is rejected. "{title}"', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} is expired. "{title}"', options)
     }
   }
 
-  return get(interactiveMessages, [proposalType, groupSettingType, proposalSettingType, variant].filter(key => !!key))
+  return get(interactiveMessages, [proposalType, options.settingType, variant].filter(key => !!key))
 }
 
 const proposalStatus = (proposal) => {
@@ -145,14 +123,10 @@ export default ({
     }
   },
   computed: {
-    ...mapState(['currentGroupId']),
-    ...mapGetters(['globalProfile']),
+    ...mapGetters(['userDisplayNameFromID']),
     interactiveMessage () {
       const { variant, creator } = this.proposal
-      const creatorProfile = this.globalProfile(creator)
-      const baseOptions = {
-        from: creatorProfile.displayName || creatorProfile.username
-      }
+      const baseOptions = { from: this.userDisplayNameFromID(creator) }
 
       return {
         text: interactiveMessage(this.proposal, baseOptions),
