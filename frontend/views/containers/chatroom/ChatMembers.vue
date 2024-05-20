@@ -5,18 +5,19 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='headerButtonAction'
+      @click='onClickNewDirectMessage'
     )
       i.icon-plus.is-prefix
       i18n New
 
   ul.c-group-list
     list-item(
-      v-for='({partners, title, picture}, chatRoomId) in ourGroupDirectMessages'
+      v-for='({partners, title, picture}, chatRoomID) in ourGroupDirectMessages'
       tag='router-link'
-      :to='buildUrl(chatRoomId)'
-      :data-test='chatRoomId'
-      :key='chatRoomId'
+      :to='buildUrl(chatRoomID)'
+      :data-test='chatRoomID'
+      :key='chatRoomID'
+      @click='$emit("redirect")'
     )
       .profile-wrapper(v-if='partners.length === 1')
         profile-card(:contractID='partners[0]' deactivated)
@@ -31,8 +32,8 @@
 
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='getUnreadMsgCount(chatRoomId)'
-        ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomId))}}
+          v-if='getUnreadMsgCount(chatRoomID)'
+        ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomID))}}
 </template>
 
 <script>
@@ -81,21 +82,22 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    buildUrl (chatRoomId) {
+    buildUrl (chatRoomID) {
       return {
         name: 'GroupChatConversation',
-        params: { chatRoomId }
+        params: { chatRoomID }
       }
     },
-    headerButtonAction () {
+    onClickNewDirectMessage () {
       let modalAction = ''
       if (this.action === 'addDirectMessage') modalAction = 'NewDirectMessageModal'
       if (modalAction) {
         this.openModal(modalAction)
+        this.$emit('new')
       }
     },
-    getUnreadMsgCount (chatRoomId) {
-      return this.chatRoomUnreadMentions(chatRoomId).length
+    getUnreadMsgCount (chatRoomID) {
+      return this.chatRoomUnreadMentions(chatRoomID).length
     },
     limitedUnreadCount (n) {
       const nLimit = 99

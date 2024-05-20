@@ -69,6 +69,10 @@ export default ({
       margin-right: 1.375rem;
     }
   }
+
+  fieldset.field > legend.label {
+    margin: 0 auto 0.5rem auto;
+  }
 }
 
 ::v-deep .c-modal-header {

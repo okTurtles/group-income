@@ -44,11 +44,9 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'ourGroupProfile'
-    ]),
+    ...mapGetters(['globalProfile']),
     profilePicture () {
-      const profile = this.$store.getters.globalProfile(this.contractID)
+      const profile = this.globalProfile(this.contractID)
       return this.picture || (profile && profile.picture)
     },
     pictureURL () {

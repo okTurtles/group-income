@@ -1002,8 +1002,18 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/contract/state': async function (contractID: string) {
-    return await sbp(this.config.stateSelector)[contractID]
+  'chelonia/contract/state': function (contractID: string, height: ?number) {
+    const state = sbp(this.config.stateSelector)[contractID]
+    const stateCopy = state && cloneDeep(state)
+    if (stateCopy?._vm && height != null) {
+      // Remove keys in the future
+      Object.keys(stateCopy._vm.authorizedKeys).forEach(keyId => {
+        if (stateCopy._vm.authorizedKeys[keyId]._notBeforeHeight > height) {
+          delete stateCopy._vm.authorizedKeys[keyId]
+        }
+      })
+    }
+    return stateCopy
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {

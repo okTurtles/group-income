@@ -343,7 +343,22 @@ const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leaving
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
-    ...extraParams
+    ...extraParams,
+    hooks: {
+      onprocessed: () => {
+        const rootState = sbp('state/vuex/state')
+        if (memberID === rootState.loggedIn.identityContractID) {
+          // NOTE: since the gi.contracts/chatroom/leave/sideEffect appends invocation in the queue
+          //       the chatroom contract should be released after the queued invocation
+          //       would be fully executed
+          sbp('chelonia/queueInvocation', chatRoomID, () => {
+            sbp('chelonia/contract/release', chatRoomID).catch(e => {
+              console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
+            })
+          })
+        }
+      }
+    }
   }).catch((e) => {
     if (
       leavingGroup &&
@@ -1150,17 +1165,15 @@ sbp('chelonia/defineContract', {
             const generalChatRoomId = state.generalChatRoomId
             if (generalChatRoomId) {
               // Join the general chatroom
-              if (state.chatRooms[generalChatRoomId]?.members?.[loggedIn.identityContractID]?.status !== PROFILE_STATUS.ACTIVE) {
+              if (state.chatRooms[generalChatRoomId]?.members?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
-                  data: {
-                    chatRoomID: generalChatRoomId
-                  },
+                  data: { chatRoomID: generalChatRoomId },
                   hooks: {
                     onprocessed: () => {
                       sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-                        groupId: contractID,
-                        chatRoomId: generalChatRoomId
+                        groupID: contractID,
+                        chatRoomID: generalChatRoomId
                       })
                     }
                   }
@@ -1202,7 +1215,7 @@ sbp('chelonia/defineContract', {
             // are indexed by contract ID
             sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
               const { profiles = {} } = state
-              const myProfile = profiles[loggedIn.identityContractID]
+              const myProfile = profiles[userID]
 
               if (isActionYoungerThanUser(contractID, height, myProfile)) {
                 sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
@@ -1356,10 +1369,26 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/addChatRoom': {
       // The #General chatroom is added without an inner signature
-      validate: objectOf({
-        chatRoomID: string,
-        attributes: chatRoomAttributesType
-      }),
+      validate: (data) => {
+        objectOf({
+          chatRoomID: string,
+          attributes: chatRoomAttributesType
+        })(data)
+
+        // Validation on the chatroom name (reference: https://github.com/okTurtles/group-income/issues/1987)
+        const chatroomName = data.attributes.name
+        const nameValidationMap: {[string]: Function} = {
+          [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
+          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v)
+        }
+
+        for (const key in nameValidationMap) {
+          const check = nameValidationMap[key]
+          if (check(chatroomName)) {
+            throw new TypeError(key)
+          }
+        }
+      },
       process ({ data, meta, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes
         // XOR: has(innerSigningContractID) XOR #General
@@ -1383,8 +1412,8 @@ sbp('chelonia/defineContract', {
         if (Object.keys(state.chatRooms).length === 1) {
           // NOTE: only general chatroom exists, meaning group has just been created
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: contractID,
-            chatRoomId: state.generalChatRoomId
+            groupID: contractID,
+            chatRoomID: state.generalChatRoomId
           })
         }
         // If it's the #General chatroom being added, add ourselves to it
@@ -1456,13 +1485,15 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
+        const { chatRoomID } = data
+
         if (state.profiles[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
           throw new Error('Cannot join a chatroom for a group you\'re not a member of')
         }
-        if (!state.chatRooms[data.chatRoomID]) {
+        if (!state.chatRooms[chatRoomID]) {
           throw new Error('Cannot join a chatroom which isn\'t part of the group')
         }
-        if (state.chatRooms[data.chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
+        if (state.chatRooms[chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new GIGroupAlreadyJoinedError('Cannot join a chatroom that you\'re already part of')
         }
         // Here, we could use a list of active members or we could use a
@@ -1476,7 +1507,7 @@ sbp('chelonia/defineContract', {
         // removed members, we would need to possibly fetch every chatroom
         // contract to account for chatrooms for which the removed member is
         // a part of.
-        Vue.set(state.chatRooms[data.chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
+        Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
       },
       sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
@@ -1738,19 +1769,22 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomId, memberID) {
+    'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, memberID) {
       const state = await sbp('chelonia/contract/state', contractID)
       const actorID = sbp('state/vuex/state').loggedIn.identityContractID
 
-      if (state?.profiles?.[actorID]?.status !== PROFILE_STATUS.ACTIVE || state?.profiles?.[memberID]?.status !== PROFILE_STATUS.ACTIVE || state.chatRooms?.[chatRoomId]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE) {
+      if (state?.profiles?.[actorID]?.status !== PROFILE_STATUS.ACTIVE ||
+        state?.profiles?.[memberID]?.status !== PROFILE_STATUS.ACTIVE ||
+        state.chatRooms?.[chatRoomID]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE
+      ) {
         return
       }
 
       try {
-        await sbp('chelonia/contract/retain', chatRoomId, { ephemeral: true })
+        await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
 
-        if (!await sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomId, 'gi.contracts/chatroom/join')) {
-          throw new Error(`Missing keys to join chatroom ${chatRoomId}`)
+        if (!await sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
+          throw new Error(`Missing keys to join chatroom ${chatRoomID}`)
         }
 
         // Using the group's CEK allows for everyone to have an overview of the
@@ -1759,16 +1793,13 @@ sbp('chelonia/defineContract', {
         const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
 
         await sbp('gi.actions/chatroom/join', {
-          contractID: chatRoomId,
+          contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId,
           ...actorID === memberID && {
             hooks: {
               postpublish: () => {
-                sbp('chelonia/contract/retain', chatRoomId)
-              },
-              onprocessed: () => {
-                sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId: contractID, chatRoomId })
+                sbp('chelonia/contract/retain', chatRoomID)
               }
             }
           }
@@ -1779,14 +1810,14 @@ sbp('chelonia/defineContract', {
               // Note: this addresses syncing the contract from a new device,
               // where `retain` in postpublish hasn't been called and the
               // reference count is zero due to the state being fresh.
-              sbp('chelonia/contract/retain', chatRoomId)
+              sbp('chelonia/contract/retain', chatRoomID)
             }
             return
           }
-          console.warn(`Unable to join ${memberID} to chatroom ${chatRoomId} for group ${contractID}`, e)
+          console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         })
       } finally {
-        await sbp('chelonia/contract/release', chatRoomId, { ephemeral: true })
+        await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
       }
     },
     // eslint-disable-next-line require-await

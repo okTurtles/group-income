@@ -31,7 +31,7 @@ import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
-import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
+import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
@@ -658,12 +658,23 @@ export default (sbp('sbp/selectors/register', {
 
     await sbp('gi.actions/group/joinChatRoom', {
       ...omit(params, ['options', 'data', 'hooks']),
-      data: {
-        chatRoomID
-      },
+      data: { chatRoomID },
       hooks: {
+        // joinChatRoom sideEffect will trigger a call to 'gi.actions/chatroom/join', we want
+        // to wait for that action to be received and processed, and then switch the UI to the
+        // new chatroom. We do this here instead of in the sideEffect for chatroom/join to
+        // avoid causing the UI to change in other open tabs/windows, as per bug:
+        // https://github.com/okTurtles/group-income/issues/1960
         onprocessed: (msg) => {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: chatRoomID, groupId: msg.contractID() })
+          const fnEventHandled = (cID, message) => {
+            if (cID === chatRoomID) {
+              if (sbp('state/vuex/getters').isJoinedChatRoom(chatRoomID)) {
+                sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID, groupID: msg.contractID() })
+                sbp('okTurtles.events/off', EVENT_HANDLED, fnEventHandled)
+              }
+            }
+          }
+          sbp('okTurtles.events/on', EVENT_HANDLED, fnEventHandled)
         },
         postpublish: params.hooks?.postpublish
       }
