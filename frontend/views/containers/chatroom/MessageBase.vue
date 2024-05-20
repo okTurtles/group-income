@@ -378,7 +378,7 @@ export default ({
   }
 
   .c-avatar {
-    max-width: unset;
+    margin-right: 0.5rem;
   }
 
   &:hover {
@@ -415,7 +415,6 @@ export default ({
 .c-message-wrapper {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
 }
 
 .c-avatar {
