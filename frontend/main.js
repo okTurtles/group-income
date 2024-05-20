@@ -8,7 +8,7 @@ import '@sbp/okturtles.eventqueue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 import '@model/captureLogs.js'
-import type { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
@@ -59,6 +59,7 @@ Vue.config.errorHandler = function (err, vm, info) {
   if (process.env.CI) throw err
 }
 
+deserializer.register(GIMessage)
 deserializer.register(Secret)
 
 async function startApp () {

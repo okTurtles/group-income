@@ -10,6 +10,7 @@ import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
+import { serdesTagSymbol, serdesSerializeSymbol, serdesDeserializeSymbol } from '~/shared/serdes/index.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -462,6 +463,34 @@ export class GIMessage {
 
   direction (): 'incoming' | 'outgoing' {
     return this._direction
+  }
+
+  static get [serdesTagSymbol] () {
+    return 'GIMessage'
+  }
+
+  static [serdesSerializeSymbol] (m: GIMessage) {
+    return {
+      contractID: m.contractID(),
+      originatingContractID: m.originatingContractID(),
+      serialize: m.serialize(),
+      hash: m.hash(),
+      height: m.height(),
+      direction: m.direction(),
+      id: m.id()
+    }
+  }
+
+  static [serdesDeserializeSymbol] ({ contractID, originatingContractID, serialize, hash, height, direction, id }) {
+    return {
+      contractID: () => contractID,
+      originatingContractID: () => originatingContractID,
+      serialize: () => serialize,
+      hash: () => hash,
+      height: () => height,
+      direction: () => direction,
+      id: () => id
+    }
   }
 }
 

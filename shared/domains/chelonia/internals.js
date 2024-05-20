@@ -476,7 +476,7 @@ export default (sbp('sbp/selectors/register', {
           }
 
           if (hooks?.preSendCheck) {
-            if (!hooks.preSendCheck(entry, state)) {
+            if (!await hooks.preSendCheck(entry, state)) {
               console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
               return
             }
@@ -507,7 +507,7 @@ export default (sbp('sbp/selectors/register', {
         // If there is no event to send, return
         if (!newEntry) return
 
-        hooks?.beforeRequest?.(newEntry, entry)
+        await hooks?.beforeRequest?.(newEntry, entry)
         entry = newEntry
 
         const r = await fetch(`${this.config.connectionURL}/event`, {

@@ -614,7 +614,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
   // Needs to be in 'Group Chat' page
   if (bypassUI) {
     cy.window().its('sbp').then(sbp => {
-      sbp('gi.actions/group/addAndJoinChatRoom', {
+      sbp('gi.app/group/addAndJoinChatRoom', {
         contractID: sbp('state/vuex/state').currentGroupId,
         data: {
           attributes: {

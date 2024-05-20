@@ -118,7 +118,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -143,7 +143,9 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
-const collectEventStream = async (s: ReadableStream) => {
+const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
+  s = await s
+  console.error('@@@collectEventStream', s)
   const reader = s.getReader()
   const r = []
   for (;;) {
@@ -1096,13 +1098,20 @@ export default ({
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-        } else {
-          this.refreshContent()
-        }
+        // `chelonia/contract/isSyncing` could be synchronous or asynchronous,
+        // depending on whether Chelonia is running on a SW (async) or not (sync)
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+          if (!this.checkEventSourceConsistency(toChatRoomId)) return
+          if (isSyncing) {
+            if (toIsJoined) {
+              sbp('chelonia/contract/wait', toChatRoomId).then(() => initAfterSynced(toChatRoomId))
+            }
+          } else {
+            this.refreshContent()
+          }
+        })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
-        sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+        sbp('chelonia/contract/wait', toChatRoomId).then(() => initAfterSynced(toChatRoomId))
       }
     }
   }

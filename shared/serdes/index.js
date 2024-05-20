@@ -25,6 +25,7 @@ const rawResult = (obj: Object) => {
 export const serializer = (data: any) => {
   const verbatim: any[] = []
   const transferables = new Set()
+  const revokables = new Set()
   const result = JSON.parse(JSON.stringify(data, (_key: string, value: any) => {
     if (value && value[raw]) return value
     if (value === undefined) return rawResult(['_', '_'])
@@ -47,6 +48,26 @@ export const serializer = (data: any) => {
       transferables.add(value)
       return rawResult(['_', '_ref', pos])
     }
+    if (typeof value === 'function') {
+      const mc = new MessageChannel()
+      mc.port1.onmessage = async (ev) => {
+        try {
+          try {
+            const result = await value(deserializer(...ev.data[1]))
+            const { data, transferables } = serializer(result)
+            ev.data[0].postMessage([true, data], transferables)
+          } catch (e) {
+            const { data, transferables } = serializer(e)
+            ev.data[0].postMessage([false, data], transferables)
+          }
+        } catch (e) {
+          console.error('Async error on onmessage handler', e)
+        }
+      }
+      transferables.add(mc.port2)
+      revokables.add(mc.port1)
+      return rawResult(['_', '_fn', mc.port2])
+    }
     const proto = Object.getPrototypeOf(value)
     if (proto?.constructor?.[serdesTagSymbol] && proto.constructor[serdesSerializeSymbol]) {
       return rawResult(['_', '_custom', proto.constructor[serdesTagSymbol], proto.constructor[serdesSerializeSymbol](value)])
@@ -61,7 +82,8 @@ export const serializer = (data: any) => {
 
   return {
     data: result,
-    transferables: Array.from(transferables)
+    transferables: Array.from(transferables),
+    revokables: Array.from(revokables)
   }
 }
 
@@ -99,6 +121,23 @@ export const deserializer = (data: any) => {
           }
         case '_ref':
           return verbatim[value[2]]
+        case '_fn': {
+          const mp = value[2]
+          return (...args) => {
+            return new Promise((resolve, reject) => {
+              const mc = new MessageChannel()
+              const { data, transferables } = serializer(args)
+              mp.postMessage([mc.port2, data], [mc.port2, ...transferables])
+              mc.port1.onmessage = (ev) => {
+                if (ev.data[0]) {
+                  resolve(deserializer(ev.data[1]))
+                } else {
+                  reject(deserializer(ev.data[1]))
+                }
+              }
+            })
+          }
+        }
       }
     }
     return value

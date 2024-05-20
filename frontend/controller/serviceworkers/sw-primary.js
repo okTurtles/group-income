@@ -23,7 +23,9 @@ import '../actions/index.js'
 import '../../views/utils/avatar.js'
 import { serializer, deserializer } from '~/shared/serdes/index.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
+deserializer.register(GIMessage)
 deserializer.register(Secret)
 
 sbp('sbp/filters/global/add', (domain, selector, data) => {
