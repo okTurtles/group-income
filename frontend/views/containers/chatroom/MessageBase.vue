@@ -28,7 +28,7 @@
               v-safe-html:a='objReplyMessage.text'
             )
             span.link(
-              v-else-if='isSelfRedirect(objText)'
+              v-else-if='isOnSiteRedirect(objText)'
               @click='navigateToOnsiteURL(objText.path)'
             ) {{ objText.text }}
             span.c-member-mention(
@@ -59,7 +59,7 @@
               v-safe-html:a='objText.text'
             )
             span.link(
-              v-else-if='isSelfRedirect(objText)'
+              v-else-if='isOnSiteRedirect(objText)'
               @click='navigateToOnsiteURL(objText.path)'
             ) {{ objText.text }}
             template(v-else-if='isMemberMention(objText)')
@@ -146,7 +146,7 @@ import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const TextObjectType = {
   Text: 'TEXT',
-  SelfRedirect: 'SELF_REDIRECT',
+  OnsiteRedirect: 'ONSITE_REDIRECT',
   MemberMention: 'MEMBER_MENTION',
   ChannelMention: 'CHANNEL_MENTION'
 }
@@ -263,8 +263,8 @@ export default ({
     isText (o) {
       return o.type === TextObjectType.Text
     },
-    isSelfRedirect (o) {
-      return o.type === TextObjectType.SelfRedirect
+    isOnSiteRedirect (o) {
+      return o.type === TextObjectType.OnsiteRedirect
     },
     isMemberMention (o) {
       return o.type === TextObjectType.MemberMention
@@ -278,23 +278,23 @@ export default ({
       const genDefaultTextObj = (text) => {
         const textOutput = this.shouldRenderMarkdown ? renderMarkdown(text) : text
         // NOTE: regex should be of same format with the response of renderMarkDown
-        const selfRedirectElements = textOutput.match(/<span class='link' data=([^]*?)<\/span>/g)
+        const onsiteRedirectElements = textOutput.match(/<span class='link' data=([^]*?)<\/span>/g)
 
-        if (!selfRedirectElements) {
+        if (!onsiteRedirectElements) {
           return { type: TextObjectType.Text, text: textOutput }
         } else {
           // NOTE: regex should be of same format with the response of renderMarkDown
-          const objSelfRedirects = selfRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/data='([^]*?)'>/g)[1]), raw: ele }))
-          const escapedRedirectElements = selfRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
+          const objOnsiteRedirects = onsiteRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/data='([^]*?)'>/g)[1]), raw: ele }))
+          const escapedRedirectElements = onsiteRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
           const splitPatternRegEx = new RegExp('(' + escapedRedirectElements.join('|') + ')')
           return textOutput.split(splitPatternRegEx).map(part => {
             if (!part) {
               return null
             } else {
-              const index = objSelfRedirects.findIndex(obj => obj.raw === part)
+              const index = objOnsiteRedirects.findIndex(obj => obj.raw === part)
               if (index >= 0) {
-                const { path, text } = objSelfRedirects[index]
-                return { type: TextObjectType.SelfRedirect, path, text }
+                const { path, text } = objOnsiteRedirects[index]
+                return { type: TextObjectType.OnsiteRedirect, path, text }
               }
               return { type: TextObjectType.Text, text: part }
             }
