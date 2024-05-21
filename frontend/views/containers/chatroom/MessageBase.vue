@@ -18,12 +18,12 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        p.c-replying(
+        p.c-replying.custom-markdown-content(
           v-if='replyingMessage'
           @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
-            span.custom-markdown-content(
+            span(
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
@@ -48,9 +48,9 @@
           @cancelEdit='cancelEdit'
         )
 
-        p.c-text(v-else-if='text')
+        p.c-text.custom-markdown-content(v-else-if='text')
           template(v-for='objText in textObjects')
-            span.custom-markdown-content(
+            span(
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
@@ -274,6 +274,16 @@ export default ({
       }
       const allMention = makeMentionFromUserID('').all
 
+      if (this.shouldRenderMarkdown) {
+        console.log('!@# before transform: ', text)
+        text = renderMarkdown(text)
+        console.log('!@# after transform: ', text)
+
+        const listRegExp = /(<ul>.+<\/ul>)/
+        const isList = str => listRegExp.test(str)
+        const splitByList = text.split(listRegExp).filter(Boolean)
+      }
+
       return text
         // We try to find all the mentions and render them as mentions instead
         // of regular text. The `(?<=\\s|^)` part ensures that a mention is
@@ -283,8 +293,7 @@ export default ({
         .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
           const genDefaultTextObj = (text) => ({
-            type: TextObjectType.Text,
-            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
+            type: TextObjectType.Text, text
           })
           const genChannelMentionObj = (text) => {
             const chatRoomID = text.slice(1)
