@@ -85,6 +85,7 @@
             v-if='ephemeral.showButtons'
             direction='top'
             :text='L("Add reaction")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -94,6 +95,7 @@
           tooltip(
             direction='top'
             :text='L("Bold")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -103,6 +105,7 @@
           tooltip(
             direction='top'
             :text='L("Italic")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -112,6 +115,7 @@
           tooltip(
             direction='top'
             :text='L("Code")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -121,6 +125,7 @@
           tooltip(
             direction='top'
             :text='L("Strikethrough")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -130,6 +135,7 @@
           tooltip(
             direction='top'
             :text='L("Link")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -153,6 +159,7 @@
           tooltip(
             direction='top'
             :text='L("Bold")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -162,6 +169,7 @@
           tooltip(
             direction='top'
             :text='L("Italic")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -171,6 +179,7 @@
           tooltip(
             direction='top'
             :text='L("Code")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -180,6 +189,7 @@
           tooltip(
             direction='top'
             :text='L("Strikethrough")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -189,6 +199,7 @@
           tooltip(
             direction='top'
             :text='L("Link")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -797,16 +808,15 @@ export default ({
           case 'code':
           case 'strikethrough': {
             result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
-            inputEl.value = result.output
-            this.moveCursorTo(result.focusIndex)
             break
           }
           case 'link': {
             result = injectOrStripLink(inputValue, selStart, selEnd)
-            inputEl.value = result.output
-            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
           }
         }
+
+        inputEl.value = result.output
+        this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
       }
     },
     onUserTyping (data) {
@@ -1154,5 +1164,20 @@ export default ({
   display: block;
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  // fix for some mobile-specific issue: https://github.com/okTurtles/group-income/issues/1934
+  .c-send-textarea {
+    padding-bottom: 1rem;
+    height: 3.25rem;
+  }
+
+  .c-send-actions {
+    button.is-icon:focus,
+    button.is-icon:hover {
+      color: $general_0 !important;
+    }
+  }
 }
 </style>
