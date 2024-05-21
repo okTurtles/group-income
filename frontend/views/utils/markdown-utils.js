@@ -1,4 +1,6 @@
+import sbp from '@sbp/sbp'
 import { marked } from 'marked'
+import { validateURL } from '@view-utils/misc.js'
 
 marked.use({
   extensions: [
@@ -6,8 +8,18 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        // custom renderer for <a> tag for setting target='_blank' to the output HTML
-        return `<a class='link' href='${token.href}' target='_blank'>${token.text}</a>`
+        const { isValid, url } = validateURL(token.href)
+        if (isValid) {
+          const { href, text } = token
+          if (url.hostname === document.location.hostname) {
+            const path = href.split(sbp('controller/router').options.base)[1]
+            return `<span class='link' data='${JSON.stringify({ path, text })}'>${text}</span>`
+          } else {
+            // custom renderer for <a> tag for setting target='_blank' to the output HTML
+            return `<a class='link' href='${href}' target='_blank'>${text}</a>`
+          }
+        }
+        return token.raw
       }
     }
   ]

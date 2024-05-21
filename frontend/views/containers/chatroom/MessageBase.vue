@@ -27,6 +27,10 @@
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
+            span.link(
+              v-else-if='isSelfRedirect(objText)'
+              @click='navigateToOnsiteURL(objText.path)'
+            ) {{ objText.text }}
             span.c-member-mention(
               v-else-if='isMemberMention(objReplyMessage)'
               :class='{"c-mention-to-me": objReplyMessage.toMe}'
@@ -54,7 +58,11 @@
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
-            template(v-else-if='isMemberMention')
+            span.link(
+              v-else-if='isSelfRedirect(objText)'
+              @click='navigateToOnsiteURL(objText.path)'
+            ) {{ objText.text }}
+            template(v-else-if='isMemberMention(objText)')
               span.c-mention-profile-card-wrapper(v-if='objText.userID')
                 profile-card(:contractID='objText.userID' direction='top-left')
                   span.c-member-mention(:class='{"c-mention-to-me": objText.toMe}') {{ objText.text }}
@@ -134,9 +142,11 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const TextObjectType = {
   Text: 'TEXT',
+  SelfRedirect: 'SELF_REDIRECT',
   MemberMention: 'MEMBER_MENTION',
   ChannelMention: 'CHANNEL_MENTION'
 }
@@ -253,6 +263,9 @@ export default ({
     isText (o) {
       return o.type === TextObjectType.Text
     },
+    isSelfRedirect (o) {
+      return o.type === TextObjectType.SelfRedirect
+    },
     isMemberMention (o) {
       return o.type === TextObjectType.MemberMention
     },
@@ -262,15 +275,62 @@ export default ({
     generateTextObjectsFromText (text) {
       const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
 
+      const genDefaultTextObj = (text) => {
+        const textOutput = this.shouldRenderMarkdown ? renderMarkdown(text) : text
+        // NOTE: regex should be of same format with the response of renderMarkDown
+        const selfRedirectElements = textOutput.match(/<span class='link' data=([^]*?)<\/span>/g)
+
+        if (!selfRedirectElements) {
+          return { type: TextObjectType.Text, text: textOutput }
+        } else {
+          // NOTE: regex should be of same format with the response of renderMarkDown
+          const objSelfRedirects = selfRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/data='([^]*?)'>/g)[1]), raw: ele }))
+          const escapedRedirectElements = selfRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
+          const splitPatternRegEx = new RegExp('(' + escapedRedirectElements.join('|') + ')')
+          return textOutput.split(splitPatternRegEx).map(part => {
+            if (!part) {
+              return null
+            } else {
+              const index = objSelfRedirects.findIndex(obj => obj.raw === part)
+              if (index >= 0) {
+                const { path, text } = objSelfRedirects[index]
+                return { type: TextObjectType.SelfRedirect, path, text }
+              }
+              return { type: TextObjectType.Text, text: part }
+            }
+          }).filter(item => !!item)
+        }
+      }
+
+      const genChannelMentionObj = (text) => {
+        const chatRoomID = text.slice(1)
+        const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
+
+        return found
+          ? {
+              type: TextObjectType.ChannelMention,
+              text: found.name,
+              icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
+              disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
+              chatRoomID: found.id
+            }
+          : genDefaultTextObj(text)
+      }
+
+      const genMemberMentionObj = (text) => {
+        const userID = text.slice(1)
+        return {
+          type: TextObjectType.MemberMention,
+          text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(userID),
+          userID,
+          toMe: userID === this.currentUserID
+        }
+      }
+
       if (!text) {
         return []
       } else if (!containsMentionChar(text)) {
-        return [
-          {
-            type: TextObjectType.Text,
-            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
-          }
-        ]
+        return [genDefaultTextObj(text)].flat()
       }
       const allMention = makeMentionFromUserID('').all
 
@@ -282,35 +342,6 @@ export default ({
         // a letter or a number (so `Hi @user!` works).
         .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
         .map(t => {
-          const genDefaultTextObj = (text) => ({
-            type: TextObjectType.Text,
-            text: this.shouldRenderMarkdown ? renderMarkdown(text) : text
-          })
-          const genChannelMentionObj = (text) => {
-            const chatRoomID = text.slice(1)
-            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
-
-            return found
-              ? {
-                  type: TextObjectType.ChannelMention,
-                  text: found.name,
-                  icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
-                  disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
-                  chatRoomID: found.id
-                }
-              : genDefaultTextObj(text)
-          }
-
-          const genMemberMentionObj = (text) => {
-            const userID = text.slice(1)
-            return {
-              type: TextObjectType.MemberMention,
-              text: CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(userID),
-              userID,
-              toMe: userID === this.currentUserID
-            }
-          }
-
           if (t === allMention) {
             return { type: TextObjectType.MemberMention, text: t, toMe: true }
           }
@@ -320,7 +351,7 @@ export default ({
               ? genMemberMentionObj(t)
               : genChannelMentionObj(t)
             : genDefaultTextObj(t)
-        })
+        }).flat()
     },
     navigateToChatRoom (obj) {
       if (obj.disabled || obj.chatRoomID === this.$route.params?.chatRoomID) { return }
@@ -328,6 +359,9 @@ export default ({
         name: 'GroupChatConversation',
         params: { chatRoomID: obj.chatRoomID }
       })
+    },
+    navigateToOnsiteURL (path) {
+      this.$router.push({ path }).catch(logExceptNavigationDuplicated)
     },
     longPressHandler (e) {
       const targetEl = e.target
