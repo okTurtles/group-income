@@ -63,7 +63,7 @@ const save = debounce(() => sbp('chelonia/queueInvocation', 'CHELONIA_STATE', ()
   })
 }), 500)
 
-sbp('chelonia/configure', {
+const configured = sbp('chelonia/configure', {
   connectionURL: sbp('okTurtles.data/get', 'API_URL'),
   reactiveSet: (o: Object, k: string, v: string) => {
     if (!has(o, k) || o[k] !== v) {
@@ -226,7 +226,7 @@ self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(configured.finally(() => self.clients.claim()))
 })
 
 self.addEventListener('fetch', function (event) {

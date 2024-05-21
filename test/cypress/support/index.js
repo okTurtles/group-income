@@ -21,17 +21,18 @@ before(function () {
   cy.clearCookies()
   cy.clearLocalStorage()
   if (typeof indexedDB === 'object') {
-    indexedDB.databases().then((db) => {
-      return Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name)))
-    })
+    cy.wrap(indexedDB.databases().then((db) =>
+      Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name)))
+    ))
   }
   if (typeof navigator === 'object' && navigator.serviceWorker) {
-    navigator.serviceWorker.getRegistrations()
-      .then((registrations) => {
+    cy.wrap(navigator.serviceWorker.getRegistrations()
+      .then((registrations) =>
         Promise.all(registrations.map((registration) =>
           registration.unregister()
         ))
-      })
+      )
+    )
   }
 })
 

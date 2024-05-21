@@ -573,8 +573,11 @@ async function startApp () {
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
+        // Wait for SW to be ready
+        navigator.serviceWorker.ready.then(() => {
+          this.ephemeral.ready = true
+          this.removeLoadingAnimation()
+        })
       })
     },
     computed: {
