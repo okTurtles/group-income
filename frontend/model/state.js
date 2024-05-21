@@ -165,7 +165,7 @@ const getters = {
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
     const userContract = getters.currentIdentityState || {}
-    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername || getters.ourIdentityContractId
+    return userContract.attributes?.displayName || getters.ourUsername || getters.ourIdentityContractId
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
@@ -252,8 +252,8 @@ const getters = {
       if (userID === getters.ourIdentityContractId) {
         return getters.ourUserDisplayName
       }
-      const profile = getters.ourContactProfilesById[userID] || {}
-      return profile.displayName || profile.username || userID
+      const profile = getters.ourContactProfilesById[userID]
+      return profile?.displayName || profile?.username || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate

@@ -757,7 +757,7 @@ export default (sbp('sbp/selectors/register', {
           .find(([hash, prop]: [string, Object]) => (
             prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
-            prop.data.proposalData.memberName === memberID
+            prop.data.proposalData.memberID === memberID
           )) ?? ['', undefined]
         if (proposal) {
           // cast our vote if we haven't already cast it
