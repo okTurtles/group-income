@@ -51,9 +51,10 @@ export const serializer = (data: any) => {
     if (typeof value === 'function') {
       const mc = new MessageChannel()
       mc.port1.onmessage = async (ev) => {
+        console.error('RECVD CALL', ev)
         try {
           try {
-            const result = await value(deserializer(...ev.data[1]))
+            const result = await value(...deserializer(ev.data[1]))
             const { data, transferables } = serializer(result)
             ev.data[0].postMessage([true, data], transferables)
           } catch (e) {
@@ -127,14 +128,17 @@ export const deserializer = (data: any) => {
             return new Promise((resolve, reject) => {
               const mc = new MessageChannel()
               const { data, transferables } = serializer(args)
-              mp.postMessage([mc.port2, data], [mc.port2, ...transferables])
+              const N = (0, Math.random)()
+              console.error('CALLED HOOK', N, args)
               mc.port1.onmessage = (ev) => {
+                console.error('RECVD HOOK RESULT', N, ev)
                 if (ev.data[0]) {
                   resolve(deserializer(ev.data[1]))
                 } else {
                   reject(deserializer(ev.data[1]))
                 }
               }
+              mp.postMessage([mc.port2, data], [mc.port2, ...transferables])
             })
           }
         }

@@ -420,6 +420,7 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
+          console.error('BeforeRequest', message, oldMessage)
           if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
@@ -862,6 +863,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
+      console.error('@@ListenChatRoomActions', contractID, message)
       // We must check this.summary.chatRoomID and not this.currentChatRoomId
       // because they might be different, as this.summary is computed from
       // this.currentChatRoomId.

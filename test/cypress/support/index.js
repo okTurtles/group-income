@@ -20,7 +20,19 @@ import './output-logs.js'
 before(function () {
   cy.clearCookies()
   cy.clearLocalStorage()
-  indexedDB.deleteDatabase('Group Income')
+  if (typeof indexedDB === 'object') {
+    indexedDB.databases().then((db) => {
+      return Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name)))
+    })
+  }
+  if (typeof navigator === 'object' && navigator.serviceWorker) {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => {
+        Promise.all(registrations.map((registration) =>
+          registration.unregister()
+        ))
+      })
+  }
 })
 
 // Abort tests on first fail

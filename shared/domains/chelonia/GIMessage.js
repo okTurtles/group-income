@@ -213,6 +213,7 @@ export class GIMessage {
   _message: Object
   _signedMessageData: SignedData<GIOpValue>
   _direction: GIMsgDirection
+  _decryptedValue: Object
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -394,6 +395,7 @@ export class GIMessage {
   }
 
   decryptedValue (): any {
+    if (this._decryptedValue) return this._decryptedValue
     try {
       const value = this.message()
       const data = unwrapMaybeEncryptedData(value)
@@ -403,11 +405,12 @@ export class GIMessage {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
         if (isSignedData(data.data)) {
-          return data.data.valueOf()
+          this._decryptedValue = data.data.valueOf()
         } else {
-          return data.data
+          this._decryptedValue = data.data
         }
       }
+      return this._decryptedValue
     } catch {
       // Signature or encryption error
       // We don't log this error because it's already logged when the value is
@@ -470,27 +473,14 @@ export class GIMessage {
   }
 
   static [serdesSerializeSymbol] (m: GIMessage) {
-    return {
-      contractID: m.contractID(),
-      originatingContractID: m.originatingContractID(),
-      serialize: m.serialize(),
-      hash: m.hash(),
-      height: m.height(),
-      direction: m.direction(),
-      id: m.id()
-    }
+    return [m.serialize(), m.direction(), m.decryptedValue()]
   }
 
-  static [serdesDeserializeSymbol] ({ contractID, originatingContractID, serialize, hash, height, direction, id }) {
-    return {
-      contractID: () => contractID,
-      originatingContractID: () => originatingContractID,
-      serialize: () => serialize,
-      hash: () => hash,
-      height: () => height,
-      direction: () => direction,
-      id: () => id
-    }
+  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue]) {
+    const m = GIMessage.deserialize(serialized)
+    m._direction = direction
+    m._decryptedValue = decryptedValue
+    return m
   }
 }
 

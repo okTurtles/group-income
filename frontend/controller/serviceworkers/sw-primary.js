@@ -142,20 +142,6 @@ sbp('chelonia/configure', {
   } */
 })
 
-sbp('okTurtles.events/on', EVENT_HANDLED, (contractID) => {
-  const message = {
-    type: 'event',
-    subtype: EVENT_HANDLED,
-    data: [contractID]
-  }
-  self.clients.matchAll()
-    .then((clientList) => {
-      clientList.forEach((client) => {
-        client.postMessage(message)
-      })
-    })
-})
-
 sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
   const message = {
     type: 'event',
@@ -170,7 +156,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
     })
 });
 
-[CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, JOINED_GROUP, SWITCH_GROUP].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, JOINED_GROUP, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
