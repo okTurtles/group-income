@@ -90,7 +90,7 @@ export default ({
   },
   methods: {
     show () {
-      if (!this.manual) this.isActive = true
+      if (!this.manual && !this.deactivated) this.isActive = true
     },
     hide () {
       if (!this.manual) this.isActive = false
