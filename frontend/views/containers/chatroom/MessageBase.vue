@@ -275,13 +275,7 @@ export default ({
       const allMention = makeMentionFromUserID('').all
 
       if (this.shouldRenderMarkdown) {
-        console.log('!@# before transform: ', text)
         text = renderMarkdown(text)
-        console.log('!@# after transform: ', text)
-
-        const listRegExp = /(<ul>.+<\/ul>)/
-        const isList = str => listRegExp.test(str)
-        const splitByList = text.split(listRegExp).filter(Boolean)
       }
 
       return text
