@@ -54,7 +54,7 @@
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
-            template(v-else-if='isMemberMention')
+            template(v-else-if='isMemberMention(objText)')
               span.c-mention-profile-card-wrapper(v-if='objText.userID')
                 profile-card(:contractID='objText.userID' direction='top-left')
                   span.c-member-mention(:class='{"c-mention-to-me": objText.toMe}') {{ objText.text }}
