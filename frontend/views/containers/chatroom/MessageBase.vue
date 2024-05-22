@@ -134,6 +134,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { htmlStringToDomObjectTree } from './chat-mentions/chat-mentions-utils.js'
 
 const TextObjectType = {
   Text: 'TEXT',
@@ -265,6 +266,8 @@ export default ({
       if (!text) {
         return []
       } else if (!containsMentionChar(text)) {
+        console.log('!@# raw html text before conversion: ', renderMarkdown(text))
+        console.log('!@# converted text: ', htmlStringToDomObjectTree(renderMarkdown(text)))
         return [
           {
             type: TextObjectType.Text,
@@ -276,6 +279,8 @@ export default ({
 
       if (this.shouldRenderMarkdown) {
         text = renderMarkdown(text)
+        console.log('!@# raw html text before conversion: ', text)
+        console.log('!@# converted text: ', htmlStringToDomObjectTree(text))
       }
 
       return text
