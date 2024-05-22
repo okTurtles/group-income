@@ -101,7 +101,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
       )
 
   .card.c-card
-    chat-main(:summary='summary')
+    chat-main(ref='chatMain' :summary='summary')
 </template>
 
 <script>
@@ -186,12 +186,19 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomID } = to.params
+      const { mhash } = to.query
       const prevChatRoomId = from.params.chatRoomID || ''
-      if (chatRoomID && chatRoomID !== prevChatRoomId) {
-        this.updateCurrentChatRoomID(chatRoomID)
-        // NOTE: No need to consider not-joined private chatroom because it's impossible
-        if (!this.isJoinedChatRoom(chatRoomID)) {
-          this.loadLatestState(chatRoomID)
+      if (chatRoomID) {
+        if (chatRoomID !== prevChatRoomId) {
+          this.updateCurrentChatRoomID(chatRoomID)
+          // NOTE: No need to consider not-joined private chatroom because it's impossible
+          if (!this.isJoinedChatRoom(chatRoomID)) {
+            this.loadLatestState(chatRoomID)
+          }
+        } else if (mhash) {
+          this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+            this.$router.replace({ query: {} })
+          })
         }
       }
     }

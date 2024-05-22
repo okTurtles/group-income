@@ -783,7 +783,11 @@ export default ({
         if (events.length) {
           // NOTE: if 'messageHashToScroll' was not there in the messages of the contract state
           //       we need to retrieve more events, and render to scroll to that message
-          this.updateScroll(messageHashToScroll, Boolean(mhash))
+          this.updateScroll(messageHashToScroll, Boolean(mhash)).then(() => {
+            if (mhash) {
+              this.$router.replace({ query: {} })
+            }
+          })
         } else {
           // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
           await this.updateScroll(messageHashToScroll, Boolean(mhash))
