@@ -219,8 +219,8 @@ export default ({
   border-radius: 0.625rem;
 
   @include tablet {
-    height: calc(100% - 2rem);
-    margin-top: 0.5rem;
+    height: calc(100% - 1.625rem);
+    margin-top: 0.125rem;
     margin-bottom: 1rem;
   }
 
@@ -352,6 +352,7 @@ export default ({
 
 .c-header-shortcuts {
   padding: 0 0.2rem;
+  margin-top: 0.125rem;
 
   .c-pin-wrapper {
     span {
