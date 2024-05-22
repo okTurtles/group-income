@@ -53,7 +53,7 @@ export default ({
 
 .c-pinned-messages-wrapper {
   margin: -0.5rem;
-  padding: 1rem;
+  padding: 0.75rem;
   max-height: 40rem;
   max-width: 25rem;
   display: flex;
@@ -62,7 +62,7 @@ export default ({
   overflow: auto;
 
   .c-pinned-message {
-    padding: 0.5rem;
+    padding: 0.75rem 0.75rem 0.5rem 0.75rem;
     color: $text_0;
     border-radius: 0.3rem;
     background-color: $general_2;
