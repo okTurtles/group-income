@@ -68,8 +68,6 @@ async function startApp () {
   //       In the future we might move it elsewhere.
   // ?debug=true
   // force debug output even in production
-  // @@@@ TODO: Wait for db to be ready
-  await sbp('gi.db/ready')
 
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
@@ -102,6 +100,9 @@ async function startApp () {
     })
   }
 
+  // Wait for DB to be ready
+  await sbp('gi.db/ready')
+
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
@@ -129,35 +130,42 @@ async function startApp () {
   await sbp('service-workers/setup')
 
   /* TODO: MOVE TO ANOTHER FILE */
-  const swRpc = (...args) => {
-    return new Promise((resolve, reject) => {
-      console.error('@@CHELONIA', args)
-      const messageChannel = new MessageChannel()
-      messageChannel.port1.addEventListener('message', (event) => {
-        console.error('@@@RECEIVED', event)
-        if (event.data && Array.isArray(event.data)) {
-          const r = deserializer(event.data[1])
-          if (event.data[0] === true) {
-            resolve(r)
-          } else {
-            reject(r)
-          }
-          messageChannel.port1.close()
-        }
-      })
-      messageChannel.port1.addEventListener('messageerror', (event) => {
-        reject(event.data)
-        messageChannel.port1.close()
-      })
-      messageChannel.port1.start()
-      const { data, transferables } = serializer(args)
-      navigator.serviceWorker.controller.postMessage({
-        type: 'sbp',
-        port: messageChannel.port2,
-        data
-      }, [messageChannel.port2, ...transferables])
+  const swRpc = (() => {
+    let controller = navigator.serviceWorker.controller
+    navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
+      controller = navigator.serviceWorker.controller
     })
-  }
+
+    return (...args) => {
+      return new Promise((resolve, reject) => {
+        console.error('@@CHELONIA', args)
+        const messageChannel = new MessageChannel()
+        messageChannel.port1.addEventListener('message', (event) => {
+          console.error('@@@RECEIVED', event)
+          if (event.data && Array.isArray(event.data)) {
+            const r = deserializer(event.data[1])
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+            messageChannel.port1.close()
+          }
+        })
+        messageChannel.port1.addEventListener('messageerror', (event) => {
+          reject(event.data)
+          messageChannel.port1.close()
+        })
+        messageChannel.port1.start()
+        const { data, transferables } = serializer(args)
+        controller.postMessage({
+          type: 'sbp',
+          port: messageChannel.port2,
+          data
+        }, [messageChannel.port2, ...transferables])
+      })
+    }
+  })()
 
   sbp('sbp/selectors/register', {
     'gi.actions/*': swRpc
@@ -575,6 +583,7 @@ async function startApp () {
       }).finally(() => {
         // Wait for SW to be ready
         navigator.serviceWorker.ready.then(() => {
+          console.error('[main] Set ready to true', navigator.serviceWorker.controller)
           this.ephemeral.ready = true
           this.removeLoadingAnimation()
         })

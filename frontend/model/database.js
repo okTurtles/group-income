@@ -6,8 +6,10 @@ import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keyg
 const _instances = []
 // Localforage-like API for IndexedDB
 const localforage = {
-  ready () {
-    return Promise.all(_instances).then(() => {})
+  async ready () {
+    console.error('@lf ready', _instances)
+    await Promise.all(_instances).then(() => {})
+    console.error('@lf ready[done]', _instances)
   },
   createInstance ({ name, storeName }: { name: string, storeName: string }) {
     // Open the IndexedDB database
@@ -16,24 +18,29 @@ const localforage = {
         reject(new Error('Unsupported characters in name: -'))
         return
       }
+      console.error('IDB OPEN', name, storeName)
       const request = self.indexedDB.open(name + '--' + storeName)
 
       // Create the object store if it doesn't exist
       request.onupgradeneeded = (event) => {
+        console.error('ONUPGRADENEEDED', name, storeName)
         const db = event.target.result
         db.createObjectStore(storeName)
       }
 
       request.onsuccess = (event) => {
+        console.error('ONSUCCESS', name, storeName)
         const db = event.target.result
         resolve(db)
       }
 
       request.onerror = (error) => {
+        console.error('ONERROR', name, storeName)
         reject(error)
       }
 
       request.onblocked = (event) => {
+        console.error('ONBLOCKED', name, storeName)
         reject(new Error('DB is blocked'))
       }
     })
