@@ -18,12 +18,12 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        p.c-replying(
+        p.c-replying.custom-markdown-content(
           v-if='replyingMessage'
           @click='$emit("reply-message-clicked")'
         )
           template(v-for='(objReplyMessage, index) in replyMessageObjects')
-            span.custom-markdown-content(
+            span(
               v-if='isText(objReplyMessage)'
               v-safe-html:a='objReplyMessage.text'
             )
@@ -52,9 +52,9 @@
           @cancelEdit='cancelEdit'
         )
 
-        p.c-text(v-else-if='text')
+        p.c-text.custom-markdown-content(v-else-if='text')
           template(v-for='objText in textObjects')
-            span.custom-markdown-content(
+            span(
               v-if='isText(objText)'
               v-safe-html:a='objText.text'
             )
@@ -333,6 +333,10 @@ export default ({
         return [genDefaultTextObj(text)].flat()
       }
       const allMention = makeMentionFromUserID('').all
+
+      if (this.shouldRenderMarkdown) {
+        text = renderMarkdown(text)
+      }
 
       return text
         // We try to find all the mentions and render them as mentions instead
