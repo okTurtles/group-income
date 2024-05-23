@@ -1,6 +1,6 @@
 <template lang='pug'>
 .card.c-pinned-messages-wrapper
-  template(v-for='(msg, index) in chatRoomPinnedMessages')
+  template(v-for='(msg, index) in messages')
     .c-pinned-message(:key='msg.hash')
       .c-pinned-message-header
         .c-sender-profile
@@ -30,12 +30,17 @@ export default ({
     AvatarUser,
     Tooltip
   },
-  props: {},
+  props: {
+    messages: {
+      type: Array,
+      default: () => []
+    }
+  },
   data () {
     return {}
   },
   computed: {
-    ...mapGetters(['chatRoomPinnedMessages', 'userDisplayNameFromID'])
+    ...mapGetters(['userDisplayNameFromID'])
   },
   methods: {
     humanDate,

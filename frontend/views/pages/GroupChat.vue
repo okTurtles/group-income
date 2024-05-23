@@ -82,12 +82,17 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           @click='editDescription'
         ) Add description
     .c-header-shortcuts
-      tooltip(:manual='true' :opacity='1' direction='bottom-left')
+      tooltip(
+        v-if='summary.pinnedMessages.length'
+        :manual='true'
+        :opacity='1'
+        direction='bottom-left'
+      )
         span.c-pin-wrapper
           i.icon-thumbtack
-          span 2 Pinned
+          i18n(:args='{ messagesCount: summary.pinnedMessages.length }') {messagesCount} Pinned
         template(slot='tooltip')
-          pinned-messages
+          pinned-messages(:messages='summary.pinnedMessages')
 
   template(#sidebar='{ toggle }')
     chat-nav

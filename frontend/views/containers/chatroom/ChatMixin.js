@@ -39,6 +39,7 @@ const ChatMixin: Object = {
       'groupIdFromChatRoomId',
       'ourGroupDirectMessages',
       'chatRoomMembers',
+      'chatRoomPinnedMessages',
       'groupGeneralChatRoomId',
       'groupChatRooms',
       'globalProfile',
@@ -71,6 +72,7 @@ const ChatMixin: Object = {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
           return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
+        pinnedMessages: this.chatRoomPinnedMessages,
         numberOfMembers: Object.keys(this.currentChatRoomState.members).length,
         participants: this.ourContactProfilesById // TODO: return only historical contributors
       }
@@ -110,6 +112,7 @@ const ChatMixin: Object = {
           title: name,
           attributes: { creator, name, description, type, privacyLevel },
           members: activeMembers,
+          pinnedMessages: [],
           numberOfMembers: activeMembers.length,
           participants: this.ourContactProfilesById // TODO: return only historical contributors
         }
