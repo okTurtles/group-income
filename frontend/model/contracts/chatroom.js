@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, optional, object, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -164,8 +164,11 @@ sbp('chelonia/defineContract', {
     chatRoomMembers (state, getters) {
       return getters.currentChatRoomState.members || {}
     },
-    chatRoomLatestMessages (state, getters) {
+    chatRoomRecentMessages (state, getters) {
       return getters.currentChatRoomState.messages || []
+    },
+    chatRoomPinnedMessages (state, getters) {
+      return getters.currentChatRoomState.pinnedMessages || []
     }
   },
   actions: {
@@ -185,7 +188,8 @@ sbp('chelonia/defineContract', {
             deletedDate: null
           },
           members: {},
-          messages: []
+          messages: [],
+          pinnedMessages: []
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -752,6 +756,37 @@ sbp('chelonia/defineContract', {
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           Vue.set(state.messages[msgIndex].pollData, 'status', POLL_STATUS.CLOSED)
+        }
+      }
+    },
+    'gi.contracts/chatroom/pinMessage': {
+      validate: actionRequireInnerSignature(objectOf({
+        message: object
+      })),
+      process ({ data, innerSigningContractID }, { state }) {
+        const { message } = data
+        state.pinnedMessages.unshift(message)
+
+        const msgIndex = findMessageIdx(message.hash, state.messages)
+        if (msgIndex >= 0) {
+          Vue.set(state.messages[msgIndex], 'pinnedBy', innerSigningContractID)
+        }
+      }
+    },
+    'gi.contracts/chatroom/unpinMessage': {
+      validate: actionRequireInnerSignature(objectOf({
+        hash: string
+      })),
+      process ({ data }, { state }) {
+        const { hash } = data
+        const pinnedMsgIndex = state.pinnedMessages.findIndex(msg => msg.hash === hash)
+        if (pinnedMsgIndex >= 0) {
+          state.pinnedMessages.splice(pinnedMsgIndex, 1)
+        }
+
+        const msgIndex = findMessageIdx(hash, state.messages)
+        if (msgIndex >= 0) {
+          Vue.delete(state.messages[msgIndex], 'pinnedBy')
         }
       }
     }

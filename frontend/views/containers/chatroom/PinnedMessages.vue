@@ -1,6 +1,6 @@
 <template lang='pug'>
 .card.c-pinned-messages-wrapper
-  template(v-for='(msg, index) in fakeMessages')
+  template(v-for='(msg, index) in chatRoomPinnedMessages')
     .c-pinned-message(:key='msg.hash')
       .c-pinned-message-header
         .c-sender-profile
@@ -21,7 +21,6 @@
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
@@ -36,10 +35,7 @@ export default ({
     return {}
   },
   computed: {
-    ...mapGetters(['ourIdentityContractId', 'chatRoomLatestMessages', 'userDisplayNameFromID']),
-    fakeMessages () {
-      return this.chatRoomLatestMessages.filter(msg => msg.type === MESSAGE_TYPES.TEXT)
-    }
+    ...mapGetters(['chatRoomPinnedMessages', 'userDisplayNameFromID'])
   },
   methods: {
     humanDate,

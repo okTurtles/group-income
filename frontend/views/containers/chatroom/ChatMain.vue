@@ -306,7 +306,6 @@ export default ({
       'chatRoomSettings',
       'chatRoomAttributes',
       'chatRoomMembers',
-      'chatRoomLatestMessages',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
