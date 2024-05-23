@@ -84,6 +84,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
     .c-header-shortcuts
       tooltip(
         v-if='pinnedMessages.length'
+        ref='pinnedMessagesToolTip'
         :manual='true'
         :opacity='1'
         direction='bottom-left'
@@ -210,11 +211,13 @@ export default ({
       if (this.$refs.chatMain) {
         this.$refs.chatMain.unpinFromChannel(messageHash)
       }
+      this.$refs.pinnedMessagesToolTip?.toggle()
     },
     scrollToPinnedMessage (messageHash) {
       if (this.$refs.chatMain) {
         this.$refs.chatMain.scrollToMessage(messageHash)
       }
+      this.$refs.pinnedMessagesToolTip?.toggle()
     }
   },
   watch: {

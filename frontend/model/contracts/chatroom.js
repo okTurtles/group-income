@@ -470,15 +470,21 @@ sbp('chelonia/defineContract', {
         text: string
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
+        const { hash, text } = data
+        const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
-          state.messages[msgIndex].text = data.text
+          state.messages[msgIndex].text = text
           state.messages[msgIndex].updatedDate = meta.createdDate
           if (state.renderingContext && state.messages[msgIndex].pending) {
             // NOTE: 'pending' message attribute is not the original message attribute
             //       and it is only set and used in Chat page
             delete state.messages[msgIndex].pending
           }
+        }
+
+        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          state.pinnedMessages[pinnedMsgIndex].text = text
         }
       },
       sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
@@ -540,18 +546,24 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, meta, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
+        const { hash } = data
+        const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0) {
           state.messages.splice(msgIndex, 1)
         }
         // filter replied messages and check if the current message is original
         for (const message of state.messages) {
-          if (message.replyingMessage?.hash === data.hash) {
+          if (message.replyingMessage?.hash === hash) {
             message.replyingMessage.hash = null
             message.replyingMessage.text = L('Original message was removed by {user}', {
               user: makeMentionFromUserID(innerSigningContractID).me
             })
           }
+        }
+
+        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          state.pinnedMessages.splice(pinnedMsgIndex, 1)
         }
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
