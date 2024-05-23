@@ -358,11 +358,11 @@ export default ({
         }).flat()
     },
     navigateToChatRoom (obj) {
-      if (obj.disabled || obj.chatRoomID === this.$route.params?.chatRoomID) { return }
+      if (obj.disabled) { return }
       this.$router.push({
         name: 'GroupChatConversation',
         params: { chatRoomID: obj.chatRoomID }
-      })
+      }).catch(logExceptNavigationDuplicated)
     },
     navigateToOnsiteURL (path) {
       this.$router.push({ path }).catch(logExceptNavigationDuplicated)
