@@ -102,6 +102,7 @@
     :type='type'
     :isMsgSender='isMsgSender'
     :isGroupCreator='isGroupCreator'
+    :isAlreadyPinned='isAlreadyPinned'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
@@ -109,6 +110,7 @@
     @reply='reply'
     @retry='$emit("retry")'
     @copyMessageLink='copyMessageLink'
+    @pinToChannel='$emit("pin-to-channel")'
   )
 </template>
 
@@ -184,6 +186,7 @@ export default ({
     },
     isSameSender: Boolean,
     isGroupCreator: Boolean,
+    isAlreadyPinned: Boolean,
     isMsgSender: Boolean,
     shouldRenderMarkdown: Boolean
   },

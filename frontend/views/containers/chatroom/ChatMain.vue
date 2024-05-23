@@ -82,11 +82,13 @@
           :isSameSender='isSameSender(index)'
           :isMsgSender='isMsgSender(message.from)'
           :isGroupCreator='isGroupCreator'
+          :isAlreadyPinned='!!message.pinnedBy'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
+          @pin-to-channel='pinToChannel(message)'
           @delete-message='deleteMessage(message)'
           @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -624,6 +626,15 @@ export default ({
         }
       }).catch((e) => {
         console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
+      })
+    },
+    pinToChannel (message) {
+      const contractID = this.renderingChatRoomId
+      sbp('gi.actions/chatroom/pinMessage', {
+        contractID,
+        data: { message }
+      }).catch((e) => {
+        console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
     async deleteMessage (message) {

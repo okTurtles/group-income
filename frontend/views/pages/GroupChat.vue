@@ -83,16 +83,16 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
         ) Add description
     .c-header-shortcuts
       tooltip(
-        v-if='summary.pinnedMessages.length'
+        v-if='pinnedMessages.length'
         :manual='true'
         :opacity='1'
         direction='bottom-left'
       )
         span.c-pin-wrapper
           i.icon-thumbtack
-          i18n(:args='{ messagesCount: summary.pinnedMessages.length }') {messagesCount} Pinned
+          i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
         template(slot='tooltip')
-          pinned-messages(:messages='summary.pinnedMessages')
+          pinned-messages(:messages='pinnedMessages')
 
   template(#sidebar='{ toggle }')
     chat-nav
@@ -152,6 +152,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentChatRoomId',
       'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles',
@@ -185,6 +186,13 @@ export default ({
         order: this.getChatRoomIDsInSort,
         channels: this.chatRoomsInDetail
       }
+    },
+    pinnedMessages () {
+      const { chatRoomID } = this.summary
+      if (this.isJoinedChatRoom(chatRoomID) && chatRoomID === this.currentChatRoomId) {
+        return this.chatRoomPinnedMessages
+      }
+      return []
     }
   },
   methods: {

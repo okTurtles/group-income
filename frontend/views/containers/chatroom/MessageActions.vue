@@ -89,6 +89,14 @@ menu-parent(ref='menu')
         i.icon-link
         i18n Copy message Link
 
+      menu-item.is-icon-small(
+        v-if='!isAlreadyPinned'
+        tag='button'
+        @click='action("pinToChannel")'
+      )
+        i.icon-thumbtack
+        i18n Pin to channel
+
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
@@ -122,7 +130,8 @@ export default ({
     },
     type: String,
     isMsgSender: Boolean,
-    isGroupCreator: Boolean
+    isGroupCreator: Boolean,
+    isAlreadyPinned: Boolean
   },
   computed: {
     isText () {
