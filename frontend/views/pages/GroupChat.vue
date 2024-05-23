@@ -349,6 +349,7 @@ export default ({
 
   @include desktop {
     display: flex;
+    margin-bottom: 0.5rem;
   }
 
   .is-unstyled {
@@ -357,8 +358,13 @@ export default ({
 }
 
 .c-header-shortcuts {
+  display: none;
   padding: 0 0.2rem;
-  margin-top: 0.125rem;
+
+  @include desktop {
+    display: block;
+    margin-top: -0.375rem;
+  }
 
   .c-pin-wrapper {
     span {
