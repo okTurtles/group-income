@@ -14,14 +14,17 @@ marked.use({
 })
 
 export function renderMarkdown (str: string): any {
+  str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
+    .replace(/<br>-/g, '\n-')
+
   let converted = marked.parse(str, { gfm: true, breaks: true })
 
   // remove unecessary line-breaks from the converted markdown outcome.
   converted = converted.replace(/^\s+|\s+$/g, '')
 
   // remove the unecessary starting/end line-breaks added to the blockquote.
-  converted = converted.replace(/blockquote>\n/g, 'blockquote>')
-    .replace(/\n<\/blockquote>/g, '</blockquote>')
+  converted = converted.replace(/([a-z]+)>\n/g, '$1>')
+    .replace(/\n<\/([a-z]+)>/g, '</$1>')
 
   // if the original string doesn't have a line-break within it,
   // the converted outcome doesn't need to be wrapped with <p></p>.
