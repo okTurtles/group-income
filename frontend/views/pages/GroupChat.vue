@@ -95,6 +95,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           pinned-messages(
             :messages='pinnedMessages'
             @unpin-message='unpinMessage'
+            @scroll-to-pinned-message='scrollToPinnedMessage'
           )
 
   template(#sidebar='{ toggle }')
@@ -208,6 +209,11 @@ export default ({
     unpinMessage (messageHash) {
       if (this.$refs.chatMain) {
         this.$refs.chatMain.unpinFromChannel(messageHash)
+      }
+    },
+    scrollToPinnedMessage (messageHash) {
+      if (this.$refs.chatMain) {
+        this.$refs.chatMain.scrollToMessage(messageHash)
       }
     }
   },

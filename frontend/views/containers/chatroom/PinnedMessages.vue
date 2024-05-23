@@ -3,7 +3,7 @@
   template(v-for='(msg, index) in messages')
     .c-pinned-message(
       :key='msg.hash'
-      @click='scrollToPinnedMessage(msg)'
+      @click='scrollToPinnedMessage(msg.hash)'
     )
       .c-pinned-message-header
         .c-sender-profile
@@ -53,8 +53,8 @@ export default ({
     unpinMessage (messageHash) {
       this.$emit('unpin-message', messageHash)
     },
-    scrollToPinnedMessage (message) {
-      console.log('TODO: Scroll To Pinned Message -', message)
+    scrollToPinnedMessage (messageHash) {
+      this.$emit('scroll-to-pinned-message', messageHash)
     }
   }
 }: Object)
