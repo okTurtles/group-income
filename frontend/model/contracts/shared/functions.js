@@ -1,8 +1,19 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { MESSAGE_TYPES, POLL_STATUS } from './constants.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
+import { L } from '@common/common.js'
+import {
+  MESSAGE_TYPES,
+  POLL_STATUS,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from './constants.js'
+import { humanDate } from './time.js'
 
 // !!!!!!!!!!!!!!!
 // !! IMPORTANT !!
@@ -46,6 +57,49 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
     isLate: !!payment.data.isLate,
     when: payment.data.completedDate
   }
+}
+
+export function getProposalDetails (proposal: Object): Object {
+  const { creatorID, status } = proposal
+  const { proposalType, proposalData } = proposal.data
+
+  const settingsTranslationMap = {
+    'mincomeAmount': L('mincome'),
+    'distributionDate': L('distribution date'),
+    'votingSystem': L('voting system'),
+    'votingRule': L('voting rules')
+  }
+  const options = {}
+  if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
+    if (proposalData.ruleName !== proposalData.current.ruleName) {
+      options['settingType'] = 'votingSystem'
+    } else if (proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
+      options['settingType'] = 'votingRule'
+    }
+  } else if (proposalType === PROPOSAL_GROUP_SETTING_CHANGE) {
+    options['settingType'] = proposalData.setting
+  } else if (proposalType === PROPOSAL_GENERIC) {
+    options['title'] = proposalData.name
+  } else if (proposalType === PROPOSAL_INVITE_MEMBER) {
+    options['member'] = proposalData.memberName
+  } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
+    options['memberID'] = proposalData.memberID
+    options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
+  }
+
+  const { proposedValue } = proposalData
+  if (proposedValue) {
+    if (options.settingType === 'distributionDate') {
+      options['value'] = humanDate(proposedValue, { month: 'long', year: 'numeric', day: 'numeric' })
+    } else {
+      options['value'] = proposedValue
+    }
+  }
+  if (options.settingType) {
+    options['setting'] = settingsTranslationMap[options.settingType]
+  }
+
+  return { creatorID, status, type: proposalType, options }
 }
 
 // chatroom.js related
@@ -104,25 +158,21 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function leaveChatRoom ({ contractID }: {
-  contractID: string
-}) {
+export function leaveChatRoom (contractID: string) {
+  if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
+    return
+  }
   const rootState = sbp('state/vuex/state')
   const rootGetters = sbp('state/vuex/getters')
   if (contractID === rootGetters.currentChatRoomId) {
-    sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-      groupId: rootState.currentGroupId
-    })
-    const curRouteName = sbp('controller/router').history.current.name
-    if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      await sbp('controller/router')
-        .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
-        .catch(logExceptNavigationDuplicated)
-    }
+    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: rootState.currentGroupId })
   }
 
-  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
-  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomID: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
+  // NOTE: The contract that keeps track of chatrooms should now call `/release`
+  // This would be the group contract (for group chatrooms) or the identity
+  // contract (for DMs).
 }
 
 export function findMessageIdx (hash: string, messages: Array<Object>): number {
@@ -155,17 +205,35 @@ export function makeMentionFromUserID (userID: string): {
   me: string, all: string
 } {
   return {
-    me: userID ? `@${userID}` : '',
-    all: '@all'
+    me: userID ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${userID}` : '',
+    all: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}all`
   }
 }
 
-export function swapUserIDForUsername (text: string): string {
-  const rootGetters = sbp('state/vuex/getters')
-  const possibleMentions = Object.keys(rootGetters.ourContactProfilesById)
-    .map(u => makeMentionFromUserID(u).me).filter(v => !!v)
+export function makeChannelMention (string: string): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${string}`
+}
+
+export function swapMentionIDForDisplayname (text: string): string {
+  const {
+    chatRoomsInDetail,
+    ourContactProfilesById,
+    getChatroomNameById,
+    usernameFromID
+  } = sbp('state/vuex/getters')
+  const possibleMentions = [
+    ...Object.keys(ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+    ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
+  ]
+
   return text
     .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-    .map(t => !possibleMentions.includes(t) ? t : t[0] + rootGetters.usernameFromID(t.slice(1)))
+    .map(t => {
+      return possibleMentions.includes(t)
+        ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
+          ? t[0] + usernameFromID(t.slice(1))
+          : t[0] + getChatroomNameById(t.slice(1))
+        : t
+    })
     .join('')
 }

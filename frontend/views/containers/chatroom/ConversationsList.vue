@@ -5,7 +5,7 @@
 
     button.button.is-small.is-outlined(
       data-test='newChannelButton'
-      @click='openModal("CreateNewChannelModal")'
+      @click='onClickedNewChannel'
     )
       i.icon-plus.is-prefix
       i18n New
@@ -19,6 +19,7 @@
       :data-test='getChannelTestData(id)'
       :icon='getIcon(id)'
       :to='buildUrl(id)'
+      @click='$emit("redirect")'
     )
       avatar(
         v-if='list.channels[id].picture'
@@ -58,6 +59,10 @@ export default ({
     routeName: String
   },
   methods: {
+    onClickedNewChannel () {
+      this.openModal('CreateNewChannelModal')
+      this.$emit('new')
+    },
     getChannelTestData (id) {
       const prefix = `channel-${this.list.channels[id].name}`
       return prefix + (this.list.channels[id].joined ? '-in' : '-out')
@@ -70,12 +75,12 @@ export default ({
       }[this.list.channels[id].privacyLevel]
       return this.list.channels[id].joined ? channelIcon : 'plus'
     },
-    buildUrl (chatRoomId) {
+    buildUrl (chatRoomID) {
       // NOTE - This should be $store responsability
       // ...but for now I've used the $route params just for mocked layout purposes
       return {
         name: this.routeName,
-        params: { chatRoomId }
+        params: { chatRoomID }
       }
 
       // ... once $store is implement, we can just pass the following:

@@ -8,12 +8,14 @@ import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import {
-  STATUS_PASSED, STATUS_FAILED, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
+  STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
+import { getProposalDetails } from '@model/contracts/shared/functions.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
-const usernameFromID = (userID) => sbp('state/vuex/getters').usernameFromID(userID)
+const userDisplayNameFromID = (userID) => sbp('state/vuex/getters').userDisplayNameFromID(userID)
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
 // To guard against XSS when rendering usernames, use the `v-safe-html` directive.
@@ -101,7 +103,7 @@ export default ({
   },
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
 
     return {
       avatarUserID: data.memberID,
@@ -113,7 +115,7 @@ export default ({
     }
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
       body: L('{name} has left your group. Contributions were updated accordingly.', {
@@ -126,7 +128,7 @@ export default ({
     }
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
-    const name = strong(usernameFromID(data.memberID))
+    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
@@ -140,7 +142,7 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
-    const name = strong(usernameFromID(data.creatorID))
+    const name = strong(userDisplayNameFromID(data.creatorID))
     const bodyTemplateMap = {
       ADD_MEMBER: () => L('{name} proposed to add a member to the group. Vote now!', { name }),
       CHANGE_MINCOME: () => L('{name} proposed to change the group mincome. Vote now!', { name }),
@@ -195,19 +197,37 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, creatorID: string, proposalStatus: string }) {
-    const name = strong(usernameFromID(data.creatorID))
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object }) {
+    const { creatorID, status, type, options } = getProposalDetails(data.proposal)
+
     const bodyTemplateMap = {
-      // TODO: needs various messages depending on the proposal type? TBD by team.
-      [STATUS_PASSED]: () => L("{name}'s proposal has passed.", { name }),
-      [STATUS_FAILED]: () => L("{name}'s proposal has failed.", { name })
+      [PROPOSAL_INVITE_MEMBER]:
+        (opts) => L('{creator} proposal to add {member} to the group was {closedWith}.', opts),
+      [PROPOSAL_REMOVE_MEMBER]:
+        (opts) => L('{creator} proposal to remove {member} from the group was {closedWith}.', opts),
+      [PROPOSAL_GROUP_SETTING_CHANGE]:
+        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {closedWith}.', opts),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
+        (opts) => L('{creator} proposal to change group\'s {setting} was {closedWith}.', opts), // TODO: define message
+      [PROPOSAL_GENERIC]:
+        (opts) => L('{creator} proposal "{title}" was {closedWith}.', opts)
+    }
+    const statusMap = {
+      [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
+      [STATUS_FAILED]: { icon: 'times', level: 'danger', closedWith: L('rejected') },
+      [STATUS_CANCELLED]: { icon: 'times', level: 'danger', closedWith: L('cancelled') }, // TODO: define icon, level
+      [STATUS_EXPIRED]: { icon: 'times', level: 'danger', closedWith: L('expired') } // TODO: define icon, level
     }
 
     return {
-      avatarUserID: data.creatorID,
-      body: bodyTemplateMap[data.proposalStatus](),
-      icon: 'cog', // TODO : to be decided.
-      level: 'info',
+      avatarUserID: creatorID,
+      body: bodyTemplateMap[type]({
+        ...options,
+        creator: L('{name}\'s', { name: strong(userDisplayNameFromID(creatorID)) }), // TODO: display YOUR
+        closedWith: strong(statusMap[status].closedWith)
+      }),
+      icon: statusMap[status].icon,
+      level: statusMap[status].level,
       linkTo: '/dashboard#proposals',
       scope: 'group'
     }
@@ -233,7 +253,7 @@ export default ({
     return {
       avatarUserID: data.creatorID,
       body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: strong(usernameFromID(data.fromMemberID)),
+        name: strong(userDisplayNameFromID(data.fromMemberID)),
         ...LTags('strong')
       }),
       creatorID: data.creatorID,
@@ -249,7 +269,7 @@ export default ({
       avatarUserID: data.creatorID,
       body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
       creatorID: data.creatorID,
-      icon: '',
+      icon: 'dollar-sign',
       level: 'info',
       scope: 'group',
       sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {

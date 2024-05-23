@@ -106,7 +106,7 @@ export default ({
       }
     },
     groupPictureForContract (contractID) {
-      return this.$store.state[contractID].settings?.groupPicture || ''
+      return this.$store.state[contractID]?.settings?.groupPicture || ''
     }
   }
 }: Object)

@@ -19,7 +19,7 @@ import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDat
 import './internals.js'
 import './files.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId } from './utils.js'
+import { buildShelterAuthorizationHeader, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -285,7 +285,7 @@ export default (sbp('sbp/selectors/register', {
       get: secretKeyGetter,
       ownKeys: secretKeyList
     })
-    this.removeCount = Object.create(null)
+    this.ephemeralReferenceCount = Object.create(null)
     // subscriptionSet includes all the contracts in state.contracts for which
     // we can process events (contracts for which we have called /sync)
     // The reason we can't use, e.g., Object.keys(state.contracts), is that
@@ -352,12 +352,12 @@ export default (sbp('sbp/selectors/register', {
     this.abortController.abort()
     this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
-    this.config.reactiveSet(rootState, 'contracts', Object.create(null))
+    reactiveClearObject(contracts, this.config.reactiveDel)
+    clearObject(this.ephemeralReferenceCount)
     this.pending.splice(0)
-    Object.keys(contracts).forEach((contractID) => this.config.reactiveDel(rootState, contractID))
-    this.currentSyncs = Object.create(null)
-    this.postSyncOperations = Object.create(null)
-    this.sideEffectStacks = Object.create(null) // [contractID]: Array<*>
+    clearObject(this.currentSyncs)
+    clearObject(this.postSyncOperations)
+    clearObject(this.sideEffectStacks)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
@@ -763,14 +763,11 @@ export default (sbp('sbp/selectors/register', {
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
-  'chelonia/contract/sync': function (contractIDs: string | string[], params?: { force?: boolean, deferredRemove?: boolean }): Promise<*> {
+  'chelonia/contract/sync': function (contractIDs: string | string[], params?: { force?: boolean, resync?: boolean }): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     const forcedSync = !!params?.force
     return Promise.all(listOfIds.map(contractID => {
       if (!forcedSync && this.subscriptionSet.has(contractID)) {
-        if (params?.deferredRemove) {
-          this.removeCount[contractID] = (this.removeCount[contractID] || 0) + 1
-        }
         return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
       }
       // enqueue this invocation in a serial queue to ensure
@@ -792,18 +789,7 @@ export default (sbp('sbp/selectors/register', {
       ? isSyncing && this.currentSyncs[contractID].firstSync
       : isSyncing
   },
-  // TODO: implement 'chelonia/contract/release' (see #828)
-  // safer version of removeImmediately that waits to finish processing events for contractIDs
-  'chelonia/contract/cancelRemove': function (contractIDs: string | string[]): void {
-    const rootState = sbp(this.config.stateSelector)
-    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    listOfIds.forEach(contractID => {
-      if (rootState?.contracts?.[contractID]?.pendingRemove) {
-        rootState.contracts[contractID].pendingRemove = false
-      }
-    })
-  },
-  'chelonia/contract/remove': function (contractIDs: string | string[], params?: { removeIfPending?: boolean}): Promise<*> {
+  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -811,28 +797,104 @@ export default (sbp('sbp/selectors/register', {
         return undefined
       }
 
-      if (params?.removeIfPending) {
-        if (has(this.removeCount, contractID)) {
-          if (this.removeCount[contractID] > 1) {
-            this.removeCount[contractID] -= 1
-          } else {
-            delete this.removeCount[contractID]
+      return sbp('chelonia/private/queueEvent', contractID, () => {
+        const rootState = sbp(this.config.stateSelector)
+        const fkContractIDs = Array.from(new Set(Object.values(rootState[contractID]?._vm?.authorizedKeys ?? {}).filter((k) => {
+          return !!(k: any).foreignKey
+        }).map((k) => {
+          try {
+            const fkUrl = new URL((k: any).foreignKey)
+            return fkUrl.pathname
+          } catch {
+            return undefined
           }
-        }
-        if (!rootState.contracts[contractID].pendingRemove) {
-          return undefined
-        }
-      }
+        }).filter(Boolean)))
 
-      if (this.removeCount[contractID] >= 1) {
-        rootState.contracts[contractID].pendingRemove = true
-        return undefined
-      }
+        sbp('chelonia/private/removeImmediately', contractID)
 
-      return sbp('chelonia/private/queueEvent', contractID, [
-        'chelonia/private/removeImmediately', contractID
-      ])
+        if (fkContractIDs.length) {
+          // Attempt to release all contracts that are being monitored for
+          // foreign keys
+          sbp('chelonia/contract/release', fkContractIDs, { try: true }).catch((e) => {
+            console.error('[chelonia] Error attempting to release foreign key contracts', e)
+          })
+        }
+      })
     }))
+  },
+  'chelonia/contract/retain': function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    if (listOfIds.length === 0) return Promise.resolve()
+    if (!params?.ephemeral) {
+      const rootState = sbp(this.config.stateSelector)
+      listOfIds.forEach((id) => {
+        if (!has(rootState.contracts, id)) {
+          this.config.reactiveSet(rootState.contracts, id, Object.create(null))
+        }
+        this.config.reactiveSet(rootState.contracts[id], 'references', (rootState.contracts[id].references ?? 0) + 1)
+      })
+    } else {
+      listOfIds.forEach((id) => {
+        if (!has(this.ephemeralReferenceCount, id)) {
+          this.ephemeralReferenceCount[id] = 1
+        } else {
+          this.ephemeralReferenceCount[id] = this.ephemeralReferenceCount[id] + 1
+        }
+      })
+    }
+    return sbp('chelonia/contract/sync', listOfIds)
+  },
+  // the `try` parameter does not affect (ephemeral or persistent) reference
+  // counts, but rather removes a contract if the reference count is zero
+  // and the contract isn't being monitored for foreign keys. This parameter
+  // is meant mostly for internal chelonia use, so that removing or releasing
+  // a contract can also remove other contracts that this first contract
+  // was monitoring.
+  'chelonia/contract/release': function (contractIDs: string | string[], params?: { ephemeral?: boolean, try?: boolean }): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    const rootState = sbp(this.config.stateSelector)
+    if (!params?.try) {
+      if (!params?.ephemeral) {
+        listOfIds.forEach((id) => {
+          if (has(rootState.contracts, id) && has(rootState.contracts[id], 'references')) {
+            const current = rootState.contracts[id].references
+            if (current === 0) {
+              throw new Error('Invalid negative reference count')
+            }
+            if (current <= 1) {
+              this.config.reactiveDel(rootState.contracts[id], 'references')
+            } else {
+              this.config.reactiveSet(rootState.contracts[id], 'references', current - 1)
+            }
+          } else {
+            throw new Error('Invalid negative reference count')
+          }
+        })
+      } else {
+        listOfIds.forEach((id) => {
+          if (has(this.ephemeralReferenceCount, id)) {
+            const current = this.ephemeralReferenceCount[id] ?? 0
+            if (current <= 1) {
+              delete this.ephemeralReferenceCount[id]
+            } else {
+              this.ephemeralReferenceCount[id] = current - 1
+            }
+          } else {
+            throw new Error('Invalid negative ephemeral reference count')
+          }
+        })
+      }
+    }
+    const idsToRemove = listOfIds.filter((id) => {
+      return (
+        // Check persistent references
+        (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
+        // Check ephemeral references
+        !has(this.ephemeralReferenceCount, id)) &&
+        // Check foreign keys (i.e., that no keys are being watched)
+        (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
+    })
+    return idsToRemove.length ? sbp('chelonia/contract/remove', idsToRemove) : Promise.resolve()
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)
@@ -931,6 +993,19 @@ export default (sbp('sbp/selectors/register', {
         state = stateCopy
       }
     }
+  },
+  'chelonia/contract/state': function (contractID: string, height: ?number) {
+    const state = sbp(this.config.stateSelector)[contractID]
+    const stateCopy = state && cloneDeep(state)
+    if (stateCopy?._vm && height != null) {
+      // Remove keys in the future
+      Object.keys(stateCopy._vm.authorizedKeys).forEach(keyId => {
+        if (stateCopy._vm.authorizedKeys[keyId]._notBeforeHeight > height) {
+          delete stateCopy._vm.authorizedKeys[keyId]
+        }
+      })
+    }
+    return stateCopy
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
@@ -1121,6 +1196,10 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/out/keyRequest': async function (params: ChelKeyRequestParams): Promise<?GIMessage> {
     const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, innerSigningKeyId, encryptionKeyId, innerEncryptionKeyId, encryptKeyRequestMetadata, reference } = params
+    // `encryptKeyRequestMetadata` is optional because it could be desirable
+    // sometimes to allow anyone to audit OP_KEY_REQUEST and OP_KEY_SHARE
+    // operations. If `encryptKeyRequestMetadata` were always true, it would
+    // be harder in these situations to see interactions between two contracts.
     const manifestHash = this.config.contracts.manifests[contractName]
     const originatingManifestHash = this.config.contracts.manifests[originatingContractName]
     const contract = this.manifestToContract[manifestHash]?.contract
@@ -1130,7 +1209,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const rootState = sbp(this.config.stateSelector)
     try {
-      await sbp('chelonia/contract/sync', contractID, { deferredRemove: true })
+      await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
       const state = contract.state(contractID)
       const originatingState = originatingContract.state(originatingContractID)
 
@@ -1214,7 +1293,7 @@ export default (sbp('sbp/selectors/register', {
       })
       return msg
     } finally {
-      await sbp('chelonia/contract/remove', contractID, { removeIfPending: true })
+      await sbp('chelonia/contract/release', contractID, { ephemeral: true })
     }
   },
   'chelonia/out/keyRequestResponse': async function (params: ChelKeyRequestResponseParams): Promise<GIMessage> {

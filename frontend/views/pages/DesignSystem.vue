@@ -192,6 +192,7 @@ page(
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
               i.icon-envelope-open-text icon-envelope-open-text
+              i.icon-external-link-alt icon-external-link-alt
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
@@ -202,7 +203,7 @@ page(
               i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
-              i.icon-newspaper newspaper
+              i.icon-newspaper icon-newspaper
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
@@ -211,7 +212,7 @@ page(
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-search icon-search
-              i.icon-sort-down sort-down
+              i.icon-sort-down icon-sort-down
               i.icon-star icon-star
               i.icon-strikethrough icon-strikethrough
               i.icon-times icon-times
@@ -225,12 +226,13 @@ page(
               i.icon-hashtag icon-hashtag
               i.icon-grin-beam icon-grin-beam
               i.icon-smile-beam icon-smile-beam
+              i.icon-share-alt icon-share-alt
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
-              i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
               i.icon-paper-clip icon-paper-clip
+              i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-file icon-file
         tr
           td

@@ -70,7 +70,7 @@ tooltip(
         ) Send message
 
         i18n.button.is-outlined.is-small(
-          v-if='groupShouldPropose || ourIdentityContractId === groupSettings.groupCreatorID'
+          v-if='groupShouldPropose || isGroupCreator'
           tag='button'
           @click='openModal("RemoveMember", { memberID: contractID })'
           data-test='buttonRemoveMember'
@@ -119,7 +119,7 @@ export default ({
   computed: {
     ...mapGetters([
       'groupProfiles',
-      'groupSettings',
+      'currentGroupOwnerID',
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
@@ -128,6 +128,9 @@ export default ({
     ]),
     isSelf () {
       return this.contractID === this.ourIdentityContractId
+    },
+    isGroupCreator () {
+      return this.ourIdentityContractId === this.currentGroupOwnerID
     },
     profile () {
       return this.globalProfile(this.contractID)
@@ -163,14 +166,14 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      const chatRoomId = this.ourGroupDirectMessageFromUserIds(this.contractID)
-      if (!chatRoomId) {
+      const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
+      if (!chatRoomID) {
         this.createDirectMessage(this.contractID)
       } else {
-        if (!this.ourGroupDirectMessages[chatRoomId].visible) {
-          this.setDMVisibility(chatRoomId, true)
+        if (!this.ourGroupDirectMessages[chatRoomID].visible) {
+          this.setDMVisibility(chatRoomID, true)
         } else {
-          this.redirect(chatRoomId)
+          this.redirect(chatRoomID)
         }
       }
       this.toggleTooltip()
