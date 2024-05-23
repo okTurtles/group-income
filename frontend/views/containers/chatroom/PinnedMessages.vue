@@ -51,7 +51,7 @@ export default ({
     humanDate,
     renderMarkdown,
     unpinMessage (messageHash) {
-      console.log('TODO: Unpin Message -', messageHash)
+      this.$emit('unpin-message', messageHash)
     },
     scrollToPinnedMessage (message) {
       console.log('TODO: Scroll To Pinned Message -', message)

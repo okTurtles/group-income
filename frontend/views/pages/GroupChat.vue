@@ -92,7 +92,10 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           i.icon-thumbtack
           i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
         template(slot='tooltip')
-          pinned-messages(:messages='pinnedMessages')
+          pinned-messages(
+            :messages='pinnedMessages'
+            @unpin-message='unpinMessage'
+          )
 
   template(#sidebar='{ toggle }')
     chat-nav
@@ -111,7 +114,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
       )
 
   .card.c-card
-    chat-main(:summary='summary')
+    chat-main(ref='chatMain' :summary='summary')
 </template>
 
 <script>
@@ -201,6 +204,11 @@ export default ({
     },
     editDescription () {
       this.openModal('EditChannelDescriptionModal')
+    },
+    unpinMessage (messageHash) {
+      if (this.$refs.chatMain) {
+        this.$refs.chatMain.unpinFromChannel(messageHash)
+      }
     }
   },
   watch: {

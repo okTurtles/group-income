@@ -168,7 +168,7 @@ sbp('chelonia/defineContract', {
       return getters.currentChatRoomState.messages || []
     },
     chatRoomPinnedMessages (state, getters) {
-      return getters.currentChatRoomState.pinnedMessages || []
+      return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
     }
   },
   actions: {
@@ -779,7 +779,7 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data }, { state }) {
         const { hash } = data
-        const pinnedMsgIndex = state.pinnedMessages.findIndex(msg => msg.hash === hash)
+        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
         if (pinnedMsgIndex >= 0) {
           state.pinnedMessages.splice(pinnedMsgIndex, 1)
         }

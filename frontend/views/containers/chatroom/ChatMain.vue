@@ -637,6 +637,15 @@ export default ({
         console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
+    unpinFromChannel (hash) {
+      const contractID = this.renderingChatRoomId
+      sbp('gi.actions/chatroom/unpinMessage', {
+        contractID,
+        data: { hash }
+      }).catch((e) => {
+        console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
+      })
+    },
     async deleteMessage (message) {
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
