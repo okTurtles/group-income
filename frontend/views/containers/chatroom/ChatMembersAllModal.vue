@@ -151,9 +151,9 @@ export default ({
   computed: {
     ...mapGetters([
       'currentChatRoomState',
-      'currentGroupState',
+      'groupGeneralChatRoomId',
       'groupMembersSorted',
-      'getGroupChatRooms',
+      'groupChatRooms',
       'chatRoomMembers',
       'chatRoomMembersInSort',
       'globalProfile',
@@ -204,13 +204,13 @@ export default ({
       // NOTE: Do not consider to get attributes of private chatroom which the user is not part of
       //       because it couldn't be happened
       // TODO: remove 'users', 'deletedDate' to keep consistency when this.isJoined === false
-      return this.isJoined ? this.currentChatRoomState.attributes : this.getGroupChatRooms[this.currentChatRoomId]
+      return this.isJoined ? this.currentChatRoomState.attributes : this.groupChatRooms[this.currentChatRoomId]
     },
     chatRoomMembersInOrder () {
       return this.isJoined
         ? this.chatRoomMembersInSort
         : this.groupMembersSorted
-          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].members[member.username]?.status === PROFILE_STATUS.ACTIVE)
+          .filter(member => this.groupChatRooms[this.currentChatRoomId].members[member.username]?.status === PROFILE_STATUS.ACTIVE)
           .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
     }
   },
@@ -267,7 +267,7 @@ export default ({
         return false
       }
       const { creatorID } = this.chatRoomAttribute
-      if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
+      if (this.groupGeneralChatRoomId === this.currentChatRoomId) {
         return false
       } else if (this.ourIdentityContractId === creatorID) {
         return true

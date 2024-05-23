@@ -611,10 +611,10 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupCurrency?.displayWithCurrency
     },
-    getGroupChatRooms (state, getters) {
+    groupChatRooms (state, getters) {
       return getters.currentGroupState.chatRooms
     },
-    generalChatRoomId (state, getters) {
+    groupGeneralChatRoomId (state, getters) {
       return getters.currentGroupState.generalChatRoomId
     },
     // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
@@ -1402,7 +1402,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
         objectOf({ chatRoomID: string })(data)
 
-        if (getters.getGroupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
+        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),

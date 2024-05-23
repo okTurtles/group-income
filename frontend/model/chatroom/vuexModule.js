@@ -136,7 +136,7 @@ const getters = {
         Object.keys(rootState[cId].chatRooms).includes(chatRoomID))
   },
   chatRoomsInDetail (state, getters, rootState) {
-    const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
+    const chatRoomsInDetail = merge({}, getters.groupChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
       if (chatRoom && chatRoom.attributes &&

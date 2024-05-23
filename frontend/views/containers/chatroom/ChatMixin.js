@@ -39,8 +39,8 @@ const ChatMixin: Object = {
       'groupIdFromChatRoomId',
       'ourGroupDirectMessages',
       'chatRoomMembers',
-      'generalChatRoomId',
-      'getGroupChatRooms',
+      'groupGeneralChatRoomId',
+      'groupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfilesById',
@@ -65,7 +65,7 @@ const ChatMixin: Object = {
         picture,
         attributes: Object.assign({}, this.currentChatRoomState.attributes),
         isPrivate: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
-        isGeneral: this.generalChatRoomId === this.currentChatRoomId,
+        isGeneral: this.groupGeneralChatRoomId === this.currentChatRoomId,
         isJoined: true,
         members: Object.fromEntries(Object.keys(this.currentChatRoomState.members).map(memberID => {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
@@ -81,7 +81,7 @@ const ChatMixin: Object = {
       const name = 'GroupChatConversation'
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
-      chatRoomID = chatRoomID || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
+      chatRoomID = chatRoomID || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId)
 
       this.$router.push({
         name,
@@ -93,7 +93,7 @@ const ChatMixin: Object = {
       document.title = title || this.summary.title
     },
     loadLatestState (chatRoomID: string): void {
-      const summarizedAttr = this.getGroupChatRooms[chatRoomID]
+      const summarizedAttr = this.groupChatRooms[chatRoomID]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, members } = summarizedAttr
         const activeMembers = Object

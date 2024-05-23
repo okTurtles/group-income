@@ -151,13 +151,14 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'isJoinedChatRoom',
-      'getGroupChatRooms',
+      'groupChatRooms',
+      'chatRoomPinnedMessages',
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getGroupChatRooms || {}).map(cID => ({
-        name: this.getGroupChatRooms[cID].name,
-        privacyLevel: this.getGroupChatRooms[cID].privacyLevel,
+      return Object.keys(this.groupChatRooms || {}).map(cID => ({
+        name: this.groupChatRooms[cID].name,
+        privacyLevel: this.groupChatRooms[cID].privacyLevel,
         joined: this.isJoinedChatRoom(cID),
         id: cID
       })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
