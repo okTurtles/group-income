@@ -15,8 +15,14 @@
           )
       .c-pinned-message-content
         span.custom-markdown-content(
+          v-if='isText(msg)'
           v-safe-html:a='renderMarkdown(msg.text)'
         )
+        .c-poll-wrapper(v-else-if='isPoll(msg)')
+          poll-vote-result.c-poll-inner(
+            :pollData='msg.pollData'
+            :readOnly='true'
+          )
       .c-pinned-message-footer
         span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 
@@ -26,14 +32,17 @@
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
+import PollVoteResult from '@containers/chatroom/poll-message-content/PollVoteResult.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 export default ({
   name: 'PinnedMessage',
   components: {
     AvatarUser,
-    Tooltip
+    Tooltip,
+    PollVoteResult
   },
   props: {
     messages: {
@@ -50,6 +59,12 @@ export default ({
   methods: {
     humanDate,
     renderMarkdown,
+    isText (message) {
+      return message.type === MESSAGE_TYPES.TEXT
+    },
+    isPoll (message) {
+      return message.type === MESSAGE_TYPES.POLL
+    },
     unpinMessage (messageHash) {
       this.$emit('unpin-message', messageHash)
     },
@@ -68,6 +83,7 @@ export default ({
   padding: 0.75rem;
   max-height: 40rem;
   max-width: 25rem;
+  width: 25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -103,6 +119,15 @@ export default ({
 
     .c-pinned-message-content {
       margin: 0.5rem 0;
+
+      .c-poll-inner {
+        position: relative;
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid $general_0;
+        padding: 1rem;
+        background-color: $background_0;
+      }
     }
 
     .c-pinned-message-footer {
