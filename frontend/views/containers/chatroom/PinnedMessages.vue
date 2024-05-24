@@ -23,12 +23,12 @@
             :pollData='msg.pollData'
             :readOnly='true'
           )
-        .c-attachments-wrapper(v-if='hasAttachments(msg)')
-          chat-attachment-preview(
-            :attachmentList='msg.attachments'
-            :isForDownload='true'
-            :variant='messageSentVariant'
-          )
+        chat-attachment-preview(
+          v-if='hasAttachments(msg)'
+          :attachmentList='msg.attachments'
+          :isForDownload='true'
+          :variant='messageSentVariant'
+        )
       .c-pinned-message-footer
         span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 
