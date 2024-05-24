@@ -19,16 +19,20 @@
           v-safe-html:a='renderMarkdown(msg.text)'
         )
         .c-poll-wrapper(v-else-if='isPoll(msg)')
-          poll-vote-result.c-poll-inner(
-            :pollData='msg.pollData'
-            :readOnly='true'
-          )
+          poll-vote-result.c-poll-inner(:pollData='msg.pollData' :readOnly='true')
         chat-attachment-preview(
           v-if='hasAttachments(msg)'
           :attachmentList='msg.attachments'
           :isForDownload='true'
           :variant='messageSentVariant'
         )
+        .c-message-reactions-wrapper
+          message-reactions(
+            :emoticonsList='msg.emoticons'
+            :messageType='msg.type'
+            :currentUserID='ourIdentityContractId'
+            :readOnly='true'
+          )
       .c-pinned-message-footer
         span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 
@@ -38,8 +42,9 @@
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
-import PollVoteResult from '@containers/chatroom/poll-message-content/PollVoteResult.vue'
-import ChatAttachmentPreview from '@containers/chatroom/file-attachment/ChatAttachmentPreview.vue'
+import PollVoteResult from './poll-message-content/PollVoteResult.vue'
+import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
+import MessageReactions from './MessageReactions.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
@@ -50,7 +55,8 @@ export default ({
     AvatarUser,
     Tooltip,
     PollVoteResult,
-    ChatAttachmentPreview
+    ChatAttachmentPreview,
+    MessageReactions
   },
   props: {
     messages: {
@@ -62,7 +68,7 @@ export default ({
     return {}
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID']),
+    ...mapGetters(['userDisplayNameFromID', 'ourIdentityContractId']),
     messageSentVariant () {
       return MESSAGE_VARIANTS.SENT
     }
@@ -141,6 +147,10 @@ export default ({
         border: 1px solid $general_0;
         padding: 1rem;
         background-color: $background_0;
+      }
+
+      .c-message-reactions-wrapper {
+        margin-left: -3rem;
       }
     }
 
