@@ -614,15 +614,24 @@ sbp('chelonia/defineContract', {
         messageSender: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
-          const oldAttachments = state.messages[msgIndex].attachments
+        const { hash, manifestCid } = data
+        const fnDeleteAttachment = (message) => {
+          const oldAttachments = message.attachments
           if (Array.isArray(oldAttachments)) {
             const newAttachments = oldAttachments.filter(attachment => {
-              return attachment.downloadData.manifestCid !== data.manifestCid
+              return attachment.downloadData.manifestCid !== manifestCid
             })
-            Vue.set(state.messages[msgIndex], 'attachments', newAttachments)
+            Vue.set(message, 'attachments', newAttachments)
           }
+        }
+
+        const msgIndex = findMessageIdx(hash, state.messages)
+        if (msgIndex >= 0) {
+          fnDeleteAttachment(state.messages[msgIndex])
+        }
+        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          fnDeleteAttachment(state.pinnedMessages[pinnedMsgIndex])
         }
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
@@ -643,9 +652,9 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, innerSigningContractID }, { state }) {
         const { hash, emoticon } = data
-        const msgIndex = findMessageIdx(hash, state.messages)
-        if (msgIndex >= 0) {
-          let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
+
+        const fnMakeEmotion = (message) => {
+          let emoticons = cloneDeep(message.emoticons || {})
           if (emoticons[emoticon]) {
             const alreadyAdded = emoticons[emoticon].indexOf(innerSigningContractID)
             if (alreadyAdded >= 0) {
@@ -663,10 +672,19 @@ sbp('chelonia/defineContract', {
             emoticons[emoticon] = [innerSigningContractID]
           }
           if (emoticons) {
-            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+            Vue.set(message, 'emoticons', emoticons)
           } else {
-            Vue.delete(state.messages[msgIndex], 'emoticons')
+            Vue.delete(message, 'emoticons')
           }
+        }
+
+        const msgIndex = findMessageIdx(hash, state.messages)
+        if (msgIndex >= 0) {
+          fnMakeEmotion(state.messages[msgIndex])
+        }
+        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          fnMakeEmotion(state.pinnedMessages[pinnedMsgIndex])
         }
       }
     },
@@ -677,25 +695,30 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
+        const fnVoteOnPoll = (message) => {
           const myVotes = data.votes
-          const pollData = state.messages[msgIndex].pollData
+          const pollData = message.pollData
           const optsCopy = cloneDeep(pollData.options)
-          const votedOptNames = []
 
           myVotes.forEach(optId => {
-            const foundOpt = optsCopy.find(x => x.id === optId)
-
-            if (foundOpt) {
-              foundOpt.voted.push(innerSigningContractID)
-              votedOptNames.push(`"${foundOpt.value}"`)
-            }
+            optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+        }
 
-          if (pollData.hideVoters) { return }
+        const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          fnVoteOnPoll(state.pinnedMessages[pinnedMsgIndex])
+        }
+
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+        if (msgIndex >= 0) {
+          fnVoteOnPoll(state.messages[msgIndex])
+
+          // TODO: this doesn't always run. fix it
+          //       https://github.com/okTurtles/group-income/issues/2010
+          if (state.messages[msgIndex].pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having voted.
@@ -719,31 +742,35 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
-          const me = innerSigningContractID
+        const fnChangeVoteOnPoll = (message) => {
           const myUpdatedVotes = data.votes
-          const pollData = state.messages[msgIndex].pollData
+          const pollData = message.pollData
           const optsCopy = cloneDeep(pollData.options)
-          const votedOptNames = []
 
           // remove all the previous votes of the user before update.
           optsCopy.forEach(opt => {
-            opt.voted = opt.voted.filter(votername => votername !== me)
+            opt.voted = opt.voted.filter(votername => votername !== innerSigningContractID)
           })
 
           myUpdatedVotes.forEach(optId => {
-            const foundOpt = optsCopy.find(x => x.id === optId)
-
-            if (foundOpt) {
-              foundOpt.voted.push(me)
-              votedOptNames.push(`"${foundOpt.value}"`)
-            }
+            optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+        }
 
-          if (pollData.hideVoters) { return }
+        const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          fnChangeVoteOnPoll(state.pinnedMessages[pinnedMsgIndex])
+        }
+
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+        if (msgIndex >= 0) {
+          fnChangeVoteOnPoll(state.messages[msgIndex])
+
+          // TODO: this doesn't always run. fix it
+          //       https://github.com/okTurtles/group-income/issues/2010
+          if (state.messages[msgIndex].pollData.hideVoters) { return }
         }
 
         // create & add a notification-message for user having update his/her votes.
@@ -768,6 +795,10 @@ sbp('chelonia/defineContract', {
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           Vue.set(state.messages[msgIndex].pollData, 'status', POLL_STATUS.CLOSED)
+        }
+        const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          Vue.set(state.pinnedMessages[pinnedMsgIndex].pollData, 'status', POLL_STATUS.CLOSED)
         }
       }
     },
