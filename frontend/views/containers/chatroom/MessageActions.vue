@@ -90,7 +90,7 @@ menu-parent(ref='menu')
         i18n Copy message Link
 
       menu-item.is-icon-small(
-        v-if='!isAlreadyPinned'
+        v-if='!isAlreadyPinned && isPinnable'
         tag='button'
         @click='action("pinToChannel")'
       )
@@ -139,6 +139,9 @@ export default ({
     },
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
+    },
+    isPinnable () {
+      return this.isText || this.isPoll
     },
     isEditable () {
       return this.isMsgSender && (this.isText || this.isPoll)
