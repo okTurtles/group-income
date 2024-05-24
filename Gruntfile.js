@@ -75,7 +75,7 @@ const development = NODE_ENV === 'development'
 const production = !development
 
 // Make database path available to subprocess
-const dbPath = process.env.DB_PATH || (production ? `./${distDir}/data` : './data')
+const dbPath = process.env.DB_PATH || './data'
 if (!process.env.DB_PATH) {
   Object.assign(process.env, { DB_PATH: dbPath })
 }
