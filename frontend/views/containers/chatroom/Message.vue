@@ -50,9 +50,9 @@ export default ({
         return null
       }
     },
+    pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
-    isAlreadyPinned: Boolean,
     isMsgSender: Boolean,
     replyingMessage: String
   },

@@ -66,8 +66,8 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    isMsgSender: Boolean, // says if the current user is the creator of the message
-    isAlreadyPinned: Boolean
+    pinnedBy: String,
+    isMsgSender: Boolean // says if the current user is the creator of the message
   },
   data () {
     return {
