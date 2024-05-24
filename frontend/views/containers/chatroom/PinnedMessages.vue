@@ -23,6 +23,12 @@
             :pollData='msg.pollData'
             :readOnly='true'
           )
+        .c-attachments-wrapper(v-if='hasAttachments(msg)')
+          chat-attachment-preview(
+            :attachmentList='msg.attachments'
+            :isForDownload='true'
+            :variant='messageSentVariant'
+          )
       .c-pinned-message-footer
         span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 
@@ -33,8 +39,9 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PollVoteResult from '@containers/chatroom/poll-message-content/PollVoteResult.vue'
+import ChatAttachmentPreview from '@containers/chatroom/file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
 
 export default ({
@@ -42,7 +49,8 @@ export default ({
   components: {
     AvatarUser,
     Tooltip,
-    PollVoteResult
+    PollVoteResult,
+    ChatAttachmentPreview
   },
   props: {
     messages: {
@@ -54,7 +62,10 @@ export default ({
     return {}
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID'])
+    ...mapGetters(['userDisplayNameFromID']),
+    messageSentVariant () {
+      return MESSAGE_VARIANTS.SENT
+    }
   },
   methods: {
     humanDate,
@@ -64,6 +75,9 @@ export default ({
     },
     isPoll (message) {
       return message.type === MESSAGE_TYPES.POLL
+    },
+    hasAttachments (message) {
+      return message.attachments?.length > 0
     },
     unpinMessage (messageHash) {
       this.$emit('unpin-message', messageHash)
