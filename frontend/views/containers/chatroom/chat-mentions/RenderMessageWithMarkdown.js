@@ -18,9 +18,6 @@ Vue.component('RenderMessageWithMarkdown', {
     const { text, edited = false, isReplyingMessage = false } = this.$props
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
 
-    console.log('!@# text: ', text)
-    console.log('!@# markdown converted: ', renderMarkdown(text))
-    console.log('!@# final domTree: ', domTree)
     const recursiveCall = (entry: any) => {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
@@ -52,7 +49,7 @@ Vue.component('RenderMessageWithMarkdown', {
       'p',
       {
         class: {
-          'is-replying': isReplyingMessage,
+          'c-replying': isReplyingMessage,
           'custom-markdown-content': true
         },
         attrs: { ...(this.$attrs || {}) },
@@ -63,7 +60,7 @@ Vue.component('RenderMessageWithMarkdown', {
         edited && createElement(
           'span',
           {
-            class: { 'edited': true }
+            class: { 'c-edited': true }
           },
           L('(edited)')
         )

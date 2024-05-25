@@ -25,7 +25,7 @@
             :text='replyingMessage'
             @click='$emit("reply-message-clicked")'
           )
-          render-message-text(
+          render-message-text.c-replying(
             v-else
             :isReplyingMessage='true'
             :text='replyingMessage'
@@ -40,7 +40,7 @@
           @cancelEdit='cancelEdit'
         )
         template(v-else-if='text')
-          render-message-with-markdown(
+          render-message-with-markdown.c-text(
             v-if='shouldRenderMarkdown'
             :text='text'
             :edited='edited'
