@@ -117,6 +117,7 @@ import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import '../containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 
 export default ({
   name: 'GroupChat',

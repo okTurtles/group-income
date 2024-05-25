@@ -1,5 +1,6 @@
 <template lang='pug'>
-p.c-message-text(
+component.c-message-text(
+  :is='tag'
   v-bind='$attrs'
   v-on='$listeners'
   :class='{ "is-replying": isReplyingMessage }'
@@ -54,6 +55,10 @@ export default ({
       type: String,
       required: true,
       default: ''
+    },
+    tag: {
+      type: String,
+      default: 'p'
     },
     edited: Boolean,
     isReplyingMessage: Boolean

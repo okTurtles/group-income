@@ -18,12 +18,19 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        render-message-text.custom-markdown-content(
-          v-if='replyingMessage'
-          :isReplyingMessage='true'
-          :text='replyingMessage'
-          @click='$emit("reply-message-clicked")'
-        )
+        template(v-if='replyingMessage')
+          render-message-with-markdown(
+            v-if='shouldRenderMarkdown'
+            :isReplyingMessage='true'
+            :text='replyingMessage'
+            @click='$emit("reply-message-clicked")'
+          )
+          render-message-text(
+            v-else
+            :isReplyingMessage='true'
+            :text='replyingMessage'
+            @click='$emit("reply-message-clicked")'
+          )
 
         send-area(
           v-if='isEditing'
@@ -32,11 +39,17 @@
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
-        render-message-text.c-text.custom-markdown-content(
-          v-else-if='text'
-          :text='text'
-          :edited='edited'
-        )
+        template(v-else-if='text')
+          render-message-with-markdown(
+            v-if='shouldRenderMarkdown'
+            :text='text'
+            :edited='edited'
+          )
+          render-message-text.c-text(
+            v-else
+            :text='text'
+            :edited='edited'
+          )
 
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
@@ -88,7 +101,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
-import RenderMessageText from './RenderMessageText.vue'
+import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'

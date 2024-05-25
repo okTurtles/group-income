@@ -3,6 +3,28 @@
   white-space: initial;
   -webkit-touch-callout: none;
 
+  &.is-replying {
+    border-left: 2px;
+    border-color: #dbdbdb; // var(--text_1);
+    border-style: none none none solid;
+    font-size: 0.75rem;
+    color: var(--text_1);
+    font-style: italic;
+    padding-left: 0.25rem;
+    white-space: pre-line;
+
+    &:hover {
+      cursor: pointer;
+      color: var(--text_2);
+      border-color: var(--text_1); // var(--text_2);
+    }
+
+    .c-member-mention,
+    .c-channel-mention {
+      background-color: transparent;
+    }
+  }
+
   code {
     display: inline-block;
     border-radius: $radius;
@@ -80,5 +102,11 @@
 
   .link {
     border-bottom-color: currentColor;
+  }
+
+  .edited {
+    margin-left: 0.2rem;
+    font-size: 0.7rem;
+    color: var(--text_1);
   }
 }

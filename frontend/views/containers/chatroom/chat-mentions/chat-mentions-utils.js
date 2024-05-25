@@ -1,4 +1,4 @@
-type DomObject = {
+export type DomObject = {
   tagName: string | null,
   attributes: Object, // can be an empty object too.
   text?: string,
@@ -24,7 +24,7 @@ function createRecursiveDomObjects (element: any): DomObject {
 
   if (element.attributes?.length) {
     for (const attr of element.attributes) {
-      nodeObj[attr.name] = attr.value
+      nodeObj.attributes[attr.name] = attr.value
     }
   }
 
