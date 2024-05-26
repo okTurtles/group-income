@@ -7,7 +7,9 @@ export type DomObject = {
 
 export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject> {
   // Use DOMParser to parse the HTML string into a DOM tree.
-  // (reference: https://medium.com/@fulit103/converting-html-to-a-virtual-dom-in-javascript-3a6db0f563b1)
+  // Reference 1. (DOMParser API): https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
+  // Refernce 2. (Converting html to virtual DOM): https://medium.com/@fulit103/converting-html-to-a-virtual-dom-in-javascript-3a6db0f563b1)
+
   const parser = new DOMParser()
   const doc = parser.parseFromString(htmlString, 'text/html')
   const rootNode = doc.body
@@ -16,7 +18,40 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
 }
 
 function createRecursiveDomObjects (element: any): DomObject {
-  const isNodeTypeText = (el: any) => el?.nodeType === Node.TEXT_NODE
+  /*
+    This function takes the virtual DOM tree generated as a reult of calling the DOMParser method,
+    and then turn into the equivalent recursive object literal structures, which looks like below for example.
+
+    {
+      tagName: 'div',
+      attributes: { id: ..., ... },
+      children: [
+        {
+          tagName: 'ul',
+          attributes: { class: '...', ... },
+          children: [
+            { tagName: 'li', attributes: { ... }, children: [ ... ] },
+            { tagName: 'li', attributes: { ... }, children: [ ... ] }
+            ...
+          ]
+        },
+        {
+          tagName: 'a',
+          attributes: { href: '...', target: '_blank', ... },
+          children: [ { tagName: null, text: 'This is the link' } ]
+        },
+        {
+          tagName: null,
+          text: 'A text segment'
+        },
+        ...
+      ]
+    }
+
+    This outcome will be used by a Vue render function to render converted markdown cleanly without breaking the html structure.
+  */
+
+  const isNodeTypeText = (el: any): boolean => el?.nodeType === Node.TEXT_NODE
 
   const nodeObj: DomObject = isNodeTypeText(element)
     ? { tagName: null, attributes: {}, text: element.textContent }

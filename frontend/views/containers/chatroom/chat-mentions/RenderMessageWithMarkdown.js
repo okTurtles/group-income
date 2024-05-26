@@ -3,6 +3,7 @@ import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 
+// reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
 Vue.component('RenderMessageWithMarkdown', {
   name: 'RenderMessageWithMarkdown',
   props: {
@@ -18,7 +19,8 @@ Vue.component('RenderMessageWithMarkdown', {
     const { text, edited = false, isReplyingMessage = false } = this.$props
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
 
-    const recursiveCall = (entry: any) => {
+    // Turns a dom tree object structure into the equivalent recursive createElement(...) call structure.
+    const recursiveCall = (entry: any): any => {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
 
