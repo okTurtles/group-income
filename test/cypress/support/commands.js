@@ -212,17 +212,19 @@ Cypress.Commands.add('giLogin', (username, {
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         const ourUsername = sbp('state/vuex/getters').ourUsername
+        console.log('@ev@ OUR USERNAME ' + ourUsername + '; LOGGING IN AS ' + username)
         if (ourUsername === username) {
           throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
         }
-        sbp('okTurtles.events/once', LOGIN, async ({ username: name }) => {
+        sbp('okTurtles.events/once', LOGIN, ({ identityContractID }) => {
+          const name = sbp('state/vuex/getters').usernameFromID(identityContractID)
+          console.error('@ev@ ONCE LOGIN', { name, username })
           if (name === username) {
-            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
             resolve()
           }
         })
         sbp('gi.app/identity/login', { username, password })
-      })
+      }).then(() => sbp('controller/router').push({ path: '/dashboard' }).catch(() => {}))
     })
 
     if (toGroupDashboardUponSuccess) {
@@ -302,6 +304,22 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         (async () => {
+          const eventHandler = ({ contractID }) => {
+            console.error('@ev@@ CY CMDS JOINED_GROUP', { cID, contractID })
+            if (contractID === cID) {
+              sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
+              const invervalId = setInterval(() => {
+                console.error('@ev@@ INT', sbp('state/vuex/state').currentGroupId === contractID, sbp('state/vuex/getters').ourProfileActive)
+                if (sbp('state/vuex/state').currentGroupId === contractID && sbp('state/vuex/getters').ourProfileActive) {
+                  clearTimeout(invervalId)
+                  resolve()
+                }
+              }, 5)
+            }
+          }
+          console.error('@ev@@ SETTING UP LISTENER ON JOINED_GROUP')
+          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
+
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
@@ -312,17 +330,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
               ruleThreshold
             }
           })
-
-          const eventHandler = async ({ contractID }) => {
-            if (contractID === cID) {
-              await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-              sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-              resolve()
-            }
-          }
-          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
         })()
-      })
+      }).then(() => sbp('controller/router').push({ path: '/dashboard' }))
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('groupName').should('contain', name)

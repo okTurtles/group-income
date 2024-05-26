@@ -16,9 +16,9 @@ import { NOTIFICATION_TYPE, REQUEST_TYPE } from '~/shared/pubsub.js'
 import { PUBSUB_INSTANCE } from '../instance-keys.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
-import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, SWITCH_GROUP } from '../../utils/events.js'
+import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
 import '@sbp/okturtles.data'
-import '../namespace.js'
+import '../namespace-sw.js'
 import '../actions/index.js'
 import '../../views/utils/avatar.js'
 import { serializer, deserializer } from '~/shared/serdes/index.js'
@@ -52,8 +52,6 @@ sbp('sbp/selectors/register', {
     console.error('[sw] CALLED state/vuex/commit WHICH IS UNDEFINED')
   }
 })
-
-sbp('chelonia/rootState').namespaceLookups = Object.create(null)
 
 // Use queueInvocation to prevent 'save' calls to persist after calling
 // `'chelonia/reset'`
@@ -156,7 +154,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
     })
 });
 
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, JOINED_GROUP, SWITCH_GROUP].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {

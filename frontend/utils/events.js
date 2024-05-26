@@ -9,6 +9,7 @@ export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGOUT = 'logout'
 
+export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
 
@@ -40,3 +41,5 @@ export const THEME_CHANGE = 'theme-change'
 export const CHATROOM_EVENTS = 'chatroom-events'
 export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
+
+export const NAMESPACE_REGISTRATION = 'namespace-registration'

@@ -13,7 +13,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP } from './utils/events.js'
+import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, NAMESPACE_REGISTRATION } from './utils/events.js'
 import './controller/namespace.js'
 // import './controller/actions/index.js'
 import './controller/app/index.js'
@@ -133,8 +133,9 @@ async function startApp () {
   const swRpc = (() => {
     let controller = navigator.serviceWorker.controller
     navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
+      console.error('@@@CONTROLLERCHANGE @lifecycle')
       controller = navigator.serviceWorker.controller
-    })
+    }, false)
 
     return (...args) => {
       return new Promise((resolve, reject) => {
@@ -151,11 +152,11 @@ async function startApp () {
             }
             messageChannel.port1.close()
           }
-        })
+        }, false)
         messageChannel.port1.addEventListener('messageerror', (event) => {
           reject(event.data)
           messageChannel.port1.close()
-        })
+        }, false)
         messageChannel.port1.start()
         const { data, transferables } = serializer(args)
         controller.postMessage({
@@ -325,6 +326,12 @@ async function startApp () {
         Vue.set(vuexState, x, JSON.parse(JSON.stringify(state)))
       }
     })
+  })
+
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+    console.error('@@@NAMESPACE_REGISTRATION', { name, value })
+    const cache = sbp('state/vuex/state').namespaceLookups
+    Vue.set(cache, name, value)
   })
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
@@ -583,9 +590,19 @@ async function startApp () {
       }).finally(() => {
         // Wait for SW to be ready
         navigator.serviceWorker.ready.then(() => {
-          console.error('[main] Set ready to true', navigator.serviceWorker.controller)
-          this.ephemeral.ready = true
-          this.removeLoadingAnimation()
+          const onready = () => {
+            this.ephemeral.ready = true
+            this.removeLoadingAnimation()
+          }
+          if (!navigator.serviceWorker.controller) {
+            const listener = (ev) => {
+              navigator.serviceWorker.removeEventListener('controllerchange', listener, false)
+              onready()
+            }
+            navigator.serviceWorker.addEventListener('controllerchange', listener, false)
+          } else {
+            onready()
+          }
         })
       })
     },
@@ -655,6 +672,9 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       }
     })
     state.contracts = cheloniaState.contracts
+    if (cheloniaState.namespaceLookups) {
+      state.namespaceLookups = cheloniaState.namespaceLookups
+    }
     // End exclude contracts
     sbp('state/vuex/postUpgradeVerification', state)
     sbp('state/vuex/replace', state)
@@ -672,6 +692,9 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       }
     })
     Vue.set(state, 'contracts', cheloniaState.contracts)
+    if (cheloniaState.namespaceLookups) {
+      Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+    }
     // End exclude contracts
   }
 

@@ -36,6 +36,8 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'event': {
+              console.error('@@@@ev@@ Forwarding event', event.data.subtype, ...deserializer(event.data.data))
+              if (event.data.subtype.includes('acc')) console.error('@@@@ev@@ HOME Forwarding event', event.data.subtype, ...deserializer(event.data.data))
               sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }

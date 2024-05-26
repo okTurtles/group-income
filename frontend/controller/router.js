@@ -25,18 +25,25 @@ const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
 Vue.use(Router)
 
+const XXX = (t, c) => {
+  if (c) {
+    console.error(t, c)
+  }
+  return c
+}
+
 /*
   The following are reusable guard for routes
   the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
   when a route is blocked.
  */
 const homeGuard = {
-  guard: (to, from) => !!store.state.currentGroupId,
+  guard: (to, from) => XXX('@@@ HOME homeGuard', !!store.state.currentGroupId),
   redirect: (to, from) => ({ path: store.getters.ourProfileActive ? '/dashboard' : '/pending-approval' })
 }
 
 const loginGuard = {
-  guard: (to, from) => !store.state.loggedIn,
+  guard: (to, from) => XXX(`@@@ HOME loginGuard to{${to.path}} from{${from.path}}`, !store.state.loggedIn),
   redirect: (to, from) => ({ path: '/', query: { ...to.query, next: to.path } })
 }
 
@@ -50,12 +57,12 @@ const inviteGuard = {
 
 // Check if user has a group
 const groupGuard = {
-  guard: (to, from) => !store.state.currentGroupId,
+  guard: (to, from) => XXX('@@@ HOME groupGuard', !store.state.currentGroupId),
   redirect: (to, from) => ({ path: '/' })
 }
 
 const pendingApprovalGuard = {
-  guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
+  guard: (to, from) => XXX('@@@ HOME pendingApprovalGuard', store.state.currentGroupId && !store.getters.ourProfileActive),
   redirect: (to, from) => ({ path: '/pending-approval' })
 }
 

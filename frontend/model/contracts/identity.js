@@ -325,7 +325,7 @@ sbp('chelonia/defineContract', {
           try {
             const router = sbp('controller/router')
             const switchFrom = router.currentRoute.path
-            const switchTo = sbp('state/vuex/state').currentGroupId ? '/dashboard' : '/'
+            const switchTo = '/' // sbp('state/vuex/state').currentGroupId ? '/dashboard' : '/'
             if (switchFrom !== '/join' && switchFrom !== switchTo) {
               router.push({ path: switchTo }).catch((e) => console.error('Error switching groups', e))
             }

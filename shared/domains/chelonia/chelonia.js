@@ -312,7 +312,11 @@ export default (sbp('sbp/selectors/register', {
     this.pending = []
   },
   'chelonia/config': function () {
-    return cloneDeep(this.config)
+    return {
+      ...cloneDeep(this.config),
+      reactiveSet: this.config.reactiveSet,
+      reactiveDel: this.config.reactiveDel
+    }
   },
   'chelonia/configure': async function (config: Object) {
     merge(this.config, config)

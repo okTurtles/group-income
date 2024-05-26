@@ -12,7 +12,6 @@ export default (sbp('sbp/selectors/register', {
     return contractID
   },
   'gi.app/group/switch': function (groupId) {
-    sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('okTurtles.events/emit', SWITCH_GROUP, { contractID: groupId })
   },
   'gi.app/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
