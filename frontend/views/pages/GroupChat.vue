@@ -243,26 +243,15 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-card {
-  margin-top: -1.5rem;
   padding: 0;
-  height: 100%;
-  margin-bottom: 0;
+  height: calc(100% - 1.5rem);
+  margin-bottom: 1.5rem;
   border-radius: 0.625rem;
 
-  @include tablet {
-    height: calc(100% - 1.625rem);
-    margin-top: 0.125rem;
-    margin-bottom: 1rem;
-  }
-
   @include phone {
-    margin: -1.5rem -1rem 0 -1rem;
-    height: calc(100% + 1.5rem);
+    height: 100%;
+    margin: 0 -1rem 0 -1rem;
     border-radius: 0.625rem 0.625rem 0 0;
-  }
-
-  &:last-child {
-    margin-bottom: 1.5rem;
   }
 }
 
@@ -277,6 +266,10 @@ export default ({
     height: auto !important;
     // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
     max-width: unset !important;
+
+    @include touch {
+      padding-top: 0 !important;
+    }
   }
 }
 
