@@ -18,7 +18,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
-        @click='action("editMessage")'
+        @click='action("editMessage", $event)'
       )
         i.icon-pencil-alt
 
@@ -29,7 +29,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Reply")'
-        @click='action("reply")'
+        @click='action("reply", $event)'
       )
         i.icon-reply
 
@@ -40,7 +40,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Retry")'
-        @click='action("retry")'
+        @click='action("retry", $event)'
       )
         i.icon-undo
 
@@ -61,7 +61,7 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='isEditable'
-        @click='action("editMessage")'
+        @click='action("editMessage", $event)'
       )
         i.icon-pencil-alt
         i18n Edit
@@ -69,7 +69,7 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='isText'
-        @click='action("reply")'
+        @click='action("reply", $event)'
       )
         i.icon-reply
         i18n Reply
@@ -77,14 +77,14 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='variant==="failed"'
-        @click='action("retry")'
+        @click='action("retry", $event)'
       )
         i.icon-undo
         i18n Add emoticons
 
       menu-item.is-icon-small(
         tag='button'
-        @click='action("copyMessageLink")'
+        @click='action("copyMessageLink", $event)'
       )
         i.icon-link
         i18n Copy message Link
@@ -93,7 +93,7 @@ menu-parent(ref='menu')
         v-if='!isAlreadyPinned && isPinnable'
         tag='button'
         data-test='pinMessage'
-        @click='action("pinToChannel")'
+        @click='action("pinToChannel", $event)'
       )
         i.icon-thumbtack
         i18n Pin to channel
@@ -102,7 +102,7 @@ menu-parent(ref='menu')
         tag='button'
         data-test='deleteMessage'
         v-if='isDeletable'
-        @click='action("deleteMessage")'
+        @click='action("deleteMessage", $event)'
       )
         i.icon-trash-alt
         i18n Delete message
@@ -153,6 +153,7 @@ export default ({
   },
   methods: {
     action (type, e) {
+      e.stopPropagation()
       // Change to sbp action
       this.$emit(type, e)
     }

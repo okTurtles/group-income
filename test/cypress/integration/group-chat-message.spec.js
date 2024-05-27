@@ -275,6 +275,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
+        cy.get('.c-attachment-actions-wrapper').invoke('hide')
       })
     })
 
@@ -290,15 +291,33 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   })
 
   it('user1 pins 3 messages and unpins 1 message', () => {
-    pinMessage(9)
+    pinMessage(11)
     pinMessage(8)
     pinMessage(10)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
-    unpinMessage(3)
+    unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
   })
 
-  it('pinned messages should be sorted by the created date of original messages', () => {})
+  it('pinned messages should be sorted by the created date of original messages', () => {
+    cy.getByDT('numberOfPinnedMessages').click()
+    cy.getByDT('pinnedMessages').within(() => {
+      cy.get('.c-body>.c-pinned-message:first-child .c-pinned-message-content')
+        .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
+      cy.get('.c-body>.c-pinned-message:last-child .c-pinned-message-content')
+        .should('contain', 'Hi @all. Hope you are doing well.')
+    })
+  })
+
+  it('user1 clicks the first pinned message to highlight the original message', () => {
+    cy.getByDT('pinnedMessages').within(() => {
+      cy.get('.c-body>.c-pinned-message:first-child').click()
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:nth-child(10)').should('have.class', 'c-focused')
+    })
+  })
 
   it('user2 checks 2 pinned message and logout', () => {
     switchUser(user1)
