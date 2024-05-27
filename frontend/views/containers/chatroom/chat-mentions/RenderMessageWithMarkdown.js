@@ -4,7 +4,7 @@ import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 
 // reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
-const RenderMessageWithMarkdown = {
+const RenderMessageWithMarkdown: any = {
   name: 'RenderMessageWithMarkdown',
   props: {
     text: {
@@ -15,7 +15,7 @@ const RenderMessageWithMarkdown = {
     edited: Boolean,
     isReplyingMessage: Boolean
   },
-  render: function (createElement) {
+  render: function (createElement: any): any {
     const { text, edited = false, isReplyingMessage = false } = this.$props
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
 
