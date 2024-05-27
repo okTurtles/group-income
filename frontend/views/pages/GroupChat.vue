@@ -36,6 +36,8 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
+            menu-item.hide-desktop(v-if='pinnedMessages.length')
+              i18n(@click='showPinnedMessages($event)') Pinned Messages
             menu-item(
               :class='`${!summary.isGeneral && !isDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
@@ -82,22 +84,12 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           @click='editDescription'
         ) Add description
     .c-header-shortcuts
-      tooltip(
+      span.c-pin-wrapper(
         v-if='pinnedMessages.length'
-        ref='pinnedMessagesToolTip'
-        :manual='true'
-        :opacity='1'
-        direction='bottom-left'
+        @click='showPinnedMessages($event)'
       )
-        span.c-pin-wrapper
-          i.icon-thumbtack
-          i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
-        template(slot='tooltip')
-          pinned-messages(
-            :messages='pinnedMessages'
-            @unpin-message='unpinMessage'
-            @scroll-to-pinned-message='scrollToPinnedMessage'
-          )
+        i.icon-thumbtack
+        i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
 
   template(#sidebar='{ toggle }')
     chat-nav
@@ -117,6 +109,12 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
   .card.c-card
     chat-main(ref='chatMain' :summary='summary')
+
+  pinned-messages(
+    ref='pinnedMessages'
+    @unpin-message='unpinMessage'
+    @scroll-to-pinned-message='scrollToPinnedMessage'
+  )
 </template>
 
 <script>
@@ -124,7 +122,6 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Page from '@components/Page.vue'
-import Tooltip from '@components/Tooltip.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
@@ -143,7 +140,6 @@ export default ({
   components: {
     Avatar,
     Page,
-    Tooltip,
     ChatNav,
     ChatMain,
     ConversationsList,
@@ -204,6 +200,13 @@ export default ({
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
+    showPinnedMessages (event) {
+      const element = event.target.parentNode.getBoundingClientRect()
+      this.$refs.pinnedMessages.open({
+        left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
+        top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
+      }, this.pinnedMessages)
+    },
     editDescription () {
       this.openModal('EditChannelDescriptionModal')
     },
@@ -211,13 +214,11 @@ export default ({
       if (this.$refs.chatMain) {
         this.$refs.chatMain.unpinFromChannel(messageHash)
       }
-      this.$refs.pinnedMessagesToolTip?.toggle()
     },
     scrollToPinnedMessage (messageHash) {
       if (this.$refs.chatMain) {
         this.$refs.chatMain.scrollToMessage(messageHash)
       }
-      this.$refs.pinnedMessagesToolTip?.toggle()
     }
   },
   watch: {
@@ -385,6 +386,8 @@ export default ({
   }
 
   .c-pin-wrapper {
+    cursor: pointer;
+
     span {
       margin-left: 0.25rem;
     }

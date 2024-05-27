@@ -1,71 +1,72 @@
-<template lang='pug'>
-.card.c-pinned-messages-wrapper
-  template(v-for='(msg, index) in messages')
-    .c-pinned-message(
-      :key='msg.hash'
-      @click='scrollToPinnedMessage(msg.hash)'
-    )
-      .c-pinned-message-header
-        .c-sender-profile
-          avatar-user(:contractID='msg.from' size='xs')
-          .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
-        tooltip(:text='L("Unpin this message")')
-          i.icon-times(
-            @click.stop='unpinMessage(msg.hash)'
-          )
-      .c-pinned-message-content
-        span.custom-markdown-content(
-          v-if='isText(msg)'
-          v-safe-html:a='renderMarkdown(msg.text)'
-        )
-        .c-poll-wrapper(v-else-if='isPoll(msg)')
-          poll-vote-result.c-poll-inner(:pollData='msg.pollData' :readOnly='true')
-        chat-attachment-preview(
-          v-if='hasAttachments(msg)'
-          :attachmentList='msg.attachments'
-          :isForDownload='true'
-          :variant='messageSentVariant'
-        )
-        .c-message-reactions-wrapper
-          message-reactions(
-            :emoticonsList='msg.emoticons'
-            :messageType='msg.type'
-            :currentUserID='ourIdentityContractId'
-            :readOnly='true'
-          )
-      .c-pinned-message-footer
-        span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
+<template lang="pug">
+.c-pinned-messages(
+  v-if='ephemeral.isActive'
+  @click='onBackDropClick'
+  @keyup.esc='close'
+)
+  .c-pinned-messages-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
+    header.c-header
+      i18n.is-title-2.c-popup-title(tag='h2') Pinned Messages
+      modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
+    section.c-body
+      template(v-for='(msg, index) in messages')
+        .c-pinned-message(:key='msg.hash' @click='scrollToPinnedMessage(msg.hash)')
+          .c-pinned-message-header
+            .c-sender-profile
+              avatar-user(:contractID='msg.from' size='xs')
+              .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
+            tooltip(:text='ephemeral.isDesktopScreen ? L("Unpin this message") : L("Unpin")')
+              i.icon-times(@click.stop='unpinMessage(msg.hash)')
+          .c-pinned-message-content
+            span.custom-markdown-content(
+              v-if='isText(msg)'
+              v-safe-html:a='renderMarkdown(msg.text)'
+            )
+            .c-poll-wrapper(v-else-if='isPoll(msg)')
+              poll-vote-result.c-poll-inner(:pollData='msg.pollData' :readOnly='true')
+            chat-attachment-preview(
+              v-if='hasAttachments(msg)'
+              :attachmentList='msg.attachments'
+              :isForDownload='true'
+              :variant='messageSentVariant'
+            )
+            .c-message-reactions-wrapper
+              message-reactions(
+                :emoticonsList='msg.emoticons'
+                :messageType='msg.type'
+                :currentUserID='ourIdentityContractId'
+                :readOnly='true'
+              )
+          .c-pinned-message-footer
+            span {{ humanDate(msg.datetime, { month: 'long', year: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }) }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
+import ModalClose from '@components/modal/ModalClose.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import trapFocus from '@utils/trapFocus.js'
 
-export default ({
-  name: 'PinnedMessage',
+export default {
+  name: 'PinnedMessages',
+  mixins: [
+    trapFocus
+  ],
   components: {
     AvatarUser,
     Tooltip,
     PollVoteResult,
     ChatAttachmentPreview,
-    MessageReactions
-  },
-  props: {
-    messages: {
-      type: Array,
-      default: () => []
-    }
-  },
-  data () {
-    return {}
+    MessageReactions,
+    ModalClose
   },
   computed: {
     ...mapGetters(['userDisplayNameFromID', 'ourIdentityContractId']),
@@ -73,9 +74,52 @@ export default ({
       return MESSAGE_VARIANTS.SENT
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        isActive: false,
+        isDesktopScreen: false,
+        wrapperPosition: {
+          top: 0,
+          left: 0
+        }
+      },
+      messages: []
+    }
+  },
   methods: {
     humanDate,
     renderMarkdown,
+    open (position, pinnedMessages) {
+      if (this.ephemeral.isActive) { return }
+
+      this.messages = pinnedMessages
+
+      if (position) {
+        this.ephemeral.wrapperPosition = { ...position }
+        this.$nextTick(() => { this.ephemeral.isActive = true })
+      } else {
+        this.ephemeral.isActive = true
+      }
+    },
+    close () {
+      if (this.ephemeral.isActive) {
+        this.ephemeral.isActive = false
+      }
+    },
+    onBackDropClick (e) {
+      if (e.target.matches('.c-pinned-messages')) {
+        this.close()
+      }
+    },
+    resizeHandler () {
+      if (window.matchMedia('(hover: hover)').matches) {
+        // This is a fix for the issue #1954(https://github.com/okTurtles/group-income/issues/1954)
+        // -> closes the pop-up if the viewport size changes only when it's NOT a touch device.
+        //    e.g) The viewport size changes when the keyboard tab is pulled out on the touch device.
+        this.close()
+      }
+    },
     isText (message) {
       return message.type === MESSAGE_TYPES.TEXT
     },
@@ -87,27 +131,110 @@ export default ({
     },
     unpinMessage (messageHash) {
       this.$emit('unpin-message', messageHash)
+      this.close()
     },
     scrollToPinnedMessage (messageHash) {
       this.$emit('scroll-to-pinned-message', messageHash)
+      this.close()
     }
+  },
+  created () {
+    this.matchMediaDesktop = window.matchMedia('screen and (min-width: 1200px)')
+    this.matchMediaDesktop.onchange = (e) => {
+      this.ephemeral.isDesktopScreen = e.matches
+    }
+    this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
+
+    window.addEventListener('resize', this.resizeHandler)
+    document.addEventListener('keydown', this.trapFocus)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.resizeHandler)
+    document.removeEventListener('keydown', this.trapFocus)
+
+    this.matchMediaDesktop.onchange = null
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-pinned-messages {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  // NOTE: z-index should be bigger than the one of sidebar
+  //       because PinnedMessages modal is rendered before the sidebar
+  // REF:  https://github.com/okTurtles/group-income/issues/1843
+  z-index: $zindex-modal + 1;
+  pointer-events: initial;
+  height: 100%;
+}
+
 .c-pinned-messages-wrapper {
-  margin: -0.5rem;
-  padding: 0.75rem;
-  max-height: 40rem;
-  max-width: 25rem;
-  width: 25rem;
+  position: absolute;
+  pointer-events: inherit;
+  background-color: $background_0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "pinned-messages-header" "pinned-messages-body";
+
+  @include desktop {
+    max-width: 25rem;
+    width: 25rem;
+    height: fit-content;
+    max-height: 70vh;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+    left: unset;
+
+    .is-dark-theme & {
+      box-shadow: 0 0 20px rgba(38, 38, 38, 0.625);
+    }
+  }
+}
+
+.c-header {
+  grid-area: pinned-messages-header;
+  position: relative;
+  height: 5.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @include desktop {
+    display: none;
+  }
+
+  .c-popup-title {
+    font-size: $size_2;
+    text-align: center;
+
+    @include tablet {
+      font-size: $size_3;
+      text-align: left;
+    }
+  }
+}
+
+.c-body {
+  grid-area: pinned-messages-body;
+  position: relative;
+  padding: 0.5rem 0.5rem;
+  overflow-y: auto;
+  height: fit-content;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  overflow: auto;
 
   .c-pinned-message {
     padding: 0.75rem 0.75rem 0.5rem 0.75rem;
