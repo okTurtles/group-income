@@ -102,6 +102,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
+import RenderMessageWithMarkdown from './chat-mentions/renderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
@@ -123,7 +124,8 @@ export default ({
     MessageReactions,
     SendArea,
     ChatAttachmentPreview,
-    RenderMessageText
+    RenderMessageText,
+    RenderMessageWithMarkdown
   },
   data () {
     return {

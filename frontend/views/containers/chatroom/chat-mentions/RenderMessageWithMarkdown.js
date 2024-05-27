@@ -1,10 +1,10 @@
-import { Vue, L } from '@common/common.js'
+import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 
 // reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
-Vue.component('RenderMessageWithMarkdown', {
+const RenderMessageWithMarkdown = {
   name: 'RenderMessageWithMarkdown',
   props: {
     text: {
@@ -69,4 +69,6 @@ Vue.component('RenderMessageWithMarkdown', {
       ].filter(Boolean)
     )
   }
-})
+}
+
+export default RenderMessageWithMarkdown
