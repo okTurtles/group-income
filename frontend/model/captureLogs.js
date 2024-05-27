@@ -123,7 +123,7 @@ function clearLogs () {
 }
 
 // Util to download all stored logs so far.
-function downloadLogs (elLink: Object): void {
+function downloadOrShareLogs (elLink: Object): void {
   const filename = 'gi_logs.json'
 
   const file = new Blob([JSON.stringify({
@@ -174,7 +174,7 @@ function setAppLogsFilter (filter: Array<string>) {
 window.addEventListener('beforeunload', event => sbp('appLogs/save'))
 
 sbp('sbp/selectors/register', {
-  'appLogs/download' (elLink) { downloadLogs(elLink) },
+  'appLogs/downloadOrShare' (...args) { downloadOrShareLogs(...args) },
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
