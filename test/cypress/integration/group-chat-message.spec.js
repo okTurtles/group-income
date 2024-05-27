@@ -45,6 +45,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').clear().type(`${message}{enter}`)
       })
+      cy.get('.c-menu>.c-actions').invoke('hide')
       cy.get('.c-text').should('contain', message)
       cy.get('.c-edited').should('contain', '(edited)')
     })
@@ -60,6 +61,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
           cy.getByDT('deleteMessage').click()
         })
       })
+      cy.get('.c-menu>.c-actions').invoke('hide')
     })
 
     cy.getByDT('modal').within(() => {
@@ -73,6 +75,27 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message').should('have.length', countAfter)
+    })
+  }
+
+  function pinMessage (nth) {
+    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
+      cy.get('.c-menu').within(() => {
+        cy.getByDT('menuTrigger').click()
+        cy.getByDT('menuContent').within(() => {
+          cy.getByDT('pinMessage').click()
+        })
+      })
+      cy.get('.c-menu>.c-actions').invoke('hide')
+      cy.get('.c-pinned-wrapper').should('contain', 'Pinned by you')
+    })
+  }
+
+  function unpinMessage (nth) {
+    cy.getByDT('numberOfPinnedMessages').click()
+    cy.getByDT('pinnedMessages').find(`.c-body>.c-pinned-message:nth-child(${nth})`).within(() => {
+      cy.getByDT('unpinMessage').click()
     })
   }
 
@@ -264,6 +287,24 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
     })
+  })
+
+  it('user1 pins 3 messages and unpins 1 message', () => {
+    pinMessage(9)
+    pinMessage(8)
+    pinMessage(10)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
+    unpinMessage(3)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
+  })
+
+  it('pinned messages should be sorted by the created date of original messages', () => {})
+
+  it('user2 checks 2 pinned message and logout', () => {
+    switchUser(user1)
+
+    cy.giRedirectToGroupChat()
+    cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
 
     cy.giLogout()
   })

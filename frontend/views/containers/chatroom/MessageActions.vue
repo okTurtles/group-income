@@ -92,7 +92,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small(
         v-if='!isAlreadyPinned && isPinnable'
         tag='button'
-        :aria-label='L("Pin")'
+        data-test='pinMessage'
         @click='action("pinToChannel")'
       )
         i.icon-thumbtack

@@ -1,6 +1,7 @@
 <template lang="pug">
 .c-pinned-messages(
   v-if='ephemeral.isActive'
+  data-test='pinnedMessages'
   @click='onBackDropClick'
   @keyup.esc='close'
 )
@@ -17,7 +18,7 @@
               avatar-user(:contractID='msg.from' size='xs')
               .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
             tooltip(:text='ephemeral.isDesktopScreen ? L("Unpin this message") : L("Unpin")')
-              i.icon-times(@click.stop='unpinMessage(msg.hash)')
+              i.icon-times(data-test='unpinMessage' @click.stop='unpinMessage(msg.hash)')
           .c-pinned-message-content
             span.custom-markdown-content(
               v-if='isText(msg)'

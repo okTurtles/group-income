@@ -85,6 +85,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
         ) Add description
     .c-header-shortcuts
       span.c-pin-wrapper(
+        data-test='numberOfPinnedMessages'
         v-if='pinnedMessages.length'
         @click='showPinnedMessages($event)'
       )
