@@ -18,7 +18,8 @@
               avatar-user(:contractID='msg.from' size='xs')
               .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
             tooltip(:text='ephemeral.isDesktopScreen ? L("Unpin this message") : L("Unpin")')
-              i.icon-times(data-test='unpinMessage' @click.stop='unpinMessage(msg.hash)')
+              span.c-unpin-button(data-test='unpinMessage' @click.stop='unpinMessage(msg.hash)')
+                i.icon-times
           .c-pinned-message-content
             span.custom-markdown-content(
               v-if='isText(msg)'
@@ -260,7 +261,12 @@ export default {
         }
       }
 
-      i.icon-times {
+      .c-unpin-button {
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-right: 0.25rem;
       }
     }

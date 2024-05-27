@@ -97,6 +97,11 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('pinnedMessages').find(`.c-body>.c-pinned-message:nth-child(${nth})`).within(() => {
       cy.getByDT('unpinMessage').click()
     })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Remove pinned message')
+      cy.getByDT('submitPrompt').click()
+    })
   }
 
   function sendEmoticon (nth, emojiCode, emojiCount) {

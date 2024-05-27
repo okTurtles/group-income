@@ -637,14 +637,26 @@ export default ({
         console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
-    unpinFromChannel (hash) {
+    async unpinFromChannel (hash) {
       const contractID = this.renderingChatRoomId
-      sbp('gi.actions/chatroom/unpinMessage', {
-        contractID,
-        data: { hash }
-      }).catch((e) => {
-        console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
-      })
+
+      const promptConfig = {
+        heading: L('Remove pinned message'),
+        question: L('Are you sure you want to remove this pinned message?'),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
+      }
+
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+
+      if (primaryButtonSelected) {
+        sbp('gi.actions/chatroom/unpinMessage', {
+          contractID,
+          data: { hash }
+        }).catch((e) => {
+          console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
+        })
+      }
     },
     async deleteMessage (message) {
       const contractID = this.renderingChatRoomId
