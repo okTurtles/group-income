@@ -14,14 +14,17 @@ marked.use({
 })
 
 export function renderMarkdown (str: string): any {
+  str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
+    .replace(/<br>-/g, '\n-')
+
   let converted = marked.parse(str, { gfm: true, breaks: true })
 
   // remove unecessary line-breaks from the converted markdown outcome.
   converted = converted.replace(/^\s+|\s+$/g, '')
 
   // remove the unecessary starting/end line-breaks added to the blockquote.
-  converted = converted.replace(/blockquote>\n/g, 'blockquote>')
-    .replace(/\n<\/blockquote>/g, '</blockquote>')
+  converted = converted.replace(/([a-z]+)>\n/g, '$1>')
+    .replace(/\n<\/([a-z]+)>/g, '</$1>')
 
   // if the original string doesn't have a line-break within it,
   // the converted outcome doesn't need to be wrapped with <p></p>.
@@ -48,10 +51,15 @@ export function injectOrStripSpecialChar (
   let segment = str.slice(startIndex, endIndex)
   let before = str.slice(0, startIndex)
   let after = str.slice(endIndex)
+  let focusStart = startIndex
+  let focusEnd = endIndex
   const specialChar = charMap[type]
 
   if (!specialChar) {
-    return { output: str, focusIndex: str.length }
+    return {
+      output: str,
+      focusIndex: { start: focusStart, end: focusEnd }
+    }
   }
 
   if (before.endsWith(specialChar) && after.startsWith(specialChar)) {
@@ -59,18 +67,23 @@ export function injectOrStripSpecialChar (
     const len = specialChar.length
     before = before.slice(0, before.length - len)
     after = after.slice(len)
+
+    focusStart -= len
+    focusEnd -= len * 2
   } else if (segment.startsWith(specialChar) && segment.endsWith(specialChar)) {
     // Stripping condition No 2. - when the selected segment itself contains the special character at both start/end of the string.
     const len = specialChar.length
     segment = segment.slice(len, segment.length - len)
+    focusEnd -= len * 2
   } else {
+    const len = specialChar.length
     // Otherwise, let's wrap the selected segment with the speical character.
     segment = `${specialChar}${segment}${specialChar}`
+    focusEnd += len * 2
   }
 
   const output = before + segment + after
-  const focusIndex = (before + segment).length
-  return { output, focusIndex }
+  return { output, focusIndex: { start: focusStart, end: focusEnd } }
 }
 
 export function injectOrStripLink (

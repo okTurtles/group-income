@@ -312,9 +312,7 @@ export default ({
       'isJoinedChatRoom',
       'isDirectMessage',
       'currentChatRoomScrollPosition',
-      'currentChatRoomReadUntil',
-      'currentGroupNotifications',
-      'currentChatVm'
+      'currentChatRoomReadUntil'
     ]),
     currentUserAttr () {
       return {
