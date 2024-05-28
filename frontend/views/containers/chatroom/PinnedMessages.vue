@@ -23,7 +23,7 @@
           .c-pinned-message-content
             span.custom-markdown-content(
               v-if='isText(msg)'
-              v-safe-html:a='renderMarkdown(msg.text)'
+              v-safe-html:a='renderTextMessage(msg.text)'
             )
             .c-poll-wrapper(v-else-if='isPoll(msg)')
               poll-vote-result.c-poll-inner(:pollData='msg.pollData' :readOnly='true')
@@ -53,9 +53,15 @@ import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_VARIANTS,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import trapFocus from '@utils/trapFocus.js'
+import { makeMentionFromUserID, makeChannelMention } from '@model/contracts/shared/functions.js'
 
 export default {
   name: 'PinnedMessages',
@@ -71,7 +77,19 @@ export default {
     ModalClose
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID', 'ourIdentityContractId']),
+    ...mapGetters([
+      'userDisplayNameFromID',
+      'ourIdentityContractId',
+      'ourContactProfilesById',
+      'chatRoomsInDetail',
+      'usernameFromID'
+    ]),
+    possibleMentions () {
+      return [
+        ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+        ...Object.values(this.chatRoomsInDetail).map(details => makeChannelMention(details.id))
+      ]
+    },
     messageSentVariant () {
       return MESSAGE_VARIANTS.SENT
     }
@@ -92,6 +110,27 @@ export default {
   methods: {
     humanDate,
     renderMarkdown,
+    renderTextMessage (text) {
+      // TODO: Update this after PR #2016 is merged
+      const replaceChannelMention = (text) => {
+        const chatRoomID = text.slice(1)
+        const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
+        return found ? `#${found.name}` : text
+      }
+      const mentionReplacedText = text.split(new RegExp(`(?<=\\s|^)(${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .map(t => {
+          if (this.possibleMentions.includes(t)) {
+            if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
+              return CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
+            } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
+              return replaceChannelMention(t)
+            }
+          }
+          return t
+        }).join('')
+
+      return renderMarkdown(mentionReplacedText)
+    },
     open (position, pinnedMessages) {
       if (this.ephemeral.isActive) { return }
 
