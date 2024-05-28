@@ -853,8 +853,8 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, type, createdHeight }: {
-    contractID: string, messageHash: string, type: string, createdHeight: number
+  'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
       return requireToSuccess(async () => {
@@ -864,7 +864,7 @@ export default (sbp('sbp/selectors/register', {
         if (currentChatRoomLogs[contractID].readUntil) {
           const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
           if (index < 0) {
-            currentChatRoomLogs[contractID].unreadMessages.push({ messageHash, type, createdHeight })
+            currentChatRoomLogs[contractID].unreadMessages.push({ messageHash, createdHeight })
             await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
           }
         }

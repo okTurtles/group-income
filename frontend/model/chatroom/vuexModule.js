@@ -121,12 +121,6 @@ const getters = {
       return getters.ourChatRoomLogs[chatRoomID]?.unreadMessages || []
     }
   },
-  chatRoomUnreadMentions (state, getters) {
-    return (chatRoomID: string) => {
-      // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return (getters.ourChatRoomLogs[chatRoomID]?.unreadMessages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
-    }
-  },
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)

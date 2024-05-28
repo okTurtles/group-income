@@ -314,8 +314,7 @@ export default ({
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
-      'currentChatVm',
-      'chatRoomUnreadMentions'
+      'currentChatVm'
     ]),
     currentUserAttr () {
       return {
@@ -744,8 +743,6 @@ export default ({
       let unreadPosition = null
       if (this.currentChatRoomReadUntil && !this.currentChatRoomReadUntil.deletedDate) {
         unreadPosition = this.currentChatRoomReadUntil.messageHash
-      } else if (this.chatRoomUnreadMentions(chatRoomID).length) {
-        unreadPosition = this.chatRoomUnreadMentions(chatRoomID)[0].messageHash
       }
       const {
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)

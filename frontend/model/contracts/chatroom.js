@@ -65,16 +65,10 @@ function messageReceivePostEffect ({
   }
   const rootGetters = sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
-  const unreadMessageType = {
-    [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : undefined,
-    [MESSAGE_TYPES.INTERACTIVE]: MESSAGE_TYPES.INTERACTIVE,
-    [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
-  }[messageType]
+  const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
-  if (unreadMessageType) {
-    sbp('gi.actions/identity/addChatRoomUnreadMessage', {
-      contractID, messageHash, type: unreadMessageType, createdHeight: height
-    })
+  if (shouldAddToUnreadMessages) {
+    sbp('gi.actions/identity/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
   }
 
   let title = `# ${chatRoomName}`

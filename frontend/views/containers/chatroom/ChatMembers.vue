@@ -71,7 +71,7 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'chatRoomUnreadMentions',
+      'chatRoomUnreadMessages',
       'usernameFromID'
     ])
   },
@@ -97,7 +97,7 @@ export default ({
       }
     },
     getUnreadMsgCount (chatRoomID) {
-      return this.chatRoomUnreadMentions(chatRoomID).length
+      return this.chatRoomUnreadMessages(chatRoomID).length
     },
     limitedUnreadCount (n) {
       const nLimit = 99
