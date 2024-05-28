@@ -15,7 +15,8 @@ marked.use({
 
 export function renderMarkdown (str: string): any {
   str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
-    .replace(/<br>-/g, '\n-')
+  console.log('!@# first conversion to <br>: ', str)
+  str = str.replace(/<br>(\s*)-(\s.+)<br>/g, '\n$1-$2\n')
 
   let converted = marked.parse(str, { gfm: true, breaks: true })
 
