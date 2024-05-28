@@ -229,14 +229,6 @@ sbp('chelonia/defineContract', {
               contractID, messageHash: hash, createdHeight: height
             })
 
-            if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-              // NOTE: To ignore scroll to the message of this hash
-              //       since we don't create notification when join the direct message
-              sbp('gi.actions/identity/deleteChatRoomReadUntil', {
-                contractID, deletedHeight: height
-              })
-            }
-
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(state.members).filter((id) =>
               id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]
@@ -507,20 +499,11 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }) {
         const rootState = sbp('state/vuex/state')
-        const rootGetters = sbp('state/vuex/getters')
         const me = rootState.loggedIn.identityContractID
 
         if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomID: contractID, messageHash: null
-          })
-        }
-
-        // NOTE: readUntil can't be undefined because it would be set in advance
-        //       while syncing the contracts events especially join, addMessage, ...
-        if (rootGetters.ourChatRoomLogs[contractID]?.readUntil.messageHash === data.hash) {
-          sbp('gi.actions/identity/deleteChatRoomReadUntil', {
-            contractID, deletedHeight: height
           })
         }
 

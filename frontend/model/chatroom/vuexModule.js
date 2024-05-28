@@ -3,13 +3,11 @@
 import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
-import { MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
-  // NOTE: chatRoomLogs format
-  // [chatRoomID]: { readUntil: { messageHash, createdHeight, deletedHeight? }, unreadMessages: [{ messageHash,  type, createdHeight, deletedHeight? }]}
-  chatRoomLogs: null,
+  chatRoomLogs: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
   chatNotificationSettings: {} // { [chatRoomID]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 

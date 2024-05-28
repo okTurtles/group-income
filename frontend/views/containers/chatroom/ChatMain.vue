@@ -740,14 +740,11 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
-      let unreadPosition = null
-      if (this.currentChatRoomReadUntil && !this.currentChatRoomReadUntil.deletedDate) {
-        unreadPosition = this.currentChatRoomReadUntil.messageHash
-      }
+      const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
       const {
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
       } = this.$route.query
-      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
+      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       let events = []
       if (!this.ephemeral.messagesInitiated) {
         const shouldLoadMoreEvents = messageHashToScroll && this.messages.findIndex(msg => msg.hash === messageHashToScroll) < 0

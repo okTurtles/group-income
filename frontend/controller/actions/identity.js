@@ -839,20 +839,6 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.actions/identity/deleteChatRoomReadUntil': ({ contractID, deletedHeight }: {
-    contractID: string, deletedHeight: number
-  }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_LOGS, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomLogs = await sbp('gi.actions/identity/loadChatRoomLogs')
-
-        if (currentChatRoomLogs[contractID].readUntil.deletedHeight === undefined) {
-          currentChatRoomLogs[contractID].readUntil['deletedHeight'] = deletedHeight
-          await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
-        }
-      })
-    })
-  },
   'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
@@ -880,7 +866,7 @@ export default (sbp('sbp/selectors/register', {
 
         // NOTE: should ignore to delete unreadMessages before joining chatroom
         if (currentChatRoomLogs[contractID].readUntil) {
-          const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash !== messageHash)
+          const index = currentChatRoomLogs[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
           if (index >= 0) {
             currentChatRoomLogs[contractID].unreadMessages.splice(index, 1)
             await sbp('gi.actions/identity/saveChatRoomLogs', contractID, currentChatRoomLogs)
