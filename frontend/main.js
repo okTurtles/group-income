@@ -56,8 +56,6 @@ Vue.config.errorHandler = function (err, vm, info) {
   if (process.env.CI) throw err
 }
 
-Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
-
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
   //       to get logging for all subsequent SBP calls.
@@ -318,6 +316,9 @@ async function startApp () {
         const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
         sbp('chelonia.persistentActions/configure', { databaseKey })
         await sbp('chelonia.persistentActions/load')
+
+        // NOTE: should set IdleVue plugin here because state could be replaced while logging in
+        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
