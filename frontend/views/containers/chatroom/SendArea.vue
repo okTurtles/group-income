@@ -655,7 +655,10 @@ export default ({
       const msgSplitByCodeMarkdown = splitStringByMarkdownCode(msgToSend)
       msgSplitByCodeMarkdown.forEach((entry, index) => {
         if (entry.type === 'plain' &&
-          msgSplitByCodeMarkdown[index - 1]?.text !== '```') {
+          // Below check: sometimes, the message content ends without closing the block-code and
+          // in this case the rest of the code is treated as code content too.
+          msgSplitByCodeMarkdown[index - 1]?.text !== '```'
+        ) {
           entry.text = convertAllMentions(entry.text)
         }
       })
