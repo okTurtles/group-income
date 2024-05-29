@@ -15,13 +15,16 @@ export default ({
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
   methods: {
+    shouldPlay () {
+      return document.hidden || this.isAppIdle
+    },
     playMessageReceive () {
-      if (this.isAppIdle) {
+      if (this.shouldPlay()) {
         this.$refs.msgReceive.play()
       }
     },
     playMessageSend () {
-      if (this.isAppIdle) {
+      if (this.shouldPlay()) {
         this.$refs.msgSend.play()
       }
     }
