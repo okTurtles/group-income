@@ -531,11 +531,6 @@ const getters = {
         const nameB = getters.ourContactProfilesByUsername[usernameB].displayName || usernameB
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
-  },
-  isAppIdle (state) {
-    // NOTE: idleVue.isIdle is created by the IdleVue plugin
-    //       https://www.npmjs.com/package/idle-vue
-    return Boolean(state.idleVue?.isIdle)
   }
 }
 
