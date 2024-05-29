@@ -83,7 +83,7 @@
 
     > ul {
       // style correction for a sub-list within <li></li>.
-      padding-bottom: 0;
+      margin-bottom: 0;
 
       li::before {
         background-color: rgba(0, 0, 0, 0);
