@@ -535,7 +535,7 @@ const getters = {
   isAppIdle (state) {
     // NOTE: idleVue.isIdle is created by the IdleVue plugin
     //       https://www.npmjs.com/package/idle-vue
-    return state.idleVue.isIdle
+    return Boolean(state.idleVue?.isIdle)
   }
 }
 
