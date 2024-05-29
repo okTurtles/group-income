@@ -81,12 +81,17 @@
       background-color: $text_0;
     }
 
-    > ul li::before {
-      background-color: rgba(0, 0, 0, 0);
-      border: 1px solid $text_0;
-      top: 0.6rem;
-      width: 0.4rem;
-      height: 0.4rem;
+    > ul {
+      // style correction for a sub-list within <li></li>.
+      padding-bottom: 0;
+
+      li::before {
+        background-color: rgba(0, 0, 0, 0);
+        border: 1px solid $text_0;
+        top: 0.6rem;
+        width: 0.4rem;
+        height: 0.4rem;
+      }
     }
   }
 

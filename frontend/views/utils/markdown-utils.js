@@ -1,5 +1,10 @@
 import { marked } from 'marked'
 
+export type MarkdownSegment = {
+  type: 'code' | 'plain',
+  text: string
+}
+
 marked.use({
   extensions: [
     {
@@ -14,9 +19,11 @@ marked.use({
 })
 
 export function renderMarkdown (str: string): any {
-  str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
-  console.log('!@# first conversion to <br>: ', str)
-  str = str.replace(/<br>(\s*)-(\s.+)<br>/g, '\n$1-$2\n')
+  // markedjs with the gfm(Github Flavored Markdown) style collapses multiple line-breaks into one (Reference issue here: https://github.com/markedjs/marked/issues/190)
+  // So we need some custom logic that overrides this behaviour.
+  // str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
+  // str = str.replace(/<br>(\s*)-(\s.+)<br><br>/g, '\n$1-$2\n\n')
+  //   .replace(/<br>(\s*)-/g, '\n$1-')
 
   let converted = marked.parse(str, { gfm: true, breaks: true })
 
@@ -33,6 +40,7 @@ export function renderMarkdown (str: string): any {
     converted = converted.replace(/^<p>|<\/p>$/g, '')
   }
 
+  console.log('!@# after all custom conversion: ', converted)
   return converted
 }
 
@@ -124,4 +132,43 @@ export function injectOrStripLink (
   return {
     output: before + segment + after, focusIndex
   }
+}
+
+export function splitStringByMarkdownCode (
+  str: string
+): Array<MarkdownSegment> {
+  // This function takes a markdown string and split it by texts written as either inline/block code.
+  // (e.g. `asdf`, ```const var = 123```)
+
+  const regExCodeMultiple = /(```.+```)/g
+  const regExCodeInline = /(`.+`)/g
+  const splitByMulitpleCode = str.split(regExCodeMultiple)
+  const finalArr = []
+
+  for (const segment of splitByMulitpleCode) {
+    if (regExCodeMultiple.test(segment)) {
+      finalArr.push({ type: 'code', text: segment })
+    } else {
+      const splitByInlineCode = segment.split(regExCodeInline)
+        .map(piece => {
+          return regExCodeInline.test(piece)
+            ? { type: 'code', text: piece }
+            : { type: 'plain', text: piece }
+        })
+
+      finalArr.push(...splitByInlineCode)
+    }
+  }
+  return finalArr
+}
+
+export function combineMarkdownSegmentListIntoString (
+  segmentList: Array<MarkdownSegment>
+): string {
+  // This is pretty much reverting what splitStringByMarkdownCode() above does.
+  // It combines the object list into a string.
+  return segmentList.reduce(
+    (concatenated: string, entry: MarkdownSegment) => concatenated + entry.text,
+    ''
+  )
 }
