@@ -70,6 +70,10 @@ function createRecursiveDomObjects (element: any): DomObject {
       // recursively create a dom object when encountering another html tag as children
       nodeObj.children.push(createRecursiveDomObjects(child))
     }
+
+    nodeObj.children = nodeObj.children.filter(
+      child => child.tagName || (child.text || '').trim().length
+    )
   }
 
   return nodeObj
