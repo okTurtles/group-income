@@ -531,6 +531,9 @@ const getters = {
         const nameB = getters.ourContactProfilesByUsername[usernameB].displayName || usernameB
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
+  },
+  isAppIdle (state) {
+    return state.idleVue.isIdle
   }
 }
 

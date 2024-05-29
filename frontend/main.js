@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import IdleVue from 'idle-vue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 import '@model/captureLogs.js'
@@ -54,6 +55,8 @@ Vue.config.errorHandler = function (err, vm, info) {
   // Fix for https://github.com/okTurtles/group-income/issues/684
   if (process.env.CI) throw err
 }
+
+Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
 
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here

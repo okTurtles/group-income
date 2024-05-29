@@ -6,20 +6,28 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'BackgroundSounds',
+  computed: {
+    ...mapGetters(['isAppIdle'])
+  },
   created () {
     sbp('okTurtles.events/on', MESSAGE_RECEIVE, this.playMessageReceive)
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
   methods: {
     playMessageReceive () {
-      this.$refs.msgReceive.play()
+      if (this.isAppIdle) {
+        this.$refs.msgReceive.play()
+      }
     },
     playMessageSend () {
-      this.$refs.msgSend.play()
+      if (this.isAppIdle) {
+        this.$refs.msgSend.play()
+      }
     }
   }
 }: Object)
