@@ -4,7 +4,7 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, difference, has, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
@@ -1377,30 +1377,47 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
     innerSigningKeyId,
     encryptionKeyId,
-    signingKeyId
+    signingKeyId,
+    maxAttempts = 3,
+    onconflict
   }: {
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
-    signingKeyId: string
+    signingKeyId: string,
+    maxAttempts: ?number,
+    onconflict: (contractID: string, key: string, data: Object) => Promise<Object>,
   }) {
-    const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
-      contractID,
-      innerSigningKeyId,
-      encryptionKeyId,
-      signingKeyId,
-      data,
-      meta: key
-    })
-    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
-      headers: new Headers([[
-        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
-      ]]),
-      method: 'POST',
-      body: JSON.stringify(serializedData),
-      signal: this.abortController.signal
-    })
-    if (!response.ok) {
-      throw new Error('Invalid response status: ' + response.status)
+    for (;;) {
+      const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+        contractID,
+        innerSigningKeyId,
+        encryptionKeyId,
+        signingKeyId,
+        data,
+        meta: key
+      })
+      const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+        headers: new Headers([[
+          'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+        ]]),
+        method: 'POST',
+        body: JSON.stringify(serializedData),
+        signal: this.abortController.signal
+      })
+      if (!response.ok) {
+        if (response.status === 409) {
+          if (--maxAttempts <= 0) {
+            throw new Error('kv/set conflict setting KV value')
+          }
+          await delay(randomIntFromRange(0, 1500))
+          if (typeof onconflict === 'function') {
+            data = await onconflict(contractID, key, data)
+          }
+          continue
+        }
+        throw new Error('kv/set invalid response status: ' + response.status)
+      }
+      break
     }
   },
   'chelonia/kv/get': async function (contractID: string, key: string) {
