@@ -42,7 +42,7 @@ modal-base-template.has-background(
       )
         li.c-search-member(
           v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
-          @click='onAddSelection(partners)'
+          @click='onAddSelection(partners.map(p => p.contractID))'
           :key='chatRoomID'
         )
           profile-card(
@@ -57,7 +57,7 @@ modal-base-template.has-background(
               .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map((p => usernameFromID(p))).join(', @') }}
+                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
 
       .is-subtitle
         i18n(
@@ -147,17 +147,39 @@ export default ({
         })
     },
     filteredRecents () {
+      if (!this.searchText && !this.selections.length) {
+        return this.ourRecentConversations
+      }
       return this.ourRecentConversations.filter(({ title, partners }) => {
+        const partnerIDs = partners.map(p => p.contractID)
         const upperCasedSearchText = String(this.searchText).toUpperCase().normalize()
-        if (!difference(partners, this.selections).length) {
+        if (!difference(partnerIDs, this.selections).length) {
+          // match with contractIDs
           return false
-        } else if (String(title).toUpperCase().normalize().indexOf(upperCasedSearchText) > -1) {
+        } else if (String(title).toUpperCase().normalize().includes(upperCasedSearchText)) {
+          // match with title
           return true
-        } else if (String(partners.join(', ')).toUpperCase().indexOf(upperCasedSearchText) > -1) {
-          return true
+        } else {
+          // match with username and displayname
+          const userKeywords = upperCasedSearchText.replace(/\s/g, '').split(',')
+          return userKeywords.reduce((found, userKeyword, index, arr) => {
+            const isLastUserKeyword = index === arr.length - 1
+            let currentFound = false
+            if (isLastUserKeyword) {
+              currentFound = partners.findIndex(p => {
+                return p.username.toUpperCase().normalize().includes(userKeyword) ||
+                  p.displayName.toUpperCase().normalize().includes(userKeyword)
+              }) >= 0
+            } else {
+              currentFound = partners.findIndex(p => {
+                return p.username.toUpperCase().normalize() === userKeyword ||
+                  p.displayName.toUpperCase().normalize() === userKeyword
+              }) >= 0
+            }
+            return found && currentFound
+          }, true)
         }
-        return false
-      })
+      }).sort((a, b) => a.partners.length > b.partners.length ? 1 : -1)
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
