@@ -7,7 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME, CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
-import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
+import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -210,21 +210,20 @@ Cypress.Commands.add('giLogin', (username, {
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(sbp => {
-      return new Promise(resolve => {
-        const ourUsername = sbp('state/vuex/getters').ourUsername
-        console.log('@ev@ OUR USERNAME ' + ourUsername + '; LOGGING IN AS ' + username)
-        if (ourUsername === username) {
-          throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+      return new Promise((resolve, reject) => {
+        if (firstLoginAfterJoinGroup) {
+          sbp('okTurtles.events/once', JOINED_GROUP, ({ groupContractID }) => {
+            resolve(
+              sbp('chelonia/contract/wait', groupContractID)
+                .then(() => sbp('controller/router').push({ path: '/dashboard' }))
+            )
+          })
         }
-        sbp('okTurtles.events/once', LOGIN, ({ identityContractID }) => {
-          const name = sbp('state/vuex/getters').usernameFromID(identityContractID)
-          console.error('@ev@ ONCE LOGIN', { name, username })
-          if (name === username) {
-            resolve()
-          }
-        })
-        sbp('gi.app/identity/login', { username, password })
-      }).then(() => sbp('controller/router').push({ path: '/dashboard' }).catch(() => {}))
+        const loginPromise = sbp('gi.app/identity/login', { username, password }).catch(reject)
+        if (!firstLoginAfterJoinGroup) {
+          resolve(loginPromise)
+        }
+      })
     })
 
     if (toGroupDashboardUponSuccess) {
@@ -252,9 +251,11 @@ Cypress.Commands.add('giLogin', (username, {
   })
 
   if (firstLoginAfterJoinGroup) {
+    cy.log('cyLog 254')
     if (!bypassUI) {
       cy.getByDT('toDashboardBtn').click()
     }
+    cy.log('cyLog 258')
     cy.giCheckIfJoinedGeneralChatroom(username)
   }
 })
@@ -304,13 +305,13 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         (async () => {
-          const eventHandler = ({ contractID }) => {
-            console.error('@ev@@ CY CMDS JOINED_GROUP', { cID, contractID })
-            if (contractID === cID) {
+          const eventHandler = ({ groupContractID }) => {
+            console.error('@ev@@ CY CMDS JOINED_GROUP', { cID, groupContractID })
+            if (groupContractID === cID) {
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
               const invervalId = setInterval(() => {
-                console.error('@ev@@ INT', sbp('state/vuex/state').currentGroupId === contractID, sbp('state/vuex/getters').ourProfileActive)
-                if (sbp('state/vuex/state').currentGroupId === contractID && sbp('state/vuex/getters').ourProfileActive) {
+                console.error('@ev@@ INT', sbp('state/vuex/state').currentGroupId === groupContractID, sbp('state/vuex/getters').ourProfileActive)
+                if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
                   clearTimeout(invervalId)
                   resolve()
                 }
@@ -482,6 +483,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   cy.url().should('eq', `${API_URL}/app/pending-approval`)
 
   if (existingMemberUsername) {
+    cy.log('@@EMU')
     // NOTE: checking 'data-groupId' is for waiting until joining process would be finished
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
@@ -490,13 +492,16 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     cy.giLogout()
 
+    cy.log('@@EMU493')
     cy.giLogin(existingMemberUsername, { bypassUI })
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
     cy.giLogout()
 
+    cy.log('@@EMU500')
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
+    cy.log('@@EMU502')
   } else {
     // NOTE: if existingMemberUsername doens't exist
     //       it means the invitation link is unique for someone

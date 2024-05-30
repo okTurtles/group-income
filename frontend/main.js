@@ -13,7 +13,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, NAMESPACE_REGISTRATION } from './utils/events.js'
+import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, LEFT_GROUP, NAMESPACE_REGISTRATION } from './utils/events.js'
 import './controller/namespace.js'
 // import './controller/actions/index.js'
 import './controller/app/index.js'
@@ -175,11 +175,30 @@ async function startApp () {
     'chelonia/*': swRpc
   })
 
-  sbp('okTurtles.events/on', JOINED_GROUP, ({ contractID }) => {
+  sbp('okTurtles.events/on', JOINED_GROUP, ({ identityContractID, groupContractID }) => {
     const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
     if (!rootState.currentGroupId) {
-      sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+      sbp('state/vuex/commit', 'setCurrentGroupId', groupContractID)
       sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+    }
+  })
+
+  sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    const state = rootState[identityContractID]
+    // grab the groupID of any group that we're a part of
+    if (!rootState.currentGroupId || rootState.currentGroupId === groupContractID) {
+      const groupIdToSwitch = Object.keys(state.groups)
+        .filter(cID =>
+          cID !== groupContractID
+        ).sort(cID =>
+        // prefer successfully joined groups
+          sbp('state/vuex/state')[cID]?.profiles?.[groupContractID] ? -1 : 1
+        )[0] || null
+      sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+      sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
     }
   })
 
@@ -710,12 +729,11 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       .find(cID => has(currentState[identityContractID].groups, cID))
 
     if (gId) {
-      // TODO: This should be gi.app/group/switch once implemented
       sbp('gi.app/group/switch', gId)
     }
   }
 
-  // Whenever there's an anctive session, the encrypted save state should be
+  // Whenever there's an active session, the encrypted save state should be
   // removed, as it is only used for recovering the state when logging in
   sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
     console.error('Error deleting encrypted settings after login')

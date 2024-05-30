@@ -266,6 +266,14 @@ export default (sbp('sbp/selectors/register', {
         })
       }
 
+      if (!sbp('chelonia/rootState').loggedIn) {
+        sbp('chelonia/rootState').loggedIn = {}
+      }
+      sbp('chelonia/rootState').loggedIn.identityContractID = identityContractID
+      console.error('@@LOGGED IN', sbp('chelonia/rootState'))
+      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+      sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
+
       // We need to sync contracts in this order to ensure that we have all the
       // corresponding secret keys. Group chatrooms use group keys but there's
       // no OP_KEY_SHARE, which will result in the keys not being available when
@@ -349,14 +357,6 @@ export default (sbp('sbp/selectors/register', {
       } catch (e) {
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
         throw e
-      } finally {
-        if (!sbp('chelonia/rootState').loggedIn) {
-          sbp('chelonia/rootState').loggedIn = {}
-        }
-        sbp('chelonia/rootState').loggedIn.identityContractID = identityContractID
-        console.error('@@LOGGED IN', sbp('chelonia/rootState'))
-        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
-        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
       }
 
       return identityContractID
@@ -377,6 +377,7 @@ export default (sbp('sbp/selectors/register', {
       console.info('logging out, waiting for any events to finish...')
       // wait for any pending operations to finish before calling state/vuex/save
       // This includes, in order:
+      //   0. Pending login events
       //   1. Actions to be sent (in the `encrypted-action` queue)
       //   2. (In reset) Actions that haven't been published yet (the
       //      `publish:${contractID}` queues)
@@ -384,6 +385,8 @@ export default (sbp('sbp/selectors/register', {
       //      queues), including their side-effects (the `${contractID}` queues)
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
+      cheloniaState = sbp('chelonia/rootState')
+      await sbp('okTurtles.eventQueue/queueEvent', `login:${cheloniaState.loggedIn?.identityContractID ?? '(null)'}`, () => {})
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       // reset will wait until we have processed any remaining actions
       cheloniaState = await sbp('chelonia/reset', async () => {

@@ -23,6 +23,12 @@ sbp('sbp/selectors/register', {
         // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
         await swRegistration.update()
         setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
+
+        // Keep the service worker alive while the window is open
+        // The default idle timeout on Chrome and Firefox is 30 seconds. We send
+        // a ping message every 5 seconds to ensure that the worker remains
+        // active.
+        setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
@@ -31,6 +37,8 @@ sbp('sbp/selectors/register', {
 
         if (typeof data === 'object' && data.type) {
           switch (data.type) {
+            case 'pong':
+              break
             case 'pushsubscriptionchange': {
               sbp('service-worker/resubscribe-push', data.subscription)
               break

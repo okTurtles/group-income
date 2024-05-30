@@ -1194,7 +1194,7 @@ sbp('chelonia/defineContract', {
               })
             }
 
-            sbp('okTurtles.events/emit', JOINED_GROUP, { contractID })
+            sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
           } else {
             // we're an existing member of the group getting notified that a
             // new member has joined, so subscribe to their identity contract

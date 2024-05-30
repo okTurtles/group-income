@@ -16,7 +16,7 @@ import { NOTIFICATION_TYPE, REQUEST_TYPE } from '~/shared/pubsub.js'
 import { PUBSUB_INSTANCE } from '../instance-keys.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
-import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, LEFT_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
 import '@sbp/okturtles.data'
 import '../namespace-sw.js'
 import '../actions/index.js'
@@ -33,9 +33,6 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   if (selector.includes('wait')) console.error(`[sbp] ${selector}`, data)
   console.debug(`[sbp] ${selector}`, data)
 })
-
-// this is to ensure compatibility between frontend and test/backend.test.js
-sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
 sbp('sbp/selectors/register', {
   'state/vuex/state': () => {
@@ -61,55 +58,95 @@ const save = debounce(() => sbp('chelonia/queueInvocation', 'CHELONIA_STATE', ()
   })
 }), 500)
 
-const configured = sbp('chelonia/configure', {
-  connectionURL: sbp('okTurtles.data/get', 'API_URL'),
-  reactiveSet: (o: Object, k: string, v: string) => {
-    if (!has(o, k) || o[k] !== v) {
-      o[k] = v
-      save()
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
+  const message = {
+    type: 'event',
+    subtype: CONTRACTS_MODIFIED,
+    data: [subscriptionSet]
+  }
+  self.clients.matchAll()
+    .then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage(message)
+      })
+    })
+});
+
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, LEFT_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP].forEach(et => {
+  sbp('okTurtles.events/on', et, (...args) => {
+    const { data } = serializer(args)
+    const message = {
+      type: 'event',
+      subtype: et,
+      data
     }
-  },
-  reactiveDel: (o: Object, k: string) => {
-    if (has(o, k)) {
-      delete o[k]
-      save()
-    }
-  },
-  contracts: {
-    ...manifests,
-    defaults: {
-      modules: { '@common/common.js': Common },
-      allowedSelectors: [
-        'namespace/lookup', 'namespace/lookupCached',
-        'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
-        'chelonia/contract/state',
-        'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
-        'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
-        'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
-        'chelonia/queueInvocation',
-        'chelonia/contract/waitingForKeyShareTo',
-        'chelonia/contract/successfulKeySharesByContractID',
-        'gi.actions/chatroom/leave',
-        'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
-        'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
-        'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
-        'gi.notifications/emit',
-        'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
-        'chelonia/out/keyDel',
-        'chelonia/contract/disconnect',
-        'gi.actions/identity/removeFiles',
-        'gi.actions/chatroom/join',
-        'chelonia/contract/hasKeysToPerformOperation'
-      ],
-      allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
-      preferSlim: true,
-      exposedGlobals: {
+    self.clients.matchAll()
+      .then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage(message)
+        })
+      })
+  })
+})
+
+const cheloniaReady = (async () => {
+  // this is to ensure compatibility between frontend and test/backend.test.js
+  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
+
+  const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
+  if (cheloniaState) {
+    Object.assign(sbp('chelonia/rootState'), cheloniaState)
+  }
+
+  await sbp('chelonia/configure', {
+    connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    reactiveSet: (o: Object, k: string, v: string) => {
+      if (!has(o, k) || o[k] !== v) {
+        o[k] = v
+        save()
+      }
+    },
+    reactiveDel: (o: Object, k: string) => {
+      if (has(o, k)) {
+        delete o[k]
+        save()
+      }
+    },
+    contracts: {
+      ...manifests,
+      defaults: {
+        modules: { '@common/common.js': Common },
+        allowedSelectors: [
+          'namespace/lookup', 'namespace/lookupCached',
+          'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/state',
+          'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
+          'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
+          'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
+          'chelonia/queueInvocation',
+          'chelonia/contract/waitingForKeyShareTo',
+          'chelonia/contract/successfulKeySharesByContractID',
+          'gi.actions/chatroom/leave',
+          'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
+          'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
+          'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
+          'gi.notifications/emit',
+          'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
+          'chelonia/out/keyDel',
+          'chelonia/contract/disconnect',
+          'gi.actions/identity/removeFiles',
+          'gi.actions/chatroom/join',
+          'chelonia/contract/hasKeysToPerformOperation'
+        ],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
+        preferSlim: true,
+        exposedGlobals: {
         // note: needs to be written this way and not simply "Notification"
         // because that breaks on mobile where Notification is undefined
         // Notification: window.Notification
+        }
       }
     }
-  }
   /* hooks: {
     handleEventError: (e: Error, message: GIMessage) => {
       if (e.name === 'ChelErrorUnrecoverable') {
@@ -138,82 +175,58 @@ const configured = sbp('chelonia/configure', {
       errorNotification('sideEffect', e, message)
     }
   } */
-})
-
-sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
-  const message = {
-    type: 'event',
-    subtype: CONTRACTS_MODIFIED,
-    data: [subscriptionSet]
-  }
-  self.clients.matchAll()
-    .then((clientList) => {
-      clientList.forEach((client) => {
-        client.postMessage(message)
-      })
-    })
-});
-
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP].forEach(et => {
-  sbp('okTurtles.events/on', et, (...args) => {
-    const { data } = serializer(args)
-    const message = {
-      type: 'event',
-      subtype: et,
-      data
-    }
-    self.clients.matchAll()
-      .then((clientList) => {
-        clientList.forEach((client) => {
-          client.postMessage(message)
-        })
-      })
   })
-})
 
-sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
-  messageHandlers: {
-    [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-      const ourVersion = process.env.GI_VERSION
-      const theirVersion = msg.data.GI_VERSION
+  // Re-subscribe to existing contracts
+  if (cheloniaState?.contracts) {
+    // TODO: Sync order
+    await sbp('chelonia/contract/sync', Object.keys(cheloniaState.contracts))
+  }
 
-      const ourContractsVersion = process.env.CONTRACTS_VERSION
-      const theirContractsVersion = msg.data.CONTRACTS_VERSION
-      if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
-        sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
-      }
-    },
-    [REQUEST_TYPE.PUSH_ACTION] (msg) {
-      sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
-    },
-    [NOTIFICATION_TYPE.PUB] (msg) {
-      const { contractID, innerSigningContractID, data } = msg
+  sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
+    messageHandlers: {
+      [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
+        const ourVersion = process.env.GI_VERSION
+        const theirVersion = msg.data.GI_VERSION
 
-      switch (data[0]) {
-        case 'gi.contracts/chatroom/user-typing-event': {
-          sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { contractID, innerSigningContractID })
-          break
+        const ourContractsVersion = process.env.CONTRACTS_VERSION
+        const theirContractsVersion = msg.data.CONTRACTS_VERSION
+        if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
         }
-        case 'gi.contracts/chatroom/user-stop-typing-event': {
-          sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { contractID, innerSigningContractID })
-          break
+      },
+      [REQUEST_TYPE.PUSH_ACTION] (msg) {
+        sbp('okTurtles.events/emit', REQUEST_TYPE.PUSH_ACTION, { data: msg.data })
+      },
+      [NOTIFICATION_TYPE.PUB] (msg) {
+        const { contractID, innerSigningContractID, data } = msg
+
+        switch (data[0]) {
+          case 'gi.contracts/chatroom/user-typing-event': {
+            sbp('okTurtles.events/emit', CHATROOM_USER_TYPING, { contractID, innerSigningContractID })
+            break
+          }
+          case 'gi.contracts/chatroom/user-stop-typing-event': {
+            sbp('okTurtles.events/emit', CHATROOM_USER_STOP_TYPING, { contractID, innerSigningContractID })
+            break
+          }
+          default: {
+            console.log(`[pubsub] Received data from channel ${contractID}:`, data)
+          }
         }
-        default: {
-          console.log(`[pubsub] Received data from channel ${contractID}:`, data)
-        }
-      }
-    },
-    [NOTIFICATION_TYPE.KV] ([key, data]) {
-      switch (key) {
-        case 'lastLoggedIn': {
-          // TODO THIS
-          // const rootState = sbp('state/vuex/state')
-          // Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
+      },
+      [NOTIFICATION_TYPE.KV] ([key, data]) {
+        switch (key) {
+          case 'lastLoggedIn': {
+            // TODO THIS
+            // const rootState = sbp('state/vuex/state')
+            // Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
+          }
         }
       }
     }
-  }
-}))
+  }))
+})()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
@@ -224,7 +237,7 @@ self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
-  event.waitUntil(configured.finally(() => self.clients.claim()))
+  event.waitUntil(cheloniaReady.finally(() => self.clients.claim()))
 })
 
 self.addEventListener('fetch', function (event) {
@@ -277,6 +290,9 @@ self.addEventListener('message', function (event) {
         })
         break
       }
+      case 'ping':
+        event.source.postMessage({ type: 'pong' })
+        break
       default:
         console.error('[sw] unknown message type:', event.data)
         break

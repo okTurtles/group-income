@@ -107,8 +107,10 @@ const mutations = {
     state.loggedIn = user
   },
   setCurrentGroupId (state, currentGroupId) {
-    // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
+    if (!currentGroupId) {
+      sbp('controller/router').push({ path: '/' }).catch(() => {})
+    }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state

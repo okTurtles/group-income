@@ -239,16 +239,13 @@ export default (sbp('sbp/selectors/register', {
   'gi.app/identity/logout': async function () {
     try {
       const state = cloneDeep(sbp('state/vuex/state'))
-      console.error('@@@@logout', state)
       if (!state.loggedIn) return
 
       const cheloniaState = await sbp('gi.actions/identity/logout')
 
       const { encryptionParams } = state.loggedIn
-      console.error('xxxx', encryptionParams)
       if (encryptionParams) {
         state.cheloniaState = cheloniaState
-        console.error('yyy', state)
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)

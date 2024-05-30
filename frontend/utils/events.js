@@ -12,6 +12,7 @@ export const LOGOUT = 'logout'
 export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
+export const LEFT_GROUP = 'left-group'
 
 export const REPLACED_STATE = 'replaced-state'
 

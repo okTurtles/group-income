@@ -15,11 +15,9 @@ div
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
-import { JOINED_GROUP } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 
 export default ({
@@ -56,12 +54,6 @@ export default ({
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
     this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
   },
-  beforeDestroy () {
-    if (this.ephemeral.handler) {
-      sbp('okTurtles.events/off', JOINED_GROUP, this.ephemeral.handler)
-      delete this.ephemeral.handler
-    }
-  },
   watch: {
     groupState (to) {
       if (to?.settings && this.ephemeral.settings !== to.settings) {
@@ -69,6 +61,7 @@ export default ({
       }
     },
     haveActiveGroupProfile (to) {
+      // TODO: Don't set this to true if the group contract is syncing
       // if our group profile appears in the group state, it means we've joined the group
       if (to !== this.ephemeral.groupJoined) {
         this.ephemeral.groupJoined = to
