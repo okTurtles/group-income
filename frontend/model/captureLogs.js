@@ -125,9 +125,8 @@ function clearLogs () {
 
 // Util to download all stored logs so far.
 function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnchorElement): any {
-  const isDownload = actionType === 'download'
-  const filename = isDownload ? 'gi_logs.json' : 'gi_logs.txt'
-  const mimeType = isDownload ? 'application/json' : 'text/plain'
+  const filename = 'gi_logs.json.txt'
+  const mimeType = 'text/plain'
 
   const blob = new Blob([JSON.stringify({
     // Add instructions in case the user opens the file.
@@ -136,7 +135,7 @@ function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnc
     logs: getLogger().entries.toArray()
   }, undefined, 2)], { type: mimeType })
 
-  if (isDownload) {
+  if (actionType === 'download') {
     if (!elLink) { return }
 
     const url = URL.createObjectURL(blob)
@@ -186,9 +185,9 @@ function setAppLogsFilter (filter: Array<string>) {
 window.addEventListener('beforeunload', event => sbp('appLogs/save'))
 
 sbp('sbp/selectors/register', {
-  'appLogs/downloadOrShare' (...args) { downloadOrShareLogs(...args) },
+  'appLogs/downloadOrShare': downloadOrShareLogs,
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
-  'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
-  'appLogs/startCapture' (identityContractID) { captureLogsStart(identityContractID) }
+  'appLogs/pauseCapture': captureLogsPause,
+  'appLogs/startCapture': captureLogsStart
 })
