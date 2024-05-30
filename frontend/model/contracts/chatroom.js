@@ -169,7 +169,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID }) {
-        sbp('gi.actions/identity/addChatRoomLog', contractID)
+        sbp('gi.actions/identity/initChatRoomUnreadMessages', contractID)
       }
     },
     'gi.contracts/chatroom/join': {
@@ -457,7 +457,7 @@ sbp('chelonia/defineContract', {
             chatRoomName: getters.chatRoomAttributes.name
           })
         } else if (!isMentionedMe) {
-          sbp('gi.actions/identity/deleteChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+          sbp('gi.actions/identity/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
         }
       }
     },
@@ -522,8 +522,8 @@ sbp('chelonia/defineContract', {
         }
 
         // NOTE: ignore to check if the existance of current message (data.hash)
-        //       because if not exist, deleteChatRoomUnreadMessage won't do anything
-        sbp('gi.actions/identity/deleteChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+        //       because if not exist, removeChatRoomUnreadMessage won't do anything
+        sbp('gi.actions/identity/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
       }
     },
     'gi.contracts/chatroom/deleteAttachment': {

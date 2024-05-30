@@ -4,10 +4,11 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { KV_KEYS } from '@utils/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
-  chatRoomLogs: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
+  unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
   chatNotificationSettings: {} // { [chatRoomID]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 
@@ -27,8 +28,8 @@ const getters = {
       }
     }, state.chatNotificationSettings || {})
   },
-  ourChatRoomLogs (state) {
-    return state.chatRoomLogs || {}
+  ourUnreadMessages (state) {
+    return state.unreadMessages || {}
   },
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {
@@ -63,7 +64,11 @@ const getters = {
           currentGroupDirectMessages[chatRoomID] = {
             ...directMessageSettings,
             members,
-            partners,
+            partners: partners.map(memberID => ({
+              contractID: memberID,
+              username: getters.usernameFromID(memberID),
+              displayName: getters.userDisplayNameFromID(memberID)
+            })),
             lastJoinedPartner,
             // TODO: The UI should display display names, usernames and (in the future)
             // identity contract IDs differently in some way (e.g., font, font size,
@@ -91,7 +96,7 @@ const getters = {
       }
       const currentGroupDirectMessages = getters.ourGroupDirectMessages
       return Object.keys(currentGroupDirectMessages).find(chatRoomID => {
-        const cPartners = currentGroupDirectMessages[chatRoomID].partners
+        const cPartners = currentGroupDirectMessages[chatRoomID].partners.map(partner => partner.contractID)
         return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
       })
     }
@@ -111,21 +116,21 @@ const getters = {
   },
   currentChatRoomReadUntil (state, getters) {
     // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
-    return getters.ourChatRoomLogs[getters.currentChatRoomId]?.readUntil // undefined means to the latest
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
   chatRoomUnreadMessages (state, getters) {
     return (chatRoomID: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return getters.ourChatRoomLogs[chatRoomID]?.unreadMessages || []
+      return getters.ourUnreadMessages[chatRoomID]?.unreadMessages || []
     }
   },
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)
       const isGroupChatroom = cID => Object.keys(state[groupID]?.chatRooms || {}).includes(cID)
-      return Object.keys(getters.ourChatRoomLogs)
+      return Object.keys(getters.ourUnreadMessages)
         .filter(cID => isGroupDirectMessage(cID) || isGroupChatroom(cID))
-        .map(cID => getters.ourChatRoomLogs[cID].unreadMessages.length)
+        .map(cID => getters.ourUnreadMessages[cID].unreadMessages.length)
         .reduce((sum, n) => sum + n, 0)
     }
   },
@@ -192,8 +197,8 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
     }
   },
-  setChatRoomLogs (state, newLogs) {
-    Vue.set(state, 'chatRoomLogs', newLogs)
+  setUnreadMessages (state, value) {
+    Vue.set(state, KV_KEYS.UNREAD_MESSAGES, value)
   },
   setChatRoomScrollPosition (state, { chatRoomID, messageHash }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomID, messageHash)

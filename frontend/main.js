@@ -41,6 +41,7 @@ import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import { showNavMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
+import { KV_KEYS } from './utils/constants.js'
 
 const { Vue, L } = Common
 
@@ -130,9 +131,9 @@ async function startApp () {
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
           'chelonia/contract/hasKeysToPerformOperation',
-          'gi.actions/identity/addChatRoomLog', 'gi.actions/identity/deleteChatRoomLog',
+          'gi.actions/identity/initChatRoomUnreadMessages', 'gi.actions/identity/deleteChatRoomUnreadMessages',
           'gi.actions/identity/setChatRoomReadUntil',
-          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/deleteChatRoomUnreadMessage'
+          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/removeChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -244,10 +245,10 @@ async function startApp () {
           const rootState = sbp('state/vuex/state')
           const { contractID, data: value } = data
 
-          if (key === 'lastLoggedIn' && value) {
+          if (key === KV_KEYS.LAST_LOGGED_IN && value) {
             Vue.set(rootState.lastLoggedIn, contractID, value)
-          } else if (key === 'chatRoomLogs' && value) {
-            sbp('state/vuex/commit', 'setChatRoomLogs', value)
+          } else if (key === KV_KEYS.UNREAD_MESSAGES && value) {
+            sbp('state/vuex/commit', 'setUnreadMessages', value)
           }
         }
       }
@@ -405,12 +406,12 @@ async function startApp () {
       })
     },
     computed: {
-      ...mapGetters(['groupsByName', 'ourChatRoomLogs', 'totalUnreadNotificationCount']),
+      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
-        return Object.keys(this.ourChatRoomLogs)
+        return Object.keys(this.ourUnreadMessages)
           // TODO: need to remove the '|| []' after we release 0.2.*
-          .map(cId => (this.ourChatRoomLogs[cId].unreadMessages || []).length)
+          .map(cId => (this.ourUnreadMessages[cId].unreadMessages || []).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {

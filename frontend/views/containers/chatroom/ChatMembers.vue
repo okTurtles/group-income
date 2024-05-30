@@ -20,9 +20,9 @@
       @click='$emit("redirect")'
     )
       .profile-wrapper(v-if='partners.length === 1')
-        profile-card(:contractID='partners[0]' deactivated)
-          avatar-user(:contractID='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(:data-test='usernameFromID(partners[0])') {{ title }}
+        profile-card(:contractID='partners[0].contractID' deactivated)
+          avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0].username') {{ title }}
 
       .group-wrapper(v-else)
         .picture-wrapper
@@ -71,8 +71,7 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'chatRoomUnreadMessages',
-      'usernameFromID'
+      'chatRoomUnreadMessages'
     ])
   },
   methods: {
