@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import CircularList from '~/shared/CircularList.js'
+import { L } from '@common/common.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -123,24 +124,35 @@ function clearLogs () {
 }
 
 // Util to download all stored logs so far.
-function downloadOrShareLogs (elLink: Object): void {
-  const filename = 'gi_logs.json'
+function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnchorElement): any {
+  const isDownload = actionType === 'download'
+  const filename = isDownload ? 'gi_logs.json' : 'gi_logs.txt'
+  const mimeType = isDownload ? 'application/json' : 'text/plain'
 
-  const file = new Blob([JSON.stringify({
+  const blob = new Blob([JSON.stringify({
     // Add instructions in case the user opens the file.
     _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     ua: navigator.userAgent,
     logs: getLogger().entries.toArray()
-  }, undefined, 2)], { type: 'application/json' })
+  }, undefined, 2)], { type: mimeType })
 
-  const url = URL.createObjectURL(file)
-  elLink.href = url
-  elLink.download = filename
-  elLink.click()
-  setTimeout(() => {
-    elLink.href = '#'
-    URL.revokeObjectURL(url)
-  }, 0)
+  if (isDownload) {
+    if (!elLink) { return }
+
+    const url = URL.createObjectURL(blob)
+    elLink.href = url
+    elLink.download = filename
+    elLink.click()
+    setTimeout(() => {
+      elLink.href = '#'
+      URL.revokeObjectURL(url)
+    }, 0)
+  } else {
+    return window.navigator.share({
+      files: [new File([blob], filename, { type: blob.type })],
+      title: L('Application Logs')
+    })
+  }
 }
 
 function getLogger (): Object {

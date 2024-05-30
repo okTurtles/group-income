@@ -25,7 +25,7 @@
               input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
               i18n Log
 
-        button.is-small.c-download(@click='downloadOrShareLogs')
+        button-submit.is-small.c-download(@click='downloadOrShareLogs')
           template(v-if='ephemeral.useWebShare')
             i.icon-share-alt.is-prefix
             i18n Share
@@ -35,10 +35,13 @@
 
         a(ref='linkDownload' hidden)
 
+      banner-scoped.c-err-banner(ref='errBanner')
+
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
         | {{ prettyLogs }}
 
       i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
+
 </template>
 
 <script>
@@ -46,9 +49,16 @@ import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
+import { L, LError } from '@common/common.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
   name: 'AppLogs',
+  components: {
+    BannerScoped,
+    ButtonSubmit
+  },
   data () {
     return {
       form: {
@@ -118,8 +128,23 @@ export default ({
         }
       })
     },
-    downloadOrShareLogs () {
-      sbp('appLogs/downloadOrShare', this.$refs.linkDownload)
+    async downloadOrShareLogs () {
+      const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
+      const isDownload = actionType === 'download'
+
+      try {
+        await sbp('appLogs/downloadOrShare',
+          actionType,
+          isDownload ? this.$refs.linkDownload : undefined
+        )
+      } catch (err) {
+        const errorDisplay = isDownload
+          ? L('Failed to download the app logs. {reportError}', LError(err))
+          : L('Failed to share the app logs. {reportError}', LError(err))
+
+        console.error(`AppLogs.vue downloadOrShareLogs() '${actionType}' action error:`, err)
+        this.$refs.errBanner.danger(errorDisplay)
+      }
     },
     checkWebShareAvailable () {
       this.ephemeral.useWebShare = Boolean(navigator.share) &&
@@ -180,5 +205,13 @@ export default ({
   font-family: "Monaco", "Menlo", "Courier", monospace;
   font-size: $size_5;
   white-space: pre;
+}
+
+.c-err-banner {
+  margin-bottom: 1.5rem;
+
+  ::v-deep .c-banner {
+    margin-top: 0;
+  }
 }
 </style>
