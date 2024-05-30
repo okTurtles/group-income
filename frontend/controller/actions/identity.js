@@ -805,9 +805,11 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/loadChatRoomUnreadMessages': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
-      const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
-      sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
+      return requireToSuccess(async () => {
+        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+        sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+      })
     })
   },
   'gi.actions/identity/initChatRoomUnreadMessages': (contractID: string) => {
