@@ -1378,7 +1378,7 @@ export default (sbp('sbp/selectors/register', {
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId,
-    maxAttempts = 3,
+    maxAttempts,
     onconflict
   }: {
     innerSigningKeyId: ?string,
@@ -1387,6 +1387,7 @@ export default (sbp('sbp/selectors/register', {
     maxAttempts: ?number,
     onconflict: (contractID: string, key: string, data: Object) => Promise<Object>,
   }) {
+    maxAttempts = maxAttempts ?? 3
     for (;;) {
       const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
         contractID,
