@@ -14,6 +14,13 @@ export default ({
     sbp('okTurtles.events/on', MESSAGE_RECEIVE, this.playMessageReceive)
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
+  computed: {
+    isAppIdle () {
+      // NOTE: idle-vue plugin will provide this.isAppIdle
+      //       but sometimes it returns undefined, so redefine here
+      return this.$store.state.idleVue?.isIdle
+    }
+  },
   methods: {
     shouldPlay () {
       return document.hidden || this.isAppIdle
