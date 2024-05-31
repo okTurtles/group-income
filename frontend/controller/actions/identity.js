@@ -801,12 +801,11 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
       const fnInitUnreadMessages = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
-        return !currentData[cID]
-          ? {
-              ...currentData,
-              [cID]: { readUntil: null, unreadMessages: [] }
-            }
-          : null
+
+        if (!currentData[cID]) {
+          return { ...currentData, [cID]: { readUntil: null, unreadMessages: [] } }
+        }
+        return null
       }
 
       const data = await fnInitUnreadMessages(contractID)
