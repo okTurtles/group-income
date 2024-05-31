@@ -127,7 +127,7 @@ const getters = {
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)
-      const isGroupChatroom = cID => Object.keys(state[groupID]?.chatRooms || {}).includes(cID)
+      const isGroupChatroom = cID => Object.keys(rootState[groupID]?.chatRooms || {}).includes(cID)
       return Object.keys(getters.ourUnreadMessages)
         .filter(cID => isGroupDirectMessage(cID) || isGroupChatroom(cID))
         .map(cID => getters.ourUnreadMessages[cID].unreadMessages.length)

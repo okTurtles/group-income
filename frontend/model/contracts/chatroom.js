@@ -60,15 +60,16 @@ function messageReceivePostEffect ({
   memberID: string,
   chatRoomName: string
 }): void {
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    return
-  }
   const rootGetters = sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
   if (shouldAddToUnreadMessages) {
     sbp('gi.actions/identity/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
+  }
+
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
+    return
   }
 
   let title = `# ${chatRoomName}`
