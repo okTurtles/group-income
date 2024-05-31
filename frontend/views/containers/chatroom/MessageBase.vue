@@ -141,15 +141,10 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
-import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { renderMarkdown, filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { TextObjectType } from '@utils/constants.js'
 
-const TextObjectType = {
-  Text: 'TEXT',
-  OnsiteRedirect: 'ONSITE_REDIRECT',
-  MemberMention: 'MEMBER_MENTION',
-  ChannelMention: 'CHANNEL_MENTION'
-}
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -277,29 +272,7 @@ export default ({
 
       const genDefaultTextObj = (text) => {
         const textOutput = this.shouldRenderMarkdown ? renderMarkdown(text) : text
-        // NOTE: regex should be of same format with the response of renderMarkDown
-        const onsiteRedirectElements = textOutput.match(/<span class='link' data=([^]*?)<\/span>/g)
-
-        if (!onsiteRedirectElements) {
-          return { type: TextObjectType.Text, text: textOutput }
-        } else {
-          // NOTE: regex should be of same format with the response of renderMarkDown
-          const objOnsiteRedirects = onsiteRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/data='([^]*?)'>/g)[1]), raw: ele }))
-          const escapedRedirectElements = onsiteRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
-          const splitPatternRegEx = new RegExp('(' + escapedRedirectElements.join('|') + ')')
-          return textOutput.split(splitPatternRegEx).map(part => {
-            if (!part) {
-              return null
-            } else {
-              const index = objOnsiteRedirects.findIndex(obj => obj.raw === part)
-              if (index >= 0) {
-                const { path, text } = objOnsiteRedirects[index]
-                return { type: TextObjectType.OnsiteRedirect, path, text }
-              }
-              return { type: TextObjectType.Text, text: part }
-            }
-          }).filter(item => !!item)
-        }
+        return filterOutOnsiteRedirectsFromSafeHTML(textOutput)
       }
 
       const genChannelMentionObj = (text) => {
@@ -330,7 +303,7 @@ export default ({
       if (!text) {
         return []
       } else if (!containsMentionChar(text)) {
-        return [genDefaultTextObj(text)].flat()
+        return genDefaultTextObj(text)
       }
       const allMention = makeMentionFromUserID('').all
 

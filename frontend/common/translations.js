@@ -2,10 +2,11 @@
 
 // since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
-import dompurify from 'dompurify'
 import Vue from 'vue'
+import dompurify from 'dompurify'
+import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import template from './stringTemplate.js'
+import { makeOnsiteRedirectElement } from '@view-utils/markdown-utils.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
@@ -132,17 +133,26 @@ export default function L (
 }
 
 export function LError (error: Error): {|reportError: any|} {
-  let url = `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
-  const target = !sbp('state/vuex/state').loggedIn ? 'target="_blank"' : ''
-  if (!sbp('state/vuex/state').loggedIn) {
-    url = 'https://github.com/okTurtles/group-income/issues'
+  const options = {
+    errorMsg: error.message,
+    'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income/issues">',
+    '_a': '</a>'
   }
+  if (sbp('state/vuex/state').loggedIn) {
+    const route = {
+      query: {
+        modal: 'UserSettingsModal',
+        tab: 'application-logs',
+        errorMsg: encodeURI(error.message)
+      }
+    }
+    const { prefix, suffix } = makeOnsiteRedirectElement({ route })
+    options['a_'] = prefix
+    options['_a'] = suffix
+  }
+
   return {
-    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
-      errorMsg: error.message,
-      'a_': `<a class="link" ${target} href="${url}">`,
-      '_a': '</a>'
-    })
+    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', options)
   }
 }
 

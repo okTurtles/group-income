@@ -19,3 +19,10 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
 //       meaning if this limit is updated on the server-side, an update is required here too.
 // TODO: fetch this value from a server API
 export const CHAT_ATTACHMENT_SIZE_LIMIT = 6291456 // in byte.
+
+export const TextObjectType = {
+  Text: 'TEXT',
+  OnsiteRedirect: 'ONSITE_REDIRECT',
+  MemberMention: 'MEMBER_MENTION',
+  ChannelMention: 'CHANNEL_MENTION'
+}

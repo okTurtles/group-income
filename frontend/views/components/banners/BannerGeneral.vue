@@ -1,18 +1,25 @@
 <template lang='pug'>
   transition-expand
     .l-banner(
-      v-if='ephemeral.message'
+      v-if='shouldShowBanner'
       data-test='bannerGeneral'
       :class='`is-${ephemeral.severity}`'
       aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
-      span(v-safe-html:a='ephemeral.message')
+      template(v-for='(objMessage, index) in messageObjects')
+        span.link(
+          v-if='isOnsiteRedirect(objMessage)'
+          @click='navigate(objMessage.route)'
+        ) {{ objMessage.text }}
+        span(v-else v-safe-html:a='objMessage.text')
 </template>
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
+import { filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
+import { TextObjectType } from '@utils/constants.js'
 
 export default ({
   name: 'BannerGeneral',
@@ -26,6 +33,17 @@ export default ({
       severity: null
     }
   }),
+  computed: {
+    messageObjects () {
+      if (!this.ephemeral.message) {
+        return []
+      }
+      return filterOutOnsiteRedirectsFromSafeHTML(this.ephemeral.message).flat()
+    },
+    shouldShowBanner () {
+      return Boolean(this.messageObjects.length)
+    }
+  },
   methods: {
     // To be used by parent. Example:
     // this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
@@ -68,6 +86,12 @@ export default ({
           clearBannerTimer = setTimeout(clearBanner, 1000 * seconds)
         }
       }, 1000 * seconds)
+    },
+    navigate (route) {
+      this.$router.push({ ...route })
+    },
+    isOnsiteRedirect (messageObject) {
+      return messageObject.type === TextObjectType.OnsiteRedirect
     }
   }
 }: Object)

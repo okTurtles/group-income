@@ -1,6 +1,16 @@
 import sbp from '@sbp/sbp'
 import { marked } from 'marked'
 import { validateURL } from '@view-utils/misc.js'
+import { TextObjectType } from '@utils/constants.js'
+
+export const makeOnsiteRedirectElement = (data?: Object): {
+  prefix: string, suffix: string
+} => {
+  return {
+    prefix: `<span class="link" data="${JSON.stringify(data ?? {})}">`,
+    suffix: '</span>'
+  }
+}
 
 marked.use({
   extensions: [
@@ -13,10 +23,11 @@ marked.use({
           const { href, text } = token
           if (url.hostname === document.location.hostname) {
             const path = href.split(sbp('controller/router').options.base)[1]
-            return `<span class='link' data='${JSON.stringify({ path, text })}'>${text}</span>`
+            const { prefix, suffix } = makeOnsiteRedirectElement({ path })
+            return `${prefix}${text}${suffix}`
           } else {
             // custom renderer for <a> tag for setting target='_blank' to the output HTML
-            return `<a class='link' href='${href}' target='_blank'>${text}</a>`
+            return `<a class="link" href="${href}" target="_blank">${text}</a>`
           }
         }
         return token.raw
@@ -134,5 +145,34 @@ export function injectOrStripLink (
 
   return {
     output: before + segment + after, focusIndex
+  }
+}
+
+export const filterOutOnsiteRedirectsFromSafeHTML = (textInSafeHTML: string): Array<Object> => {
+  // NOTE: regular expressions we use in this function
+  //       should be defined using response of makeOnsiteRedirectElement
+  const onsiteRedirectElements = textInSafeHTML.match(/<span class="link" data="([^]*?)<\/span>/g)
+
+  if (!onsiteRedirectElements) {
+    return [{ type: TextObjectType.Text, text: textInSafeHTML }]
+  } else {
+    const objOnsiteRedirects = onsiteRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/data="([^]*?)">/g)[1]), raw: ele }))
+    const escapedRedirectElements = onsiteRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
+    const splitPatternRegEx = new RegExp('(' + escapedRedirectElements.join('|') + ')')
+    return textInSafeHTML.split(splitPatternRegEx).map(part => {
+      if (!part) {
+        return null
+      } else {
+        const index = objOnsiteRedirects.findIndex(obj => obj.raw === part)
+        if (index >= 0) {
+          return {
+            type: TextObjectType.OnsiteRedirect,
+            text: part.split(/">([^]*?)<\/span>/g)[1],
+            ...objOnsiteRedirects[index]
+          }
+        }
+        return { type: TextObjectType.Text, text: part }
+      }
+    }).filter(item => !!item)
   }
 }
