@@ -1,5 +1,10 @@
 import { marked } from 'marked'
 
+export type MarkdownSegment = {
+  type: 'code' | 'plain',
+  text: string
+}
+
 marked.use({
   extensions: [
     {
@@ -14,23 +19,20 @@ marked.use({
 })
 
 export function renderMarkdown (str: string): any {
-  str = str.replace(/\n/g, '<br>') // firstly, manually replace all new-lines with <br>. ("breaks: true" option below doesn't consistently work.)
-    .replace(/<br>-/g, '\n-')
+  // STEP 1. Handle multiple line-breaks
+  // markedjs with the gfm(Github Flavored Markdown) style always collapses multiple line-breaks into one
+  // so we need some custom logic to handle it manually.
+  // (Reference issue here: https://github.com/markedjs/marked/issues/190)
+  str = str.replace(/\n(?=\n)/g, '\n<br>')
+    .replace(/<br>\n(\s*)(\d+\.|-|```)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of block-code (```)
+    .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
 
-  let converted = marked.parse(str, { gfm: true, breaks: true })
+  // STEP 2. convert the markdown into html DOM string.
+  let converted = marked.parse(str, { gfm: true })
 
-  // remove unecessary line-breaks from the converted markdown outcome.
-  converted = converted.replace(/^\s+|\s+$/g, '')
-
-  // remove the unecessary starting/end line-breaks added to the blockquote.
-  converted = converted.replace(/([a-z]+)>\n/g, '$1>')
+  // STEP 3. Remove the unecessary starting/end line-breaks added in/outside of the converted html tags.
+  converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')
     .replace(/\n<\/([a-z]+)>/g, '</$1>')
-
-  // if the original string doesn't have a line-break within it,
-  // the converted outcome doesn't need to be wrapped with <p></p>.
-  if (!str.includes('\n')) {
-    converted = converted.replace(/^<p>|<\/p>$/g, '')
-  }
 
   return converted
 }
@@ -123,4 +125,43 @@ export function injectOrStripLink (
   return {
     output: before + segment + after, focusIndex
   }
+}
+
+export function splitStringByMarkdownCode (
+  str: string
+): Array<MarkdownSegment> {
+  // This function takes a markdown string and split it by texts written as either inline/block code.
+  // (e.g. `asdf`, ```const var = 123```)
+
+  const regExCodeMultiple = /(^```\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
+  const regExCodeInline = /(`.+`)/g
+  const splitByMulitpleCode = str.split(regExCodeMultiple)
+  const finalArr = []
+
+  for (const segment of splitByMulitpleCode) {
+    if (regExCodeMultiple.test(segment)) {
+      finalArr.push({ type: 'code', text: segment })
+    } else {
+      const splitByInlineCode = segment.split(regExCodeInline)
+        .map(piece => {
+          return regExCodeInline.test(piece)
+            ? { type: 'code', text: piece }
+            : { type: 'plain', text: piece }
+        })
+
+      finalArr.push(...splitByInlineCode)
+    }
+  }
+  return finalArr
+}
+
+export function combineMarkdownSegmentListIntoString (
+  segmentList: Array<MarkdownSegment>
+): string {
+  // This is pretty much reverting what splitStringByMarkdownCode() above does.
+  // It combines the object list into a string.
+  return segmentList.reduce(
+    (concatenated: string, entry: MarkdownSegment) => concatenated + entry.text,
+    ''
+  )
 }
