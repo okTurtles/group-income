@@ -168,9 +168,6 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
-      },
-      sideEffect ({ contractID }) {
-        sbp('gi.actions/identity/initChatRoomUnreadMessages', contractID)
       }
     },
     'gi.contracts/chatroom/join': {
@@ -226,7 +223,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (memberID === loggedIn.identityContractID) {
-            sbp('gi.actions/identity/setChatRoomReadUntil', {
+            sbp('gi.actions/identity/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
 

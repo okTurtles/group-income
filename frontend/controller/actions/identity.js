@@ -797,13 +797,21 @@ export default (sbp('sbp/selectors/register', {
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },
-  'gi.actions/identity/initChatRoomUnreadMessages': (contractID: string) => {
+  'gi.actions/identity/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
     return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
       const fnInitUnreadMessages = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
         if (!currentData[cID]) {
-          return { ...currentData, [cID]: { readUntil: null, unreadMessages: [] } }
+          return {
+            ...currentData,
+            [cID]: {
+              readUntil: { messageHash, createdHeight },
+              unreadMessages: []
+            }
+          }
         }
         return null
       }
@@ -821,14 +829,13 @@ export default (sbp('sbp/selectors/register', {
       const fnSetReadUntil = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        const exReadUntil = currentData[cID].readUntil
-        const exUnreadMessages = currentData[cID].unreadMessages
-        if (exReadUntil === null || exReadUntil.createdHeight < createdHeight) {
+        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
+          const { unreadMessages } = currentData[cID]
           return {
             ...currentData,
             [cID]: {
               readUntil: { messageHash, createdHeight },
-              unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+              unreadMessages: unreadMessages.filter(msg => msg.createdHeight > createdHeight)
             }
           }
         }
@@ -848,10 +855,12 @@ export default (sbp('sbp/selectors/register', {
       const fnAddUnreadMessage = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        const index = currentData[cID].unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
-        if (index === -1) {
-          currentData[cID].unreadMessages.push({ messageHash, createdHeight })
-          return currentData
+        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
+          const index = currentData[cID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+          if (index === -1) {
+            currentData[cID].unreadMessages.push({ messageHash, createdHeight })
+            return currentData
+          }
         }
         return null
       }
@@ -869,7 +878,7 @@ export default (sbp('sbp/selectors/register', {
       const fnRemoveUnreadMessage = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        const index = currentData[cID].unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
+        const index = currentData[cID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
         // NOTE: index could be undefined if unreadMessages is not initialized
         if (Number.isInteger(index) && index >= 0) {
           currentData[cID].unreadMessages.splice(index, 1)
