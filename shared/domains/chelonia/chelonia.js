@@ -1412,6 +1412,7 @@ export default (sbp('sbp/selectors/register', {
           await delay(randomIntFromRange(0, 1500))
           if (typeof onconflict === 'function') {
             data = await onconflict(contractID, key, data)
+            if (!data) { break }
           }
           continue
         }

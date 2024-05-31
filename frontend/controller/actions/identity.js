@@ -22,22 +22,6 @@ import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction } from './utils.js'
 
-const requireToSuccess = async (fnToSuccess) => {
-  if (typeof fnToSuccess !== 'function') {
-    return
-  }
-
-  let failureCount = 0
-  do {
-    try {
-      return await fnToSuccess()
-    } catch (err) {
-      console.error('[requireToSuccess:]', err)
-      failureCount++
-    }
-  } while (failureCount < 10)
-}
-
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
     const r = randomNonce()
@@ -796,97 +780,125 @@ export default (sbp('sbp/selectors/register', {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
     return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
-  'gi.actions/identity/saveChatRoomUnreadMessages': (contractID: string, data: Object) => {
+  'gi.actions/identity/saveChatRoomUnreadMessages': ({ contractID, data, onconflict }: {
+    contractID: string, data: Object, onconflict?: Function
+  }) => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
 
     return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk')
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+      onconflict
     })
   },
   'gi.actions/identity/loadChatRoomUnreadMessages': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
-        sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
-      })
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+      sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },
   'gi.actions/identity/initChatRoomUnreadMessages': (contractID: string) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnInitUnreadMessages = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+        return !currentData[cID]
+          ? {
+              ...currentData,
+              [cID]: { readUntil: null, unreadMessages: [] }
+            }
+          : null
+      }
 
-        if (!currentChatRoomUnreadMessages[contractID]) {
-          currentChatRoomUnreadMessages[contractID] = { readUntil: null, unreadMessages: [] }
-          await sbp('gi.actions/identity/saveChatRoomUnreadMessages', contractID, currentChatRoomUnreadMessages)
-        }
-      })
+      const data = await fnInitUnreadMessages(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnInitUnreadMessages })
+      }
     })
   },
   'gi.actions/identity/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnSetReadUntil = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        const exReadUntil = currentChatRoomUnreadMessages[contractID].readUntil
+        const exReadUntil = currentData[cID].readUntil
+        const exUnreadMessages = currentData[cID].unreadMessages
         if (exReadUntil === null || exReadUntil.createdHeight < createdHeight) {
-          const exUnreadMessages = currentChatRoomUnreadMessages[contractID]?.unreadMessages || []
-          currentChatRoomUnreadMessages[contractID] = {
-            readUntil: { messageHash, createdHeight },
-            unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+          return {
+            ...currentData,
+            [cID]: {
+              readUntil: { messageHash, createdHeight },
+              unreadMessages: exUnreadMessages.filter(msg => msg.createdHeight > createdHeight)
+            }
           }
-
-          await sbp('gi.actions/identity/saveChatRoomUnreadMessages', contractID, currentChatRoomUnreadMessages)
         }
-      })
+        return null
+      }
+
+      const data = await fnSetReadUntil(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnSetReadUntil })
+      }
     })
   },
   'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnAddUnreadMessage = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        // NOTE: should ignore to add unreadMessages before joining chatroom
-        if (currentChatRoomUnreadMessages[contractID].readUntil) {
-          const index = currentChatRoomUnreadMessages[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
-          if (index < 0) {
-            currentChatRoomUnreadMessages[contractID].unreadMessages.push({ messageHash, createdHeight })
-            await sbp('gi.actions/identity/saveChatRoomUnreadMessages', contractID, currentChatRoomUnreadMessages)
-          }
+        const index = currentData[cID].unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
+        if (index === -1) {
+          currentData[cID].unreadMessages.push({ messageHash, createdHeight })
+          return currentData
         }
-      })
+        return null
+      }
+
+      const data = await fnAddUnreadMessage(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnAddUnreadMessage })
+      }
     })
   },
   'gi.actions/identity/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
     contractID: string, messageHash: string
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnRemoveUnreadMessage = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
-        // NOTE: should ignore to delete unreadMessages before joining chatroom
-        if (currentChatRoomUnreadMessages[contractID].readUntil) {
-          const index = currentChatRoomUnreadMessages[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
-          if (index >= 0) {
-            currentChatRoomUnreadMessages[contractID].unreadMessages.splice(index, 1)
-            await sbp('gi.actions/identity/saveChatRoomUnreadMessages', contractID, currentChatRoomUnreadMessages)
-          }
+        const index = currentData[cID].unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
+        if (Number.isInteger(index) && index >= 0) {
+          currentData[cID].unreadMessages.splice(index, 1)
+          return currentData
         }
-      })
+        return null
+      }
+
+      const data = await fnRemoveUnreadMessage(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnRemoveUnreadMessage })
+      }
     })
   },
   'gi.actions/identity/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {
-      return requireToSuccess(async () => {
-        const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
-        delete currentChatRoomUnreadMessages[contractID]
-        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', contractID, currentChatRoomUnreadMessages)
-      })
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnDeleteUnreadMessages = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+        if (currentData[cID]) {
+          delete currentData[cID]
+          return currentData
+        }
+        return null
+      }
+
+      const data = await fnDeleteUnreadMessages(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnDeleteUnreadMessages })
+      }
     })
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
