@@ -306,7 +306,6 @@ export default {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-right: 0.25rem;
       }
     }
 
