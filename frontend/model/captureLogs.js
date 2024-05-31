@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import CircularList from '~/shared/CircularList.js'
+import { L } from '@common/common.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -123,24 +124,34 @@ function clearLogs () {
 }
 
 // Util to download all stored logs so far.
-function downloadLogs (elLink: Object): void {
-  const filename = 'gi_logs.json'
+function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnchorElement): any {
+  const filename = 'gi_logs.json.txt'
+  const mimeType = 'text/plain'
 
-  const file = new Blob([JSON.stringify({
+  const blob = new Blob([JSON.stringify({
     // Add instructions in case the user opens the file.
     _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     ua: navigator.userAgent,
     logs: getLogger().entries.toArray()
-  }, undefined, 2)], { type: 'application/json' })
+  }, undefined, 2)], { type: mimeType })
 
-  const url = URL.createObjectURL(file)
-  elLink.href = url
-  elLink.download = filename
-  elLink.click()
-  setTimeout(() => {
-    elLink.href = '#'
-    URL.revokeObjectURL(url)
-  }, 0)
+  if (actionType === 'download') {
+    if (!elLink) { return }
+
+    const url = URL.createObjectURL(blob)
+    elLink.href = url
+    elLink.download = filename
+    elLink.click()
+    setTimeout(() => {
+      elLink.href = '#'
+      URL.revokeObjectURL(url)
+    }, 0)
+  } else {
+    return window.navigator.share({
+      files: [new File([blob], filename, { type: blob.type })],
+      title: L('Application Logs')
+    })
+  }
 }
 
 function getLogger (): Object {
@@ -174,9 +185,9 @@ function setAppLogsFilter (filter: Array<string>) {
 window.addEventListener('beforeunload', event => sbp('appLogs/save'))
 
 sbp('sbp/selectors/register', {
-  'appLogs/download' (elLink) { downloadLogs(elLink) },
+  'appLogs/downloadOrShare': downloadOrShareLogs,
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
-  'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
-  'appLogs/startCapture' (identityContractID) { captureLogsStart(identityContractID) }
+  'appLogs/pauseCapture': captureLogsPause,
+  'appLogs/startCapture': captureLogsStart
 })

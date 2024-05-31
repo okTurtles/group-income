@@ -75,7 +75,7 @@ const development = NODE_ENV === 'development'
 const production = !development
 
 // Make database path available to subprocess
-const dbPath = process.env.DB_PATH || (production ? `./${distDir}/data` : './data')
+const dbPath = process.env.DB_PATH || './data'
 if (!process.env.DB_PATH) {
   Object.assign(process.env, { DB_PATH: dbPath })
 }
@@ -549,20 +549,21 @@ module.exports = (grunt) => {
 
   grunt.registerTask('deploy', function () {
     if (!production) {
-      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
+      grunt.log.error(chalk.red('Please run with NODE_ENV=production'))
+      process.exit(1)
     }
     grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
   })
   grunt.registerTask('serve', function () {
     if (!production) {
-      console.warn(chalk.yellow('Please run with NODE_ENV=production'))
+      grunt.log.error(chalk.red('Please run with NODE_ENV=production'))
+      process.exit(1)
     }
     grunt.task.run(['chelDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
-  grunt.registerTask('dist', ['exec:gitconfig', 'build'])
 
   // --------------------
   // - Our esbuild task
