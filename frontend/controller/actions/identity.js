@@ -870,6 +870,7 @@ export default (sbp('sbp/selectors/register', {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
         const index = currentData[cID].unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
+        // NOTE: index could be undefined if unreadMessages is not initialized
         if (Number.isInteger(index) && index >= 0) {
           currentData[cID].unreadMessages.splice(index, 1)
           return currentData
