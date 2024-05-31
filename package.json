@@ -110,6 +110,7 @@
     "chalk": "4.1.0",
     "dompurify": "2.2.7",
     "emoji-mart-vue-fast": "7.0.7",
+    "idle-vue": "2.0.5",
     "localforage": "1.9.0",
     "lru-cache": "7.14.0",
     "marked": "11.1.1",
