@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { marked } from 'marked'
-import { validateURL } from '@view-utils/misc.js'
-import { TextObjectType } from '@utils/constants.js'
+import { validateURL } from './misc.js'
+import { TextObjectType } from '~/frontend/utils/constants.js'
 
 export const makeOnsiteRedirectElement = (data?: Object): {
   prefix: string, suffix: string

@@ -6,7 +6,7 @@ import Vue from 'vue'
 import dompurify from 'dompurify'
 import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import template from './stringTemplate.js'
-import { makeOnsiteRedirectElement } from '@view-utils/markdown-utils.js'
+import { makeOnsiteRedirectElement } from '~/frontend/views/utils/markdown-utils.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
