@@ -19,6 +19,7 @@
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
 import { filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { TextObjectType } from '@utils/constants.js'
 
 export default ({
@@ -88,7 +89,7 @@ export default ({
       }, 1000 * seconds)
     },
     navigate (route) {
-      this.$router.push({ ...route })
+      this.$router.push(route).catch(logExceptNavigationDuplicated)
     },
     isOnsiteRedirect (messageObject) {
       return messageObject.type === TextObjectType.OnsiteRedirect

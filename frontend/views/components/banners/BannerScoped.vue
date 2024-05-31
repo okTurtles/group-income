@@ -3,7 +3,13 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(v-if='allowA' :data-test='dataTest' role='alert' v-safe-html:a='ephemeral.text')
+          .c-inner-text(v-if='allowA' :data-test='dataTest' role='alert')
+            template(v-for='(objMessage, index) in messageObjects')
+              span.link(
+                v-if='isOnsiteRedirect(objMessage)'
+                @click='navigate(objMessage.route)'
+              ) {{ objMessage.text }}
+              span(v-else v-safe-html:a='objMessage.text')
           .c-inner-text(v-else :data-test='dataTest' role='alert' v-safe-html='ephemeral.text')
           button.is-icon-small.c-button(
             type='button'
@@ -17,6 +23,9 @@
 <script>
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
+import { filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { TextObjectType } from '@utils/constants.js'
 
 export default ({
   name: 'BannerScoped',
@@ -40,6 +49,14 @@ export default ({
       severity: null
     }
   }),
+  computed: {
+    messageObjects () {
+      if (!this.ephemeral.text || !this.allowA) {
+        return []
+      }
+      return filterOutOnsiteRedirectsFromSafeHTML(this.ephemeral.text).flat()
+    }
+  },
   methods: {
     // To be used by parent. Example:
     // this.$refs.BannerScoped.success(L('Changes saved!'))
@@ -55,6 +72,12 @@ export default ({
     updateBanner (text, severity) {
       this.ephemeral.text = text
       this.ephemeral.severity = severity
+    },
+    navigate (route) {
+      this.$router.push(route).catch(logExceptNavigationDuplicated)
+    },
+    isOnsiteRedirect (messageObject) {
+      return messageObject.type === TextObjectType.OnsiteRedirect
     }
   }
 }: Object)
