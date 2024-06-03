@@ -781,19 +781,21 @@ export default (sbp('sbp/selectors/register', {
             // Note: The following may be problematic when several tabs are open
             // sharing the same state. This is more of a general issue in this
             // situation, not limited to the following sequence of events
-            const resync = sbp('chelonia/private/queueEvent', v.contractID, [
-              'chelonia/private/in/syncContract', v.contractID
-            ]).catch((e) => {
-              console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
-              if (v.contractID === contractID) {
-                throw e
-              }
-            })
+            if (self.subscriptionSet.has(v.contractID)) {
+              const resync = sbp('chelonia/private/queueEvent', v.contractID, [
+                'chelonia/private/in/syncContract', v.contractID
+              ]).catch((e) => {
+                console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
+                if (v.contractID === contractID) {
+                  throw e
+                }
+              })
 
-            // If the keys received were for the current contract, we can't
-            // use queueEvent as we're already on that same queue
-            if (v.contractID !== contractID) {
-              await resync
+              // If the keys received were for the current contract, we can't
+              // use queueEvent as we're already on that same queue
+              if (v.contractID !== contractID) {
+                await resync
+              }
             }
           }
 
@@ -1127,6 +1129,9 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    console.error('@@@pending syncContract START', contractID, params)
+    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
+    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
     // If the dirty flag is set (indicating that new encryption keys were received),
     // we remove the current state before syncing (this has the effect of syncing
@@ -1152,8 +1157,6 @@ export default (sbp('sbp/selectors/register', {
         this.pending.push({ contractID })
       }
     }
-    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
       if (latestHEAD !== recentHEAD) {
@@ -1167,7 +1170,6 @@ export default (sbp('sbp/selectors/register', {
         let latestHashFound = false
         const eventReader = eventsStream.getReader()
         // remove the first element in cases where we are not getting the contract for the first time
-        console.error('@@@sync, just before process', contractID, { recentHeight, currentHeight: state.contracts[contractID]?.height || '-', state: state[contractID] || '-' })
         for (let skip = has(state.contracts, contractID) && has(state.contracts[contractID], 'HEAD'); ; skip = false) {
           const { done, value: event } = await eventReader.read()
           if (done) {
@@ -1208,6 +1210,7 @@ export default (sbp('sbp/selectors/register', {
       }
       delete this.currentSyncs[contractID]
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+      console.error('@@@pending syncContract END', contractID, params)
     }
   },
   'chelonia/private/enqueuePostSyncOps': function (contractID: string) {
@@ -1863,7 +1866,6 @@ const handleEvent = {
       // Allow having _volatile but nothing else if this is the first message,
       // as we should be starting off with a clean state
       if (Object.keys(state).some(k => k !== '_volatile')) {
-        console.error('@@@@', state)
         throw new ChelErrorUnrecoverable(`state for ${contractID} is already set`)
       }
     }

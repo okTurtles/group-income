@@ -780,7 +780,10 @@ export default (sbp('sbp/selectors/register', {
     const forcedSync = !!params?.force
     return Promise.all(listOfIds.map(contractID => {
       if (!forcedSync && this.subscriptionSet.has(contractID)) {
-        return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        const rootState = sbp(this.config.stateSelector)
+        if (!rootState[contractID]?._volatile?.dirty) {
+          return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        }
       }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,

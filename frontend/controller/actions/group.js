@@ -5,7 +5,6 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS,
   INVITE_INITIAL_CREATOR,
-  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   PROFILE_STATUS,
   PROPOSAL_GENERIC,
@@ -25,7 +24,6 @@ import {
   ACCEPTED_GROUP,
   JOINED_GROUP,
   LOGOUT,
-  OPEN_MODAL,
   REPLACE_MODAL
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
@@ -33,9 +31,8 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
@@ -860,41 +857,6 @@ export default (sbp('sbp/selectors/register', {
     if (primaryButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
-    }
-  },
-  'gi.actions/group/checkGroupSizeAndProposeMember': async function () {
-    // if current size of the group is >= 150, display a warning prompt first before presenting the user with
-    // 'AddMembers' proposal modal.
-
-    const enforceDunbar = true // Context for this hard-coded boolean variable: https://github.com/okTurtles/group-income/pull/1648#discussion_r1230389924
-    const { groupMembersCount, currentGroupState } = sbp('state/vuex/getters')
-    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter((invite: any) => invite.creatorID !== INVITE_INITIAL_CREATOR).length
-    const isGroupSizeLarge = (groupMembersCount + memberInvitesCount) >= MAX_GROUP_MEMBER_COUNT
-
-    if (isGroupSizeLarge) {
-      const translationArgs = {
-        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUNBARS_NUMBER}' target='_blank'>`,
-        _a: '</a>'
-      }
-      const promptConfig = enforceDunbar
-        ? {
-            heading: 'Large group size',
-            question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
-            primaryButton: L('OK')
-          }
-        : {
-            heading: 'Large group size',
-            question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
-            primaryButton: L('Yes'),
-            secondaryButton: L('Cancel')
-          }
-
-      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-      if (!enforceDunbar && primaryButtonSelected) {
-        sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
-      } else return false
-    } else {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),

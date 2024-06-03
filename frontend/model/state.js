@@ -110,6 +110,8 @@ const mutations = {
     Vue.set(state, 'currentGroupId', currentGroupId)
     if (!currentGroupId) {
       sbp('controller/router').push({ path: '/' }).catch(() => {})
+    } else {
+      sbp('controller/router').push({ path: '/dashboard' }).catch(() => {})
     }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we

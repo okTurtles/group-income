@@ -145,7 +145,6 @@ import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
   s = await s
-  console.error('@@@collectEventStream', s)
   const reader = s.getReader()
   const r = []
   for (;;) {
@@ -524,6 +523,15 @@ export default ({
             sendMessage(removeTemporaryMessage)
           } else {
             Vue.set(temporaryMessage, 'hasFailed', true)
+          }
+        }).catch((e) => {
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
+          } else {
+            if (temporaryMessage) {
+              Vue.set(temporaryMessage, 'hasFailed', true)
+            }
+            console.error('Error sending message', e)
           }
         })
       }

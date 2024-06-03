@@ -215,7 +215,11 @@ Cypress.Commands.add('giLogin', (username, {
           sbp('okTurtles.events/once', JOINED_GROUP, ({ groupContractID }) => {
             resolve(
               sbp('chelonia/contract/wait', groupContractID)
-                .then(() => sbp('controller/router').push({ path: '/dashboard' }))
+                .then(() => {
+                  const router = sbp('controller/router')
+                  if (router.history.current.path === '/dashboard') return
+                  return router.push({ path: '/dashboard' })
+                })
             )
           })
         }
@@ -332,7 +336,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
             }
           })
         })()
-      }).then(() => sbp('controller/router').push({ path: '/dashboard' }))
+      }).then(() => {
+        const router = sbp('controller/router')
+        if (router.history.current.path === '/dashboard') return
+        return router.push({ path: '/dashboard' })
+      })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
     cy.getByDT('groupName').should('contain', name)

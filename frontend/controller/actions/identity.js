@@ -255,7 +255,6 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/reset')
         // TODO: Ability to pass state to reset instead of this Object.assign
         Object.assign(sbp('chelonia/rootState'), cheloniaState)
-        console.error('@@@@SET CHELONIA STATE[identity.js]')
         await sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         // $FlowFixMe[incompatible-use]
         Object.entries(cheloniaState.contracts).forEach(([id, { type }]) => {

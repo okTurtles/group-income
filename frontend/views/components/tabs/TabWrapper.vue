@@ -121,7 +121,6 @@ export default ({
         // The action could be asynchronous, so we wrap it in a try-catch block
         try {
           await sbp(tabItem.action)
-          console.error('@@@@tabClick-CLOSING', tabItem)
           this.$emit('close')
         } catch (e) {
           console.error(`Error on tabClick: [${e?.name}] ${e?.message || e}`, tabItem, e)

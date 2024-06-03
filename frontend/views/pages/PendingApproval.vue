@@ -15,6 +15,7 @@ div
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
@@ -29,6 +30,7 @@ export default ({
   data () {
     return {
       ephemeral: {
+        contractFinishedSyncing: false,
         groupIdWhenMounted: null,
         groupJoined: false,
         settings: {}
@@ -44,6 +46,7 @@ export default ({
     },
     haveActiveGroupProfile () {
       const state = this.groupState
+      console.error('@@@@pending-approval', JSON.stringify(state?.profiles?.[this.ourIdentityContractId]))
       return (
         // We want the group state to be active
         state?.profiles?.[this.ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE
@@ -52,7 +55,17 @@ export default ({
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
+    sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+      await sbp('chelonia/contract/sync', this.currentGroupId)
+      console.error('@@@pending finished syncing', this.ephemeral.groupIdWhenMounted, await sbp('chelonia/contract/isSyncing', this.ephemeral.groupIdWhenMounted), JSON.stringify(sbp('state/vuex/state').contracts[this.ephemeral.groupIdWhenMounted]))
+      // if (isNaN(NaN)) return
+      this.ephemeral.contractFinishedSyncing = true
+      if (this.haveActiveGroupProfile) {
+        this.ephemeral.groupJoined = true
+      }
+    }).catch(e => {
+      console.error('[PendingApproval.vue]: Error waiting for contract to finish syncing', e)
+    })
   },
   watch: {
     groupState (to) {
@@ -61,10 +74,10 @@ export default ({
       }
     },
     haveActiveGroupProfile (to) {
-      // TODO: Don't set this to true if the group contract is syncing
       // if our group profile appears in the group state, it means we've joined the group
-      if (to !== this.ephemeral.groupJoined) {
-        this.ephemeral.groupJoined = to
+      const newValue = to && this.ephemeral.contractFinishedSyncing
+      if (newValue !== this.ephemeral.groupJoined) {
+        this.ephemeral.groupJoined = newValue
       }
     }
   }

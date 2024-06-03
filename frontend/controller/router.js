@@ -62,7 +62,7 @@ const groupGuard = {
 }
 
 const pendingApprovalGuard = {
-  guard: (to, from) => XXX('@@@ HOME pendingApprovalGuard', store.state.currentGroupId && !store.getters.ourProfileActive),
+  guard: (to, from) => XXX(`@@@ HOME pendingApprovalGuard ${store.state.currentGroupId} ${!store.getters.ourProfileActive}`, store.state.currentGroupId && !store.getters.ourProfileActive),
   redirect: (to, from) => ({ path: '/pending-approval' })
 }
 

@@ -16,7 +16,8 @@ import { NOTIFICATION_TYPE, REQUEST_TYPE } from '~/shared/pubsub.js'
 import { PUBSUB_INSTANCE } from '../instance-keys.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
-import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, LEFT_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import { PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import '@sbp/okturtles.data'
 import '../namespace-sw.js'
 import '../actions/index.js'
@@ -30,7 +31,6 @@ deserializer.register(Secret)
 
 sbp('sbp/filters/global/add', (domain, selector, data) => {
   // if (domainBlacklist[domain] || selectorBlacklist[selector]) return
-  if (selector.includes('wait')) console.error(`[sbp] ${selector}`, data)
   console.debug(`[sbp] ${selector}`, data)
 })
 
@@ -72,7 +72,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
     })
 });
 
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, LEFT_GROUP, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -279,7 +279,6 @@ self.addEventListener('message', function (event) {
         store.clientId = event.source.id
         break
       case 'sbp': {
-        console.error('@@@@[sw] sbp', event)
         const port = event.data.port;
         (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           const { data, transferables } = serializer(r)

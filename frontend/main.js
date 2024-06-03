@@ -13,7 +13,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, LEFT_GROUP, NAMESPACE_REGISTRATION } from './utils/events.js'
+import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, JOINED_CHATROOM } from './utils/events.js'
 import './controller/namespace.js'
 // import './controller/actions/index.js'
 import './controller/app/index.js'
@@ -133,16 +133,13 @@ async function startApp () {
   const swRpc = (() => {
     let controller = navigator.serviceWorker.controller
     navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
-      console.error('@@@CONTROLLERCHANGE @lifecycle')
       controller = navigator.serviceWorker.controller
     }, false)
 
     return (...args) => {
       return new Promise((resolve, reject) => {
-        console.error('@@CHELONIA', args)
         const messageChannel = new MessageChannel()
         messageChannel.port1.addEventListener('message', (event) => {
-          console.error('@@@RECEIVED', event)
           if (event.data && Array.isArray(event.data)) {
             const r = deserializer(event.data[1])
             if (event.data[0] === true) {
@@ -175,17 +172,41 @@ async function startApp () {
     'chelonia/*': swRpc
   })
 
+  sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState.chatroom.currentChatRoomIDs[groupContractID]) {
+      sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
+    }
+  })
+
   sbp('okTurtles.events/on', JOINED_GROUP, ({ identityContractID, groupContractID }) => {
     const rootState = sbp('state/vuex/state')
     if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState[groupContractID]) return
     if (!rootState.currentGroupId) {
       sbp('state/vuex/commit', 'setCurrentGroupId', groupContractID)
       sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
     }
   })
 
+  sbp('okTurtles.events/on', LEFT_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState[groupContractID]) return
+    if (rootState.chatroom.currentChatRoomIDs[groupContractID] === chatRoomID) {
+      const entry = Object.entries(rootState[groupContractID].chatRooms).find(([id, value]) => {
+        return value.members[identityContractID]?.status === 'active'
+      })
+      if (entry) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID: entry[0] })
+      }
+    }
+  })
+
   sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
     const rootState = sbp('state/vuex/state')
+    console.error('@@@@@yy LEFT GROUP', identityContractID, groupContractID)
     if (rootState.loggedIn?.identityContractID !== identityContractID) return
     const state = rootState[identityContractID]
     // grab the groupID of any group that we're a part of
@@ -348,7 +369,6 @@ async function startApp () {
   })
 
   sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
-    console.error('@@@NAMESPACE_REGISTRATION', { name, value })
     const cache = sbp('state/vuex/state').namespaceLookups
     Vue.set(cache, name, value)
   })

@@ -389,7 +389,7 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.members, memberID)
         }
       },
-      sideEffect ({ meta, contractID }) {
+      sideEffect ({ contractID }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'

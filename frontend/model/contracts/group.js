@@ -24,7 +24,7 @@ import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
-import { JOINED_GROUP } from '@utils/events.js'
+import { LEFT_CHATROOM, JOINED_CHATROOM, JOINED_GROUP } from '@utils/events.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -303,7 +303,7 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
   )
 }
 
-const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leavingGroup) => {
+const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID, leavingGroup) => {
   const sendingData = leavingGroup || actorID !== memberID
     ? { memberID }
     : {}
@@ -346,8 +346,7 @@ const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leaving
     ...extraParams,
     hooks: {
       onprocessed: () => {
-        const rootState = sbp('state/vuex/state')
-        if (memberID === rootState.loggedIn.identityContractID) {
+        if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
           // NOTE: since the gi.contracts/chatroom/leave/sideEffect appends invocation in the queue
           //       the chatroom contract should be released after the queued invocation
           //       would be fully executed
@@ -358,6 +357,10 @@ const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leaving
           })
         }
       }
+    }
+  }).then(() => {
+    if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+      sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
     }
   }).catch((e) => {
     if (
@@ -385,12 +388,13 @@ const leaveChatRoomAction = async (state, chatRoomID, memberID, actorID, leaving
   }
 }
 
-const leaveAllChatRoomsUponLeaving = (state, memberID, actorID) => {
+const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
   const chatRooms = state.chatRooms
 
   return Promise.all(Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].members?.[memberID]?.status === PROFILE_STATUS.REMOVED)
     .map((chatRoomID) => leaveChatRoomAction(
+      groupID,
       state,
       chatRoomID,
       memberID,
@@ -1155,15 +1159,7 @@ sbp('chelonia/defineContract', {
               if (state.chatRooms[generalChatRoomId]?.members?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
-                  data: { chatRoomID: generalChatRoomId },
-                  hooks: {
-                    onprocessed: () => {
-                      sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-                        groupID: contractID,
-                        chatRoomID: generalChatRoomId
-                      })
-                    }
-                  }
+                  data: { chatRoomID: generalChatRoomId }
                 }).catch((e) => {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
@@ -1458,7 +1454,7 @@ sbp('chelonia/defineContract', {
           sbp('chelonia/queueInvocation', contractID, async () => {
             const state = await sbp('chelonia/contract/state', contractID)
             if (state?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
-              return leaveChatRoomAction(state, data.chatRoomID, memberID, innerSigningContractID)
+              return leaveChatRoomAction(contractID, state, data.chatRoomID, memberID, innerSigningContractID)
             }
           }).catch((e) => {
             console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
@@ -1531,6 +1527,10 @@ sbp('chelonia/defineContract', {
               })
             }
           })
+        }
+
+        if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: contractID, chatRoomID: data.chatRoomID })
         }
       }
     },
@@ -1801,6 +1801,8 @@ sbp('chelonia/defineContract', {
               }
             }
           }
+        }).then(() => {
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             if (actorID === memberID) {
@@ -1880,7 +1882,7 @@ sbp('chelonia/defineContract', {
         }
       }
 
-      leaveAllChatRoomsUponLeaving(state, memberID, innerSigningContractID).catch((e) => {
+      leaveAllChatRoomsUponLeaving(contractID, state, memberID, innerSigningContractID).catch((e) => {
         console.warn('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
       })
 

@@ -14,6 +14,9 @@ export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
 export const LEFT_GROUP = 'left-group'
 
+export const JOINED_CHATROOM = 'joined-chatroom'
+export const LEFT_CHATROOM = 'left-chatroom'
+
 export const REPLACED_STATE = 'replaced-state'
 
 export const OPEN_MODAL = 'open-modal'
