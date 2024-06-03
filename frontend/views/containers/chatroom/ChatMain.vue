@@ -813,10 +813,10 @@ export default ({
       if (this.renderingChatRoomId === this.currentChatRoomId) {
         return
       }
+      this.renderingChatRoomId = this.currentChatRoomId
       this.initializeState()
       this.ephemeral.messagesInitiated = false
       this.ephemeral.unprocessedEvents = []
-      this.renderingChatRoomId = this.currentChatRoomId
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -1017,7 +1017,7 @@ export default ({
           } else if (completed === false) {
             $state.loaded()
           }
-          if (completed !== undefined) {
+          if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
             this.listenChatRoomActions(chatRoomID)

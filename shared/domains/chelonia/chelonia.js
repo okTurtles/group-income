@@ -948,7 +948,7 @@ export default (sbp('sbp/selectors/register', {
         const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
         const deserializedHEAD = GIMessage.deserializeHEAD(first)
         if (deserializedHEAD.contractID !== contractID) {
-          controller.error(new Error('Mismatched contract ID'))
+          controller.error(new Error('chelonia/out/eventsBetween: Mismatched contract ID'))
           return
         }
         const startOffset = Math.max(0, deserializedHEAD.head.height - offset)
