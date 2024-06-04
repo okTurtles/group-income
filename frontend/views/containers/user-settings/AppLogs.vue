@@ -25,16 +25,23 @@
               input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
               i18n Log
 
-        button.is-small.c-download(@click='downloadLogs')
-          i.icon-download.is-prefix.c-icon
-          i18n.hide-touch Download
-          i18n.hide-desktop Share
+        button-submit.is-small.c-download(@click='downloadOrShareLogs')
+          template(v-if='ephemeral.useWebShare')
+            i.icon-share-alt.is-prefix
+            i18n Share
+          template(v-else)
+            i.icon-download.is-prefix
+            i18n Download
+
         a(ref='linkDownload' hidden)
+
+      banner-scoped.c-err-banner(ref='errBanner')
 
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
         | {{ prettyLogs }}
 
       i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
+
 </template>
 
 <script>
@@ -42,16 +49,24 @@ import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
+import { L, LError } from '@common/common.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
   name: 'AppLogs',
+  components: {
+    BannerScoped,
+    ButtonSubmit
+  },
   data () {
     return {
       form: {
         filter: this.$store.state.settings.appLogsFilter
       },
       ephemeral: {
-        logs: []
+        logs: [],
+        useWebShare: false
       }
     }
   },
@@ -61,8 +76,13 @@ export default ({
     // Log entries in chronological order (oldest to most recent).
     this.ephemeral.logs = sbp('appLogs/get')
   },
+  mounted () {
+    window.addEventListener('resize', this.checkWebShareAvailable)
+    this.checkWebShareAvailable()
+  },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
+    window.removeEventListener('resize', this.checkWebShareAvailable)
   },
   watch: {
     'form.filter' (filter) {
@@ -108,8 +128,28 @@ export default ({
         }
       })
     },
-    downloadLogs () {
-      sbp('appLogs/download', this.$refs.linkDownload)
+    async downloadOrShareLogs () {
+      const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
+      const isDownload = actionType === 'download'
+
+      try {
+        await sbp('appLogs/downloadOrShare',
+          actionType,
+          isDownload ? this.$refs.linkDownload : undefined
+        )
+      } catch (err) {
+        const errorDisplay = isDownload
+          ? L('Failed to download the app logs. {reportError}', LError(err))
+          : L('Failed to share the app logs. {reportError}', LError(err))
+
+        console.error(`AppLogs.vue downloadOrShareLogs() '${actionType}' action error:`, err)
+        this.$refs.errBanner.danger(errorDisplay)
+      }
+    },
+    checkWebShareAvailable () {
+      this.ephemeral.useWebShare = Boolean(navigator.share) &&
+        window.matchMedia('(hover: none) and (pointer: coarse)').matches &&
+        window.matchMedia('screen and (max-width: 1199px)').matches
     }
   }
 }: Object)
@@ -153,14 +193,6 @@ export default ({
 
 .c-download {
   flex-grow: 1;
-
-  @include touch {
-    .c-icon {
-      &::before {
-        content: "\f1e0"; // .icon-share-alt
-      }
-    }
-  }
 }
 
 .c-filters,
@@ -173,5 +205,13 @@ export default ({
   font-family: "Monaco", "Menlo", "Courier", monospace;
   font-size: $size_5;
   white-space: pre;
+}
+
+.c-err-banner {
+  margin-bottom: 1.5rem;
+
+  ::v-deep .c-banner {
+    margin-top: 0;
+  }
 }
 </style>

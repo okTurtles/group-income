@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import IdleVue from 'idle-vue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 import '@model/captureLogs.js'
@@ -315,6 +316,9 @@ async function startApp () {
         const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
         sbp('chelonia.persistentActions/configure', { databaseKey })
         await sbp('chelonia.persistentActions/load')
+
+        // NOTE: should set IdleVue plugin here because state could be replaced while logging in
+        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
