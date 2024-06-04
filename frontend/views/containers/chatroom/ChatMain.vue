@@ -813,6 +813,8 @@ export default ({
       if (this.renderingChatRoomId === this.currentChatRoomId) {
         return
       }
+      // NOTE: since the state is initialized based on the renderingChatRoomId
+      //       need to set renderingChatRoomId here, before calling initializeState
       this.renderingChatRoomId = this.currentChatRoomId
       this.initializeState()
       this.ephemeral.messagesInitiated = false
