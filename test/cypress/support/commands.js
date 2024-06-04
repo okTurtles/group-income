@@ -178,6 +178,7 @@ Cypress.Commands.add('giSignup', (username, {
     cy.getByDT('signEmail').clear().type(email)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(password)
+    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
 
     cy.getByDT('signSubmit').click()
     cy.getByDT('closeModal').should('not.exist')

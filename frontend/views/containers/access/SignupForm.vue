@@ -32,7 +32,13 @@ form(data-test='signup' @submit.prevent='')
     password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
 
   label.checkbox
-    input.input(type='checkbox' name='terms' v-model='form.terms' @click.stop='')
+    input.input(
+      type='checkbox'
+      name='terms'
+      v-model='form.terms'
+      data-test='signTerms'
+      @click.stop=''
+    )
     i18n(
       :args='{ a_: `<a class="link" target="_blank" href="${linkToTerms}">`, _a: "</a>"}'
     ) I agree to the {a_}terms and conditions{_a}
