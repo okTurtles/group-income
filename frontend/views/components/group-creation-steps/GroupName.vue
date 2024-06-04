@@ -61,7 +61,10 @@ export default ({
     sbp('okTurtles.events/on', AVATAR_EDITED, this.updateGroupPictureByEditor)
   },
   mounted () {
-    this.$refs.name.focus()
+    window.setTimeout(() => {
+      this.$refs.name.focus()
+    }, 300)
+
     const c = this.$refs.pictureCanvas
     c.width = 256
     c.height = 256
