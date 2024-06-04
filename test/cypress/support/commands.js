@@ -258,6 +258,9 @@ Cypress.Commands.add('giLogin', (username, {
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+  // NOTE: wait until all the queued invocations to run before logout
+  cy.giEmptyInvocationQueue()
+
   if (hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
   } else {
