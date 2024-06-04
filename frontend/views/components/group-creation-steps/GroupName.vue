@@ -62,6 +62,8 @@ export default ({
   },
   mounted () {
     window.setTimeout(() => {
+      // An arbitrary delay here is to fix the issue #2020.
+      // See the PR description here for the details: https://github.com/okTurtles/group-income/pull/2036#issue-2332505747
       this.$refs.name.focus()
     }, 300)
 
