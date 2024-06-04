@@ -227,5 +227,9 @@ export default ({
     align-items: flex-start;
     gap: 1.5rem;
   }
+
+  @include phone {
+    margin-bottom: 1.5rem;
+  }
 }
 </style>
