@@ -13,7 +13,7 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_VARIANTS,
+  STATUS_EXPIRING,
   STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
@@ -865,7 +865,7 @@ export default (sbp('sbp/selectors/register', {
           type: MESSAGE_TYPES.INTERACTIVE,
           proposal: {
             ...proposal,
-            variant: PROPOSAL_VARIANTS.EXPIRING
+            variant: STATUS_EXPIRING
           }
         },
         hooks: {

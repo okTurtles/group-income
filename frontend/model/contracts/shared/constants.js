@@ -33,6 +33,7 @@ export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
+export const STATUS_EXPIRING = 'expiring'
 export const STATUS_CANCELLED = 'cancelled'
 
 export const STREAK_ON_TIME_PAYMENTS = 1
@@ -52,7 +53,6 @@ export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 
 // chatroom events
-export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 
@@ -96,15 +96,6 @@ export const MESSAGE_VARIANTS = {
   SENT: 'sent',
   RECEIVED: 'received',
   FAILED: 'failed'
-}
-
-export const PROPOSAL_VARIANTS = {
-  CREATED: 'created',
-  EXPIRING: 'expiring',
-  ACCEPTED: 'accepted',
-  REJECTED: 'rejected',
-  CANCELLED: 'cancelled',
-  EXPIRED: 'expired'
 }
 
 export const MESSAGE_NOTIFY_SETTINGS = {

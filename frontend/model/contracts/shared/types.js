@@ -6,7 +6,7 @@ import {
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
-  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, PROPOSAL_VARIANTS
+  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, STATUS_EXPIRING
 } from './constants.js'
 
 // group.js related
@@ -38,7 +38,7 @@ export const messageType: any = objectMaybeOf({
     expires_date_ms: number,
     createdDate: string,
     creatorID: string,
-    variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map(v => literalOf(v)))
+    variant: unionOf(...[STATUS_EXPIRING].map(v => literalOf(v))) // NOTE: STATUS_EXPIRING is only available ATM
   }),
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
