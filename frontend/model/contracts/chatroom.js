@@ -471,10 +471,14 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, innerSigningContractID }, { state }) {
         const { hash, text } = data
+        const fnEditMessage = (message) => {
+          Vue.set(message, 'text', text)
+          Vue.set(message, 'updatedDate', meta.createdDate)
+        }
+
         const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
-          state.messages[msgIndex].text = text
-          state.messages[msgIndex].updatedDate = meta.createdDate
+          fnEditMessage(state.messages[msgIndex])
           if (state.renderingContext && state.messages[msgIndex].pending) {
             // NOTE: 'pending' message attribute is not the original message attribute
             //       and it is only set and used in Chat page
@@ -484,7 +488,7 @@ sbp('chelonia/defineContract', {
 
         const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
         if (pinnedMsgIndex >= 0) {
-          state.pinnedMessages[pinnedMsgIndex].text = text
+          fnEditMessage(state.pinnedMessages[pinnedMsgIndex])
         }
       },
       sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
