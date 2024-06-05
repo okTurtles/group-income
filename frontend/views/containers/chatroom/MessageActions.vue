@@ -85,7 +85,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small(
         v-if='isText'
         tag='button'
-        @click='action("copyMessageText")'
+        @click='action("copyMessageText", $event)'
       )
         i.icon-copy
         i18n Copy message text
