@@ -202,10 +202,12 @@ export default ({
       this.$refs.messageAction.$refs.menu.handleTrigger()
     },
     longPressHandler (e) {
-      const targetEl = e.target
-      if (targetEl.matches('a.link[href]')) {
-        const url = targetEl.getAttribute('href')
+      const wrappingLinkTag = e.target.closest('a.link[href]')
+
+      if (wrappingLinkTag) {
+        const url = wrappingLinkTag.getAttribute('href')
         sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
+        e?.preventDefault()
       } else {
         this.openMenu()
       }
