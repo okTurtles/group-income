@@ -86,6 +86,8 @@
     v-if='!isEditing'
     :variant='variant'
     :type='type'
+    :text='text'
+    :messageHash='messageHash'
     :isMsgSender='isMsgSender'
     :isGroupCreator='isGroupCreator'
     :isAlreadyPinned='isAlreadyPinned'
@@ -95,7 +97,6 @@
     @deleteMessage='$emit("delete-message")'
     @reply='reply'
     @retry='$emit("retry")'
-    @copyMessageLink='copyMessageLink'
     @pinToChannel='$emit("pin-to-channel")'
   )
 </template>
@@ -213,14 +214,6 @@ export default ({
     reply () {
       this.$emit('reply')
     },
-    copyMessageLink () {
-      if (!this.messageHash) { return }
-
-      const url = new URL(location.href)
-      url.search = `mhash=${this.messageHash}`
-
-      navigator.clipboard.writeText(url.href)
-    },
     selectEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon.native || emoticon)
     },
@@ -228,10 +221,12 @@ export default ({
       this.$refs.messageAction.$refs.menu.handleTrigger()
     },
     longPressHandler (e) {
-      const targetEl = e.target
-      if (targetEl.matches('a.link[href]')) {
-        const url = targetEl.getAttribute('href')
+      const wrappingLinkTag = e.target.closest('a.link[href]')
+
+      if (wrappingLinkTag) {
+        const url = wrappingLinkTag.getAttribute('href')
         sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
+        e?.preventDefault()
       } else {
         this.openMenu()
       }

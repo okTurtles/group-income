@@ -83,11 +83,19 @@ menu-parent(ref='menu')
         i18n Add emoticons
 
       menu-item.is-icon-small(
+        v-if='isText'
+        tag='button'
+        @click='action("copyMessageText")'
+      )
+        i.icon-copy
+        i18n Copy message text
+
+      menu-item.is-icon-small(
         tag='button'
         @click='action("copyMessageLink", $event)'
       )
         i.icon-link
-        i18n Copy message Link
+        i18n Copy message link
 
       menu-item.is-icon-small(
         v-if='!isAlreadyPinned && isPinnable'
@@ -129,6 +137,8 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
+    messageHash: String,
+    text: String,
     type: String,
     isMsgSender: Boolean,
     isGroupCreator: Boolean,
@@ -154,8 +164,30 @@ export default ({
   methods: {
     action (type, e) {
       e.stopPropagation()
-      // Change to sbp action
-      this.$emit(type, e)
+      const copyString = str => {
+        navigator?.clipboard.writeText(str)
+      }
+      switch (type) {
+        case 'copyMessageLink': {
+          if (!this.messageHash) { return }
+
+          const url = new URL(location.href)
+          url.search = `mhash=${this.messageHash}`
+
+          copyString(url.href)
+          break
+        }
+        case 'copyMessageText': {
+          if (!this.text) { return }
+
+          copyString(this.text)
+          break
+        }
+        default: {
+          // Change to sbp action
+          this.$emit(type, e)
+        }
+      }
     }
   }
 }: Object)
