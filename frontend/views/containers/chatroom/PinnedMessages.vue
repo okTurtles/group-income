@@ -21,10 +21,7 @@
               span.c-unpin-button(data-test='unpinMessage' @click.stop='unpinMessage(msg.hash)')
                 i.icon-times
           .c-pinned-message-content
-            span.custom-markdown-content(
-              v-if='isText(msg)'
-              v-safe-html:a='renderTextMessage(msg.text)'
-            )
+            render-message-with-markdown.c-text(v-if='isText(msg)' :text='msg.text' :edited='!!msg.updatedDate')
             .c-poll-wrapper(v-else-if='isPoll(msg)')
               poll-vote-result.c-poll-inner(:pollData='msg.pollData' :readOnly='true')
             chat-attachment-preview(
@@ -52,6 +49,7 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
+import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import {
   MESSAGE_TYPES,
@@ -74,6 +72,7 @@ export default {
     PollVoteResult,
     ChatAttachmentPreview,
     MessageReactions,
+    RenderMessageWithMarkdown,
     ModalClose
   },
   computed: {
