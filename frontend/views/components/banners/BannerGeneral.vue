@@ -9,7 +9,7 @@
       i(:class='`icon-${ephemeral.icon} is-prefix`')
       template(v-for='(objMessage, index) in messageObjects')
         span.link(
-          v-if='isOnsiteRedirect(objMessage)'
+          v-if='isInAppLink(objMessage)'
           @click='navigate(objMessage.route)'
         ) {{ objMessage.text }}
         span(v-else v-safe-html:a='objMessage.text')
@@ -18,7 +18,7 @@
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
-import { filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
+import { filterOutInAppLinksFromSafeHTML } from '@view-utils/markdown-utils.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { TextObjectType } from '@utils/constants.js'
 
@@ -39,7 +39,7 @@ export default ({
       if (!this.ephemeral.message) {
         return []
       }
-      return filterOutOnsiteRedirectsFromSafeHTML(this.ephemeral.message).flat()
+      return filterOutInAppLinksFromSafeHTML(this.ephemeral.message).flat()
     },
     shouldShowBanner () {
       return Boolean(this.messageObjects.length)
@@ -91,8 +91,8 @@ export default ({
     navigate (route) {
       this.$router.push(route).catch(logExceptNavigationDuplicated)
     },
-    isOnsiteRedirect (messageObject) {
-      return messageObject.type === TextObjectType.OnsiteRedirect
+    isInAppLink (messageObject) {
+      return messageObject.type === TextObjectType.InAppLink
     }
   }
 }: Object)

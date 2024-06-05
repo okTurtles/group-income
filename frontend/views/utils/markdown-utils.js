@@ -3,7 +3,7 @@ import { marked } from 'marked'
 import { validateURL } from './misc.js'
 import { TextObjectType } from '~/frontend/utils/constants.js'
 
-export const makeOnsiteRedirectElement = (data?: Object): {
+export const makeInAppLinkElement = (data?: Object): {
   prefix: string, suffix: string
 } => {
   return {
@@ -28,7 +28,7 @@ marked.use({
           const { href, text } = token
           if (url.hostname === document.location.hostname) {
             const path = href.split(sbp('controller/router').options.base)[1]
-            const { prefix, suffix } = makeOnsiteRedirectElement({ path })
+            const { prefix, suffix } = makeInAppLinkElement({ path })
             return `${prefix}${text}${suffix}`
           } else {
             // custom renderer for <a> tag for setting target='_blank' to the output HTML
@@ -150,27 +150,27 @@ export function injectOrStripLink (
   }
 }
 
-export const filterOutOnsiteRedirectsFromSafeHTML = (textInSafeHTML: string): Array<Object> => {
+export const filterOutInAppLinksFromSafeHTML = (textInSafeHTML: string): Array<Object> => {
   // NOTE: regular expressions we use in this function
-  //       should be defined using response of makeOnsiteRedirectElement
-  const onsiteRedirectElements = textInSafeHTML.match(/<router route='([^]*?)<\/router>/g)
+  //       should be defined using response of makeInAppLinkElement
+  const inAppLinkElements = textInSafeHTML.match(/<router route='([^]*?)<\/router>/g)
 
-  if (!onsiteRedirectElements) {
+  if (!inAppLinkElements) {
     return [{ type: TextObjectType.Text, text: textInSafeHTML }]
   } else {
-    const objOnsiteRedirects = onsiteRedirectElements.map(ele => ({ ...JSON.parse(ele.split(/route='([^]*?)'>/g)[1]), raw: ele }))
-    const escapedRedirectElements = onsiteRedirectElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
-    const splitPatternRegEx = new RegExp('(' + escapedRedirectElements.join('|') + ')')
+    const objInAppLinks = inAppLinkElements.map(ele => ({ ...JSON.parse(ele.split(/route='([^]*?)'>/g)[1]), raw: ele }))
+    const escapedLinksElements = inAppLinkElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
+    const splitPatternRegEx = new RegExp('(' + escapedLinksElements.join('|') + ')')
     return textInSafeHTML.split(splitPatternRegEx).map(part => {
       if (!part) {
         return null
       } else {
-        const index = objOnsiteRedirects.findIndex(obj => obj.raw === part)
+        const index = objInAppLinks.findIndex(obj => obj.raw === part)
         if (index >= 0) {
           return {
-            type: TextObjectType.OnsiteRedirect,
+            type: TextObjectType.InAppLink,
             text: part.split(/'>([^]*?)<\/router>/g)[1],
-            ...objOnsiteRedirects[index]
+            ...objInAppLinks[index]
           }
         }
         return { type: TextObjectType.Text, text: part }

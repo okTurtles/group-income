@@ -1,5 +1,7 @@
+import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 
@@ -23,15 +25,23 @@ const RenderMessageWithMarkdown: any = {
     const recursiveCall = (entry: any): any => {
       if (entry.tagName === 'ROUTER') {
         const hasChildren = Array.isArray(entry.children)
+        const route = entry.attributes.route && JSON.parse(entry.attributes.route)
+        const href = route && this.$router.resolve(route).href
         return createElement(
-          'span',
+          'a',
           {
             class: 'link',
+            attrs: {
+              href
+            },
             on: {
-              click: () => {
-                if (entry.attributes?.route) {
-                  this.$router.push(JSON.parse(entry.attributes.route))
-                }
+              click: (e) => {
+                route && this.$router.push(route)
+                e?.preventDefault()
+              },
+              touchhold: (e) => {
+                href && sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, href)
+                e?.preventDefault()
               }
             }
           },

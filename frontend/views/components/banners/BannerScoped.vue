@@ -6,7 +6,7 @@
           .c-inner-text(v-if='allowA' :data-test='dataTest' role='alert')
             template(v-for='(objMessage, index) in messageObjects')
               span.link(
-                v-if='isOnsiteRedirect(objMessage)'
+                v-if='isInAppLink(objMessage)'
                 @click='navigate(objMessage.route)'
               ) {{ objMessage.text }}
               span(v-else v-safe-html:a='objMessage.text')
@@ -23,7 +23,7 @@
 <script>
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import { filterOutOnsiteRedirectsFromSafeHTML } from '@view-utils/markdown-utils.js'
+import { filterOutInAppLinksFromSafeHTML } from '@view-utils/markdown-utils.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { TextObjectType } from '@utils/constants.js'
 
@@ -54,7 +54,7 @@ export default ({
       if (!this.ephemeral.text || !this.allowA) {
         return []
       }
-      return filterOutOnsiteRedirectsFromSafeHTML(this.ephemeral.text).flat()
+      return filterOutInAppLinksFromSafeHTML(this.ephemeral.text).flat()
     }
   },
   methods: {
@@ -76,8 +76,8 @@ export default ({
     navigate (route) {
       this.$router.push(route).catch(logExceptNavigationDuplicated)
     },
-    isOnsiteRedirect (messageObject) {
-      return messageObject.type === TextObjectType.OnsiteRedirect
+    isInAppLink (messageObject) {
+      return messageObject.type === TextObjectType.InAppLink
     }
   }
 }: Object)

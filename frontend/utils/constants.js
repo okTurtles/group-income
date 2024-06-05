@@ -22,7 +22,7 @@ export const CHAT_ATTACHMENT_SIZE_LIMIT = 6291456 // in byte.
 
 export const TextObjectType = {
   Text: 'TEXT',
-  OnsiteRedirect: 'ONSITE_REDIRECT',
+  InAppLink: 'IN_APP_LINK',
   MemberMention: 'MEMBER_MENTION',
   ChannelMention: 'CHANNEL_MENTION'
 }
