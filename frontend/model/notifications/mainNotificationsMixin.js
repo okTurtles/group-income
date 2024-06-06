@@ -178,7 +178,7 @@ const periodicNotificationEntries = [
           if (expiringProposals.length) {
             await sbp('gi.actions/group/notifyExpiringProposals', {
               contractID,
-              data: { proposals: expiringProposals }
+              data: { proposalIds: expiringProposals.map(p => p.proposalId) }
             })
           }
 

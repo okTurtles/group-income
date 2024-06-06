@@ -69,7 +69,6 @@
           :attachments='message.attachments'
           :type='message.type'
           :notification='message.notification'
-          :proposal='message.proposal'
           :pollData='message.pollData'
           :replyingMessage='replyingMessageText(message)'
           :datetime='time(message.datetime)'
