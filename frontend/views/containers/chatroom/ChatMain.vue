@@ -183,7 +183,7 @@ const onChatScroll = function () {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
       if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
-        this.updateUnreadMessageHash({
+        this.updateReadUntilMessageHash({
           messageHash: msg.hash,
           createdHeight: msg.height
         })
@@ -785,7 +785,7 @@ export default ({
 
       return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
     },
-    rerenderEvents (events) {
+    async rerenderEvents (events) {
       if (!this.latestEvents.length) {
         this.latestEvents = events
       } else if (events.length > 1) {
@@ -794,20 +794,18 @@ export default ({
 
       const contractID = this.summary.chatRoomID
       // This ensures that `this.latestEvents.push(event)` below happens in order
-      return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-        if (!this.checkEventSourceConsistency(contractID)) return
+      if (!this.checkEventSourceConsistency(contractID)) return
 
-        if (this.latestEvents.length > 0) {
-          const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-          let state = this.generateNewChatRoomState(true, entryHeight)
+      if (this.latestEvents.length > 0) {
+        const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
+        let state = this.generateNewChatRoomState(true, entryHeight)
 
-          for (const event of this.latestEvents) {
-            state = await sbp('chelonia/in/processMessage', event, state)
-          }
-          if (!this.checkEventSourceConsistency(contractID)) return
-          Vue.set(this.messageState, 'contract', state)
+        for (const event of this.latestEvents) {
+          state = await sbp('chelonia/in/processMessage', event, state)
         }
-      })
+        if (!this.checkEventSourceConsistency(contractID)) return
+        Vue.set(this.messageState, 'contract', state)
+      }
     },
     setInitMessages () {
       if (this.renderingChatRoomId === this.currentChatRoomId) {
@@ -844,7 +842,7 @@ export default ({
         }
       }
     },
-    updateUnreadMessageHash ({ messageHash, createdHeight }) {
+    updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         sbp('gi.actions/identity/setChatRoomReadUntil', {
@@ -872,9 +870,9 @@ export default ({
       }
 
       this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
-      // TODO: The next line will _not_ get information about any inner signatures,
-      // which is used for determininng the sender of a message. Update with
-      // another call to GIMessage to get signature information
+        // TODO: The next line will _not_ get information about any inner signatures,
+        // which is used for determininng the sender of a message. Update with
+        // another call to GIMessage to get signature information
         const value = message.decryptedValue()
         if (!value) throw new Error('Unable to decrypt message')
 
@@ -931,8 +929,8 @@ export default ({
           }
 
           if (addedOrDeleted === 'DELETED') {
-          // NOTE: Message will be deleted in processMessage function
-          //       but need to make animation to delete it, probably here
+            // NOTE: Message will be deleted in processMessage function
+            //       but need to make animation to delete it, probably here
             const messageHash = value.data.hash
             const msgIndex = findMessageIdx(messageHash, this.messages)
             if (msgIndex !== -1) {
@@ -962,7 +960,7 @@ export default ({
                 this.updateScroll()
               } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]
-                this.updateUnreadMessageHash({
+                this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
                   createdHeight: msg.height
                 })
@@ -998,10 +996,11 @@ export default ({
         return
       }
       const chatRoomID = this.currentChatRoomId
-      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (!this.checkEventSourceConsistency(chatRoomID)) return
 
-        this.renderMoreMessages().then(completed => {
+        try {
+          const completed = await this.renderMoreMessages()
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
@@ -1010,7 +1009,7 @@ export default ({
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
               const msg = this.messages[this.messages.length - 1]
               if (msg) {
-                this.updateUnreadMessageHash({
+                this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
                   createdHeight: msg.height
                 })
@@ -1022,11 +1021,10 @@ export default ({
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
-            this.listenChatRoomActions(chatRoomID)
           }
-        }).catch(e => {
+        } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
-        })
+        }
       })
     },
     onChatScroll () {
