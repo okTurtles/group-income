@@ -33,7 +33,6 @@ export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
-export const STATUS_EXPIRING = 'expiring'
 export const STATUS_CANCELLED = 'cancelled'
 
 export const STREAK_ON_TIME_PAYMENTS = 1
