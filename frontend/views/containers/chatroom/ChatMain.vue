@@ -793,7 +793,6 @@ export default ({
       }
 
       const contractID = this.summary.chatRoomID
-      // This ensures that `this.latestEvents.push(event)` below happens in order
       if (!this.checkEventSourceConsistency(contractID)) return
 
       if (this.latestEvents.length > 0) {
@@ -997,6 +996,7 @@ export default ({
       }
       const chatRoomID = this.currentChatRoomId
       sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
+        // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
         if (!this.checkEventSourceConsistency(chatRoomID)) return
 
         try {
