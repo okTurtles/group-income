@@ -263,13 +263,18 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/leaveGroup': {
       validate: objectOf({
-        groupContractID: string
+        groupContractID: string,
+        reference: string
       }),
       process ({ data, meta }, { state }) {
         const { groupContractID } = data
 
         if (!has(state.groups, groupContractID)) {
           throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
+        }
+
+        if (state.groups[groupContractID].hash !== data.reference) {
+          throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
         Vue.delete(state.groups, groupContractID)

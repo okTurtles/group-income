@@ -138,7 +138,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE
 } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -475,7 +475,7 @@ export default ({
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
-          return false
+          throw e
         }
       }
 
@@ -487,11 +487,13 @@ export default ({
           contractID,
           data,
           hooks: {
-            preSendCheck: (message, state) => {
+            preSendCheck: async (message) => {
               // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
-              const [, opV] = message.op()
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              temporaryMessage = this.messages.find((m) => m.hash === message.hash())
+              /* const [, opV] = message.op()
               const { meta } = opV.valueOf().valueOf()
 
               temporaryMessage = createMessage({
@@ -508,22 +510,20 @@ export default ({
               this.stopReplying()
               this.updateScroll()
               return false
+              */
+              return false
             }
           }
         }).then(async () => {
-          const isUploaded = await uploadAttachments()
-          if (isUploaded) {
-            const removeTemporaryMessage = () => {
-              // NOTE: remove temporary message which is created before uploading attachments
-              if (temporaryMessage) {
-                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
-                this.messages.splice(msgIndex, 1)
-              }
+          await uploadAttachments()
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+              this.messages.splice(msgIndex, 1)
             }
-            sendMessage(removeTemporaryMessage)
-          } else {
-            Vue.set(temporaryMessage, 'hasFailed', true)
           }
+          sendMessage(removeTemporaryMessage)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))

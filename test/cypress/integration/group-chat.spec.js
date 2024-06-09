@@ -342,20 +342,30 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
+    cy.log('@@345')
     // Switch from group2 to group1 on the group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
+    cy.log('@@348')
     cy.giWaitUntilMessagesLoaded()
+    cy.log('@@350')
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
+    cy.log('@@352')
     switchChannel(channelsOf2For1[0])
 
+    cy.log('@@355')
     // Switch from group1 to group2 on the group chat page
     cy.getByDT('groupsList').find('li:nth-child(3) button').click()
+    cy.log('@@357')
     cy.giWaitUntilMessagesLoaded()
+    cy.log('@@360')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
 
     // Switch from group2 to group1 on the group chat page
+    cy.log('@@364')
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
+    cy.log('@@366')
     cy.giWaitUntilMessagesLoaded()
+    cy.log('@@368')
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
   })
 
@@ -507,14 +517,16 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = user2
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+    cy.log('LETS GET THIS')
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName: groupName1,
       existingMemberUsername: user3,
       shouldLogoutAfter: false,
       isLoggedIn: true,
-      bypassUI: true
+      bypassUI: false
     })
+    cy.log('ACCEPTINVITE')
 
     cy.giRedirectToGroupChat()
 

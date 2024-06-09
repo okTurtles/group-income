@@ -13,7 +13,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, JOINED_CHATROOM } from './utils/events.js'
+import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, JOINED_CHATROOM, SHELTER_EVENT_HANDLED } from './utils/events.js'
 import './controller/namespace.js'
 // import './controller/actions/index.js'
 import './controller/app/index.js'
@@ -190,19 +190,22 @@ async function startApp () {
     }
   })
 
-  sbp('okTurtles.events/on', LEFT_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+  const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, chatRoomID }) => {
     const rootState = sbp('state/vuex/state')
-    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (identityContractID && rootState.loggedIn?.identityContractID !== identityContractID) return
     if (!rootState[groupContractID]) return
     if (rootState.chatroom.currentChatRoomIDs[groupContractID] === chatRoomID) {
-      const entry = Object.entries(rootState[groupContractID].chatRooms).find(([id, value]) => {
-        return value.members[identityContractID]?.status === 'active'
-      })
-      if (entry) {
-        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID: entry[0] })
+      const id = rootState[groupContractID].generalChatRoomId || Object.entries(rootState[groupContractID].chatRooms).find(([id, value]) => {
+        return id !== chatRoomID && value.members[identityContractID]?.status === 'active'
+      })?.[0]
+      if (id) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID: id })
       }
     }
-  })
+  }
+
+  sbp('okTurtles.events/on', LEFT_CHATROOM, switchCurrentChatRoomHandler)
+  sbp('okTurtles.events/on', DELETED_CHATROOM, switchCurrentChatRoomHandler)
 
   sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
     const rootState = sbp('state/vuex/state')
@@ -210,7 +213,8 @@ async function startApp () {
     if (rootState.loggedIn?.identityContractID !== identityContractID) return
     const state = rootState[identityContractID]
     // grab the groupID of any group that we're a part of
-    if (!rootState.currentGroupId || rootState.currentGroupId === groupContractID) {
+    const currentGroupId = rootState.currentGroupId
+    if (!currentGroupId || currentGroupId === groupContractID) {
       const groupIdToSwitch = Object.keys(state.groups)
         .filter(cID =>
           cID !== groupContractID
@@ -220,6 +224,9 @@ async function startApp () {
         )[0] || null
       sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
       sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+      if (currentGroupId === groupContractID) {
+        sbp('controller/router').push({ path: '/' }).catch(() => {})
+      }
     }
   })
 
@@ -316,7 +323,7 @@ async function startApp () {
     }
   })
 
-  sbp('okTurtles.events/on', EVENT_HANDLED, async (contractID) => {
+  sbp('okTurtles.events/on', EVENT_HANDLED, async (contractID, message) => {
     // TODO: WRITE THIS MORE EFFICIENTLY SO THAT ONLY THE RELEVANT PARTS ARE
     // COPIED INSTEAD OF THE ENTIRE CHELONIA STATE
     const cheloniaState = await sbp('chelonia/rootState')
@@ -336,6 +343,7 @@ async function startApp () {
     } else {
       Vue.delete(vuexState, contractID)
     }
+    sbp('okTurtles.events/emit', SHELTER_EVENT_HANDLED, contractID, message)
   })
 
   sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (subscriptionSet) => {

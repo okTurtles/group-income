@@ -44,6 +44,7 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'event': {
+              console.error('@@@EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
               sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }

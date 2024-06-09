@@ -1,6 +1,7 @@
 'use strict'
 
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { createInvite } from '@controller/actions/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS,
@@ -17,7 +18,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
-import proposals from '@model/contracts/shared/voting/proposals.js'
+import proposals, { oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
 import {
@@ -29,9 +30,9 @@ import {
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -377,6 +378,8 @@ export default (sbp('sbp/selectors/register', {
         // (identity) contract. Calls to keyRequest require
         // simultaneously waiting on the group and the identity
         // (originating) contract.
+        const sentKeyShares = await sbp('chelonia/contract/successfulKeySharesByContractID', state, userID)
+        console.error('@@@REJOINING SENDING KEY REQUEST', params.contractID, sentKeyShares?.[userID]?.[0].height, state.profiles?.[userID]?.departedHeight)
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           innerEncryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
@@ -392,6 +395,7 @@ export default (sbp('sbp/selectors/register', {
           console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
           throw e
         })
+        console.error('@@@REJOINING SENT KEY REQUEST', params.contractID, sentKeyShares?.[userID]?.[0].height, state.profiles?.[userID]?.departedHeight)
 
         // Nothing left to do until the keys are received
 
@@ -446,6 +450,9 @@ export default (sbp('sbp/selectors/register', {
             await sbp('chelonia/contract/wait', params.contractID)
             await sbp('gi.actions/group/inviteAccept', {
               ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+              data: {
+                reference: rootState[userID].groups[params.contractID].hash
+              },
               hooks: {
                 prepublish: params.hooks?.prepublish,
                 postpublish: null
@@ -912,7 +919,37 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
   ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.')),
-  ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.')),
+  ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.'), async (sendMessage, params) => {
+    const state = await sbp('chelonia/contract/state', params.contractID)
+    const data = params.data
+    const proposalHash = data.proposalHash
+    const proposal = state.proposals[proposalHash]
+    console.error('@@@xx proposalVote', params.contractID, proposalHash, proposal)
+    const type = proposal.data.proposalType
+    let passPayload
+
+    if (data.vote === VOTE_FOR) {
+      passPayload = {}
+      if (oneVoteToPass(state, proposalHash)) {
+        if (type === PROPOSAL_INVITE_MEMBER) {
+          passPayload = await createInvite({
+            contractID: params.contractID,
+            invitee: proposal.data.proposalData.memberName,
+            creatorID: proposal.creatorID,
+            expires: state.settings.inviteExpiryProposal
+          })
+        }
+      }
+    }
+
+    return sendMessage({
+      ...params,
+      data: {
+        ...data,
+        passPayload
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),

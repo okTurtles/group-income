@@ -6,7 +6,7 @@ import {
   MAX_GROUP_MEMBER_COUNT
 } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { GIActionParams } from './types.js'

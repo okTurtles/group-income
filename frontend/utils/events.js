@@ -16,6 +16,7 @@ export const LEFT_GROUP = 'left-group'
 
 export const JOINED_CHATROOM = 'joined-chatroom'
 export const LEFT_CHATROOM = 'left-chatroom'
+export const DELETED_CHATROOM = 'deleted-chatroom'
 
 export const REPLACED_STATE = 'replaced-state'
 
@@ -47,3 +48,4 @@ export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
 
 export const NAMESPACE_REGISTRATION = 'namespace-registration'
+export const SHELTER_EVENT_HANDLED = 'shelter-event-handled'

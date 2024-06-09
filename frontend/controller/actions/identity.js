@@ -595,7 +595,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
     attachments: Array<Object>, billableContractID: string
   }) => {
-    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
 
     try {
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
@@ -619,7 +619,7 @@ export default (sbp('sbp/selectors/register', {
       }))
 
       await sbp('gi.actions/identity/saveFileDeleteToken', {
-        contractID: rootGetters.ourIdentityContractId,
+        contractID: rootState.loggedIn.identityContractID,
         data: { tokensByManifestCid }
       })
 
@@ -632,14 +632,16 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
     manifestCids: string[], option: Object
   }) => {
-    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const { shouldDeleteFile, shouldDeleteToken } = option
+
+    const currentIdentityState = rootState[identityContractID]
 
     if (shouldDeleteFile) {
       const credentials = Object.fromEntries(manifestCids.map(cid => {
         const credential = shouldDeleteToken
-          ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
+          ? { token: currentIdentityState.fileDeleteTokens[cid] }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))

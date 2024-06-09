@@ -249,27 +249,19 @@ export const encryptedNotification = (
   }
 }
 
-export async function createInvite ({ quantity = 1, creatorID, expires, invitee }: {
-  quantity: number, creatorID: string, expires: number, invitee?: string
+export async function createInvite ({ contractID, quantity = 1, creatorID, expires, invitee }: {
+  contractID: string, quantity: number, creatorID: string, expires: number, invitee?: string
 }): Promise<{inviteKeyId: string; creatorID: string; invitee?: string; }> {
-  const rootState = sbp('state/vuex/state')
-
-  if (!rootState.currentGroupId) {
-    throw new Error('Current group not selected')
-  }
-
-  const contractID = rootState.currentGroupId
+  const state = await sbp('chelonia/contract/state', contractID)
 
   if (
-    !rootState[contractID] ||
-    !rootState[contractID]._vm ||
-    !findSuitableSecretKeyId(rootState[contractID], '*', ['sig']) ||
-    rootState[contractID]._volatile?.pendingKeyRequests?.length
+    !state ||
+    !state._vm ||
+    !findSuitableSecretKeyId(state, '*', ['sig']) ||
+    state._volatile?.pendingKeyRequests?.length
   ) {
     throw new Error('Invalid or missing current group state')
   }
-
-  const state = rootState[contractID]
 
   const CEKid = findKeyIdByName(state, 'cek')
   const CSKid = findKeyIdByName(state, 'csk')

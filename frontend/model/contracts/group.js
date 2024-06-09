@@ -24,7 +24,7 @@ import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { findKeyIdByName, findForeignKeysByContractID } from '~/shared/domains/chelonia/utils.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
-import { LEFT_CHATROOM, JOINED_CHATROOM, JOINED_GROUP } from '@utils/events.js'
+import { DELETED_CHATROOM, LEFT_CHATROOM, JOINED_CHATROOM, JOINED_GROUP } from '@utils/events.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -35,11 +35,12 @@ function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   return value
 }
 
-function initGroupProfile (joinedDate: string, joinedHeight: number) {
+function initGroupProfile (joinedDate: string, joinedHeight: number, reference: string) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     joinedDate,
     joinedHeight,
+    reference,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
@@ -1111,12 +1112,12 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteAccept': {
-      validate: actionRequireInnerSignature(() => {}),
+      validate: actionRequireInnerSignature(objectOf({ reference: string })),
       process ({ data, meta, height, innerSigningContractID }, { state }) {
         if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`)
         }
-        Vue.set(state.profiles, innerSigningContractID, initGroupProfile(meta.createdDate, height))
+        Vue.set(state.profiles, innerSigningContractID, initGroupProfile(meta.createdDate, height, data.reference))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -1431,6 +1432,9 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state }) {
         Vue.delete(state.chatRooms, data.chatRoomID)
+      },
+      sideEffect ({ data, contractID }) {
+        sbp('okTurtles.events/emit', DELETED_CHATROOM, { groupContractID: contractID, chatRoomID: data.chatRoomID })
       }
     },
     'gi.contracts/group/leaveChatRoom': {
@@ -1556,19 +1560,19 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(optional),
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
-        const current = getters.groupSettings?.distributionDate
+        const current = state.settings?.distributionDate
         if (current !== period) {
           // right before updating to the new distribution period, make sure to update various payment-related group streaks.
           updateGroupStreaks({ state, getters })
-          getters.groupSettings.distributionDate = period
+          state.settings.distributionDate = period
         }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
-        process ({ meta, contractID }, { state, getters }) {
-          getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
+        process ({ meta, contractID }, { state }) {
+          state.settings.distributionDate = dateToPeriodStamp(meta.createdDate)
         }
       },
       'gi.contracts/group/malformedMutation': {
@@ -1860,6 +1864,7 @@ sbp('chelonia/defineContract', {
         // First, we check if there are no pending key requests for us
         const areWeRejoining = async () => {
           const pendingKeyShares = await sbp('chelonia/contract/waitingForKeyShareTo', state, identityContractID)
+          console.error('@@@REJOINING pendingKeyShares', pendingKeyShares)
           if (pendingKeyShares) {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has a pending key share for ourselves', contractID)
             return true
@@ -1871,6 +1876,7 @@ sbp('chelonia/defineContract', {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has shared keys with ourselves after we left', contractID)
             return true
           }
+          console.error('@@@REJOINING sentKeyShare departedHeight', sentKeyShares?.[identityContractID]?.[0].height, state.profiles[memberID].departedHeight)
           return false
         }
 
@@ -1879,6 +1885,8 @@ sbp('chelonia/defineContract', {
           // Previously we called `gi.actions/group/join` here, but it doesn't
           // seem necessary
           return
+        } else {
+          console.error('@@@@NOT REJOINING')
         }
       }
 
@@ -1895,7 +1903,8 @@ sbp('chelonia/defineContract', {
         sbp('gi.actions/identity/leaveGroup', {
           contractID: identityContractID,
           data: {
-            groupContractID: contractID
+            groupContractID: contractID,
+            reference: state.profiles[identityContractID].reference
           }
         }).catch(e => {
           console.warn(`[gi.contracts/group/leaveGroup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)

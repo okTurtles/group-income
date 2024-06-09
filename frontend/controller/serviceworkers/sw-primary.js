@@ -7,24 +7,24 @@
 // https://frontendian.co/service-workers
 // https://stackoverflow.com/a/49748437 => https://medium.com/@nekrtemplar/self-destroying-serviceworker-73d62921d717 => https://love2dev.com/blog/how-to-uninstall-a-service-worker/
 
-import sbp from '@sbp/sbp'
-import '~/shared/domains/chelonia/chelonia.js'
-import manifests from '@model/contracts/manifests.json'
 import * as Common from '@common/common.js'
-import { debounce, has } from '@model/contracts/shared/giLodash.js'
-import { NOTIFICATION_TYPE, REQUEST_TYPE } from '~/shared/pubsub.js'
-import { PUBSUB_INSTANCE } from '../instance-keys.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
-import { ACCEPTED_GROUP, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import manifests from '@model/contracts/manifests.json'
 import { PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { debounce, has } from '@model/contracts/shared/giLodash.js'
 import '@sbp/okturtles.data'
-import '../namespace-sw.js'
-import '../actions/index.js'
-import '../../views/utils/avatar.js'
-import { serializer, deserializer } from '~/shared/serdes/index.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import sbp from '@sbp/sbp'
+import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE, REQUEST_TYPE } from '~/shared/pubsub.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import '../../views/utils/avatar.js'
+import '../actions/index.js'
+import { PUBSUB_INSTANCE } from '../instance-keys.js'
+import '../namespace-sw.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -72,7 +72,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
     })
 });
 
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -119,7 +119,7 @@ const cheloniaReady = (async () => {
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
-          'chelonia/contract/state',
+          'chelonia/contract/state', 'chelonia/contract/wait',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',

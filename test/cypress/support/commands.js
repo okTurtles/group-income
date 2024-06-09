@@ -6,8 +6,8 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME, CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
-import { JOINED_GROUP } from '../../../frontend/utils/events.js'
+import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
+import { JOINED_GROUP, SHELTER_EVENT_HANDLED } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -685,11 +685,21 @@ Cypress.Commands.add('giAddNewChatroom', ({
 Cypress.Commands.add('giForceDistributionDateToNow', () => {
   cy.window().its('sbp').then(sbp => {
     return new Promise((resolve) => {
+      const contractID = sbp('state/vuex/state').currentGroupId
+      const handler = (cID, entry) => {
+        if (cID === contractID && entry.hash() === hash) {
+          sbp('okTurtles.events/off', SHELTER_EVENT_HANDLED, handler)
+          resolve()
+        }
+      }
+      let hash
+      sbp('okTurtles.events/on', SHELTER_EVENT_HANDLED, handler)
       sbp('gi.actions/group/forceDistributionDate', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID,
         hooks: {
-          // Setup a hook to resolve the promise when the action has been processed locally.
-          onprocessed: () => resolve()
+          beforeRequest: (entry) => {
+            hash = entry.hash()
+          }
         }
       })
     })
