@@ -36,6 +36,7 @@ const getters = {
       const currentGroupDirectMessages = {}
 
       if (!groupID) {
+        // NOTE: groupID could be null before finish syncing group contracts
         return currentGroupDirectMessages
       }
 
