@@ -34,6 +34,11 @@ const getters = {
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {
       const currentGroupDirectMessages = {}
+
+      if (!groupID) {
+        return currentGroupDirectMessages
+      }
+
       for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
         const chatRoomState = rootState[chatRoomID]
         const directMessageSettings = getters.ourDirectMessages[chatRoomID]
