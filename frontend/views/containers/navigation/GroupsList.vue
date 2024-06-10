@@ -63,7 +63,6 @@ export default ({
     ]),
     ...mapGetters([
       'groupsByName',
-      'ourUnreadMessages',
       'groupUnreadMessages',
       'unreadGroupNotificationCountFor'
     ]),
