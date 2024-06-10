@@ -31,6 +31,11 @@ div
         | &nbsp;
         i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
+    .c-joined(v-else-if='isStatus("JOINED")')
+      svg-create-group.c-svg
+      i18n.is-title-1(tag='h1' data-test='pageTitle') You are already a member.
+      i18n.has-text-1(tag='p' data-test='helperText') Cannot join already joined group.
+      i18n.c-goHome(tag='button' @click='goToDashboard') Go to dashboard
     .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
@@ -51,6 +56,7 @@ import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
 import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
+import SvgCreateGroup from '@svgs/create-group.svg'
 import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
@@ -68,7 +74,8 @@ export default ({
     LoginForm,
     SignupForm,
     Avatar,
-    SvgBrokenLink
+    SvgBrokenLink,
+    SvgCreateGroup
   },
   data () {
     return {
@@ -85,7 +92,7 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const possibleStatus = ['LOADING', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
+        const possibleStatus = ['LOADING', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED', 'JOINED']
         if (!possibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${possibleStatus.join(', ')}`)
         }
@@ -134,8 +141,14 @@ export default ({
           return
         }
         if (this.ourIdentityContractId) {
-          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[this.ephemeral.hash.groupId]?.profiles?.[this.ourIdentityContractId])) {
-            this.$router.push({ path: '/dashboard' })
+          console.log('!@# here - aaaa')
+          const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
+          const targetGroupId = this.ephemeral.hash?.get('groupId') || ''
+          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[targetGroupId]?.profiles?.[this.ourIdentityContractId])) {
+            this.goToDashboard()
+          } else if (myGroupIds.includes(targetGroupId)) {
+            this.pageStatus = 'JOINED'
+            return
           } else {
             await this.accept()
           }
@@ -167,6 +180,13 @@ export default ({
     goHome () {
       this.$router.push({ path: '/' })
     },
+    goToDashboard (toGroupId) {
+      if (toGroupId) {
+        sbp('gi.actions/group/switch', toGroupId)
+      }
+
+      this.$router.push({ path: '/dashboard' })
+    },
     async accept () {
       this.ephemeral.errorMsg = null
       const groupId = this.ephemeral.hash.get('groupId')
@@ -174,7 +194,7 @@ export default ({
 
       const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourIdentityContractId]?.status
       if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(profileStatus)) {
-        return this.$router.push({ path: '/dashboard' })
+        return this.goToDashboard()
       }
       try {
         await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
@@ -263,7 +283,8 @@ export default ({
   text-align: center;
 }
 
-.c-broken {
+.c-broken,
+.c-joined {
   margin-top: 20vh;
   text-align: center;
 
