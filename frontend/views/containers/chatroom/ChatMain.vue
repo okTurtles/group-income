@@ -118,7 +118,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -138,12 +138,13 @@ import {
   CHATROOM_ACTIONS_PER_PAGE
 } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
-const collectEventStream = async (s: ReadableStream) => {
+const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
+  s = await s
   const reader = s.getReader()
   const r = []
   for (;;) {
@@ -415,6 +416,7 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
+          console.error('BeforeRequest', message, oldMessage)
           if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
@@ -471,7 +473,7 @@ export default ({
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
-          return false
+          throw e
         }
       }
 
@@ -483,11 +485,13 @@ export default ({
           contractID,
           data,
           hooks: {
-            preSendCheck: (message, state) => {
+            preSendCheck: async (message) => {
               // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
-              const [, opV] = message.op()
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              temporaryMessage = this.messages.find((m) => m.hash === message.hash())
+              /* const [, opV] = message.op()
               const { meta } = opV.valueOf().valueOf()
 
               temporaryMessage = createMessage({
@@ -504,21 +508,28 @@ export default ({
               this.stopReplying()
               this.updateScroll()
               return false
+              */
+              return false
             }
           }
         }).then(async () => {
-          const isUploaded = await uploadAttachments()
-          if (isUploaded) {
-            const removeTemporaryMessage = () => {
-              // NOTE: remove temporary message which is created before uploading attachments
-              if (temporaryMessage) {
-                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
-                this.messages.splice(msgIndex, 1)
-              }
+          await uploadAttachments()
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+              this.messages.splice(msgIndex, 1)
             }
-            sendMessage(removeTemporaryMessage)
+          }
+          sendMessage(removeTemporaryMessage)
+        }).catch((e) => {
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
           } else {
-            Vue.set(temporaryMessage, 'hasFailed', true)
+            if (temporaryMessage) {
+              Vue.set(temporaryMessage, 'hasFailed', true)
+            }
+            console.error('Error sending message', e)
           }
         })
       }
@@ -850,6 +861,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
+      console.error('@@ListenChatRoomActions', contractID, message)
       // We must check this.summary.chatRoomID and not this.currentChatRoomId
       // because they might be different, as this.summary is computed from
       // this.currentChatRoomId.
@@ -1023,7 +1035,7 @@ export default ({
             this.ephemeral.messagesInitiated = true
           }
         } catch (e) {
-          console.error('ChatMain infiniteHandler() error:', e)
+          console.error('ChatMain infiniteHandler() error:', e, e?.stack)
         }
       })
     },
@@ -1087,13 +1099,20 @@ export default ({
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-        } else {
-          this.refreshContent()
-        }
+        // `chelonia/contract/isSyncing` could be synchronous or asynchronous,
+        // depending on whether Chelonia is running on a SW (async) or not (sync)
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+          if (!this.checkEventSourceConsistency(toChatRoomId)) return
+          if (isSyncing) {
+            if (toIsJoined) {
+              sbp('chelonia/contract/wait', toChatRoomId).then(() => initAfterSynced(toChatRoomId))
+            }
+          } else {
+            this.refreshContent()
+          }
+        })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
-        sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+        sbp('chelonia/contract/wait', toChatRoomId).then(() => initAfterSynced(toChatRoomId))
       }
     }
   }

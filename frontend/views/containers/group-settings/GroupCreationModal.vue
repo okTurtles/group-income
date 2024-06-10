@@ -107,7 +107,7 @@ export default ({
       try {
         this.$refs.formMsg.clean()
 
-        await sbp('gi.actions/group/createAndSwitch', {
+        await sbp('gi.app/group/createAndSwitch', {
           data: {
             name: this.form.groupName,
             picture: this.ephemeral.groupPictureFile,

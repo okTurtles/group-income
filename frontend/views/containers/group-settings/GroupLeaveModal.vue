@@ -108,9 +108,9 @@ export default ({
       if (this.$v.form.$invalid) { return }
       try {
         const groupContractID = this.currentGroupId
-        await sbp('gi.actions/identity/leaveGroup', {
-          contractID: this.ourIdentityContractId,
-          data: { groupContractID }
+        await sbp('gi.actions/group/removeMember', {
+          contractID: groupContractID,
+          data: {}
         })
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)

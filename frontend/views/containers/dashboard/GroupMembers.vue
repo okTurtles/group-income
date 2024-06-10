@@ -96,7 +96,7 @@ export default ({
           this.openModal('InvitationLinkModal')
         } else {
           const contractID = this.$store.state.currentGroupId
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+          sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
             console.error(`Error on action checkGroupSizeAndProposeMember (headerButtonAction) for ${contractID}`, e)
           })
         }

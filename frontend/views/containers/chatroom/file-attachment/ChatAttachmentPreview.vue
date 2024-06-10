@@ -87,6 +87,7 @@ import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -158,7 +159,7 @@ export default {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', () => attachment.downloadData)
+        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
         return URL.createObjectURL(blob)
       }
     },

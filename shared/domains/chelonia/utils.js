@@ -11,6 +11,7 @@ import { ChelErrorWarning } from './errors.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
+import { Secret } from './Secret.js'
 
 const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
 
@@ -259,12 +260,12 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
   const storeSecretKey = (key, decryptedKey) => {
     const decryptedDeserializedKey = deserializeKey(decryptedKey)
     const transient = !!key.meta.private.transient
-    sbp('chelonia/storeSecretKeys', () => [{
+    sbp('chelonia/storeSecretKeys', new Secret([{
       key: decryptedDeserializedKey,
       // We always set this to true because this could be done from
       // an outgoing message
       transient: true
-    }])
+    }]))
     if (!transient) {
       keysToPersist.push({ key: decryptedDeserializedKey, transient })
     }
@@ -392,7 +393,7 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
   // Any persistent keys are stored as a side-effect
   if (keysToPersist.length) {
     internalSideEffectStack?.push(() => {
-      sbp('chelonia/storeSecretKeys', () => keysToPersist)
+      sbp('chelonia/storeSecretKeys', new Secret(keysToPersist))
     })
   }
   internalSideEffectStack?.push(() => subscribeToForeignKeyContracts.call(this, contractID, state))

@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { deserializer } from '~/shared/serdes/index.js'
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
@@ -22,6 +23,12 @@ sbp('sbp/selectors/register', {
         // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
         await swRegistration.update()
         setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
+
+        // Keep the service worker alive while the window is open
+        // The default idle timeout on Chrome and Firefox is 30 seconds. We send
+        // a ping message every 5 seconds to ensure that the worker remains
+        // active.
+        setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
@@ -30,8 +37,15 @@ sbp('sbp/selectors/register', {
 
         if (typeof data === 'object' && data.type) {
           switch (data.type) {
+            case 'pong':
+              break
             case 'pushsubscriptionchange': {
               sbp('service-worker/resubscribe-push', data.subscription)
+              break
+            }
+            case 'event': {
+              console.error('@@@EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }
             default:

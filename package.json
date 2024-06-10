@@ -104,7 +104,7 @@
     "@sbp/okturtles.data": "0.1.5",
     "@sbp/okturtles.eventqueue": "1.2.0",
     "@sbp/okturtles.events": "0.1.5",
-    "@sbp/sbp": "2.2.0",
+    "@sbp/sbp": "2.4.0",
     "blakejs": "1.2.1",
     "buffer": "6.0.3",
     "chalk": "4.1.0",

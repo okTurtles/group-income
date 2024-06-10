@@ -177,7 +177,7 @@ describe('Notifications', () => {
   it('creates a user and two groups', () => {
     cy.visit('/').its('sbp').then(async sbp => {
       if (sbp('state/vuex/state').loggedIn) {
-        await sbp('gi.actions/identity/logout')
+        await sbp('gi.app/identity/logout')
       }
     })
     cy.giSignup(username, { bypassUI: true })

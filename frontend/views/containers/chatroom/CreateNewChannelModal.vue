@@ -182,7 +182,7 @@ export default ({
     async submit () {
       const { name, description } = this.form
       try {
-        await sbp('gi.actions/group/addAndJoinChatRoom', {
+        await sbp('gi.app/group/addAndJoinChatRoom', {
           contractID: this.currentGroupId,
           data: {
             attributes: {

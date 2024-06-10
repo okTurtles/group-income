@@ -1,48 +1,52 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.data'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
-import IdleVue from 'idle-vue'
-import { mapMutations, mapGetters, mapState } from 'vuex'
-import 'wicg-inert'
 import '@model/captureLogs.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
-import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.eventqueue'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
+import IdleVue from 'idle-vue'
+import { mapGetters, mapMutations, mapState } from 'vuex'
+import 'wicg-inert'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+// import '~/shared/domains/chelonia/chelonia.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import './controller/namespace.js'
-import './controller/actions/index.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, LOGIN, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, SHELTER_EVENT_HANDLED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+// import './controller/actions/index.js'
+import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/service-worker.js'
-import '~/shared/domains/chelonia/persistent-actions.js'
-import manifests from './model/contracts/manifests.json'
-import router from './controller/router.js'
-import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
-import store from './model/state.js'
-import { SETTING_CURRENT_USER } from './model/database.js'
-import BackgroundSounds from './views/components/sounds/Background.vue'
-import BannerGeneral from './views/components/banners/BannerGeneral.vue'
-import Navigation from './views/containers/navigation/Navigation.vue'
-import AppStyles from './views/components/AppStyles.vue'
-import Modal from './views/components/modal/Modal.vue'
+// import '~/shared/domains/chelonia/persistent-actions.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import router from './controller/router.js'
+import manifests from './model/contracts/manifests.json'
+import { SETTING_CURRENT_USER } from './model/database.js'
+import store from './model/state.js'
+import AppStyles from './views/components/AppStyles.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+import Modal from './views/components/modal/Modal.vue'
+import BackgroundSounds from './views/components/sounds/Background.vue'
+import Navigation from './views/containers/navigation/Navigation.vue'
 import './views/utils/avatar.js'
 import './views/utils/ui.js'
-import './views/utils/vFocus.js'
 import './views/utils/vError.js'
+import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
-import './views/utils/vStyle.js'
-import './utils/touchInteractions.js'
-import './model/notifications/periodicNotifications.js'
+import { has } from '@model/contracts/shared/giLodash.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
-import { showNavMixin } from './views/utils/misc.js'
-import FaviconBadge from './utils/faviconBadge.js'
+import './model/notifications/periodicNotifications.js'
 import { KV_KEYS } from './utils/constants.js'
+import FaviconBadge from './utils/faviconBadge.js'
+import './utils/touchInteractions.js'
+import { showNavMixin } from './views/utils/misc.js'
+import './views/utils/vStyle.js'
 
 const { Vue, L } = Common
 
@@ -57,12 +61,16 @@ Vue.config.errorHandler = function (err, vm, info) {
   if (process.env.CI) throw err
 }
 
+deserializer.register(GIMessage)
+deserializer.register(Secret)
+
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
   //       to get logging for all subsequent SBP calls.
   //       In the future we might move it elsewhere.
   // ?debug=true
   // force debug output even in production
+
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
     const reducer = (o, v) => { o[v] = true; return o }
@@ -94,6 +102,9 @@ async function startApp () {
     })
   }
 
+  // Wait for DB to be ready
+  await sbp('gi.db/ready')
+
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
@@ -103,11 +114,152 @@ async function startApp () {
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save')
   }
-  await sbp('chelonia/configure', {
+  /*
+  await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
+    // TODO: PLACEHOLDER TO SIMULATE CHELONIA IN A SW
+    if (!cheloniaState) return
+    const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    if (!identityContractID) return
+    Object.assign(sbp('chelonia/rootState'), cheloniaState)
+    console.error('@@@@SET CHELONIA STATE[main.js]', identityContractID, sbp('chelonia/rootState'), cheloniaState)
+  })
+  console.error('@@@@@@@@')
+  /* const save = debounce(() => sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+    return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
+  })) */
+
+  // register service-worker
+  await sbp('service-workers/setup')
+
+  /* TODO: MOVE TO ANOTHER FILE */
+  const swRpc = (() => {
+    let controller = navigator.serviceWorker.controller
+    navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
+      controller = navigator.serviceWorker.controller
+    }, false)
+
+    return (...args) => {
+      return new Promise((resolve, reject) => {
+        const messageChannel = new MessageChannel()
+        messageChannel.port1.addEventListener('message', (event) => {
+          if (event.data && Array.isArray(event.data)) {
+            const r = deserializer(event.data[1])
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+            messageChannel.port1.close()
+          }
+        }, false)
+        messageChannel.port1.addEventListener('messageerror', (event) => {
+          reject(event.data)
+          messageChannel.port1.close()
+        }, false)
+        messageChannel.port1.start()
+        const { data, transferables } = serializer(args)
+        controller.postMessage({
+          type: 'sbp',
+          port: messageChannel.port2,
+          data
+        }, [messageChannel.port2, ...transferables])
+      })
+    }
+  })()
+
+  sbp('sbp/selectors/register', {
+    'gi.actions/*': swRpc
+  })
+  sbp('sbp/selectors/register', {
+    'chelonia/*': swRpc
+  })
+
+  sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState.chatroom.currentChatRoomIDs[groupContractID]) {
+      sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
+    }
+  })
+
+  sbp('okTurtles.events/on', JOINED_GROUP, ({ identityContractID, groupContractID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState[groupContractID]) return
+    if (!rootState.currentGroupId) {
+      sbp('state/vuex/commit', 'setCurrentGroupId', groupContractID)
+      sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+    }
+  })
+
+  const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, chatRoomID }) => {
+    const rootState = sbp('state/vuex/state')
+    if (identityContractID && rootState.loggedIn?.identityContractID !== identityContractID) return
+    if (!rootState[groupContractID]) return
+    if (rootState.chatroom.currentChatRoomIDs[groupContractID] === chatRoomID) {
+      const id = rootState[groupContractID].generalChatRoomId || Object.entries(rootState[groupContractID].chatRooms).find(([id, value]) => {
+        return id !== chatRoomID && value.members[identityContractID]?.status === 'active'
+      })?.[0]
+      if (id) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID: id })
+      }
+    }
+  }
+
+  sbp('okTurtles.events/on', LEFT_CHATROOM, switchCurrentChatRoomHandler)
+  sbp('okTurtles.events/on', DELETED_CHATROOM, switchCurrentChatRoomHandler)
+
+  sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
+    const rootState = sbp('state/vuex/state')
+    console.error('@@@@@yy LEFT GROUP', identityContractID, groupContractID)
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return
+    const state = rootState[identityContractID]
+    // grab the groupID of any group that we're a part of
+    const currentGroupId = rootState.currentGroupId
+    if (!currentGroupId || currentGroupId === groupContractID) {
+      const groupIdToSwitch = Object.keys(state.groups)
+        .filter(cID =>
+          cID !== groupContractID
+        ).sort(cID =>
+        // prefer successfully joined groups
+          sbp('state/vuex/state')[cID]?.profiles?.[groupContractID] ? -1 : 1
+        )[0] || null
+      sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+      sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+      if (currentGroupId === groupContractID) {
+        sbp('controller/router').push({ path: '/' }).catch(() => {})
+      }
+    }
+  })
+
+  sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID }) => {
+    sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+  })
+  /* TODO: END MOVE TO ANOTHER FILE */
+
+  isNaN(0) && await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    /*
     stateSelector: 'state/vuex/state',
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
+    */
+    /* reactiveSet: (o: Object, k: string, v: string) => {
+      // TODO: PLACEHOLDER TO SIMULATE CHELONIA SERVICE WORKER SAVING STATE
+      // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
+      if (o[k] !== v) {
+        o[k] = v
+        save()
+      }
+    },
+    reactiveDel: (o: Object, k: string) => {
+      // TODO: PLACEHOLDER TO SIMULATE CHELONIA SERVICE WORKER SAVING STATE
+      // TODO: DOES THE STATE EVEN NEED TO BE SAVED OR IS RAM ENOUGH?
+      if (Object.prototype.hasOwnProperty.call(o, k)) {
+        delete o[k]
+        save()
+      }
+    }, */
     contracts: {
       ...manifests,
       defaults: {
@@ -115,6 +267,7 @@ async function startApp () {
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/state',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
@@ -175,6 +328,64 @@ async function startApp () {
     }
   })
 
+  sbp('okTurtles.events/on', EVENT_HANDLED, async (contractID, message) => {
+    // TODO: WRITE THIS MORE EFFICIENTLY SO THAT ONLY THE RELEVANT PARTS ARE
+    // COPIED INSTEAD OF THE ENTIRE CHELONIA STATE
+    const cheloniaState = await sbp('chelonia/rootState')
+    const state = cheloniaState[contractID]
+    const contractState = cheloniaState.contracts[contractID]
+    const vuexState = sbp('state/vuex/state')
+    if (contractState) {
+      if (!vuexState.contracts) {
+        Vue.set(vuexState, 'contracts', Object.create(null))
+      }
+      Vue.set(vuexState.contracts, contractID, JSON.parse(JSON.stringify(contractState)))
+    } else if (vuexState.contracts) {
+      Vue.delete(vuexState.contracts, contractState)
+    }
+    if (state) {
+      Vue.set(vuexState, contractID, JSON.parse(JSON.stringify(state)))
+    } else {
+      Vue.delete(vuexState, contractID)
+    }
+    sbp('okTurtles.events/emit', SHELTER_EVENT_HANDLED, contractID, message)
+  })
+
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (subscriptionSet) => {
+    // TODO: WRITE THIS MORE EFFICIENTLY SO THAT ONLY THE RELEVANT PARTS ARE
+    // COPIED INSTEAD OF THE ENTIRE CHELONIA STATE
+    const cheloniaState = await sbp('chelonia/rootState')
+    const vuexState = sbp('state/vuex/state')
+
+    if (!vuexState.contracts) {
+      Vue.set(vuexState, 'contracts', Object.create(null))
+    }
+
+    const oldContracts = Object.keys(vuexState.contracts)
+    const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.includes(x))
+    const newContracts = subscriptionSet.filter(x => !oldContracts.includes(x))
+
+    oldContractsToRemove.forEach(x => {
+      Vue.delete(vuexState.contracts, x)
+      Vue.delete(vuexState, x)
+    })
+    newContracts.forEach(x => {
+      const state = cheloniaState[x]
+      const contractState = cheloniaState.contracts[x]
+      if (contractState) {
+        Vue.set(vuexState.contracts, x, JSON.parse(JSON.stringify(contractState)))
+      }
+      if (state) {
+        Vue.set(vuexState, x, JSON.parse(JSON.stringify(state)))
+      }
+    })
+  })
+
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+    const cache = sbp('state/vuex/state').namespaceLookups
+    Vue.set(cache, name, value)
+  })
+
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
   //       ban system. Only enable it if you know what you're doing and don't mind the risk.
@@ -203,7 +414,7 @@ async function startApp () {
   const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
-    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
+    isNaN(0) && sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
       messageHandlers: {
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const isDevelopment = process.env.NODE_ENV === 'development'
@@ -262,9 +473,6 @@ async function startApp () {
     return
   }
 
-  // register service-worker
-  await sbp('service-workers/setup')
-
   /* eslint-disable no-new */
   new Vue({
     router: router,
@@ -312,26 +520,35 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
-      sbp('okTurtles.events/on', LOGIN, async () => {
+      sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-        const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
+        /* const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
         sbp('chelonia.persistentActions/configure', { databaseKey })
         await sbp('chelonia.persistentActions/load')
+        */
 
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
+        const state = sbp('state/vuex/state')
+        if (!state.loggedIn) return
         this.ephemeral.finishedLogin = 'no'
-        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+        sbp('gi.db/settings/delete', state.loggedIn.identityContractID).catch(e => {
+          console.error('Logout event: error deleting settings')
+        })
+        sbp('state/vuex/reset')
+        /*
         sbp('chelonia.persistentActions/unload')
+        */
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
         // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
@@ -346,7 +563,7 @@ async function startApp () {
         // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)
 
-        Object.assign(pubsub.customEventHandlers, {
+        isNaN(0) && Object.assign(pubsub.customEventHandlers, {
           offline () {
             sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
           },
@@ -396,17 +613,54 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
+      isNaN(1) && sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
+        // TODO: PLACEHOLDER TO SIMULATE CHELONIA IN A SW
+        const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+        if (!cheloniaState || !identityContractID) return
+        const contractSyncPriorityList = [
+          'gi.contracts/identity',
+          'gi.contracts/group',
+          'gi.contracts/chatroom'
+        ]
+        const getContractSyncPriority = (key) => {
+          const index = contractSyncPriorityList.indexOf(key)
+          return index === -1 ? contractSyncPriorityList.length : index
+        }
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        const contractIDs = Object.keys(cheloniaState.contracts)
+        await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
+          // Sync contracts in order based on type
+          return getContractSyncPriority(a) - getContractSyncPriority(b)
+        }).map(([, ids]) => {
+          return sbp('okTurtles.eventQueue/queueEvent', `appStart:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+        }))
+      })
+
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
+        return sbp('gi.app/identity/login', { identityContractID }).catch((e) => {
           console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
           console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
         })
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
       }).finally(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
+        // Wait for SW to be ready
+        navigator.serviceWorker.ready.then(() => {
+          const onready = () => {
+            this.ephemeral.ready = true
+            this.removeLoadingAnimation()
+          }
+          if (!navigator.serviceWorker.controller) {
+            const listener = (ev) => {
+              navigator.serviceWorker.removeEventListener('controllerchange', listener, false)
+              onready()
+            }
+            navigator.serviceWorker.addEventListener('controllerchange', listener, false)
+          } else {
+            onready()
+          }
+        })
       })
     },
     computed: {
@@ -454,5 +708,74 @@ async function startApp () {
     store // make this and all child components aware of the new store
   }).$mount('#app')
 }
+
+sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams, state }) => {
+  const vuexState = sbp('state/vuex/state')
+  if (vuexState.loggedIn) {
+    throw new Error('Received login event but there already is an active session')
+  }
+  const cheloniaState = await sbp('chelonia/rootState')
+  if (state) {
+    // TODO Do this in a cleaner way
+    // Exclude contracts from the state
+    Object.keys(state).forEach(k => {
+      if (k.startsWith('z9br')) {
+        delete state[k]
+      }
+    })
+    Object.keys(cheloniaState.contracts).forEach(k => {
+      if (cheloniaState[k]) {
+        state[k] = cheloniaState[k]
+      }
+    })
+    state.contracts = cheloniaState.contracts
+    if (cheloniaState.namespaceLookups) {
+      state.namespaceLookups = cheloniaState.namespaceLookups
+    }
+    // End exclude contracts
+    sbp('state/vuex/postUpgradeVerification', state)
+    sbp('state/vuex/replace', state)
+  } else {
+    const state = vuexState
+    // Exclude contracts from the state
+    Object.keys(state).forEach(k => {
+      if (k.startsWith('z9br')) {
+        Vue.delete(state, k)
+      }
+    })
+    Object.keys(cheloniaState.contracts).forEach(k => {
+      if (cheloniaState[k]) {
+        Vue.set(state, k, cheloniaState[k])
+      }
+    })
+    Vue.set(state, 'contracts', cheloniaState.contracts)
+    if (cheloniaState.namespaceLookups) {
+      Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+    }
+    // End exclude contracts
+  }
+
+  if (encryptionParams) {
+    sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
+  }
+
+  // NOTE: users could notice that they leave the group by someone
+  // else when they log in
+  const currentState = sbp('state/vuex/state')
+  if (!currentState.currentGroupId) {
+    const gId = Object.keys(currentState.contracts)
+      .find(cID => has(currentState[identityContractID].groups, cID))
+
+    if (gId) {
+      sbp('gi.app/group/switch', gId)
+    }
+  }
+
+  // Whenever there's an active session, the encrypted save state should be
+  // removed, as it is only used for recovering the state when logging in
+  sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
+    console.error('Error deleting encrypted settings after login')
+  })
+})
 
 startApp()

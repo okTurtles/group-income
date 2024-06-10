@@ -13,6 +13,7 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
+import type { Secret } from './Secret.js'
 import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -311,7 +312,11 @@ export default (sbp('sbp/selectors/register', {
     this.pending = []
   },
   'chelonia/config': function () {
-    return cloneDeep(this.config)
+    return {
+      ...cloneDeep(this.config),
+      reactiveSet: this.config.reactiveSet,
+      reactiveDel: this.config.reactiveDel
+    }
   },
   'chelonia/configure': async function (config: Object) {
     merge(this.config, config)
@@ -343,16 +348,16 @@ export default (sbp('sbp/selectors/register', {
     })
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
-    await postCleanupFn?.()
+    const result = await postCleanupFn?.()
     // The following are all synchronous operations
     const rootState = sbp(this.config.stateSelector)
-    const contracts = rootState.contracts
     // Cancel all outgoing messages by replacing this._instance
     this._instance = Object.create(null)
     this.abortController.abort()
     this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
-    reactiveClearObject(contracts, this.config.reactiveDel)
+    reactiveClearObject(rootState, this.config.reactiveDel)
+    this.config.reactiveSet(rootState, 'contracts', Object.create(null))
     clearObject(this.ephemeralReferenceCount)
     this.pending.splice(0)
     clearObject(this.currentSyncs)
@@ -360,13 +365,14 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.sideEffectStacks)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     sbp('chelonia/private/startClockSync')
+    return result
   },
-  'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
+  'chelonia/storeSecretKeys': function (wkeys: Secret<{key: Key | string, transient?: boolean}[]>) {
     const rootState = sbp(this.config.stateSelector)
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
-    let keys = keysFn?.()
+    let keys = wkeys.valueOf()
     if (!keys) return
     if (!Array.isArray(keys)) keys = [keys]
     keys.forEach(({ key, transient }) => {
@@ -523,8 +529,8 @@ export default (sbp('sbp/selectors/register', {
   // This function takes a function as a parameter that returns a string
   // It does not a string directly to prevent accidentally logging the value,
   // which is a secret
-  'chelonia/crypto/keyId': (inKeyFn: { (): Key | string }) => {
-    return keyId(inKeyFn())
+  'chelonia/crypto/keyId': (inKey: Secret<Key | string>) => {
+    return keyId(inKey.valueOf())
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (options = {}): Object {
@@ -645,11 +651,13 @@ export default (sbp('sbp/selectors/register', {
         [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
-          const gProxy = gettersProxy(state, contract.getters)
-          state = state || contract.state(contractID)
-          contract.metadata.validate(meta, { state, ...gProxy, contractID })
-          contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
-          contract.actions[action].process(message, { state, ...gProxy })
+          // TODO: Copy to simulate a sandbox boundary without direct access
+          const stateCopy = cloneDeep(state || contract.state(contractID))
+          const gProxy = gettersProxy(stateCopy, contract.getters)
+          contract.metadata.validate(meta, { state: stateCopy, ...gProxy, contractID })
+          contract.actions[action].validate(data, { state: stateCopy, ...gProxy, meta, message, contractID })
+          contract.actions[action].process(message, { state: stateCopy, ...gProxy })
+          Object.assign(state, stateCopy)
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
@@ -659,8 +667,12 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`[${contract.manifest}/${action}/sideEffect]: Skipping side-effect since there is no contract state for contract ${mutation.contractID}`)
               return
             }
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+            // TODO: Copy to simulate a sandbox boundary without direct access
+            // as well as to enforce the rule that side-effects must not mutate
+            // state
+            const stateCopy = cloneDeep(state)
+            const gProxy = gettersProxy(stateCopy, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state: stateCopy, ...gProxy })
           }
           // since both /process and /sideEffect could call /pushSideEffect, we make sure
           // to process the side effects on the stack after calling /sideEffect.
@@ -768,7 +780,10 @@ export default (sbp('sbp/selectors/register', {
     const forcedSync = !!params?.force
     return Promise.all(listOfIds.map(contractID => {
       if (!forcedSync && this.subscriptionSet.has(contractID)) {
-        return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        const rootState = sbp(this.config.stateSelector)
+        if (!rootState[contractID]?._volatile?.dirty) {
+          return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        }
       }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,

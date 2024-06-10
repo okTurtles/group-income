@@ -38,9 +38,7 @@ import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
-
-// Returns a function that returns the function's argument
-const wrapValueInFunction = (v) => () => v
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
 export default ({
   name: 'LoginForm',
@@ -87,9 +85,9 @@ export default ({
 
         const username = this.form.username
 
-        await sbp('gi.actions/identity/login', {
+        await sbp('gi.app/identity/login', {
           username,
-          passwordFn: wrapValueInFunction(this.form.password)
+          password: new Secret(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')

@@ -1,77 +1,44 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
-import { has, omit } from '@model/contracts/shared/giLodash.js'
+import { has, omit, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT, UNREAD_MESSAGES_QUEUE } from '~/frontend/utils/events.js'
+import { LOGIN, LOGOUT, UNREAD_MESSAGES_QUEUE } from '~/frontend/utils/events.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { handleFetchResult } from '../utils/misc.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { encryptedAction } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/identity/retrieveSalt': async (username: string, passwordFn: () => string) => {
-    const r = randomNonce()
-    const b = hash(r)
-    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
-      .then(handleFetchResult('json'))
-
-    const { authSalt, s, sig } = authHash
-
-    const h = await hashPassword(passwordFn(), authSalt)
-
-    const [c, hc] = computeCAndHc(r, s, h)
-
-    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
-      'r': r,
-      's': s,
-      'sig': sig,
-      'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
-    })).toString()}`).then(handleFetchResult('text'))
-
-    return decryptContractSalt(c, contractHash)
-  },
   'gi.actions/identity/create': async function ({
-    data: { username, email, passwordFn, picture },
-    publishOptions
+    IPK,
+    IEK,
+    publishOptions,
+    username,
+    email,
+    picture,
+    r,
+    s,
+    sig,
+    Eh
   }) {
-    const password = passwordFn()
-    let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
+    let finalPicture = `${self.location.origin}/assets/images/user-avatar-default.png`
 
-    // proceed with creation
-    const keyPair = boxKeyPair()
-    const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
-    const b = hash(r)
-    // TODO: use the contractID instead, and move this code down below the registration
-    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      body: `b=${encodeURIComponent(b)}`
-    })
-      .then(handleFetchResult('json'))
-
-    const { p, s, sig } = registrationRes
-
-    const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
+    IPK = typeof IPK === 'string' ? deserializeKey(IPK) : IPK
+    IEK = typeof IEK === 'string' ? deserializeKey(IEK) : IEK
 
     // Create the necessary keys to initialise the contract
-    const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, contractSalt)
-    const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, contractSalt)
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const PEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -100,8 +67,8 @@ export default (sbp('sbp/selectors/register', {
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
 
     // Before creating the contract, put all keys into transient store
-    sbp('chelonia/storeSecretKeys',
-      () => [IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true }))
+    await sbp('chelonia/storeSecretKeys',
+      new Secret([IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true })))
     )
 
     let userID
@@ -210,7 +177,7 @@ export default (sbp('sbp/selectors/register', {
             const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
               method: 'POST',
               headers: {
-                'authorization': sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
+                'authorization': await sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
                 'content-type': 'application/x-www-form-urlencoded'
               },
               body: new URLSearchParams({
@@ -231,7 +198,7 @@ export default (sbp('sbp/selectors/register', {
                 finalPicture = await imageUpload(picture, { billableContractID: userID })
               } catch (e) {
                 console.error('actions/identity.js picture upload error:', e)
-                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
+                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }), { cause: e })
               }
             }
           }
@@ -246,81 +213,52 @@ export default (sbp('sbp/selectors/register', {
       })
 
       // After the contract has been created, store pesistent keys
-      sbp('chelonia/storeSecretKeys',
-        () => [CEK, CSK, PEK].map(key => ({ key }))
+      await sbp('chelonia/storeSecretKeys',
+        new Secret([CEK, CSK, PEK].map(key => ({ key })))
       )
-      // And remove transient keys, which require a user password
-      sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
+      throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)), { cause: e })
+    } finally {
+      // And remove transient keys, which require a user password
+      await sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
     }
     return userID
   },
-  'gi.actions/identity/signup': async function ({ username, email, passwordFn }, publishOptions) {
+  'gi.actions/identity/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
+    transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k), transient: true }))
+
+    await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
+
     try {
-      const randomAvatar = sbp('gi.utils/avatar/create')
-      const userID = await sbp('gi.actions/identity/create', {
-        data: {
-          username,
-          email,
-          passwordFn,
-          picture: randomAvatar
-        },
-        publishOptions
-      })
-      return userID
+      if (!state) {
+        // Make sure we don't unsubscribe from our own identity contract
+        // Note that this should be done _after_ calling
+        // `chelonia/storeSecretKeys`: If the following line results in
+        // syncing the identity contract and fetching events, the secret keys
+        // for processing them will not be available otherwise.
+        await sbp('chelonia/contract/retain', identityContractID)
+      } else {
+        // If there is a state, we've already retained the identity contract
+        // but might need to fetch the latest events
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+      }
     } catch (e) {
-      await sbp('gi.actions/identity/logout') // TODO: should this be here?
-      console.error('gi.actions/identity/signup failed!', e)
-      const message = LError(e)
-      if (e.name === 'GIErrorUIRuntimeError') {
-        // 'gi.actions/identity/create' also sets reportError
-        message.reportError = e.message
-      }
-      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
-    }
-  },
-  'gi.actions/identity/login': async function ({ username, passwordFn, identityContractID }: {
-    username: ?string, passwordFn: ?() => string, identityContractID: ?string
-  }) {
-    if (username) {
-      identityContractID = await sbp('namespace/lookup', username)
-    }
-
-    if (!identityContractID) {
-      throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-    }
-
-    const password = passwordFn?.()
-    const transientSecretKeys = []
-    if (password) {
-      try {
-        const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
-        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        transientSecretKeys.push({ key: IEK, transient: true })
-      } catch (e) {
-        console.error('caught error calling retrieveSalt:', e)
-        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-      }
+      console.error('Error during login contract sync', e)
+      throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
     }
 
     try {
-      sbp('appLogs/startCapture', identityContractID)
-      const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
-        return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
-      }))
-
       const contractIDs = Object.create(null)
+
       // login can be called when no settings are saved (e.g. from Signup.vue)
-      if (state) {
-        // The retrieved local data might need to be completed in case it was originally saved
-        // under an older version of the app where fewer/other Vuex modules were implemented.
-        sbp('state/vuex/postUpgradeVerification', state)
-        sbp('state/vuex/replace', state)
-        sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
+      if (cheloniaState) {
+        await sbp('chelonia/reset')
+        // TODO: Ability to pass state to reset instead of this Object.assign
+        Object.assign(sbp('chelonia/rootState'), cheloniaState)
+        await sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         // $FlowFixMe[incompatible-use]
-        Object.entries(state.contracts).forEach(([id, { type }]) => {
+        Object.entries(cheloniaState.contracts).forEach(([id, { type }]) => {
           if (!contractIDs[type]) {
             contractIDs[type] = []
           }
@@ -328,19 +266,13 @@ export default (sbp('sbp/selectors/register', {
         })
       }
 
-      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
-
-      const loginAttributes = { identityContractID, encryptionParams, username }
-
-      // If username was not provided, retrieve it from the state
-      if (!loginAttributes.username) {
-        loginAttributes.username = Object.entries(state.namespaceLookups)
-          .find(([k, v]) => v === identityContractID)
-          ?.[0]
+      if (!sbp('chelonia/rootState').loggedIn) {
+        sbp('chelonia/rootState').loggedIn = {}
       }
-
-      sbp('state/vuex/commit', 'login', loginAttributes)
-      await sbp('chelonia/storeSecretKeys', () => transientSecretKeys)
+      sbp('chelonia/rootState').loggedIn.identityContractID = identityContractID
+      console.error('@@LOGGED IN', sbp('chelonia/rootState'))
+      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+      sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
       // We need to sync contracts in this order to ensure that we have all the
       // corresponding secret keys. Group chatrooms use group keys but there's
@@ -358,45 +290,6 @@ export default (sbp('sbp/selectors/register', {
         return index === -1 ? contractSyncPriorityList.length : index
       }
 
-      // loading the website instead of stalling out.
-      try {
-        if (!state) {
-          // Make sure we don't unsubscribe from our own identity contract
-          // Note that this should be done _after_ calling
-          // `chelonia/storeSecretKeys`: If the following line results in
-          // syncing the identity contract and fetching events, the secret keys
-          // for processing them will not be available otherwise.
-          await sbp('chelonia/contract/retain', identityContractID)
-        } else {
-          // If there is a state, we've already retained the identity contract
-          // but might need to fetch the latest events
-          await sbp('chelonia/contract/sync', identityContractID, { force: true })
-        }
-      } catch (err) {
-        sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: err })
-        const errMessage = err?.message || String(err)
-        console.error('Error during login contract sync', errMessage)
-
-        const promptOptions = {
-          heading: L('Login error'),
-          question: L('Do you want to log out? {br_}Error details: {err}.', { err: err.message, ...LTags() }),
-          primaryButton: L('No'),
-          secondaryButton: L('Yes')
-        }
-
-        const result = await sbp('gi.ui/prompt', promptOptions)
-        if (!result) {
-          return sbp('gi.actions/identity/logout')
-        } else {
-          throw err
-        }
-      }
-
-      // NOTE: update chatRoomUnreadMessages to the latest one we do this here
-      //       just after the identity contract is synced because
-      //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
-      await sbp('gi.actions/identity/loadChatRoomUnreadMessages')
-
       try {
         // $FlowFixMe[incompatible-call]
         await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
@@ -406,16 +299,16 @@ export default (sbp('sbp/selectors/register', {
           return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
         }))
       } catch (err) {
-        alert(L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' }))
         console.error('Error during contract sync upon login (syncing all contractIDs)', err)
+        throw err
       }
 
       try {
         // The state above might be null, so we re-grab it
-        const state = sbp('state/vuex/state')
+        const cheloniaState = sbp('chelonia/rootState')
 
         // The updated list of groups
-        const groupIds = Object.keys(state[identityContractID].groups)
+        const groupIds = Object.keys(cheloniaState[identityContractID].groups)
 
         // contract sync might've triggered an async call to /remove, so
         // wait before proceeding
@@ -424,85 +317,67 @@ export default (sbp('sbp/selectors/register', {
 
         // Call 'gi.actions/group/join' on all groups which may need re-joining
         await Promise.allSettled(
-          groupIds.map(groupId => (
+          groupIds.map(async groupId => (
             // (1) Check whether the contract exists (may have been removed
             //     after sync)
-            has(state.contracts, groupId) &&
-              has(state[identityContractID].groups, groupId) &&
+            has(cheloniaState.contracts, groupId) &&
+              has(cheloniaState[identityContractID].groups, groupId) &&
               // (2) Check whether the join process is still incomplete
               //     This needs to be re-checked because it may have changed after
               //     sync
               // //     We only check for groups where we don't have a profile, as
               // //     re-joining is handled by the group contract itself.
               // !state[groupId]?.profiles?.[identityContractID] && // ?.status !== PROFILE_STATUS.
-              state[groupId]?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
+              cheloniaState[groupId]?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
               // (3) Call join
               sbp('gi.actions/group/join', {
                 originatingContractID: identityContractID,
                 originatingContractName: 'gi.contracts/identity',
                 contractID: groupId,
                 contractName: 'gi.contracts/group',
-                reference: state[identityContractID].groups[groupId].hash,
-                signingKeyId: state[identityContractID].groups[groupId].inviteSecretId,
-                innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-                encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+                reference: cheloniaState[identityContractID].groups[groupId].hash,
+                signingKeyId: cheloniaState[identityContractID].groups[groupId].inviteSecretId,
+                innerSigningKeyId: await sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+                encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
               }).catch((e) => {
-                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
                 console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
               })
           ))
         )
 
         // update the 'lastLoggedIn' field in user's group profiles
-        Object.keys(state[identityContractID].groups)
+        Object.keys(cheloniaState[identityContractID].groups)
           .forEach(cId => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
-            if (state[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
+            if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
               sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
             }
           })
-
-        // NOTE: users could notice that they leave the group by someone
-        // else when they log in
-        if (!state.currentGroupId) {
-          const gId = Object.keys(state.contracts)
-            .find(cID => has(state[identityContractID].groups, cID))
-
-          if (gId) {
-            sbp('gi.actions/group/switch', gId)
-          }
-        }
       } catch (e) {
-        alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
-      } finally {
-        sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
+        throw e
       }
 
       return identityContractID
     } catch (e) {
+      // TODO: Remove transient secret keys
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
-      alert(humanErr)
       await sbp('gi.actions/identity/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })
-      throw new GIErrorUIRuntimeError(humanErr)
+      throw new GIErrorUIRuntimeError(humanErr, { cause: e })
     }
   },
-  'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {
-    const contractIDs = await sbp('gi.actions/identity/signup', { username, email, passwordFn })
-    await sbp('gi.actions/identity/login', { username, passwordFn })
-    return contractIDs
-  },
   'gi.actions/identity/logout': async function () {
+    let cheloniaState
     try {
-      const state = sbp('state/vuex/state')
       console.info('logging out, waiting for any events to finish...')
       // wait for any pending operations to finish before calling state/vuex/save
       // This includes, in order:
+      //   0. Pending login events
       //   1. Actions to be sent (in the `encrypted-action` queue)
       //   2. (In reset) Actions that haven't been published yet (the
       //      `publish:${contractID}` queues)
@@ -510,9 +385,11 @@ export default (sbp('sbp/selectors/register', {
       //      queues), including their side-effects (the `${contractID}` queues)
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
+      cheloniaState = sbp('chelonia/rootState')
+      await sbp('okTurtles.eventQueue/queueEvent', `login:${cheloniaState.loggedIn?.identityContractID ?? '(null)'}`, () => {})
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       // reset will wait until we have processed any remaining actions
-      await sbp('chelonia/reset', async () => {
+      cheloniaState = await sbp('chelonia/reset', async () => {
         // some of the actions that reset waited for might have side-effects
         // that send actions
         // we wait for those as well (the duplication in this case is
@@ -523,34 +400,35 @@ export default (sbp('sbp/selectors/register', {
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
         // See comment below for 'gi.db/settings/delete'
-        await sbp('state/vuex/save')
-
-        // If there is a state encryption key in the app settings, remove it
-        const encryptionParams = state.loggedIn?.encryptionParams
-        if (encryptionParams) {
-          await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
-        }
+        const cheloniaState = await sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', async () => {
+          const cheloniaState = cloneDeep(sbp('chelonia/rootState'))
+          await sbp('gi.db/settings/delete', 'CHELONIA_STATE')
+          return cheloniaState
+        })
         await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
-      }).then(() => {
+
+        return cheloniaState
+      }).then((cheloniaState) => {
         console.info('successfully logged out')
+        return cheloniaState
       })
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
     // Clear the file cache when logging out to preserve privacy
     sbp('gi.db/filesCache/clear').catch((e) => { console.error('Error clearing file cache', e) })
-    sbp('state/vuex/reset')
     sbp('okTurtles.events/emit', LOGOUT)
-    sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+    /// sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+    return cheloniaState
   },
   'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
-    const keyId = sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
-    const CEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+    const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
+    const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
 
     const rootState = sbp('state/vuex/state')
     const foreignContractState = rootState[foreignContractID]
 
-    const existingForeignKeys = sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
+    const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
 
     if (existingForeignKeys?.includes(keyId)) {
       return
@@ -571,22 +449,22 @@ export default (sbp('sbp/selectors/register', {
         ringLevel: Number.MAX_SAFE_INTEGER,
         name: `${foreignContractID}/${keyId}`
       })],
-      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
+      signingKeyId: await sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
     })
   },
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
-    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
-      const CEKid = findKeyIdByName(rootState[groupID], 'cek')
-      const CSKid = findKeyIdByName(rootState[groupID], 'csk')
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(async groupID => {
+      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
 
       if (!CEKid || !CSKid) {
         console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
         // We intentionally don't throw here to be able to share keys with the
         // remaining groups
-        return Promise.resolve()
+        return
       }
       return sbp('chelonia/out/keyShare', {
         contractID: groupID,
@@ -705,7 +583,7 @@ export default (sbp('sbp/selectors/register', {
         },
         // For now, we assume that we're messaging someone which whom we
         // share a group
-        signingKeyId: sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
         innerSigningContractID: currentGroupId,
         hooks
       })
@@ -718,7 +596,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
     attachments: Array<Object>, billableContractID: string
   }) => {
-    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
 
     try {
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
@@ -742,7 +620,7 @@ export default (sbp('sbp/selectors/register', {
       }))
 
       await sbp('gi.actions/identity/saveFileDeleteToken', {
-        contractID: rootGetters.ourIdentityContractId,
+        contractID: rootState.loggedIn.identityContractID,
         data: { tokensByManifestCid }
       })
 
@@ -755,14 +633,16 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
     manifestCids: string[], option: Object
   }) => {
-    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const { shouldDeleteFile, shouldDeleteToken } = option
+
+    const currentIdentityState = rootState[identityContractID]
 
     if (shouldDeleteFile) {
       const credentials = Object.fromEntries(manifestCids.map(cid => {
         const credential = shouldDeleteToken
-          ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
+          ? { token: currentIdentityState.fileDeleteTokens[cid] }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
@@ -794,6 +674,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },

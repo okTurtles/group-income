@@ -27,10 +27,8 @@ import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.js'
-import { oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { createInvite } from '@controller/actions/utils.js'
 
 export default ({
   name: 'Vote',
@@ -102,22 +100,10 @@ export default ({
       try {
         this.refVoteMsg.clean()
         const proposalHash = this.proposalHash
-        let passPayload = {}
 
-        if (oneVoteToPass(proposalHash)) {
-          if (this.type === PROPOSAL_INVITE_MEMBER) {
-            passPayload = await createInvite({
-              invitee: this.proposal.data.proposalData.memberName,
-              creatorID: this.proposal.creatorID,
-              expires: this.currentGroupState.settings.inviteExpiryProposal
-            })
-          } else if (this.type === PROPOSAL_REMOVE_MEMBER) {
-            passPayload = {}
-          }
-        }
         await sbp('gi.actions/group/proposalVote', {
           contractID: this.currentGroupId,
-          data: { vote: VOTE_FOR, proposalHash, passPayload }
+          data: { vote: VOTE_FOR, proposalHash }
         })
       } catch (e) {
         console.error('ProposalVoteOptions voteFor failed:', e)

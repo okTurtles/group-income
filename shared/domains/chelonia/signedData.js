@@ -98,6 +98,7 @@ const signData = function (stateOrContractID: string | Object, sKeyId: string, d
 // entire GIMessage
 const verifySignatureData = function (height: number, data: any, additionalData: string) {
   if (!this) {
+    console.error('@@@', new Error('Missing contract state'))
     throw new ChelErrorSignatureError('Missing contract state')
   }
 

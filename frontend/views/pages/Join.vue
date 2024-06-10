@@ -177,7 +177,7 @@ export default ({
         return this.$router.push({ path: '/dashboard' })
       }
       try {
-        await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
+        await sbp('gi.app/group/joinWithInviteSecret', groupId, secret)
         // this.pageStatus = 'WELCOME'
         this.$router.push({ path: '/pending-approval' })
       } catch (e) {

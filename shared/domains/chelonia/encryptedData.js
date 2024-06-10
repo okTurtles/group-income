@@ -84,6 +84,7 @@ const encryptData = function (stateOrContractID: string | Object, eKeyId: string
 // entire GIMessage
 const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any, id: string) => void) {
   if (!this) {
+    console.error('@@@', new Error('Missing contract state'))
     throw new ChelErrorDecryptionError('Missing contract state')
   }
 

@@ -504,7 +504,7 @@ export default ({
 
         if (!contractID) {
           console.log(`signing up a fake user [${userData.username}]`)
-          await sbp('gi.actions/identity/signup', userData)
+          await sbp('gi.app/identity/signup', userData)
         }
       }
 

@@ -148,7 +148,8 @@ describe('Group Payments', () => {
     cy.giForceDistributionDateToNow()
 
     // Period-related getters should also work in a normal period.
-    cy.window().its('sbp').then(sbp => {
+    cy.window().its('sbp').then(async sbp => {
+      await sbp('chelonia/contract/wait')
       const { periodStampGivenDate, periodAfterPeriod, periodBeforePeriod, groupSortedPeriodKeys } = sbp('state/vuex/getters')
       const { distributionDate, distributionPeriodLength } = sbp('state/vuex/getters').groupSettings
       const onePeriodLengthBefore = addTimeToDate(distributionDate, -distributionPeriodLength)
