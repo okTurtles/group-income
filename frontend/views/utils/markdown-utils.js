@@ -151,8 +151,8 @@ export function injectOrStripLink (
 }
 
 export const filterOutInAppLinksFromSafeHTML = (textInSafeHTML: string): Array<Object> => {
-  // NOTE: regular expressions we use in this function
-  //       should be defined using response of makeInAppLinkElement
+  // NOTE: regular expressions we are using in this function
+  //       should be defined based on response of makeInAppLinkElement
   const inAppLinkElements = textInSafeHTML.match(/<router route='([^]*?)<\/router>/g)
 
   if (!inAppLinkElements) {
