@@ -33,9 +33,9 @@ div
 
     .c-joined(v-else-if='isStatus("JOINED")')
       svg-create-group.c-svg
-      i18n.is-title-1(tag='h1' data-test='pageTitle') You are already a member.
-      i18n.has-text-1(tag='p' data-test='helperText') Cannot join already joined group.
-      i18n.c-goHome(tag='button' @click='goToDashboard') Go to dashboard
+      i18n.is-title-1(tag='h1' data-test='pageTitle' :args='{ groupName: ephemeral.groupInfo.name }') You are already a member of '{groupName}'
+      i18n.has-text-1(tag='p' data-test='helperText') You cannot join already joined group.
+      i18n.c-goHome(tag='button' @click='goToDashboard(ephemeral.groupInfo.id)') Go to dashboard
     .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
@@ -82,6 +82,7 @@ export default ({
       ephemeral: {
         pageStatus: 'LOADING',
         invitation: {},
+        groupInfo: {},
         query: null
       }
     }
@@ -141,13 +142,19 @@ export default ({
           return
         }
         if (this.ourIdentityContractId) {
-          console.log('!@# here - aaaa')
           const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
           const targetGroupId = this.ephemeral.hash?.get('groupId') || ''
-          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(this.$store.state.contracts[targetGroupId]?.profiles?.[this.ourIdentityContractId])) {
+          const targetGroupState = this.$store.state[targetGroupId] || {}
+
+          if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(targetGroupState?.profiles?.[this.ourIdentityContractId])) {
             this.goToDashboard()
-          } else if (myGroupIds.includes(targetGroupId)) {
+          } else if (myGroupIds.includes(targetGroupId)) { // if the user is already part of the target group.
+            this.ephemeral.groupInfo = {
+              name: targetGroupState.settings?.groupName || '',
+              id: targetGroupId
+            }
             this.pageStatus = 'JOINED'
+
             return
           } else {
             await this.accept()
@@ -181,7 +188,7 @@ export default ({
       this.$router.push({ path: '/' })
     },
     goToDashboard (toGroupId) {
-      if (toGroupId) {
+      if (toGroupId && this.currentGroupId !== toGroupId) {
         sbp('gi.actions/group/switch', toGroupId)
       }
 
