@@ -6,14 +6,12 @@ import {
   INVITE_EXPIRES_IN_DAYS,
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
-  MESSAGE_TYPES,
   PROFILE_STATUS,
   PROPOSAL_GENERIC,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_VARIANTS,
   STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
@@ -843,38 +841,6 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.'), async function (sendMessage, params) {
-    const { proposals } = params.data
-    await sendMessage({
-      ...omit(params, ['options', 'data', 'action', 'hooks']),
-      data: proposals.map(p => p.proposalId),
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
-
-    const rootState = sbp('state/vuex/state')
-    const { generalChatRoomId } = rootState[params.contractID]
-
-    for (const proposal of proposals) {
-      await sbp('gi.actions/chatroom/addMessage', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: generalChatRoomId,
-        data: {
-          type: MESSAGE_TYPES.INTERACTIVE,
-          proposal: {
-            ...proposal,
-            variant: PROPOSAL_VARIANTS.EXPIRING
-          }
-        },
-        hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
-        }
-      })
-    }
-  }),
   'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
     const promptOptions = data.increased
@@ -979,6 +945,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
+  ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))

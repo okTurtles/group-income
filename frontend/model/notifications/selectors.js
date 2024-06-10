@@ -21,8 +21,8 @@ sbp('sbp/selectors/register', {
 
     // Creates the notification object in a single step.
     const notification = {
-      avatarUserID: template.avatarUserID || sbp('state/vuex/getters').ourIdentityContractId,
       ...template,
+      avatarUserID: template.avatarUserID || sbp('state/vuex/getters').ourIdentityContractId,
       // Sets 'groupID' if this notification only pertains to a certain group.
       ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
       read: false,

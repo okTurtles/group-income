@@ -848,13 +848,16 @@ sbp('chelonia/defineContract', {
           const payment = state.payments[data.paymentHash]
 
           if (loggedIn.identityContractID === payment.data.toMemberID) {
-            sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_RECEIVED', {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              creatorID: innerSigningContractID,
-              paymentHash: data.paymentHash,
-              amount: getters.withGroupCurrency(payment.data.amount)
-            })
+            sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+              notificationName: 'PAYMENT_RECEIVED',
+              notificationData: {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                creatorID: innerSigningContractID,
+                paymentHash: data.paymentHash,
+                amount: getters.withGroupCurrency(payment.data.amount)
+              }
+            }])
           }
         }
       }
@@ -872,12 +875,15 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
 
         if (data.toMemberID === loggedIn.identityContractID) {
-          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_THANKYOU_SENT', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            fromMemberID: innerSigningContractID,
-            toMemberID: data.toMemberID
-          })
+          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+            notificationName: 'PAYMENT_THANKYOU_SENT',
+            notificationData: {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              fromMemberID: innerSigningContractID,
+              toMemberID: data.toMemberID
+            }
+          }])
         }
       }
     },
@@ -937,12 +943,15 @@ sbp('chelonia/defineContract', {
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (isActionOlderThanUser(contractID, height, myProfile)) {
-          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'NEW_PROPOSAL', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            creatorID: innerSigningContractID,
-            subtype: typeToSubTypeMap[data.proposalType]
-          })
+          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+            notificationName: 'NEW_PROPOSAL',
+            notificationData: {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              subtype: typeToSubTypeMap[data.proposalType]
+            }
+          }])
         }
       }
     },
@@ -1024,11 +1033,25 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/notifyExpiringProposals': {
-      validate: actionRequireActiveMember(arrayOf(string)),
+      validate: actionRequireActiveMember(objectOf({
+        proposalIds: arrayOf(string)
+      })),
       process ({ data, meta, contractID }, { state }) {
-        for (const proposalId of data) {
+        for (const proposalId of data.proposalIds) {
           Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
         }
+      },
+      sideEffect ({ data, contractID }, { state }) {
+        const notifications = []
+        for (const proposalId of data.proposalIds) {
+          const proposal = state.proposals[proposalId]
+          notifications.push({
+            notificationName: 'PROPOSAL_EXPIRING',
+            notificationData: { groupID: contractID, proposal, proposalId }
+          })
+        }
+
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, notifications)
       }
     },
     'gi.contracts/group/removeMember': {
@@ -1197,11 +1220,14 @@ sbp('chelonia/defineContract', {
               const myProfile = profiles[userID]
 
               if (isActionOlderThanUser(contractID, height, myProfile)) {
-                sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
-                  createdDate: meta.createdDate,
-                  groupID: contractID,
-                  memberID: innerSigningContractID
-                })
+                sbp('gi.contracts/group/emitNotificationsAfterSyncing', [], [{
+                  notificationName: 'MEMBER_ADDED',
+                  notificationData: {
+                    createdDate: meta.createdDate,
+                    groupID: contractID,
+                    memberID: innerSigningContractID
+                  }
+                }])
               }
             }).catch((e) => {
               console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e)
@@ -1687,9 +1713,10 @@ sbp('chelonia/defineContract', {
       const { loggedIn } = sbp('state/vuex/state')
       const { createdDate } = meta
       if (isActionOlderThanUser(contractID, height, state.profiles[loggedIn.identityContractID])) {
-        sbp('gi.contracts/group/emitNotificationAfterSyncing', contractID, 'PROPOSAL_CLOSED', {
-          createdDate, groupID: contractID, proposal
-        })
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, [{
+          notificationName: 'PROPOSAL_CLOSED',
+          notificationData: { createdDate, groupID: contractID, proposal }
+        }])
       }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
@@ -1732,13 +1759,16 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'MINCOME_CHANGED', {
-          groupID: contractID,
-          creatorID: innerSigningContractID,
-          to: toAmount,
-          memberType,
-          increased: mincomeIncreased
-        })
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+          notificationName: 'MINCOME_CHANGED',
+          notificationData: {
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            to: toAmount,
+            memberType,
+            increased: mincomeIncreased
+          }
+        }])
       }
     },
     'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, memberID) {
@@ -1884,12 +1914,10 @@ sbp('chelonia/defineContract', {
           if (!proposalHash) {
             // NOTE: Do not make notification when the member is removed by proposal
             const memberRemovedThemselves = memberID === innerSigningContractID
-            const notificationName = memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED'
-            sbp('gi.contracts/group/emitNotificationAfterSyncing', memberID, notificationName, {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              memberID
-            })
+            sbp('gi.contracts/group/emitNotificationsAfterSyncing', memberID, [{
+              notificationName: memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              notificationData: { createdDate: meta.createdDate, groupID: contractID, memberID }
+            }])
           }
 
           Promise.resolve()
@@ -1948,13 +1976,15 @@ sbp('chelonia/defineContract', {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
     },
-    'gi.contracts/group/emitNotificationAfterSyncing': async (contractIDs, notificationName, notificationData) => {
+    'gi.contracts/group/emitNotificationsAfterSyncing': async (contractIDs, notifications) => {
       const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
       for (const id of listOfIds) {
         await sbp('chelonia/contract/wait', id)
       }
 
-      sbp('gi.notifications/emit', notificationName, notificationData)
+      notifications.forEach(({ notificationName, notificationData }) => {
+        sbp('gi.notifications/emit', notificationName, notificationData)
+      })
     }
   }
 })

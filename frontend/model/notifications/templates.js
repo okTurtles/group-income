@@ -172,23 +172,24 @@ export default ({
       scope: 'group'
     }
   },
-  PROPOSAL_EXPIRING (data: { creatorID: string, proposalType: string, proposalData: any, title?: string, proposalId: string }) {
+  PROPOSAL_EXPIRING (data: { proposalId: string, proposal: Object }) {
+    const { proposalData, proposalType } = data.proposal.data
     const typeToTitleMap = {
       [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
       [PROPOSAL_REMOVE_MEMBER]: L('Member removal'),
       [PROPOSAL_GROUP_SETTING_CHANGE]: {
         mincomeAmount: L('Mincome change'),
         distributionDate: L('Distribution date change')
-      }[data.proposalData.setting],
+      }[proposalData.setting],
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]: L('Voting rule change'),
-      [PROPOSAL_GENERIC]: data.title
+      [PROPOSAL_GENERIC]: proposalData.name
     }
 
     return {
-      avatarUserID: data.creatorID,
-      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. please vote!', {
+      avatarUserID: '',
+      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!', {
         ...LTags('i'),
-        proposalTitle: typeToTitleMap[data.proposalType]
+        proposalTitle: typeToTitleMap[proposalType]
       }),
       level: 'info',
       icon: 'exclamation-triangle',
@@ -197,7 +198,7 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object }) {
+  PROPOSAL_CLOSED (data: { proposal: Object }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
 
     const bodyTemplateMap = {

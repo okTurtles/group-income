@@ -52,7 +52,6 @@ export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 
 // chatroom events
-export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 
@@ -96,15 +95,6 @@ export const MESSAGE_VARIANTS = {
   SENT: 'sent',
   RECEIVED: 'received',
   FAILED: 'failed'
-}
-
-export const PROPOSAL_VARIANTS = {
-  CREATED: 'created',
-  EXPIRING: 'expiring',
-  ACCEPTED: 'accepted',
-  REJECTED: 'rejected',
-  CANCELLED: 'cancelled',
-  EXPIRED: 'expired'
 }
 
 export const MESSAGE_NOTIFY_SETTINGS = {

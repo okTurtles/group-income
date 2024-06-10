@@ -1,141 +1,37 @@
 <template lang='pug'>
 message-base(v-bind='$props' @wrapperAction='action')
   template(#image='')
-    .c-icon(
-      :class='{"is-warning": isYellowHorn}'
-    )
+    .c-icon(:class='{"is-warning": isYellowHorn}')
       svg-yellow-horn(v-if='isYellowHorn')
       svg-horn(v-else)
   template(#header='')
     .c-header
-      span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
-      span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
+      span TODO
   template(#body='')
-    .c-text
-      | {{interactiveMessage.text}}
-      i18n.c-link(@click='$router.push({ path: "/dashboard#proposals" })') See proposal
+    .c-text TODO
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { L } from '@common/common.js'
-import {
-  PROPOSAL_GROUP_SETTING_CHANGE,
-  PROPOSAL_INVITE_MEMBER,
-  PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC,
-  PROPOSAL_VARIANTS
-} from '@model/contracts/shared/constants.js'
-import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
-import { humanDate } from '@model/contracts/shared/time.js'
-import { get } from '@model/contracts/shared/giLodash.js'
-
-const interactiveMessage = (proposal, baseOptions = {}) => {
-  const { proposalType, variant } = proposal
-  const { options: proposalDetails } = getProposalDetails({ data: proposal })
-  const options = Object.assign(proposalDetails, baseOptions)
-
-  const settingChangeMessages = (options) => ({
-    [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups {setting}.', options),
-    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to change the {setting} is accepted.', options),
-    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to change the {setting} is rejected.', options),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options)
-  })
-
-  const interactiveMessages = {
-    [PROPOSAL_INVITE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add {member} to the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to add {member} is accepted.', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
-    },
-    [PROPOSAL_REMOVE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove {member} from the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to remove {member} is accepted.', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
-    },
-    [PROPOSAL_GROUP_SETTING_CHANGE]: {
-      mincomeAmount: settingChangeMessages(options),
-      distributionDate: settingChangeMessages(options)
-    },
-    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
-      votingRule: settingChangeMessages(options),
-      votingSystem: settingChangeMessages(options)
-    },
-    [PROPOSAL_GENERIC]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} is accepted. "{title}"', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} is rejected. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} is expired. "{title}"', options)
-    }
-  }
-
-  return get(interactiveMessages, [proposalType, options.settingType, variant].filter(key => !!key))
-}
-
-const proposalStatus = (proposal) => {
-  const options = {}
-  if (proposal.variant === PROPOSAL_VARIANTS.EXPIRING) {
-    options['date'] = humanDate(proposal.expires_date_ms, { month: 'short', day: 'numeric', year: 'numeric' })
-  }
-  return {
-    [PROPOSAL_VARIANTS.CREATED]: L('New proposal'),
-    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal expiring on {date}', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal Accepted'),
-    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal rejected'),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal expired')
-  }[proposal.variant]
-}
-
-const proposalSeverity = {
-  [PROPOSAL_VARIANTS.CREATED]: 'is-info',
-  [PROPOSAL_VARIANTS.EXPIRING]: 'is-warning',
-  [PROPOSAL_VARIANTS.ACCEPTED]: 'is-success',
-  [PROPOSAL_VARIANTS.REJECTED]: 'is-danger',
-  [PROPOSAL_VARIANTS.EXPIRED]: 'is-neutral'
-}
 
 export default ({
   name: 'MessageInteractive',
-  props: {
-    id: String,
-    datetime: Date,
-    proposal: Object
-  },
+  props: {},
   components: {
     SvgHorn,
     SvgYellowHorn,
     MessageBase
   },
   methods: {
-    humanDate,
     action () {
       console.log('TODO')
     }
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID']),
-    interactiveMessage () {
-      const { variant, creator } = this.proposal
-      const baseOptions = { from: this.userDisplayNameFromID(creator) }
-
-      return {
-        text: interactiveMessage(this.proposal, baseOptions),
-        proposalStatus: proposalStatus(this.proposal),
-        proposalSeverity: proposalSeverity[variant]
-      }
-    },
     isYellowHorn () {
-      return this.proposal.variant === PROPOSAL_VARIANTS.EXPIRING
+      return true // random value ATM
     }
   }
 }: Object)
@@ -193,13 +89,5 @@ export default ({
     background-color: $success_2;
     color: $success_0;
   }
-}
-
-.c-link {
-  margin-left: 0.25rem;
-  border-bottom: 1px solid $text_1;
-  cursor: pointer;
-  text-decoration: none;
-  font-style: italic;
 }
 </style>
