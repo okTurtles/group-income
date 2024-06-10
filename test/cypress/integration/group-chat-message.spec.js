@@ -221,19 +221,15 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   })
 
   it('user2 and user1 check mentions for themselves', () => {
-    // NOTE: test assertions are commented here
-    // That's because we don't display notifications if user signs in another device
     switchUser(user2)
-
-    // cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
-    // cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('1')
+    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     switchUser(user1)
-
-    // cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    // cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('2')
+    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
   it('user1 sends two messages with attachments, and deletes attachments', () => {

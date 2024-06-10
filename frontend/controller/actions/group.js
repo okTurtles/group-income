@@ -28,6 +28,7 @@ import {
   SWITCH_GROUP,
   JOINED_GROUP
 } from '@utils/events.js'
+import { KV_KEYS } from '@utils/constants.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -958,11 +959,16 @@ export default (sbp('sbp/selectors/register', {
 
       // Wait for any pending operations (e.g., sync) to finish
       await sbp('chelonia/queueInvocation', contractID, async () => {
-        const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
-        current[userID] = now
-        await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
+        const fnGetUpdatedLastLoggedIn = async (cID, key) => {
+          const current = (await sbp('chelonia/kv/get', cID, key))?.data || {}
+          return { ...current, [userID]: now }
+        }
+
+        const data = await fnGetUpdatedLastLoggedIn(contractID, KV_KEYS.LAST_LOGGED_IN)
+        await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
           encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
+          onconflict: fnGetUpdatedLastLoggedIn
         })
       })
     } catch (e) {
