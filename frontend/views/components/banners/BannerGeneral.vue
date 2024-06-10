@@ -39,7 +39,7 @@ export default ({
       if (!this.ephemeral.message) {
         return []
       }
-      return filterOutInAppLinksFromSafeHTML(this.ephemeral.message).flat()
+      return filterOutInAppLinksFromSafeHTML(this.ephemeral.message)
     },
     shouldShowBanner () {
       return Boolean(this.messageObjects.length)

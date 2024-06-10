@@ -54,7 +54,7 @@ export default ({
       if (!this.ephemeral.text || !this.allowA) {
         return []
       }
-      return filterOutInAppLinksFromSafeHTML(this.ephemeral.text).flat()
+      return filterOutInAppLinksFromSafeHTML(this.ephemeral.text)
     }
   },
   methods: {
