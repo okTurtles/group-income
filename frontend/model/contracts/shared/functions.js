@@ -210,30 +210,36 @@ export function makeMentionFromUserID (userID: string): {
   }
 }
 
-export function makeChannelMention (string: string): string {
-  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${string}`
+export function makeChannelMention (channelName: string): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${channelName}`
 }
 
-export function swapMentionIDForDisplayname (text: string): string {
+export function swapMentionIDForDisplayname (
+  text: string,
+  options: Object = { escaped: true, forChat: true }
+): string {
   const {
     chatRoomsInDetail,
     ourContactProfilesById,
     getChatroomNameById,
-    usernameFromID
+    usernameFromID,
+    userDisplayNameFromID
   } = sbp('state/vuex/getters')
   const possibleMentions = [
     ...Object.keys(ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
     ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
   ]
 
-  return text
-    .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-    .map(t => {
-      return possibleMentions.includes(t)
-        ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
-          ? t[0] + usernameFromID(t.slice(1))
-          : t[0] + getChatroomNameById(t.slice(1))
-        : t
-    })
-    .join('')
+  const { escaped, forChat } = options
+  const regEx = escaped
+    ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
+    : new RegExp(`(${possibleMentions.join('|')})`)
+
+  return text.split(regEx).map(t => {
+    return possibleMentions.includes(t)
+      ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
+        ? forChat ? t[0] + usernameFromID(t.slice(1)) : userDisplayNameFromID(t.slice(1))
+        : (forChat ? t[0] : '') + getChatroomNameById(t.slice(1))
+      : t
+  }).join('')
 }

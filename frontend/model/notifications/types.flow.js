@@ -10,7 +10,8 @@ export type NewProposalType =
 export type Notification = {
   // Indicates which user avatar icon to display alongside the notification.
   +avatarUserID: string;
-  +body: string;
+  // object-formatted body will be of format { key: '', args?: { ... } } and needs to be translated by i18n
+  +body: string | Object;
   // If present, indicates in which group's notification list to display the notification.
   +groupID?: string;
   +icon: string;
@@ -35,7 +36,7 @@ export type NotificationScope = 'group' | 'user' | 'app';
 
 export type NotificationTemplate = {
   +avatarUserID?: string;
-  +body: string;
+  +body: string | Object;
   +icon: string;
   +level: NotificationLevel;
   +linkTo?: string;
