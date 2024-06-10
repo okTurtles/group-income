@@ -235,6 +235,7 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
+  console.error('@@@SW ACTIVATE', JSON.stringify(process.env.CI), !!process.env.CI)
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
   event.waitUntil(cheloniaReady.finally(() => self.clients.claim()))
@@ -291,6 +292,15 @@ self.addEventListener('message', function (event) {
       }
       case 'ping':
         event.source.postMessage({ type: 'pong' })
+        break
+      case 'shutdown':
+        self.registration.unregister()
+          .then(function () {
+            return self.clients.matchAll()
+          })
+          .then(function (clients) {
+            clients.forEach(client => client.navigate(client.url))
+          })
         break
       default:
         console.error('[sw] unknown message type:', event.data)

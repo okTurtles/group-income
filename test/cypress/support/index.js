@@ -18,27 +18,32 @@ import './commands.js'
 import './output-logs.js'
 
 before(function () {
-  cy.location().then(v => console.log(v))
+  console.log('[cypress] `before`: cleaning up')
   if (typeof navigator === 'object' && navigator.serviceWorker) {
     cy.wrap(navigator.serviceWorker.getRegistrations()
-      .then((registrations) =>
-        // eslint-disable-next-line no-sequences
-        (console.log('regs', registrations), Promise.all(registrations.map((registration) =>
-          registration.unregister())
-        ))
+      .then((registrations) => {
+        console.log('[cypress] Service worker registations', registrations)
+        return Promise.all(registrations.map((registration) => {
+          // Shut down and unregister any existing service workers
+          registration.active?.postMessage({ type: 'shutdown' })
+          registration.installing?.postMessage({ type: 'shutdown' })
+          registration.waiting?.postMessage({ type: 'shutdown' })
+          return registration.unregister()
+        }))
+      }
       )
     )
   }
   cy.clearCookies()
   cy.clearLocalStorage()
   if (typeof indexedDB === 'object') {
-    cy.wrap(indexedDB.databases().then((db) =>
-      // eslint-disable-next-line no-sequences
-      (console.log('db', db), Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name))))
+    cy.wrap(indexedDB.databases().then((db) => {
+      console.log('[cypress] Registered DBs', db)
+      return Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name)))
+    }
     ))
   }
-  cy.wrap(undefined).then(() => console.error('Finished before'))
-  // cy.visit('about:blank')
+  cy.wrap(undefined).then(() => console.log('[cypress] Finished `before`'))
 })
 
 // Abort tests on first fail
