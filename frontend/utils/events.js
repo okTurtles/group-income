@@ -49,3 +49,5 @@ export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
 
 export const NAMESPACE_REGISTRATION = 'namespace-registration'
 export const SHELTER_EVENT_HANDLED = 'shelter-event-handled'
+
+export const UNREAD_MESSAGES_QUEUE = 'unread-messages-queue'

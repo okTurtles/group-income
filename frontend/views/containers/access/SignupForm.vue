@@ -31,6 +31,18 @@ form(data-test='signup' @submit.prevent='')
 
     password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
 
+  label.checkbox
+    input.input(
+      type='checkbox'
+      name='terms'
+      v-model='form.terms'
+      data-test='signTerms'
+      @click.stop=''
+    )
+    i18n(
+      :args='{ a_: `<a class="link" target="_blank" href="${linkToTerms}">`, _a: "</a>"}'
+    ) I agree to the {a_}terms and conditions{_a}
+
   banner-scoped(ref='formMsg' allow-a)
 
   .buttons.is-centered
@@ -64,6 +76,7 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 
 export const usernameValidations = {
   [L('A username is required.')]: required,
@@ -105,11 +118,13 @@ export default ({
     return {
       form: {
         username: '',
+        email: '',
         password: '',
         passwordConfirm: '',
-        email: '',
+        terms: false,
         pictureBase64: ''
       },
+      linkToTerms: ALLOWED_URLS.TERMS_PAGE,
       usernameAsyncValidation: {
         timer: null,
         resolveFn: null
@@ -184,6 +199,11 @@ export default ({
         email: {
           [L('An email is required.')]: required,
           [L('Please enter a valid email.')]: email
+        },
+        terms: {
+          [L('You need to agree to the terms and conditions.')]: (value) => {
+            return Boolean(value)
+          }
         }
       }
     }
@@ -204,6 +224,10 @@ export default ({
     flex-direction: row;
     align-items: flex-start;
     gap: 1.5rem;
+  }
+
+  @include phone {
+    margin-bottom: 1.5rem;
   }
 }
 </style>

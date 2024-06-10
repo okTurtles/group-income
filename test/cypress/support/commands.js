@@ -178,6 +178,7 @@ Cypress.Commands.add('giSignup', (username, {
     cy.getByDT('signEmail').clear().type(email)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(password)
+    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
 
     cy.getByDT('signSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
@@ -265,6 +266,9 @@ Cypress.Commands.add('giLogin', (username, {
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+  // NOTE: wait until all the queued invocations to run before logout
+  cy.giEmptyInvocationQueue()
+
   if (hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {

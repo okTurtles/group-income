@@ -277,7 +277,12 @@ import {
 import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
-import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/markdown-utils.js'
+import {
+  injectOrStripSpecialChar,
+  injectOrStripLink,
+  splitStringByMarkdownCode,
+  combineMarkdownSegmentListIntoString
+} from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
@@ -507,6 +512,8 @@ export default ({
           }
 
           e.preventDefault()
+        } else if (!nChoices && e.keyCode === caretKeyCodes.Esc) {
+          this.cancelEditing()
         } else {
           this.endMention()
         }
@@ -623,6 +630,7 @@ export default ({
           member - @username => @userID
           channel - #channel-name => #channelID
       */
+
       const genMentionRegExp = (type = 'member') => {
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
         const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
@@ -636,17 +644,27 @@ export default ({
         const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
         return found ? makeChannelMention(found.id) : ''
       }
+      const convertAllMentions = str => {
+        return str.replace(
+          genMentionRegExp('member'), // 1. replace all member mentions.
+          (_, username) => makeMentionFromUsername(username).me
+        ).replace( // 2. replace all channel mentions.
+          genMentionRegExp('channel'),
+          (_, channelName) => convertChannelMentionToId(channelName)
+        )
+      }
 
-      // 1. replace all member mentions.
-      msgToSend = msgToSend.replace(
-        genMentionRegExp('member'),
-        (_, username) => makeMentionFromUsername(username).me
-      )
-      // 2. replace all channel mentions.
-      msgToSend = msgToSend.replace(
-        genMentionRegExp('channel'),
-        (_, channelName) => convertChannelMentionToId(channelName)
-      )
+      const msgSplitByCodeMarkdown = splitStringByMarkdownCode(msgToSend)
+      msgSplitByCodeMarkdown.forEach((entry, index) => {
+        if (entry.type === 'plain' &&
+          // Below check: sometimes, the message content ends without closing the block-code and
+          // in this case the rest of the code is treated as code content too.
+          msgSplitByCodeMarkdown[index - 1]?.text !== '```'
+        ) {
+          entry.text = convertAllMentions(entry.text)
+        }
+      })
+      msgToSend = combineMarkdownSegmentListIntoString(msgSplitByCodeMarkdown)
 
       this.$emit(
         'send',

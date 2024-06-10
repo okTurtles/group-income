@@ -12,7 +12,7 @@
 
   ul.c-group-list
     list-item(
-      v-for='({partners, title, picture}, chatRoomID) in ourGroupDirectMessages'
+      v-for='({ partners, title, picture }, chatRoomID) in ourGroupDirectMessages'
       tag='router-link'
       :to='buildUrl(chatRoomID)'
       :data-test='chatRoomID'
@@ -20,9 +20,9 @@
       @click='$emit("redirect")'
     )
       .profile-wrapper(v-if='partners.length === 1')
-        profile-card(:contractID='partners[0]' deactivated)
-          avatar-user(:contractID='partners[0]' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(:data-test='usernameFromID(partners[0])') {{ title }}
+        profile-card(:contractID='partners[0].contractID' deactivated)
+          avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0].username') {{ title }}
 
       .group-wrapper(v-else)
         .picture-wrapper
@@ -71,8 +71,7 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'chatRoomUnreadMentions',
-      'usernameFromID'
+      'chatRoomUnreadMessages'
     ])
   },
   methods: {
@@ -97,7 +96,7 @@ export default ({
       }
     },
     getUnreadMsgCount (chatRoomID) {
-      return this.chatRoomUnreadMentions(chatRoomID).length
+      return this.chatRoomUnreadMessages(chatRoomID).length
     },
     limitedUnreadCount (n) {
       const nLimit = 99

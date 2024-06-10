@@ -1,50 +1,52 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.data'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
-import { mapMutations, mapGetters, mapState } from 'vuex'
-import 'wicg-inert'
 import '@model/captureLogs.js'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.eventqueue'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
+import IdleVue from 'idle-vue'
+import { mapGetters, mapMutations, mapState } from 'vuex'
+import 'wicg-inert'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import '~/shared/domains/chelonia/chelonia.js'
+import * as Common from '@common/common.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
-import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, JOINED_CHATROOM, SHELTER_EVENT_HANDLED } from './utils/events.js'
 import './controller/namespace.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, LOGIN, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, SHELTER_EVENT_HANDLED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 // import './controller/actions/index.js'
 import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/service-worker.js'
 // import '~/shared/domains/chelonia/persistent-actions.js'
-import { serializer, deserializer } from '~/shared/serdes/index.js'
-import manifests from './model/contracts/manifests.json'
-import router from './controller/router.js'
-import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
-import store from './model/state.js'
-import { SETTING_CURRENT_USER } from './model/database.js'
-import BackgroundSounds from './views/components/sounds/Background.vue'
-import BannerGeneral from './views/components/banners/BannerGeneral.vue'
-import Navigation from './views/containers/navigation/Navigation.vue'
-import AppStyles from './views/components/AppStyles.vue'
-import Modal from './views/components/modal/Modal.vue'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import router from './controller/router.js'
+import manifests from './model/contracts/manifests.json'
+import { SETTING_CURRENT_USER } from './model/database.js'
+import store from './model/state.js'
+import AppStyles from './views/components/AppStyles.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+import Modal from './views/components/modal/Modal.vue'
+import BackgroundSounds from './views/components/sounds/Background.vue'
+import Navigation from './views/containers/navigation/Navigation.vue'
 import './views/utils/avatar.js'
 import './views/utils/ui.js'
-import './views/utils/vFocus.js'
 import './views/utils/vError.js'
+import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
-import './views/utils/vStyle.js'
-import './utils/touchInteractions.js'
-import './model/notifications/periodicNotifications.js'
-import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
-import { showNavMixin } from './views/utils/misc.js'
-import FaviconBadge from './utils/faviconBadge.js'
 import { has } from '@model/contracts/shared/giLodash.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
+import './model/notifications/periodicNotifications.js'
+import { KV_KEYS } from './utils/constants.js'
+import FaviconBadge from './utils/faviconBadge.js'
+import './utils/touchInteractions.js'
+import { showNavMixin } from './views/utils/misc.js'
+import './views/utils/vStyle.js'
 
 const { Vue, L } = Common
 
@@ -282,7 +284,10 @@ async function startApp () {
           'chelonia/contract/disconnect',
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
-          'chelonia/contract/hasKeysToPerformOperation'
+          'chelonia/contract/hasKeysToPerformOperation',
+          'gi.actions/identity/initChatRoomUnreadMessages', 'gi.actions/identity/deleteChatRoomUnreadMessages',
+          'gi.actions/identity/setChatRoomReadUntil',
+          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/removeChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -449,11 +454,13 @@ async function startApp () {
           }
         },
         [NOTIFICATION_TYPE.KV] ([key, data]) {
-          switch (key) {
-            case 'lastLoggedIn': {
-              const rootState = sbp('state/vuex/state')
-              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
-            }
+          const rootState = sbp('state/vuex/state')
+          const { contractID, data: value } = data
+
+          if (key === KV_KEYS.LAST_LOGGED_IN && value) {
+            Vue.set(rootState.lastLoggedIn, contractID, value)
+          } else if (key === KV_KEYS.UNREAD_MESSAGES && value) {
+            sbp('state/vuex/commit', 'setUnreadMessages', value)
           }
         }
       }
@@ -524,6 +531,9 @@ async function startApp () {
         sbp('chelonia.persistentActions/configure', { databaseKey })
         await sbp('chelonia.persistentActions/load')
         */
+
+        // NOTE: should set IdleVue plugin here because state could be replaced while logging in
+        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         const state = sbp('state/vuex/state')
@@ -659,7 +669,7 @@ async function startApp () {
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
           // TODO: need to remove the '|| []' after we release 0.2.*
-          .map(cId => (this.ourUnreadMessages[cId].messages || []).length)
+          .map(cId => (this.ourUnreadMessages[cId].unreadMessages || []).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {

@@ -163,7 +163,7 @@ export function leaveChatRoom (contractID: string) {
     return
   }
 
-  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomID: contractID })
+  sbp('gi.actions/identity/deleteChatRoomUnreadMessages', { contractID })
   sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
