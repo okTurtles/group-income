@@ -254,7 +254,6 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     cy.giRedirectToGroupChat()
     sendMessage('Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
-    cy.getByDT('dashboard').click()
   })
 
   it('user1 checks two mentions for himself', () => {

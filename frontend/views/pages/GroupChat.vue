@@ -59,6 +59,14 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
   template(#description='' v-if='!isDirectMessage()')
     .c-header-description
+      span.c-pin-wrapper(
+        data-test='numberOfPinnedMessages'
+        v-if='pinnedMessages.length'
+        @click='showPinnedMessages($event)'
+      )
+        i.icon-thumbtack
+        i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
+        | ∙
       i18n.is-unstyled.c-link(
         tag='button'
         @click='openModal("ChatMembersAllModal")'
@@ -83,14 +91,6 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
           data-test='updateDescription'
           @click='editDescription'
         ) Add description
-    .c-header-shortcuts
-      span.c-pin-wrapper(
-        data-test='numberOfPinnedMessages'
-        v-if='pinnedMessages.length'
-        @click='showPinnedMessages($event)'
-      )
-        i.icon-thumbtack
-        i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
 
   template(#sidebar='{ toggle }')
     chat-nav
@@ -375,22 +375,12 @@ export default ({
   .is-unstyled {
     margin: 0 0.2rem;
   }
-}
-
-.c-header-shortcuts {
-  display: none;
-  padding: 0 0.2rem;
-
-  @include desktop {
-    display: block;
-    margin-top: -0.375rem;
-  }
 
   .c-pin-wrapper {
     cursor: pointer;
 
     span {
-      margin-left: 0.25rem;
+      margin: 0 0.25rem;
     }
   }
 }
