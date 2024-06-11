@@ -51,10 +51,9 @@ if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
 const CONTRACTS_VERSION = packageJSON.contractsVersion
-// In production, append a timestamp so that browsers will detect a new version
+// In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-// TODO: get rid of this timestamp and just bump the package version when necessary.
-const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Date().toISOString()}` : '')
+const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
