@@ -26,3 +26,8 @@ export const TextObjectType = {
   MemberMention: 'MEMBER_MENTION',
   ChannelMention: 'CHANNEL_MENTION'
 }
+
+export const KV_KEYS = {
+  UNREAD_MESSAGES: 'unreadMessages',
+  LAST_LOGGED_IN: 'lastLoggedIn'
+}

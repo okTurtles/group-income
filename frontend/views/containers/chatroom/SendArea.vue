@@ -512,6 +512,8 @@ export default ({
           }
 
           e.preventDefault()
+        } else if (!nChoices && e.keyCode === caretKeyCodes.Esc) {
+          this.cancelEditing()
         } else {
           this.endMention()
         }
