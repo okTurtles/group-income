@@ -23,40 +23,39 @@ const RenderMessageWithMarkdown: any = {
 
     // Turns a dom tree object structure into the equivalent recursive createElement(...) call structure.
     const recursiveCall = (entry: any): any => {
-      if (entry.tagName === 'ROUTER') {
+      if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
-        const route = entry.attributes.route && JSON.parse(entry.attributes.route)
-        const href = route && this.$router.resolve(route).href
-        return createElement(
-          'a',
-          {
-            class: 'link',
-            attrs: {
-              href
-            },
-            on: {
-              click: (e) => {
-                route && this.$router.push(route)
-                e?.preventDefault()
-              },
-              touchhold: (e) => {
-                href && sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, href)
-                e?.preventDefault()
+        // NOTE: this ROUTER entry is temporary one which is created
+        //       by makeInAppLinkElement function from markdown-utils.js
+        const isRouter = entry.tagName === 'ROUTER'
+
+        const routerOptions = {}
+        if (isRouter) {
+          routerOptions.route = entry.attributes.route && JSON.parse(entry.attributes.route)
+          routerOptions.href = routerOptions.route && this.$router.resolve(routerOptions.route).href
+        }
+
+        const elName =  isRouter ? 'a' : entry.tagName.toLowerCase()
+        const opts = isRouter
+          ? {
+              class: 'link',
+              attrs: { href: routerOptions.href },
+              on: {
+                click: (e) => {
+                  routerOptions.route && this.$router.push(routerOptions.route)
+                  e?.preventDefault()
+                },
+                touchhold: (e) => {
+                  routerOptions.href && sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, routerOptions.href)
+                  e?.preventDefault()
+                }
               }
             }
-          },
-          hasChildren
-            ? entry.children.map(child => recursiveCall(child))
-            : undefined
-        )
-      } else if (entry.tagName) {
-        const hasChildren = Array.isArray(entry.children)
+          : { attrs: entry.attributes || {} }
 
         return createElement(
-          entry.tagName.toLowerCase(),
-          {
-            attrs: entry.attributes || {}
-          },
+          elName,
+          opts,
           hasChildren
             ? entry.children.map(child => recursiveCall(child))
             : undefined

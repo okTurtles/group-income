@@ -3,6 +3,7 @@ import { marked } from 'marked'
 import { validateURL } from './misc.js'
 import { TextObjectType } from '~/frontend/utils/constants.js'
 
+// NOTE: this function could be used to create a temporary string for in-app link element
 export const makeInAppLinkElement = (data?: Object): {
   prefix: string, suffix: string
 } => {
