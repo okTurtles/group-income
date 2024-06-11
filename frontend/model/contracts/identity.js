@@ -284,7 +284,7 @@ sbp('chelonia/defineContract', {
 
         Vue.delete(state.groups, groupContractID)
       },
-      sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID }) {
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
