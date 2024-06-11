@@ -297,7 +297,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it('user1 pins 3 messages and unpins 1 message', () => {
     pinMessage(13)
-    pinMessage(8)
+    pinMessage(10)
     pinMessage(12)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
@@ -310,7 +310,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-body>.c-pinned-message:first-child .c-pinned-message-content')
         .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
       cy.get('.c-body>.c-pinned-message:last-child .c-pinned-message-content')
-        .should('contain', 'Hi @all. Hope you are doing well.')
+        .should('contain', 'Welcome!')
     })
   })
 
