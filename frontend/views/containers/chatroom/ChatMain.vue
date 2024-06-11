@@ -182,12 +182,12 @@ const onChatScroll = function () {
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
     const height = this.$refs[msg.hash][0].$el.clientHeight
     if (offsetTop + height <= curScrollBottom) {
-      const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-      const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
-      if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
-        this.updateUnreadMessageHash({
+      const bottomMessageCreatedHeight = msg.height
+      const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
+      if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
+        this.updateReadUntilMessageHash({
           messageHash: msg.hash,
-          createdDate: msg.datetime
+          createdHeight: msg.height
         })
       }
       break
@@ -313,9 +313,7 @@ export default ({
       'isJoinedChatRoom',
       'isDirectMessage',
       'currentChatRoomScrollPosition',
-      'currentChatRoomReadUntil',
-      'currentChatVm',
-      'chatRoomUnreadMentions'
+      'currentChatRoomReadUntil'
     ]),
     currentUserAttr () {
       return {
@@ -621,7 +619,7 @@ export default ({
         contractID,
         data: {
           hash: message.hash,
-          createdDate: message.datetime,
+          createdHeight: message.height,
           text: newMessage
         }
       }).catch((e) => {
@@ -771,16 +769,11 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
-      let unreadPosition = null
-      if (this.currentChatRoomReadUntil && !this.currentChatRoomReadUntil.deletedDate) {
-        unreadPosition = this.currentChatRoomReadUntil.messageHash
-      } else if (this.chatRoomUnreadMentions(chatRoomID).length) {
-        unreadPosition = this.chatRoomUnreadMentions(chatRoomID)[0].messageHash
-      }
+      const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
       const {
         mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
       } = this.$route.query
-      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || unreadPosition
+      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       let events = []
       if (!this.ephemeral.messagesInitiated) {
         const shouldLoadMoreEvents = messageHashToScroll && this.messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
@@ -823,7 +816,7 @@ export default ({
 
       return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
     },
-    rerenderEvents (events) {
+    async rerenderEvents (events) {
       if (!this.latestEvents.length) {
         this.latestEvents = events
       } else if (events.length > 1) {
@@ -831,30 +824,29 @@ export default ({
       }
 
       const contractID = this.summary.chatRoomID
-      // This ensures that `this.latestEvents.push(event)` below happens in order
-      return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-        if (!this.checkEventSourceConsistency(contractID)) return
+      if (!this.checkEventSourceConsistency(contractID)) return
 
-        if (this.latestEvents.length > 0) {
-          const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-          let state = this.generateNewChatRoomState(true, entryHeight)
+      if (this.latestEvents.length > 0) {
+        const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
+        let state = this.generateNewChatRoomState(true, entryHeight)
 
-          for (const event of this.latestEvents) {
-            state = await sbp('chelonia/in/processMessage', event, state)
-          }
-          if (!this.checkEventSourceConsistency(contractID)) return
-          Vue.set(this.messageState, 'contract', state)
+        for (const event of this.latestEvents) {
+          state = await sbp('chelonia/in/processMessage', event, state)
         }
-      })
+        if (!this.checkEventSourceConsistency(contractID)) return
+        Vue.set(this.messageState, 'contract', state)
+      }
     },
     setInitMessages () {
       if (this.renderingChatRoomId === this.currentChatRoomId) {
         return
       }
+      // NOTE: since the state is initialized based on the renderingChatRoomId
+      //       need to set renderingChatRoomId here, before calling initializeState
+      this.renderingChatRoomId = this.currentChatRoomId
       this.initializeState()
       this.ephemeral.messagesInitiated = false
       this.ephemeral.unprocessedEvents = []
-      this.renderingChatRoomId = this.currentChatRoomId
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -862,10 +854,7 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        const checkByDate = (msg) => {
-          return new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime()
-        }
-        const index = this.messages.findIndex(msg => checkByDate(msg))
+        const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
         if (index >= 0) {
           // NOTE: When the user switches channel before the message is not fully processed,
           //       (in other words, until this.variant(msg) === 'sent')
@@ -883,10 +872,12 @@ export default ({
         }
       }
     },
-    updateUnreadMessageHash ({ messageHash, createdDate }) {
+    updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        sbp('state/vuex/commit', 'setChatRoomReadUntil', { chatRoomID, messageHash, createdDate })
+        sbp('gi.actions/identity/setChatRoomReadUntil', {
+          contractID: chatRoomID, messageHash, createdHeight
+        })
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
@@ -909,9 +900,9 @@ export default ({
       }
 
       this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
-      // TODO: The next line will _not_ get information about any inner signatures,
-      // which is used for determininng the sender of a message. Update with
-      // another call to GIMessage to get signature information
+        // TODO: The next line will _not_ get information about any inner signatures,
+        // which is used for determininng the sender of a message. Update with
+        // another call to GIMessage to get signature information
         const value = message.decryptedValue()
         if (!value) throw new Error('Unable to decrypt message')
 
@@ -968,8 +959,8 @@ export default ({
           }
 
           if (addedOrDeleted === 'DELETED') {
-          // NOTE: Message will be deleted in processMessage function
-          //       but need to make animation to delete it, probably here
+            // NOTE: Message will be deleted in processMessage function
+            //       but need to make animation to delete it, probably here
             const messageHash = value.data.hash
             const msgIndex = findMessageIdx(messageHash, this.messages)
             if (msgIndex !== -1) {
@@ -999,9 +990,9 @@ export default ({
                 this.updateScroll()
               } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]
-                this.updateUnreadMessageHash({
+                this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
-                  createdDate: msg.datetime
+                  createdHeight: msg.height
                 })
               }
             }
@@ -1035,10 +1026,12 @@ export default ({
         return
       }
       const chatRoomID = this.currentChatRoomId
-      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
+        // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
         if (!this.checkEventSourceConsistency(chatRoomID)) return
 
-        this.renderMoreMessages().then(completed => {
+        try {
+          const completed = await this.renderMoreMessages()
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
@@ -1047,23 +1040,22 @@ export default ({
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
               const msg = this.messages[this.messages.length - 1]
               if (msg) {
-                this.updateUnreadMessageHash({
+                this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
-                  createdDate: msg.datetime
+                  createdHeight: msg.height
                 })
               }
             }
           } else if (completed === false) {
             $state.loaded()
           }
-          if (completed !== undefined) {
+          if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
-            this.listenChatRoomActions(chatRoomID)
           }
-        }).catch(e => {
+        } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
-        })
+        }
       })
     },
     onChatScroll () {
