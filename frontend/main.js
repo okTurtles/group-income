@@ -533,7 +533,8 @@ async function startApp () {
         */
 
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
-        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
+        if (isNaN(IdleVue)) console.debug('TODO: This needs to be readded, but it results in an unhandled exception (Cannot set property \'isIdle\' of undefined)')
+        // Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         const state = sbp('state/vuex/state')

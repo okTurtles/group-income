@@ -48,7 +48,7 @@ function createNotificationData (
 }
 
 async function messageReceivePostEffect ({
-  contractID, messageHash, datetime, text,
+  contractID, messageHash, height, datetime, text,
   isDMOrMention, messageType, memberID, chatRoomName
 }: {
   contractID: string,
@@ -198,7 +198,7 @@ sbp('chelonia/defineContract', {
         )
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
           const memberID = data.memberID || innerSigningContractID
@@ -207,29 +207,22 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const rootGetters = sbp('state/vuex/getters')
-          const loggedIn = sbp('state/vuex/state').loggedIn
+          const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
-          // await setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-
-          if (memberID === loggedIn.identityContractID) {
+          if (memberID === identityContractID) {
             sbp('gi.actions/identity/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
 
             // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(state.members).filter((id) =>
-              id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]
-            )
-            sbp('chelonia/contract/sync', profileIds).catch((e) => {
+            const profileIds = Object.keys(state.members)
+            sbp('chelonia/contract/retain', profileIds).catch((e) => {
               console.error('Error while syncing other members\' contracts at chatroom join', e)
             })
           } else {
-            if (!rootGetters.ourContactProfilesById[memberID]) {
-              sbp('chelonia/contract/sync', memberID).catch((e) => {
-                console.error(`Error while syncing new memberID's contract ${memberID}`, e)
-              })
-            }
+            sbp('chelonia/contract/retain', memberID).catch((e) => {
+              console.error(`Error while syncing new memberID's contract ${memberID}`, e)
+            })
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)
@@ -287,6 +280,15 @@ sbp('chelonia/defineContract', {
         }
 
         Vue.delete(state.members, memberID)
+
+        const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+        if (memberID === identityContractID) {
+          sbp('chelonia/contract/release', Object.keys(state.members))
+        } else {
+          // NOTE: Don't call release as shown below, as this will remove that
+          // member's profile
+          // // sbp('chelonia/contract/release', memberID)
+        }
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for leaving in direct messages
@@ -346,11 +348,12 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.members, memberID)
         }
       },
-      sideEffect ({ contractID }) {
+      sideEffect ({ contractID }, { state }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
         leaveChatRoom(contractID)
+        sbp('chelonia/contract/release', Object.keys(state.members))
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
         })

@@ -857,6 +857,8 @@ export default ({
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         sbp('gi.actions/identity/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
+        }).catch((e) => {
+          console.error('[ChatMain.vue] updateReadUntilMessageHash error', e)
         })
       }
     },
