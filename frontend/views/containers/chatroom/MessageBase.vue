@@ -103,6 +103,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
@@ -173,6 +174,7 @@ export default ({
     shouldRenderMarkdown: Boolean
   },
   computed: {
+    ...mapGetters(['userDisplayNameFromID']),
     hasAttachments () {
       return Boolean(this.attachments?.length)
     },
