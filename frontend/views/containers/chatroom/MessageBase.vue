@@ -8,7 +8,7 @@
   .c-pinned-wrapper(v-if='isAlreadyPinned')
     .c-pinned-icon
       i.icon-thumbtack
-    i18n(:args='{ user: pinnedUserName }') Pinned by {user}
+    span(v-safe-html='pinLabel')
 
   .c-message-wrapper
     slot(name='image')
@@ -120,7 +120,7 @@ import {
   MESSAGE_VARIANTS
 } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
-import { L } from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'MessageBase',
@@ -189,6 +189,11 @@ export default ({
         return this.userDisplayNameFromID(this.pinnedBy)
       }
       return ''
+    },
+    pinLabel () {
+      return this.isAlreadyPinned
+        ? L('Pinned by {strong_}{user}{_strong}', { user: this.pinnedUserName, ...LTags('strong') })
+        : ''
     }
   },
   methods: {
