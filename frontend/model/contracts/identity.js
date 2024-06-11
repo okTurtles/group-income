@@ -87,7 +87,7 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/identity': {
-      validate: (data, { state }) => {
+      validate: (data) => {
         objectMaybeOf({
           attributes: attributesType
         })(data)
@@ -153,7 +153,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/createDirectMessage': {
-      validate: (data, { state, getters }) => {
+      validate: (data) => {
         objectOf({
           contractID: string // NOTE: chatroom contract id
         })(data)
@@ -164,7 +164,7 @@ sbp('chelonia/defineContract', {
           visible: true // NOTE: this attr is used to hide/show direct message
         })
       },
-      sideEffect ({ contractID, data }) {
+      sideEffect ({ data }) {
         sbp('chelonia/contract/retain', data.contractID).catch((e) => {
           console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
         })
@@ -199,7 +199,7 @@ sbp('chelonia/defineContract', {
         inviteSecret: string,
         creatorID: optional(boolean)
       }),
-      process ({ hash, data, meta }, { state }) {
+      process ({ hash, data }, { state }) {
         const { groupContractID, inviteSecret } = data
         if (has(state.groups, groupContractID)) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
@@ -275,7 +275,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         groupContractID: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data }, { state }) {
         const { groupContractID } = data
 
         if (!has(state.groups, groupContractID)) {
@@ -284,7 +284,7 @@ sbp('chelonia/defineContract', {
 
         Vue.delete(state.groups, groupContractID)
       },
-      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootState = sbp('state/vuex/state')
           const state = rootState[contractID]
@@ -352,7 +352,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/setDirectMessageVisibility': {
-      validate: (data, { state, getters }) => {
+      validate: (data, { getters }) => {
         objectOf({
           contractID: string,
           visible: boolean
@@ -361,7 +361,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Not existing direct message.'))
         }
       },
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
       }
     },
@@ -372,7 +372,7 @@ sbp('chelonia/defineContract', {
           token: string
         }))
       }),
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         for (const { manifestCid, token } of data.tokensByManifestCid) {
           Vue.set(state.fileDeleteTokens, manifestCid, token)
         }
@@ -382,7 +382,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         manifestCids: arrayOf(string)
       }),
-      process ({ data }, { state, getters }) {
+      process ({ data }, { state }) {
         for (const manifestCid of data.manifestCids) {
           Vue.delete(state.fileDeleteTokens, manifestCid)
         }
