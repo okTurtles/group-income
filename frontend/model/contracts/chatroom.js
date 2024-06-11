@@ -439,7 +439,7 @@ sbp('chelonia/defineContract', {
           fnEditMessage(state.pinnedMessages[pinnedMsgIndex])
         }
       },
-      sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
+      sideEffect ({ contractID, data, innerSigningContractID }, { getters }) {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
         if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -474,7 +474,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature((data, { state, meta, message: { innerSigningContractID }, contractID }) => {
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID }, contractID }) => {
         objectOf({
           hash: string,
           // NOTE: manifestCids of the attachments which belong to the message
@@ -494,7 +494,7 @@ sbp('chelonia/defineContract', {
           }
         }
       }),
-      process ({ data, meta, innerSigningContractID }, { state }) {
+      process ({ data, innerSigningContractID }, { state }) {
         const { hash } = data
         const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0) {
@@ -515,7 +515,7 @@ sbp('chelonia/defineContract', {
           state.pinnedMessages.splice(pinnedMsgIndex, 1)
         }
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }) {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
@@ -550,7 +550,7 @@ sbp('chelonia/defineContract', {
         manifestCid: string,
         messageSender: string
       })),
-      process ({ data, innerSigningContractID }, { state }) {
+      process ({ data }, { state }) {
         const { hash, manifestCid } = data
         const fnDeleteAttachment = (message) => {
           const oldAttachments = message.attachments
@@ -571,7 +571,7 @@ sbp('chelonia/defineContract', {
           fnDeleteAttachment(state.pinnedMessages[pinnedMsgIndex])
         }
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         const option = {
           shouldDeleteFile: me === innerSigningContractID,
