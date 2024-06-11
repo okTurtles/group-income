@@ -734,6 +734,7 @@ export default ({
         members: state.members || {},
         _vm: state._vm,
         messages: shouldClearMessages ? [] : state.messages,
+        pinnedMessages: [], // NOTE: We don't use this pinnedMessages, but initialize so that the process functions won't break
         renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },

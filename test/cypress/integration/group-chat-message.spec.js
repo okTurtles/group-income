@@ -248,17 +248,19 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
   })
 
-  it('user2 and user1 check mentions for themselves', () => {
+  it('user2 checks a mention for himself', () => {
     switchUser(user2)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
-    cy.getByDT('conversationWrapper').scrollTo('bottom')
+    sendMessage('Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
+  })
 
+  it('user1 checks two mentions for himself', () => {
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    cy.getByDT('conversationWrapper').scrollTo('bottom')
+    sendMessage(`Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
@@ -274,7 +276,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('attachments').attachFile(fileNames[1])
     sendMessage('Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
@@ -288,15 +290,15 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
     })
   })
 
   it('user1 pins 3 messages and unpins 1 message', () => {
-    pinMessage(11)
+    pinMessage(13)
     pinMessage(8)
-    pinMessage(10)
+    pinMessage(12)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
@@ -318,7 +320,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(10)').should('have.class', 'c-focused')
+      cy.get('.c-message:nth-child(12)').should('have.class', 'c-focused')
     })
   })
 
