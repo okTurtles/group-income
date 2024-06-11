@@ -252,11 +252,13 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     switchUser(user2)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
+    cy.getByDT('conversationWrapper').scrollTo('bottom')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
+    cy.getByDT('conversationWrapper').scrollTo('bottom')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
