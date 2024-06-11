@@ -21,7 +21,7 @@ const user3 = `user3${userId}`
 let invitationLinkAnyone
 let me
 
-describe('Send/edit/remove messages & add/remove emoticons inside group chat', () => {
+describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages inside group chat', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
     me = username
@@ -254,6 +254,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giRedirectToGroupChat()
     sendMessage('Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
+    cy.getByDT('dashboard').click()
   })
 
   it('user1 checks two mentions for himself', () => {
