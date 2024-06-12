@@ -28,17 +28,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giWaitUntilMessagesLoaded()
   }
 
-  function sendMessage (message) {
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').clear().type(`${message}{enter}`, { delay: 0 })
-      cy.get('textarea').should('be.empty')
-    })
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
-    })
-  }
-
   function replyMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-menu>.c-actions')
@@ -59,7 +48,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-replying-wrapper').should('exist')
     })
 
-    sendMessage(message)
+    cy.giSendMessage(me, message)
   }
 
   it(`user1 creates '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default and sends 15 messages`, () => {
@@ -79,7 +68,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
     for (let i = 0; i < 15; i++) {
-      sendMessage(`Text-${i + 1}`)
+      cy.giSendMessage(me, `Text-${i + 1}`)
     }
 
     cy.giLogout()
@@ -97,7 +86,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giRedirectToGroupChat()
 
     for (let i = 15; i < 30; i++) {
-      sendMessage(`Text-${i + 1}`)
+      cy.giSendMessage(me, `Text-${i + 1}`)
     }
 
     replyMessage(5, 'Three') // Message with 'Text-3'

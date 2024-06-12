@@ -259,9 +259,6 @@ Cypress.Commands.add('giLogin', (username, {
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
-  // NOTE: wait until all the queued invocations to run before logout
-  cy.giEmptyInvocationQueue()
-
   if (hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
   } else {
@@ -735,4 +732,15 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
   if (isGroupChannel) {
     cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
+})
+
+Cypress.Commands.add('giSendMessage', (sender, message) => {
+  cy.getByDT('messageInputWrapper').within(() => {
+    cy.get('textarea').clear().type(`${message}{enter}`)
+    cy.get('textarea').should('be.empty')
+  })
+  cy.getByDT('conversationWrapper').within(() => {
+    cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
+    cy.get('.c-message.sent:last-child .c-text').should('contain', message)
+  })
 })

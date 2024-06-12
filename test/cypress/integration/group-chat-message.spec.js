@@ -27,17 +27,6 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     me = username
   }
 
-  function sendMessage (message) {
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').clear().type(`${message}{enter}`)
-      cy.get('textarea').should('be.empty')
-    })
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
-    })
-  }
-
   function editMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
@@ -169,15 +158,15 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     me = user2
 
     cy.giRedirectToGroupChat()
-    sendMessage(`Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
-    sendMessage('Can we have a meeting this morning?')
+    cy.giSendMessage(me, `Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
+    cy.giSendMessage(me, 'Can we have a meeting this morning?')
   })
 
   it('user1 sends greetings and edits', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
-    sendMessage('Hi')
+    cy.giSendMessage(me, 'Hi')
 
     editMessage(7, `Hi ${user2}. I am fine thanks.`)
   })
@@ -244,15 +233,15 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     me = user3
     cy.giRedirectToGroupChat()
 
-    sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
-    sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
+    cy.giSendMessage(me, `I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
   })
 
   it('user2 checks a mention for himself', () => {
     switchUser(user2)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
-    sendMessage('Welcome!')
+    cy.giSendMessage(me, 'Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
@@ -260,7 +249,7 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    sendMessage(`Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
@@ -271,10 +260,10 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     ]
 
     cy.getByDT('attachments').attachFile(fileNames[0])
-    sendMessage('Sending three profile pictures which are designed by Apple. Cute, right?')
+    cy.giSendMessage(me, 'Sending three profile pictures which are designed by Apple. Cute, right?')
 
     cy.getByDT('attachments').attachFile(fileNames[1])
-    sendMessage('Sending two files; one is image, and the other is JSON file.')
+    cy.giSendMessage(me, 'Sending two files; one is image, and the other is JSON file.')
 
     cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {

@@ -511,6 +511,8 @@ export default (sbp('sbp/selectors/register', {
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+      // NOTE: wait for all the pending unreadMessages invocations to be finished
+      await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
       // reset will wait until we have processed any remaining actions
       await sbp('chelonia/reset', async () => {
         // some of the actions that reset waited for might have side-effects

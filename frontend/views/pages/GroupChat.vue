@@ -380,7 +380,8 @@ export default ({
     cursor: pointer;
 
     span {
-      margin: 0 0.25rem;
+      margin-left: 0.25rem;
+      margin-right: 0.2rem;
     }
   }
 }
