@@ -657,6 +657,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
       if (!description) {
         cy.getByDT('addDescription').should('exist')
       }
+    })
   })
 })
 
