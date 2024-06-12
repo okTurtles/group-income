@@ -967,8 +967,8 @@ export default ({
             if (msgIndex !== -1) {
               document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
-              // NOTE: waiting for the animation is done
-              //       it's duration is 500ms described in MessageBase.vue
+              // NOTE: waiting for the animation to be completed with the duration of 500ms
+              //       .c-disappeared class is defined in MessageBase.vue
               await delay(500)
               if (!this.checkEventSourceConsistency(contractID)) return
             }
