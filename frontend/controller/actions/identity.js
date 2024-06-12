@@ -463,8 +463,7 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-        // NOTE: users could notice that they leave the group by someone
-        // else when they log in
+        // NOTE: users could notice that they leave the group by someone else when they log in
         if (!state.currentGroupId) {
           const gId = Object.keys(state.contracts)
             .find(cID => has(state[identityContractID].groups, cID))
