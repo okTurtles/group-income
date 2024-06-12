@@ -40,7 +40,7 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
-import { showNavMixin } from './views/utils/misc.js'
+import { showNavMixin, checkCypressMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import { KV_KEYS } from './utils/constants.js'
 
@@ -273,7 +273,7 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    mixins: [notificationsMixin, showNavMixin],
+    mixins: [notificationsMixin, showNavMixin, checkCypressMixin],
     components: {
       AppStyles,
       BackgroundSounds,
@@ -433,9 +433,6 @@ async function startApp () {
           'js-reducedMotion': this.$store.state.reducedMotion,
           'is-dark-theme': this.$store.getters.isDarkTheme
         }
-      },
-      isInCypress () {
-        return !!window.Cypress
       }
     },
     methods: {

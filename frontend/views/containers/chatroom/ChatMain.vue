@@ -132,16 +132,13 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import {
-  MESSAGE_TYPES,
-  MESSAGE_VARIANTS,
-  CHATROOM_ACTIONS_PER_PAGE
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { showNavMixin } from '@view-utils/misc.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -241,6 +238,7 @@ export default ({
       required: true
     }
   },
+  mixins: [checkCypressMixin],
   data () {
     return {
       config: {
@@ -844,6 +842,10 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
+        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
+          return
+        }
         sbp('gi.actions/identity/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
@@ -946,8 +948,22 @@ export default ({
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
 
           if (!this.checkEventSourceConsistency(contractID)) return
-          Vue.set(this.messageState, 'contract', newContractState)
 
+          if (this.isInCypress) {
+            // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
+            //       we should save `readUntilMessageHash` before to update contract state.
+            //       This normally happens in Cypress, when user logs out just after sending a message.
+            const curMessages = newContractState.messages || []
+            if (addedOrDeleted === 'ADDED' && curMessages.length) {
+              const lastMessage = curMessages[curMessages.length - 1]
+              this.updateReadUntilMessageHash({
+                messageHash: lastMessage.hash,
+                createdHeight: lastMessage.height
+              })
+            }
+          }
+
+          Vue.set(this.messageState, 'contract', newContractState)
           this.latestEvents.push(serializedMessage)
 
           if (this.ephemeral.scrolledDistance < 50) {
@@ -957,7 +973,7 @@ export default ({
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable && this.messages.length) {
+              } else {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,

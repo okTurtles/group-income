@@ -259,9 +259,6 @@ Cypress.Commands.add('giLogin', (username, {
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
-  // NOTE: wait until all the queued invocations to run before logout
-  cy.giEmptyInvocationQueue()
-
   if (hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
   } else {
@@ -650,16 +647,22 @@ Cypress.Commands.add('giAddNewChatroom', ({
     })
   }
 
-  cy.giWaitUntilMessagesLoaded()
   cy.getByDT('channelName').should('contain', name)
+
+  cy.giWaitUntilMessagesLoaded()
   cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
-    cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
-    cy.get('.buttons').within(() => {
-      cy.getByDT('addMembers').should('exist')
-      if (!description) {
-        cy.getByDT('addDescription').should('exist')
-      }
+     cy.get('.infinite-status-prompt:nth-child(3)')
+      .invoke('attr', 'style')
+      .should('not.include', 'display: none')
+    cy.get('.infinite-status-prompt:nth-child(3)').within(() => {
+      cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
+      cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
+      cy.get('.buttons').within(() => {
+        cy.getByDT('addMembers').should('exist')
+        if (!description) {
+          cy.getByDT('addDescription').should('exist')
+        }
+      })
     })
   })
 })

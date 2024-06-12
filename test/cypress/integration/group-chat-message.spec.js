@@ -220,15 +220,19 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
   })
 
-  it('user2 and user1 check mentions for themselves', () => {
+  it('user2 checks a mention for himself', () => {
     switchUser(user2)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
+    sendMessage('Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
+  })
 
+  it('user1 checks two mentions for himself', () => {
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
+    sendMessage(`Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
