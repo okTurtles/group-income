@@ -335,7 +335,14 @@ export default ({
         return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
-    }
+    },
+    isInCypress () {
+      // NOTE: By only checking the window.Cypress, it's difficult to say that the app is running in Cypress
+      //       because anyone can access the window object.
+      //       in Cypress mode, sbp is exposed to window object (see main.js) so window.sbp can be compared
+      //       with our sbp object to verify if the app is in Cypress mode in real
+        return !!window.Cypress && window.sbp === sbp
+      }
   },
   methods: {
     proximityDate,
@@ -981,7 +988,7 @@ export default ({
 
           if (!this.checkEventSourceConsistency(contractID)) return
 
-          if (window.sbp === sbp && window.Cypress) {
+          if (this.isInCypress) {
             // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
             //       we should save `readUntilMessageHash` before to update contract state.
             //       This normally happens in Cypress, when user logs out just after sending a message.
