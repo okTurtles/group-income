@@ -884,6 +884,7 @@ export default ({
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
           return
         }
         sbp('gi.actions/identity/setChatRoomReadUntil', {
