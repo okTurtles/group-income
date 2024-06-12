@@ -463,7 +463,8 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-        // NOTE: users could notice that they leave the group by someone else when they log in
+        // NOTE: users could notice that they leave the group by someone
+        // else when they log in
         if (!state.currentGroupId) {
           const gId = Object.keys(state.contracts)
             .find(cID => has(state[identityContractID].groups, cID))
@@ -521,10 +522,6 @@ export default (sbp('sbp/selectors/register', {
         // TODO: We might not need this second await and 1-3 could be fine (i.e.,
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
-
-        // NOTE: wait for all the pending UNREAD_MESSAGES_QUEUE invocations to be finished
-        await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
-
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
 

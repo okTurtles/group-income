@@ -335,13 +335,6 @@ export default ({
         return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
-    },
-    isInCypress () {
-      // NOTE: By only checking the window.Cypress, it's difficult to say that the app is running in Cypress
-      //       because anyone can access the window object.
-      //       in Cypress mode, sbp is exposed to window object (see main.js) so window.sbp can be compared
-      //       with our sbp object to verify if the app is in Cypress mode in real
-      return !!window.Cypress && window.sbp === sbp
     }
   },
   methods: {
@@ -883,10 +876,6 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
-          return
-        }
         sbp('gi.actions/identity/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
@@ -988,20 +977,6 @@ export default ({
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
 
           if (!this.checkEventSourceConsistency(contractID)) return
-
-          if (this.isInCypress) {
-            // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
-            //       we should save `readUntilMessageHash` before to update contract state.
-            //       This normally happens in Cypress, when user logs out just after sending a message.
-            const curMessages = newContractState.messages || []
-            if (addedOrDeleted === 'ADDED' && curMessages.length) {
-              const lastMessage = curMessages[curMessages.length - 1]
-              this.updateReadUntilMessageHash({
-                messageHash: lastMessage.hash,
-                createdHeight: lastMessage.height
-              })
-            }
-          }
 
           Vue.set(this.messageState, 'contract', newContractState)
           this.latestEvents.push(serializedMessage)

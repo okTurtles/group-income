@@ -430,7 +430,7 @@ async function startApp () {
         }
       },
       isInCypress () {
-        return !!window.Cypress && window.sbp === sbp
+        return !!window.Cypress
       }
     },
     methods: {
