@@ -876,9 +876,11 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        sbp('gi.actions/identity/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight
-        })
+        if (this.currentChatRoomReadUntil.createdHeight < createdHeight) {
+          sbp('gi.actions/identity/setChatRoomReadUntil', {
+            contractID: chatRoomID, messageHash, createdHeight
+          })
+        }
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
@@ -970,7 +972,6 @@ export default ({
               // NOTE: waiting for the animation to be completed with the duration of 500ms
               //       .c-disappeared class is defined in MessageBase.vue
               await delay(500)
-              if (!this.checkEventSourceConsistency(contractID)) return
             }
           }
 
@@ -978,8 +979,20 @@ export default ({
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
 
           if (!this.checkEventSourceConsistency(contractID)) return
-          Vue.set(this.messageState, 'contract', newContractState)
 
+          if (window.Cypress) {
+            // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
+            //       we should save `readUntilMessageHash` before to update contract state.
+            //       This normally happens in Cypress, when user logs out just after sending a message.
+            const curMessages = newContractState.messages || []
+            const lastMessage = curMessages[curMessages.length - 1]
+            this.updateReadUntilMessageHash({
+              messageHash: lastMessage.hash,
+              createdHeight: lastMessage.height
+            })
+          }
+
+          Vue.set(this.messageState, 'contract', newContractState)
           this.latestEvents.push(serializedMessage)
 
           if (this.ephemeral.scrolledDistance < 50) {
@@ -989,7 +1002,7 @@ export default ({
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable && this.messages.length) {
+              } else {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,

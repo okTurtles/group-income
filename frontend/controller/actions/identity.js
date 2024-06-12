@@ -511,8 +511,6 @@ export default (sbp('sbp/selectors/register', {
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
-      // NOTE: wait for all the pending unreadMessages invocations to be finished
-      await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
       // reset will wait until we have processed any remaining actions
       await sbp('chelonia/reset', async () => {
         // some of the actions that reset waited for might have side-effects
@@ -524,6 +522,8 @@ export default (sbp('sbp/selectors/register', {
         // TODO: We might not need this second await and 1-3 could be fine (i.e.,
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+        // NOTE: wait for all the pending unreadMessages invocations to be finished
+        await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
 
