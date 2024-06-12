@@ -341,8 +341,8 @@ export default ({
       //       because anyone can access the window object.
       //       in Cypress mode, sbp is exposed to window object (see main.js) so window.sbp can be compared
       //       with our sbp object to verify if the app is in Cypress mode in real
-        return !!window.Cypress && window.sbp === sbp
-      }
+      return !!window.Cypress && window.sbp === sbp
+    }
   },
   methods: {
     proximityDate,
