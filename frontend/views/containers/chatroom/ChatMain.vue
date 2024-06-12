@@ -138,7 +138,7 @@ import { findMessageIdx, createMessage } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { showNavMixin } from '@view-utils/misc.js'
+import { checkCypressMixin } from '@view-utils/misc.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()

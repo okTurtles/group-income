@@ -651,7 +651,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
 
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('conversationWrapper').within(() => {
-     cy.get('.infinite-status-prompt:nth-child(3)')
+    cy.get('.infinite-status-prompt:nth-child(3)')
       .invoke('attr', 'style')
       .should('not.include', 'display: none')
     cy.get('.infinite-status-prompt:nth-child(3)').within(() => {
