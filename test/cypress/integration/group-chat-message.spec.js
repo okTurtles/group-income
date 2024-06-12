@@ -248,7 +248,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('attachments').attachFile(fileNames[1])
     sendMessage('Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
@@ -261,7 +261,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
     })
 
