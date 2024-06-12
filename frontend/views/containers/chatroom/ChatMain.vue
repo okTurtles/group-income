@@ -142,7 +142,7 @@ import {
 import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const collectEventStream = async (s: ReadableStream) => {
@@ -969,7 +969,7 @@ export default ({
 
               // NOTE: waiting for the animation is done
               //       it's duration is 500ms described in MessageBase.vue
-              await new Promise(resolve => setTimeout(resolve, 500))
+              await delay(500)
               if (!this.checkEventSourceConsistency(contractID)) return
             }
           }
