@@ -876,11 +876,12 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (this.currentChatRoomReadUntil.createdHeight < createdHeight) {
-          sbp('gi.actions/identity/setChatRoomReadUntil', {
-            contractID: chatRoomID, messageHash, createdHeight
-          })
+        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          return
         }
+        sbp('gi.actions/identity/setChatRoomReadUntil', {
+          contractID: chatRoomID, messageHash, createdHeight
+        })
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
@@ -980,16 +981,18 @@ export default ({
 
           if (!this.checkEventSourceConsistency(contractID)) return
 
-          if (window.Cypress) {
+          if (window.sbp === sbp && window.Cypress) {
             // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
             //       we should save `readUntilMessageHash` before to update contract state.
             //       This normally happens in Cypress, when user logs out just after sending a message.
             const curMessages = newContractState.messages || []
-            const lastMessage = curMessages[curMessages.length - 1]
-            this.updateReadUntilMessageHash({
-              messageHash: lastMessage.hash,
-              createdHeight: lastMessage.height
-            })
+            if (addedOrDeleted === 'ADDED' && curMessages.length) {
+              const lastMessage = curMessages[curMessages.length - 1]
+              this.updateReadUntilMessageHash({
+                messageHash: lastMessage.hash,
+                createdHeight: lastMessage.height
+              })
+            }
           }
 
           Vue.set(this.messageState, 'contract', newContractState)
