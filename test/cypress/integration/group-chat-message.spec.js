@@ -237,19 +237,15 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     cy.giSendMessage(me, `I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
   })
 
-  it('user2 checks a mention for himself', () => {
+  it('user2 and user1 check mentions for themselves', () => {
     switchUser(user2)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
-    cy.giSendMessage(me, 'Welcome!')
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
-  })
 
-  it('user1 checks two mentions for himself', () => {
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
   })
 
@@ -265,7 +261,7 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     cy.getByDT('attachments').attachFile(fileNames[1])
     cy.giSendMessage(me, 'Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
@@ -279,7 +275,7 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
     })
   })

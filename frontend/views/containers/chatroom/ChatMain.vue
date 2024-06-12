@@ -977,8 +977,8 @@ export default ({
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
 
           if (!this.checkEventSourceConsistency(contractID)) return
-
           Vue.set(this.messageState, 'contract', newContractState)
+
           this.latestEvents.push(serializedMessage)
 
           if (this.ephemeral.scrolledDistance < 50) {
@@ -988,7 +988,7 @@ export default ({
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
-              } else {
+              } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
