@@ -35,7 +35,7 @@ const RenderMessageWithMarkdown: any = {
           routerOptions.href = routerOptions.route && this.$router.resolve(routerOptions.route).href
         }
 
-        const elName =  isRouter ? 'a' : entry.tagName.toLowerCase()
+        const elName = isRouter ? 'a' : entry.tagName.toLowerCase()
         const opts = isRouter
           ? {
               class: 'link',
