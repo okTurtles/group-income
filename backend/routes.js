@@ -223,6 +223,42 @@ function (request, h) {
 }
 )
 
+// Development file upload route. The difference between this and /file is that
+// this endpoint bypasses checks in /file for well-formedness, and it also
+// doesn't set or read accounting information.
+// If accepted, the file will be stored in Chelonia DB.
+if (process.env.NODE_ENV === 'development') {
+  route.POST('/dev-file', {
+    payload: {
+      output: 'data',
+      multipart: true,
+      allow: 'multipart/form-data',
+      failAction: function (request, h, err) {
+        console.error('failAction error:', err)
+        return err
+      },
+      maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
+      timeout: 10 * SECOND // TODO: make this a configurable setting
+    }
+  }, async function (request, h) {
+    try {
+      console.log('FILE UPLOAD!')
+      const { hash, data } = request.payload
+      if (!hash) return Boom.badRequest('missing hash')
+      if (!data) return Boom.badRequest('missing data')
+      const ourHash = createCID(data)
+      if (ourHash !== hash) {
+        console.error(`hash(${hash}) != ourHash(${ourHash})`)
+        return Boom.badRequest('bad hash!')
+      }
+      await sbp('chelonia/db/set', hash, data)
+      return '/file/' + hash
+    } catch (err) {
+      return logger(err)
+    }
+  })
+}
+
 // File upload route.
 // If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
