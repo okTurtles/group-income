@@ -405,7 +405,7 @@ const getters = {
   profilesByGroup (state, getters) {
     return groupID => {
       const profiles = {}
-      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+      if (state.contracts[groupID]?.type !== 'gi.contracts/group') {
         return profiles
       }
       const groupProfiles = state[groupID].profiles || {}
