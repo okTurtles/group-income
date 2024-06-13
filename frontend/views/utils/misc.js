@@ -1,5 +1,4 @@
 'use strict'
-import sbp from '@sbp/sbp'
 import VueRouter from 'vue-router'
 
 export function logExceptNavigationDuplicated (err: Object) {
