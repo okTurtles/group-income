@@ -89,6 +89,7 @@
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @pin-to-channel='pinToChannel(message)'
+          @unpin-from-channel='unpinFromChannel(message.hash)'
           @delete-message='deleteMessage(message)'
           @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
           @add-emoticon='addEmoticon(message, $event)'

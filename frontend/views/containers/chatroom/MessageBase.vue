@@ -98,6 +98,7 @@
     @reply='reply'
     @retry='$emit("retry")'
     @pinToChannel='$emit("pin-to-channel")'
+    @unpinFromChannel='$emit("unpin-from-channel")'
   )
 </template>
 

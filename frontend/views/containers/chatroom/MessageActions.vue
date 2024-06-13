@@ -106,6 +106,15 @@ menu-parent(ref='menu')
         i.icon-thumbtack
         i18n Pin to channel
 
+      menu-item.is-icon-small(
+        v-if='isAlreadyPinned'
+        tag='button'
+        data-test='unpinMessage'
+        @click='action("unpinFromChannel", $event)'
+      )
+        i.icon-thumbtack
+        i18n Unpin from channel
+
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'

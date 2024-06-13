@@ -4,6 +4,7 @@ message-base.c-message-poll(
   @delete-message='deleteMessage'
   @add-emoticon='addEmoticon($event)'
   @pin-to-channel='$emit("pin-to-channel")'
+  @unpin-from-channel='$emit("unpin-from-channel")'
 )
   template(#body='')
     i18n.c-poll-created-sentence(tag='p') Created a new poll:

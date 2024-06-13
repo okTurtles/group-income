@@ -281,9 +281,9 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
   })
 
   it('user1 pins 3 messages and unpins 1 message', () => {
-    pinMessage(13)
+    pinMessage(11)
+    pinMessage(8)
     pinMessage(10)
-    pinMessage(12)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
@@ -295,7 +295,7 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
       cy.get('.c-body>.c-pinned-message:first-child .c-pinned-message-content')
         .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
       cy.get('.c-body>.c-pinned-message:last-child .c-pinned-message-content')
-        .should('contain', 'Welcome!')
+        .should('contain', 'Hi @all. Hope you are doing well.')
     })
   })
 
@@ -305,7 +305,7 @@ describe('Send/edit/remove messages & add/remove emoticons & pin/unpin messages 
     })
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(12)').should('have.class', 'c-focused')
+      cy.get('.c-message:nth-child(10)').should('have.class', 'c-focused')
     })
   })
 
