@@ -57,7 +57,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
             )
               i18n Delete channel
 
-  template(#description='' v-if='!isDirectMessage()')
+  template(#description='')
     .c-header-description
       span.c-pin-wrapper(
         data-test='numberOfPinnedMessages'
@@ -66,31 +66,30 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
       )
         i.icon-thumbtack
         i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
+      template(v-if='!isDirectMessage()')
         | ∙
-      i18n.is-unstyled.c-link(
-        tag='button'
-        @click='openModal("ChatMembersAllModal")'
-        :args='{ numMembers: summary.numberOfMembers  }'
-        data-test='channelMembers'
-      ) {numMembers} members
-      template(
-        v-if='summary.attributes.description || ourIdentityContractId === summary.attributes.creatorID'
-      )
-        | ∙
-        .is-unstyled(
-          v-if='summary.attributes.description'
-          :class='{"c-link": ourIdentityContractId === summary.attributes.creatorID}'
-          data-test='updateDescription'
-          @click='editDescription'
-        )
-          | {{ summary.attributes.description }}
-          i.icon-pencil-alt
-
         i18n.is-unstyled.c-link(
-          v-else
-          data-test='updateDescription'
-          @click='editDescription'
-        ) Add description
+          tag='button'
+          @click='openModal("ChatMembersAllModal")'
+          :args='{ numMembers: summary.numberOfMembers  }'
+          data-test='channelMembers'
+        ) {numMembers} members
+        template(v-if='summary.attributes.description || isChatRoomCreator')
+          | ∙
+          .is-unstyled(
+            v-if='summary.attributes.description'
+            :class='{"c-link": isChatRoomCreator}'
+            data-test='updateDescription'
+            @click='editDescription'
+          )
+            | {{ summary.attributes.description }}
+            i.icon-pencil-alt
+
+          i18n.is-unstyled.c-link(
+            v-else
+            data-test='updateDescription'
+            @click='editDescription'
+          ) Add description
 
   template(#sidebar='{ toggle }')
     chat-nav
@@ -195,6 +194,9 @@ export default ({
         return this.chatRoomPinnedMessages
       }
       return []
+    },
+    isChatRoomCreator () {
+      return this.ourIdentityContractId === this.summary.attributes.creatorID
     }
   },
   methods: {
