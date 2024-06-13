@@ -281,15 +281,6 @@ sbp('chelonia/defineContract', {
 
         Vue.delete(state.members, memberID)
 
-        const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
-        if (memberID === identityContractID) {
-          sbp('chelonia/contract/release', Object.keys(state.members))
-        } else {
-          // NOTE: Don't call release as shown below, as this will remove that
-          // member's profile
-          // // sbp('chelonia/contract/release', memberID)
-        }
-
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for leaving in direct messages
           return
@@ -324,6 +315,14 @@ sbp('chelonia/defineContract', {
           const state = await sbp('chelonia/contract/state', contractID)
           if (!state || !!state.members?.[data.memberID]) {
             return
+          }
+
+          if (itsMe) {
+            sbp('chelonia/contract/release', Object.keys(state.members))
+          } else {
+            // NOTE: Don't call release as shown below, as this will remove that
+            // member's profile
+            // // sbp('chelonia/contract/release', memberID)
           }
 
           if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {

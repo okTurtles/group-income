@@ -389,9 +389,26 @@ export default (sbp('sbp/selectors/register', {
   // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
   'chelonia/private/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
     const state = sbp(this.config.stateSelector)
+    console.error('@@@removeImmediately', contractID, this.subscriptionSet.has(contractID) ? 'subs' : 'not subs', { ...(state.contracts[contractID] || { 'empty': true }) })
+    /*
+    const isSubcribed = this.subscriptionSet.has(contractID)
+    if (!isSubcribed) {
+      if (params?.resync) return
+      const entryIdx = this.pending.findIndex((entry) => entry?.contractID === contractID)
+      if (entryIdx < 0) {
+        console.error('[chelonia/private/removeImmediately] Called on non-existing contract', { contractID })
+        return
+      }
+      Promise.reject(new Error('CALLED REMOVE ON PENDING ' + contractID + ';' + entryIdx))
+      this.pending.splice(entryIdx, 1)
+      delete this.ephemeralReferenceCount[contractID]
+      this.config.reactiveDel(state.contracts, contractID)
+      this.config.reactiveDel(state, contractID)
+    } */
+
     const contractName = state.contracts[contractID]?.type
     if (!contractName) {
-      console.error('[chelonia/private/removeImmediately] Called on non-existing contract', { contractID })
+      console.error('[chelonia/private/removeImmediately] Missing contract name for contract', { contractID })
       return
     }
 

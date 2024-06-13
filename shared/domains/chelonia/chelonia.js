@@ -20,7 +20,7 @@ import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDat
 import './internals.js'
 import './files.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
+import { buildShelterAuthorizationHeader, clearObject, checkCanBeGarbageCollected, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -804,7 +804,7 @@ export default (sbp('sbp/selectors/register', {
       ? isSyncing && this.currentSyncs[contractID].firstSync
       : isSyncing
   },
-  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
+  'chelonia/contract/remove': function (contractIDs: string | string[], check?: (contractID: string) => boolean): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -813,6 +813,14 @@ export default (sbp('sbp/selectors/register', {
       }
 
       return sbp('chelonia/private/queueEvent', contractID, () => {
+        // This allows us to double-check that the contract is meant to be
+        // removed, as circumstances could have changed from the time remove
+        // was called and this function is executed. For example, `/release`
+        // makes a synchronous check, but processing of other events since
+        // require this to be re-checked (in this case, for reference counts).
+        if (check && !check(contractID)) {
+          return
+        }
         const rootState = sbp(this.config.stateSelector)
         const fkContractIDs = Array.from(new Set(Object.values(rootState[contractID]?._vm?.authorizedKeys ?? {}).filter((k) => {
           return !!(k: any).foreignKey
@@ -839,6 +847,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/contract/retain': function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    console.error('@@@chelonia/contract/retain', listOfIds.join(' '), params)
     if (listOfIds.length === 0) return Promise.resolve()
     if (!params?.ephemeral) {
       const rootState = sbp(this.config.stateSelector)
@@ -867,6 +876,7 @@ export default (sbp('sbp/selectors/register', {
   // was monitoring.
   'chelonia/contract/release': function (contractIDs: string | string[], params?: { ephemeral?: boolean, try?: boolean }): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    console.error('@@@chelonia/contract/release', listOfIds.join(' '), params)
     const rootState = sbp(this.config.stateSelector)
     if (!params?.try) {
       if (!params?.ephemeral) {
@@ -900,16 +910,25 @@ export default (sbp('sbp/selectors/register', {
         })
       }
     }
+    // This function will be called twice. The first time, it provides a list of
+    // candidate contracts to remove. The second time, it confirms that the
+    // contract is safe to remove
+    const boundCheckCanBeGarbageCollected = checkCanBeGarbageCollected.bind(this)
+    const idsToRemove = listOfIds.filter(boundCheckCanBeGarbageCollected)
+    return idsToRemove.length ? sbp('chelonia/contract/remove', idsToRemove, boundCheckCanBeGarbageCollected) : Promise.resolve()
+    /*
+    if (!checkCanBeGarbageCollected) console.error('DUMMY REMOVEME')
     const idsToRemove = listOfIds.filter((id) => {
       return (
-        // Check persistent references
+      // Check persistent references
         (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
-        // Check ephemeral references
-        !has(this.ephemeralReferenceCount, id)) &&
-        // Check foreign keys (i.e., that no keys are being watched)
-        (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
+              // Check ephemeral references
+              !has(this.ephemeralReferenceCount, id)) &&
+              // Check foreign keys (i.e., that no keys are being watched)
+              (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
     })
     return idsToRemove.length ? sbp('chelonia/contract/remove', idsToRemove) : Promise.resolve()
+    */
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)

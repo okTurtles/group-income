@@ -786,3 +786,14 @@ export const clearObject = (o: Object) => {
 export const reactiveClearObject = (o: Object, fn: (o: Object, k: string | number) => any) => {
   Object.keys(o).forEach((k) => fn(o, k))
 }
+
+export const checkCanBeGarbageCollected = function (id: string) {
+  const rootState = sbp(this.config.stateSelector)
+  return (
+    // Check persistent references
+    (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
+    // Check ephemeral references
+    !has(this.ephemeralReferenceCount, id)) &&
+    // Check foreign keys (i.e., that no keys are being watched)
+    (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
+}

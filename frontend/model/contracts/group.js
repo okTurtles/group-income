@@ -1114,6 +1114,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/inviteAccept': {
       validate: actionRequireInnerSignature(objectOf({ reference: string })),
       process ({ data, meta, height, innerSigningContractID }, { state }) {
+        console.error('@@@@gi.contracts/group/inviteAccept[process]', innerSigningContractID, height)
         if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`)
         }
@@ -1128,10 +1129,12 @@ sbp('chelonia/defineContract', {
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       sideEffect ({ meta, contractID, height, innerSigningContractID }, { state }) {
+        console.error('@@@@gi.contracts/group/inviteAccept[sideEffect]', innerSigningContractID, height)
         const { loggedIn } = sbp('state/vuex/state')
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
+          console.error('@@@@gi.contracts/group/inviteAccept[sideEffect-post]', innerSigningContractID, height)
 
           if (!state) {
             console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`)
@@ -1152,6 +1155,7 @@ sbp('chelonia/defineContract', {
           // we're the person who just accepted the group invite
             // Add the group's CSK to our identity contract so that we can receive
             // DMs.
+            console.error('@@@@gi.contracts/group/inviteAccept[sideEffect-post] (us)', innerSigningContractID, height)
             await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
 
             const generalChatRoomId = state.generalChatRoomId
@@ -1182,9 +1186,8 @@ sbp('chelonia/defineContract', {
 
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(profiles)
-              .filter((id) =>
-                id !== loggedIn.identityContractID
-              )
+
+            console.error('@@@@gi.contracts/group/inviteAccept[sideEffect-post] (us) - subscriting to', innerSigningContractID, height, profileIds)
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
@@ -1895,10 +1898,7 @@ sbp('chelonia/defineContract', {
       })
 
       if (memberID === identityContractID) {
-        const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter(cID => cID !== identityContractID)
-        sbp('chelonia/contract/release', possiblyUselessContractIDs).catch(e =>
-          console.error('[gi.contracts/group/leaveGroup] Error calling release on all members', e)
-        )
+        const possiblyUselessContractIDs = Object.keys(state.profiles || {})
 
         sbp('gi.actions/identity/leaveGroup', {
           contractID: identityContractID,
@@ -1906,6 +1906,10 @@ sbp('chelonia/defineContract', {
             groupContractID: contractID,
             reference: state.profiles[identityContractID].reference
           }
+        }).then(() => {
+          sbp('chelonia/contract/release', possiblyUselessContractIDs).catch(e =>
+            console.error('[gi.contracts/group/leaveGroup] Error calling release on all members', e)
+          )
         }).catch(e => {
           console.warn(`[gi.contracts/group/leaveGroup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
         })

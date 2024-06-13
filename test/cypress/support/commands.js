@@ -219,7 +219,7 @@ Cypress.Commands.add('giLogin', (username, {
                 .then(() => {
                   const router = sbp('controller/router')
                   if (router.history.current.path === '/dashboard') return
-                  return router.push({ path: '/dashboard' })
+                  return router.push({ path: '/dashboard' }) // .catch(() => {})
                 })
             )
           })
