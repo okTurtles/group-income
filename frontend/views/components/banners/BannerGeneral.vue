@@ -1,31 +1,25 @@
 <template lang='pug'>
   transition-expand
     .l-banner(
-      v-if='shouldShowBanner'
+      v-if='ephemeral.message'
       data-test='bannerGeneral'
       :class='`is-${ephemeral.severity}`'
       aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
-      template(v-for='(objMessage, index) in messageObjects')
-        span.link(
-          v-if='isInAppLink(objMessage)'
-          @click='navigate(objMessage.route)'
-        ) {{ objMessage.text }}
-        span(v-else v-safe-html:a='objMessage.text')
+      render-message-with-markdown(:text='ephemeral.message')
 </template>
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
-import { filterOutInAppLinksFromSafeHTML } from '@view-utils/markdown-utils.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { TextObjectType } from '@utils/constants.js'
+import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 
 export default ({
   name: 'BannerGeneral',
   components: {
-    TransitionExpand
+    TransitionExpand,
+    RenderMessageWithMarkdown
   },
   data: () => ({
     ephemeral: {
@@ -34,17 +28,6 @@ export default ({
       severity: null
     }
   }),
-  computed: {
-    messageObjects () {
-      if (!this.ephemeral.message) {
-        return []
-      }
-      return filterOutInAppLinksFromSafeHTML(this.ephemeral.message)
-    },
-    shouldShowBanner () {
-      return Boolean(this.messageObjects.length)
-    }
-  },
   methods: {
     // To be used by parent. Example:
     // this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
@@ -87,18 +70,18 @@ export default ({
           clearBannerTimer = setTimeout(clearBanner, 1000 * seconds)
         }
       }, 1000 * seconds)
-    },
-    navigate (route) {
-      this.$router.push(route).catch(logExceptNavigationDuplicated)
-    },
-    isInAppLink (messageObject) {
-      return messageObject.type === TextObjectType.InAppLink
     }
   }
 }: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.l-banner {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
 
 .l-banner ::v-deep .link {
   color: inherit;

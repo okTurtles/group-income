@@ -1,17 +1,5 @@
-import sbp from '@sbp/sbp'
 import { marked } from 'marked'
 import { validateURL } from './misc.js'
-import { TextObjectType } from '~/frontend/utils/constants.js'
-
-// NOTE: this function could be used to create a temporary string for in-app link element
-export const makeInAppLinkElement = (data?: Object): {
-  prefix: string, suffix: string
-} => {
-  return {
-    prefix: `<router route='${JSON.stringify(data ?? {})}'>`,
-    suffix: '</router>'
-  }
-}
 
 export type MarkdownSegment = {
   type: 'code' | 'plain',
@@ -24,17 +12,11 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        const { isValid, url } = validateURL(token.href)
+        const { isValid } = validateURL(token.href)
         if (isValid) {
           const { href, text } = token
-          if (url.hostname === document.location.hostname) {
-            const path = href.split(sbp('controller/router').options.base)[1]
-            const { prefix, suffix } = makeInAppLinkElement({ path })
-            return `${prefix}${text}${suffix}`
-          } else {
-            // custom renderer for <a> tag for setting target='_blank' to the output HTML
-            return `<a class="link" href="${href}" target="_blank">${text}</a>`
-          }
+          // custom renderer for <a> tag for setting target='_blank' to the output HTML
+          return `<a class="link" href="${href}" target="_blank">${text}</a>`
         }
         return token.raw
       }
@@ -148,35 +130,6 @@ export function injectOrStripLink (
 
   return {
     output: before + segment + after, focusIndex
-  }
-}
-
-export const filterOutInAppLinksFromSafeHTML = (textInSafeHTML: string): Array<Object> => {
-  // NOTE: regular expressions we are using in this function
-  //       should be defined based on response of makeInAppLinkElement
-  const inAppLinkElements = textInSafeHTML.match(/<router route='([^]*?)<\/router>/g)
-
-  if (!inAppLinkElements) {
-    return [{ type: TextObjectType.Text, text: textInSafeHTML }]
-  } else {
-    const objInAppLinks = inAppLinkElements.map(ele => ({ ...JSON.parse(ele.split(/route='([^]*?)'>/g)[1]), raw: ele }))
-    const escapedLinksElements = inAppLinkElements.map(ele => ele.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'))
-    const splitPatternRegEx = new RegExp('(' + escapedLinksElements.join('|') + ')')
-    return textInSafeHTML.split(splitPatternRegEx).map(part => {
-      if (!part) {
-        return null
-      } else {
-        const index = objInAppLinks.findIndex(obj => obj.raw === part)
-        if (index >= 0) {
-          return {
-            type: TextObjectType.InAppLink,
-            text: part.split(/'>([^]*?)<\/router>/g)[1],
-            ...objInAppLinks[index]
-          }
-        }
-        return { type: TextObjectType.Text, text: part }
-      }
-    }).filter(item => !!item)
   }
 }
 

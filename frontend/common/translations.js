@@ -6,7 +6,6 @@ import Vue from 'vue'
 import dompurify from 'dompurify'
 import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import template from './stringTemplate.js'
-import { makeInAppLinkElement } from '~/frontend/views/utils/markdown-utils.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
@@ -133,26 +132,17 @@ export default function L (
 }
 
 export function LError (error: Error): {|reportError: any|} {
-  const options = {
-    errorMsg: error.message,
-    'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income/issues">',
-    '_a': '</a>'
-  }
+  let url = 'https://github.com/okTurtles/group-income/issues'
   if (sbp('state/vuex/state').loggedIn) {
-    const route = {
-      query: {
-        modal: 'UserSettingsModal',
-        tab: 'application-logs',
-        errorMsg: encodeURI(error.message)
-      }
-    }
-    const { prefix, suffix } = makeInAppLinkElement({ route })
-    options['a_'] = prefix
-    options['_a'] = suffix
+    const baseRoute = document.location.origin + sbp('controller/router').options.base
+    url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
   }
-
   return {
-    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', options)
+    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
+      errorMsg: error.message,
+      'a_': `<a class="link" target="_blank" href="${url}">`,
+      '_a': '</a>'
+    })
   }
 }
 

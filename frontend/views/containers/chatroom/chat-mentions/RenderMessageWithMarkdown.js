@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { validateURL } from '@view-utils/misc.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
@@ -25,18 +26,24 @@ const RenderMessageWithMarkdown: any = {
     const recursiveCall = (entry: any): any => {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
-        // NOTE: this ROUTER entry is temporary one which is created
-        //       by makeInAppLinkElement function from markdown-utils.js
-        const isRouter = entry.tagName === 'ROUTER'
 
-        const routerOptions = {}
-        if (isRouter) {
-          routerOptions.route = entry.attributes.route && JSON.parse(entry.attributes.route)
-          routerOptions.href = routerOptions.route && this.$router.resolve(routerOptions.route).href
+        const routerOptions = { isInAppRouter: false }
+        if (entry.tagName === 'A' && entry.attributes.href) {
+          const { href } = entry.attributes
+          const { url, isHttpValid } = validateURL(href)
+          if (isHttpValid && url.origin === document.location.origin) {
+            const path = url.pathname.split(this.$router.options.base)[1]
+            const query = {}
+            for (const [key, value] of url.searchParams) {
+              query[key] = value
+            }
+            routerOptions.route = { path, query }
+            routerOptions.href = this.$router.resolve(routerOptions.route).href
+            routerOptions.isInAppRouter = true
+          }
         }
 
-        const elName = isRouter ? 'a' : entry.tagName.toLowerCase()
-        const opts = isRouter
+        const opts = routerOptions.isInAppRouter
           ? {
               class: 'link',
               attrs: { href: routerOptions.href },
@@ -54,7 +61,7 @@ const RenderMessageWithMarkdown: any = {
           : { attrs: entry.attributes || {} }
 
         return createElement(
-          elName,
+          entry.tagName.toLowerCase(),
           opts,
           hasChildren
             ? entry.children.map(child => recursiveCall(child))
