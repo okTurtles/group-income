@@ -138,7 +138,6 @@ import { findMessageIdx, createMessage } from '@model/contracts/shared/functions
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { checkCypressMixin } from '@view-utils/misc.js'
 
 const collectEventStream = async (s: ReadableStream) => {
   const reader = s.getReader()
@@ -238,7 +237,6 @@ export default ({
       required: true
     }
   },
-  mixins: [checkCypressMixin],
   data () {
     return {
       config: {
@@ -948,20 +946,6 @@ export default ({
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
 
           if (!this.checkEventSourceConsistency(contractID)) return
-
-          if (this.isInCypress) {
-            // NOTE: When the user's actions are very quick, that can logout before to save `readUntilMessageHash`,
-            //       we should save `readUntilMessageHash` before to update contract state.
-            //       This normally happens in Cypress, when user logs out just after sending a message.
-            const curMessages = newContractState.messages || []
-            if (addedOrDeleted === 'ADDED' && curMessages.length) {
-              const lastMessage = curMessages[curMessages.length - 1]
-              this.updateReadUntilMessageHash({
-                messageHash: lastMessage.hash,
-                createdHeight: lastMessage.height
-              })
-            }
-          }
 
           Vue.set(this.messageState, 'contract', newContractState)
           this.latestEvents.push(serializedMessage)

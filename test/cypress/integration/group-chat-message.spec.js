@@ -14,14 +14,14 @@ function makeMentionFromUsername (username) {
 }
 
 const groupName = 'Dreamers'
+const additionalChannelName = 'bulgaria-hackathon'
 const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
-const user3 = `user3${userId}`
 let invitationLinkAnyone
 let me
 
-describe('Send/edit/remove messages & add/remove emoticons inside group chat', () => {
+describe('Send/edit/remove/reply messages & add/remove reactions inside group chat', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
     me = username
@@ -111,15 +111,50 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
   }
 
-  it(`user1 creats '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
+  function switchChannel (channelName) {
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul > li').each(($el, index, $list) => {
+        if ($el.text() === channelName) {
+          cy.wrap($el).click()
+          return false
+        }
+      })
+    })
+    cy.getByDT('channelName').should('contain', channelName)
+
+    cy.giWaitUntilMessagesLoaded()
+  }
+
+  function replyToMessage (nth, message) {
+    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-menu>.c-actions')
+        .invoke('attr', 'style', 'display: flex')
+        .invoke('show')
+        .scrollIntoView()
+        .should('be.visible')
+      cy.get('.c-menu>.c-actions button[aria-label="Reply"]').click({ force: true })
+      cy.get('.c-menu>.c-actions')
+        .should('be.visible')
+        .invoke('hide')
+        .should('be.hidden')
+    })
+    cy.get('.c-tooltip.is-active').invoke('hide')
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+      cy.get('.c-replying-wrapper').should('exist')
+    })
+
+    sendMessage(message)
+  }
+
+  it(`user1 creates '${groupName}' group and sends/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
     cy.visit('/')
     cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName, { bypassUI: true })
-    cy.giGetInvitationAnyone().then(url => {
-      invitationLinkAnyone = url
-    })
+
     cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     cy.getByDT('channelsList').within(() => {
@@ -127,10 +162,19 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
+    sendMessage(`Welcome to the ${groupName}!`)
+    sendMessage('We are going to make the world better!')
+    editMessage(4, 'We are helping each other to make the world better!')
+
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      invitationLinkAnyone = url
+    })
+
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName} group and sends greetings, asks to have meeting`, () => {
+  it(`user2 joins ${groupName} group and sends/deletes/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
@@ -141,102 +185,63 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     me = user2
 
     cy.giRedirectToGroupChat()
-    sendMessage(`Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
-    sendMessage('Can we have a meeting this morning?')
+    sendMessage('Oh, yes. I have joined the group now.')
+    deleteMessage(6, 4)
+    sendMessage('Anyone here?')
+    editMessage(6, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
-  it('user1 sends greetings and edits', () => {
-    switchUser(user1)
-    cy.giRedirectToGroupChat()
-
-    sendMessage('Hi')
-
-    editMessage(7, `Hi ${user2}. I am fine thanks.`)
-  })
-
-  it('user2 edits and deletes message', () => {
-    switchUser(user2)
-    cy.giRedirectToGroupChat()
-
-    editMessage(5, 'Can we have a meeting this evening?')
-
-    deleteMessage(4, 4)
-  })
-
-  it('user1 sees the edited message but he is not able to see the deleted message', () => {
-    switchUser(user1)
-    cy.giRedirectToGroupChat()
-
+  it('user2 sees totally 5 messages', () => {
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message').should('have.length', 4)
+      cy.get('.c-message').should('have.length', 5)
     })
 
     checkMessageBySender(0, user1, `Joined ${CHATROOM_GENERAL_NAME}`)
-    checkMessageBySender(1, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
-    checkMessageBySender(2, user2, 'Can we have a meeting this evening?')
-    checkMessageBySender(3, user1, `Hi ${user2}. I am fine thanks.`)
+    checkMessageBySender(1, user1, `Welcome to the ${groupName}!`)
+    checkMessageBySender(2, user1, 'We are helping each other to make the world better!')
+    checkMessageBySender(3, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
+    checkMessageBySender(4, user2, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
-  it('user1 adds 4 emojis and removes 1 emoji', () => {
+  it('user2 mentions user1 and adds/removes reactions to the message', () => {
+    sendMessage(`Hi ${makeMentionFromUsername(user1).me}. When is the best time for you to help me with learning more about this group?`)
+
     sendEmoticon(4, '+1', 1)
     sendEmoticon(4, 'joy', 2)
     sendEmoticon(4, 'grinning', 3)
 
-    sendEmoticon(5, 'joy', 1)
+    sendEmoticon(7, 'joy', 1)
 
     deleteEmotion(4, 2, 2)
   })
 
-  it('user2 sees the emojis user1 created and adds his emoji', () => {
-    switchUser(user2)
+  it('user1 sees the mentions and reactions which user2 created and adds his reaction', () => {
+    switchUser(user1)
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
+    sendMessage(`Hi ${makeMentionFromUsername(user2).me}. Anytime!`)
+    sendMessage(`Hi ${makeMentionFromUsername(user2).all}. I am always be with you. Message me anytime.`)
+    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:nth-child(4) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
     })
 
-    sendEmoticon(5, '+1', 2)
+    sendEmoticon(8, '+1', 2)
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
     })
-    cy.giLogout()
   })
 
-  it(`user3 joins ${groupName} group and mentions user1 and all`, () => {
-    cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: user3,
-      existingMemberUsername: user1,
-      groupName: groupName,
-      shouldLogoutAfter: false,
-      bypassUI: true
-    })
-    me = user3
-    cy.giRedirectToGroupChat()
-
-    sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
-    sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
-  })
-
-  it('user2 checks a mention for himself', () => {
+  it('user2 checks two mentions and sends/deletes attachments', () => {
     switchUser(user2)
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
-    cy.giRedirectToGroupChat()
-    sendMessage('Welcome!')
-    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
-  })
-
-  it('user1 checks two mentions for himself', () => {
-    switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    sendMessage(`Hi ${makeMentionFromUsername(user3).me}. Nice to see you here.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
-  })
 
-  it('user1 sends two messages with attachments, and deletes attachments', () => {
     const fileNames = [
       ['1.png', '2.png', '3.png'], // Prefix Path: cypress/fixtures/
       ['imageTest.png', 'test.json']
@@ -248,7 +253,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('attachments').attachFile(fileNames[1])
     sendMessage('Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
@@ -261,8 +266,74 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(12)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
+    })
+  })
+
+  it('user2 sends 20 messages and replies to a message too', () => {
+    for (let i = 1; i <= 20; i++) {
+      sendMessage(`Text-${i}`)
+    }
+
+    replyToMessage(4, 'Awesome!') // `Hi ${makeMentionFromUsername(user2).me}. Anytime!`
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().find('.c-who > span:first-child').should('contain', user2)
+      cy.get('.c-message').last().find('.c-text').should('contain', 'Awesome!')
+      cy.get('.c-message').last().should('be.visible').within(() => {
+        cy.get('.c-replying').should('exist').should('be.visible').click()
+      })
+
+      // HACK: scrollIntoView() should not be there
+      // But cy.get('.c-replying').click() doesn't scroll to the target message
+      // Because of this can not move forward to the next stages, so just used HACK
+      cy.get('.c-message:nth-child(4)').should('contain', 'We are helping each other to make the world better!').scrollIntoView().should('be.visible')
+      cy.get('.c-replying').should('not.be.visible')
+    })
+  })
+
+  it('user2 creates a new channel and checks how the scroll position is saved for each channel', () => {
+    cy.giAddNewChatroom({
+      name: additionalChannelName,
+      isPrivate: false,
+      bypassUI: true
+    })
+    cy.giCheckIfJoinedChatroom(additionalChannelName, me)
+
+    switchChannel(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.contains('We are helping each other to make the world better!').should('be.visible')
+    })
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('.c-jump-to-latest').should('exist').click()
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().should('be.visible')
+    })
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('.c-jump-to-latest').should('not.exist')
+    })
+  })
+
+  it('user2 checks how the infinite scroll works', () => {
+    switchChannel(additionalChannelName)
+    switchChannel(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.contains('Awesome!').should('be.visible')
+    })
+
+    cy.getByDT('conversationWrapper').scrollTo('top')
+    cy.giWaitUntilMessagesLoaded()
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:nth-child(2) .c-who > span:first-child').should('contain', user1)
+      cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
     cy.giLogout()
