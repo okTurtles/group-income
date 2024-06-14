@@ -23,11 +23,3 @@ export const showNavMixin = {
     }
   }
 }
-
-export const checkCypressMixin = {
-  computed: {
-    isInCypress (): boolean {
-      return !!window.Cypress
-    }
-  }
-}
