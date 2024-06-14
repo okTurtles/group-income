@@ -288,7 +288,10 @@ describe('Send/edit/remove/reply messages & add/remove reactions inside group ch
       // HACK: scrollIntoView() should not be there
       // But cy.get('.c-replying').click() doesn't scroll to the target message
       // Because of this can not move forward to the next stages, so just used HACK
-      cy.get('.c-message:nth-child(4)').should('contain', 'We are helping each other to make the world better!').scrollIntoView().should('be.visible')
+      cy.get('.c-message:nth-child(4)')
+        .should('contain', 'We are helping each other to make the world better!')
+        .scrollIntoView()
+        .should('be.visible')
       cy.get('.c-replying').should('not.be.visible')
     })
   })
