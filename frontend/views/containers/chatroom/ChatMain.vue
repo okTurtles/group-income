@@ -132,11 +132,7 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import {
-  MESSAGE_TYPES,
-  MESSAGE_VARIANTS,
-  CHATROOM_ACTIONS_PER_PAGE
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
@@ -844,6 +840,10 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
+        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
+          return
+        }
         sbp('gi.actions/identity/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
@@ -957,7 +957,7 @@ export default ({
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable && this.messages.length) {
+              } else {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
