@@ -191,19 +191,17 @@ sbp('sbp/selectors/register', {
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture': captureLogsPause,
   'appLogs/startCapture': captureLogsStart,
-  'appLogs/logServer': process.env.NODE_ENV !== 'development'
+  'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
     ? noop
     : function (level, string) {
-      if (window.location.href.startsWith('https://gi')) {
-        fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ level, value: string })
-        }).catch(e => {
-          originalConsole.error(`[captureLogs] '${e.message}' attempting to log [${level}] to server:`, string)
-        })
-      }
+      fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ level, value: string })
+      }).catch(e => {
+        originalConsole.error(`[captureLogs] '${e.message}' attempting to log [${level}] to server:`, string)
+      })
     }
 })
