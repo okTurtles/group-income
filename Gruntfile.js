@@ -51,10 +51,9 @@ if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
 const CONTRACTS_VERSION = packageJSON.contractsVersion
-// In production, append a timestamp so that browsers will detect a new version
+// In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-// TODO: get rid of this timestamp and just bump the package version when necessary.
-const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Date().toISOString()}` : '')
+const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
@@ -134,7 +133,16 @@ module.exports = (grunt) => {
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
     grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-    await access(dest).catch(async () => await mkdir(dest))
+    // If we're writing to a URL, don't try to create a directory
+    try {
+      const url = new URL(dest)
+      // Likely a drive letter
+      if (url.protocol.length < 3) {
+        throw new Error('Not a URL')
+      }
+    } catch {
+      await access(dest).catch(async () => await mkdir(dest))
+    }
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
