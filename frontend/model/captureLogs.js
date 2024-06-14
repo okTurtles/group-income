@@ -194,6 +194,7 @@ sbp('sbp/selectors/register', {
   'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
     ? noop
     : function (level, stringifyMe) {
+      if (level === 'debug') return // comment out to send much more log info
       const string = JSON.stringify(stringifyMe)
       fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
         method: 'POST',
