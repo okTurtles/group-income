@@ -424,9 +424,9 @@ sbp('chelonia/defineContract', {
           Vue.set(message, 'updatedDate', meta.createdDate)
 
           if (state.renderingContext && message.pending) {
-              // NOTE: 'pending' message attribute is not the original message attribute
-              //       and it is only set and used in Chat page
-              Vue.delete(message, 'pending')
+            // NOTE: 'pending' message attribute is not the original message attribute
+            //       and it is only set and used in Chat page
+            Vue.delete(message, 'pending')
           }
         }
 
@@ -493,16 +493,15 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, innerSigningContractID }, { state }) {
-        const { hash } = data
         [state.messages, state.pinnedMessages].forEach(messageArray => {
-          const msgIndex = findMessageIdx(hash, messageArray)
+          const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
             messageArray.splice(msgIndex, 1)
           }
 
           // filter replied messages and check if the current message is original
           for (const message of messageArray) {
-            if (message.replyingMessage?.hash === hash) {
+            if (message.replyingMessage?.hash === data.hash) {
               message.replyingMessage.hash = null
               message.replyingMessage.text = L('Original message was removed by {user}', {
                 user: makeMentionFromUserID(innerSigningContractID).me
@@ -547,19 +546,18 @@ sbp('chelonia/defineContract', {
         messageSender: string
       })),
       process ({ data }, { state }) {
-        const { hash, manifestCid } = data
         const fnDeleteAttachment = (message) => {
           const oldAttachments = message.attachments
           if (Array.isArray(oldAttachments)) {
             const newAttachments = oldAttachments.filter(attachment => {
-              return attachment.downloadData.manifestCid !== manifestCid
+              return attachment.downloadData.manifestCid !== data.manifestCid
             })
             Vue.set(message, 'attachments', newAttachments)
           }
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
-          const msgIndex = findMessageIdx(hash, messageArray)
+          const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
             fnDeleteAttachment(messageArray[msgIndex])
           }
@@ -624,6 +622,8 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
+        let shouldHideVoters = false
+
         const fnVoteOnPoll = (message) => {
           const myVotes = data.votes
           const pollData = message.pollData
@@ -634,16 +634,15 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+
+          // TODO: https://github.com/okTurtles/group-income/issues/2010
+          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
-        let shouldHideVoters = false
         [state.messages, state.pinnedMessages].forEach(messageArray => {
           const msgIndex = findMessageIdx(hash, messageArray)
           if (msgIndex >= 0) {
             fnVoteOnPoll(messageArray[msgIndex])
-
-            // TODO: https://github.com/okTurtles/group-income/issues/2010
-            shouldHideVoters = shouldHideVoters || messageArray[msgIndex].pollData.hideVoters
           }
         })
 
@@ -667,6 +666,8 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
+        let shouldHideVoters = false
+
         const fnChangeVoteOnPoll = (message) => {
           const myUpdatedVotes = data.votes
           const pollData = message.pollData
@@ -682,16 +683,15 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+
+          // TODO: https://github.com/okTurtles/group-income/issues/2010
+          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
-        let shouldHideVoters = false
         [state.messages, state.pinnedMessages].forEach(messageArray => {
           const msgIndex = findMessageIdx(hash, messageArray)
           if (msgIndex >= 0) {
             fnChangeVoteOnPoll(messageArray[msgIndex])
-
-            // TODO: https://github.com/okTurtles/group-income/issues/2010
-            shouldHideVoters = shouldHideVoters || messageArray[msgIndex].pollData.hideVoters
           }
         })
 
@@ -718,7 +718,7 @@ sbp('chelonia/defineContract', {
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
-          const msgIndex = findMessageIdx(hash, messageArray)
+          const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
             fnClosePoll(messageArray[msgIndex])
           }
@@ -744,13 +744,12 @@ sbp('chelonia/defineContract', {
         hash: string
       })),
       process ({ data }, { state }) {
-        const { hash } = data
-        const pinnedMsgIndex = findMessageIdx(hash, state.pinnedMessages)
+        const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
         if (pinnedMsgIndex >= 0) {
           state.pinnedMessages.splice(pinnedMsgIndex, 1)
         }
 
-        const msgIndex = findMessageIdx(hash, state.messages)
+        const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           Vue.delete(state.messages[msgIndex], 'pinnedBy')
         }
