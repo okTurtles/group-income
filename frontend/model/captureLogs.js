@@ -84,7 +84,7 @@ function captureLogEntry (type, ...args) {
   // The reason this works is because the entire `sbp` domain is blacklisted
   // from being logged in main.js.
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
-  sbp('sbp/selectors/fn', 'appLogs/logServer')(type, JSON.stringify(entry.msg))
+  sbp('sbp/selectors/fn', 'appLogs/logServer')(type, entry.msg)
 }
 
 function captureLogsStart (userLogged: string) {
@@ -193,7 +193,8 @@ sbp('sbp/selectors/register', {
   'appLogs/startCapture': captureLogsStart,
   'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
     ? noop
-    : function (level, string) {
+    : function (level, stringifyMe) {
+      const string = JSON.stringify(stringifyMe)
       fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
         method: 'POST',
         headers: {
