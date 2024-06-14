@@ -782,18 +782,22 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/fetchChatRoomUnreadMessages': async () => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
+    if (ourIdentityContractId) {
+      return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
+    }
   },
   'gi.actions/identity/saveChatRoomUnreadMessages': ({ contractID, data, onconflict }: {
     contractID: string, data: Object, onconflict?: Function
   }) => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
 
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
-      onconflict
-    })
+    if (ourIdentityContractId) {
+      return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+        onconflict
+      })
+    }
   },
   'gi.actions/identity/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
