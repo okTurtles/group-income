@@ -788,6 +788,7 @@ export default (sbp('sbp/selectors/register', {
     contractID: string, data: Object, onconflict?: Function
   }) => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
+
     return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
       signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
