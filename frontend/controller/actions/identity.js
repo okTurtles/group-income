@@ -306,6 +306,10 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
+      if (Math.random() < 10) {
+        throw new GIErrorUIRuntimeError('Random error thrown by Sebin')
+      }
+
       sbp('appLogs/startCapture', identityContractID)
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
@@ -484,12 +488,17 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
-      alert(humanErr)
+      const promptOptions = {
+        heading: L('Login error'),
+        question: L('{br_}Error details: {err}.', { err: humanErr, ...LTags() }),
+        primaryButton: L('Close')
+      }
+      await sbp('gi.ui/prompt', promptOptions)
+
       await sbp('gi.actions/identity/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })
-      throw new GIErrorUIRuntimeError(humanErr)
     }
   },
   'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {
