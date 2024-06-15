@@ -294,6 +294,16 @@ export default (sbp('sbp/selectors/register', {
 
     const password = passwordFn?.()
     const transientSecretKeys = []
+    const displayGeneralLoginFailPrompt = (errMsg: any) => {
+      const promptOptions = {
+        heading: L('Failed to login'),
+        question: L('Error details:{br_}{err}', { err: errMsg, ...LTags() }),
+        primaryButton: L('Close')
+      }
+
+      return sbp('gi.ui/prompt', promptOptions)
+    }
+
     if (password) {
       try {
         const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
@@ -306,10 +316,6 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      if (Math.random() < 10) {
-        throw new GIErrorUIRuntimeError('Random error thrown by Sebin')
-      }
-
       sbp('appLogs/startCapture', identityContractID)
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
@@ -410,8 +416,10 @@ export default (sbp('sbp/selectors/register', {
           return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
         }))
       } catch (err) {
-        alert(L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' }))
         console.error('Error during contract sync upon login (syncing all contractIDs)', err)
+
+        const humanErr = L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' })
+        throw new GIErrorUIRuntimeError(humanErr)
       }
 
       try {
@@ -451,8 +459,9 @@ export default (sbp('sbp/selectors/register', {
                 innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
                 encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
               }).catch((e) => {
-                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
                 console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
+                const humanErr = L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' })
+                throw new GIErrorUIRuntimeError(humanErr)
               })
           ))
         )
@@ -478,8 +487,8 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       } catch (e) {
-        alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
+        throw new GIErrorUIRuntimeError(e?.message || L('unkown error'))
       } finally {
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }
@@ -487,13 +496,8 @@ export default (sbp('sbp/selectors/register', {
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
-      const humanErr = L('Failed to login: {reportError}', LError(e))
-      const promptOptions = {
-        heading: L('Login error'),
-        question: L('{br_}Error details: {err}.', { err: humanErr, ...LTags() }),
-        primaryButton: L('Close')
-      }
-      await sbp('gi.ui/prompt', promptOptions)
+      const humanErr = L('{reportError}', LError(e))
+      await displayGeneralLoginFailPrompt(humanErr)
 
       await sbp('gi.actions/identity/logout')
         .catch((e) => {
