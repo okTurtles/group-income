@@ -67,7 +67,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
         i.icon-thumbtack
         i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
       template(v-if='!isDirectMessage()')
-        | ∙
+        span(v-if='pinnedMessages.length') ∙
         i18n.is-unstyled.c-link(
           tag='button'
           @click='openModal("ChatMembersAllModal")'

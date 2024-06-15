@@ -49,8 +49,8 @@
       button.is-icon-small
         i.icon-arrow-down
 
-    .c-replying-wrapper
-      .c-replying(v-if='replyingMessage')
+    .c-reply-wrapper
+      .c-reply(v-if='replyingMessage')
         i18n(:args='{ replyingTo, text: replyingMessage.text }') Replying to {replyingTo}: "{text}"
         button.c-clear.is-icon-small(
           :aria-label='L("Stop replying")'
@@ -1067,7 +1067,7 @@ export default ({
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
-.c-replying-wrapper {
+.c-reply-wrapper {
   display: table;
   table-layout: fixed;
   width: 100%;
@@ -1075,7 +1075,7 @@ export default ({
   top: -2.1rem;
 }
 
-.c-replying {
+.c-reply {
   display: table-cell;
   background-color: $general_2;
   padding: 0.4rem 2rem 0.5rem 0.5rem;
