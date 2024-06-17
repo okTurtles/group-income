@@ -761,23 +761,44 @@ export default (sbp('sbp/selectors/register', {
   }) => {
     const rootGetters = sbp('state/vuex/getters')
     const { identityContractID } = sbp('state/vuex/state').loggedIn
-    const { shouldDeleteFile, shouldDeleteToken } = option
+    const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
+    let deleteResult, toDelete
 
     if (shouldDeleteFile) {
       const credentials = Object.fromEntries(manifestCids.map(cid => {
+        // It could be that the file was already deleted, if we no longer have
+        // a delete token. In this case, omit those CIDs.
+        if (!throwIfMissingToken && shouldDeleteToken && !rootGetters.currentIdentityState.fileDeleteTokens[cid]) {
+          console.info('[gi.actions/identity/removeFiles] Skipping file as token is missing', cid)
+          return [cid, null]
+        };
         const credential = shouldDeleteToken
           ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
-      await sbp('chelonia/fileDelete', manifestCids, credentials)
+      toDelete = !throwIfMissingToken ? manifestCids.filter((cid) => !!credentials[cid]) : manifestCids
+      deleteResult = await sbp('chelonia/fileDelete', toDelete, credentials)
+    } else {
+      toDelete = manifestCids
     }
 
     if (shouldDeleteToken) {
       await sbp('gi.actions/identity/removeFileDeleteToken', {
         contractID: identityContractID,
-        data: { manifestCids }
+        data: {
+          manifestCids: deleteResult
+            ? toDelete.filter((_, i) => {
+              return deleteResult[i].status === 'fulfilled'
+            })
+            : toDelete
+        }
       })
+    }
+
+    if (deleteResult?.some(r => r.status === 'rejected')) {
+      console.error('[gi.actions/identity/removeFiles] Some CIDs could not be deleted', deleteResult.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
+      throw new Error('Some CIDs could not be deleted')
     }
   },
   'gi.actions/identity/fetchChatRoomUnreadMessages': async () => {
