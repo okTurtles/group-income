@@ -84,6 +84,7 @@ function captureLogEntry (type, ...args) {
   // The reason this works is because the entire `sbp` domain is blacklisted
   // from being logged in main.js.
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
+  sbp('sbp/selectors/fn', 'appLogs/logServer')(type, entry.msg)
 }
 
 function captureLogsStart (userLogged: string) {
@@ -189,5 +190,22 @@ sbp('sbp/selectors/register', {
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture': captureLogsPause,
-  'appLogs/startCapture': captureLogsStart
+  'appLogs/startCapture': captureLogsStart,
+  // only log to server if we're in development mode and connected over the tunnel (which creates URLs that
+  // begin with 'https://gi' per Gruntfile.js)
+  'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
+    ? noop
+    : function (level, stringifyMe) {
+      if (level === 'debug') return // comment out to send much more log info
+      const value = JSON.stringify(stringifyMe)
+      fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ level, value })
+      }).catch(e => {
+        originalConsole.error(`[captureLogs] '${e.message}' attempting to log [${level}] to server:`, value)
+      })
+    }
 })

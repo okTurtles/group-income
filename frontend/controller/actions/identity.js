@@ -292,21 +292,22 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
     }
 
-    const password = passwordFn?.()
-    const transientSecretKeys = []
-    if (password) {
-      try {
-        const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
-        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        transientSecretKeys.push({ key: IEK, transient: true })
-      } catch (e) {
-        console.error('caught error calling retrieveSalt:', e)
-        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-      }
-    }
-
     try {
       sbp('appLogs/startCapture', identityContractID)
+
+      const password = passwordFn?.()
+      const transientSecretKeys = []
+      if (password) {
+        try {
+          const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
+          const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+          transientSecretKeys.push({ key: IEK, transient: true })
+        } catch (e) {
+          console.error('caught error calling retrieveSalt:', e)
+          throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+        }
+      }
+
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
