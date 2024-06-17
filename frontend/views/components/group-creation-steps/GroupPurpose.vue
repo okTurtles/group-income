@@ -10,17 +10,19 @@
         name='sharedValues'
         ref='purpose'
         :placeholder='L("Group Purpose")'
-        maxlength='500'
-        :class='{ error: $v.form.sharedValues.$error }'
+        :class='{ error: isFieldError }'
         :value='group.sharedValues'
+        v-error:sharedValues=''
         @input='update'
       )
-      i18n.helper This is optional.
+      i18n.helper(v-if='!isFieldError') This is optional.
 
     slot
 </template>
 
 <script>
+import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
+
 export default ({
   name: 'GroupPurpose',
   props: {
@@ -29,6 +31,18 @@ export default ({
   },
   mounted () {
     this.$refs.purpose.focus()
+  },
+  data () {
+    return {
+      config: {
+        maxChar: GROUP_DESCRIPTION_MAX_CHAR
+      }
+    }
+  },
+  computed: {
+    isFieldError () {
+      return this.$v.form.sharedValues.$error
+    }
   },
   methods: {
     update (e) {
