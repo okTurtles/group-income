@@ -166,7 +166,7 @@ export default ({
       groupName: { required },
       groupPicture: { },
       sharedValues: {
-        [L('Group purpose cannot exceed {maxchar} characters', { maxChar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR) 
+        [L('Group purpose cannot exceed {maxchar} characters', { maxChar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR)
       },
       mincomeAmount: {
         [L('This field is required')]: required,
