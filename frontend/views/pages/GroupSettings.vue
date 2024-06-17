@@ -15,7 +15,7 @@ page.c-page
         i18n.label Group name
         input.input(
           type='text'
-          :class='{error: $v.form.groupName.$error}'
+          :class='{ error: $v.form.groupName.$error }'
           v-model='form.groupName'
           @input='debounceField("groupName")'
           @blur='updateField("groupName")'
@@ -24,10 +24,17 @@ page.c-page
         )
 
       label.field
-        i18n.label About the group
+        .c-desc-label-container
+          i18n.label About the group
+          span.c-char-len(:class='{ "is-error": $v.form.sharedValues.$error }') {{ descCharLen }}
+
         textarea.textarea(
-          maxlength='500'
+          :class='{ error: $v.form.sharedValues.$error }'
+          :maxlength='config.descMaxChar'
           v-model='form.sharedValues'
+          v-error:sharedValues = ''
+          @input='debounceField("sharedValues")'
+          @blur='updateField("sharedValues")'
           data-test='sharedValues'
         )
 
@@ -113,7 +120,7 @@ import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
-import { required } from 'vuelidate/lib/validators'
+import { required, maxLength } from 'vuelidate/lib/validators'
 import currencies from '@model/contracts/shared/currencies.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
@@ -122,6 +129,7 @@ import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -143,6 +151,9 @@ export default ({
         groupName,
         sharedValues,
         mincomeCurrency
+      },
+      config: {
+        descMaxChar: GROUP_DESCRIPTION_MAX_CHAR
       },
       allowPublicChannels: false
     }
@@ -167,6 +178,10 @@ export default ({
     configurePublicChannel () {
       // TODO: check if Chelonia server admin allows to create public channels
       return this.isGroupAdmin && false
+    },
+    descCharLen () {
+      const len = this.form.sharedValues?.length || 0
+      return `${len}/${GROUP_DESCRIPTION_MAX_CHAR}`
     }
   },
   mounted () {
@@ -231,6 +246,9 @@ export default ({
     form: {
       groupName: {
         [L('This field is required')]: required
+      },
+      sharedValues: {
+        [L('Group description cannot exceed {maxchar} characters', { maxchar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR)
       }
     }
   },
@@ -248,6 +266,30 @@ export default ({
 
 .c-page ::v-deep .p-main {
   max-width: 37rem;
+}
+
+.c-desc-label-container {
+  position: relative;
+  display: flex;
+  column-gap: 0.5rem;
+  align-items: flex-end;
+
+  .label {
+    flex-grow: 1;
+  }
+
+  .c-char-len {
+    display: inline-block;
+    line-height: $size_4;
+    font-size: $size_5;
+    color: $text_1;
+    flex-shrink: 0;
+    margin-bottom: 0.625rem;
+
+    &.is-error {
+      color: $danger_0;
+    }
+  }
 }
 
 .c-currency {
