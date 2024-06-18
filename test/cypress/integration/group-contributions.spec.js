@@ -402,10 +402,12 @@ describe('Contributions', () => {
 
   it('user1 have their payment info on the member list profile card', () => {
     cy.getByDT('dashboard', 'a').click()
+
+    // NOTE: wait until 4 profile cards are fully loaded
     cy.getByDT('openMemberProfileCard', 'img').should('have.length', 4)
-    cy.getByDT('openMemberProfileCard').eq(0).click()
 
     cy.log('The first member card should not contain payment info')
+    cy.getByDT('openMemberProfileCard').eq(0).click()
     cy.getByDT('profilePaymentMethods').should('not.exist')
     cy.getByDT('closeProfileCard').click()
 
