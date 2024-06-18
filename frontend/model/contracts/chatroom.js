@@ -640,7 +640,7 @@ sbp('chelonia/defineContract', {
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
-          const msgIndex = findMessageIdx(hash, messageArray)
+          const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
             fnVoteOnPoll(messageArray[msgIndex])
           }
@@ -689,7 +689,7 @@ sbp('chelonia/defineContract', {
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
-          const msgIndex = findMessageIdx(hash, messageArray)
+          const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
             fnChangeVoteOnPoll(messageArray[msgIndex])
           }
