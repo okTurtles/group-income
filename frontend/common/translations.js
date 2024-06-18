@@ -131,10 +131,10 @@ export default function L (
     .replace(/\s(?=[;:?!])/g, '&nbsp;')
 }
 
-export function LError (error: Error): {|reportError: any|} {
+export function LError (error: Error, noAuth?: boolean): {|reportError: any|} {
   let url = `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
-  const target = !sbp('state/vuex/state').loggedIn ? 'target="_blank"' : ''
-  if (!sbp('state/vuex/state').loggedIn) {
+  const target = (noAuth || !sbp('state/vuex/state').loggedIn) ? 'target="_blank"' : ''
+  if (noAuth || !sbp('state/vuex/state').loggedIn) {
     url = 'https://github.com/okTurtles/group-income/issues'
   }
   return {

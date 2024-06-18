@@ -60,6 +60,10 @@ export default ({
   align-items: center;
   max-width: 100vw;
   overflow: auto;
+
+  &.is-prompt {
+    z-index: $zindex-prompt;
+  }
 }
 
 @include desktop {

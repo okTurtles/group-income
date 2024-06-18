@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
+modal-template(ref='modal' class='is-prompt' :a11yTitle='$attrs.heading' :modalForceAction='true')
   template(#title='') {{ $attrs.heading }}
   template(#subtitle='' v-if='$attrs.subtitle') {{ $attrs.subtitle }}
 

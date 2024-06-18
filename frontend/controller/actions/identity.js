@@ -496,7 +496,7 @@ export default (sbp('sbp/selectors/register', {
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
-      const humanErr = L('{reportError}', LError(e))
+      const humanErr = L('{reportError}', LError(e, true))
       await displayGeneralLoginFailPrompt(humanErr)
 
       await sbp('gi.actions/identity/logout')

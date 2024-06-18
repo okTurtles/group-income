@@ -1154,15 +1154,18 @@ sbp('chelonia/defineContract', {
                       })
                     }
                   }
-                }).catch((e) => {
+                }).catch(async (e) => {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
-                  console.error('Error while joining the #General chatroom', e);
-                  // avoid blocking the main thread
-                  // eslint-disable-next-line require-await
-                  (async () => {
-                    alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
-                  })()
+                  console.error('Error while joining the #General chatroom', e)
+                  const errMsg = L("Couldn't join the #{chatroomName} in the group. An error occurred: {error}", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e })
+                  const promptOptions = {
+                    heading: L('Error while joining a chatroom'),
+                    question: errMsg,
+                    primaryButton: L('Close')
+                  }
+
+                  await sbp('gi.ui/prompt', promptOptions)
                 })
               }
             } else {
@@ -1457,6 +1460,10 @@ sbp('chelonia/defineContract', {
         }
         if (state.chatRooms[chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new GIGroupAlreadyJoinedError('Cannot join a chatroom that you\'re already part of')
+        }
+
+        if (Math.random() < 1) {
+          throw new Error('Random error by Sebin')
         }
         // Here, we could use a list of active members or we could use a
         // dictionary with an explicit status (as is being done). The reason

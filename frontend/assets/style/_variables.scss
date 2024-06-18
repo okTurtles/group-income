@@ -5,6 +5,7 @@ $zindex-mask: 60;
 $zindex-tooltip: 50;
 $zindex-modal: 40;
 $zindex-sidebar: 40;
+$zindex-prompt: 45; // some page content presented as 'position: fixed' has z-index larger than $zindex-modal (e.g. GroupWelcome.vue)
 $zindex-header: 30;
 
 // Used for typography
