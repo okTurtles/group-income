@@ -58,14 +58,10 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import trapFocus from '@utils/trapFocus.js'
 import { makeMentionFromUserID, makeChannelMention } from '@model/contracts/shared/functions.js'
 
 export default {
   name: 'PinnedMessages',
-  mixins: [
-    trapFocus
-  ],
   components: {
     AvatarUser,
     Tooltip,
@@ -186,11 +182,9 @@ export default {
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
 
     window.addEventListener('resize', this.resizeHandler)
-    document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.resizeHandler)
-    document.removeEventListener('keydown', this.trapFocus)
 
     this.matchMediaDesktop.onchange = null
   }
