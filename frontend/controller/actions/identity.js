@@ -292,31 +292,23 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
     }
 
-    const password = passwordFn?.()
-    const transientSecretKeys = []
-    const displayGeneralLoginFailPrompt = (errMsg: any) => {
-      const promptOptions = {
-        heading: L('Failed to login'),
-        question: L('Error details:{br_}{err}', { err: errMsg, ...LTags() }),
-        primaryButton: L('Close')
-      }
-
-      return sbp('gi.ui/prompt', promptOptions)
-    }
-
-    if (password) {
-      try {
-        const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
-        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        transientSecretKeys.push({ key: IEK, transient: true })
-      } catch (e) {
-        console.error('caught error calling retrieveSalt:', e)
-        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-      }
-    }
-
     try {
       sbp('appLogs/startCapture', identityContractID)
+
+      const password = passwordFn?.()
+      const transientSecretKeys = []
+
+      if (password) {
+        try {
+          const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
+          const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+          transientSecretKeys.push({ key: IEK, transient: true })
+        } catch (e) {
+          console.error('caught error calling retrieveSalt:', e)
+          throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+        }
+      }
+
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
@@ -497,8 +489,13 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('{reportError}', LError(e, true))
-      await displayGeneralLoginFailPrompt(humanErr)
+      const promptOptions = {
+        heading: L('Failed to login'),
+        question: L('Error details:{br_}{err}', { err: humanErr, ...LTags() }),
+        primaryButton: L('Close')
+      }
 
+      await sbp('gi.ui/prompt', promptOptions)
       await sbp('gi.actions/identity/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
@@ -774,23 +771,44 @@ export default (sbp('sbp/selectors/register', {
   }) => {
     const rootGetters = sbp('state/vuex/getters')
     const { identityContractID } = sbp('state/vuex/state').loggedIn
-    const { shouldDeleteFile, shouldDeleteToken } = option
+    const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
+    let deleteResult, toDelete
 
     if (shouldDeleteFile) {
       const credentials = Object.fromEntries(manifestCids.map(cid => {
+        // It could be that the file was already deleted, if we no longer have
+        // a delete token. In this case, omit those CIDs.
+        if (!throwIfMissingToken && shouldDeleteToken && !rootGetters.currentIdentityState.fileDeleteTokens[cid]) {
+          console.info('[gi.actions/identity/removeFiles] Skipping file as token is missing', cid)
+          return [cid, null]
+        };
         const credential = shouldDeleteToken
           ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
-      await sbp('chelonia/fileDelete', manifestCids, credentials)
+      toDelete = !throwIfMissingToken ? manifestCids.filter((cid) => !!credentials[cid]) : manifestCids
+      deleteResult = await sbp('chelonia/fileDelete', toDelete, credentials)
+    } else {
+      toDelete = manifestCids
     }
 
     if (shouldDeleteToken) {
       await sbp('gi.actions/identity/removeFileDeleteToken', {
         contractID: identityContractID,
-        data: { manifestCids }
+        data: {
+          manifestCids: deleteResult
+            ? toDelete.filter((_, i) => {
+              return deleteResult[i].status === 'fulfilled'
+            })
+            : toDelete
+        }
       })
+    }
+
+    if (deleteResult?.some(r => r.status === 'rejected')) {
+      console.error('[gi.actions/identity/removeFiles] Some CIDs could not be deleted', deleteResult.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
+      throw new Error('Some CIDs could not be deleted')
     }
   },
   'gi.actions/identity/fetchChatRoomUnreadMessages': async () => {

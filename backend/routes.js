@@ -143,6 +143,29 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   }
 })
 
+if (process.env.NODE_ENV === 'development') {
+  const levelToColor = {
+    error: chalk.bold.red,
+    warn: chalk.yellow,
+    log: chalk.green,
+    info: chalk.green,
+    debug: chalk.blue
+  }
+  route.POST('/log', {
+    validate: {
+      payload: Joi.object({
+        level: Joi.string().required(),
+        value: Joi.string().required()
+      })
+    }
+  }, function (request, h) {
+    const ip = request.info.remoteAddress
+    const log = levelToColor[request.payload.level]
+    console.debug(chalk.bold.yellow(`REMOTE LOG (${ip}): `) + log(`[${request.payload.level}] ${request.payload.value}`))
+    return h.response().code(200)
+  })
+}
+
 /*
 // The following endpoint is disabled because name registrations are handled
 // through the `shelter-namespace-registration` header when registering a

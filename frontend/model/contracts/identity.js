@@ -163,6 +163,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.chatRooms, contractID, {
           visible: true // NOTE: this attr is used to hide/show direct message
         })
+        throw new Error('Random error thrown by Sebin')
       },
       sideEffect ({ contractID, data }) {
         sbp('chelonia/contract/retain', data.contractID).catch((e) => {

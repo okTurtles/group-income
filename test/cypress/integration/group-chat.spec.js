@@ -118,7 +118,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).within(() => {
       cy.getByDT('username').should('contain', username)
 
-      cy.getByDT('openMemberProfileCard').click()
+      cy.getByDT('openMemberProfileCard', 'img').click()
     })
 
     cy.getByDT('memberProfileCard').within(() => {
