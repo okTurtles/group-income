@@ -18,7 +18,9 @@ export default ({
     picture: {
       type: [String, Object]
     },
-    contractID: String,
+    contractID: {
+      type: String
+    },
     alt: {
       type: String,
       default: ''
