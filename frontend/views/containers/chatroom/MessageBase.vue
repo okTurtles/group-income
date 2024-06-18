@@ -174,11 +174,7 @@ export default ({
     humanDate,
     swapMentionIDForDisplayname,
     editMessage () {
-      if (this.type === MESSAGE_TYPES.POLL) {
-        alert('TODO: implement editting a poll')
-      } else {
-        this.isEditing = true
-      }
+      this.isEditing = true
     },
     onMessageEdited (newMessage) {
       this.isEditing = false

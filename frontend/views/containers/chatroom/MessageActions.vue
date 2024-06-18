@@ -142,7 +142,7 @@ export default ({
       return this.type === MESSAGE_TYPES.POLL
     },
     isEditable () {
-      return this.isMsgSender && (this.isText || this.isPoll)
+      return this.isMsgSender && this.isText
     },
     isDeletable () {
       return this.isEditable || this.isGroupCreator
