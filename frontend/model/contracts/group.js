@@ -1320,6 +1320,7 @@ sbp('chelonia/defineContract', {
               Vue.set(groupProfile, key, value)
           }
         }
+
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
           Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
@@ -1462,9 +1463,6 @@ sbp('chelonia/defineContract', {
           throw new GIGroupAlreadyJoinedError('Cannot join a chatroom that you\'re already part of')
         }
 
-        if (Math.random() < 1) {
-          throw new Error('Random error by Sebin')
-        }
         // Here, we could use a list of active members or we could use a
         // dictionary with an explicit status (as is being done). The reason
         // to choose the explicit approach is to avoid syncing all the chatroom

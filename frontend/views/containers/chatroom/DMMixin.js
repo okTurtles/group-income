@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { L } from '@common/common.js'
 
 const DMMixin: Object = {
   computed: {
@@ -31,7 +32,11 @@ const DMMixin: Object = {
           }
         })
       } catch (err) {
-        alert(err.message)
+        await sbp('gi.ui/prompt', {
+          heading: L('Failed to create a new chatroom'),
+          question: err.message,
+          primaryButton: L('Close')
+        })
       }
     },
     async setDMVisibility (chatRoomID: string, visible: boolean) {
@@ -41,7 +46,11 @@ const DMMixin: Object = {
           data: { contractID: chatRoomID, visible }
         })
       } catch (err) {
-        alert(err.message)
+        await sbp('gi.ui/prompt', {
+          heading: L('Failed to change the chatroom settings'),
+          question: err.message,
+          primaryButton: L('Close')
+        })
       }
     },
     redirect (chatRoomID: string) {
