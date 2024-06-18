@@ -368,8 +368,6 @@ describe('Contributions', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
-    // Double check // TODO - Why do we need this?
-    assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
