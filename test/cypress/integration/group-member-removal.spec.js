@@ -77,7 +77,7 @@ describe('Group - Removing a member', () => {
         // the profile picture.
         // cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
         //  cy.getByDT('username').should('contain', `user1-${userId}`)
-        //  cy.getByDT('openMemberProfileCard').click()
+        //  cy.getByDT('openMemberProfileCard', 'img').click()
         // })
         cy.getByDT('memberProfileCard').find('button').should('have.length', 2) // Send message and close
         cy.getByDT('closeProfileCard').click()
