@@ -27,7 +27,7 @@ const RenderMessageWithMarkdown: any = {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
 
-        const routerOptions = { isInAppRouter: false }
+        const routerOptions = { isInAppRouter: false, route: {}, href: '' }
         if (entry.tagName === 'A' && entry.attributes.href) {
           const { href } = entry.attributes
           const { url, isHttpValid } = validateURL(href)
