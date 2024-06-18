@@ -12,6 +12,7 @@ const elGivingFirst = '.giving .c-contribution-item:first-child'
 
 function addNonMonetaryContribution (name) {
   cy.getByDT('addNonMonetaryContribution', 'button').click()
+  cy.getByDT('inputNonMonetaryContribution').should('have.length', 1)
   cy.getByDT('inputNonMonetaryContribution').type(name)
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').should('not.exist')
@@ -401,6 +402,7 @@ describe('Contributions', () => {
 
   it('user1 have their payment info on the member list profile card', () => {
     cy.getByDT('dashboard', 'a').click()
+    cy.getByDT('openMemberProfileCard', 'img').should('have.length', 4)
     cy.getByDT('openMemberProfileCard').eq(0).click()
 
     cy.log('The first member card should not contain payment info')
