@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import { validateURL } from '@view-utils/misc.js'
+import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
@@ -49,7 +49,7 @@ const RenderMessageWithMarkdown: any = {
               attrs: { href: routerOptions.href },
               on: {
                 click: (e) => {
-                  routerOptions.route && this.$router.push(routerOptions.route)
+                  routerOptions.route && this.$router.push(routerOptions.route).catch(logExceptNavigationDuplicated)
                   e?.preventDefault()
                 },
                 touchhold: (e) => {
