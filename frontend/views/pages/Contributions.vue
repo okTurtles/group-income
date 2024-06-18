@@ -88,17 +88,19 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         ) You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!
 
         i18n.has-text-1.spacer-around(
-          v-else-if='noOneToGive'
+          v-else-if='!someoneNeedsIncome'
           data-test='givingParagraph'
           tag='p'
         ) No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.
 
-        ul(
-          data-test='givingList'
-        )
-          contribution(
-            v-if='doesGiveMonetary'
-          )
+        i18n.has-text-1.spacer-around(
+          v-else-if='noOneToGive'
+          data-test='givingParagraph'
+          tag='p'
+        ) You can add non-monetary contributions for the group here.
+
+        ul(data-test='givingList')
+          contribution(v-if='doesGiveMonetary')
             contribution-item(
               :what='withCurrency(givingMonetary.total)'
               :who='givingMonetary.who'
@@ -114,11 +116,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             :initial-value='contribution'
             @new-value='handleNonMonetary'
           )
-            contribution-item(
-              :what='contribution'
-              type='NON_MONETARY'
-              action='GIVING'
-            )
+            contribution-item(:what='contribution' type='NON_MONETARY' action='GIVING')
 
           contribution(
             variant='unfilled'
@@ -173,12 +171,16 @@ export default ({
       'groupProfiles',
       'groupMincomeFormatted',
       'globalProfile',
+      'groupIncomeDistribution',
       'ourContributionSummary'
     ]),
     upTo () {
       const amount = this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType]
       if (typeof amount !== 'number') return false
       return this.withCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+    },
+    someoneNeedsIncome () {
+      return Boolean(this.groupIncomeDistribution.length)
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'

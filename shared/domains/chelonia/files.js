@@ -369,26 +369,25 @@ export default (sbp('sbp/selectors/register', {
       throw new TypeError('A manifest CID must be provided')
     }
     if (!Array.isArray(manifestCid)) manifestCid = [manifestCid]
-    // Validation
-    manifestCid.forEach((cid) => {
+    return await Promise.allSettled(manifestCid.map(async (cid) => {
       const hasCredential = has(credentials, cid)
-      const hasToken = has(credentials[cid], 'token')
-      const hasBillableContractID = has(credentials[cid], 'billableContractID')
+      const hasToken = has(credentials[cid], 'token') && credentials[cid].token
+      const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
       if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
-    })
-    return await Promise.all(manifestCid.map(async (cid) => {
-      const { token, billableContractID } = credentials[cid]
+
       const response = await fetch(`${this.config.connectionURL}/deleteFile/${cid}`, {
         method: 'POST',
         signal: this.abortController.signal,
         headers: new Headers([
           ['authorization',
-            token
-              ? `bearer ${token}`
+            hasToken
+              // $FlowFixMe[incompatible-type]
+              ? `bearer ${credentials[cid].token}`
+              // $FlowFixMe[incompatible-type]
               // $FlowFixMe[incompatible-call]
-              : buildShelterAuthorizationHeader.call(this, billableContractID)]
+              : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]
         ])
       })
       if (!response.ok) {

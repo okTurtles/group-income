@@ -723,9 +723,6 @@ export default (sbp('sbp/selectors/register', {
 
           const cheloniaState = sbp(self.config.stateSelector)
 
-          if (!cheloniaState[v.contractID]) {
-            config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
-          }
           const targetState = cheloniaState[v.contractID]
 
           let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
@@ -743,7 +740,7 @@ export default (sbp('sbp/selectors/register', {
                     transient
                   }])
                   if (
-                    targetState._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
+                    targetState?._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
                       targetState._vm.authorizedKeys[key.id].purpose.includes('enc')
                   ) {
