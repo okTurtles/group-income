@@ -88,16 +88,16 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         ) You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!
 
         i18n.has-text-1.spacer-around(
-          v-else-if='someoneNeedsIncome'
-          data-test='givingParagraph'
-          tag='p'
-        ) You can add non-monetary contributions for the group here.
-
-        i18n.has-text-1.spacer-around(
-          v-else
+          v-else-if='!someoneNeedsIncome'
           data-test='givingParagraph'
           tag='p'
         ) No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.
+
+        i18n.has-text-1.spacer-around(
+          v-else-if='noOneToGive'
+          data-test='givingParagraph'
+          tag='p'
+        ) You can add non-monetary contributions for the group here.
 
         ul(data-test='givingList')
           contribution(v-if='doesGiveMonetary')
