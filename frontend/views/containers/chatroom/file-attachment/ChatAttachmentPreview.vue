@@ -178,6 +178,8 @@ export default {
         aTag.setAttribute('download', attachment.name)
 
         aTag.addEventListener('click', function (event) {
+          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
+          //       when user trys to download attachment inside the dialog
           event.stopPropagation()
         })
 
