@@ -137,6 +137,7 @@ export default ({
           this.activeTab = link.index
           this.title = link.title
           this.activeComponent = link.component
+          this.open = false
         }
       }
       const allTabNavLinks = this.tabNav.reduce(

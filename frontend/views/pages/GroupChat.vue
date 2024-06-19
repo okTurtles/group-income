@@ -131,6 +131,7 @@ import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupChat',
@@ -157,6 +158,7 @@ export default ({
       'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles',
+      'groupIdFromChatRoomId',
       'isJoinedChatRoom',
       'groupChatRooms',
       'chatRoomPinnedMessages',
@@ -222,6 +224,18 @@ export default ({
       if (this.$refs.chatMain) {
         this.$refs.chatMain.scrollToMessage(messageHash)
       }
+    },
+    hasPermissionToReadChatRoom (chatRoomID) {
+      if (this.isJoinedChatRoom(chatRoomID)) {
+        return true
+      }
+
+      const groupId = this.groupIdFromChatRoomId(chatRoomID)
+      if (groupId && this.$store.state[groupId].chatRooms[chatRoomID].privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+        return true
+      }
+
+      return false
     }
   },
   watch: {
@@ -230,12 +244,30 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomID } = to.params
+      const { mhash } = to.query
       const prevChatRoomId = from.params.chatRoomID || ''
-      if (chatRoomID && chatRoomID !== prevChatRoomId) {
-        this.updateCurrentChatRoomID(chatRoomID)
-        // NOTE: No need to consider not-joined private chatroom because it's impossible
-        if (!this.isJoinedChatRoom(chatRoomID)) {
-          this.loadLatestState(chatRoomID)
+      if (chatRoomID) {
+        if (chatRoomID !== prevChatRoomId) {
+          if (!this.isJoinedChatRoom(chatRoomID)) {
+            if (this.hasPermissionToReadChatRoom(chatRoomID)) {
+              this.updateCurrentChatRoomID(chatRoomID)
+              this.loadLatestState(chatRoomID)
+            } else {
+              alert(L('Sorry, this message is from a private chatroom that you are not part of.'))
+              this.$router.go(-1)
+            }
+          } else {
+            this.updateCurrentChatRoomID(chatRoomID)
+          }
+        } else if (mhash) {
+          // NOTE: this block handles the behavior to scroll to the message with mhash
+          //       when user clicks the message link of the one from current chatroom
+          this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+            // NOTE: delete mhash from queries after scroll to and highlight it
+            const newQuery = { ...to.query }
+            delete newQuery.mhash
+            this.$router.replace({ query: newQuery })
+          })
         }
       }
     }
@@ -282,16 +314,17 @@ export default ({
   align-items: center;
   position: relative;
 
+  @include touch {
+    width: 100%;
+    justify-content: center;
+  }
+
   .p-title {
     display: block;
     width: fit-content;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    @include touch {
-      max-width: 55vw;
-    }
   }
 
   .c-group-i {
@@ -398,6 +431,7 @@ export default ({
 
 .avatar-wrapper {
   margin-right: 0.5rem;
+  flex: 0 0 2.5rem;
 }
 
 .c-menu-parent.c-menu {

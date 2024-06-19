@@ -194,9 +194,7 @@ export default ({
         })
         this.close()
       } catch (e) {
-        this.$refs.formMsg.danger(
-          e?.message ? e.message : L('Failed to create chat channel. {reportError}', LError(e))
-        )
+        this.$refs.formMsg.danger(L('Failed to create chat channel. {reportError}', LError(e)))
       }
     },
     toggleChannelPrivate (e) {
