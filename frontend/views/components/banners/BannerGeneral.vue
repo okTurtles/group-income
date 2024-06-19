@@ -7,17 +7,19 @@
       aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
-      span(v-safe-html:a='ephemeral.message')
+      render-message-with-markdown(:text='ephemeral.message')
 </template>
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from '@model/contracts/shared/giLodash.js'
+import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 
 export default ({
   name: 'BannerGeneral',
   components: {
-    TransitionExpand
+    TransitionExpand,
+    RenderMessageWithMarkdown
   },
   data: () => ({
     ephemeral: {
@@ -74,6 +76,12 @@ export default ({
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.l-banner {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
 
 .l-banner ::v-deep .link {
   color: inherit;
