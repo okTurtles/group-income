@@ -65,6 +65,7 @@ export default ({
       open: true,
       subNav: [{
         html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
+          ...LTags(),
           appVersion,
           contractsVersion
         })
