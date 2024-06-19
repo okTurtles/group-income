@@ -64,8 +64,7 @@ export default ({
       transitionName: '',
       open: true,
       subNav: [{
-        html: L('{span_}App Version: {appVersion}{_span}{br_}{span_}Contracts Version: {contractsVersion}{_span}', {
-          ...LTags('span'),
+        html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
           appVersion,
           contractsVersion
         })
