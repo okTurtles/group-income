@@ -39,11 +39,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { makeMentionFromUserID, makeChannelMention } from '@model/contracts/shared/functions.js'
-const TextObjectType = {
-  Text: 'TEXT',
-  MemberMention: 'MEMBER_MENTION',
-  ChannelMention: 'CHANNEL_MENTION'
-}
+import { TextObjectType } from '@utils/constants.js'
 
 export default ({
   name: 'RenderMessageText',

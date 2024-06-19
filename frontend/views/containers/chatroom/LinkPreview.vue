@@ -12,6 +12,8 @@
 </template>
 
 <script>
+import { validateURL } from '@view-utils/misc.js'
+
 export default ({
   name: 'link-preview',
   props: {
@@ -50,8 +52,8 @@ export default ({
   },
   methods: {
     isValidUrl (url) {
-      const regex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/
-      this.validUrl = regex.test(url)
+      const { isValid, isHttpValid } = validateURL(url)
+      this.validUrl = isValid && isHttpValid
       return this.validUrl
     }
   }

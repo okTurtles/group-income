@@ -2,9 +2,9 @@
 
 // since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
-import dompurify from 'dompurify'
 import Vue from 'vue'
+import dompurify from 'dompurify'
+import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import template from './stringTemplate.js'
 
 Vue.prototype.L = L
@@ -131,16 +131,16 @@ export default function L (
     .replace(/\s(?=[;:?!])/g, '&nbsp;')
 }
 
-export function LError (error: Error, noAuth?: boolean): {|reportError: any|} {
-  let url = `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
-  const target = (noAuth || !sbp('state/vuex/state').loggedIn) ? 'target="_blank"' : ''
-  if (noAuth || !sbp('state/vuex/state').loggedIn) {
-    url = 'https://github.com/okTurtles/group-income/issues'
+export function LError (error: Error, toGithub?: boolean): {|reportError: any|} {
+  let url = 'https://github.com/okTurtles/group-income/issues'
+  if (!toGithub && sbp('state/vuex/state').loggedIn) {
+    const baseRoute = document.location.origin + sbp('controller/router').options.base
+    url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
   }
   return {
     reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
       errorMsg: error.message,
-      'a_': `<a class="link" ${target} href="${url}">`,
+      'a_': `<a class="link" target="_blank" href="${url}">`,
       '_a': '</a>'
     })
   }

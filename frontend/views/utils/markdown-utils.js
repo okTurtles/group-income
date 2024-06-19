@@ -1,4 +1,5 @@
 import { marked } from 'marked'
+import { validateURL } from './misc.js'
 
 export type MarkdownSegment = {
   type: 'code' | 'plain',
@@ -11,8 +12,13 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        // custom renderer for <a> tag for setting target='_blank' to the output HTML
-        return `<a class='link' href='${token.href}' target='_blank'>${token.text}</a>`
+        const { isValid } = validateURL(token.href)
+        if (isValid) {
+          const { href, text } = token
+          // custom renderer for <a> tag for setting target='_blank' to the output HTML
+          return `<a class="link" href="${href}" target="_blank">${text}</a>`
+        }
+        return token.raw
       }
     }
   ]

@@ -248,14 +248,14 @@ async function startApp () {
             }
           }
         },
-        [NOTIFICATION_TYPE.KV] ([key, data]) {
+        [NOTIFICATION_TYPE.KV] ([key, value]) {
           const rootState = sbp('state/vuex/state')
-          const { contractID, data: value } = data
+          const { contractID, data } = value
 
-          if (key === KV_KEYS.LAST_LOGGED_IN && value) {
-            Vue.set(rootState.lastLoggedIn, contractID, value)
-          } else if (key === KV_KEYS.UNREAD_MESSAGES && value) {
-            sbp('state/vuex/commit', 'setUnreadMessages', value)
+          if (key === KV_KEYS.LAST_LOGGED_IN && data) {
+            Vue.set(rootState.lastLoggedIn, contractID, data)
+          } else if (key === KV_KEYS.UNREAD_MESSAGES && data) {
+            sbp('state/vuex/commit', 'setUnreadMessages', data)
           }
         }
       }

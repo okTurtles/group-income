@@ -735,9 +735,10 @@ export default ({
        * and scroll to that message
        */
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
-      const {
-        mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
-      } = this.$route.query
+      // NOTE: mhash is a query for scrolling to a particular message
+      //       when chat-room is done with the initial render.
+      //       (refer to 'copyMessageLink' method in MessageBase.vue)
+      const { mhash } = this.$route.query
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       let events = []
       if (!this.ephemeral.messagesInitiated) {
@@ -772,7 +773,14 @@ export default ({
         if (events.length) {
           // NOTE: if 'messageHashToScroll' was not there in the messages of the contract state
           //       we need to retrieve more events, and render to scroll to that message
-          this.updateScroll(messageHashToScroll, Boolean(mhash))
+          this.updateScroll(messageHashToScroll, Boolean(mhash)).then(() => {
+            // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+            if (mhash) {
+              const newQuery = { ...this.$route.query }
+              delete newQuery.mhash
+              this.$router.replace({ query: newQuery })
+            }
+          })
         } else {
           // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
           await this.updateScroll(messageHashToScroll, Boolean(mhash))
