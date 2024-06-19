@@ -267,7 +267,7 @@ export default ({
   },
   PAYMENT_THANKYOU_SENT (data: { creatorID: string, fromMemberID: string, toMemberID: string }) {
     return {
-      avatarUserID: data.creatorID,
+      avatarUserID: data.fromMemberID,
       body: {
         key: '{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.',
         args: {
@@ -275,7 +275,7 @@ export default ({
           ...LTags('strong')
         }
       },
-      creatorID: data.creatorID,
+      creatorID: data.fromMemberID,
       icon: '',
       level: 'info',
       linkTo: `/payments?modal=ThankYouNoteModal&from=${data.fromMemberID}&to=${data.toMemberID}`,

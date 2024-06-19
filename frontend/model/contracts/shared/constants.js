@@ -13,6 +13,9 @@ export const PROFILE_STATUS = {
   PENDING: 'pending', // shortly after being approved to join the group
   REMOVED: 'removed'
 }
+export const GROUP_DESCRIPTION_MAX_CHAR = 500
+
+// group-proposal related
 
 export const PROPOSAL_RESULT = 'proposal-result'
 export const PROPOSAL_INVITE_MEMBER = 'invite-member'

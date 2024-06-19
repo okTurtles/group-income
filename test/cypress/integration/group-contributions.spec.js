@@ -12,6 +12,7 @@ const elGivingFirst = '.giving .c-contribution-item:first-child'
 
 function addNonMonetaryContribution (name) {
   cy.getByDT('addNonMonetaryContribution', 'button').click()
+  cy.getByDT('inputNonMonetaryContribution').should('have.length', 1)
   cy.getByDT('inputNonMonetaryContribution').type(name)
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').should('not.exist')
@@ -367,8 +368,6 @@ describe('Contributions', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
-    // Double check // TODO - Why do we need this?
-    assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
@@ -401,9 +400,12 @@ describe('Contributions', () => {
 
   it('user1 have their payment info on the member list profile card', () => {
     cy.getByDT('dashboard', 'a').click()
-    cy.getByDT('openMemberProfileCard').eq(0).click()
+
+    // NOTE: wait until 4 profile cards are fully loaded
+    cy.getByDT('openMemberProfileCard', 'img').should('have.length', 4)
 
     cy.log('The first member card should not contain payment info')
+    cy.getByDT('openMemberProfileCard').eq(0).click()
     cy.getByDT('profilePaymentMethods').should('not.exist')
     cy.getByDT('closeProfileCard').click()
 
