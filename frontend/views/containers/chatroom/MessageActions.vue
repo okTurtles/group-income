@@ -145,7 +145,8 @@ export default ({
       return this.isMsgSender && this.isText
     },
     isDeletable () {
-      return this.isEditable || this.isGroupCreator
+      return this.isGroupCreator ||
+        (this.isMsgSender && (this.isText || this.isPoll))
     }
   },
   methods: {
