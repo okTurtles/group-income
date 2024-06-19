@@ -277,16 +277,17 @@ export default ({
   align-items: center;
   position: relative;
 
+  @include touch {
+    width: 100%;
+    justify-content: center;
+  }
+
   .p-title {
     display: block;
     width: fit-content;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    @include touch {
-      max-width: 55vw;
-    }
   }
 
   .c-group-i {
@@ -383,6 +384,7 @@ export default ({
 
 .avatar-wrapper {
   margin-right: 0.5rem;
+  flex: 0 0 2.5rem;
 }
 
 .c-menu-parent.c-menu {
