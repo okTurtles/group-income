@@ -127,7 +127,7 @@ export default ({
         contractID: this.currentGroupId,
         hidden: true
       })
-    }
+    },
     showBanner () {
       sbp('gi.actions/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
