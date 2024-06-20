@@ -79,6 +79,7 @@
           :currentUserID='currentUserAttr.id'
           :avatar='avatar(message.from)'
           :variant='variant(message)'
+          :pinnedBy='message.pinnedBy'
           :isSameSender='isSameSender(index)'
           :isMsgSender='isMsgSender(message.from)'
           :isGroupCreator='isGroupCreator'
@@ -87,6 +88,8 @@
           @reply='replyMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
+          @pin-to-channel='pinToChannel(message)'
+          @unpin-from-channel='unpinFromChannel(message.hash)'
           @delete-message='deleteMessage(message)'
           @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -132,15 +135,11 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import {
-  MESSAGE_TYPES,
-  MESSAGE_VARIANTS,
-  CHATROOM_ACTIONS_PER_PAGE
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, throttle } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
 const collectEventStream = async (s: ReadableStream) => {
@@ -306,7 +305,6 @@ export default ({
       'chatRoomSettings',
       'chatRoomAttributes',
       'chatRoomMembers',
-      'chatRoomLatestMessages',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
@@ -625,6 +623,36 @@ export default ({
         console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
+    pinToChannel (message) {
+      const contractID = this.renderingChatRoomId
+      sbp('gi.actions/chatroom/pinMessage', {
+        contractID,
+        data: { message }
+      }).catch((e) => {
+        console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
+      })
+    },
+    async unpinFromChannel (hash) {
+      const contractID = this.renderingChatRoomId
+
+      const promptConfig = {
+        heading: L('Remove pinned message'),
+        question: L('Are you sure you want to remove this pinned message?'),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
+      }
+
+      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+
+      if (primaryButtonSelected) {
+        sbp('gi.actions/chatroom/unpinMessage', {
+          contractID,
+          data: { hash }
+        }).catch((e) => {
+          console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
+        })
+      }
+    },
     async deleteMessage (message) {
       const contractID = this.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
@@ -703,6 +731,7 @@ export default ({
         members: state.members || {},
         _vm: state._vm,
         messages: shouldClearMessages ? [] : state.messages,
+        pinnedMessages: [], // NOTE: We don't use this pinnedMessages, but initialize so that the process functions won't break
         renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
@@ -739,9 +768,10 @@ export default ({
        * and scroll to that message
        */
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
-      const {
-        mhash = '' // mhash is a query for scrolling to a particular message when chat-room is done with the initial render. (refer to 'copyMessageLink' method in MessageBase.vue)
-      } = this.$route.query
+      // NOTE: mhash is a query for scrolling to a particular message
+      //       when chat-room is done with the initial render.
+      //       (refer to 'copyMessageLink' method in MessageBase.vue)
+      const { mhash } = this.$route.query
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       let events = []
       if (!this.ephemeral.messagesInitiated) {
@@ -780,6 +810,13 @@ export default ({
         } else {
           // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
           await this.updateScroll(messageHashToScroll, Boolean(mhash))
+
+          if (mhash) {
+            // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+            const newQuery = { ...this.$route.query }
+            delete newQuery.mhash
+            this.$router.replace({ query: newQuery })
+          }
         }
       }
 
@@ -844,6 +881,10 @@ export default ({
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
+        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
+          return
+        }
         sbp('gi.actions/identity/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
@@ -935,10 +976,9 @@ export default ({
             if (msgIndex !== -1) {
               document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
-              // NOTE: waiting for the animation is done
-              //       it's duration is 500ms described in MessageBase.vue
-              await new Promise(resolve => setTimeout(resolve, 500))
-              if (!this.checkEventSourceConsistency(contractID)) return
+              // NOTE: waiting for the animation to be completed with the duration of 500ms
+              //       .c-disappeared class is defined in MessageBase.vue
+              await delay(500)
             }
           }
 
@@ -957,7 +997,7 @@ export default ({
               const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable && this.messages.length) {
+              } else {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,

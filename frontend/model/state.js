@@ -405,7 +405,7 @@ const getters = {
   profilesByGroup (state, getters) {
     return groupID => {
       const profiles = {}
-      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+      if (state.contracts[groupID]?.type !== 'gi.contracts/group') {
         return profiles
       }
       const groupProfiles = state[groupID].profiles || {}
@@ -439,7 +439,7 @@ const getters = {
       .filter(memberID => getters.groupProfiles[memberID] ||
          getters.groupMembersPending[memberID].expires >= Date.now())
       .map(memberID => {
-        const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || {}
+        const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || (getters.groupProfiles[memberID] ? { contractID: memberID } : {})
         return {
           id: memberID, // common unique ID: it can be either the contract ID or the invite key
           contractID,

@@ -41,6 +41,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'ConversationsList',
@@ -49,7 +50,10 @@ export default ({
     Avatar
   },
   props: {
-    title: String,
+    title: {
+      type: String,
+      default: L('Channels')
+    },
     /** List of channels - shape: {
       order: [] - group channels in order,
       channels: - group channels

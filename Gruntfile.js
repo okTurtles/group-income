@@ -133,7 +133,16 @@ module.exports = (grunt) => {
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
     grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-    await access(dest).catch(async () => await mkdir(dest))
+    // If we're writing to a URL, don't try to create a directory
+    try {
+      const url = new URL(dest)
+      // Likely a drive letter
+      if (url.protocol.length < 3) {
+        throw new Error('Not a URL')
+      }
+    } catch {
+      await access(dest).catch(async () => await mkdir(dest))
+    }
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
