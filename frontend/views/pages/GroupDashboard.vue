@@ -107,6 +107,13 @@ export default ({
   },
   beforeMount () {
     sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
+
+    if (!this.isCloseToDistributionTime) {
+      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
+        contractID: this.currentGroupId,
+        hidden: false
+      })
+    }
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
