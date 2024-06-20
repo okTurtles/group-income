@@ -463,16 +463,17 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-        // NOTE: users could notice that they leave the group by someone
-        // else when they log in
+        // NOTE: users could notice that they leave the group by someone else when they log in
         if (!state.currentGroupId) {
-          const gId = Object.keys(state.contracts)
-            .find(cID => has(state[identityContractID].groups, cID))
+          const gId = Object.keys(state.contracts).find(cID => has(state[identityContractID].groups, cID))
 
           if (gId) {
             sbp('gi.actions/group/switch', gId)
           }
         }
+
+        // NOTE: load users preferences config which is saved in KV store
+        await sbp('gi.actions/kv/loadPreferences')
       } catch (e) {
         alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)

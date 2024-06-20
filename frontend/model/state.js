@@ -28,7 +28,8 @@ const initialState = {
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
   contractSiginingKeys: Object.create(null),
-  lastLoggedIn: {} // Group last logged in information
+  lastLoggedIn: {}, // Group last logged in information
+  preferences: {}
 }
 
 if (window.matchMedia) {
@@ -99,6 +100,9 @@ const mutations = {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
   },
+  setPreferences (state, value) {
+    Vue.set(state, 'preferences', value)
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
@@ -141,6 +145,9 @@ const getters = {
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
+  },
+  ourPreferences (state) {
+    return state.preferences
   },
   ourProfileActive (state, getters) {
     return getters.profileActive(getters.ourIdentityContractId)

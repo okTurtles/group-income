@@ -255,6 +255,8 @@ async function startApp () {
             Vue.set(rootState.lastLoggedIn, contractID, data)
           } else if (key === KV_KEYS.UNREAD_MESSAGES && data) {
             sbp('state/vuex/commit', 'setUnreadMessages', data)
+          } else if (key === KV_KEYS.PREFERENCES && data) {
+            sbp('state/vuex/commit', 'setPreferences', data)
           }
         }
       }

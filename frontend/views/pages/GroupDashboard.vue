@@ -57,82 +57,6 @@ import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/t
 
 export default ({
   name: 'GroupDashboard',
-  beforeMount () {
-    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
-
-    if (!this.isCloseToDistributionTime) {
-      localStorage.setItem(this.bannerStorageKey, false)
-    }
-
-    this.updateBannerVisibility()
-  },
-  beforeDestroy () {
-    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
-  },
-  data () {
-    return {
-      ephemeral: {
-        hideBanner: false
-      }
-    }
-  },
-  computed: {
-    ...mapState([
-      'currentGroupId'
-    ]),
-    ...mapGetters([
-      'currentGroupState', // TODO normalize getters names
-      'groupSettings',
-      'groupsByName',
-      'groupMembersCount',
-      'groupProfiles',
-      'ourGroupProfile'
-    ]),
-    canDisplayGraph () {
-      return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
-    },
-    hasIncomeDetails () {
-      return !!this.ourGroupProfile?.incomeDetailsType
-    },
-    isCloseToDistributionTime () {
-      const dDay = new Date(this.groupSettings.distributionDate)
-      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
-
-      // when (D-day - 7d) <= today < D-day
-      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
-    },
-    bannerStorageKey () {
-      return `giHideDistributionWarning.${this.currentGroupId}`
-    },
-    showBanner () {
-      return this.isCloseToDistributionTime && !this.ephemeral.hideBanner
-    },
-    hasMemberRequest () {
-      return this.requests
-    }
-  },
-  methods: {
-    humanDate,
-    handleIncomeClick (e) {
-      if (e.target.classList.contains('js-btnInvite')) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
-      }
-    },
-    closeBanner () {
-      localStorage.setItem(this.bannerStorageKey, true)
-      this.ephemeral.hideBanner = true
-    },
-    updateBannerVisibility () {
-      this.ephemeral.hideBanner = localStorage.getItem(this.bannerStorageKey) === 'true'
-    }
-  },
-  watch: {
-    bannerStorageKey () {
-      // if the user performs switching to another group while he/she is still in this page[GroupDashboard.vue],
-      // check if the distribution-warning banner has been dismissed for the switched group again.
-      this.updateBannerVisibility()
-    }
-  },
   components: {
     Page,
     AddIncomeDetailsWidget,
@@ -146,6 +70,60 @@ export default ({
     GroupPurpose,
     BannerSimple
     // GroupSettings
+  },
+  computed: {
+    ...mapState(['currentGroupId']),
+    ...mapGetters([
+      'currentGroupState', // TODO normalize getters names
+      'ourPreferences',
+      'groupSettings',
+      'groupsByName',
+      'groupMembersCount',
+      'groupProfiles',
+      'ourGroupProfile'
+    ]),
+    canDisplayGraph () {
+      return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
+    },
+    hideBanner (state, getters) {
+      return this.ourPreferences.hideDistributionBanner?.[this.currentGroupId]
+    },
+    hasIncomeDetails () {
+      return !!this.ourGroupProfile?.incomeDetailsType
+    },
+    isCloseToDistributionTime () {
+      const dDay = new Date(this.groupSettings.distributionDate)
+      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
+
+      // when (D-day - 7d) <= today < D-day
+      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
+    },
+    showBanner () {
+      return this.isCloseToDistributionTime && !this.hideBanner
+    },
+    hasMemberRequest () {
+      return this.requests
+    }
+  },
+  beforeMount () {
+    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
+  },
+  methods: {
+    humanDate,
+    handleIncomeClick (e) {
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      }
+    },
+    closeBanner () {
+      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
+        contractID: this.currentGroupId,
+        hidden: true
+      })
+    }
   }
 }: Object)
 </script>

@@ -160,6 +160,12 @@ export default (sbp('sbp/selectors/register', {
       onconflict
     })
   },
+  'gi.actions/kv/loadPreferences': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const preferences = await sbp('gi.actions/kv/fetchPreferences')
+      sbp('state/vuex/commit', 'setPreferences', preferences)
+    })
+  },
   'gi.actions/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedPreferences = async (cID) => {
