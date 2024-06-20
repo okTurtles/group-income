@@ -2,7 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  banner-simple(severity='warning' class='c-banner' v-if='showBanner')
+  banner-simple(severity='warning' class='c-banner' v-if='shouldShowBanner')
     i18n(
       @click='handleIncomeClick'
       :args='{ \
@@ -12,7 +12,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
       }'
     ) Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.
 
-    button.is-unstyled(@click='closeBanner')
+    button.is-unstyled(@click='hideBanner')
       i.icon-times
 
   add-income-details-widget(v-if='!hasIncomeDetails' :welcomeMessage='true')
@@ -85,7 +85,7 @@ export default ({
     canDisplayGraph () {
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
     },
-    hideBanner (state, getters) {
+    shouldHideBanner (state, getters) {
       return this.ourPreferences.hideDistributionBanner?.[this.currentGroupId]
     },
     hasIncomeDetails () {
@@ -98,25 +98,22 @@ export default ({
       // when (D-day - 7d) <= today < D-day
       return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
     },
-    showBanner () {
-      return this.isCloseToDistributionTime && !this.hideBanner
+    shouldShowBanner () {
+      return this.isCloseToDistributionTime && !this.shouldHideBanner
     },
     hasMemberRequest () {
       return this.requests
     }
   },
   beforeMount () {
-    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
+    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.hideBanner)
 
     if (!this.isCloseToDistributionTime) {
-      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
-        contractID: this.currentGroupId,
-        hidden: false
-      })
+      this.showBanner()
     }
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
+    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.hideBanner)
   },
   methods: {
     humanDate,
@@ -125,10 +122,16 @@ export default ({
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       }
     },
-    closeBanner () {
+    hideBanner () {
       sbp('gi.actions/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
         hidden: true
+      })
+    }
+    showBanner () {
+      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
+        contractID: this.currentGroupId,
+        hidden: false
       })
     }
   }
