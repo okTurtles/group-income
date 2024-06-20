@@ -102,7 +102,7 @@ export default ({
       return this.isCloseToDistributionTime && !this.shouldHideBanner
     },
     hasMemberRequest () {
-      return this.requests
+      return this.requests && false // NOTE: not using it at the moment
     }
   },
   beforeMount () {
