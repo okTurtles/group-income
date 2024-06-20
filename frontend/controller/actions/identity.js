@@ -10,7 +10,7 @@ import { has, omit } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT, UNREAD_MESSAGES_QUEUE } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT, KV_QUEUE } from '~/frontend/utils/events.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
@@ -524,8 +524,8 @@ export default (sbp('sbp/selectors/register', {
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
 
-        // NOTE: wait for all the pending UNREAD_MESSAGES_QUEUE invocations to be finished
-        await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
+        // NOTE: wait for all the pending KV_QUEUE invocations to be finished
+        await sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, () => {})
 
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
@@ -819,7 +819,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/loadChatRoomUnreadMessages': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
@@ -827,7 +827,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const fnInitUnreadMessages = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
@@ -852,7 +852,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const fnSetReadUntil = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
@@ -878,7 +878,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const fnAddUnreadMessage = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
@@ -901,7 +901,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
     contractID: string, messageHash: string
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const fnRemoveUnreadMessage = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
 
@@ -921,7 +921,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const fnDeleteUnreadMessages = async (cID) => {
         const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
         if (currentData[cID]) {

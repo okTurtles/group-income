@@ -23,6 +23,7 @@ import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
 import {
   LOGOUT,
+  KV_QUEUE,
   OPEN_MODAL,
   REPLACE_MODAL,
   SWITCH_GROUP,
@@ -962,7 +963,9 @@ export default (sbp('sbp/selectors/register', {
       const now = new Date().toISOString()
 
       // Wait for any pending operations (e.g., sync) to finish
-      await sbp('chelonia/queueInvocation', contractID, async () => {
+      await sbp('chelonia/queueInvocation', contractID, () => {})
+
+      sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
         const fnGetUpdatedLastLoggedIn = async (cID, key) => {
           const current = (await sbp('chelonia/kv/get', cID, key))?.data || {}
           return { ...current, [userID]: now }
