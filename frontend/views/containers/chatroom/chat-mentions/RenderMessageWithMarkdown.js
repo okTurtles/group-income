@@ -1,5 +1,8 @@
+import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
+import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 
@@ -24,11 +27,42 @@ const RenderMessageWithMarkdown: any = {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
 
+        const routerOptions = { isInAppRouter: false, route: {}, href: '' }
+        if (entry.tagName === 'A' && entry.attributes.href) {
+          const { href } = entry.attributes
+          const { url, isHttpValid } = validateURL(href)
+          if (isHttpValid && url.origin === document.location.origin) {
+            const path = url.pathname.split(this.$router.options.base)[1]
+            const query = {}
+            for (const [key, value] of url.searchParams) {
+              query[key] = value
+            }
+            routerOptions.route = { path, query }
+            routerOptions.href = this.$router.resolve(routerOptions.route).href
+            routerOptions.isInAppRouter = true
+          }
+        }
+
+        const opts = routerOptions.isInAppRouter
+          ? {
+              class: 'link',
+              attrs: { href: routerOptions.href },
+              on: {
+                click: (e) => {
+                  routerOptions.route && this.$router.push(routerOptions.route).catch(logExceptNavigationDuplicated)
+                  e?.preventDefault()
+                },
+                touchhold: (e) => {
+                  routerOptions.href && sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, routerOptions.href)
+                  e?.preventDefault()
+                }
+              }
+            }
+          : { attrs: entry.attributes || {} }
+
         return createElement(
           entry.tagName.toLowerCase(),
-          {
-            attrs: entry.attributes || {}
-          },
+          opts,
           hasChildren
             ? entry.children.map(child => recursiveCall(child))
             : undefined

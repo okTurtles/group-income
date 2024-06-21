@@ -55,7 +55,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId', 'getGroupChatRooms']),
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'groupGeneralChatRoomId', 'groupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     }
@@ -72,11 +72,10 @@ export default ({
   },
   created () {
     this.form.name = this.currentChatRoomState.attributes.name
-    this.form.existingNames = Object.keys(this.getGroupChatRooms)
-      .map(cId => this.getGroupChatRooms[cId].name)
+    this.form.existingNames = Object.keys(this.groupChatRooms).map(cId => this.groupChatRooms[cId].name)
   },
   mounted () {
-    if (this.generalChatRoomId === this.currentChatRoomId) {
+    if (this.groupGeneralChatRoomId === this.currentChatRoomId) {
       this.close()
     }
     this.$refs.name.focus()
@@ -92,7 +91,7 @@ export default ({
         if (this.currentChatRoomState.attributes.name === this.form.name) {
           // TODO: No need to update chatroom name. Display message box or toast or sth else
           console.log('TODO: Channel name is not changed')
-        } else if (this.currentChatRoomId === this.generalChatRoomId) {
+        } else if (this.currentChatRoomId === this.groupGeneralChatRoomId) {
           // TODO: display warning message '"General" chatroom can not be renamed'
           console.log('TODO: "General" chatroom can not be renamed')
         } else {

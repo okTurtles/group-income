@@ -23,3 +23,19 @@ export const showNavMixin = {
     }
   }
 }
+
+export function validateURL (url: string): Object {
+  const response = {}
+
+  try {
+    const objURL = new URL(url)
+    response.isValid = true
+    response.isHttpValid = objURL.protocol === 'http:' || objURL.protocol === 'https:'
+    response.isMailtoValid = objURL.protocol === 'mailto:'
+    response.url = objURL
+  } catch (err) {
+    response.isValid = false
+  }
+
+  return response
+}

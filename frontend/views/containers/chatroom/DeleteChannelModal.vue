@@ -63,7 +63,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['currentChatRoomId', 'chatRoomAttributes', 'generalChatRoomId']),
+    ...mapGetters(['currentChatRoomId', 'chatRoomAttributes', 'groupGeneralChatRoomId']),
     ...mapState(['currentGroupId'])
   },
   methods: {
@@ -80,7 +80,7 @@ export default ({
           data: { chatRoomID },
           hooks: {
             postpublish: (message) => {
-              const contractID = this.generalChatRoomId
+              const contractID = this.groupGeneralChatRoomId
               // TODO: This should be moved to a side-effect
               sbp('gi.actions/chatroom/addMessage', {
                 contractID,

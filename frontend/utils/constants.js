@@ -20,6 +20,13 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
 // TODO: fetch this value from a server API
 export const CHAT_ATTACHMENT_SIZE_LIMIT = 6291456 // in byte.
 
+export const TextObjectType = {
+  Text: 'TEXT',
+  InAppLink: 'IN_APP_LINK',
+  MemberMention: 'MEMBER_MENTION',
+  ChannelMention: 'CHANNEL_MENTION'
+}
+
 export const KV_KEYS = {
   UNREAD_MESSAGES: 'unreadMessages',
   LAST_LOGGED_IN: 'lastLoggedIn'
