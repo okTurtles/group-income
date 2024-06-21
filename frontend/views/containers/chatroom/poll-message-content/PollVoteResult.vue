@@ -9,12 +9,12 @@
     h3.is-title-4 {{ pollData.question }}
 
     i18n.pill.is-neutral.c-poll-closed-badge(v-if='isPollExpired') Poll closed
-    menu-parent.c-poll-menu(v-else)
+    menu-parent.c-poll-menu(v-else-if='!readOnly')
       menu-trigger.is-icon.c-poll-menu-trigger
         i.icon-ellipsis-v
       menu-content.c-poll-menu-content
         ul
-          menu-item(tag='button' icon='edit' @click='pollUtils.switchOnChangeMode')
+          menu-item(tag='button' icon='edit' @click='$emit("request-vote-change")')
             i18n Change vote
   .c-options-and-voters
     ul.c-options-list
@@ -38,19 +38,18 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
-import { POLL_STATUS } from '@model/contracts/shared/constants.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import PollMixin from '@containers/chatroom/PollMixin.js'
 
 export default ({
   name: 'PollVoteResult',
-  inject: ['pollUtils'],
   props: {
-    pollData: Object
+    pollData: Object,
+    readOnly: Boolean
   },
+  mixins: [PollMixin],
   components: {
     VoterAvatars,
     MenuParent,
@@ -59,18 +58,6 @@ export default ({
     MenuItem
   },
   computed: {
-    ...mapGetters([
-      'ourIdentityContractId'
-    ]),
-    isPollExpired () {
-      return this.pollData.status === POLL_STATUS.CLOSED
-    },
-    pollExpiryDate () {
-      return humanDate(new Date(this.pollData.expires_date_ms))
-    },
-    isAnonymousPoll () {
-      return !!this.pollData.hideVoters
-    },
     list () {
       const percents = []
       const voters = []
@@ -97,10 +84,10 @@ export default ({
   },
   methods: {
     getPercent (votes) {
-      const total = this.pollUtils.totalVoteCount()
+      const total = this.totalVoteCount
       return total === 0
         ? '0%'
-        : `${Math.round(votes.length / this.pollUtils.totalVoteCount() * 100)}%`
+        : `${Math.round(votes.length / this.totalVoteCount * 100)}%`
     }
   }
 }: Object)

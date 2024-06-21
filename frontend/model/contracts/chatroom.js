@@ -4,7 +4,7 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, number, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, optional, object, number, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -142,8 +142,11 @@ sbp('chelonia/defineContract', {
     chatRoomMembers (state, getters) {
       return getters.currentChatRoomState.members || {}
     },
-    chatRoomLatestMessages (state, getters) {
+    chatRoomRecentMessages (state, getters) {
       return getters.currentChatRoomState.messages || []
+    },
+    chatRoomPinnedMessages (state, getters) {
+      return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
     }
   },
   actions: {
@@ -163,7 +166,8 @@ sbp('chelonia/defineContract', {
             deletedDate: null
           },
           members: {},
-          messages: []
+          messages: [],
+          pinnedMessages: []
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -381,7 +385,7 @@ sbp('chelonia/defineContract', {
           addMessage(state, createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
-          delete existingMsg.pending
+          Vue.delete(existingMsg, 'pending')
         }
       },
       sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
@@ -413,19 +417,27 @@ sbp('chelonia/defineContract', {
         createdHeight: number,
         text: string
       })),
-      process ({ data, meta, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0 && innerSigningContractID === state.messages[msgIndex].from) {
-          state.messages[msgIndex].text = data.text
-          state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.renderingContext && state.messages[msgIndex].pending) {
+      process ({ data, meta }, { state }) {
+        const { hash, text } = data
+        const fnEditMessage = (message) => {
+          Vue.set(message, 'text', text)
+          Vue.set(message, 'updatedDate', meta.createdDate)
+
+          if (state.renderingContext && message.pending) {
             // NOTE: 'pending' message attribute is not the original message attribute
             //       and it is only set and used in Chat page
-            delete state.messages[msgIndex].pending
+            Vue.delete(message, 'pending')
           }
         }
+
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(hash, messageArray)
+          if (msgIndex >= 0) {
+            fnEditMessage(messageArray[msgIndex])
+          }
+        })
       },
-      sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { getters }) {
+      sideEffect ({ contractID, data, innerSigningContractID }, { getters }) {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
         if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -460,7 +472,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: actionRequireInnerSignature((data, { state, meta, message: { innerSigningContractID }, contractID }) => {
+      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID }, contractID }) => {
         objectOf({
           hash: string,
           // NOTE: manifestCids of the attachments which belong to the message
@@ -480,22 +492,25 @@ sbp('chelonia/defineContract', {
           }
         }
       }),
-      process ({ data, meta, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
-          state.messages.splice(msgIndex, 1)
-        }
-        // filter replied messages and check if the current message is original
-        for (const message of state.messages) {
-          if (message.replyingMessage?.hash === data.hash) {
-            message.replyingMessage.hash = null
-            message.replyingMessage.text = L('Original message was removed by {user}', {
-              user: makeMentionFromUserID(innerSigningContractID).me
-            })
+      process ({ data, innerSigningContractID }, { state }) {
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(data.hash, messageArray)
+          if (msgIndex >= 0) {
+            messageArray.splice(msgIndex, 1)
           }
-        }
+
+          // filter replied messages and check if the current message is original
+          for (const message of messageArray) {
+            if (message.replyingMessage?.hash === data.hash) {
+              message.replyingMessage.hash = null
+              message.replyingMessage.text = L('Original message was removed by {user}', {
+                user: makeMentionFromUserID(innerSigningContractID).me
+              })
+            }
+          }
+        })
       },
-      sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }) {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
@@ -530,19 +545,25 @@ sbp('chelonia/defineContract', {
         manifestCid: string,
         messageSender: string
       })),
-      process ({ data, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
-          const oldAttachments = state.messages[msgIndex].attachments
+      process ({ data }, { state }) {
+        const fnDeleteAttachment = (message) => {
+          const oldAttachments = message.attachments
           if (Array.isArray(oldAttachments)) {
             const newAttachments = oldAttachments.filter(attachment => {
               return attachment.downloadData.manifestCid !== data.manifestCid
             })
-            Vue.set(state.messages[msgIndex], 'attachments', newAttachments)
+            Vue.set(message, 'attachments', newAttachments)
           }
         }
+
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(data.hash, messageArray)
+          if (msgIndex >= 0) {
+            fnDeleteAttachment(messageArray[msgIndex])
+          }
+        })
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         const option = {
           shouldDeleteFile: me === innerSigningContractID,
@@ -560,9 +581,9 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, innerSigningContractID }, { state }) {
         const { hash, emoticon } = data
-        const msgIndex = findMessageIdx(hash, state.messages)
-        if (msgIndex >= 0) {
-          let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
+
+        const fnMakeEmotion = (message) => {
+          let emoticons = cloneDeep(message.emoticons || {})
           if (emoticons[emoticon]) {
             const alreadyAdded = emoticons[emoticon].indexOf(innerSigningContractID)
             if (alreadyAdded >= 0) {
@@ -580,11 +601,18 @@ sbp('chelonia/defineContract', {
             emoticons[emoticon] = [innerSigningContractID]
           }
           if (emoticons) {
-            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+            Vue.set(message, 'emoticons', emoticons)
           } else {
-            Vue.delete(state.messages[msgIndex], 'emoticons')
+            Vue.delete(message, 'emoticons')
           }
         }
+
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(hash, messageArray)
+          if (msgIndex >= 0) {
+            fnMakeEmotion(messageArray[msgIndex])
+          }
+        })
       }
     },
     'gi.contracts/chatroom/voteOnPoll': {
@@ -594,36 +622,41 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
+        let shouldHideVoters = false
+
+        const fnVoteOnPoll = (message) => {
           const myVotes = data.votes
-          const pollData = state.messages[msgIndex].pollData
+          const pollData = message.pollData
           const optsCopy = cloneDeep(pollData.options)
-          const votedOptNames = []
 
           myVotes.forEach(optId => {
-            const foundOpt = optsCopy.find(x => x.id === optId)
-
-            if (foundOpt) {
-              foundOpt.voted.push(innerSigningContractID)
-              votedOptNames.push(`"${foundOpt.value}"`)
-            }
+            optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
 
-          if (pollData.hideVoters) { return }
+          // TODO: https://github.com/okTurtles/group-income/issues/2010
+          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
-        // create & add a notification-message for user having voted.
-        const notificationData = createNotificationData(
-          MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-          {
-            votedOptions: data.votesAsString,
-            pollMessageHash: data.hash
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(data.hash, messageArray)
+          if (msgIndex >= 0) {
+            fnVoteOnPoll(messageArray[msgIndex])
           }
-        )
-        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+        })
+
+        if (!shouldHideVoters) {
+          // create & add a notification-message for user having voted.
+          const notificationData = createNotificationData(
+            MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
+            {
+              votedOptions: data.votesAsString,
+              pollMessageHash: data.hash
+            }
+          )
+          addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+        }
       }
     },
     'gi.contracts/chatroom/changeVoteOnPoll': {
@@ -633,42 +666,46 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        const msgIndex = findMessageIdx(data.hash, state.messages)
-        if (msgIndex >= 0) {
-          const me = innerSigningContractID
+        let shouldHideVoters = false
+
+        const fnChangeVoteOnPoll = (message) => {
           const myUpdatedVotes = data.votes
-          const pollData = state.messages[msgIndex].pollData
+          const pollData = message.pollData
           const optsCopy = cloneDeep(pollData.options)
-          const votedOptNames = []
 
           // remove all the previous votes of the user before update.
           optsCopy.forEach(opt => {
-            opt.voted = opt.voted.filter(votername => votername !== me)
+            opt.voted = opt.voted.filter(votername => votername !== innerSigningContractID)
           })
 
           myUpdatedVotes.forEach(optId => {
-            const foundOpt = optsCopy.find(x => x.id === optId)
-
-            if (foundOpt) {
-              foundOpt.voted.push(me)
-              votedOptNames.push(`"${foundOpt.value}"`)
-            }
+            optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
 
-          if (pollData.hideVoters) { return }
+          // TODO: https://github.com/okTurtles/group-income/issues/2010
+          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
-        // create & add a notification-message for user having update his/her votes.
-        const notificationData = createNotificationData(
-          MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
-          {
-            votedOptions: data.votesAsString,
-            pollMessageHash: data.hash
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(data.hash, messageArray)
+          if (msgIndex >= 0) {
+            fnChangeVoteOnPoll(messageArray[msgIndex])
           }
-        )
-        addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+        })
+
+        if (!shouldHideVoters) {
+          // create & add a notification-message for user having update his/her votes.
+          const notificationData = createNotificationData(
+            MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
+            {
+              votedOptions: data.votesAsString,
+              pollMessageHash: data.hash
+            }
+          )
+          addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
+        }
       }
     },
     'gi.contracts/chatroom/closePoll': {
@@ -676,9 +713,52 @@ sbp('chelonia/defineContract', {
         hash: string
       })),
       process ({ data }, { state }) {
+        const fnClosePoll = (message) => {
+          Vue.set(message.pollData, 'status', POLL_STATUS.CLOSED)
+        }
+
+        [state.messages, state.pinnedMessages].forEach(messageArray => {
+          const msgIndex = findMessageIdx(data.hash, messageArray)
+          if (msgIndex >= 0) {
+            fnClosePoll(messageArray[msgIndex])
+          }
+        })
+      }
+    },
+    'gi.contracts/chatroom/pinMessage': {
+      validate: actionRequireInnerSignature(objectOf({
+        message: object
+      })),
+      process ({ data, innerSigningContractID }, { state }) {
+        // TODO: remove the below 'if' statement when no older version of contracts are being used
+        if (!state.pinnedMessages) {
+          // NOTE: this is temporary solution for the older version of contracts
+          //       that doesn't have 'pinnedMessages' field which is created in its constructor
+          state.pinnedMessages = []
+        }
+
+        const { message } = data
+        state.pinnedMessages.unshift(message)
+
+        const msgIndex = findMessageIdx(message.hash, state.messages)
+        if (msgIndex >= 0) {
+          Vue.set(state.messages[msgIndex], 'pinnedBy', innerSigningContractID)
+        }
+      }
+    },
+    'gi.contracts/chatroom/unpinMessage': {
+      validate: actionRequireInnerSignature(objectOf({
+        hash: string
+      })),
+      process ({ data }, { state }) {
+        const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
+        if (pinnedMsgIndex >= 0) {
+          state.pinnedMessages.splice(pinnedMsgIndex, 1)
+        }
+
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
-          Vue.set(state.messages[msgIndex].pollData, 'status', POLL_STATUS.CLOSED)
+          Vue.delete(state.messages[msgIndex], 'pinnedBy')
         }
       }
     }

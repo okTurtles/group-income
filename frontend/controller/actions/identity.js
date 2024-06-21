@@ -807,7 +807,8 @@ export default (sbp('sbp/selectors/register', {
     }
 
     if (deleteResult?.some(r => r.status === 'rejected')) {
-      console.error('[gi.actions/identity/removeFiles] Some CIDs could not be deleted', deleteResult?.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
+      console.error('[gi.actions/identity/removeFiles] Some CIDs could not be deleted',
+        deleteResult?.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
       throw new Error('Some CIDs could not be deleted')
     }
   },
