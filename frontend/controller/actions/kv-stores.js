@@ -4,7 +4,7 @@ import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { KV_QUEUE } from '~/frontend/utils/events.js'
 
 export default (sbp('sbp/selectors/register', {
-  // NOTE: Identity Contract ID
+  // NOTE: Space of Identity Contract ID
   'gi.actions/kv/fetchChatRoomUnreadMessages': async () => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
     if (!ourIdentityContractId) {
@@ -181,7 +181,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
     })
   },
-  // NOTE: Group Contract ID
+  // NOTE: Space of Group Contract ID
   'gi.actions/kv/updateLastLoggedIn': async ({ contractID }: { contractID: string }) => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
     if (!ourIdentityContractId) {

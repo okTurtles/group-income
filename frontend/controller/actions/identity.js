@@ -803,6 +803,15 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Some CIDs could not be deleted')
     }
   },
+  // NOTE: Adding the following 4 actions is a temporary solution and needs to be removed
+  //       when no older (than 0.5.1) version of contracts are being used.
+  //       https://okturtles.slack.com/archives/C0EH7P20Y/p1718990127660609
+  ...Object.fromEntries([
+    'addChatRoomUnreadMessage',
+    'initChatRoomUnreadMessages',
+    'removeChatRoomUnreadMessage',
+    'deleteChatRoomUnreadMessages'
+  ].map(fnName => [`gi.actions/identity/${fnName}`, (...args) => sbp(`gi.actions/kv/${fnName}`, args)])),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
 }): string[])
