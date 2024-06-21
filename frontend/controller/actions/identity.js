@@ -804,7 +804,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   // NOTE: Adding the following 4 actions is a temporary solution and needs to be removed
-  //       when no older (than 0.5.1) version of contracts are being used.
+  //       when no older (than 0.5.1) version of contracts are being used
   //       https://okturtles.slack.com/archives/C0EH7P20Y/p1718990127660609
   ...Object.fromEntries([
     'addChatRoomUnreadMessage',
