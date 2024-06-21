@@ -18,6 +18,10 @@ const additionalChannelName = 'bulgaria-hackathon'
 const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
+const pollData = {
+  question: 'What is your favourite coin?',
+  options: ['Bitcoin', 'Ethereum', 'Solana', 'Not mentioned here']
+}
 let invitationLinkAnyone
 let me
 
@@ -296,6 +300,72 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
+  })
+
+  it('user2 creates a poll', () => {
+    const { question, options } = pollData
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.getByDT('createPoll').click()
+    })
+
+    cy.getByDT('createPollWrapper').within(() => {
+      cy.getByDT('question').within(() => {
+        cy.get('input').type(`${question}{enter}`)
+      })
+
+      cy.getByDT('options').within(() => {
+        for (let i = 1; i <= options.length; i++) {
+          cy.getByDT('addOption').click()
+          cy.get('.c-option-list > .c-option-item').should('have.length', i + 1)
+        }
+        cy.get('.c-option-list > .c-option-item:last-child').within(() => {
+          cy.get('button[aria-label="Remove option"]').click()
+        })
+        cy.get('.c-option-list > .c-option-item').should('have.length', options.length)
+
+        for (let i = 1; i <= options.length; i++) {
+          cy.get(`.c-option-list > .c-option-item:nth-child(${i})`).within(() => {
+            cy.get('input').type(`${options[i - 1]}{enter}`)
+          })
+        }
+      })
+
+      cy.get('.c-btns-container').within(() => {
+        cy.getByDT('submit').click()
+      })
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('have.class', 'is-type-poll')
+      cy.get('.c-message:last-child .c-poll-container').within(() => {
+        cy.get('.c-poll-title').should('contain', question)
+        cy.get('fieldset').within(() => {
+          cy.get('.c-poll-option').should('have.length', options.length)
+          for (let i = 1; i <= options.length; i++) {
+            cy.get(`.c-poll-option:nth-child(${i})`).should('contain', options[i - 1])
+          }
+        })
+      })
+    })
+  })
+
+  it('user2 votes the poll he created', () => {
+    const { options } = pollData
+    cy.get('.c-message:last-child').within(() => {
+      cy.get('fieldset').within(() => {
+        cy.get('label.c-poll-option:first-child').click()
+      })
+
+      cy.get('.c-buttons-container').within(() => {
+        cy.get('button').click()
+      })
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
+      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
+      cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${options[0]}"`)
+    })
   })
 
   it('pinned messages should be sorted by the created date of original messages', () => {
