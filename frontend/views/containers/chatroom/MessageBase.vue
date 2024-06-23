@@ -116,10 +116,7 @@ import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/contracts/shared/functions.js'
-import {
-  MESSAGE_TYPES,
-  MESSAGE_VARIANTS
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
 
@@ -201,11 +198,7 @@ export default ({
     humanDate,
     swapMentionIDForDisplayname,
     editMessage () {
-      if (this.type === MESSAGE_TYPES.POLL) {
-        alert('TODO: implement editting a poll')
-      } else {
-        this.isEditing = true
-      }
+      this.isEditing = true
     },
     onMessageEdited (newMessage) {
       this.isEditing = false

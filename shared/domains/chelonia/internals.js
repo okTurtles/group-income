@@ -793,7 +793,7 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          const previousVolatileState = targetState._volatile
+          const previousVolatileState = targetState?._volatile
           sbp('chelonia/private/queueEvent', v.contractID, ['chelonia/private/postKeyShare', v.contractID, mustResync ? previousVolatileState : null, signingKey])
             .then(() => {
             // The CONTRACT_HAS_RECEIVED_KEYS event is placed on the queue for

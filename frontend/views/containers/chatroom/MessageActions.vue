@@ -164,10 +164,11 @@ export default ({
       return this.isText || this.isPoll
     },
     isEditable () {
-      return this.isMsgSender && (this.isText || this.isPoll)
+      return this.isMsgSender && this.isText
     },
     isDeletable () {
-      return this.isEditable || this.isGroupCreator
+      return this.isGroupCreator ||
+        (this.isMsgSender && (this.isText || this.isPoll))
     }
   },
   methods: {
