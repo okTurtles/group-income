@@ -193,7 +193,6 @@ export default ({
   },
   PROPOSAL_CLOSED (data: { proposal: Object }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
-    const isMe = sbp('state/vuex/getters').ourIdentityContractId === creatorID
 
     const statusMap = {
       [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
@@ -218,7 +217,7 @@ export default ({
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
         L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_GENERIC]:
-        L(`{strong_}{name}'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.`, args)
+        L('{strong_}{name}\'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.', args)
     }
 
     return {
