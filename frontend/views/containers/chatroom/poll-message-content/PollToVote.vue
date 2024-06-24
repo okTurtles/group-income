@@ -20,18 +20,10 @@ form(@submit.prevent='')
 
   .buttons.c-buttons-container
     template(v-if='enableSubmitBtn')
-      button-submit.is-small(
-        v-if='isChangeMode'
-        type='button'
-        @click='changeVotes'
-      )
+      button-submit.is-small(v-if='isChangeMode' data-test='submit' type='button' @click='changeVotes')
         i18n Change vote
 
-      button-submit.is-small(
-        v-else
-        type='button'
-        @click='submitVotes'
-      )
+      button-submit.is-small(v-else type='button' data-test='submit' @click='submitVotes')
         i18n Submit
 
     i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='onCancelClick') Cancel
@@ -39,16 +31,15 @@ form(@submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { humanDate } from '@model/contracts/shared/time.js'
+import PollMixin from '@containers/chatroom/PollMixin.js'
 
 export default ({
   name: 'PollToVote',
-  inject: ['pollUtils'],
+  mixins: [PollMixin],
   components: {
     BannerScoped,
     ButtonSubmit
@@ -70,13 +61,6 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'ourIdentityContractId',
-      'currentChatRoomId'
-    ]),
-    allowMultipleChoices () {
-      return this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES
-    },
     enableSubmitBtn () {
       if (this.isChangeMode) {
         return this.formBeenUpdated()
@@ -86,18 +70,12 @@ export default ({
           : Boolean(this.form.selectedOptions)
       }
     },
-    isAnonymousPoll () {
-      return !!this.pollData.hideVoters
-    },
     selectedVotesAsString () {
       if (this.isAnonymousPoll) { return '' }
 
       return this.allowMultipleChoices
         ? this.form.selectedOptions.map(id => this.getOptValue(id)).join(', ')
         : this.getOptValue(this.form.selectedOptions)
-    },
-    pollExpiryDate () {
-      return humanDate(new Date(this.pollData.expires_date_ms))
     }
   },
   methods: {
@@ -127,7 +105,7 @@ export default ({
           }
         })
 
-        this.pollUtils.switchOffChangeMode()
+        this.onCancelClick()
       } catch (e) {
         console.error('"changeVoteOnPoll" action failed: ', e)
         this.$refs.errBanner.danger(e.message)
@@ -145,7 +123,7 @@ export default ({
       } else return this.selectedOptionsBeforeUpdate !== this.form.selectedOptions
     },
     onCancelClick () {
-      this.pollUtils.switchOffChangeMode()
+      this.$emit('cancel-vote-change')
     }
   },
   mounted () {

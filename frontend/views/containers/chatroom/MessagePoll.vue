@@ -3,6 +3,8 @@ message-base.c-message-poll(
   v-bind='$props'
   @delete-message='deleteMessage'
   @add-emoticon='addEmoticon($event)'
+  @pin-to-channel='$emit("pin-to-channel")'
+  @unpin-from-channel='$emit("unpin-from-channel")'
 )
   template(#body='')
     i18n.c-poll-created-sentence(tag='p') Created a new poll:
@@ -16,6 +18,8 @@ message-base.c-message-poll(
         :messageId='messageId'
         :messageHash='messageHash'
         :pollData='pollData'
+        @request-vote-change='switchOnChangeMode'
+        @cancel-vote-change='switchOffChangeMode'
       )
 
       banner-scoped(ref='errBanner')
@@ -23,16 +27,17 @@ message-base.c-message-poll(
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS, POLL_STATUS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import PollMixin from '@containers/chatroom/PollMixin.js'
 
 export default ({
   name: 'MessagePoll',
+  mixins: [PollMixin],
   components: {
     MessageBase,
     PollToVote,
@@ -62,6 +67,7 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
+    pinnedBy: String,
     isMsgSender: Boolean // says if the current user is the creator of the message
   },
   data () {
@@ -72,22 +78,6 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'ourIdentityContractId',
-      'currentChatRoomId'
-    ]),
-    votesFlattened () {
-      return this.pollData.options.reduce((accu, opt) => [...accu, ...opt.voted], [])
-    },
-    hasVoted () { // checks if the current user has voted on this poll or not
-      return this.votesFlattened.includes(this.ourIdentityContractId)
-    },
-    isPollEditable () { // If the current user is the creator of the poll and no one has voted yet, poll can be editted.
-      return this.isMsgSender && this.votesFlattened.length === 0
-    },
-    isPollExpired () {
-      return this.pollData.status === POLL_STATUS.CLOSED
-    },
     messageContentComponent () {
       if (this.hasVoted) {
         return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-vote-result'
@@ -144,16 +134,6 @@ export default ({
         //       (couldn't find a way to access a chat-message item via vuex state/getters)
         //       So implemented this logic here.
         this.expirationTimeoutId = setTimeout(checkAndSetTimer, MINS_MILLIS)
-      }
-    }
-  },
-  provide () {
-    return {
-      pollUtils: {
-        hasVoted: () => this.hasVoted,
-        totalVoteCount: () => this.votesFlattened.length,
-        switchOnChangeMode: this.switchOnChangeMode,
-        switchOffChangeMode: this.switchOffChangeMode
       }
     }
   },

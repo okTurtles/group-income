@@ -1,7 +1,7 @@
 'use strict'
 
 import {
-  objectOf, objectMaybeOf, arrayOf, unionOf,
+  objectOf, objectMaybeOf, arrayOf, unionOf, boolean,
   object, string, optional, number, mapOf, literalOf
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
@@ -9,6 +9,7 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
+  POLL_TYPES,
   STATUS_EXPIRING
 } from './constants.js'
 
@@ -63,7 +64,12 @@ export const messageType: any = objectMaybeOf({
     hash: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)
   }),
-  emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
+  pollData: objectOf({
+    question: string,
+    options: arrayOf(objectOf({ id: string, value: string })),
+    expires_date_ms: number,
+    hideVoters: boolean,
+    pollType: unionOf(...Object.values(POLL_TYPES).map(v => literalOf(v)))
+  }),
   onlyVisibleTo: arrayOf(string) // list of usernames, only necessary when type is NOTIFICATION
-  // TODO: need to consider POLL and add more down here
 })

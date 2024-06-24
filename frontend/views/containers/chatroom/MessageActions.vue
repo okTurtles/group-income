@@ -1,5 +1,5 @@
 <template lang='pug'>
-menu-parent(ref='menu')
+menu-parent.c-message-menu(ref='menu')
   .c-actions
     tooltip(
       direction='top'
@@ -7,7 +7,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Add reaction")'
-        @click='action("openEmoticon", $event)'
+        @click.stop='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
 
@@ -18,7 +18,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
-        @click='action("editMessage")'
+        @click.stop='action("editMessage")'
       )
         i.icon-pencil-alt
 
@@ -29,7 +29,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Reply")'
-        @click='action("reply")'
+        @click.stop='action("reply")'
       )
         i.icon-reply
 
@@ -40,7 +40,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Retry")'
-        @click='action("retry")'
+        @click.stop='action("retry")'
       )
         i.icon-undo
 
@@ -53,7 +53,7 @@ menu-parent(ref='menu')
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        @click='action("openEmoticon", $event)'
+        @click.stop='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
         i18n Add reaction
@@ -61,7 +61,7 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='isEditable'
-        @click='action("editMessage")'
+        @click.stop='action("editMessage")'
       )
         i.icon-pencil-alt
         i18n Edit
@@ -69,7 +69,7 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='isText'
-        @click='action("reply")'
+        @click.stop='action("reply")'
       )
         i.icon-reply
         i18n Reply
@@ -77,7 +77,7 @@ menu-parent(ref='menu')
       menu-item.hide-desktop.is-icon-small(
         tag='button'
         v-if='variant==="failed"'
-        @click='action("retry")'
+        @click.stop='action("retry")'
       )
         i.icon-undo
         i18n Add emoticons
@@ -85,23 +85,41 @@ menu-parent(ref='menu')
       menu-item.is-icon-small(
         v-if='isText'
         tag='button'
-        @click='action("copyMessageText")'
+        @click.stop='action("copyMessageText")'
       )
         i.icon-copy
         i18n Copy message text
 
       menu-item.is-icon-small(
         tag='button'
-        @click='action("copyMessageLink")'
+        @click.stop='action("copyMessageLink")'
       )
         i.icon-link
         i18n Copy message link
+
+      menu-item.is-icon-small(
+        v-if='!isAlreadyPinned && isPinnable'
+        tag='button'
+        data-test='pinMessage'
+        @click.stop='action("pinToChannel")'
+      )
+        i.icon-thumbtack
+        i18n Pin to channel
+
+      menu-item.is-icon-small(
+        v-if='isAlreadyPinned'
+        tag='button'
+        data-test='unpinMessage'
+        @click.stop='action("unpinFromChannel")'
+      )
+        i.icon-thumbtack
+        i18n Unpin from channel
 
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
         v-if='isDeletable'
-        @click='action("deleteMessage")'
+        @click.stop='action("deleteMessage")'
       )
         i.icon-trash-alt
         i18n Delete message
@@ -132,7 +150,8 @@ export default ({
     text: String,
     type: String,
     isMsgSender: Boolean,
-    isGroupCreator: Boolean
+    isGroupCreator: Boolean,
+    isAlreadyPinned: Boolean
   },
   computed: {
     isText () {
@@ -141,11 +160,15 @@ export default ({
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
     },
+    isPinnable () {
+      return this.isText || this.isPoll
+    },
     isEditable () {
-      return this.isMsgSender && (this.isText || this.isPoll)
+      return this.isMsgSender && this.isText
     },
     isDeletable () {
-      return this.isEditable || this.isGroupCreator
+      return this.isGroupCreator ||
+        (this.isMsgSender && (this.isText || this.isPoll))
     }
   },
   methods: {

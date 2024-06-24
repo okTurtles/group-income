@@ -1,10 +1,15 @@
 <template lang='pug'>
 .c-message(
-  :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
+  :class='[variant, isSameSender && "same-sender", "is-type-" + type, isAlreadyPinned && "pinned"]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
+  .c-pinned-wrapper(v-if='isAlreadyPinned')
+    .c-pinned-icon
+      i.icon-thumbtack
+    span(v-safe-html='pinLabel')
+
   .c-message-wrapper
     slot(name='image')
       profile-card(:contractID='from' direction='top-left')
@@ -85,19 +90,22 @@
     :messageHash='messageHash'
     :isMsgSender='isMsgSender'
     :isGroupCreator='isGroupCreator'
+    :isAlreadyPinned='isAlreadyPinned'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @editMessage='editMessage'
     @deleteMessage='$emit("delete-message")'
     @reply='reply'
     @retry='$emit("retry")'
+    @pinToChannel='$emit("pin-to-channel")'
+    @unpinFromChannel='$emit("unpin-from-channel")'
   )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
-import Tooltip from '@components/Tooltip.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
@@ -108,18 +116,15 @@ import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/contracts/shared/functions.js'
-import {
-  MESSAGE_TYPES,
-  MESSAGE_VARIANTS
-} from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
   components: {
     Avatar,
-    Tooltip,
     ProfileCard,
     MessageActions,
     MessageReactions,
@@ -160,25 +165,40 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
+    pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
     shouldRenderMarkdown: Boolean
   },
   computed: {
+    ...mapGetters(['userDisplayNameFromID']),
     hasAttachments () {
       return Boolean(this.attachments?.length)
+    },
+    isAlreadyPinned () {
+      return !!this.pinnedBy
+    },
+    pinnedUserName () {
+      if (this.isAlreadyPinned) {
+        if (this.currentUserID === this.pinnedBy) {
+          return L('you')
+        }
+        return this.userDisplayNameFromID(this.pinnedBy)
+      }
+      return ''
+    },
+    pinLabel () {
+      return this.isAlreadyPinned
+        ? L('Pinned by {strong_}{user}{_strong}', { user: this.pinnedUserName, ...LTags('strong') })
+        : ''
     }
   },
   methods: {
     humanDate,
     swapMentionIDForDisplayname,
     editMessage () {
-      if (this.type === MESSAGE_TYPES.POLL) {
-        alert('TODO: implement editting a poll')
-      } else {
-        this.isEditing = true
-      }
+      this.isEditing = true
     },
     onMessageEdited (newMessage) {
       this.isEditing = false
@@ -245,6 +265,10 @@ export default ({
     }
   }
 
+  &.pinned {
+    background-color: $warning_2;
+  }
+
   &.same-sender {
     margin-top: 0.25rem;
   }
@@ -285,6 +309,17 @@ export default ({
     .c-failure-message-wrapper {
       display: block;
     }
+  }
+}
+
+.c-pinned-wrapper {
+  color: $warning_0;
+  display: flex;
+  gap: 0.5rem;
+
+  .c-pinned-icon {
+    width: 2.5rem;
+    text-align: right;
   }
 }
 

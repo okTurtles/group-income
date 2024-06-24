@@ -6,6 +6,8 @@ message-base(
   @retry='$emit("retry")'
   @reply-message-clicked='$emit("scroll-to-replying-message")'
   @message-edited='editMessage'
+  @pin-to-channel='$emit("pin-to-channel")'
+  @unpin-from-channel='$emit("unpin-from-channel")'
   @delete-attachment='deleteAttachment'
   @delete-message='$emit("delete-message")'
   :shouldRenderMarkdown='true'
@@ -49,6 +51,7 @@ export default ({
         return null
       }
     },
+    pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,

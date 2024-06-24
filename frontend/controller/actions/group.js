@@ -458,6 +458,10 @@ export default (sbp('sbp/selectors/register', {
                 postpublish: null
               }
             })
+
+            await sbp('gi.actions/group/updateLastLoggedIn', {
+              contractID: params.contractID
+            }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
           } catch (e) {
             console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
             throw e

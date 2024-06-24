@@ -611,10 +611,10 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupCurrency?.displayWithCurrency
     },
-    getGroupChatRooms (state, getters) {
+    groupChatRooms (state, getters) {
       return getters.currentGroupState.chatRooms
     },
-    generalChatRoomId (state, getters) {
+    groupGeneralChatRoomId (state, getters) {
       return getters.currentGroupState.generalChatRoomId
     },
     // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
@@ -888,7 +888,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/proposal': {
-      validate: actionRequireActiveMember((data, { state, meta }) => {
+      validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
           proposalType: proposalType,
           proposalData: object, // data for Vue widgets
@@ -1036,7 +1036,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID }, { state }) {
+      process ({ data }, { state }) {
         for (const proposalId of data.proposalIds) {
           Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
         }
@@ -1055,7 +1055,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: actionRequireActiveMember((data, { state, getters, meta, message: { innerSigningContractID, proposalHash } }) => {
+      validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID, proposalHash } }) => {
         objectOf({
           memberID: optional(string), // member to remove
           reason: optional(string),
@@ -1113,7 +1113,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/invite': {
       validate: actionRequireActiveMember(inviteType),
-      process ({ data, meta }, { state }) {
+      process ({ data }, { state }) {
         Vue.set(state.invites, data.inviteKeyId, data)
       }
     },
@@ -1133,7 +1133,7 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      sideEffect ({ meta, contractID, height, innerSigningContractID }, { state }) {
+      sideEffect ({ meta, contractID, height, innerSigningContractID }) {
         const { loggedIn } = sbp('state/vuex/state')
 
         sbp('chelonia/queueInvocation', contractID, async () => {
@@ -1239,7 +1239,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteRevoke': {
-      validate: actionRequireActiveMember((data, { state, meta }) => {
+      validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
           inviteKeyId: string
         })(data)
@@ -1356,7 +1356,7 @@ sbp('chelonia/defineContract', {
         ruleThreshold: number,
         expires_ms: number
       })),
-      process ({ data, meta }, { state }) {
+      process ({ data }, { state }) {
         // Update all types of proposal settings for simplicity
         if (data.ruleName && data.ruleThreshold) {
           for (const proposalSettings in state.settings.proposals) {
@@ -1395,7 +1395,7 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      process ({ data, meta, contractID, innerSigningContractID }, { state }) {
+      process ({ data, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes
         // XOR: has(innerSigningContractID) XOR #General
         if (!!innerSigningContractID === (data.attributes.name === CHATROOM_GENERAL_NAME)) {
@@ -1425,14 +1425,14 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/deleteChatRoom': {
-      validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
+      validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
         objectOf({ chatRoomID: string })(data)
 
-        if (getters.getGroupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
+        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data }, { state }) {
         Vue.delete(state.chatRooms, data.chatRoomID)
       }
     },
@@ -1451,7 +1451,7 @@ sbp('chelonia/defineContract', {
         }
         removeGroupChatroomProfile(state, data.chatRoomID, memberID)
       },
-      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const memberID = data.memberID || innerSigningContractID
         if (innerSigningContractID === rootState.loggedIn.identityContractID) {
@@ -1471,7 +1471,7 @@ sbp('chelonia/defineContract', {
         memberID: optional(string),
         chatRoomID: string
       })),
-      process ({ data, meta, innerSigningContractID }, { state }) {
+      process ({ data, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
         const { chatRoomID } = data
 
@@ -1497,7 +1497,7 @@ sbp('chelonia/defineContract', {
         // a part of.
         Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
       },
-      sideEffect ({ meta, data, contractID, innerSigningContractID }, { state }) {
+      sideEffect ({ data, contractID, innerSigningContractID }) {
         const rootState = sbp('state/vuex/state')
         const memberID = data.memberID || innerSigningContractID
 
@@ -1540,7 +1540,7 @@ sbp('chelonia/defineContract', {
         chatRoomID: string,
         name: string
       })),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'name', data.name)
       }
     },
@@ -1549,7 +1549,7 @@ sbp('chelonia/defineContract', {
         chatRoomID: string,
         description: string
       })),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
       }
     },
@@ -1568,7 +1568,7 @@ sbp('chelonia/defineContract', {
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
-        process ({ meta, contractID }, { state, getters }) {
+        process ({ meta }, { getters }) {
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
         }
       },
@@ -1784,7 +1784,23 @@ sbp('chelonia/defineContract', {
       }
 
       try {
-        await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
+        // We need to be subscribed to the chatroom before writing to it, and
+        // also because of the following check (hasKeysToPerformOperation),
+        // which requires state.
+        // If we're joining the chatroom ourselves (actorID === memberID),
+        // ensure we _remain_ subscribed to the chatroom by not using an
+        // ephemeral call to retain.
+        // If we're _not_ joining the chatroom ourselves (but instead we've
+        // added someone else), we use 'ephemeral: true' because we don't want
+        // to remain subscribed to the chatroom if we're not a member(*).
+        // This used to be done in four steps: unconditional ephemeral retain
+        // here, ended with an ephemeral release in the finally block, and two
+        // conditional persistent retains on postpublish (for the current
+        // device) and the error handler (for other devices). This was too
+        // complex.
+        // (*) Yes, usually we'd be a member of the chatroom in this case, but
+        // we could have left afterwards.
+        await sbp('chelonia/contract/retain', chatRoomID, actorID !== memberID ? { ephemeral: true } : {})
 
         if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
           throw new Error(`Missing keys to join chatroom ${chatRoomID}`)
@@ -1798,29 +1814,18 @@ sbp('chelonia/defineContract', {
         await sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
-          encryptionKeyId,
-          ...actorID === memberID && {
-            hooks: {
-              postpublish: () => {
-                sbp('chelonia/contract/retain', chatRoomID)
-              }
-            }
-          }
+          encryptionKeyId
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
-            if (actorID === memberID) {
-              // Increase reference count if we've already joined
-              // Note: this addresses syncing the contract from a new device,
-              // where `retain` in postpublish hasn't been called and the
-              // reference count is zero due to the state being fresh.
-              sbp('chelonia/contract/retain', chatRoomID)
-            }
             return
           }
+
           console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         })
       } finally {
-        await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+        if (actorID !== memberID) {
+          await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+        }
       }
     },
     // eslint-disable-next-line require-await

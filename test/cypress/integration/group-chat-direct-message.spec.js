@@ -15,17 +15,6 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     me = username
   }
 
-  function sendMessage (message) {
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').clear().type(`${message}{enter}`)
-      cy.get('textarea').should('be.empty')
-    })
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
-    })
-  }
-
   function createPrivateDM (partner) {
     cy.getByDT('chatMembers').within(() => {
       cy.getByDT('inviteButton').click()
@@ -124,8 +113,8 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 1)
     cy.getByDT('channelName').should('contain', user1)
 
-    sendMessage('Hi! Nice to meet you.')
-    sendMessage('Hope you are doing well.')
+    cy.giSendMessage(me, 'Hi! Nice to meet you.')
+    cy.giSendMessage(me, 'Hope you are doing well.')
   })
 
   it('user1 checks direct messages from user2 and replies', () => {
@@ -138,7 +127,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 2)
 
-    sendMessage('I am fine. Thanks.')
+    cy.giSendMessage(me, 'I am fine. Thanks.')
   })
 
   it('user3 creates a direct message channel with user1 and sends greetings', () => {
@@ -150,7 +139,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 1)
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 
-    sendMessage('Hello. How are you?')
+    cy.giSendMessage(me, 'Hello. How are you?')
   })
 
   it('user1 checks the direct messages from user3 and replies', () => {
@@ -163,7 +152,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 1)
     cy.getByDT('channelName').should('contain', user3)
 
-    sendMessage('Fine. You?')
+    cy.giSendMessage(me, 'Fine. You?')
   })
 
   it('direct message channels should be sorted by name and the latest message', () => {
@@ -204,7 +193,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
-    sendMessage(message)
+    cy.giSendMessage(me, message)
 
     cy.url().then(url => url).as('groupMessageLink')
 
