@@ -365,10 +365,6 @@ export default (sbp('sbp/selectors/register', {
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
       }
 
-      if (Math.random() < 1) {
-        throw new Error('Random error thrown by sebin')
-      }
-
       // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
 
       // After syncing the group contract, we send a key request
