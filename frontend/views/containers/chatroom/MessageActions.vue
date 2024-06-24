@@ -1,5 +1,5 @@
 <template lang='pug'>
-menu-parent(ref='menu')
+menu-parent.c-message-menu(ref='menu')
   .c-actions
     tooltip(
       direction='top'
