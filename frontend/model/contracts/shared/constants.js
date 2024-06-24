@@ -35,6 +35,7 @@ export const MAX_GROUP_MEMBER_COUNT = 150 // Dunbar's number (https://en.wikiped
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
+export const STATUS_EXPIRING = 'expiring' // Only useful to notify users that the proposals are expiring
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_CANCELLED = 'cancelled'
 

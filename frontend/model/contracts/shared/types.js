@@ -4,7 +4,13 @@ import {
   objectOf, objectMaybeOf, arrayOf, unionOf,
   object, string, optional, number, mapOf, literalOf
 } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, MESSAGE_TYPES, MESSAGE_NOTIFICATIONS } from './constants.js'
+import {
+  CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
+  MESSAGE_TYPES,
+  MESSAGE_NOTIFICATIONS,
+  STATUS_EXPIRING
+} from './constants.js'
 
 // group.js related
 
@@ -29,6 +35,14 @@ export const chatRoomAttributesType: any = objectOf({
 export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   text: string,
+    proposal: objectMaybeOf({
+    proposalId: string,
+    proposalType: string,
+    expires_date_ms: number,
+    createdDate: string,
+    creatorID: string,
+    variant: unionOf([STATUS_EXPIRING].map(v => literalOf(v))) // NOTE: only expiring proposals could be notified at the moment
+  }),
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }

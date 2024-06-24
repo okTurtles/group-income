@@ -216,7 +216,10 @@ export function makeChannelMention (channelName: string): string {
 
 export function swapMentionIDForDisplayname (
   text: string,
-  options: Object = { escaped: true, forChat: true }
+  options: Object = {
+    escaped: true, // this indicates that the text contains escaped characters
+    forChat: true // this indicates that the function is being used for messages inside chatroom
+  }
 ): string {
   const {
     chatRoomsInDetail,
@@ -235,11 +238,24 @@ export function swapMentionIDForDisplayname (
     ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
     : new RegExp(`(${possibleMentions.join('|')})`)
 
-  return text.split(regEx).map(t => {
-    return possibleMentions.includes(t)
-      ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
-        ? forChat ? t[0] + usernameFromID(t.slice(1)) : userDisplayNameFromID(t.slice(1))
-        : (forChat ? t[0] : '') + getChatroomNameById(t.slice(1))
-      : t
-  }).join('')
+  const swap = (t) => {
+    if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
+      // swap member mention
+      const userID = t.slice(1)
+      const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : ''
+      const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID)
+      return prefix + body
+    } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
+      // swap channel mention
+      const channelID = t.slice(1)
+      const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
+      return prefix + getChatroomNameById(channelID)
+    }
+    return t
+  }
+
+  return text
+    .split(regEx)
+    .map(t => possibleMentions.includes(t) ? swap(t) : t)
+    .join('')
 }

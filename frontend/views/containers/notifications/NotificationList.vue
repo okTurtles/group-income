@@ -28,7 +28,7 @@
               avatar-user(:contractID='item.avatarUserID' size='md')
               i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
-              span.c-item-text(v-safe-html='renderNotificationBody(item.body)')
+              span.c-item-text(v-safe-html='swapMemberMention(item.body)')
               span.c-item-date.has-text-1.has-text-small {{ ageTag(item) }}
 </template>
 
@@ -108,8 +108,7 @@ export default ({
     markAsRead (item: Object): void {
       sbp('gi.notifications/markAsRead', item)
     },
-    renderNotificationBody (body: string | Object): string {
-      const text = typeof body === 'string' ? body : L(body.key, body.args || {})
+    swapMemberMention (text: string): string {
       return swapMentionIDForDisplayname(text, {
         escaped: false,
         forChat: false

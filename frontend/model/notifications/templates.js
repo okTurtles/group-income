@@ -26,18 +26,15 @@ export default ({
     }
 
     return {
-      body: {
-        key: "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'",
-        args: {
-          ...LTags('b'),
-          errName: error.name,
-          activity,
-          action: action ?? opType,
-          who: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${message.signingKeyId()}`,
-          contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
-          errMsg: error.message ?? '?'
-        }
-      },
+      body: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
+        ...LTags('b'),
+        errName: error.name,
+        activity,
+        action: action ?? opType,
+        who: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${message.signingKeyId()}`,
+        contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
+        errMsg: error.message ?? '?'
+      }),
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`,
@@ -73,10 +70,9 @@ export default ({
   },
   CONTRIBUTION_REMINDER (data: { date: string }) {
     return {
-      body: {
-        key: 'Do not forget to send your pledge by {strong_}{date}{_strong}.',
-        args: { ...LTags('strong') }
-      },
+      body: L('Do not forget to send your pledge by {strong_}{date}{_strong}.', {
+        ...LTags('strong')
+      }),
       icon: 'coins',
       level: 'info',
       linkTo: '/payments',
@@ -85,10 +81,9 @@ export default ({
   },
   INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
-      body: {
-        key: "You haven't updated your income details in more than {months} months. Would you like to review them now?",
-        args: { months: Math.floor(data.months) } // Avoid displaying decimals
-      },
+      body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
+        months: Math.floor(data.months) // Avoid displaying decimals
+      }),
       icon: 'coins',
       level: 'info',
       linkTo: '/contributions?modal=IncomeDetails',
@@ -99,13 +94,10 @@ export default ({
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     return {
       avatarUserID: data.memberID,
-      body: {
-        key: 'The group has a new member. Say hi to {strong_}{name}{_strong}!',
-        args: {
-          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
-          ...LTags('strong')
-        }
-      },
+      body: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
+      }),
       icon: 'user-plus',
       level: 'info',
       linkTo: `/group-chat/${sbp('state/vuex/state')[data.groupID]?.generalChatRoomId}`,
@@ -115,13 +107,10 @@ export default ({
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
     return {
       avatarUserID: data.memberID,
-      body: {
-        key: '{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.',
-        args: {
-          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
-          ...LTags('strong')
-        }
-      },
+      body: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
+      }),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
@@ -132,13 +121,10 @@ export default ({
     return {
       avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
-      body: {
-        key: '{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.',
-        args: {
-          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
-          ...LTags('strong')
-        }
-      },
+      body: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
+      }),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
@@ -151,12 +137,12 @@ export default ({
       ...LTags('strong')
     }
     const bodyTemplateMap = {
-      ADD_MEMBER: () => ({ key: '{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args }),
-      CHANGE_MINCOME: () => ({ key: '{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args }),
-      CHANGE_DISTRIBUTION_DATE: () => ({ key: '{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args }),
-      CHANGE_VOTING_RULE: () => ({ key: '{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args }),
-      REMOVE_MEMBER: () => ({ key: '{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args }),
-      GENERIC: () => ({ key: '{strong_}{name}{_strong} created a proposal. Vote now!', args })
+      ADD_MEMBER: L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args),
+      CHANGE_MINCOME: L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args),
+      CHANGE_DISTRIBUTION_DATE: L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args),
+      CHANGE_VOTING_RULE: L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args),
+      REMOVE_MEMBER: L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args),
+      GENERIC: L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
     }
 
     const iconMap = {
@@ -170,7 +156,7 @@ export default ({
 
     return {
       avatarUserID: data.creatorID,
-      body: bodyTemplateMap[data.subtype](),
+      body: bodyTemplateMap[data.subtype],
       creatorID: data.creatorID,
       icon: iconMap[data.subtype],
       level: 'info',
@@ -194,10 +180,10 @@ export default ({
 
     return {
       avatarUserID: '',
-      body: {
-        key: 'Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!',
-        args: { ...LTags('i'), proposalTitle: typeToTitleMap[proposalType] }
-      },
+      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!', {
+        ...LTags('i'),
+        proposalTitle: typeToTitleMap[proposalType]
+      }),
       level: 'info',
       icon: 'exclamation-triangle',
       scope: 'group',
@@ -215,32 +201,28 @@ export default ({
       [STATUS_CANCELLED]: { icon: 'times', level: 'danger', closedWith: L('cancelled') }, // TODO: define icon, level
       [STATUS_EXPIRED]: { icon: 'times', level: 'danger', closedWith: L('expired') } // TODO: define icon, level
     }
-    const args = { ...options, closedWith: statusMap[status].closedWith }
-
-    const makeBodyBasedOnCreator = (key) => {
-      return isMe
-        ? { key: '{strong_}Your{_strong} ' + key, args }
-        : {
-            key: "{strong_}{name}'s{_strong} " + key,
-            args: { ...args, name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` }
-          }
+    const args = {
+      ...options,
+      closedWith: statusMap[status].closedWith,
+      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}`
     }
+
     const bodyTemplateMap = {
       [PROPOSAL_INVITE_MEMBER]:
-        () => makeBodyBasedOnCreator('proposal to add {member} to the group was {strong_}{closedWith}{_strong}.'),
+        L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_REMOVE_MEMBER]:
-        () => makeBodyBasedOnCreator('proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.'),
+        L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_GROUP_SETTING_CHANGE]:
-        () => makeBodyBasedOnCreator("proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}."),
+        L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
-        () => makeBodyBasedOnCreator("proposal to change group's {setting} was {strong_}{closedWith}{_strong}."),
+        L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_GENERIC]:
-        () => makeBodyBasedOnCreator('proposal "{title}" was {strong_}{closedWith}{_strong}.')
+        L("{strong_}{name}'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.", args)
     }
 
     return {
       avatarUserID: creatorID,
-      body: bodyTemplateMap[type](),
+      body: bodyTemplateMap[type],
       icon: statusMap[status].icon,
       level: statusMap[status].level,
       linkTo: '/dashboard#proposals',
@@ -250,14 +232,11 @@ export default ({
   PAYMENT_RECEIVED (data: { creatorID: string, amount: string, paymentHash: string }) {
     return {
       avatarUserID: data.creatorID,
-      body: {
-        key: '{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}',
-        args: {
-          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
-          amount: data.amount,
-          ...LTags('strong')
-        }
-      },
+      body: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
+        amount: data.amount,
+        ...LTags('strong')
+      }),
       creatorID: data.creatorID,
       icon: '',
       level: 'info',
@@ -268,13 +247,10 @@ export default ({
   PAYMENT_THANKYOU_SENT (data: { creatorID: string, fromMemberID: string, toMemberID: string }) {
     return {
       avatarUserID: data.fromMemberID,
-      body: {
-        key: '{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.',
-        args: {
-          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`,
-          ...LTags('strong')
-        }
-      },
+      body: L('{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`,
+        ...LTags('strong')
+      }),
       creatorID: data.fromMemberID,
       icon: '',
       level: 'info',
@@ -286,10 +262,9 @@ export default ({
     const { withGroupCurrency } = sbp('state/vuex/getters')
     return {
       avatarUserID: data.creatorID,
-      body: {
-        key: 'The mincome has changed to {amount}.',
-        args: { amount: withGroupCurrency(data.to) }
-      },
+      body: L('The mincome has changed to {amount}.', {
+        amount: withGroupCurrency(data.to)
+      }),
       creatorID: data.creatorID,
       icon: 'dollar-sign',
       level: 'info',
@@ -309,19 +284,13 @@ export default ({
     const args = { period: humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' }) }
     const bodyTemplate = {
       // Display the distribution period in the notification message (issue: https://github.com/okTurtles/group-income/issues/1903)
-      'pledger': () => ({
-        key: 'A new distribution period ({period}) has started. Please check Payment TODOs.',
-        args
-      }),
-      'receiver': () => ({
-        key: 'A new distribution period ({period}) has started. Please update your income details if they have changed.',
-        args
-      })
+      pledger: L('A new distribution period ({period}) has started. Please check Payment TODOs.', args),
+      receiver: L('A new distribution period ({period}) has started. Please update your income details if they have changed.', args)
     }
 
     return {
       avatarUserID: data.creatorID,
-      body: bodyTemplate[data.memberType](),
+      body: bodyTemplate[data.memberType],
       level: 'info',
       icon: 'coins',
       linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
@@ -334,9 +303,7 @@ export default ({
   },
   NEAR_DISTRIBUTION_END (data: { period: string }) {
     return {
-      body: {
-        key: "Less than 1 week left before the distribution period ends - don't forget to send payments!"
-      },
+      body: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
       level: 'info',
       icon: 'coins',
       linkTo: '/payments',
