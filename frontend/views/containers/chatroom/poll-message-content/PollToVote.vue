@@ -20,18 +20,10 @@ form(@submit.prevent='')
 
   .buttons.c-buttons-container
     template(v-if='enableSubmitBtn')
-      button-submit.is-small(
-        v-if='isChangeMode'
-        type='button'
-        @click='changeVotes'
-      )
+      button-submit.is-small(v-if='isChangeMode' data-test='submit' type='button' @click='changeVotes')
         i18n Change vote
 
-      button-submit.is-small(
-        v-else
-        type='button'
-        @click='submitVotes'
-      )
+      button-submit.is-small(v-else type='button' data-test='submit' @click='submitVotes')
         i18n Submit
 
     i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='onCancelClick') Cancel

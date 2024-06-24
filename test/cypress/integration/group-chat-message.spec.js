@@ -33,12 +33,13 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   function editMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu>.c-actions button[aria-label="Edit"]').click()
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        cy.get('.c-actions button[aria-label="Edit"]').click()
+      })
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').clear().type(`${message}{enter}`)
       })
-      cy.get('.c-menu>.c-actions').invoke('hide')
       cy.get('.c-text').should('contain', message)
       cy.get('.c-edited').should('contain', '(edited)')
     })
@@ -47,14 +48,15 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   function deleteMessage (nth, countAfter) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu').within(() => {
-        cy.getByDT('menuTrigger').click()
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
+          cy.getByDT('menuTrigger').click()
+        })
         cy.getByDT('menuContent').within(() => {
           cy.getByDT('deleteMessage').click()
         })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
-      cy.get('.c-menu>.c-actions').invoke('hide')
     })
 
     cy.getByDT('modal').within(() => {
@@ -73,14 +75,15 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   function pinMessage (nth) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu').within(() => {
-        cy.getByDT('menuTrigger').click()
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
+          cy.getByDT('menuTrigger').click()
+        })
         cy.getByDT('menuContent').within(() => {
           cy.getByDT('pinMessage').click()
         })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
-      cy.get('.c-menu>.c-actions').invoke('hide')
       cy.get('.c-pinned-wrapper').should('contain', 'Pinned by you')
     })
   }
@@ -100,9 +103,11 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   function sendEmoticon (nth, emojiCode, emojiCount) {
     const emojiWrapperSelector = '.c-picker-wrapper .emoji-mart .vue-recycle-scroller__item-wrapper .vue-recycle-scroller__item-view:first-child .emoji-mart-category'
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu>.c-actions button[aria-label="Add reaction"]').click()
-      cy.get('.c-menu>.c-actions').invoke('hide')
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        cy.get('.c-actions button[aria-label="Add reaction"]').click()
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
+      })
     })
     cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
 
@@ -148,16 +153,11 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   function replyToMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions')
-        .invoke('attr', 'style', 'display: flex')
-        .invoke('show')
-        .scrollIntoView()
-        .should('be.visible')
-      cy.get('.c-menu>.c-actions button[aria-label="Reply"]').click({ force: true })
-      cy.get('.c-menu>.c-actions')
-        .should('be.visible')
-        .invoke('hide')
-        .should('be.hidden')
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').scrollIntoView().should('be.visible')
+        cy.get('.c-actions button[aria-label="Reply"]').click({ force: true })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
+      })
     })
     cy.get('.c-tooltip.is-active').invoke('hide')
 
@@ -169,23 +169,40 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSendMessage(me, message)
   }
 
-  function votePoll (nthForMessage, nthForOption) {
-    const { options } = pollData
+  function votePoll (nthForMessage, nthForOption, isChange = false) {
+    const option = pollData.options[nthForOption - 1]
     cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
       cy.get('fieldset').within(() => {
         cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
       })
 
       cy.get('.c-buttons-container').within(() => {
-        cy.get('button').click()
+        cy.getByDT('submit').click()
       })
     })
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${options[nthForOption - 1]}"`)
+      if (isChange) {
+        cy.get('.c-message.sent:last-child .c-text').should('contain', `Changed vote to "${option}"`)
+      } else {
+        cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${option}"`)
+      }
     })
+  }
+
+  function changeVote (nthForMessage, nthForOption) {
+    cy.get('.c-message:nth-child(13)').within(() => {
+      cy.get('.c-poll-container .c-poll-menu').within(() => {
+        cy.getByDT('menuTrigger').click()
+        cy.getByDT('menuContent').should('be.visible').within(() => {
+          cy.getByDT('changeVote').click()
+        })
+      })
+    })
+
+    votePoll(nthForMessage, nthForOption, true)
   }
 
   it(`user1 creates '${groupName}' group and sends/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
@@ -404,6 +421,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user1 votes the poll, updates his vote, and pins it', () => {
     votePoll(13, 2)
+    changeVote(13, 3)
+    pinMessage(13)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
   })
 
   it('user1 sends 20 messages', () => {
