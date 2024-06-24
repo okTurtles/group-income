@@ -35,7 +35,7 @@ export const chatRoomAttributesType: any = objectOf({
 export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   text: string,
-    proposal: objectMaybeOf({
+  proposal: objectMaybeOf({
     proposalId: string,
     proposalType: string,
     expires_date_ms: number,

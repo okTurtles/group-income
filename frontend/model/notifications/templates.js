@@ -203,6 +203,7 @@ export default ({
     }
     const args = {
       ...options,
+      ...LTags('strong'),
       closedWith: statusMap[status].closedWith,
       name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}`
     }
@@ -217,7 +218,7 @@ export default ({
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
         L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
       [PROPOSAL_GENERIC]:
-        L("{strong_}{name}'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.", args)
+        L(`{strong_}{name}'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.`, args)
     }
 
     return {

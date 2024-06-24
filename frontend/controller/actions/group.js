@@ -844,7 +844,7 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-    ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.'), async function (sendMessage, params) {
+  ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.'), async function (sendMessage, params) {
     const { proposals } = params.data
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
