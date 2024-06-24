@@ -169,6 +169,25 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSendMessage(me, message)
   }
 
+  function votePoll (nthForMessage, nthForOption) {
+    const { options } = pollData
+    cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
+      cy.get('fieldset').within(() => {
+        cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
+      })
+
+      cy.get('.c-buttons-container').within(() => {
+        cy.get('button').click()
+      })
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
+      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
+      cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${options[nthForOption - 1]}"`)
+    })
+  }
+
   it(`user1 creates '${groupName}' group and sends/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
     cy.visit('/')
     cy.giSignup(user1, { bypassUI: true })
@@ -236,12 +255,12 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     deleteEmotion(4, 2, 2)
   })
 
-  it('user1 sees the mentions and reactions which user2 created and adds his reaction', () => {
+  it('user1 sees a mention and three reactions, and he sends two mentions and one reaction too', () => {
     switchUser(user1)
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).me}. Anytime!`)
-    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).all}. I am always with you. Message me anytime.`)
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).all}. No matter what, I will always be by your side.`)
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     cy.getByDT('conversationWrapper').within(() => {
@@ -352,22 +371,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user2 votes the poll he created', () => {
-    const { options } = pollData
-    cy.get('.c-message:last-child').within(() => {
-      cy.get('fieldset').within(() => {
-        cy.get('label.c-poll-option:first-child').click()
-      })
-
-      cy.get('.c-buttons-container').within(() => {
-        cy.get('button').click()
-      })
-    })
-
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${options[0]}"`)
-    })
+    votePoll(13, 1)
   })
 
   it('pinned messages should be sorted by the created date of original messages', () => {
@@ -376,7 +380,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get('.c-body>.c-pinned-message:first-child .c-pinned-message-content')
         .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
       cy.get('.c-body>.c-pinned-message:last-child .c-pinned-message-content')
-        .should('contain', 'Hi @all. I am always with you. Message me anytime.')
+        .should('contain', 'Hi @all. No matter what, I will always be by your side.')
     })
   })
 
@@ -395,7 +399,11 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
     cy.giRedirectToGroupChat()
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
-    cy.contains('Hi @all. I am always with you. Message me anytime.').should('be.visible')
+    cy.contains('Hi @all. No matter what, I will always be by your side.').should('be.visible')
+  })
+
+  it('user1 votes the poll, updates his vote, and pins it', () => {
+    votePoll(13, 2)
   })
 
   it('user1 sends 20 messages', () => {
