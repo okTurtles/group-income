@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS,
@@ -365,6 +365,10 @@ export default (sbp('sbp/selectors/register', {
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
       }
 
+      if (Math.random() < 1) {
+        throw new Error('Random error thrown by sebin')
+      }
+
       // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
 
       // After syncing the group contract, we send a key request
@@ -483,7 +487,16 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
+      const primaryClicked = await sbp('gi.ui/prompt', {
+        heading: L('Failed to join the group'),
+        question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
+        primaryButton: L('Refresh')
+      })
+
+      if (primaryClicked) {
+        const url = (window.location.href).split('?')[0]
+        window.open(url, '_self')
+      }
     } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove
