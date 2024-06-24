@@ -335,6 +335,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       })
     })
 
+    cy.getByDT('createPollWrapper').should('not.visible')
+
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:last-child').should('have.class', 'is-type-poll')
       cy.get('.c-message:last-child .c-poll-container').within(() => {
