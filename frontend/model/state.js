@@ -493,6 +493,10 @@ const getters = {
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
+        if (!state[contractID]) {
+          console.warn('[ourContactProfilesById] Missing state', contractID)
+          return
+        }
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
           const username = checkedUsername(state, attributes.username, contractID)
