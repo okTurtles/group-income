@@ -6,8 +6,20 @@
   "description": "Voluntary decentralized Basic Income system for you and your friends.",
   "icons": [
     {
+      "src": "/assets/images/pwa-icons/group-income-icon-maskable_180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/assets/images/pwa-icons/group-income-icon-maskable_192x192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/images/pwa-icons/group-income-icon-maskable_270x270.png",
+      "sizes": "270x270",
       "type": "image/png",
       "purpose": "maskable"
     },
