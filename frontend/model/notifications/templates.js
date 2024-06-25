@@ -262,9 +262,7 @@ export default ({
     const { withGroupCurrency } = sbp('state/vuex/getters')
     return {
       avatarUserID: data.creatorID,
-      body: L('The mincome has changed to {amount}.', {
-        amount: withGroupCurrency(data.to)
-      }),
+      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
       creatorID: data.creatorID,
       icon: 'dollar-sign',
       level: 'info',
@@ -281,11 +279,11 @@ export default ({
   },
   NEW_DISTRIBUTION_PERIOD (data: { creatorID: string, memberType: string }) {
     const distPeriod = sbp('state/vuex/getters').groupSettings?.distributionDate
-    const args = { period: humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' }) }
+    const periodDisplay = humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
       // Display the distribution period in the notification message (issue: https://github.com/okTurtles/group-income/issues/1903)
-      pledger: L('A new distribution period ({period}) has started. Please check Payment TODOs.', args),
-      receiver: L('A new distribution period ({period}) has started. Please update your income details if they have changed.', args)
+      'pledger': L('A new distribution period ({period}) has started. Please check Payment TODOs.', { period: periodDisplay }),
+      'receiver': L('A new distribution period ({period}) has started. Please update your income details if they have changed.', { period: periodDisplay })
     }
 
     return {

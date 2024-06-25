@@ -13,8 +13,8 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  STATUS_OPEN,
-  STATUS_EXPIRING
+  STATUS_EXPIRING,
+  STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/shared/time.js'
@@ -852,7 +852,9 @@ export default (sbp('sbp/selectors/register', {
     const { proposals } = params.data
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
-      data: proposals.map(p => p.proposalId),
+      data: {
+        proposalIds: proposals.map(p => p.proposalId)
+      },
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
