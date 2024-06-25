@@ -730,6 +730,13 @@ sbp('chelonia/defineContract', {
         message: object
       })),
       process ({ data, innerSigningContractID }, { state }) {
+        // TODO: remove the below 'if' statement when no older version of contracts are being used
+        if (!state.pinnedMessages) {
+          // NOTE: this is temporary solution for the older version of contracts
+          //       that doesn't have 'pinnedMessages' field which is created in its constructor
+          state.pinnedMessages = []
+        }
+
         const { message } = data
         state.pinnedMessages.unshift(message)
 

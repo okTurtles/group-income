@@ -99,7 +99,7 @@
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
             )
               i.icon-bold
           tooltip(
@@ -109,7 +109,7 @@
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
             )
               i.icon-italic
           tooltip(
@@ -119,7 +119,7 @@
           )
             button.is-icon(
               :aria-label='L("Add code")'
-              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("code")'
             )
               i.icon-code
           tooltip(
@@ -129,7 +129,7 @@
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
-              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
             )
               i.icon-strikethrough
           tooltip(
@@ -139,7 +139,7 @@
           )
             button.is-icon(
               :aria-label='L("Add link")'
-              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("link")'
             )
               i.icon-link
 
@@ -163,7 +163,7 @@
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
             )
               i.icon-bold
           tooltip(
@@ -173,7 +173,7 @@
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
             )
               i.icon-italic
           tooltip(
@@ -183,7 +183,7 @@
           )
             button.is-icon(
               :aria-label='L("Add code")'
-              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("code")'
             )
               i.icon-code
           tooltip(
@@ -193,7 +193,7 @@
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
-              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
             )
               i.icon-strikethrough
           tooltip(
@@ -203,7 +203,7 @@
           )
             button.is-icon(
               :aria-label='L("Add link")'
-              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("link")'
             )
               i.icon-link
 
@@ -214,6 +214,7 @@
               :text='L("Create poll")'
             )
               button.is-icon(
+                data-test='createPoll'
                 :aria-label='L("Create poll")'
                 @click='openCreatePollModal'
               )
@@ -808,8 +809,9 @@ export default ({
         this.endMention()
       }
     },
-    transformTextSelectionToMarkdown (e, type) {
-      e.preventDefault() // Calling e.preventDefault() in 'mousedown' event listener prevents the button from being focused upon click.
+    transformTextSelectionToMarkdown (type) {
+      // NOTE: should call preventDefault() for 'mousedown' event
+      //       to prevents the button from being focused upon click
 
       const prevFocusElement = document.activeElement // the captured activeElement inside 'mousedown' handler is still a previously focused element.
       const inputEl = this.$refs.textarea

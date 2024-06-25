@@ -1754,7 +1754,23 @@ sbp('chelonia/defineContract', {
       }
 
       try {
-        await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
+        // We need to be subscribed to the chatroom before writing to it, and
+        // also because of the following check (hasKeysToPerformOperation),
+        // which requires state.
+        // If we're joining the chatroom ourselves (actorID === memberID),
+        // ensure we _remain_ subscribed to the chatroom by not using an
+        // ephemeral call to retain.
+        // If we're _not_ joining the chatroom ourselves (but instead we've
+        // added someone else), we use 'ephemeral: true' because we don't want
+        // to remain subscribed to the chatroom if we're not a member(*).
+        // This used to be done in four steps: unconditional ephemeral retain
+        // here, ended with an ephemeral release in the finally block, and two
+        // conditional persistent retains on postpublish (for the current
+        // device) and the error handler (for other devices). This was too
+        // complex.
+        // (*) Yes, usually we'd be a member of the chatroom in this case, but
+        // we could have left afterwards.
+        await sbp('chelonia/contract/retain', chatRoomID, actorID !== memberID ? { ephemeral: true } : {})
 
         if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
           throw new Error(`Missing keys to join chatroom ${chatRoomID}`)
@@ -1768,29 +1784,18 @@ sbp('chelonia/defineContract', {
         await sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
-          encryptionKeyId,
-          ...actorID === memberID && {
-            hooks: {
-              postpublish: () => {
-                sbp('chelonia/contract/retain', chatRoomID)
-              }
-            }
-          }
+          encryptionKeyId
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
-            if (actorID === memberID) {
-              // Increase reference count if we've already joined
-              // Note: this addresses syncing the contract from a new device,
-              // where `retain` in postpublish hasn't been called and the
-              // reference count is zero due to the state being fresh.
-              sbp('chelonia/contract/retain', chatRoomID)
-            }
             return
           }
+
           console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         })
       } finally {
-        await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+        if (actorID !== memberID) {
+          await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+        }
       }
     },
     // eslint-disable-next-line require-await
