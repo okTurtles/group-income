@@ -1059,7 +1059,10 @@ export default (sbp('sbp/selectors/register', {
     }
     if (!this.config.skipActionProcessing && !this.manifestToContract[manifestHash]) {
       const rootState = sbp(this.config.stateSelector)
-      const contractName = has(rootState.contracts, contractID)
+      // Having rootState.contracts[contractID] is not enough to determine we
+      // have previously synced this contract, as reference counts are also
+      // stored there. Hence, we check for the presence of 'type'
+      const contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
         ? rootState.contracts[contractID].type
         : opT === GIMessage.OP_CONTRACT
           ? ((opV: any): GIOpContract).type
@@ -1304,15 +1307,15 @@ export default (sbp('sbp/selectors/register', {
     const keysToUpdate = []
 
     pendingWatch.forEach(([keyName, externalId]) => {
-      // Does the key exist? If not, it has probably been removed and instead
-      // of waiting, we need to remove it ourselves
+    // Does the key exist? If not, it has probably been removed and instead
+    // of waiting, we need to remove it ourselves
       const keyId = findKeyIdByName(contractState, keyName)
       if (!keyId) {
         keysToDelete.push(externalId)
         return
       } else if (keyId !== externalId) {
-        // Or, the key has been updated and we need to update it in the external
-        // contract as well
+      // Or, the key has been updated and we need to update it in the external
+      // contract as well
         keysToUpdate.push(externalId)
       }
 
@@ -1696,7 +1699,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`[chelonia] Wrong contract ID. Expected ${contractID} but got ${message.contractID()}`)
       }
       if (!message.isFirstMessage() && (!has(state.contracts, contractID) || !has(state, contractID))) {
-        throw new Error('The event is not for a first message but the contract state is missing')
+        throw new ChelErrorUnrecoverable('The event is not for a first message but the contract state is missing')
       }
       preHandleEvent?.(message)
       // the order the following actions are done is critically important!
@@ -1740,7 +1743,7 @@ export default (sbp('sbp/selectors/register', {
         processingErrored = e?.name !== 'ChelErrorWarning'
         this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
         // special error that prevents the head from being updated, effectively killing the contract
-        if (e.name === 'ChelErrorUnrecoverable') throw e
+        if (e.name === 'ChelErrorUnrecoverable' || message.isFirstMessage()) throw e
       }
 
       // process any side-effects (these must never result in any mutation to the contract state!)
