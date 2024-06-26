@@ -9,8 +9,9 @@ import { keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/c
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
+export { default as groupKV } from './group-kv.js'
 export { default as identity } from './identity.js'
-export { default as kvStores } from './kv-stores.js'
+export { default as identityKV } from './identity-kv.js'
 
 sbp('sbp/selectors/register', {
   // Utility function that covers the common scenario of needing to share some

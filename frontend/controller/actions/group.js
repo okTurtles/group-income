@@ -458,7 +458,7 @@ export default (sbp('sbp/selectors/register', {
               }
             })
 
-            await sbp('gi.actions/kv/updateLastLoggedIn', {
+            await sbp('gi.actions/group/kv/updateLastLoggedIn', {
               contractID: params.contractID
             }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
           } catch (e) {

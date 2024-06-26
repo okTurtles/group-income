@@ -395,7 +395,9 @@ export default (sbp('sbp/selectors/register', {
       // NOTE: update chatRoomUnreadMessages to the latest one we do this here
       //       just after the identity contract is synced because
       //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
-      await sbp('gi.actions/kv/loadChatRoomUnreadMessages')
+      await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
+      // NOTE: load users preferences config which is saved in KV store
+      await sbp('gi.actions/identity/kv/loadPreferences')
 
       try {
         // $FlowFixMe[incompatible-call]
@@ -459,7 +461,7 @@ export default (sbp('sbp/selectors/register', {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
             if (state[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-              sbp('gi.actions/kv/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
+              sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
             }
           })
 
@@ -471,9 +473,6 @@ export default (sbp('sbp/selectors/register', {
             sbp('gi.actions/group/switch', gId)
           }
         }
-
-        // NOTE: load users preferences config which is saved in KV store
-        await sbp('gi.actions/kv/loadPreferences')
       } catch (e) {
         alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
@@ -803,15 +802,6 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Some CIDs could not be deleted')
     }
   },
-  // NOTE: Adding the following 4 actions is a temporary solution and needs to be removed
-  //       when no older (than 0.5.1) version of contracts are being used
-  //       https://okturtles.slack.com/archives/C0EH7P20Y/p1718990127660609
-  ...Object.fromEntries([
-    'addChatRoomUnreadMessage',
-    'initChatRoomUnreadMessages',
-    'removeChatRoomUnreadMessage',
-    'deleteChatRoomUnreadMessages'
-  ].map(fnName => [`gi.actions/identity/${fnName}`, (...args) => sbp(`gi.actions/kv/${fnName}`, args)])),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
 }): string[])

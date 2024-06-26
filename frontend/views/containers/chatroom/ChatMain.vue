@@ -885,7 +885,7 @@ export default ({
           // NOTE: skip adding useless invocations in KV_QUEUE queue
           return
         }
-        sbp('gi.actions/kv/setChatRoomReadUntil', {
+        sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
       }

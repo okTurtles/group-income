@@ -123,13 +123,13 @@ export default ({
       }
     },
     hideBanner () {
-      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
+      sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
         hidden: true
       })
     },
     showBanner () {
-      sbp('gi.actions/kv/updateDistributionBannerVisibility', {
+      sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
         hidden: false
       })
