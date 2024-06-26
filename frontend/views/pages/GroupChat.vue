@@ -36,6 +36,8 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
+            menu-item.hide-desktop(v-if='pinnedMessages.length')
+              i18n(@click='showPinnedMessages($event)') Pinned Messages
             menu-item(
               :class='`${!summary.isGeneral && !isDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
@@ -55,37 +57,43 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
             )
               i18n Delete channel
 
-  template(#description='' v-if='!isDirectMessage()')
+  template(#description='')
     .c-header-description
-      i18n.is-unstyled.c-link(
-        tag='button'
-        @click='openModal("ChatMembersAllModal")'
-        :args='{ numMembers: summary.numberOfMembers  }'
-        data-test='channelMembers'
-      ) {numMembers} members
-      template(
-        v-if='summary.attributes.description || ourIdentityContractId === summary.attributes.creatorID'
+      span.c-pin-wrapper(
+        data-test='numberOfPinnedMessages'
+        v-if='pinnedMessages.length'
+        @click='showPinnedMessages($event)'
       )
-        | ∙
-        .is-unstyled(
-          v-if='summary.attributes.description'
-          :class='{"c-link": ourIdentityContractId === summary.attributes.creatorID}'
-          data-test='updateDescription'
-          @click='editDescription'
-        )
-          | {{ summary.attributes.description }}
-          i.icon-pencil-alt
-
+        i.icon-thumbtack
+        i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
+      template(v-if='!isDirectMessage()')
+        span(v-if='pinnedMessages.length') ∙
         i18n.is-unstyled.c-link(
-          v-else
-          data-test='updateDescription'
-          @click='editDescription'
-        ) Add description
+          tag='button'
+          @click='openModal("ChatMembersAllModal")'
+          :args='{ numMembers: summary.numberOfMembers  }'
+          data-test='channelMembers'
+        ) {numMembers} members
+        template(v-if='summary.attributes.description || isChatRoomCreator')
+          | ∙
+          .is-unstyled(
+            v-if='summary.attributes.description'
+            :class='{"c-link": isChatRoomCreator}'
+            data-test='updateDescription'
+            @click='editDescription'
+          )
+            | {{ summary.attributes.description }}
+            i.icon-pencil-alt
+
+          i18n.is-unstyled.c-link(
+            v-else
+            data-test='updateDescription'
+            @click='editDescription'
+          ) Add description
 
   template(#sidebar='{ toggle }')
-    chat-nav(:title='L("Chat")')
+    chat-nav
       conversations-list(
-        :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
@@ -95,28 +103,35 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
       chat-members(
         action='addDirectMessage'
-        :title='L("Direct Messages")'
         @new='toggle'
         @redirect='toggle'
       )
 
   .card.c-card
-    chat-main(:summary='summary')
+    chat-main(ref='chatMain' :summary='summary')
+
+  pinned-messages(
+    ref='pinnedMessages'
+    @unpin-message='unpinMessage'
+    @scroll-to-pinned-message='scrollToPinnedMessage'
+  )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import Page from '@components/Page.vue'
 import Avatar from '@components/Avatar.vue'
+import Page from '@components/Page.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import ChatMixin from '@containers/chatroom/ChatMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupChat',
@@ -124,12 +139,13 @@ export default ({
     ChatMixin
   ],
   components: {
-    Page,
     Avatar,
+    Page,
     ChatNav,
     ChatMain,
     ConversationsList,
     ChatMembers,
+    PinnedMessages,
     MenuParent,
     MenuHeader,
     MenuTrigger,
@@ -138,17 +154,20 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentChatRoomId',
       'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles',
+      'groupIdFromChatRoomId',
       'isJoinedChatRoom',
-      'getGroupChatRooms',
+      'groupChatRooms',
+      'chatRoomPinnedMessages',
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getGroupChatRooms || {}).map(cID => ({
-        name: this.getGroupChatRooms[cID].name,
-        privacyLevel: this.getGroupChatRooms[cID].privacyLevel,
+      return Object.keys(this.groupChatRooms || {}).map(cID => ({
+        name: this.groupChatRooms[cID].name,
+        privacyLevel: this.groupChatRooms[cID].privacyLevel,
         joined: this.isJoinedChatRoom(cID),
         id: cID
       })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
@@ -170,14 +189,53 @@ export default ({
         order: this.getChatRoomIDsInSort,
         channels: this.chatRoomsInDetail
       }
+    },
+    pinnedMessages () {
+      const { chatRoomID } = this.summary
+      if (this.isJoinedChatRoom(chatRoomID) && chatRoomID === this.currentChatRoomId) {
+        return this.chatRoomPinnedMessages
+      }
+      return []
+    },
+    isChatRoomCreator () {
+      return this.ourIdentityContractId === this.summary.attributes.creatorID
     }
   },
   methods: {
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
+    showPinnedMessages (event) {
+      const element = event.target.parentNode.getBoundingClientRect()
+      this.$refs.pinnedMessages.open({
+        left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
+        top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
+      }, this.pinnedMessages)
+    },
     editDescription () {
       this.openModal('EditChannelDescriptionModal')
+    },
+    unpinMessage (messageHash) {
+      if (this.$refs.chatMain) {
+        this.$refs.chatMain.unpinFromChannel(messageHash)
+      }
+    },
+    scrollToPinnedMessage (messageHash) {
+      if (this.$refs.chatMain) {
+        this.$refs.chatMain.scrollToMessage(messageHash)
+      }
+    },
+    hasPermissionToReadChatRoom (chatRoomID) {
+      if (this.isJoinedChatRoom(chatRoomID)) {
+        return true
+      }
+
+      const groupId = this.groupIdFromChatRoomId(chatRoomID)
+      if (groupId && this.$store.state[groupId].chatRooms[chatRoomID].privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+        return true
+      }
+
+      return false
     }
   },
   watch: {
@@ -186,12 +244,30 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomID } = to.params
+      const { mhash } = to.query
       const prevChatRoomId = from.params.chatRoomID || ''
-      if (chatRoomID && chatRoomID !== prevChatRoomId) {
-        this.updateCurrentChatRoomID(chatRoomID)
-        // NOTE: No need to consider not-joined private chatroom because it's impossible
-        if (!this.isJoinedChatRoom(chatRoomID)) {
-          this.loadLatestState(chatRoomID)
+      if (chatRoomID) {
+        if (chatRoomID !== prevChatRoomId) {
+          if (!this.isJoinedChatRoom(chatRoomID)) {
+            if (this.hasPermissionToReadChatRoom(chatRoomID)) {
+              this.updateCurrentChatRoomID(chatRoomID)
+              this.loadLatestState(chatRoomID)
+            } else {
+              alert(L('Sorry, this message is from a private chatroom that you are not part of.'))
+              this.$router.go(-1)
+            }
+          } else {
+            this.updateCurrentChatRoomID(chatRoomID)
+          }
+        } else if (mhash) {
+          // NOTE: this block handles the behavior to scroll to the message with mhash
+          //       when user clicks the message link of the one from current chatroom
+          this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+            // NOTE: delete mhash from queries after scroll to and highlight it
+            const newQuery = { ...to.query }
+            delete newQuery.mhash
+            this.$router.replace({ query: newQuery })
+          })
         }
       }
     }
@@ -203,26 +279,15 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-card {
-  margin-top: -1.5rem;
   padding: 0;
-  height: 100%;
-  margin-bottom: 0;
+  height: calc(100% - 1.5rem);
+  margin-bottom: 1.5rem;
   border-radius: 0.625rem;
 
-  @include tablet {
-    height: calc(100% - 3rem);
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
   @include phone {
-    margin: -1.5rem -1rem 0 -1rem;
-    height: calc(100% + 1.5rem);
+    height: 100%;
+    margin: 0 -1rem 0 -1rem;
     border-radius: 0.625rem 0.625rem 0 0;
-  }
-
-  &:last-child {
-    margin-bottom: 1.5rem;
   }
 }
 
@@ -237,6 +302,10 @@ export default ({
     height: auto !important;
     // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
     max-width: unset !important;
+
+    @include touch {
+      padding-top: 0 !important;
+    }
   }
 }
 
@@ -245,16 +314,17 @@ export default ({
   align-items: center;
   position: relative;
 
+  @include touch {
+    width: 100%;
+    justify-content: center;
+  }
+
   .p-title {
     display: block;
     width: fit-content;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    @include touch {
-      max-width: 55vw;
-    }
   }
 
   .c-group-i {
@@ -334,10 +404,20 @@ export default ({
 
   @include desktop {
     display: flex;
+    margin-bottom: 0.5rem;
   }
 
   .is-unstyled {
     margin: 0 0.2rem;
+  }
+
+  .c-pin-wrapper {
+    cursor: pointer;
+
+    span {
+      margin-left: 0.25rem;
+      margin-right: 0.2rem;
+    }
   }
 }
 
@@ -351,6 +431,7 @@ export default ({
 
 .avatar-wrapper {
   margin-right: 0.5rem;
+  flex: 0 0 2.5rem;
 }
 
 .c-menu-parent.c-menu {

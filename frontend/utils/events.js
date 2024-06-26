@@ -40,3 +40,5 @@ export const THEME_CHANGE = 'theme-change'
 export const CHATROOM_EVENTS = 'chatroom-events'
 export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
+
+export const UNREAD_MESSAGES_QUEUE = 'unread-messages-queue'

@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import CircularList from '~/shared/CircularList.js'
+import { L } from '@common/common.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -83,6 +84,7 @@ function captureLogEntry (type, ...args) {
   // The reason this works is because the entire `sbp` domain is blacklisted
   // from being logged in main.js.
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
+  sbp('sbp/selectors/fn', 'appLogs/logServer')(type, entry.msg)
 }
 
 function captureLogsStart (userLogged: string) {
@@ -123,24 +125,34 @@ function clearLogs () {
 }
 
 // Util to download all stored logs so far.
-function downloadLogs (elLink: Object): void {
-  const filename = 'gi_logs.json'
+function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnchorElement): any {
+  const filename = 'gi_logs.json.txt'
+  const mimeType = 'text/plain'
 
-  const file = new Blob([JSON.stringify({
+  const blob = new Blob([JSON.stringify({
     // Add instructions in case the user opens the file.
     _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     ua: navigator.userAgent,
     logs: getLogger().entries.toArray()
-  }, undefined, 2)], { type: 'application/json' })
+  }, undefined, 2)], { type: mimeType })
 
-  const url = URL.createObjectURL(file)
-  elLink.href = url
-  elLink.download = filename
-  elLink.click()
-  setTimeout(() => {
-    elLink.href = '#'
-    URL.revokeObjectURL(url)
-  }, 0)
+  if (actionType === 'download') {
+    if (!elLink) { return }
+
+    const url = URL.createObjectURL(blob)
+    elLink.href = url
+    elLink.download = filename
+    elLink.click()
+    setTimeout(() => {
+      elLink.href = '#'
+      URL.revokeObjectURL(url)
+    }, 0)
+  } else {
+    return window.navigator.share({
+      files: [new File([blob], filename, { type: blob.type })],
+      title: L('Application Logs')
+    })
+  }
 }
 
 function getLogger (): Object {
@@ -174,9 +186,26 @@ function setAppLogsFilter (filter: Array<string>) {
 window.addEventListener('beforeunload', event => sbp('appLogs/save'))
 
 sbp('sbp/selectors/register', {
-  'appLogs/download' (elLink) { downloadLogs(elLink) },
+  'appLogs/downloadOrShare': downloadOrShareLogs,
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
   'appLogs/save' () { getLogger()?.save() },
-  'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
-  'appLogs/startCapture' (identityContractID) { captureLogsStart(identityContractID) }
+  'appLogs/pauseCapture': captureLogsPause,
+  'appLogs/startCapture': captureLogsStart,
+  // only log to server if we're in development mode and connected over the tunnel (which creates URLs that
+  // begin with 'https://gi' per Gruntfile.js)
+  'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
+    ? noop
+    : function (level, stringifyMe) {
+      if (level === 'debug') return // comment out to send much more log info
+      const value = JSON.stringify(stringifyMe)
+      fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ level, value })
+      }).catch(e => {
+        originalConsole.error(`[captureLogs] '${e.message}' attempting to log [${level}] to server:`, value)
+      })
+    }
 })

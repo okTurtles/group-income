@@ -75,7 +75,7 @@ grunt dev --tunnel
 Build the app for distribution
 
 ```bash
-grunt dist
+grunt deploy
 ```
 
 Clean up files in `dist/`

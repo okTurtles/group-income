@@ -203,7 +203,7 @@ page(
               i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
-              i.icon-newspaper newspaper
+              i.icon-newspaper icon-newspaper
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
@@ -212,9 +212,10 @@ page(
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-search icon-search
-              i.icon-sort-down sort-down
+              i.icon-sort-down icon-sort-down
               i.icon-star icon-star
               i.icon-strikethrough icon-strikethrough
+              i.icon-thumbtack icon-thumbtack
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
@@ -229,10 +230,10 @@ page(
               i.icon-share-alt icon-share-alt
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
-              i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
               i.icon-paper-clip icon-paper-clip
+              i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-file icon-file
         tr
           td
@@ -667,7 +668,7 @@ page(
               | tooltip(triggerElementCss='.trigger-target')
               |   i.icon-* Basic
           td
-            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
+            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-right')
               span
                 span.link.trigger-target 5 members
                 | &nbsp;have&nbsp;

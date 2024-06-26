@@ -55,7 +55,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     banner-simple.c-demo-warning(severity='warning')
       i18n(
         :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
-      ) This is a beta-testing site. Groups will have to be re-created when we enable end-to-end encryption. {a_}Read more.{_a}
+      ) This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}
 </template>
 
 <script>

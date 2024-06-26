@@ -3,6 +3,28 @@
   white-space: initial;
   -webkit-touch-callout: none;
 
+  &.c-replying {
+    border-left: 2px;
+    border-color: #dbdbdb; // var(--text_1);
+    border-style: none none none solid;
+    font-size: 0.75rem;
+    color: var(--text_1);
+    font-style: italic;
+    padding-left: 0.25rem;
+    white-space: pre-line;
+
+    &:hover {
+      cursor: pointer;
+      color: var(--text_2);
+      border-color: var(--text_1); // var(--text_2);
+    }
+
+    .c-member-mention,
+    .c-channel-mention {
+      background-color: transparent;
+    }
+  }
+
   code {
     display: inline-block;
     border-radius: $radius;
@@ -34,17 +56,18 @@
     margin-right: 1px;
   }
 
-  ul {
+  ul,
+  ol {
     margin: 0.75rem 0;
   }
 
   ul li {
     position: relative;
     display: block;
-    padding: 0 0 0.2rem 1.25rem;
+    padding: 0 0 0.2rem 1.125rem;
 
     &:not(:last-child) {
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
 
     &::before {
@@ -52,11 +75,37 @@
       position: absolute;
       display: block;
       left: 0.2rem;
-      top: 0.5rem;
-      width: 0.5rem;
-      height: 0.5rem;
+      top: 0.6rem;
+      width: 0.4rem;
+      height: 0.4rem;
       border-radius: 50%;
       background-color: $text_0;
+    }
+  }
+
+  ol li {
+    position: relative;
+    padding-bottom: 0.2rem;
+    margin-left: 1.125rem;
+
+    &:not(:last-child) {
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  li {
+    // style correction for a nested sub-list within <li></li>.
+    > ul,
+    > ol {
+      margin-bottom: 0;
+    }
+
+    > ul li::before {
+      background-color: rgba(0, 0, 0, 0);
+      border: 1px solid $text_0;
+      top: 0.6rem;
+      width: 0.4rem;
+      height: 0.4rem;
     }
   }
 
@@ -80,5 +129,11 @@
 
   .link {
     border-bottom-color: currentColor;
+  }
+
+  .c-edited {
+    margin-left: 0.2rem;
+    font-size: 0.7rem;
+    color: var(--text_1);
   }
 }

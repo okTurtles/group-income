@@ -49,8 +49,8 @@
       button.is-icon-small
         i.icon-arrow-down
 
-    .c-replying-wrapper
-      .c-replying(v-if='replyingMessage')
+    .c-reply-wrapper
+      .c-reply(v-if='replyingMessage')
         i18n(:args='{ replyingTo, text: replyingMessage.text }') Replying to {replyingTo}: "{text}"
         button.c-clear.is-icon-small(
           :aria-label='L("Stop replying")'
@@ -85,6 +85,7 @@
             v-if='ephemeral.showButtons'
             direction='top'
             :text='L("Add reaction")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -94,46 +95,51 @@
           tooltip(
             direction='top'
             :text='L("Bold")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
             )
               i.icon-bold
           tooltip(
             direction='top'
             :text='L("Italic")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
             )
               i.icon-italic
           tooltip(
             direction='top'
             :text='L("Code")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add code")'
-              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("code")'
             )
               i.icon-code
           tooltip(
             direction='top'
             :text='L("Strikethrough")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
-              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
             )
               i.icon-strikethrough
           tooltip(
             direction='top'
             :text='L("Link")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add link")'
-              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("link")'
             )
               i.icon-link
 
@@ -153,46 +159,51 @@
           tooltip(
             direction='top'
             :text='L("Bold")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "bold")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
             )
               i.icon-bold
           tooltip(
             direction='top'
             :text='L("Italic")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
-              @mousedown='transformTextSelectionToMarkdown($event, "italic")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
             )
               i.icon-italic
           tooltip(
             direction='top'
             :text='L("Code")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add code")'
-              @mousedown='transformTextSelectionToMarkdown($event, "code")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("code")'
             )
               i.icon-code
           tooltip(
             direction='top'
             :text='L("Strikethrough")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
-              @mousedown='transformTextSelectionToMarkdown($event, "strikethrough")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
             )
               i.icon-strikethrough
           tooltip(
             direction='top'
             :text='L("Link")'
+            :deactivated='ephemeral.isPhone'
           )
             button.is-icon(
               :aria-label='L("Add link")'
-              @mousedown='transformTextSelectionToMarkdown($event, "link")'
+              @mousedown.prevent='transformTextSelectionToMarkdown("link")'
             )
               i.icon-link
 
@@ -203,6 +214,7 @@
               :text='L("Create poll")'
             )
               button.is-icon(
+                data-test='createPoll'
                 :aria-label='L("Create poll")'
                 @click='openCreatePollModal'
               )
@@ -266,7 +278,12 @@ import {
 import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
-import { injectOrStripSpecialChar, injectOrStripLink } from '@view-utils/markdown-utils.js'
+import {
+  injectOrStripSpecialChar,
+  injectOrStripLink,
+  splitStringByMarkdownCode,
+  combineMarkdownSegmentListIntoString
+} from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 
 const caretKeyCodes = {
@@ -496,6 +513,8 @@ export default ({
           }
 
           e.preventDefault()
+        } else if (!nChoices && e.keyCode === caretKeyCodes.Esc) {
+          this.cancelEditing()
         } else {
           this.endMention()
         }
@@ -612,6 +631,7 @@ export default ({
           member - @username => @userID
           channel - #channel-name => #channelID
       */
+
       const genMentionRegExp = (type = 'member') => {
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
         const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
@@ -625,17 +645,27 @@ export default ({
         const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
         return found ? makeChannelMention(found.id) : ''
       }
+      const convertAllMentions = str => {
+        return str.replace(
+          genMentionRegExp('member'), // 1. replace all member mentions.
+          (_, username) => makeMentionFromUsername(username).me
+        ).replace( // 2. replace all channel mentions.
+          genMentionRegExp('channel'),
+          (_, channelName) => convertChannelMentionToId(channelName)
+        )
+      }
 
-      // 1. replace all member mentions.
-      msgToSend = msgToSend.replace(
-        genMentionRegExp('member'),
-        (_, username) => makeMentionFromUsername(username).me
-      )
-      // 2. replace all channel mentions.
-      msgToSend = msgToSend.replace(
-        genMentionRegExp('channel'),
-        (_, channelName) => convertChannelMentionToId(channelName)
-      )
+      const msgSplitByCodeMarkdown = splitStringByMarkdownCode(msgToSend)
+      msgSplitByCodeMarkdown.forEach((entry, index) => {
+        if (entry.type === 'plain' &&
+          // Below check: sometimes, the message content ends without closing the block-code and
+          // in this case the rest of the code is treated as code content too.
+          msgSplitByCodeMarkdown[index - 1]?.text !== '```'
+        ) {
+          entry.text = convertAllMentions(entry.text)
+        }
+      })
+      msgToSend = combineMarkdownSegmentListIntoString(msgSplitByCodeMarkdown)
 
       this.$emit(
         'send',
@@ -779,8 +809,9 @@ export default ({
         this.endMention()
       }
     },
-    transformTextSelectionToMarkdown (e, type) {
-      e.preventDefault() // Calling e.preventDefault() in 'mousedown' event listener prevents the button from being focused upon click.
+    transformTextSelectionToMarkdown (type) {
+      // NOTE: should call preventDefault() for 'mousedown' event
+      //       to prevents the button from being focused upon click
 
       const prevFocusElement = document.activeElement // the captured activeElement inside 'mousedown' handler is still a previously focused element.
       const inputEl = this.$refs.textarea
@@ -797,16 +828,15 @@ export default ({
           case 'code':
           case 'strikethrough': {
             result = injectOrStripSpecialChar(inputValue, type, selStart, selEnd)
-            inputEl.value = result.output
-            this.moveCursorTo(result.focusIndex)
             break
           }
           case 'link': {
             result = injectOrStripLink(inputValue, selStart, selEnd)
-            inputEl.value = result.output
-            this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
           }
         }
+
+        inputEl.value = result.output
+        this.$refs.textarea.setSelectionRange(result.focusIndex.start, result.focusIndex.end)
       }
     },
     onUserTyping (data) {
@@ -1039,7 +1069,7 @@ export default ({
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
-.c-replying-wrapper {
+.c-reply-wrapper {
   display: table;
   table-layout: fixed;
   width: 100%;
@@ -1047,7 +1077,7 @@ export default ({
   top: -2.1rem;
 }
 
-.c-replying {
+.c-reply {
   display: table-cell;
   background-color: $general_2;
   padding: 0.4rem 2rem 0.5rem 0.5rem;
@@ -1154,5 +1184,20 @@ export default ({
   display: block;
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  // fix for some mobile-specific issue: https://github.com/okTurtles/group-income/issues/1934
+  .c-send-textarea {
+    padding-bottom: 1rem;
+    height: 3.25rem;
+  }
+
+  .c-send-actions {
+    button.is-icon:focus,
+    button.is-icon:hover {
+      color: $general_0 !important;
+    }
+  }
 }
 </style>

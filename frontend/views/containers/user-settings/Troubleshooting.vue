@@ -94,7 +94,7 @@ export default ({
       this.$router.push({
         query: {
           ...this.$route.query,
-          section: 'application-logs'
+          tab: 'application-logs'
         }
       })
     },
@@ -208,5 +208,4 @@ export default ({
     margin-top: 0.5rem;
   }
 }
-
 </style>

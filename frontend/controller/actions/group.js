@@ -28,6 +28,7 @@ import {
   SWITCH_GROUP,
   JOINED_GROUP
 } from '@utils/events.js'
+import { KV_KEYS } from '@utils/constants.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -457,6 +458,10 @@ export default (sbp('sbp/selectors/register', {
                 postpublish: null
               }
             })
+
+            await sbp('gi.actions/group/updateLastLoggedIn', {
+              contractID: params.contractID
+            }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
           } catch (e) {
             console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
             throw e
@@ -793,7 +798,7 @@ export default (sbp('sbp/selectors/register', {
           .find(([hash, prop]: [string, Object]) => (
             prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
-            prop.data.proposalData.memberName === memberID
+            prop.data.proposalData.memberID === memberID
           )) ?? ['', undefined]
         if (proposal) {
           // cast our vote if we haven't already cast it
@@ -958,11 +963,16 @@ export default (sbp('sbp/selectors/register', {
 
       // Wait for any pending operations (e.g., sync) to finish
       await sbp('chelonia/queueInvocation', contractID, async () => {
-        const current = await sbp('chelonia/kv/get', contractID, 'lastLoggedIn')?.data || {}
-        current[userID] = now
-        await sbp('chelonia/kv/set', contractID, 'lastLoggedIn', current, {
+        const fnGetUpdatedLastLoggedIn = async (cID, key) => {
+          const current = (await sbp('chelonia/kv/get', cID, key))?.data || {}
+          return { ...current, [userID]: now }
+        }
+
+        const data = await fnGetUpdatedLastLoggedIn(contractID, KV_KEYS.LAST_LOGGED_IN)
+        await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
           encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk')
+          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
+          onconflict: fnGetUpdatedLastLoggedIn
         })
       })
     } catch (e) {

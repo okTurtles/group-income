@@ -154,7 +154,7 @@ const getters = {
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
     const userContract = getters.currentIdentityState || {}
-    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername || getters.ourIdentityContractId
+    return userContract.attributes?.displayName || getters.ourUsername || getters.ourIdentityContractId
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
@@ -241,8 +241,8 @@ const getters = {
       if (userID === getters.ourIdentityContractId) {
         return getters.ourUserDisplayName
       }
-      const profile = getters.ourContactProfilesById[userID] || {}
-      return profile.displayName || profile.username || userID
+      const profile = getters.ourContactProfilesById[userID]
+      return profile?.displayName || profile?.username || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
@@ -405,7 +405,7 @@ const getters = {
   profilesByGroup (state, getters) {
     return groupID => {
       const profiles = {}
-      if (state.contracts[groupID].type !== 'gi.contracts/group') {
+      if (state.contracts[groupID]?.type !== 'gi.contracts/group') {
         return profiles
       }
       const groupProfiles = state[groupID].profiles || {}
@@ -439,7 +439,7 @@ const getters = {
       .filter(memberID => getters.groupProfiles[memberID] ||
          getters.groupMembersPending[memberID].expires >= Date.now())
       .map(memberID => {
-        const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || {}
+        const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || (getters.groupProfiles[memberID] ? { contractID: memberID } : {})
         return {
           id: memberID, // common unique ID: it can be either the contract ID or the invite key
           contractID,
@@ -493,6 +493,10 @@ const getters = {
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
+        if (!state[contractID]) {
+          console.warn('[ourContactProfilesById] Missing state', contractID)
+          return
+        }
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
           const username = checkedUsername(state, attributes.username, contractID)

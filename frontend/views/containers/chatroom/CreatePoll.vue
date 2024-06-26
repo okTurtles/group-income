@@ -3,14 +3,17 @@
   @click='onBackDropClick'
   @keyup.esc='close'
 )
-  .c-create-poll-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
+  .c-create-poll-wrapper(
+    data-test='createPollWrapper'
+    :style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}'
+  )
     header.c-header
       i18n.is-title-2.c-popup-title(tag='h2') New poll
       modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
     section.c-body
       form.c-form(@submit.prevent='' :disabled='form.disabled')
-        .field
+        .field(data-test='question')
           input.input.c-input(
             name='question'
             ref='question'
@@ -22,7 +25,7 @@
             v-error:question=''
           )
 
-        .field.c-add-options
+        .field.c-add-options(data-test='options')
           i18n.label Add options
 
           .c-option-list(ref='optList')
@@ -46,13 +49,14 @@
 
           button.link.has-icon(
             v-if='enableMoreButton'
+            data-test='addOption'
             type='button'
             @click='addOption'
           )
             i.icon-plus
             i18n Add more
 
-        label.field
+        label.field(data-test='expiration')
           i18n.label Expires after (days)
           .selectbox
             select.select.c-duration-select(
@@ -81,6 +85,7 @@
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
+            data-test='cancel'
             tag='button'
             type='button'
             @click='close'
@@ -89,6 +94,7 @@
           i18n(
             :disabled='disableSubmit'
             :class='{ "is-small": ephemeral.isDesktopScreen }'
+            data-test='submit'
             tag='button'
             type='button'
             @click='submit'

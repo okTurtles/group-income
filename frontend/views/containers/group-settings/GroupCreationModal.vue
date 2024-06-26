@@ -53,7 +53,7 @@ import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
-import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_GENERIC, GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import { L } from '@common/common.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
@@ -71,7 +71,7 @@ import {
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
-import { required, between } from 'vuelidate/lib/validators'
+import { required, between, maxLength } from 'vuelidate/lib/validators'
 
 export default ({
   name: 'GroupCreationModal',
@@ -165,7 +165,9 @@ export default ({
     form: {
       groupName: { required },
       groupPicture: { },
-      sharedValues: { },
+      sharedValues: {
+        [L('Group purpose cannot exceed {maxchar} characters', { maxchar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR)
+      },
       mincomeAmount: {
         [L('This field is required')]: required,
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {

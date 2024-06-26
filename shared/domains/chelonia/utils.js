@@ -551,6 +551,11 @@ export const getContractIDfromKeyId = (contractID: string, signingKeyId: ?string
 }
 
 export function eventsAfter (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string): ReadableStream {
+  if (!contractID) {
+    // Avoid making a network roundtrip to tell us what we already know
+    throw new Error('Missing contract ID')
+  }
+
   const fetchEventsStreamReader = async () => {
     requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
     const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`, { signal })
@@ -756,7 +761,7 @@ export function verifyShelterAuthorizationHeader (authorization: string, rootSta
   }
   // TODO: Remember nonces and reject already used ones
   const [, data, contractID, timestamp, , signature] = matches
-  if (Math.abs(parseInt(timestamp) - (Date.now() / 1e3 | 0)) > 2) {
+  if (Math.abs(parseInt(timestamp) - (Date.now() / 1e3 | 0)) > 60) {
     throw new Error('Invalid signature time range')
   }
   if (!rootState) rootState = sbp('chelonia/rootState')

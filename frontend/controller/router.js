@@ -37,7 +37,7 @@ const homeGuard = {
 
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
-  redirect: (to, from) => ({ path: '/', query: { ...to.query, next: to.path } })
+  redirect: (to, from) => ({ path: '/', query: { next: to.fullPath } })
 }
 
 const inviteGuard = {

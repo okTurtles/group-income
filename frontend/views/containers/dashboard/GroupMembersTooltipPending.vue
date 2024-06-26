@@ -1,5 +1,5 @@
 <template lang="pug">
-  tooltip(direction='bottom-end')
+  tooltip(direction='bottom-right')
     span.button.is-icon-small(data-test='pendingTooltip')
       i.icon-question-circle
     template(slot='tooltip')

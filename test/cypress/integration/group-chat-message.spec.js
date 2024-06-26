@@ -14,34 +14,29 @@ function makeMentionFromUsername (username) {
 }
 
 const groupName = 'Dreamers'
+const additionalChannelName = 'bulgaria-hackathon'
 const userId = performance.now().toFixed(20).replace('.', '')
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
-const user3 = `user3${userId}`
+const pollData = {
+  question: 'What is your favourite coin?',
+  options: ['Bitcoin', 'Ethereum', 'Solana', 'Not mentioned here']
+}
 let invitationLinkAnyone
 let me
 
-describe('Send/edit/remove messages & add/remove emoticons inside group chat', () => {
+describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions inside group chat', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
     me = username
   }
 
-  function sendMessage (message) {
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').clear().type(`${message}{enter}`)
-      cy.get('textarea').should('be.empty')
-    })
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
-    })
-  }
-
   function editMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu>.c-actions button[aria-label="Edit"]').click()
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        cy.get('.c-actions button[aria-label="Edit"]').click()
+      })
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').clear().type(`${message}{enter}`)
       })
@@ -53,12 +48,14 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   function deleteMessage (nth, countAfter) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu').within(() => {
-        cy.getByDT('menuTrigger').click()
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
+          cy.getByDT('menuTrigger').click()
+        })
         cy.getByDT('menuContent').within(() => {
           cy.getByDT('deleteMessage').click()
         })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
     })
 
@@ -76,12 +73,41 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
   }
 
+  function pinMessage (nth) {
+    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
+          cy.getByDT('menuTrigger').click()
+        })
+        cy.getByDT('menuContent').within(() => {
+          cy.getByDT('pinMessage').click()
+        })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
+      })
+      cy.get('.c-pinned-wrapper').should('contain', 'Pinned by you')
+    })
+  }
+
+  function unpinMessage (nth) {
+    cy.getByDT('numberOfPinnedMessages').click()
+    cy.getByDT('pinnedMessages').find(`.c-body>.c-pinned-message:nth-child(${nth})`).within(() => {
+      cy.getByDT('unpinMessage').click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Remove pinned message')
+      cy.getByDT('submitPrompt').click()
+    })
+  }
+
   function sendEmoticon (nth, emojiCode, emojiCount) {
     const emojiWrapperSelector = '.c-picker-wrapper .emoji-mart .vue-recycle-scroller__item-wrapper .vue-recycle-scroller__item-view:first-child .emoji-mart-category'
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu>.c-actions button[aria-label="Add reaction"]').click()
-      cy.get('.c-menu>.c-actions').invoke('hide')
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        cy.get('.c-actions button[aria-label="Add reaction"]').click()
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
+      })
     })
     cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
 
@@ -111,15 +137,81 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
   }
 
-  it(`user1 creats '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
+  function switchChannel (channelName) {
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul > li').each(($el, index, $list) => {
+        if ($el.text() === channelName) {
+          cy.wrap($el).click()
+          return false
+        }
+      })
+    })
+    cy.getByDT('channelName').should('contain', channelName)
+
+    cy.giWaitUntilMessagesLoaded()
+  }
+
+  function replyToMessage (nth, message) {
+    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').scrollIntoView().should('be.visible')
+        cy.get('.c-actions button[aria-label="Reply"]').click({ force: true })
+        cy.get('.c-actions').invoke('hide').should('be.hidden')
+      })
+    })
+    cy.get('.c-tooltip.is-active').invoke('hide')
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+      cy.get('.c-reply-wrapper').should('exist')
+    })
+
+    cy.giSendMessage(me, message)
+  }
+
+  function votePoll (nthForMessage, nthForOption, isChange = false) {
+    const option = pollData.options[nthForOption - 1]
+    cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
+      cy.get('fieldset').within(() => {
+        cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
+      })
+
+      cy.get('.c-buttons-container').within(() => {
+        cy.getByDT('submit').click()
+      })
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
+      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
+      if (isChange) {
+        cy.get('.c-message.sent:last-child .c-text').should('contain', `Changed vote to "${option}"`)
+      } else {
+        cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${option}"`)
+      }
+    })
+  }
+
+  function changeVote (nthForMessage, nthForOption) {
+    cy.get('.c-message:nth-child(13)').within(() => {
+      cy.get('.c-poll-container .c-poll-menu').within(() => {
+        cy.getByDT('menuTrigger').click()
+        cy.getByDT('menuContent').should('be.visible').within(() => {
+          cy.getByDT('changeVote').click()
+        })
+      })
+    })
+
+    votePoll(nthForMessage, nthForOption, true)
+  }
+
+  it(`user1 creates '${groupName}' group and sends/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
     cy.visit('/')
     cy.giSignup(user1, { bypassUI: true })
     me = user1
 
     cy.giCreateGroup(groupName, { bypassUI: true })
-    cy.giGetInvitationAnyone().then(url => {
-      invitationLinkAnyone = url
-    })
+
     cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     cy.getByDT('channelsList').within(() => {
@@ -127,10 +219,19 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
+    cy.giSendMessage(me, `Welcome to the ${groupName}!`)
+    cy.giSendMessage(me, 'We are going to make the world better!')
+    editMessage(4, 'We are helping each other to make the world better!')
+
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      invitationLinkAnyone = url
+    })
+
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName} group and sends greetings, asks to have meeting`, () => {
+  it(`user2 joins ${groupName} group and sends/deletes/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
@@ -141,117 +242,79 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     me = user2
 
     cy.giRedirectToGroupChat()
-    sendMessage(`Hello ${user1}. How are you? Thanks for inviting me to this awesome group.`)
-    sendMessage('Can we have a meeting this morning?')
+    cy.giSendMessage(me, 'Oh, yes. I have joined the group now.')
+    deleteMessage(6, 4)
+    cy.giSendMessage(me, 'Anyone here?')
+    editMessage(6, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
-  it('user1 sends greetings and edits', () => {
-    switchUser(user1)
-    cy.giRedirectToGroupChat()
-
-    sendMessage('Hi')
-
-    editMessage(7, `Hi ${user2}. I am fine thanks.`)
-  })
-
-  it('user2 edits and deletes message', () => {
-    switchUser(user2)
-    cy.giRedirectToGroupChat()
-
-    editMessage(5, 'Can we have a meeting this evening?')
-
-    deleteMessage(4, 4)
-  })
-
-  it('user1 sees the edited message but he is not able to see the deleted message', () => {
-    switchUser(user1)
-    cy.giRedirectToGroupChat()
-
+  it('user2 sees totally 5 messages', () => {
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message').should('have.length', 4)
+      cy.get('.c-message').should('have.length', 5)
     })
 
     checkMessageBySender(0, user1, `Joined ${CHATROOM_GENERAL_NAME}`)
-    checkMessageBySender(1, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
-    checkMessageBySender(2, user2, 'Can we have a meeting this evening?')
-    checkMessageBySender(3, user1, `Hi ${user2}. I am fine thanks.`)
+    checkMessageBySender(1, user1, `Welcome to the ${groupName}!`)
+    checkMessageBySender(2, user1, 'We are helping each other to make the world better!')
+    checkMessageBySender(3, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
+    checkMessageBySender(4, user2, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
-  it('user1 adds 4 emojis and removes 1 emoji', () => {
+  it('user2 mentions user1 and adds/removes reactions to the message', () => {
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user1).me}. When is the best time for you to help me with learning more about this group?`)
+
     sendEmoticon(4, '+1', 1)
     sendEmoticon(4, 'joy', 2)
     sendEmoticon(4, 'grinning', 3)
 
-    sendEmoticon(5, 'joy', 1)
+    sendEmoticon(7, 'joy', 1)
 
     deleteEmotion(4, 2, 2)
   })
 
-  it('user2 sees the emojis user1 created and adds his emoji', () => {
-    switchUser(user2)
+  it('user1 sees a mention and three reactions, and he sends two mentions and one reaction too', () => {
+    switchUser(user1)
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
     cy.giRedirectToGroupChat()
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).me}. Anytime!`)
+    cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).all}. No matter what, I will always be by your side.`)
+    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:nth-child(4) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
     })
 
-    sendEmoticon(5, '+1', 2)
+    sendEmoticon(8, '+1', 2)
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
     })
-    cy.giLogout()
   })
 
-  it(`user3 joins ${groupName} group and mentions user1 and all`, () => {
-    cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: user3,
-      existingMemberUsername: user1,
-      groupName: groupName,
-      shouldLogoutAfter: false,
-      bypassUI: true
-    })
-    me = user3
-    cy.giRedirectToGroupChat()
-
-    sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
-    sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
-  })
-
-  it('user2 and user1 check mentions for themselves', () => {
-    // NOTE: test assertions are commented here
-    // That's because we don't display notifications if user signs in another device
+  it('user2 checks two mentions and sends/deletes attachments', () => {
     switchUser(user2)
-
-    // cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
     cy.giRedirectToGroupChat()
-    // cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('1')
+    cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
-    switchUser(user1)
-
-    // cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
-    cy.giRedirectToGroupChat()
-    // cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('2')
-  })
-
-  it('user1 sends two messages with attachments, and deletes attachments', () => {
     const fileNames = [
       ['1.png', '2.png', '3.png'], // Prefix Path: cypress/fixtures/
       ['imageTest.png', 'test.json']
     ]
 
     cy.getByDT('attachments').attachFile(fileNames[0])
-    sendMessage('Sending three profile pictures which are designed by Apple. Cute, right?')
+    cy.giSendMessage(me, 'Sending three profile pictures which are designed by Apple. Cute, right?')
 
     cy.getByDT('attachments').attachFile(fileNames[1])
-    sendMessage('Sending two files; one is image, and the other is JSON file.')
+    cy.giSendMessage(me, 'Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
+        cy.get('.c-attachment-actions-wrapper').invoke('hide')
       })
     })
 
@@ -261,8 +324,176 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(10)').within(() => {
+    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
+    })
+  })
+
+  it('user2 pins 3 messages and unpins 1 message', () => {
+    pinMessage(11)
+    pinMessage(10)
+    pinMessage(12)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
+    unpinMessage(1)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
+  })
+
+  it('user2 creates a poll', () => {
+    const { question, options } = pollData
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.getByDT('createPoll').click()
+    })
+
+    cy.getByDT('createPollWrapper').within(() => {
+      cy.getByDT('question').within(() => {
+        cy.get('input').type(`${question}{enter}`)
+      })
+
+      cy.getByDT('options').within(() => {
+        for (let i = 1; i <= options.length; i++) {
+          cy.getByDT('addOption').click()
+          cy.get('.c-option-list > .c-option-item').should('have.length', i + 1)
+        }
+        cy.get('.c-option-list > .c-option-item:last-child').within(() => {
+          cy.get('button[aria-label="Remove option"]').click()
+        })
+        cy.get('.c-option-list > .c-option-item').should('have.length', options.length)
+
+        for (let i = 1; i <= options.length; i++) {
+          cy.get(`.c-option-list > .c-option-item:nth-child(${i})`).within(() => {
+            cy.get('input').type(`${options[i - 1]}{enter}`)
+          })
+        }
+      })
+
+      cy.get('.c-btns-container').within(() => {
+        cy.getByDT('submit').click()
+      })
+    })
+
+    cy.getByDT('createPollWrapper').should('not.visible')
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child').should('have.class', 'is-type-poll')
+      cy.get('.c-message:last-child .c-poll-container').within(() => {
+        cy.get('.c-poll-title').should('contain', question)
+        cy.get('fieldset').within(() => {
+          cy.get('.c-poll-option').should('have.length', options.length)
+          for (let i = 1; i <= options.length; i++) {
+            cy.get(`.c-poll-option:nth-child(${i})`).should('contain', options[i - 1])
+          }
+        })
+      })
+    })
+  })
+
+  it('user2 votes the poll he created', () => {
+    votePoll(13, 1)
+  })
+
+  it('pinned messages should be sorted by the created date of original messages', () => {
+    cy.getByDT('numberOfPinnedMessages').click()
+    cy.getByDT('pinnedMessages').within(() => {
+      cy.get('.c-body>.c-pinned-message:first-child .c-pinned-message-content')
+        .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
+      cy.get('.c-body>.c-pinned-message:last-child .c-pinned-message-content')
+        .should('contain', 'Hi @all. No matter what, I will always be by your side.')
+    })
+  })
+
+  it('user2 clicks the first pinned message to highlight the original message', () => {
+    cy.getByDT('pinnedMessages').within(() => {
+      cy.get('.c-body>.c-pinned-message:first-child').click()
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:nth-child(11)').should('have.class', 'c-focused')
+    })
+  })
+
+  it('user1 checks 2 pinned messages and the last position where he was', () => {
+    switchUser(user1)
+
+    cy.giRedirectToGroupChat()
+    cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
+    cy.contains('Hi @all. No matter what, I will always be by your side.').should('be.visible')
+  })
+
+  it('user1 votes the poll, updates his vote, and pins it', () => {
+    votePoll(13, 2)
+    changeVote(13, 3)
+    pinMessage(13)
+    cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
+  })
+
+  it('user1 sends 20 messages', () => {
+    for (let i = 1; i <= 20; i++) {
+      cy.giSendMessage(me, `Text-${i}`)
+    }
+  })
+
+  it('user1 replies message', () => {
+    replyToMessage(11, 'Yeah, they are pretty!') // 'Sending three profile pictures which are designed by Apple. Cute, right?'
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().find('.c-who > span:first-child').should('contain', user1)
+      cy.get('.c-message').last().find('.c-text').should('contain', 'Yeah, they are pretty!')
+      cy.get('.c-message').last().should('be.visible').within(() => {
+        cy.get('.c-replying').should('be.visible').click()
+      })
+
+      // HACK: scrollIntoView() should not be there
+      // But cy.get('.c-reply').click() doesn't scroll to the target message
+      // Because of this can not move forward to the next stages, so just used HACK
+      cy.get('.c-message:nth-child(11)')
+        .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
+        .scrollIntoView()
+        .should('be.visible')
+      cy.get('.c-reply').should('not.exist')
+    })
+  })
+
+  it('user1 creates a new channel and checks how the scroll position is saved for each channel', () => {
+    cy.giAddNewChatroom({
+      name: additionalChannelName,
+      isPrivate: false,
+      bypassUI: true
+    })
+    cy.giCheckIfJoinedChatroom(additionalChannelName, me)
+
+    switchChannel(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.contains('Sending three profile pictures which are designed by Apple. Cute, right?').should('be.visible')
+    })
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('.c-jump-to-latest').should('exist').click()
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().should('be.visible')
+    })
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('.c-jump-to-latest').should('not.exist')
+    })
+  })
+
+  it('user1 checks how the infinite scroll works', () => {
+    switchChannel(additionalChannelName)
+    switchChannel(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.contains('Yeah, they are pretty!').should('be.visible')
+    })
+
+    cy.getByDT('conversationWrapper').scrollTo('top')
+    cy.giWaitUntilMessagesLoaded()
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:nth-child(2) .c-who > span:first-child').should('contain', user1)
+      cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
     cy.giLogout()

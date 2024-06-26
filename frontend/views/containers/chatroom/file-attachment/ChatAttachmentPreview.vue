@@ -37,7 +37,7 @@
           )
             button.is-icon-small(
               :aria-label='L("Download")'
-              @click='downloadAttachment(entryIndex)'
+              @click.stop='downloadAttachment(entryIndex)'
             )
               i.icon-download
           tooltip(
@@ -176,6 +176,13 @@ export default {
 
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
+
+        aTag.addEventListener('click', function (event) {
+          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
+          //       when user trys to download attachment inside the dialog
+          event.stopPropagation()
+        })
+
         aTag.click()
       } catch (err) {
         console.error('error caught while downloading a file: ', err)

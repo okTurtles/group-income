@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import IdleVue from 'idle-vue'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 import '@model/captureLogs.js'
@@ -41,6 +42,7 @@ import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import { showNavMixin } from './views/utils/misc.js'
 import FaviconBadge from './utils/faviconBadge.js'
+import { KV_KEYS } from './utils/constants.js'
 
 const { Vue, L } = Common
 
@@ -116,7 +118,7 @@ async function startApp () {
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
-          'chelonia/queueInvocation',
+          'chelonia/queueInvocation', 'chelonia/contract/wait',
           'chelonia/contract/waitingForKeyShareTo',
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/chatroom/leave',
@@ -129,7 +131,10 @@ async function startApp () {
           'chelonia/contract/disconnect',
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
-          'chelonia/contract/hasKeysToPerformOperation'
+          'chelonia/contract/hasKeysToPerformOperation',
+          'gi.actions/identity/initChatRoomUnreadMessages', 'gi.actions/identity/deleteChatRoomUnreadMessages',
+          'gi.actions/identity/setChatRoomReadUntil',
+          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/removeChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -201,7 +206,6 @@ async function startApp () {
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
       messageHandlers: {
         [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-          const isDevelopment = process.env.NODE_ENV === 'development'
           const ourVersion = process.env.GI_VERSION
           const theirVersion = msg.data.GI_VERSION
 
@@ -213,7 +217,13 @@ async function startApp () {
           // We only compare GI_VERSION in development mode so that the page auto-refreshes if `grunt dev` is re-run
           // This check cannot be done in production mode as it would lead to an infinite page refresh bug
           // when using `grunt deploy` with `grunt serve`
-          if (isContractVersionDiff || (isDevelopment && isGIVersionDiff)) {
+          console.info('VERSION_INFO received:', {
+            ourVersion,
+            theirVersion,
+            ourContractsVersion,
+            theirContractsVersion
+          })
+          if (isContractVersionDiff || isGIVersionDiff) {
             sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         },
@@ -237,12 +247,14 @@ async function startApp () {
             }
           }
         },
-        [NOTIFICATION_TYPE.KV] ([key, data]) {
-          switch (key) {
-            case 'lastLoggedIn': {
-              const rootState = sbp('state/vuex/state')
-              Vue.set(rootState.lastLoggedIn, data.contractID, data.data)
-            }
+        [NOTIFICATION_TYPE.KV] ([key, value]) {
+          const rootState = sbp('state/vuex/state')
+          const { contractID, data } = value
+
+          if (key === KV_KEYS.LAST_LOGGED_IN && data) {
+            Vue.set(rootState.lastLoggedIn, contractID, data)
+          } else if (key === KV_KEYS.UNREAD_MESSAGES && data) {
+            sbp('state/vuex/commit', 'setUnreadMessages', data)
           }
         }
       }
@@ -315,6 +327,9 @@ async function startApp () {
         const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
         sbp('chelonia.persistentActions/configure', { databaseKey })
         await sbp('chelonia.persistentActions/load')
+
+        // NOTE: should set IdleVue plugin here because state could be replaced while logging in
+        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
@@ -405,7 +420,7 @@ async function startApp () {
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
           // TODO: need to remove the '|| []' after we release 0.2.*
-          .map(cId => (this.ourUnreadMessages[cId].messages || []).length)
+          .map(cId => (this.ourUnreadMessages[cId].unreadMessages || []).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {

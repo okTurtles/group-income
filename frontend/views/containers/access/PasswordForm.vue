@@ -74,8 +74,8 @@ export default ({
 </script>
 
 <style lang="scss" scoped>
-  .icon {
-    cursor: pointer;
-    pointer-events: initial !important;
-  }
+.icon {
+  cursor: pointer;
+  pointer-events: initial !important;
+}
 </style>

@@ -56,7 +56,7 @@ describe('Signup, Profile and Login', () => {
     cy.giLogout()
   })
 
-  it('sign up button remains disabled if passwords are not the same', () => {
+  it('sign up button remains disabled if passwords are not the same or terms are not agreed', () => {
     const user2 = `user2-${userId}`
     const password = '123456789'
     const wrongPassword = 'wRoNgPaSsWoRd123'
@@ -67,9 +67,14 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('signEmail').type(`${user2}@email.com`)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(wrongPassword)
+    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
     cy.getByDT('passwordConfirm').clear().type(password)
+    cy.getByDT('signTerms').uncheck({ force: true }).should('not.be.checked')
+    cy.getByDT('signSubmit').should('be.disabled')
+
+    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
     cy.getByDT('signSubmit').should('not.be.disabled')
 
     cy.closeModal()

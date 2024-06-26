@@ -42,7 +42,7 @@ modal-base-template.has-background(
       )
         li.c-search-member(
           v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
-          @click='onAddSelection(partners)'
+          @click='onAddSelection(partners.map(p => p.contractID))'
           :key='chatRoomID'
         )
           profile-card(
@@ -57,7 +57,7 @@ modal-base-template.has-background(
               .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map((p => usernameFromID(p))).join(', @') }}
+                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
 
       .is-subtitle
         i18n(
@@ -119,7 +119,6 @@ export default ({
       'usernameFromID',
       'ourContactProfilesById',
       'ourIdentityContractId',
-      'ourUnreadMessages',
       'currentGroupContactProfilesById'
     ]),
     ourNewDMContacts () {
@@ -137,37 +136,50 @@ export default ({
     },
     ourRecentConversations () {
       return Object.keys(this.ourGroupDirectMessages)
-        .filter(chatRoomID => {
-          return this.ourGroupDirectMessages[chatRoomID].visible &&
-            // NOTE: this.ourUnreadMessages[chatRoomID] could be undefined just after new partner made direct message with me
-            // it's when the identity contract is updated, but chatroom contract is not fully synced yet
-            this.ourUnreadMessages[chatRoomID]
-        }).map(chatRoomID => {
-          const { title, partners, lastJoinedPartner, picture } = this.ourGroupDirectMessages[chatRoomID]
-          const lastMessageDate = this.ourUnreadMessages[chatRoomID].readUntil?.createdDate
-          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMessageDate }
+        .filter(chatRoomID => this.ourGroupDirectMessages[chatRoomID].visible)
+        .map(chatRoomID => {
+          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp } = this.ourGroupDirectMessages[chatRoomID]
+          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp }
         })
         .sort((former, latter) => {
-          if (former.lastMessageDate > latter.lastMessageDate) {
-            return -1
-          } else if (former.lastMessageDate < latter.lastMessageDate) {
-            return 1
-          }
-          return former.title > latter.title ? 1 : -1
+          const diff = former.lastMsgTimeStamp - latter.lastMsgTimeStamp
+          return diff > 0 ? -1 : (diff < 0 ? 1 : (former.title > latter.title ? 1 : -1))
         })
     },
     filteredRecents () {
+      if (!this.searchText && !this.selections.length) {
+        return this.ourRecentConversations
+      }
       return this.ourRecentConversations.filter(({ title, partners }) => {
+        const partnerIDs = partners.map(p => p.contractID)
         const upperCasedSearchText = String(this.searchText).toUpperCase().normalize()
-        if (!difference(partners, this.selections).length) {
+        if (!difference(partnerIDs, this.selections).length) {
+          // match with contractIDs
           return false
-        } else if (String(title).toUpperCase().normalize().indexOf(upperCasedSearchText) > -1) {
+        } else if (String(title).toUpperCase().normalize().includes(upperCasedSearchText)) {
+          // match with title
           return true
-        } else if (String(partners.join(', ')).toUpperCase().indexOf(upperCasedSearchText) > -1) {
-          return true
+        } else {
+          // match with username and displayname
+          const userKeywords = upperCasedSearchText.replace(/\s/g, '').split(',')
+          return userKeywords.reduce((found, userKeyword, index, arr) => {
+            const isLastUserKeyword = index === arr.length - 1
+            let currentFound = false
+            if (isLastUserKeyword) {
+              currentFound = partners.findIndex(p => {
+                return p.username.toUpperCase().normalize().includes(userKeyword) ||
+                  p.displayName.toUpperCase().normalize().includes(userKeyword)
+              }) >= 0
+            } else {
+              currentFound = partners.findIndex(p => {
+                return p.username.toUpperCase().normalize() === userKeyword ||
+                  p.displayName.toUpperCase().normalize() === userKeyword
+              }) >= 0
+            }
+            return found && currentFound
+          }, true)
         }
-        return false
-      })
+      }).sort((a, b) => a.partners.length > b.partners.length ? 1 : -1)
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])

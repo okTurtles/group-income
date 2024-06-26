@@ -14,7 +14,7 @@
       | {{emoticon}}
       .c-emoticon-number {{list.length}}
 
-  .c-emoticon-wrapper.c-add-icon
+  .c-emoticon-wrapper.c-add-icon(v-if='!readOnly')
     button.is-icon-small(
       :aria-label='L("Add reaction")'
       @click='(e) => $emit("openEmoticon", e)'
@@ -40,7 +40,8 @@ export default ({
       type: Object,
       default: null
     },
-    messageType: String
+    messageType: String,
+    readOnly: Boolean
   },
   computed: {
     ...mapGetters(['globalProfile']),
@@ -79,7 +80,7 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-emoticons-list {
-  padding-left: 2.5rem;
+  padding-left: 3rem;
   display: flex;
 
   &.for-type-poll {

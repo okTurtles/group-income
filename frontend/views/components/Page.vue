@@ -159,6 +159,7 @@ $pagePaddingDesktop: 5.5rem;
     top: 0;
     background: $general_2;
     z-index: 3;
+    padding: 0 5.75rem;
   }
 
   @include desktop {
@@ -167,6 +168,11 @@ $pagePaddingDesktop: 5.5rem;
     text-align: left;
     min-height: 4.75rem;
     padding-left: $pagePaddingDesktop;
+    padding-right: 2rem;
+  }
+
+  @include phone {
+    padding: 0 4.75rem;
   }
 
   &.p-mini-header {
@@ -176,7 +182,7 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   .c-toggle.sidebar {
-    right: -1rem;
+    right: 0;
 
     @include desktop {
       display: none;

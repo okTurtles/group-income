@@ -10,7 +10,8 @@ import { has, omit } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT, UNREAD_MESSAGES_QUEUE } from '~/frontend/utils/events.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -291,21 +292,22 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
     }
 
-    const password = passwordFn?.()
-    const transientSecretKeys = []
-    if (password) {
-      try {
-        const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
-        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        transientSecretKeys.push({ key: IEK, transient: true })
-      } catch (e) {
-        console.error('caught error calling retrieveSalt:', e)
-        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-      }
-    }
-
     try {
       sbp('appLogs/startCapture', identityContractID)
+
+      const password = passwordFn?.()
+      const transientSecretKeys = []
+      if (password) {
+        try {
+          const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
+          const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+          transientSecretKeys.push({ key: IEK, transient: true })
+        } catch (e) {
+          console.error('caught error calling retrieveSalt:', e)
+          throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+        }
+      }
+
       const { encryptionParams, value: state } = await sbp('gi.db/settings/loadEncrypted', identityContractID, password && ((stateEncryptionKeyId, salt) => {
         return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
       }))
@@ -357,7 +359,7 @@ export default (sbp('sbp/selectors/register', {
         return index === -1 ? contractSyncPriorityList.length : index
       }
 
-      //            loading the website instead of stalling out.
+      // loading the website instead of stalling out.
       try {
         if (!state) {
           // Make sure we don't unsubscribe from our own identity contract
@@ -390,6 +392,11 @@ export default (sbp('sbp/selectors/register', {
           throw err
         }
       }
+
+      // NOTE: update chatRoomUnreadMessages to the latest one we do this here
+      //       just after the identity contract is synced because
+      //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
+      await sbp('gi.actions/identity/loadChatRoomUnreadMessages')
 
       try {
         // $FlowFixMe[incompatible-call]
@@ -516,6 +523,10 @@ export default (sbp('sbp/selectors/register', {
         // TODO: We might not need this second await and 1-3 could be fine (i.e.,
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+
+        // NOTE: wait for all the pending UNREAD_MESSAGES_QUEUE invocations to be finished
+        await sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, () => {})
+
         // See comment below for 'gi.db/settings/delete'
         await sbp('state/vuex/save')
 
@@ -751,24 +762,180 @@ export default (sbp('sbp/selectors/register', {
   }) => {
     const rootGetters = sbp('state/vuex/getters')
     const { identityContractID } = sbp('state/vuex/state').loggedIn
-    const { shouldDeleteFile, shouldDeleteToken } = option
+    const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
+    let deleteResult, toDelete
 
     if (shouldDeleteFile) {
       const credentials = Object.fromEntries(manifestCids.map(cid => {
+        // It could be that the file was already deleted, if we no longer have
+        // a delete token. In this case, omit those CIDs.
+        if (!throwIfMissingToken && shouldDeleteToken && !rootGetters.currentIdentityState.fileDeleteTokens[cid]) {
+          console.info('[gi.actions/identity/removeFiles] Skipping file as token is missing', cid)
+          return [cid, null]
+        };
         const credential = shouldDeleteToken
           ? { token: rootGetters.currentIdentityState.fileDeleteTokens[cid] }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
-      await sbp('chelonia/fileDelete', manifestCids, credentials)
+      toDelete = !throwIfMissingToken ? manifestCids.filter((cid) => !!credentials[cid]) : manifestCids
+      deleteResult = await sbp('chelonia/fileDelete', toDelete, credentials)
+    } else {
+      toDelete = manifestCids
     }
 
     if (shouldDeleteToken) {
       await sbp('gi.actions/identity/removeFileDeleteToken', {
         contractID: identityContractID,
-        data: { manifestCids }
+        data: {
+          manifestCids: deleteResult
+            ? toDelete.filter((_, i) => {
+              return deleteResult[i].status === 'fulfilled'
+            })
+            : toDelete
+        }
       })
     }
+
+    if (deleteResult?.some(r => r.status === 'rejected')) {
+      console.error('[gi.actions/identity/removeFiles] Some CIDs could not be deleted',
+        deleteResult?.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
+      throw new Error('Some CIDs could not be deleted')
+    }
+  },
+  'gi.actions/identity/fetchChatRoomUnreadMessages': async () => {
+    const { ourIdentityContractId } = sbp('state/vuex/getters')
+    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
+  },
+  'gi.actions/identity/saveChatRoomUnreadMessages': ({ contractID, data, onconflict }: {
+    contractID: string, data: Object, onconflict?: Function
+  }) => {
+    const { ourIdentityContractId } = sbp('state/vuex/getters')
+
+    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+      onconflict
+    })
+  },
+  'gi.actions/identity/loadChatRoomUnreadMessages': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+      sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+    })
+  },
+  'gi.actions/identity/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnInitUnreadMessages = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+
+        if (!currentData[cID]) {
+          return {
+            ...currentData,
+            [cID]: {
+              readUntil: { messageHash, createdHeight },
+              unreadMessages: []
+            }
+          }
+        }
+        return null
+      }
+
+      const data = await fnInitUnreadMessages(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnInitUnreadMessages })
+      }
+    })
+  },
+  'gi.actions/identity/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnSetReadUntil = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+
+        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
+          const { unreadMessages } = currentData[cID]
+          return {
+            ...currentData,
+            [cID]: {
+              readUntil: { messageHash, createdHeight },
+              unreadMessages: unreadMessages.filter(msg => msg.createdHeight > createdHeight)
+            }
+          }
+        }
+        return null
+      }
+
+      const data = await fnSetReadUntil(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnSetReadUntil })
+      }
+    })
+  },
+  'gi.actions/identity/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnAddUnreadMessage = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+
+        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
+          const index = currentData[cID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+          if (index === -1) {
+            currentData[cID].unreadMessages.push({ messageHash, createdHeight })
+            return currentData
+          }
+        }
+        return null
+      }
+
+      const data = await fnAddUnreadMessage(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnAddUnreadMessage })
+      }
+    })
+  },
+  'gi.actions/identity/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
+    contractID: string, messageHash: string
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnRemoveUnreadMessage = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+
+        const index = currentData[cID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+        // NOTE: index could be undefined if unreadMessages is not initialized
+        if (Number.isInteger(index) && index >= 0) {
+          currentData[cID].unreadMessages.splice(index, 1)
+          return currentData
+        }
+        return null
+      }
+
+      const data = await fnRemoveUnreadMessage(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnRemoveUnreadMessage })
+      }
+    })
+  },
+  'gi.actions/identity/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', UNREAD_MESSAGES_QUEUE, async () => {
+      const fnDeleteUnreadMessages = async (cID) => {
+        const currentData = await sbp('gi.actions/identity/fetchChatRoomUnreadMessages')
+        if (currentData[cID]) {
+          delete currentData[cID]
+          return currentData
+        }
+        return null
+      }
+
+      const data = await fnDeleteUnreadMessages(contractID)
+      if (data) {
+        await sbp('gi.actions/identity/saveChatRoomUnreadMessages', { contractID, data, onconflict: fnDeleteUnreadMessages })
+      }
+    })
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))

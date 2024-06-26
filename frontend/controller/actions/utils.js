@@ -69,6 +69,9 @@ export const encryptedAction = (
 
       try {
         // Writing to a contract requires being subscribed to it
+        // Since we're only interested in writing and we don't know whether
+        // we're subscribed or should be, we use an ephemeral retain here that
+        // is undone at the end in a finally block.
         await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)

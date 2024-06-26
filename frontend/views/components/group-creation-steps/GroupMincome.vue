@@ -41,7 +41,7 @@
     fieldset.field
       .label.c-label-tooltip
         i18n On what day should the first payment distribution be calculated?
-        tooltip(direction='bottom-end')
+        tooltip(direction='bottom-right')
           span.button.is-icon-small
             i.icon-question-circle
           template(slot='tooltip')

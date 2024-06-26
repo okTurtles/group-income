@@ -99,7 +99,7 @@ export default ({
     contractID: String,
     direction: {
       type: String,
-      validator: (value) => ['left', 'top-left'].includes(value),
+      validator: (value) => ['left', 'top-left', 'bottom'].includes(value),
       default: 'left'
     },
     deactivated: {

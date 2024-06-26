@@ -29,7 +29,9 @@
         :class='{ "sublink": tabItem.url }'
         :data-test='`link-${tabItem.url}`'
         @click='tabClick(tabItem)'
-      ) {{ tabItem.title }}
+      )
+        span(v-if='tabItem.html' v-safe-html='tabItem.html')
+        span(v-else)  {{ tabItem.title }}
 
     section.tab-section
       tab-item
@@ -40,8 +42,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { L } from '@common/common.js'
-import { contractsVersion } from '~/package.json'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'TabWrapper',
@@ -53,6 +54,9 @@ export default ({
     defaultTab: String // initial tab name
   },
   data () {
+    const appVersion = process.env.GI_VERSION.split('@')[0]
+    const contractsVersion = process.env.CONTRACTS_VERSION
+
     return {
       activeTab: 0,
       activeComponent: null,
@@ -60,7 +64,11 @@ export default ({
       transitionName: '',
       open: true,
       subNav: [{
-        title: `${L('Version')} ${contractsVersion}`
+        html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
+          ...LTags(),
+          appVersion,
+          contractsVersion
+        })
       }, {
         title: L('Acknowledgements'),
         url: 'acknowledgements',
@@ -137,6 +145,7 @@ export default ({
           this.activeTab = link.index
           this.title = link.title
           this.activeComponent = link.component
+          this.open = false
         }
       }
       const allTabNavLinks = this.tabNav.reduce(
