@@ -28,7 +28,6 @@ import {
   SWITCH_GROUP,
   JOINED_GROUP
 } from '@utils/events.js'
-import { KV_KEYS } from '@utils/constants.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -459,7 +458,7 @@ export default (sbp('sbp/selectors/register', {
               }
             })
 
-            await sbp('gi.actions/group/updateLastLoggedIn', {
+            await sbp('gi.actions/group/kv/updateLastLoggedIn', {
               contractID: params.contractID
             }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
           } catch (e) {
@@ -960,34 +959,6 @@ export default (sbp('sbp/selectors/register', {
 
     return sendMessage(params)
   }),
-  'gi.actions/group/updateLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    try {
-      const rootState = sbp('state/vuex/state')
-      const userID = rootState.loggedIn?.identityContractID
-
-      if (!userID) {
-        throw new Error('Unable to update last logged in without an active session')
-      }
-      const now = new Date().toISOString()
-
-      // Wait for any pending operations (e.g., sync) to finish
-      await sbp('chelonia/queueInvocation', contractID, async () => {
-        const fnGetUpdatedLastLoggedIn = async (cID, key) => {
-          const current = (await sbp('chelonia/kv/get', cID, key))?.data || {}
-          return { ...current, [userID]: now }
-        }
-
-        const data = await fnGetUpdatedLastLoggedIn(contractID, KV_KEYS.LAST_LOGGED_IN)
-        await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
-          encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-          signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
-          onconflict: fnGetUpdatedLastLoggedIn
-        })
-      })
-    } catch (e) {
-      throw new GIErrorUIRuntimeError(L('Failed to update "lastLoggedIn" in a group profile.'), { cause: e })
-    }
-  },
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),

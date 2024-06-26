@@ -135,7 +135,7 @@ export function LError (error: Error, toGithub?: boolean): {|reportError: any|} 
   let url = 'https://github.com/okTurtles/group-income/issues'
   if (!toGithub && sbp('state/vuex/state').loggedIn) {
     const baseRoute = document.location.origin + sbp('controller/router').options.base
-    url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURI(error.message)}`
+    url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`
   }
   return {
     reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
