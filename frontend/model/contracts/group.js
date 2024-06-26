@@ -345,8 +345,8 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
     ...extraParams,
     hooks: {
       onprocessed: () => {
-        const rootState = sbp('state/vuex/state')
-        if (memberID === rootState.loggedIn.identityContractID) {
+        const { ourIdentityContractId } = sbp('state/vuex/getters')
+        if (memberID === ourIdentityContractId) {
           // NOTE: since the gi.contracts/chatroom/leave/sideEffect appends invocation in the queue
           //       the chatroom contract should be released after the queued invocation
           //       would be fully executed
@@ -844,10 +844,10 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ meta, contractID, data, innerSigningContractID }, { state, getters }) {
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
-          const { loggedIn } = sbp('state/vuex/state')
+          const { ourIdentityContractId } = sbp('state/vuex/getters')
           const payment = state.payments[data.paymentHash]
 
-          if (loggedIn.identityContractID === payment.data.toMemberID) {
+          if (ourIdentityContractId === payment.data.toMemberID) {
             sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_RECEIVED', {
               createdDate: meta.createdDate,
               groupID: contractID,
@@ -869,9 +869,9 @@ sbp('chelonia/defineContract', {
         Vue.set(fromMemberID, data.toMemberID, data.memo)
       },
       sideEffect ({ contractID, meta, data, innerSigningContractID }) {
-        const { loggedIn } = sbp('state/vuex/state')
+        const { ourIdentityContractId } = sbp('state/vuex/getters')
 
-        if (data.toMemberID === loggedIn.identityContractID) {
+        if (data.toMemberID === ourIdentityContractId) {
           sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_THANKYOU_SENT', {
             createdDate: meta.createdDate,
             groupID: contractID,
@@ -922,7 +922,7 @@ sbp('chelonia/defineContract', {
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
       },
       sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
-        const { loggedIn } = sbp('state/vuex/state')
+        const { ourIdentityContractId } = sbp('state/vuex/getters')
         const typeToSubTypeMap = {
           [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
           [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
@@ -934,7 +934,7 @@ sbp('chelonia/defineContract', {
           [PROPOSAL_GENERIC]: 'GENERIC'
         }
 
-        const myProfile = getters.groupProfile(loggedIn.identityContractID)
+        const myProfile = getters.groupProfile(ourIdentityContractId)
 
         if (isActionOlderThanUser(contractID, height, myProfile)) {
           sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'NEW_PROPOSAL', {
@@ -1111,11 +1111,9 @@ sbp('chelonia/defineContract', {
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       sideEffect ({ meta, contractID, height, innerSigningContractID }) {
-        const { loggedIn } = sbp('state/vuex/state')
-
         sbp('chelonia/queueInvocation', contractID, async () => {
           const rootState = sbp('state/vuex/state')
-          const rootGetters = sbp('state/vuex/getters')
+          const { ourIdentityContractId, ourContactProfilesById } = sbp('state/vuex/getters')
           const state = rootState[contractID]
 
           if (!state) {
@@ -1129,20 +1127,18 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const userID = loggedIn.identityContractID
-
           // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
           // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-          if (innerSigningContractID === userID) {
+          if (innerSigningContractID === ourIdentityContractId) {
           // we're the person who just accepted the group invite
             // Add the group's CSK to our identity contract so that we can receive
             // DMs.
-            await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
+            await sbp('gi.actions/identity/addJoinDirectMessageKey', ourIdentityContractId, contractID, 'csk')
 
             const generalChatRoomId = state.generalChatRoomId
             if (generalChatRoomId) {
               // Join the general chatroom
-              if (state.chatRooms[generalChatRoomId]?.members?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
+              if (state.chatRooms[generalChatRoomId]?.members?.[ourIdentityContractId]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
                   data: { chatRoomID: generalChatRoomId },
@@ -1175,7 +1171,7 @@ sbp('chelonia/defineContract', {
 
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(profiles)
-              .filter((id) => id !== userID && !rootGetters.ourContactProfilesById[id])
+              .filter((id) => id !== ourIdentityContractId && !ourContactProfilesById[id])
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
@@ -1194,7 +1190,7 @@ sbp('chelonia/defineContract', {
             // are indexed by contract ID
             sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
               const { profiles = {} } = state
-              const myProfile = profiles[userID]
+              const myProfile = profiles[ourIdentityContractId]
 
               if (isActionOlderThanUser(contractID, height, myProfile)) {
                 sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
@@ -1426,9 +1422,9 @@ sbp('chelonia/defineContract', {
         removeGroupChatroomProfile(state, data.chatRoomID, memberID)
       },
       sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
-        const rootState = sbp('state/vuex/state')
+        const { ourIdentityContractId } = sbp('state/vuex/getters')
         const memberID = data.memberID || innerSigningContractID
-        if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+        if (innerSigningContractID === ourIdentityContractId) {
           sbp('chelonia/queueInvocation', contractID, () => {
             const rootState = sbp('state/vuex/state')
             if (rootState[contractID]?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -1472,16 +1468,16 @@ sbp('chelonia/defineContract', {
         Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
-        const rootState = sbp('state/vuex/state')
+        const { ourIdentityContractId } = sbp('state/vuex/getters')
         const memberID = data.memberID || innerSigningContractID
 
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
-        if (innerSigningContractID === rootState.loggedIn.identityContractID) {
+        if (innerSigningContractID === ourIdentityContractId) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, memberID)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
-        } else if (memberID === rootState.loggedIn.identityContractID) {
+        } else if (memberID === ourIdentityContractId) {
           // If we were the ones added to the chatroom, we sync the chatroom.
           // This is an `else` block because joinGroupChatrooms already calls
           // sync
