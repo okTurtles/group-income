@@ -132,9 +132,9 @@ async function startApp () {
           'gi.actions/identity/removeFiles',
           'gi.actions/chatroom/join',
           'chelonia/contract/hasKeysToPerformOperation',
-          'gi.actions/identity/initChatRoomUnreadMessages', 'gi.actions/identity/deleteChatRoomUnreadMessages',
-          'gi.actions/identity/setChatRoomReadUntil',
-          'gi.actions/identity/addChatRoomUnreadMessage', 'gi.actions/identity/removeChatRoomUnreadMessage'
+          'gi.actions/identity/kv/initChatRoomUnreadMessages', 'gi.actions/identity/kv/deleteChatRoomUnreadMessages',
+          'gi.actions/identity/kv/setChatRoomReadUntil',
+          'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -255,6 +255,8 @@ async function startApp () {
             Vue.set(rootState.lastLoggedIn, contractID, data)
           } else if (key === KV_KEYS.UNREAD_MESSAGES && data) {
             sbp('state/vuex/commit', 'setUnreadMessages', data)
+          } else if (key === KV_KEYS.PREFERENCES && data) {
+            sbp('state/vuex/commit', 'setPreferences', data)
           }
         }
       }

@@ -65,7 +65,7 @@ function messageReceivePostEffect ({
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
   if (shouldAddToUnreadMessages) {
-    sbp('gi.actions/identity/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
+    sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
   }
 
   if (sbp('chelonia/contract/isSyncing', contractID)) {
@@ -227,7 +227,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (memberID === loggedIn.identityContractID) {
-            sbp('gi.actions/identity/initChatRoomUnreadMessages', {
+            sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
 
@@ -467,7 +467,7 @@ sbp('chelonia/defineContract', {
             chatRoomName: getters.chatRoomAttributes.name
           })
         } else if (!isMentionedMe) {
-          sbp('gi.actions/identity/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+          sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
         }
       }
     },
@@ -536,7 +536,7 @@ sbp('chelonia/defineContract', {
 
         // NOTE: ignore to check if the existance of current message (data.hash)
         //       because if not exist, removeChatRoomUnreadMessage won't do anything
-        sbp('gi.actions/identity/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+        sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
       }
     },
     'gi.contracts/chatroom/deleteAttachment': {
