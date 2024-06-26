@@ -77,6 +77,9 @@ sbp('sbp/selectors/register', {
     // if (!state.notifications) {
     //   state.notifications = []
     // }
+    if (!state.preferences) {
+      state.preferences = {}
+    }
   },
   'state/vuex/save': async function () {
     const state = store.state
