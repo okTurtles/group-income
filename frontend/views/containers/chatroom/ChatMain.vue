@@ -181,7 +181,7 @@ const onChatScroll = function () {
     if (offsetTop + height <= curScrollBottom) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
-      if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
+      if ((!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) && !msg.pending) {
         this.updateReadUntilMessageHash({
           messageHash: msg.hash,
           createdHeight: msg.height
@@ -998,7 +998,7 @@ export default ({
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else {
-                const msg = this.messages[this.messages.length - 1]
+                const msg = this.messages[this.messages.length - 1].filter(m => !m.pending)
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
                   createdHeight: msg.height
@@ -1047,7 +1047,7 @@ export default ({
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
-              const msg = this.messages[this.messages.length - 1]
+              const msg = this.messages[this.messages.length - 1].filter(m => !m.pending)
               if (msg) {
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
