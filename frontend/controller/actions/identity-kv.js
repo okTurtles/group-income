@@ -226,5 +226,43 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
       }
     })
+  },
+  'gi.actions/identity/kv/markNotificationStatusRead': (hash: string) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedNotificationStatus = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+        if (currentData[hash]?.read === false) {
+          currentData[hash].read = true
+          return currentData
+        }
+        return null
+      }
+
+      const data = await getUpdatedNotificationStatus()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
+      }
+    })
+  },
+  'gi.actions/identity/kv/markAllNotificationStatusRead': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedNotificationStatus = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+        let isUpdated = false
+
+        for (const hash in currentData) {
+          if (currentData[hash].read === false) {
+            isUpdated = true
+            currentData[hash].read = true
+          }
+        }
+        return isUpdated ? currentData : null
+      }
+
+      const data = await getUpdatedNotificationStatus()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
+      }
+    })
   }
 }): string[])
