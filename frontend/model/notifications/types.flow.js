@@ -8,6 +8,7 @@ export type NewProposalType =
   | 'GENERIC';
 
 export type Notification = {
+  +hash: string;
   // Indicates which user avatar icon to display alongside the notification.
   +avatarUserID: string;
   +body: string;
@@ -15,7 +16,7 @@ export type Notification = {
   +groupID?: string;
   +icon: string;
   +level: NotificationLevel;
-  +linkTo: string;
+  +linkTo?: string;
   read: boolean;
   // When the corresponding event happened.
   +timestamp: number;

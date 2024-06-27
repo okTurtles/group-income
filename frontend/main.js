@@ -257,6 +257,8 @@ async function startApp () {
             sbp('state/vuex/commit', 'setUnreadMessages', data)
           } else if (key === KV_KEYS.PREFERENCES && data) {
             sbp('state/vuex/commit', 'setPreferences', data)
+          } else if (key === KV_KEYS.NOTIFICATIONS && data) {
+            sbp('state/vuex/commit', 'setNotificationStatus', data)
           }
         }
       }

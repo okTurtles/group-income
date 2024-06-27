@@ -2,21 +2,27 @@
 
 import type { Notification } from './types.flow.js'
 
-import sbp from '@sbp/sbp'
-
 import './selectors.js'
 import { compareOnTimestamp, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
+import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
+
+const defaultState = {
+  items: [], status: {}
+}
 
 const getters = {
+  notifications (state, getters, rootState) {
+    return state.items.map(item => ({ ...item, ...state.status[item.hash] }))
+  },
   // Notifications relevant to the current group only.
   currentGroupNotifications (state, getters, rootState) {
-    return state.filter(item => item.groupID === rootState.currentGroupId)
+    return getters.notifications.filter(item => item.groupID === rootState.currentGroupId)
   },
 
   // Notifications relevant to a specific group.
-  notificationsByGroup (state) {
-    return groupID => state.filter(item => item.groupID === groupID)
+  notificationsByGroup (state, getters) {
+    return groupID => getters.notifications.filter(item => item.groupID === groupID)
   },
 
   currentGroupUnreadNotificationCount (state, getters) {
@@ -38,7 +44,7 @@ const getters = {
 
   // Notifications relevant to the current group, plus notifications that don't belong to any group in particular.
   currentNotifications (state, getters, rootState) {
-    return state.filter(item => !item.groupID || item.groupID === rootState.currentGroupId)
+    return getters.notifications.filter(item => !item.groupID || item.groupID === rootState.currentGroupId)
   },
 
   currentOlderNotifications (state, getters) {
@@ -54,7 +60,7 @@ const getters = {
   },
 
   totalUnreadNotificationCount (state, getters) {
-    return state.filter(item => !item.read).length
+    return getters.notifications.filter(item => !item.read).length
   },
 
   // Finds what number to display on a group's avatar badge in the sidebar. Used in GroupsList.vue.
@@ -66,7 +72,7 @@ const getters = {
     return (groupID) => (
       groupID === rootState.currentGroupId
         ? getters.currentGroupUnreadNotifications
-        : state.filter(item => !item.read && item.groupID === groupID)
+        : getters.notifications.filter(item => !item.read && item.groupID === groupID)
     )
   }
 }
@@ -74,54 +80,44 @@ const getters = {
 const mutations = {
   // Seems necessary because the red badge would not clear upon signing up a new user in Cypress via the bypassUI mechanism.
   logout (state) {
-    state.splice(0, state.length)
+    Object.assign(state, cloneDeep(defaultState))
   },
 
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
-    if (state.includes(notification)) {
+    if (state.items.includes(notification)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
       return console.error('This notification is already in the store.')
     }
-    state.push(notification)
+    state.items.push(notification)
     // Sort items in chronological order, newest items first.
-    state.sort(compareOnTimestamp)
-  },
-
-  [keys.MARK_NOTIFICATION_AS_READ] (state, notification: Notification) {
-    notification.read = true
-  },
-
-  // Clears the bell icon's badge, as well as the current group avatar's badge in the sidebar if visible.
-  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state, groupID = '') {
-    const markItemRead = item => { item.read = true }
-    if (groupID) {
-      sbp('state/vuex/getters').unreadGroupNotificationsFor(groupID).forEach(markItemRead)
-    } else {
-      sbp('state/vuex/getters').currentUnreadNotifications.forEach(markItemRead)
-    }
+    state.items.sort(compareOnTimestamp)
   },
 
   [keys.REMOVE_NOTIFICATION] (state, notification: Notification) {
-    const index = state.indexOf(notification)
+    const index = state.items.indexOf(notification)
 
     if (index > -1) {
-      state.splice(index, 1)
+      state.items.splice(index, 1)
     }
   },
 
   [keys.REMOVE_ALL_NOTIFICATIONS] (state) {
     // Just setting the length to zero wouldn't update the view immediately.
-    state.splice(0, state.length)
+    state.items.splice(0, state.items.length)
   },
 
   // Used upon successful login, with notifications from local storage.
   [keys.SET_NOTIFICATIONS] (state, notifications: Notification[]) {
-    state.splice(0, state.length, ...notifications)
+    state.items.splice(0, state.items.length, ...notifications)
+  },
+
+  setNotificationStatus (state, status) {
+    state.status = status
   }
 }
 
 export default ({
-  state: () => [],
+  state: () => cloneDeep(defaultState),
   getters,
   mutations
 }: Object)

@@ -1,7 +1,5 @@
 import type { Notification } from './types.flow.js'
-
 import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/model/contracts/shared/time.js'
-
 import {
   MAX_AGE_READ,
   MAX_AGE_UNREAD,
@@ -9,6 +7,7 @@ import {
   MAX_COUNT_READ,
   MAX_COUNT_UNREAD
 } from './storageConstants.js'
+import { blake32Hash } from '~/shared/functions.js'
 
 // How much time a notification can stay in the "new" state.
 export const NEW_STATUS_DURATION = 2 * ONE_HOUR
@@ -120,4 +119,15 @@ export function isOlder (notification: Notification): boolean {
 
 export function maxAge (notification: Notification): number {
   return notification.read ? MAX_AGE_READ : MAX_AGE_UNREAD
+}
+
+export function makeNotificationHash (notification: Object): string {
+  const excludingKeys = ['read', 'hash', 'body']
+  const sorted = Object.keys(notification).sort().reduce((acc, curKey) => {
+    if (!excludingKeys.includes(curKey)) {
+      acc[curKey] = notification[curKey]
+    }
+    return acc
+  }, {})
+  return blake32Hash(JSON.stringify(sorted))
 }

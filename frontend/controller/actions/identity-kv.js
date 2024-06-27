@@ -195,6 +195,9 @@ export default (sbp('sbp/selectors/register', {
     if (!ourIdentityContractId) {
       throw new Error('Unable to update notification status without an active session')
     }
+
+    // TODO: filter data with MAX_COUNT, and EXPIRE DATE ...
+
     return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, data, {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
       signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
@@ -203,9 +206,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const notifications = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
-      console.log('Notification Status Loaded:', notifications)
-      // sbp('state/vuex/commit', 'setPreferences', preferences)
+      const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+      sbp('state/vuex/commit', 'setNotificationStatus', status)
     })
   },
   'gi.actions/identity/kv/addNotificationStatus': (hash: string) => {

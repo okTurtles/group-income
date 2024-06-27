@@ -398,6 +398,8 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
       // NOTE: load users preferences config which is saved in KV store
       await sbp('gi.actions/identity/kv/loadPreferences')
+      // NOTE: load users notification status which is saved in KV store
+      await sbp('gi.actions/identity/kv/loadNotificationStatus')
 
       try {
         // $FlowFixMe[incompatible-call]
