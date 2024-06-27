@@ -412,7 +412,7 @@ export default (sbp('sbp/selectors/register', {
         console.error('Error during contract sync upon login (syncing all contractIDs)', err)
 
         const humanErr = L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' })
-        throw new GIErrorUIRuntimeError(humanErr)
+        throw new GIErrorUIRuntimeError(humanErr, { cause: err })
       }
 
       try {

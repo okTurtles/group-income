@@ -482,16 +482,11 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
-      const primaryClicked = await sbp('gi.ui/prompt', {
+      sbp('gi.ui/prompt', {
         heading: L('Failed to join the group'),
         question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
-        primaryButton: L('Refresh')
+        primaryButton: L('Close')
       })
-
-      if (primaryClicked) {
-        const url = (window.location.href).split('?')[0]
-        window.open(url, '_self')
-      }
     } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove

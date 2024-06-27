@@ -1154,7 +1154,7 @@ sbp('chelonia/defineContract', {
                       })
                     }
                   }
-                }).catch(async (e) => {
+                }).catch((e) => {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
                   console.error('Error while joining the #General chatroom', e)
@@ -1165,7 +1165,7 @@ sbp('chelonia/defineContract', {
                     primaryButton: L('Close')
                   }
 
-                  await sbp('gi.ui/prompt', promptOptions)
+                  sbp('gi.ui/prompt', promptOptions)
                 })
               }
             } else {
