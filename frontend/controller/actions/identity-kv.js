@@ -213,7 +213,10 @@ export default (sbp('sbp/selectors/register', {
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         if (!currentData[hash]) {
-          currentData[hash] = { read: false }
+          return {
+            ...currentData,
+            [hash]: { read: false }
+          }
         }
         return null
       }
