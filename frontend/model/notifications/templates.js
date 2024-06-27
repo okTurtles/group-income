@@ -26,12 +26,11 @@ export default ({
     }
 
     return {
-      body: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
+      body: L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", {
         ...LTags('b'),
         errName: error.name,
         activity,
         action: action ?? opType,
-        who: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${message.signingKeyId()}`,
         contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
         errMsg: error.message ?? '?'
       }),
@@ -92,6 +91,7 @@ export default ({
     }
   },
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
       avatarUserID: data.memberID,
       body: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
@@ -100,7 +100,7 @@ export default ({
       }),
       icon: 'user-plus',
       level: 'info',
-      linkTo: `/group-chat/${sbp('state/vuex/state')[data.groupID]?.generalChatRoomId}`,
+      linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
       scope: 'group'
     }
   },
