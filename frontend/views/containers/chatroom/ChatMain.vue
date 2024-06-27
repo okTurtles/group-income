@@ -181,7 +181,7 @@ const onChatScroll = function () {
     if (offsetTop + height <= curScrollBottom) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
-      if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
+      if ((!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) && !msg.pending) {
         this.updateReadUntilMessageHash({
           messageHash: msg.hash,
           createdHeight: msg.height
@@ -882,10 +882,10 @@ export default ({
       const chatRoomID = this.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in UNREAD_MESSAGES_QUEUE queue
+          // NOTE: skip adding useless invocations in KV_QUEUE queue
           return
         }
-        sbp('gi.actions/identity/setChatRoomReadUntil', {
+        sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
         })
       }
@@ -998,11 +998,13 @@ export default ({
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else {
-                const msg = this.messages[this.messages.length - 1]
-                this.updateReadUntilMessageHash({
-                  messageHash: msg.hash,
-                  createdHeight: msg.height
-                })
+                const msg = this.messages.filter(m => !m.pending).slice(-1)
+                if (msg) {
+                  this.updateReadUntilMessageHash({
+                    messageHash: msg.hash,
+                    createdHeight: msg.height
+                  })
+                }
               }
             }
           }
@@ -1047,7 +1049,7 @@ export default ({
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
-              const msg = this.messages[this.messages.length - 1]
+              const msg = this.messages.filter(m => !m.pending).slice(-1)
               if (msg) {
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
