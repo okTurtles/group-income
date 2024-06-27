@@ -2,6 +2,9 @@
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { KV_QUEUE } from '~/frontend/utils/events.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+
+const initNotificationStatus = { read: false }
 
 export default (sbp('sbp/selectors/register', {
   // Unread Messages
@@ -217,7 +220,7 @@ export default (sbp('sbp/selectors/register', {
         if (!currentData[hash]) {
           return {
             ...currentData,
-            [hash]: { read: false }
+            [hash]: cloneDeep(initNotificationStatus)
           }
         }
         return null
@@ -238,9 +241,12 @@ export default (sbp('sbp/selectors/register', {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false
         for (const hash of hashes) {
-          if (currentData[hash]?.read === false) {
-            isUpdated = true
+          if (!currentData[hash]) {
+            currentData[hash] = cloneDeep(initNotificationStatus)
+          }
+          if (!currentData[hash].read) {
             currentData[hash].read = true
+            isUpdated = true
           }
         }
         return isUpdated ? currentData : null
