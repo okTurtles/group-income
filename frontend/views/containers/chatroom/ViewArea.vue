@@ -14,6 +14,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
@@ -42,7 +43,13 @@ export default ({
           data: { chatRoomID: this.currentChatRoomId }
         })
       } catch (e) {
-        alert(e.message)
+        const promptOptions = {
+          heading: L('Failed to join the chatroom'),
+          question: L("Couldn't join the chatroom An error occurred: {error}", { error: e.message }),
+          primaryButton: L('Close')
+        }
+
+        await sbp('gi.ui/prompt', promptOptions)
         console.error('ViewArea join() error:', e)
       }
     }

@@ -206,7 +206,7 @@ export default ({
       try {
         await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
         // this.pageStatus = 'WELCOME'
-        this.$router.push({ path: '/pending-approval' })
+        this.$router.push({ path: '/pending-approval', query: this.$route.query })
       } catch (e) {
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message

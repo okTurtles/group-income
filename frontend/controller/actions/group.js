@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS,
@@ -482,7 +482,11 @@ export default (sbp('sbp/selectors/register', {
       }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
+      sbp('gi.ui/prompt', {
+        heading: L('Failed to join the group'),
+        question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
+        primaryButton: L('Close')
+      })
     } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove

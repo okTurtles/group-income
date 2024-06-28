@@ -53,7 +53,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
-      banner-scoped(ref='formMsg')
+      banner-scoped(ref='formMsg' :allowA='true')
 
       .buttons
         i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel

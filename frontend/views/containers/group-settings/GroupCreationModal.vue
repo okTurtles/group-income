@@ -119,7 +119,10 @@ export default ({
             distributionDate: this.form.distributionDate
           }
         })
-        this.$router.push({ path: '/pending-approval' })
+        this.$router.push({
+          path: '/pending-approval',
+          query: this.$route.query
+        })
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
