@@ -1,25 +1,26 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import Hapi from '@hapi/hapi'
-import initDB from './database.js'
-import { SERVER_RUNNING } from './events.js'
-import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import {
-  createMessage,
-  createPushErrorResponse,
-  createNotification,
-  createKvMessage,
-  createServer,
-  NOTIFICATION_TYPE,
-  REQUEST_TYPE
-} from './pubsub.js'
-import { pushServerActionhandlers } from './push.js'
+import sbp from '@sbp/sbp'
 import chalk from 'chalk'
 import '~/shared/domains/chelonia/chelonia.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
+import initDB from './database.js'
+import { SERVER_RUNNING } from './events.js'
+import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
+import {
+  NOTIFICATION_TYPE,
+  REQUEST_TYPE,
+  createKvMessage,
+  createMessage,
+  createNotification,
+  createPushErrorResponse,
+  createServer
+} from './pubsub.js'
+import { pushServerActionhandlers } from './push.js'
 // $FlowFixMe[cannot-resolve-module]
 import { webcrypto } from 'node:crypto'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -136,7 +137,9 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
-    sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
+    if (deserializedHEAD.head.op === GIMessage.OP_CONTRACT) {
+      sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
+    }
     await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)
     // Persist the Chelonia state after processing a message
     await sbp('backend/server/persistState', deserializedHEAD, entry)
@@ -241,12 +244,18 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     // partition
     const recoveredState = Object.create(null)
     recoveredState.contracts = Object.create(null)
+    const channels = sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels
     await Promise.all(savedStateIndex.split('\x00').map(async (contractID) => {
       const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_${contractID}`)
-      if (!cpSerialized) return
+      if (!cpSerialized) {
+        console.warn('[chelonia] Contract in index but missing state', contractID)
+        return
+      }
       const cp = JSON.parse(cpSerialized)
       recoveredState[contractID] = cp.contractState
       recoveredState.contracts[contractID] = cp.cheloniaContractInfo
+      // Add existing contract IDs to the list of channels
+      channels.add(contractID)
     }))
     Object.assign(sbp('chelonia/rootState'), recoveredState)
   }
