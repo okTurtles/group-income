@@ -7,6 +7,16 @@ import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 const initNotificationStatus = { read: false }
 
 export default (sbp('sbp/selectors/register', {
+  'gi.actions/identity/kv/load': async () => {
+    // NOTE: update chatRoomUnreadMessages to the latest one we do this here
+    //       just after the identity contract is synced because
+    //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
+    await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
+    // NOTE: load users preferences config which is saved in KV store
+    await sbp('gi.actions/identity/kv/loadPreferences')
+    // NOTE: load users notification status which is saved in KV store
+    await sbp('gi.actions/identity/kv/loadNotificationStatus')
+  },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
