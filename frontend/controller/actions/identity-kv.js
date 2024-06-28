@@ -209,7 +209,6 @@ export default (sbp('sbp/selectors/register', {
     //     .map(notification => notification.hash)
     //     .reduce((acc, hash) => ({ ...acc, [hash]: notificationStatus[hash] }), {})
     // }
-
     // const updatedOnConflict = async (...args) => {
     //   if (typeof onconflict === 'function') {
     //     return enforceStorageRules(await onconflict(...args))
