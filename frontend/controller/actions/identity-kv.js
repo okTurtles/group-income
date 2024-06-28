@@ -14,26 +14,27 @@ export default (sbp('sbp/selectors/register', {
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to fetch chatroom unreadMessages without an active session')
     }
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
   'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+    return sbp('chelonia/kv/set', identityContractID, KV_KEYS.UNREAD_MESSAGES, data, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       onconflict
     })
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },
@@ -152,26 +153,27 @@ export default (sbp('sbp/selectors/register', {
   },
   // Preferences
   'gi.actions/identity/kv/fetchPreferences': async () => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to fetch preferences without an active session')
     }
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.PREFERENCES))?.data || {}
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.PREFERENCES))?.data || {}
   },
   'gi.actions/identity/kv/savePreferences': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update preferences without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.PREFERENCES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+    return sbp('chelonia/kv/set', identityContractID, KV_KEYS.PREFERENCES, data, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       onconflict
     })
   },
   'gi.actions/identity/kv/loadPreferences': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setPreferences', preferences)
     })
   },

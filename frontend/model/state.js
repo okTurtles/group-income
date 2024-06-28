@@ -27,7 +27,7 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
-  contractSiginingKeys: Object.create(null),
+  contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
   preferences: {}
 }
@@ -64,6 +64,7 @@ sbp('sbp/selectors/register', {
     state.notifications = notificationModule.state()
     state.settings = settingsModule.state()
     state.chatroom = chatroomModule.state()
+    state.idleVue = { isIdle: false }
     store.replaceState(state)
   },
   'state/vuex/replace': (state) => store.replaceState(state),
@@ -81,14 +82,20 @@ sbp('sbp/selectors/register', {
       state.preferences = {}
     }
   },
-  'state/vuex/save': async function () {
-    const state = store.state
+  'state/vuex/save': async function (encrypted: ?boolean, state: ?Object) {
+    state = state || store.state
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
-    if (state.loggedIn) {
-      const { identityContractID, encryptionParams } = state.loggedIn
-      state.notifications.items = applyStorageRules(state.notifications.items || [])
+    if (!state.loggedIn) {
+      return
+    }
+
+    const { identityContractID, encryptionParams } = state.loggedIn
+    state.notifications.items = applyStorageRules(state.notifications.items || [])
+    if (encrypted) {
       await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
+    } else {
+      await sbp('gi.db/settings/save', identityContractID, state)
     }
   }
 })
@@ -99,9 +106,15 @@ const mutations = {
   login (state, user) {
     state.loggedIn = user
   },
-  setCurrentGroupId (state, currentGroupId) {
+  // isNewlyCreated will force a redirect to /pending-approval
+  setCurrentGroupId (state, { contractID: currentGroupId, isNewlyCreated }) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
+    if (!currentGroupId) {
+      sbp('controller/router').push({ path: '/' }).catch(() => {})
+    } else if (isNewlyCreated) {
+      sbp('controller/router').push({ path: '/pending-approval' }).catch(() => {})
+    }
   },
   setPreferences (state, value) {
     Vue.set(state, 'preferences', value)
@@ -146,8 +159,8 @@ const getters = {
   currentIdentityState (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
-  ourUsername (state) {
-    return state.loggedIn && state.loggedIn.username
+  ourUsername (state, getters) {
+    return state.loggedIn && getters.usernameFromID(state.loggedIn.identityContractID)
   },
   ourPreferences (state) {
     return state.preferences
@@ -545,6 +558,9 @@ const getters = {
         const nameB = getters.ourContactProfilesByUsername[usernameB].displayName || usernameB
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
+  },
+  ourDirectMessages (state, getters) {
+    return getters.currentIdentityState.chatRooms || {}
   }
 }
 
@@ -600,8 +616,8 @@ const omitGetters = {
   'gi.contracts/identity': ['currentIdentityState'],
   'gi.contracts/chatroom': ['currentChatRoomState']
 }
-sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
-  const { contracts: { manifests } } = sbp('chelonia/config')
+sbp('okTurtles.events/on', CONTRACT_REGISTERED, async (contract) => {
+  const { contracts: { manifests } } = await sbp('chelonia/config')
   // check to make sure we're only loading the getters for the version of the contract
   // that this build of GI was compiled with
   if (manifests[contract.name] === contract.manifest) {

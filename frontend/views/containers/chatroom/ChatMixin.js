@@ -128,7 +128,7 @@ const ChatMixin: Object = {
           // NOTE: groupID could be undefined if the incorrect chatRoomID is passed
           if (groupID) {
             if (this.currentGroupId !== groupID) {
-              sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
+              sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupID })
             }
             sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID, chatRoomID })
           }

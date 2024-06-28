@@ -5,8 +5,8 @@ import { KV_QUEUE } from '~/frontend/utils/events.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/kv/updateLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update lastLoggedIn without an active session')
     }
 
@@ -17,13 +17,13 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedLastLoggedIn = async (cID, key) => {
         const current = (await sbp('chelonia/kv/get', cID, key))?.data || {}
-        return { ...current, [ourIdentityContractId]: now }
+        return { ...current, [identityContractID]: now }
       }
 
       const data = await getUpdatedLastLoggedIn(contractID, KV_KEYS.LAST_LOGGED_IN)
       await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
+        encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+        signingKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
         onconflict: getUpdatedLastLoggedIn
       })
     })

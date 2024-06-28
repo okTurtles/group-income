@@ -158,20 +158,15 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export function leaveChatRoom (contractID: string) {
-  if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
+export async function leaveChatRoom (contractID: string) {
+  if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
-  }
-  const rootState = sbp('state/vuex/state')
-  const rootGetters = sbp('state/vuex/getters')
-  if (contractID === rootGetters.currentChatRoomId) {
-    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: rootState.currentGroupId })
   }
 
   sbp('gi.actions/identity/kv/deleteChatRoomUnreadMessages', { contractID }).catch((e) => {
     console.error('[leaveChatroom] Error at deleteChatRoomUnreadMessages ', contractID, e)
   })
-  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
+  await sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
   // contract (for DMs).

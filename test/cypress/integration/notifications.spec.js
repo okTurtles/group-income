@@ -167,7 +167,7 @@ const openNotificationCard = () => {
 const switchGroup = (groupName, sbp) => {
   const getters = sbp('state/vuex/getters')
   const { contractID } = getters.groupsByName.find(g => g.groupName === groupName)
-  sbp('state/vuex/commit', 'setCurrentGroupId', contractID)
+  sbp('state/vuex/commit', 'setCurrentGroupId', { contractID })
   expect(getters.groupSettings.groupName).to.equal(groupName)
 }
 

@@ -3,6 +3,7 @@ import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
 import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
+import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey, serializeKey, sign, verifySignature } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
@@ -259,12 +260,12 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
   const storeSecretKey = (key, decryptedKey) => {
     const decryptedDeserializedKey = deserializeKey(decryptedKey)
     const transient = !!key.meta.private.transient
-    sbp('chelonia/storeSecretKeys', () => [{
+    sbp('chelonia/storeSecretKeys', new Secret([{
       key: decryptedDeserializedKey,
       // We always set this to true because this could be done from
       // an outgoing message
       transient: true
-    }])
+    }]))
     if (!transient) {
       keysToPersist.push({ key: decryptedDeserializedKey, transient })
     }
@@ -392,7 +393,7 @@ export const keyAdditionProcessor = function (hash: string, keys: (GIKey | Encry
   // Any persistent keys are stored as a side-effect
   if (keysToPersist.length) {
     internalSideEffectStack?.push(() => {
-      sbp('chelonia/storeSecretKeys', () => keysToPersist)
+      sbp('chelonia/storeSecretKeys', new Secret(keysToPersist))
     })
   }
   internalSideEffectStack?.push(() => subscribeToForeignKeyContracts.call(this, contractID, state))
@@ -789,4 +790,15 @@ export const clearObject = (o: Object) => {
 
 export const reactiveClearObject = (o: Object, fn: (o: Object, k: string | number) => any) => {
   Object.keys(o).forEach((k) => fn(o, k))
+}
+
+export const checkCanBeGarbageCollected = function (id: string): boolean {
+  const rootState = sbp(this.config.stateSelector)
+  return (
+    // Check persistent references
+    (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
+    // Check ephemeral references
+    !has(this.ephemeralReferenceCount, id)) &&
+    // Check foreign keys (i.e., that no keys from this contract are being watched)
+    (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
 }

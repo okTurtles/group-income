@@ -44,7 +44,8 @@ sbp('sbp/selectors/register', {
         throw new Error('Missing CEK; unable to proceed sharing keys')
       }
 
-      const secretKeys = sbp('state/vuex/state')['secretKeys']
+      // TODO: Use 'chelonia/haveSecretKey'
+      const secretKeys = await sbp('chelonia/rootState')['secretKeys']
 
       const keysToShare = Array.isArray(keyIds)
         ? pick(secretKeys, keyIds)

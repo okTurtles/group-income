@@ -63,9 +63,7 @@ export const proposalSettingsType: any = objectOf({
 })
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (proposalHash: string): boolean {
-  const rootState = sbp('state/vuex/state')
-  const state = rootState[rootState.currentGroupId]
+export function oneVoteToPass (state: Object, proposalHash: string): boolean {
   const proposal = state.proposals[proposalHash]
   const votes = Object.assign({}, proposal.votes)
   const currentResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)

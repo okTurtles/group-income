@@ -6,6 +6,7 @@ import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
+  pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
   chatNotificationSettings: {} // { [chatRoomID]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
@@ -182,6 +183,21 @@ const getters = {
     return getters.groupMembersSorted
       .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
       .filter(member => !!getters.chatRoomMembers[member.contractID]) || []
+  },
+  chatRoomSettings (state, getters, rootState) {
+    return rootState[getters.currentChatRoomId]?.settings || {}
+  },
+  chatRoomAttributes (state, getters, rootState) {
+    return rootState[getters.currentChatRoomId]?.attributes || {}
+  },
+  chatRoomMembers (state, getters, rootState) {
+    return rootState[getters.currentChatRoomId]?.members || {}
+  },
+  chatRoomRecentMessages (state, getters, rootState) {
+    return rootState[getters.currentChatRoomId]?.messages || []
+  },
+  chatRoomPinnedMessages (state, getters, rootState) {
+    return (rootState[getters.currentChatRoomId]?.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
   }
 }
 
@@ -196,10 +212,31 @@ const mutations = {
       } else {
         Vue.set(state.currentChatRoomIDs, groupID, rootState[groupID].generalChatRoomId || null)
       }
-    } else if (chatRoomID) {
-      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomID)
+      Vue.delete(state.pendingChatRoomIDs, groupID)
     } else {
-      Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
+      if (chatRoomID) {
+        Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomID)
+      } else {
+        Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
+      }
+      Vue.delete(state.pendingChatRoomIDs, rootState.currentGroupId)
+    }
+  },
+  setPendingChatRoomId (state, { groupID, chatRoomID }) {
+    const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
+
+    if (rootGetters.isJoinedChatRoom(chatRoomID)) {
+      mutations.setCurrentChatRoomId(state, { groupID, chatRoomID })
+      return
+    }
+
+    if (groupID && rootState[groupID]) {
+      if (chatRoomID) {
+        Vue.set(state.pendingChatRoomIDs, groupID, chatRoomID)
+      } else {
+        Vue.set(state.pendingChatRoomIDs, groupID, null)
+      }
     }
   },
   setUnreadMessages (state, value) {

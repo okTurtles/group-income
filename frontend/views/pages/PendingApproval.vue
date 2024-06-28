@@ -19,7 +19,6 @@ import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import SvgInvitation from '@svgs/invitation.svg'
-import { JOINED_GROUP } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 
 export default ({
@@ -31,6 +30,7 @@ export default ({
   data () {
     return {
       ephemeral: {
+        contractFinishedSyncing: false,
         groupIdWhenMounted: null,
         groupJoined: false,
         settings: {}
@@ -48,22 +48,21 @@ export default ({
       const state = this.groupState
       return (
         // We want the group state to be active
-        state?.profiles?.[this.ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
-        // And we don't want to be in the process of re-syncing (i.e., re-building
-        // the state after receiving new private keys)
-        !sbp('chelonia/contract/isResyncing', state)
+        state?.profiles?.[this.ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE
       )
     }
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    this.ephemeral.groupJoined = !!this.haveActiveGroupProfile
-  },
-  beforeDestroy () {
-    if (this.ephemeral.handler) {
-      sbp('okTurtles.events/off', JOINED_GROUP, this.ephemeral.handler)
-      delete this.ephemeral.handler
-    }
+    sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+      await sbp('chelonia/contract/sync', this.ephemeral.groupIdWhenMounted)
+      this.ephemeral.contractFinishedSyncing = true
+      if (this.haveActiveGroupProfile) {
+        this.ephemeral.groupJoined = true
+      }
+    }).catch(e => {
+      console.error('[PendingApproval.vue]: Error waiting for contract to finish syncing', e)
+    })
   },
   watch: {
     groupState (to) {
@@ -73,8 +72,9 @@ export default ({
     },
     haveActiveGroupProfile (to) {
       // if our group profile appears in the group state, it means we've joined the group
-      if (to !== this.ephemeral.groupJoined) {
-        this.ephemeral.groupJoined = to
+      const newValue = to && this.ephemeral.contractFinishedSyncing
+      if (newValue !== this.ephemeral.groupJoined) {
+        this.ephemeral.groupJoined = newValue
       }
     }
   }
