@@ -8,13 +8,8 @@ const initNotificationStatus = { read: false }
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
-    // NOTE: update chatRoomUnreadMessages to the latest one we do this here
-    //       just after the identity contract is synced because
-    //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
     await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
-    // NOTE: load users preferences config which is saved in KV store
     await sbp('gi.actions/identity/kv/loadPreferences')
-    // NOTE: load users notification status which is saved in KV store
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
   },
   // Unread Messages
@@ -214,6 +209,7 @@ export default (sbp('sbp/selectors/register', {
     //     .map(notification => notification.hash)
     //     .reduce((acc, hash) => ({ ...acc, [hash]: notificationStatus[hash] }), {})
     // }
+
     // const updatedOnConflict = async (...args) => {
     //   if (typeof onconflict === 'function') {
     //     return enforceStorageRules(await onconflict(...args))
