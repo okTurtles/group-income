@@ -210,30 +210,52 @@ export function makeMentionFromUserID (userID: string): {
   }
 }
 
-export function makeChannelMention (string: string): string {
-  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${string}`
+export function makeChannelMention (channelName: string): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${channelName}`
 }
 
-export function swapMentionIDForDisplayname (text: string): string {
+export function swapMentionIDForDisplayname (
+  text: string,
+  options: Object = {
+    escaped: true, // this indicates that the text contains escaped characters
+    forChat: true // this indicates that the function is being used for messages inside chatroom
+  }
+): string {
   const {
     chatRoomsInDetail,
     ourContactProfilesById,
     getChatroomNameById,
-    usernameFromID
+    usernameFromID,
+    userDisplayNameFromID
   } = sbp('state/vuex/getters')
   const possibleMentions = [
     ...Object.keys(ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
     ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
   ]
 
+  const { escaped, forChat } = options
+  const regEx = escaped
+    ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
+    : new RegExp(`(${possibleMentions.join('|')})`)
+
+  const swap = (t) => {
+    if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
+      // swap member mention
+      const userID = t.slice(1)
+      const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : ''
+      const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID)
+      return prefix + body
+    } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
+      // swap channel mention
+      const channelID = t.slice(1)
+      const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
+      return prefix + getChatroomNameById(channelID)
+    }
+    return t
+  }
+
   return text
-    .split(new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
-    .map(t => {
-      return possibleMentions.includes(t)
-        ? t[0] === CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
-          ? t[0] + usernameFromID(t.slice(1))
-          : t[0] + getChatroomNameById(t.slice(1))
-        : t
-    })
+    .split(regEx)
+    .map(t => possibleMentions.includes(t) ? swap(t) : t)
     .join('')
 }

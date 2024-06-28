@@ -3,6 +3,7 @@
 export type NewProposalType =
   | 'ADD_MEMBER'
   | 'CHANGE_MINCOME'
+  | 'CHANGE_DISTRIBUTION_DATE'
   | 'CHANGE_VOTING_RULE'
   | 'REMOVE_MEMBER'
   | 'GENERIC';

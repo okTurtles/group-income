@@ -9,18 +9,10 @@ import { L, LTags } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import {
   STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
-
-const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
-const userDisplayNameFromID = (userID) => sbp('state/vuex/getters').userDisplayNameFromID(userID)
-// Note: this escaping is not intended as a protection against XSS.
-// It is only done to enable correct rendering of special characters in usernames.
-// To guard against XSS when rendering usernames, use the `v-safe-html` directive.
-const escapeForHtml = (text) => text.replace(/[<>&]/g, (c) => ('&#' + c.codePointAt(0) + ';'))
-const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
@@ -29,19 +21,17 @@ export default ({
     const opType = message.opType()
     const value = message.decryptedValue()
     let action
-    let meta
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
       action = value.action
-      meta = value.meta
     }
+
     return {
-      body: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
+      body: L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", {
         ...LTags('b'),
         errName: error.name,
         activity,
         action: action ?? opType,
-        who: meta?.username ?? message.signingKeyId(),
-        contract: contractName(contractID),
+        contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
         errMsg: error.message ?? '?'
       }),
       icon: 'exclamation-triangle',
@@ -79,8 +69,8 @@ export default ({
   },
   CONTRIBUTION_REMINDER (data: { date: string }) {
     return {
-      body: L('Do not forget to send your pledge by {date}.', {
-        date: strong(data.date)
+      body: L('Do not forget to send your pledge by {strong_}{date}{_strong}.', {
+        ...LTags('strong')
       }),
       icon: 'coins',
       level: 'info',
@@ -91,8 +81,7 @@ export default ({
   INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
       body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
-        // Avoid displaying decimals.
-        months: Math.floor(data.months)
+        months: Math.floor(data.months) // Avoid displaying decimals
       }),
       icon: 'coins',
       level: 'info',
@@ -103,11 +92,12 @@ export default ({
   },
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
-    const name = strong(userDisplayNameFromID(data.memberID))
-
     return {
       avatarUserID: data.memberID,
-      body: L('The group has a new member. Say hi to {name}!', { name }),
+      body: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
+      }),
       icon: 'user-plus',
       level: 'info',
       linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
@@ -115,11 +105,11 @@ export default ({
     }
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
-    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
-      body: L('{name} has left your group. Contributions were updated accordingly.', {
-        name
+      body: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -128,12 +118,12 @@ export default ({
     }
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
-    const name = strong(userDisplayNameFromID(data.memberID))
     return {
       avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
-      body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
-        name
+      body: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
+        ...LTags('strong')
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -142,14 +132,17 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
-    const name = strong(userDisplayNameFromID(data.creatorID))
+    const args = {
+      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
+      ...LTags('strong')
+    }
     const bodyTemplateMap = {
-      ADD_MEMBER: () => L('{name} proposed to add a member to the group. Vote now!', { name }),
-      CHANGE_MINCOME: () => L('{name} proposed to change the group mincome. Vote now!', { name }),
-      CHANGE_DISTRIBUTION_DATE: () => L('{name} proposed to change the group distribution date. Vote now!', { name }),
-      CHANGE_VOTING_RULE: () => L('{name} proposed to change the group voting system. Vote now!', { name }),
-      REMOVE_MEMBER: () => L('{name} proposed to remove a member from the group. Vote now!', { name }),
-      GENERIC: () => L('{name} created a proposal. Vote now!', { name })
+      ADD_MEMBER: L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args),
+      CHANGE_MINCOME: L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args),
+      CHANGE_DISTRIBUTION_DATE: L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args),
+      CHANGE_VOTING_RULE: L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args),
+      REMOVE_MEMBER: L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args),
+      GENERIC: L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
     }
 
     const iconMap = {
@@ -163,7 +156,7 @@ export default ({
 
     return {
       avatarUserID: data.creatorID,
-      body: bodyTemplateMap[data.subtype](),
+      body: bodyTemplateMap[data.subtype],
       creatorID: data.creatorID,
       icon: iconMap[data.subtype],
       level: 'info',
@@ -172,23 +165,24 @@ export default ({
       scope: 'group'
     }
   },
-  PROPOSAL_EXPIRING (data: { creatorID: string, proposalType: string, proposalData: any, title?: string, proposalId: string }) {
+  PROPOSAL_EXPIRING (data: { proposalId: string, proposal: Object }) {
+    const { proposalData, proposalType } = data.proposal.data
     const typeToTitleMap = {
       [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
       [PROPOSAL_REMOVE_MEMBER]: L('Member removal'),
       [PROPOSAL_GROUP_SETTING_CHANGE]: {
         mincomeAmount: L('Mincome change'),
         distributionDate: L('Distribution date change')
-      }[data.proposalData.setting],
+      }[proposalData.setting],
       [PROPOSAL_PROPOSAL_SETTING_CHANGE]: L('Voting rule change'),
-      [PROPOSAL_GENERIC]: data.title
+      [PROPOSAL_GENERIC]: proposalData.name
     }
 
     return {
-      avatarUserID: data.creatorID,
-      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. please vote!', {
+      avatarUserID: '',
+      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!', {
         ...LTags('i'),
-        proposalTitle: typeToTitleMap[data.proposalType]
+        proposalTitle: typeToTitleMap[proposalType]
       }),
       level: 'info',
       icon: 'exclamation-triangle',
@@ -197,35 +191,38 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object }) {
+  PROPOSAL_CLOSED (data: { proposal: Object }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
 
-    const bodyTemplateMap = {
-      [PROPOSAL_INVITE_MEMBER]:
-        (opts) => L('{creator} proposal to add {member} to the group was {closedWith}.', opts),
-      [PROPOSAL_REMOVE_MEMBER]:
-        (opts) => L('{creator} proposal to remove {member} from the group was {closedWith}.', opts),
-      [PROPOSAL_GROUP_SETTING_CHANGE]:
-        (opts) => L('{creator} proposal to change group\'s {setting} to {value} was {closedWith}.', opts),
-      [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
-        (opts) => L('{creator} proposal to change group\'s {setting} was {closedWith}.', opts), // TODO: define message
-      [PROPOSAL_GENERIC]:
-        (opts) => L('{creator} proposal "{title}" was {closedWith}.', opts)
-    }
     const statusMap = {
       [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
       [STATUS_FAILED]: { icon: 'times', level: 'danger', closedWith: L('rejected') },
       [STATUS_CANCELLED]: { icon: 'times', level: 'danger', closedWith: L('cancelled') }, // TODO: define icon, level
       [STATUS_EXPIRED]: { icon: 'times', level: 'danger', closedWith: L('expired') } // TODO: define icon, level
     }
+    const args = {
+      ...options,
+      ...LTags('strong'),
+      closedWith: statusMap[status].closedWith,
+      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}`
+    }
+
+    const bodyTemplateMap = {
+      [PROPOSAL_INVITE_MEMBER]:
+        L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_REMOVE_MEMBER]:
+        L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_GROUP_SETTING_CHANGE]:
+        L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
+        L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_GENERIC]:
+        L('{strong_}{name}\'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.', args)
+    }
 
     return {
       avatarUserID: creatorID,
-      body: bodyTemplateMap[type]({
-        ...options,
-        creator: L('{name}\'s', { name: strong(userDisplayNameFromID(creatorID)) }), // TODO: display YOUR
-        closedWith: strong(statusMap[status].closedWith)
-      }),
+      body: bodyTemplateMap[type],
       icon: statusMap[status].icon,
       level: statusMap[status].level,
       linkTo: '/dashboard#proposals',
@@ -233,12 +230,10 @@ export default ({
     }
   },
   PAYMENT_RECEIVED (data: { creatorID: string, amount: string, paymentHash: string }) {
-    const { userDisplayNameFromID } = sbp('state/vuex/getters')
-
     return {
       avatarUserID: data.creatorID,
-      body: L('{name} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
-        name: userDisplayNameFromID(data.creatorID), // displayName of the sender
+      body: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
         amount: data.amount,
         ...LTags('strong')
       }),
@@ -252,8 +247,8 @@ export default ({
   PAYMENT_THANKYOU_SENT (data: { creatorID: string, fromMemberID: string, toMemberID: string }) {
     return {
       avatarUserID: data.fromMemberID,
-      body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: strong(userDisplayNameFromID(data.fromMemberID)),
+      body: L('{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`,
         ...LTags('strong')
       }),
       creatorID: data.fromMemberID,
