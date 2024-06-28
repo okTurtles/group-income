@@ -851,9 +851,7 @@ export default (sbp('sbp/selectors/register', {
     const { proposals } = params.data
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
-      data: {
-        proposalIds: proposals.map(p => p.proposalId)
-      },
+      data: { proposalIds: proposals.map(p => p.proposalId) },
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
