@@ -248,7 +248,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     await Promise.all(savedStateIndex.split('\x00').map(async (contractID) => {
       const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_${contractID}`)
       if (!cpSerialized) {
-        console.warn('[chelonia] Contract in index but missing state', contractID)
+        console.warn(`[server] missing state for contractID ${contractID} - skipping setup for this contract`)
         return
       }
       const cp = JSON.parse(cpSerialized)
