@@ -279,7 +279,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams>) {
+  'gi.actions/group/_private/join': async function (params: $Exact<ChelKeyRequestParams>) {
     // We want to process any current events first, so that we process leave
     // actions and don't interfere with the leaving process (otherwise, the
     // side-effects could prevent us from fully leaving).
@@ -432,21 +432,25 @@ export default (sbp('sbp/selectors/register', {
               keyIds: [PEKid]
             })
 
-            await sbp('chelonia/out/keyAdd', {
-              contractID: params.contractID,
-              contractName: 'gi.contracts/group',
-              data: [encryptedOutgoingData(params.contractID, CEKid, {
-                foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-                id: userCSKid,
-                data: userCSKdata,
-                permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-                allowedActions: '*',
-                purpose: ['sig'],
-                ringLevel: Number.MAX_SAFE_INTEGER,
-                name: `${userID}/${userCSKid}`
-              })],
-              signingKeyId: CSKid
-            })
+            const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+            // Check to avoid adding existing keys to the contract
+            if (!existingForeignKeys?.includes(userCSKid)) {
+              await sbp('chelonia/out/keyAdd', {
+                contractID: params.contractID,
+                contractName: 'gi.contracts/group',
+                data: [encryptedOutgoingData(params.contractID, CEKid, {
+                  foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                  id: userCSKid,
+                  data: userCSKdata,
+                  permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                  allowedActions: '*',
+                  purpose: ['sig'],
+                  ringLevel: Number.MAX_SAFE_INTEGER,
+                  name: `${userID}/${userCSKid}`
+                })],
+                signingKeyId: CSKid
+              })
+            }
 
             // Send inviteAccept action to the group to add ourselves to the members list
             await sbp('chelonia/contract/wait', params.contractID)
@@ -462,7 +466,7 @@ export default (sbp('sbp/selectors/register', {
               contractID: params.contractID
             }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
           } catch (e) {
-            console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e)
+            console.error(`[gi.actions/group/join] Error while accepting invite ${params.contractID}:`, e)
             throw e
           }
         }
@@ -494,6 +498,13 @@ export default (sbp('sbp/selectors/register', {
       // the group contract hasn't been called.
       await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
     }
+  },
+  // This wrapper ensures that all join actions for the same contract happen in
+  // order. Because join is complex and there are many async steps involved,
+  // multiple calls to join for the same contract can result in conflicting with
+  // each other
+  'gi.actions/group/join': function (params: $Exact<ChelKeyRequestParams>) {
+    return sbp('okTurtles.eventQueue/queueEvent', `JOIN_GROUP-${params.contractID}`, ['gi.actions/group/_private/join', params])
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
     await sbp('gi.actions/group/join', params)
