@@ -298,7 +298,7 @@ export default ({
         const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
         if (this.groupShouldPropose || isWelcomeInviteExpired) {
           const contractID = this.currentGroupId
-          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+          sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
             console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)
           })
         } else {

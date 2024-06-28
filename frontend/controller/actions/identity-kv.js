@@ -25,6 +25,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },
@@ -162,6 +163,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadPreferences': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setPreferences', preferences)
     })
   },

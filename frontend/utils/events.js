@@ -9,8 +9,14 @@ export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGOUT = 'logout'
 
+export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
+export const LEFT_GROUP = 'left-group'
+
+export const JOINED_CHATROOM = 'joined-chatroom'
+export const LEFT_CHATROOM = 'left-chatroom'
+export const DELETED_CHATROOM = 'deleted-chatroom'
 
 export const REPLACED_STATE = 'replaced-state'
 
@@ -40,5 +46,8 @@ export const THEME_CHANGE = 'theme-change'
 export const CHATROOM_EVENTS = 'chatroom-events'
 export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
+
+export const NAMESPACE_REGISTRATION = 'namespace-registration'
+export const SHELTER_EVENT_HANDLED = 'shelter-event-handled'
 
 export const KV_QUEUE = 'kv-queue'

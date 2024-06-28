@@ -47,7 +47,7 @@ function createNotificationData (
   }
 }
 
-function messageReceivePostEffect ({
+async function messageReceivePostEffect ({
   contractID, messageHash, height, text,
   isDMOrMention, messageType, memberID, chatRoomName
 }: {
@@ -59,8 +59,12 @@ function messageReceivePostEffect ({
   isDMOrMention: boolean,
   memberID: string,
   chatRoomName: string
-}): void {
-  const rootGetters = sbp('state/vuex/getters')
+}): Promise<void> {
+  if (await sbp('chelonia/contract/isSyncing', contractID)) {
+    return
+  }
+  // TODO: This can't be a root getter when running in a SW
+  const rootGetters = await sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
@@ -129,26 +133,7 @@ sbp('chelonia/defineContract', {
       }
     }
   },
-  getters: {
-    currentChatRoomState (state) {
-      return state
-    },
-    chatRoomSettings (state, getters) {
-      return getters.currentChatRoomState.settings || {}
-    },
-    chatRoomAttributes (state, getters) {
-      return getters.currentChatRoomState.attributes || {}
-    },
-    chatRoomMembers (state, getters) {
-      return getters.currentChatRoomState.members || {}
-    },
-    chatRoomRecentMessages (state, getters) {
-      return getters.currentChatRoomState.messages || []
-    },
-    chatRoomPinnedMessages (state, getters) {
-      return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
-    }
-  },
+  getters: {},
   actions: {
     // This is the constructor of Chat contract
     'gi.contracts/chatroom': {
@@ -215,35 +200,31 @@ sbp('chelonia/defineContract', {
         )
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
-      sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootGetters = sbp('state/vuex/getters')
-          const state = sbp('state/vuex/state')[contractID]
-          const loggedIn = sbp('state/vuex/state').loggedIn
+      sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           const memberID = data.memberID || innerSigningContractID
 
           if (!state?.members?.[memberID]) {
             return
           }
 
-          if (memberID === loggedIn.identityContractID) {
+          const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+
+          if (memberID === identityContractID) {
             sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
 
             // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(state.members).filter((id) =>
-              id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]
-            )
-            sbp('chelonia/contract/sync', profileIds).catch((e) => {
+            const profileIds = Object.keys(state.members)
+            sbp('chelonia/contract/retain', profileIds).catch((e) => {
               console.error('Error while syncing other members\' contracts at chatroom join', e)
             })
           } else {
-            if (!rootGetters.ourContactProfilesById[memberID]) {
-              sbp('chelonia/contract/sync', memberID).catch((e) => {
-                console.error(`Error while syncing new memberID's contract ${memberID}`, e)
-              })
-            }
+            sbp('chelonia/contract/retain', memberID).catch((e) => {
+              console.error(`Error while syncing new memberID's contract ${memberID}`, e)
+            })
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)
@@ -322,9 +303,8 @@ sbp('chelonia/defineContract', {
         }))
       },
       sideEffect ({ data, hash, contractID, meta, innerSigningContractID }) {
-        const rootState = sbp('state/vuex/state')
         const memberID = data.memberID || innerSigningContractID
-        const itsMe = memberID === rootState.loggedIn.identityContractID
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
 
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
@@ -332,10 +312,18 @@ sbp('chelonia/defineContract', {
           leaveChatRoom(contractID)
         }
 
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           if (!state || !!state.members?.[data.memberID]) {
             return
+          }
+
+          if (itsMe) {
+            sbp('chelonia/contract/release', Object.keys(state.members))
+          } else {
+            // NOTE: Don't call release as shown below, as this will remove that
+            // member's profile
+            // // sbp('chelonia/contract/release', memberID)
           }
 
           if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
@@ -360,11 +348,12 @@ sbp('chelonia/defineContract', {
           Vue.delete(state.members, memberID)
         }
       },
-      sideEffect ({ meta, contractID }) {
+      sideEffect ({ contractID }, { state }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
         leaveChatRoom(contractID)
+        sbp('chelonia/contract/release', Object.keys(state.members))
         sbp('chelonia/contract/remove', contractID).catch(e => {
           console.error(`[gi.contracts/chatroom/delete/sideEffect] (${contractID}): remove threw ${e.name}:`, e)
         })
@@ -388,7 +377,7 @@ sbp('chelonia/defineContract', {
           Vue.delete(existingMsg, 'pending')
         }
       },
-      sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
+      async sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
 
         if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
@@ -399,15 +388,15 @@ sbp('chelonia/defineContract', {
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
-        messageReceivePostEffect({
+        await messageReceivePostEffect({
           contractID,
           messageHash: newMessage.hash,
           height: newMessage.height,
           text: newMessage.text,
-          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+          isDMOrMention: isMentionedMe || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE,
           messageType: data.type,
           memberID: innerSigningContractID,
-          chatRoomName: getters.chatRoomAttributes.name
+          chatRoomName: state.settings.name
         })
       }
     },
@@ -437,20 +426,20 @@ sbp('chelonia/defineContract', {
           }
         })
       },
-      sideEffect ({ contractID, data, innerSigningContractID }, { getters }) {
-        const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.identityContractID
-        if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+      async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state }) {
+        const me = sbp('state/vuex/state').loggedIn.identityContractID
+        if (me === innerSigningContractID || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
+        // TODO: This can't be a root getter when running in a SW
         const isAlreadyAdded = !!sbp('state/vuex/getters')
           .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUserID(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
         if (!isAlreadyAdded) {
-          messageReceivePostEffect({
+          await messageReceivePostEffect({
             contractID,
             messageHash: data.hash,
             /*
@@ -464,7 +453,7 @@ sbp('chelonia/defineContract', {
             isDMOrMention: isMentionedMe,
             messageType: MESSAGE_TYPES.TEXT,
             memberID: innerSigningContractID,
-            chatRoomName: getters.chatRoomAttributes.name
+            chatRoomName: state.settings.name
           })
         } else if (!isMentionedMe) {
           sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
@@ -485,6 +474,7 @@ sbp('chelonia/defineContract', {
           if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             throw new TypeError(L('Only the person who sent the message can delete it.'))
           } else {
+            // TODO: This can't be a root getter when running in a SW
             const groupID = sbp('state/vuex/getters').groupIdFromChatRoomId(contractID)
             if (sbp('state/vuex/state')[groupID]?.groupOwnerID !== innerSigningContractID) {
               throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))

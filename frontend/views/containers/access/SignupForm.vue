@@ -75,10 +75,8 @@ import {
   noUppercase,
   noWhitespace
 } from '@model/contracts/shared/validators.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-
-// Returns a function that returns the function's argument
-const wrapValueInFunction = (v) => () => v
 
 export const usernameValidations = {
   [L('A username is required.')]: required,
@@ -140,10 +138,10 @@ export default ({
         return
       }
       try {
-        await sbp('gi.actions/identity/signupAndLogin', {
+        await sbp('gi.app/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          passwordFn: wrapValueInFunction(this.form.password)
+          password: new Secret(this.form.password)
         })
         await this.postSubmit()
         this.$emit('submit-succeeded')

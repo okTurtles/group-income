@@ -3,10 +3,11 @@ import decrypt from '@exact-realty/rfc8188/decrypt'
 import { aes256gcm } from '@exact-realty/rfc8188/encodings'
 import encrypt from '@exact-realty/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
+import type { Secret } from './Secret.js'
 import { buildShelterAuthorizationHeader } from './utils.js'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
@@ -169,7 +170,7 @@ export const aes256gcmHandlers: any = {
     const recordSize = manifestOptions['cipher-params']?.rs ?? 1 << 16
     if (!IKM) {
       IKM = new Uint8Array(33)
-      window.crypto.getRandomValues(IKM)
+      self.crypto.getRandomValues(IKM)
     }
     // The keyId is only used as a sanity check but otherwise it is not needed
     // Because the keyId is computed from the IKM, which is a secret, it is
@@ -305,10 +306,10 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     })
-    // TODO: Using `window.crypto.randomUUID` breaks the tests. Maybe upgrading
+    // TODO: Using `self.crypto.randomUUID` breaks the tests. Maybe upgrading
     // Cypress would fix this.
-    const boundary = typeof window.crypto?.randomUUID === 'function'
-      ? window.crypto.randomUUID()
+    const boundary = typeof self.crypto?.randomUUID === 'function'
+      ? self.crypto.randomUUID()
       // If randomUUID not available, we instead compute a random boundary
       // The indirect call to Math.random (`(0, Math.random)`) is to explicitly
       // mark that we intend on using Math.random, even though it's not a
@@ -337,9 +338,9 @@ export default (sbp('sbp/selectors/register', {
       delete: uploadResponse.headers.get('shelter-deletion-token')
     }
   },
-  'chelonia/fileDownload': async function (downloadOptions: () => { manifestCid: string, downloadParams: Object }, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
+  'chelonia/fileDownload': async function (downloadOptions: Secret<{ manifestCid: string, downloadParams: Object }>, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
     // Using a function to prevent accidental logging
-    const { manifestCid, downloadParams } = downloadOptions()
+    const { manifestCid, downloadParams } = downloadOptions.valueOf()
     const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal

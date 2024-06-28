@@ -22,8 +22,8 @@ export default (sbp('sbp/selectors/register', {
 
       const data = await getUpdatedLastLoggedIn(contractID, KV_KEYS.LAST_LOGGED_IN)
       await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
+        encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+        signingKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
         onconflict: getUpdatedLastLoggedIn
       })
     })

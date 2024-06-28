@@ -57,6 +57,18 @@ self.addEventListener('message', function (event) {
       case 'store-client-id':
         store.clientId = event.source.id
         break
+      case 'ping':
+        event.source.postMessage({ type: 'pong' })
+        break
+      case 'shutdown':
+        self.registration.unregister()
+          .then(function () {
+            return self.clients.matchAll()
+          })
+          .then(function (clients) {
+            clients.forEach(client => client.navigate(client.url))
+          })
+        break
       default:
         console.error('[sw] unknown message type:', event.data)
         break

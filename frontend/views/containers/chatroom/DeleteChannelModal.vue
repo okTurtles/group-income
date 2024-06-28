@@ -75,6 +75,7 @@ export default ({
 
       try {
         const chatRoomID = this.currentChatRoomId
+        const attributes = { ...this.chatRoomAttributes }
         await sbp('gi.actions/group/deleteChatRoom', {
           contractID: this.currentGroupId,
           data: { chatRoomID },
@@ -88,8 +89,8 @@ export default ({
                   type: MESSAGE_TYPES.NOTIFICATION,
                   notification: {
                     type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
-                    channelName: this.chatRoomAttributes.name,
-                    channelDescription: this.chatRoomAttributes.description
+                    channelName: attributes.name,
+                    channelDescription: attributes.description
                   }
                 }
               }).catch(e => {
