@@ -5,12 +5,14 @@ export type DomObject = {
   children?: Array<DomObject>
 }
 
-export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject> {
+export function htmlStringToDomObjectTree (htmlString: any): Array<DomObject> {
   // Use DOMParser to parse the HTML string into a DOM tree.
   // Reference 1. (DOMParser API): https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
   // Refernce 2. (Converting html to virtual DOM): https://medium.com/@fulit103/converting-html-to-a-virtual-dom-in-javascript-3a6db0f563b1)
 
   const parser = new DOMParser()
+  htmlString = htmlString.replaceAll('&lt;', '<span>&lt;</span>')
+    .replaceAll('&gt;', '<span>&gt;</span>')
   const doc = parser.parseFromString(htmlString, 'text/html')
   const rootNode = doc.body
 

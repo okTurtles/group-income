@@ -29,6 +29,7 @@ export function renderMarkdown (str: string): any {
   // markedjs with the gfm(Github Flavored Markdown) style always collapses multiple line-breaks into one
   // so we need some custom logic to handle it manually.
   // (Reference issue here: https://github.com/markedjs/marked/issues/190)
+  str = str.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   str = str.replace(/\n(?=\n)/g, '\n<br>')
     .replace(/<br>\n(\s*)(\d+\.|-|```)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of block-code (```)
     .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
