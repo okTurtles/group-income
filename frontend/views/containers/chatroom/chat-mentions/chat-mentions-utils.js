@@ -11,8 +11,13 @@ export function htmlStringToDomObjectTree (htmlString: any): Array<DomObject> {
   // Refernce 2. (Converting html to virtual DOM): https://medium.com/@fulit103/converting-html-to-a-virtual-dom-in-javascript-3a6db0f563b1)
 
   const parser = new DOMParser()
+
+  // Below is a bug-fix for the issue #2130 (https://github.com/okTurtles/group-income/issues/2130)
+  // DOMParser.parseFromString() has some caveats re how it interprets &lt; and &gt;
+  // so manually wrap them with <span> tags
   htmlString = htmlString.replaceAll('&lt;', '<span>&lt;</span>')
     .replaceAll('&gt;', '<span>&gt;</span>')
+
   const doc = parser.parseFromString(htmlString, 'text/html')
   const rootNode = doc.body
 
