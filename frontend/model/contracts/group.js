@@ -844,17 +844,20 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ meta, contractID, data, innerSigningContractID }, { state, getters }) {
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
-          const { ourIdentityContractId } = sbp('state/vuex/getters')
+          const { loggedIn } = sbp('state/vuex/state')
           const payment = state.payments[data.paymentHash]
 
-          if (ourIdentityContractId === payment.data.toMemberID) {
-            sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_RECEIVED', {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              creatorID: innerSigningContractID,
-              paymentHash: data.paymentHash,
-              amount: getters.withGroupCurrency(payment.data.amount)
-            })
+          if (loggedIn.identityContractID === payment.data.toMemberID) {
+            sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+              notificationName: 'PAYMENT_RECEIVED',
+              notificationData: {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                creatorID: innerSigningContractID,
+                paymentHash: data.paymentHash,
+                amount: getters.withGroupCurrency(payment.data.amount)
+              }
+            }])
           }
         }
       }
@@ -869,15 +872,18 @@ sbp('chelonia/defineContract', {
         Vue.set(fromMemberID, data.toMemberID, data.memo)
       },
       sideEffect ({ contractID, meta, data, innerSigningContractID }) {
-        const { ourIdentityContractId } = sbp('state/vuex/getters')
+        const { loggedIn } = sbp('state/vuex/state')
 
-        if (data.toMemberID === ourIdentityContractId) {
-          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'PAYMENT_THANKYOU_SENT', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            fromMemberID: innerSigningContractID,
-            toMemberID: data.toMemberID
-          })
+        if (data.toMemberID === loggedIn.identityContractID) {
+          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+            notificationName: 'PAYMENT_THANKYOU_SENT',
+            notificationData: {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              fromMemberID: innerSigningContractID,
+              toMemberID: data.toMemberID
+            }
+          }])
         }
       }
     },
@@ -937,12 +943,15 @@ sbp('chelonia/defineContract', {
         const myProfile = getters.groupProfile(ourIdentityContractId)
 
         if (isActionOlderThanUser(contractID, height, myProfile)) {
-          sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'NEW_PROPOSAL', {
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            creatorID: innerSigningContractID,
-            subtype: typeToSubTypeMap[data.proposalType]
-          })
+          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+            notificationName: 'NEW_PROPOSAL',
+            notificationData: {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              creatorID: innerSigningContractID,
+              subtype: typeToSubTypeMap[data.proposalType]
+            }
+          }])
         }
       }
     },
@@ -1024,11 +1033,25 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/notifyExpiringProposals': {
-      validate: actionRequireActiveMember(arrayOf(string)),
+      validate: actionRequireActiveMember(objectOf({
+        proposalIds: arrayOf(string)
+      })),
       process ({ data }, { state }) {
-        for (const proposalId of data) {
+        for (const proposalId of data.proposalIds) {
           Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
         }
+      },
+      sideEffect ({ data, contractID }, { state }) {
+        const notifications = []
+        for (const proposalId of data.proposalIds) {
+          const proposal = state.proposals[proposalId]
+          notifications.push({
+            notificationName: 'PROPOSAL_EXPIRING',
+            notificationData: { groupID: contractID, proposal, proposalId }
+          })
+        }
+
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, notifications)
       }
     },
     'gi.contracts/group/removeMember': {
@@ -1153,12 +1176,15 @@ sbp('chelonia/defineContract', {
                 }).catch((e) => {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
-                  console.error('Error while joining the #General chatroom', e);
-                  // avoid blocking the main thread
-                  // eslint-disable-next-line require-await
-                  (async () => {
-                    alert(L("Couldn't join the #{chatroomName} in the group. An error occurred: #{error}.", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e }))
-                  })()
+                  console.error('Error while joining the #General chatroom', e)
+                  const errMsg = L("Couldn't join the #{chatroomName} in the group. An error occurred: {error}", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e })
+                  const promptOptions = {
+                    heading: L('Error while joining a chatroom'),
+                    question: errMsg,
+                    primaryButton: L('Close')
+                  }
+
+                  sbp('gi.ui/prompt', promptOptions)
                 })
               }
             } else {
@@ -1193,11 +1219,14 @@ sbp('chelonia/defineContract', {
               const myProfile = profiles[ourIdentityContractId]
 
               if (isActionOlderThanUser(contractID, height, myProfile)) {
-                sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
-                  createdDate: meta.createdDate,
-                  groupID: contractID,
-                  memberID: innerSigningContractID
-                })
+                sbp('gi.contracts/group/emitNotificationsAfterSyncing', [], [{
+                  notificationName: 'MEMBER_ADDED',
+                  notificationData: {
+                    createdDate: meta.createdDate,
+                    groupID: contractID,
+                    memberID: innerSigningContractID
+                  }
+                }])
               }
             }).catch((e) => {
               console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e)
@@ -1313,6 +1342,7 @@ sbp('chelonia/defineContract', {
               Vue.set(groupProfile, key, value)
           }
         }
+
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
           Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
@@ -1454,6 +1484,7 @@ sbp('chelonia/defineContract', {
         if (state.chatRooms[chatRoomID].members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new GIGroupAlreadyJoinedError('Cannot join a chatroom that you\'re already part of')
         }
+
         // Here, we could use a list of active members or we could use a
         // dictionary with an explicit status (as is being done). The reason
         // to choose the explicit approach is to avoid syncing all the chatroom
@@ -1680,11 +1711,13 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
     },
     'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposal) {
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
-      if (isActionOlderThanUser(contractID, height, state.profiles[ourIdentityContractId])) {
-        sbp('gi.contracts/group/emitNotificationAfterSyncing', contractID, 'PROPOSAL_CLOSED', {
-          createdDate: meta.createdDate, groupID: contractID, proposal
-        })
+      const { loggedIn } = sbp('state/vuex/state')
+      const { createdDate } = meta
+      if (isActionOlderThanUser(contractID, height, state.profiles[loggedIn.identityContractID])) {
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, [{
+          notificationName: 'PROPOSAL_CLOSED',
+          notificationData: { createdDate, groupID: contractID, proposal }
+        }])
       }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
@@ -1727,14 +1760,17 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        sbp('gi.contracts/group/emitNotificationAfterSyncing', [contractID, innerSigningContractID], 'MINCOME_CHANGED', {
-          createdDate: meta.createdDate,
-          groupID: contractID,
-          creatorID: innerSigningContractID,
-          to: toAmount,
-          memberType,
-          increased: mincomeIncreased
-        })
+        sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+          notificationName: 'MINCOME_CHANGED',
+          notificationData: {
+            createdDate: meta.createdDate,
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            to: toAmount,
+            memberType,
+            increased: mincomeIncreased
+          }
+        }])
       }
     },
     'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, memberID) {
@@ -1884,12 +1920,10 @@ sbp('chelonia/defineContract', {
           if (!proposalHash) {
             // NOTE: Do not make notification when the member is removed by proposal
             const memberRemovedThemselves = memberID === innerSigningContractID
-            const notificationName = memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED'
-            sbp('gi.contracts/group/emitNotificationAfterSyncing', memberID, notificationName, {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              memberID
-            })
+            sbp('gi.contracts/group/emitNotificationsAfterSyncing', memberID, [{
+              notificationName: memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              notificationData: { createdDate: meta.createdDate, groupID: contractID, memberID }
+            }])
           }
 
           Promise.resolve()
@@ -1947,13 +1981,15 @@ sbp('chelonia/defineContract', {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
     },
-    'gi.contracts/group/emitNotificationAfterSyncing': async (contractIDs, notificationName, notificationData) => {
+    'gi.contracts/group/emitNotificationsAfterSyncing': async (contractIDs, notifications) => {
       const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
       for (const id of listOfIds) {
         await sbp('chelonia/contract/wait', id)
       }
 
-      sbp('gi.notifications/emit', notificationName, notificationData)
+      notifications.forEach(({ notificationName, notificationData }) => {
+        sbp('gi.notifications/emit', notificationName, notificationData)
+      })
     }
   }
 })

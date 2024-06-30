@@ -28,7 +28,7 @@
               avatar-user(:contractID='item.avatarUserID' size='md')
               i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
-              span.c-item-text(v-safe-html='item.body')
+              span.c-item-text(v-safe-html='swapMemberMention(item.body)')
               span.c-item-date.has-text-1.has-text-small {{ ageTag(item) }}
 </template>
 
@@ -38,6 +38,7 @@ import { mapGetters } from 'vuex'
 import { timeSince } from '@model/contracts/shared/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import { L } from '@common/common.js'
+import { swapMentionIDForDisplayname } from '@model/contracts/shared/functions.js'
 
 export default ({
   name: 'NotificationList',
@@ -106,6 +107,12 @@ export default ({
     },
     markAsRead (item: Object): void {
       sbp('gi.notifications/markAsRead', item)
+    },
+    swapMemberMention (text: string): string {
+      return swapMentionIDForDisplayname(text, {
+        escaped: false,
+        forChat: false
+      })
     }
   }
 }: Object)

@@ -296,6 +296,7 @@ export default (sbp('sbp/selectors/register', {
 
       const password = passwordFn?.()
       const transientSecretKeys = []
+
       if (password) {
         try {
           const salt = await sbp('gi.actions/identity/retrieveSalt', username, passwordFn)
@@ -403,8 +404,10 @@ export default (sbp('sbp/selectors/register', {
           return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
         }))
       } catch (err) {
-        alert(L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' }))
         console.error('Error during contract sync upon login (syncing all contractIDs)', err)
+
+        const humanErr = L('Sync error during login: {msg}', { msg: err?.message || 'unknown error' })
+        throw new GIErrorUIRuntimeError(humanErr, { cause: err })
       }
 
       try {
@@ -444,8 +447,9 @@ export default (sbp('sbp/selectors/register', {
                 innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
                 encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
               }).catch((e) => {
-                alert(L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' }))
                 console.error(`Error during gi.actions/group/join for ${groupId} at login`, e)
+                const humanErr = L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' })
+                throw new GIErrorUIRuntimeError(humanErr)
               })
           ))
         )
@@ -469,8 +473,8 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       } catch (e) {
-        alert(L('Error during login: {msg}', { msg: e?.message || 'unknown error' }))
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
+        throw new GIErrorUIRuntimeError(e?.message || L('unkown error'))
       } finally {
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }
@@ -478,13 +482,18 @@ export default (sbp('sbp/selectors/register', {
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
-      const humanErr = L('Failed to login: {reportError}', LError(e))
-      alert(humanErr)
+      const humanErr = L('{reportError}', LError(e, true))
+      const promptOptions = {
+        heading: L('Failed to login'),
+        question: L('Error details:{br_}{err}', { err: humanErr, ...LTags() }),
+        primaryButton: L('Close')
+      }
+
+      await sbp('gi.ui/prompt', promptOptions)
       await sbp('gi.actions/identity/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })
-      throw new GIErrorUIRuntimeError(humanErr)
     }
   },
   'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {

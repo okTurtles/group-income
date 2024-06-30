@@ -131,9 +131,9 @@ export default function L (
     .replace(/\s(?=[;:?!])/g, '&nbsp;')
 }
 
-export function LError (error: Error): {|reportError: any|} {
+export function LError (error: Error, toGithub?: boolean): {|reportError: any|} {
   let url = 'https://github.com/okTurtles/group-income/issues'
-  if (sbp('state/vuex/state').loggedIn) {
+  if (!toGithub && sbp('state/vuex/state').loggedIn) {
     const baseRoute = document.location.origin + sbp('controller/router').options.base
     url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`
   }

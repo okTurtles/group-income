@@ -25,7 +25,11 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
-  PROPOSAL_VARIANTS
+  STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED,
+  STATUS_EXPIRED,
+  STATUS_EXPIRING
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
@@ -40,27 +44,27 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
   const options = Object.assign(proposalDetails, baseOptions)
 
   const settingChangeMessages = (options) => ({
-    [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups {setting}.', options),
-    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to change the {setting} is accepted.', options),
-    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to change the {setting} is rejected.', options),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options)
+    [STATUS_OPEN]: L('{from} wants to change the groups {setting}.', options),
+    [STATUS_PASSED]: L('Proposal from {from} to change the {setting} is accepted.', options),
+    [STATUS_FAILED]: L('Proposal from {from} to change the {setting} is rejected.', options),
+    [STATUS_EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options),
+    [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options)
   })
 
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add {member} to the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to add {member} is accepted.', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
+      [STATUS_OPEN]: L('{from} wants to add {member} to the group.', options),
+      [STATUS_PASSED]: L('Proposal from {from} to add {member} is accepted.', options),
+      [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
+      [STATUS_EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options)
     },
     [PROPOSAL_REMOVE_MEMBER]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove {member} from the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} to remove {member} is accepted.', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} to add {member} is rejected.', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} to add {member} is expired.', options)
+      [STATUS_OPEN]: L('{from} wants to remove {member} from the group.', options),
+      [STATUS_PASSED]: L('Proposal from {from} to remove {member} is accepted.', options),
+      [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
+      [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
+      [STATUS_EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options)
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: settingChangeMessages(options),
@@ -71,11 +75,11 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       votingSystem: settingChangeMessages(options)
     },
     [PROPOSAL_GENERIC]: {
-      [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
-      [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal from {from} is accepted. "{title}"', options),
-      [PROPOSAL_VARIANTS.REJECTED]: L('Proposal from {from} is rejected. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal from {from} is expired. "{title}"', options)
+      [STATUS_OPEN]: L('{from} created a proposal. "{title}"', options),
+      [STATUS_PASSED]: L('Proposal from {from} is accepted. "{title}"', options),
+      [STATUS_FAILED]: L('Proposal from {from} is rejected. "{title}"', options),
+      [STATUS_EXPIRED]: L('Proposal from {from} is expired. "{title}"', options),
+      [STATUS_EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options)
     }
   }
 
@@ -84,24 +88,24 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
 
 const proposalStatus = (proposal) => {
   const options = {}
-  if (proposal.variant === PROPOSAL_VARIANTS.EXPIRING) {
+  if (proposal.variant === STATUS_EXPIRING) {
     options['date'] = humanDate(proposal.expires_date_ms, { month: 'short', day: 'numeric', year: 'numeric' })
   }
   return {
-    [PROPOSAL_VARIANTS.CREATED]: L('New proposal'),
-    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal expiring on {date}', options),
-    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal Accepted'),
-    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal rejected'),
-    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal expired')
+    [STATUS_OPEN]: L('New proposal'),
+    [STATUS_PASSED]: L('Proposal Accepted'),
+    [STATUS_FAILED]: L('Proposal rejected'),
+    [STATUS_EXPIRED]: L('Proposal expired'),
+    [STATUS_EXPIRING]: L('Proposal expiring on {date}', options)
   }[proposal.variant]
 }
 
 const proposalSeverity = {
-  [PROPOSAL_VARIANTS.CREATED]: 'is-info',
-  [PROPOSAL_VARIANTS.EXPIRING]: 'is-warning',
-  [PROPOSAL_VARIANTS.ACCEPTED]: 'is-success',
-  [PROPOSAL_VARIANTS.REJECTED]: 'is-danger',
-  [PROPOSAL_VARIANTS.EXPIRED]: 'is-neutral'
+  [STATUS_OPEN]: 'is-info',
+  [STATUS_PASSED]: 'is-success',
+  [STATUS_FAILED]: 'is-danger',
+  [STATUS_EXPIRED]: 'is-neutral',
+  [STATUS_EXPIRING]: 'is-warning'
 }
 
 export default ({
@@ -135,7 +139,7 @@ export default ({
       }
     },
     isYellowHorn () {
-      return this.proposal.variant === PROPOSAL_VARIANTS.EXPIRING
+      return this.proposal.variant === STATUS_EXPIRING
     }
   }
 }: Object)

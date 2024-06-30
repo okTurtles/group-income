@@ -138,6 +138,7 @@ import currencies from '@model/contracts/shared/currencies.js'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'Contributions',
@@ -235,7 +236,11 @@ export default ({
           contractID: this.$store.state.currentGroupId
         })
       } catch (e) {
-        alert(e.message)
+        await sbp('gi.ui/prompt', {
+          heading: L('Failed to add a contribution'),
+          question: e.message,
+          primaryButton: L('Close')
+        })
       }
     },
     displayName (username) {
