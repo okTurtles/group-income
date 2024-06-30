@@ -345,8 +345,8 @@ const leaveChatRoomAction = (state, chatRoomID, memberID, actorID, leavingGroup)
     ...extraParams,
     hooks: {
       onprocessed: () => {
-        const { ourIdentityContractId } = sbp('state/vuex/getters')
-        if (memberID === ourIdentityContractId) {
+        const rootState = sbp('state/vuex/state')
+        if (memberID === rootState.loggedIn.identityContractID) {
           // NOTE: since the gi.contracts/chatroom/leave/sideEffect appends invocation in the queue
           //       the chatroom contract should be released after the queued invocation
           //       would be fully executed
@@ -928,7 +928,7 @@ sbp('chelonia/defineContract', {
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
       },
       sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
-        const { ourIdentityContractId } = sbp('state/vuex/getters')
+        const { loggedIn } = sbp('state/vuex/state')
         const typeToSubTypeMap = {
           [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
           [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
@@ -940,7 +940,7 @@ sbp('chelonia/defineContract', {
           [PROPOSAL_GENERIC]: 'GENERIC'
         }
 
-        const myProfile = getters.groupProfile(ourIdentityContractId)
+        const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (isActionOlderThanUser(contractID, height, myProfile)) {
           sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
@@ -1134,9 +1134,11 @@ sbp('chelonia/defineContract', {
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       sideEffect ({ meta, contractID, height, innerSigningContractID }) {
+        const { loggedIn } = sbp('state/vuex/state')
+
         sbp('chelonia/queueInvocation', contractID, async () => {
           const rootState = sbp('state/vuex/state')
-          const { ourIdentityContractId, ourContactProfilesById } = sbp('state/vuex/getters')
+          const rootGetters = sbp('state/vuex/getters')
           const state = rootState[contractID]
 
           if (!state) {
@@ -1150,18 +1152,20 @@ sbp('chelonia/defineContract', {
             return
           }
 
+          const userID = loggedIn.identityContractID
+
           // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
           // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-          if (innerSigningContractID === ourIdentityContractId) {
+          if (innerSigningContractID === userID) {
           // we're the person who just accepted the group invite
             // Add the group's CSK to our identity contract so that we can receive
             // DMs.
-            await sbp('gi.actions/identity/addJoinDirectMessageKey', ourIdentityContractId, contractID, 'csk')
+            await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
 
             const generalChatRoomId = state.generalChatRoomId
             if (generalChatRoomId) {
               // Join the general chatroom
-              if (state.chatRooms[generalChatRoomId]?.members?.[ourIdentityContractId]?.status !== PROFILE_STATUS.ACTIVE) {
+              if (state.chatRooms[generalChatRoomId]?.members?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/joinChatRoom', {
                   contractID,
                   data: { chatRoomID: generalChatRoomId },
@@ -1197,7 +1201,7 @@ sbp('chelonia/defineContract', {
 
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(profiles)
-              .filter((id) => id !== ourIdentityContractId && !ourContactProfilesById[id])
+              .filter((id) => id !== userID && !rootGetters.ourContactProfilesById[id])
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
@@ -1216,7 +1220,7 @@ sbp('chelonia/defineContract', {
             // are indexed by contract ID
             sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
               const { profiles = {} } = state
-              const myProfile = profiles[ourIdentityContractId]
+              const myProfile = profiles[userID]
 
               if (isActionOlderThanUser(contractID, height, myProfile)) {
                 sbp('gi.contracts/group/emitNotificationsAfterSyncing', [], [{
@@ -1452,9 +1456,9 @@ sbp('chelonia/defineContract', {
         removeGroupChatroomProfile(state, data.chatRoomID, memberID)
       },
       sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
-        const { ourIdentityContractId } = sbp('state/vuex/getters')
+        const rootState = sbp('state/vuex/state')
         const memberID = data.memberID || innerSigningContractID
-        if (innerSigningContractID === ourIdentityContractId) {
+        if (innerSigningContractID === rootState.loggedIn.identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => {
             const rootState = sbp('state/vuex/state')
             if (rootState[contractID]?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -1499,16 +1503,16 @@ sbp('chelonia/defineContract', {
         Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
-        const { ourIdentityContractId } = sbp('state/vuex/getters')
+        const rootState = sbp('state/vuex/state')
         const memberID = data.memberID || innerSigningContractID
 
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
-        if (innerSigningContractID === ourIdentityContractId) {
+        if (innerSigningContractID === rootState.loggedIn.identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, memberID)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
-        } else if (memberID === ourIdentityContractId) {
+        } else if (memberID === rootState.loggedIn.identityContractID) {
           // If we were the ones added to the chatroom, we sync the chatroom.
           // This is an `else` block because joinGroupChatrooms already calls
           // sync
@@ -1617,8 +1621,8 @@ sbp('chelonia/defineContract', {
       })
     },
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
-      const key = `proposals/${ourIdentityContractId}/${contractID}`
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
       const proposals = await sbp('gi.db/archive/load', key) || []
       // Check for duplicates
       if (proposals.some(([archivedProposalHash]) => archivedProposalHash === proposalHash)) {
@@ -1634,13 +1638,13 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
       const { paymentsByPeriod, payments } = archivingPayments
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
 
       // NOTE: we save payments by period and also in types of 'Sent' and 'Received' as well
       // because it's not efficient to find all sent/received payments from the payments list
-      const archPaymentsByPeriodKey = `paymentsByPeriod/${ourIdentityContractId}/${contractID}`
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
       const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
-      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${ourIdentityContractId}/${contractID}`
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
       const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
       // sort payments in order to keep the same sorting format as the recent data in vuex
@@ -1655,8 +1659,8 @@ sbp('chelonia/defineContract', {
         const { paymentsFrom } = paymentsByPeriod[period]
         for (const fromMemberID of Object.keys(paymentsFrom)) {
           for (const toMemberID of Object.keys(paymentsFrom[fromMemberID])) {
-            if (toMemberID === ourIdentityContractId || fromMemberID === ourIdentityContractId) {
-              const receivedOrSent = toMemberID === ourIdentityContractId ? 'received' : 'sent'
+            if (toMemberID === identityContractID || fromMemberID === identityContractID) {
+              const receivedOrSent = toMemberID === identityContractID ? 'received' : 'sent'
               for (const hash of paymentsFrom[fromMemberID][toMemberID]) {
                 const { data, meta, height } = payments[hash]
                 newSentOrReceivedPayments[receivedOrSent].push({ hash, period, height, data, meta, amount: data.amount })
@@ -1669,7 +1673,7 @@ sbp('chelonia/defineContract', {
         archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
         archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
-        const archPaymentsKey = `payments/${ourIdentityContractId}/${period}/${contractID}`
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
         const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
         const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
 
@@ -1678,7 +1682,7 @@ sbp('chelonia/defineContract', {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
           const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
 
-          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${ourIdentityContractId}/${contractID}`)
+          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${identityContractID}/${contractID}`)
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
 
           archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter(payment => !paymentHashes.includes(payment.hash))
@@ -1694,17 +1698,17 @@ sbp('chelonia/defineContract', {
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     },
     'gi.contracts/group/removeArchivedProposals': async function (contractID) {
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
-      const key = `proposals/${ourIdentityContractId}/${contractID}`
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${identityContractID}/${contractID}`
       await sbp('gi.db/archive/delete', key)
     },
     'gi.contracts/group/removeArchivedPayments': async function (contractID) {
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
-      const archPaymentsByPeriodKey = `paymentsByPeriod/${ourIdentityContractId}/${contractID}`
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${identityContractID}/${contractID}`
       const periods = Object.keys(await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {})
-      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${ourIdentityContractId}/${contractID}`
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${identityContractID}/${contractID}`
       for (const period of periods) {
-        const archPaymentsKey = `payments/${ourIdentityContractId}/${period}/${contractID}`
+        const archPaymentsKey = `payments/${identityContractID}/${period}/${contractID}`
         await sbp('gi.db/archive/delete', archPaymentsKey)
       }
       await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
@@ -1774,10 +1778,11 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/joinGroupChatrooms': async function (contractID, chatRoomID, memberID) {
-      const state = sbp('state/vuex/state')[contractID]
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
+      const rootState = sbp('state/vuex/state')
+      const state = rootState[contractID]
+      const actorID = rootState.loggedIn.identityContractID
 
-      if (state?.profiles?.[ourIdentityContractId]?.status !== PROFILE_STATUS.ACTIVE ||
+      if (state?.profiles?.[actorID]?.status !== PROFILE_STATUS.ACTIVE ||
         state?.profiles?.[memberID]?.status !== PROFILE_STATUS.ACTIVE ||
         state.chatRooms?.[chatRoomID]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE
       ) {
@@ -1788,7 +1793,7 @@ sbp('chelonia/defineContract', {
         // We need to be subscribed to the chatroom before writing to it, and
         // also because of the following check (hasKeysToPerformOperation),
         // which requires state.
-        // If we're joining the chatroom ourselves (ourIdentityContractId === memberID),
+        // If we're joining the chatroom ourselves (actorID === memberID),
         // ensure we _remain_ subscribed to the chatroom by not using an
         // ephemeral call to retain.
         // If we're _not_ joining the chatroom ourselves (but instead we've
@@ -1801,7 +1806,7 @@ sbp('chelonia/defineContract', {
         // complex.
         // (*) Yes, usually we'd be a member of the chatroom in this case, but
         // we could have left afterwards.
-        await sbp('chelonia/contract/retain', chatRoomID, ourIdentityContractId !== memberID ? { ephemeral: true } : {})
+        await sbp('chelonia/contract/retain', chatRoomID, actorID !== memberID ? { ephemeral: true } : {})
 
         if (!sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
           throw new Error(`Missing keys to join chatroom ${chatRoomID}`)
@@ -1814,7 +1819,7 @@ sbp('chelonia/defineContract', {
 
         await sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
-          data: ourIdentityContractId === memberID ? {} : { memberID },
+          data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
@@ -1824,15 +1829,17 @@ sbp('chelonia/defineContract', {
           console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         })
       } finally {
-        if (ourIdentityContractId !== memberID) {
+        if (actorID !== memberID) {
           await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
         }
       }
     },
     // eslint-disable-next-line require-await
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID, proposalHash }) => {
-      const state = sbp('state/vuex/state')[contractID]
-      const { ourIdentityContractId, notificationsByGroup } = sbp('state/vuex/getters')
+      const rootState = sbp('state/vuex/state')
+      const rootGetters = sbp('state/vuex/getters')
+      const state = rootState[contractID]
+      const { identityContractID } = rootState.loggedIn
       const memberID = data.memberID || innerSigningContractID
 
       if (!state) {
@@ -1847,9 +1854,9 @@ sbp('chelonia/defineContract', {
         return
       }
 
-      if (memberID === ourIdentityContractId) {
+      if (memberID === identityContractID) {
         // NOTE: remove all notifications whose scope is in this group
-        for (const notification of notificationsByGroup(contractID)) {
+        for (const notification of rootGetters.notificationsByGroup(contractID)) {
           sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
         }
 
@@ -1866,15 +1873,15 @@ sbp('chelonia/defineContract', {
 
         // First, we check if there are no pending key requests for us
         const areWeRejoining = () => {
-          const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, ourIdentityContractId)
+          const pendingKeyShares = sbp('chelonia/contract/waitingForKeyShareTo', state, identityContractID)
           if (pendingKeyShares) {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has a pending key share for ourselves', contractID)
             return true
           }
           // Now, let's see if we had a key request that's been answered
-          const sentKeyShares = sbp('chelonia/contract/successfulKeySharesByContractID', state, ourIdentityContractId)
+          const sentKeyShares = sbp('chelonia/contract/successfulKeySharesByContractID', state, identityContractID)
           // We received a key share after the last time we left
-          if (sentKeyShares?.[ourIdentityContractId]?.[0].height > state.profiles[memberID].departedHeight) {
+          if (sentKeyShares?.[identityContractID]?.[0].height > state.profiles[memberID].departedHeight) {
             console.info('[gi.contracts/group/leaveGroup] Not removing group contract because it has shared keys with ourselves after we left', contractID)
             return true
           }
@@ -1893,22 +1900,22 @@ sbp('chelonia/defineContract', {
         console.warn('[gi.contracts/group/leaveGroup]: Error while leaving all chatrooms', e)
       })
 
-      if (memberID === ourIdentityContractId) {
-        const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter(cID => cID !== ourIdentityContractId)
+      if (memberID === identityContractID) {
+        const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter(cID => cID !== identityContractID)
         sbp('chelonia/contract/release', possiblyUselessContractIDs).catch(e =>
           console.error('[gi.contracts/group/leaveGroup] Error calling release on all members', e)
         )
 
         sbp('gi.actions/identity/leaveGroup', {
-          contractID: ourIdentityContractId,
+          contractID: identityContractID,
           data: {
             groupContractID: contractID
           }
         }).catch(e => {
-          console.warn(`[gi.contracts/group/leaveGroup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${ourIdentityContractId} for ${contractID}:`, e)
+          console.warn(`[gi.contracts/group/leaveGroup] ${e.name} thrown by gi.contracts/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
         })
       } else {
-        const myProfile = getters.groupProfile(ourIdentityContractId)
+        const myProfile = getters.groupProfile(identityContractID)
 
         // Do _not_ release memberID, because doing so will remove their profile
         // from our view
@@ -1951,8 +1958,9 @@ sbp('chelonia/defineContract', {
       })
     },
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
-      const { ourIdentityContractId } = sbp('state/vuex/getters')
-      const state = sbp('state/vuex/state')[ourIdentityContractId]
+      const rootState = sbp('state/vuex/state')
+      const { identityContractID } = rootState.loggedIn
+      const state = rootState[identityContractID]
 
       if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
       if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
@@ -1961,8 +1969,8 @@ sbp('chelonia/defineContract', {
 
       Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
 
-      sbp('chelonia/queueInvocation', ourIdentityContractId, ['gi.actions/out/rotateKeys', ourIdentityContractId, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
-        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${ourIdentityContractId}:`, e)
+      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
     'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
