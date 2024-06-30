@@ -1848,9 +1848,7 @@ sbp('chelonia/defineContract', {
       }
 
       if (state.profiles?.[memberID]?.status !== PROFILE_STATUS.REMOVED) {
-        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, {
-          contractID, memberID, status: state.profiles?.[memberID]?.status
-        })
+        console.info(`[gi.contracts/group/leaveGroup] for ${contractID}: member has not left`, { contractID, memberID, status: state.profiles?.[memberID]?.status })
         return
       }
 
