@@ -204,7 +204,7 @@ const mutations = {
     }
   },
   setUnreadMessages (state, value) {
-    Vue.set(state, KV_KEYS.UNREAD_MESSAGES, value)
+    Vue.set(state, 'unreadMessages', value)
   },
   setChatRoomScrollPosition (state, { chatRoomID, messageHash }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomID, messageHash)
