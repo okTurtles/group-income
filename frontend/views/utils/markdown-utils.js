@@ -32,7 +32,7 @@ export function renderMarkdown (str: string): any {
 
   // There is some caveats discovered with 'dompurify' and DOMParser() API regarding how they interpret '<' and '>' characters.
   // So manually converting them to '&lt;' and '&gt;' here first.
-  // (context: https://github.com/okTurtles/group-income/issues/2130)
+  // ( context: https://github.com/okTurtles/group-income/issues/2130 )
   str = str.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
   str = str.replace(/\n(?=\n)/g, '\n<br>')
