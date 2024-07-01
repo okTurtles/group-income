@@ -99,7 +99,7 @@ async function startApp () {
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   function errorNotification (activity: string, error: Error, message: GIMessage) {
-    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { activity, error, message })
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save')
   }

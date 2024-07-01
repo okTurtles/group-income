@@ -1,8 +1,7 @@
 'use strict'
 
-import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
-
 import sbp from '@sbp/sbp'
+import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
 import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 import { makeNotificationHash } from './utils.js'
@@ -23,7 +22,7 @@ sbp('sbp/selectors/register', {
     // Creates the notification object in a single step.
     const notification = {
       ...template,
-      hash: '',
+      hash: makeNotificationHash({ ...data, type }),
       avatarUserID: template.avatarUserID || sbp('state/vuex/getters').ourIdentityContractId,
       // Sets 'groupID' if this notification only pertains to a certain group.
       ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
@@ -31,8 +30,7 @@ sbp('sbp/selectors/register', {
       timestamp: data.createdDate ? new Date(data.createdDate).getTime() : Date.now(),
       type
     }
-    notification.hash = makeNotificationHash(notification)
-    sbp('gi.actions/identity/kv/addNotificationStatus', notification.hash)
+    sbp('gi.actions/identity/kv/addNotificationStatus', notification)
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
   },
 

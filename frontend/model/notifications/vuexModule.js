@@ -1,7 +1,7 @@
 'use strict'
 
+import { Vue } from '@common/common.js'
 import type { Notification } from './types.flow.js'
-
 import './selectors.js'
 import { compareOnTimestamp, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
@@ -80,6 +80,9 @@ const getters = {
 const mutations = {
   // Seems necessary because the red badge would not clear upon signing up a new user in Cypress via the bypassUI mechanism.
   logout (state) {
+    Object.keys(state).forEach(key => {
+      Vue.delete(state, key)
+    })
     Object.assign(state, cloneDeep(defaultState))
   },
 

@@ -122,11 +122,8 @@ export function maxAge (notification: Notification): number {
 }
 
 export function makeNotificationHash (notification: Object): string {
-  const excludingKeys = ['read', 'hash', 'body']
   const sorted = Object.keys(notification).sort().reduce((acc, curKey) => {
-    if (!excludingKeys.includes(curKey)) {
-      acc.push([curKey, notification[curKey]])
-    }
+    acc.push([curKey, notification[curKey]])
     return acc
   }, [])
   return blake32Hash(JSON.stringify(sorted))

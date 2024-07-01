@@ -2,9 +2,9 @@
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { KV_QUEUE } from '~/frontend/utils/events.js'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { isExpired } from '@model/notifications/utils.js'
 
-const initNotificationStatus = { read: false }
+const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
@@ -204,23 +204,26 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to update notification status without an active session')
     }
 
-    // const enforceStorageRules = (notificationStatus) => {
-    //   return sbp('state/vuex/getters').notifications
-    //     .map(notification => notification.hash)
-    //     .reduce((acc, hash) => ({ ...acc, [hash]: notificationStatus[hash] }), {})
-    // }
+    const applyStorageRules = (notificationStatus) => {
+      return Object.keys(notificationStatus).reduce((acc, hash) => {
+        if (!isExpired(notificationStatus[hash])) {
+          acc[hash] = notificationStatus[hash]
+        }
+        return acc
+      }, {})
+    }
 
-    // const updatedOnConflict = async (...args) => {
-    //   if (typeof onconflict === 'function') {
-    //     return enforceStorageRules(await onconflict(...args))
-    //   }
-    //   return null
-    // }
+    const updatedOnConflict = async (...args) => {
+      if (typeof onconflict === 'function') {
+        return applyStorageRules(await onconflict(...args))
+      }
+      return null
+    }
 
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, data, {
+    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
       signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
-      onconflict
+      onconflict: updatedOnConflict
     })
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
@@ -229,14 +232,15 @@ export default (sbp('sbp/selectors/register', {
       sbp('state/vuex/commit', 'setNotificationStatus', status)
     })
   },
-  'gi.actions/identity/kv/addNotificationStatus': (hash: string) => {
+  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
+    const { hash, timestamp } = notification
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         if (!currentData[hash]) {
           return {
             ...currentData,
-            [hash]: cloneDeep(initNotificationStatus)
+            [hash]: initNotificationStatus({ timestamp })
           }
         }
         return null
@@ -253,14 +257,18 @@ export default (sbp('sbp/selectors/register', {
       hashes = [hashes]
     }
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const { notifications } = sbp('sbp/vuex/getters')
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false
         for (const hash of hashes) {
           if (!currentData[hash]) {
-            currentData[hash] = cloneDeep(initNotificationStatus)
+            const existing = notifications.find(n => n.hash === hash)
+            if (existing) {
+              currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
+            }
           }
-          if (!currentData[hash].read) {
+          if (currentData[hash].read === false) {
             currentData[hash].read = true
             isUpdated = true
           }
