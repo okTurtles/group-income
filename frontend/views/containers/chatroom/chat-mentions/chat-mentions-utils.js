@@ -14,7 +14,7 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
 
   // Below is a bug-fix for the issue #2130 (https://github.com/okTurtles/group-income/issues/2130)
   // DOMParser.parseFromString() has some caveats re how it interprets &lt; and &gt;
-  // so manually wrap them with <span> tags
+  // so manually wrap them with <span> tags.
   // $FlowFixMe[prop-missing]
   htmlString = htmlString.replaceAll('&lt;', '<span>&lt;</span>')
     .replaceAll('&gt;', '<span>&gt;</span>')
