@@ -257,7 +257,7 @@ export default (sbp('sbp/selectors/register', {
       hashes = [hashes]
     }
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const { notifications } = sbp('sbp/vuex/getters')
+      const { notifications } = sbp('state/vuex/getters')
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false
