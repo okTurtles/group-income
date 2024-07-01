@@ -1000,7 +1000,7 @@ export default ({
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
-                // contract, they should not used for updateReadUntilMessageHash
+                // contract, they should not be used for updateReadUntilMessageHash
                 const msg = this.messages.filter(m => !m.pending && !m.hasFailed).pop()
                 if (msg) {
                   this.updateReadUntilMessageHash({
