@@ -181,7 +181,8 @@ const onChatScroll = function () {
     if (offsetTop + height <= curScrollBottom) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
-      if ((!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) && !msg.pending) {
+      // No need to check for pending here as it's checked above
+      if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
         this.updateReadUntilMessageHash({
           messageHash: msg.hash,
           createdHeight: msg.height
@@ -998,7 +999,9 @@ export default ({
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else {
-                const msg = this.messages.filter(m => !m.pending).slice(-1)
+                // If there are any temporary messages that do not exist in the
+                // contract, they should not be used for updateReadUntilMessageHash
+                const msg = this.messages.filter(m => !m.pending && !m.hasFailed).pop()
                 if (msg) {
                   this.updateReadUntilMessageHash({
                     messageHash: msg.hash,
@@ -1049,7 +1052,9 @@ export default ({
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
-              const msg = this.messages.filter(m => !m.pending).slice(-1)
+              // updateReadUntilMessageHash should only use messages that exist
+              // in the contract
+              const msg = this.messages.filter(m => !m.pending && !m.hasFailed).pop()
               if (msg) {
                 this.updateReadUntilMessageHash({
                   messageHash: msg.hash,
