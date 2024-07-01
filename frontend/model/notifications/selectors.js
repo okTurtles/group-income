@@ -33,11 +33,9 @@ sbp('sbp/selectors/register', {
     sbp('gi.actions/identity/kv/addNotificationStatus', notification)
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
   },
-
   'gi.notifications/markAsRead' (notification: Notification) {
     sbp('gi.actions/identity/kv/markNotificationStatusRead', notification.hash)
   },
-
   'gi.notifications/markAllAsRead' (groupID: string) {
     const notifications = groupID
       ? sbp('state/vuex/getters').unreadGroupNotificationsFor(groupID)
