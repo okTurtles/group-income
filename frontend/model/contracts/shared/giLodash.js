@@ -163,26 +163,18 @@ export function deepEqualJSONType (a: any, b: any): boolean {
   return true
 }
 
-export function sortAny (unsorted: any): any {
-  const sort = (unsorted) => {
-    if (!unsorted || typeof unsorted !== 'object') {
-      return unsorted
-    }
-    if (Array.isArray(unsorted)) {
-      return unsorted.map(v => sort(v)).sort()
-    } else {
-      return Object.keys(unsorted).sort().reduce((acc, curKey) => {
-        if (unsorted[curKey] && typeof unsorted[curKey] === 'object') {
-          acc.push([curKey, sort(unsorted[curKey])])
-        } else {
-          acc.push([curKey, unsorted[curKey]])
-        }
-        return acc
-      }, [])
-    }
+export function hashableRepresentation (unsorted: any): any {
+  if (!unsorted || typeof unsorted !== 'object') {
+    return unsorted
   }
-
-  return sort(unsorted)
+  if (Array.isArray(unsorted)) {
+    return unsorted.map(v => hashableRepresentation(v))
+  } else {
+    return Object.keys(unsorted).sort().reduce((acc, curKey) => {
+      acc.push([curKey, hashableRepresentation(unsorted[curKey])])
+      return acc
+    }, [])
+  }
 }
 
 /**
