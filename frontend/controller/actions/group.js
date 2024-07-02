@@ -876,7 +876,9 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const { generalChatRoomId } = rootState[params.contractID]
 
-    for (const proposal of proposals) {
+    for (let i = 0; i < proposals.length; i++) {
+      const proposal = proposals[i]
+      const isLastProposal = i === proposals.length - 1
       await sbp('gi.actions/chatroom/addMessage', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: generalChatRoomId,
@@ -888,8 +890,8 @@ export default (sbp('sbp/selectors/register', {
           }
         },
         hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
+          prepublish: null,
+          postpublish: isLastProposal ? params.hooks?.postpublish : null
         }
       })
     }

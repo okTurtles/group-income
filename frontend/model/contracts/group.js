@@ -1724,6 +1724,9 @@ sbp('chelonia/defineContract', {
         }])
       }
     },
+    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function () {
+
+    },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
       // NOTE: When group's mincome has changed, below actions should be taken.
       // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.

@@ -28,8 +28,9 @@ import {
   STATUS_OPEN,
   STATUS_PASSED,
   STATUS_FAILED,
+  STATUS_EXPIRING,
   STATUS_EXPIRED,
-  STATUS_EXPIRING
+  STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
@@ -48,7 +49,8 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     [STATUS_PASSED]: L('Proposal from {from} to change the {setting} is accepted.', options),
     [STATUS_FAILED]: L('Proposal from {from} to change the {setting} is rejected.', options),
     [STATUS_EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options),
-    [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options)
+    [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
+    [STATUS_CANCELLED]: L('Proposal from {from} to change the {setting} is cancelled.', options),
   })
 
   const interactiveMessages = {
@@ -57,14 +59,16 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [STATUS_PASSED]: L('Proposal from {from} to add {member} is accepted.', options),
       [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
       [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} to add {member} is cancelled.', options)
     },
     [PROPOSAL_REMOVE_MEMBER]: {
       [STATUS_OPEN]: L('{from} wants to remove {member} from the group.', options),
       [STATUS_PASSED]: L('Proposal from {from} to remove {member} is accepted.', options),
       [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
       [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} to remove {member} is cancelled.', options)
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: settingChangeMessages(options),
@@ -79,7 +83,8 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [STATUS_PASSED]: L('Proposal from {from} is accepted. "{title}"', options),
       [STATUS_FAILED]: L('Proposal from {from} is rejected. "{title}"', options),
       [STATUS_EXPIRED]: L('Proposal from {from} is expired. "{title}"', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} is cancelled. "{title}"', options)
     }
   }
 
@@ -96,7 +101,8 @@ const proposalStatus = (proposal) => {
     [STATUS_PASSED]: L('Proposal Accepted'),
     [STATUS_FAILED]: L('Proposal rejected'),
     [STATUS_EXPIRED]: L('Proposal expired'),
-    [STATUS_EXPIRING]: L('Proposal expiring on {date}', options)
+    [STATUS_EXPIRING]: L('Proposal expiring on {date}', options),
+    [STATUS_CANCELLED]: L('Proposal cancelled')
   }[proposal.variant]
 }
 
@@ -105,7 +111,8 @@ const proposalSeverity = {
   [STATUS_PASSED]: 'is-success',
   [STATUS_FAILED]: 'is-danger',
   [STATUS_EXPIRED]: 'is-neutral',
-  [STATUS_EXPIRING]: 'is-warning'
+  [STATUS_EXPIRING]: 'is-warning',
+  [STATUS_CANCELLED]: 'is-neutral'
 }
 
 export default ({
