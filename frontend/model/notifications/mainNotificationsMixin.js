@@ -113,6 +113,7 @@ const periodicNotificationEntries = [
       emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
           groupID: rootState.currentGroupId,
+          period: rootGetters.groupSettings.distributionDate,
           creatorID: rootGetters.ourIdentityContractId,
           memberType: rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
         })

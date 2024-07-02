@@ -163,6 +163,28 @@ export function deepEqualJSONType (a: any, b: any): boolean {
   return true
 }
 
+export function sortAny (unsorted: any): any {
+  const sort = (unsorted) => {
+    if (!unsorted || typeof unsorted !== 'object') {
+      return unsorted
+    }
+    if (Array.isArray(unsorted)) {
+      return unsorted.map(v => sort(v)).sort()
+    } else {
+      return Object.keys(unsorted).sort().reduce((acc, curKey) => {
+        if (unsorted[curKey] && typeof unsorted[curKey] === 'object') {
+          acc.push([curKey, sort(unsorted[curKey])])
+        } else {
+          acc.push([curKey, unsorted[curKey]])
+        }
+        return acc
+      }, [])
+    }
+  }
+
+  return sort(unsorted)
+}
+
 /**
  * Modified version of: https://github.com/component/debounce/blob/master/index.js
  * Returns a function, that, as long as it continues to be invoked, will not

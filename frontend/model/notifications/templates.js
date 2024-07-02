@@ -277,9 +277,8 @@ export default ({
       }]
     }
   },
-  NEW_DISTRIBUTION_PERIOD (data: { creatorID: string, memberType: string }) {
-    const distPeriod = sbp('state/vuex/getters').groupSettings?.distributionDate
-    const periodDisplay = humanDate(distPeriod, { month: 'short', day: 'numeric', year: 'numeric' })
+  NEW_DISTRIBUTION_PERIOD (data: { period: string, creatorID: string, memberType: string }) {
+    const periodDisplay = humanDate(period, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
       // Display the distribution period in the notification message (issue: https://github.com/okTurtles/group-income/issues/1903)
       'pledger': L('A new distribution period ({period}) has started. Please check Payment TODOs.', { period: periodDisplay }),
@@ -293,10 +292,7 @@ export default ({
       icon: 'coins',
       linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
       scope: 'group',
-      data: {
-        // is used to check if a notification has already been sent for a particular dist-period
-        period: distPeriod
-      }
+      data: { period } // is used to check if a notification has already been sent for a particular dist-period
     }
   },
   NEAR_DISTRIBUTION_END (data: { period: string }) {

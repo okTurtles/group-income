@@ -8,6 +8,7 @@ import {
   MAX_COUNT_UNREAD
 } from './storageConstants.js'
 import { blake32Hash } from '~/shared/functions.js'
+import { sortAny } from '@model/contracts/shared/giLodash.js'
 
 // How much time a notification can stay in the "new" state.
 export const NEW_STATUS_DURATION = 2 * ONE_HOUR
@@ -122,9 +123,5 @@ export function maxAge (notification: Notification): number {
 }
 
 export function makeNotificationHash (notification: Object): string {
-  const sorted = Object.keys(notification).sort().reduce((acc, curKey) => {
-    acc.push([curKey, notification[curKey]])
-    return acc
-  }, [])
-  return blake32Hash(JSON.stringify(sorted))
+  return blake32Hash(JSON.stringify(sortAny(notification)))
 }
