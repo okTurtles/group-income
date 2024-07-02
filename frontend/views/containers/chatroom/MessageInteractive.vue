@@ -50,7 +50,7 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     [STATUS_FAILED]: L('Proposal from {from} to change the {setting} is rejected.', options),
     [STATUS_EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options),
     [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
-    [STATUS_CANCELLED]: L('Proposal from {from} to change the {setting} is cancelled.', options),
+    [STATUS_CANCELLED]: L('Proposal from {from} to change the {setting} is cancelled.', options)
   })
 
   const interactiveMessages = {
