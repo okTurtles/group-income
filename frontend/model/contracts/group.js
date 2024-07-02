@@ -1009,8 +1009,15 @@ sbp('chelonia/defineContract', {
           console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.creatorID} not ${innerSigningContractID}!`, { data, meta })
           throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
+        const shouldNotifyProposalStateChange = proposal.status !== STATUS_CANCELLED
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         Vue.set(proposal, 'dateClosed', meta.createdDate)
+
+        if (shouldNotifyProposalStateChange) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, cloneDeep(proposal)]
+          )
+        }
         notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
       }
     },
@@ -1024,8 +1031,15 @@ sbp('chelonia/defineContract', {
             const proposal = state.proposals[proposalId]
 
             if (proposal) {
+              const shouldNotifyProposalStateChange = proposal.status !== STATUS_EXPIRED
               Vue.set(proposal, 'status', STATUS_EXPIRED)
               Vue.set(proposal, 'dateClosed', meta.createdDate)
+
+              if (shouldNotifyProposalStateChange) {
+                sbp('gi.contracts/group/pushSideEffect', contractID,
+                  ['gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, cloneDeep(proposal)]
+                )
+              }
               notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
             }
           }
@@ -1724,8 +1738,23 @@ sbp('chelonia/defineContract', {
         }])
       }
     },
-    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function () {
+    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function (contractID, proposals) {
+      if (!Array.isArray(proposals)) {
+        proposals = [proposals]
+      }
+      const rootState = sbp('state/vuex/state')
+      const { generalChatRoomId } = rootState[contractID]
 
+      for (const proposal of proposals) {
+        await sbp('gi.actions/chatroom/addMessage', {
+          ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+          contractID: generalChatRoomId,
+          data: {
+            type: MESSAGE_TYPES.INTERACTIVE,
+            proposal
+          }
+        })
+      }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
       // NOTE: When group's mincome has changed, below actions should be taken.
