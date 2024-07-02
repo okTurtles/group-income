@@ -11,7 +11,16 @@ import { makeNotificationHash } from './utils.js'
  *   outer scope, because login actions might invalidate it by calling `replaceState()`.
  */
 sbp('sbp/selectors/register', {
-  // Creates and dispatches a new notification.
+  /*
+   * Creates and dispatches a new notification.
+   * NOTE: two arguments (type, data) need to be minimal to be identifiable
+   *       for each notification in order to avoid the following two problems
+   *       Problem 1 - same hash for different notifications
+   *       Problem 2 - different hash for the same notifications
+   *       for example, adding needless 'createdDate' inside the data could cause the Problem 2
+   *                    removing necessary 'createdDate' from the data could cause the Problem 1
+   * https://github.com/okTurtles/group-income/pull/2129#discussion_r1659219172
+   */
   'gi.notifications/emit' (type: string, data: NotificationData) {
     const template: NotificationTemplate = templates[type](data)
 
