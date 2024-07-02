@@ -1767,6 +1767,7 @@ sbp('chelonia/defineContract', {
         sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
           notificationName: 'MINCOME_CHANGED',
           notificationData: {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creatorID: innerSigningContractID,
             to: toAmount,

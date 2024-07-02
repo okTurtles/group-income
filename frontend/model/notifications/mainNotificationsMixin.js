@@ -60,7 +60,6 @@ const oneTimeNotificationEntries = [
     },
     emit ({ rootGetters }) {
       sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
-        createdDate: new Date().toISOString(),
         months: 6,
         lastUpdatedDate: rootGetters.ourGroupProfile.incomeDetailsLastUpdatedDate
       })
@@ -88,7 +87,6 @@ const periodicNotificationEntries = [
       },
       emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
-          createdDate: new Date().toISOString(),
           groupID: rootState.currentGroupId,
           period: rootGetters.groupSettings.distributionDate
         })
@@ -114,8 +112,8 @@ const periodicNotificationEntries = [
       },
       emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
-          createdDate: new Date().toISOString(),
           groupID: rootState.currentGroupId,
+          period: rootGetters.groupSettings.distributionDate,
           creatorID: rootGetters.ourIdentityContractId,
           memberType: rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
         })
@@ -185,7 +183,6 @@ const periodicNotificationEntries = [
           if (groupNotificationItems.length) {
             groupNotificationItems.forEach(proposal => {
               sbp('gi.notifications/emit', 'PROPOSAL_EXPIRING', {
-                createdDate: new Date().toISOString(),
                 groupID: contractID,
                 creatorID: proposal.creatorID,
                 proposalId: proposal.proposalId,

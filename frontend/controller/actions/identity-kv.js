@@ -2,8 +2,17 @@
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { KV_QUEUE } from '~/frontend/utils/events.js'
+import { isExpired } from '@model/notifications/utils.js'
+
+const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
 export default (sbp('sbp/selectors/register', {
+  'gi.actions/identity/kv/load': async () => {
+    await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
+    await sbp('gi.actions/identity/kv/loadPreferences')
+    await sbp('gi.actions/identity/kv/loadNotificationStatus')
+  },
+  // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
     if (!ourIdentityContractId) {
@@ -32,13 +41,13 @@ export default (sbp('sbp/selectors/register', {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = async (cID) => {
+      const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        if (!currentData[cID]) {
+        if (!currentData[contractID]) {
           return {
             ...currentData,
-            [cID]: {
+            [contractID]: {
               readUntil: { messageHash, createdHeight },
               unreadMessages: []
             }
@@ -47,7 +56,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = await getUpdatedUnreadMessages(contractID)
+      const data = await getUpdatedUnreadMessages()
       if (data) {
         await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
       }
@@ -57,14 +66,14 @@ export default (sbp('sbp/selectors/register', {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = async (cID) => {
+      const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
-          const { unreadMessages } = currentData[cID]
+        if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
+          const { unreadMessages } = currentData[contractID]
           return {
             ...currentData,
-            [cID]: {
+            [contractID]: {
               readUntil: { messageHash, createdHeight },
               unreadMessages: unreadMessages.filter(msg => msg.createdHeight > createdHeight)
             }
@@ -73,7 +82,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = await getUpdatedUnreadMessages(contractID)
+      const data = await getUpdatedUnreadMessages()
       if (data) {
         await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
       }
@@ -83,20 +92,20 @@ export default (sbp('sbp/selectors/register', {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = async (cID) => {
+      const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        if (currentData[cID]?.readUntil.createdHeight < createdHeight) {
-          const index = currentData[cID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+        if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
+          const index = currentData[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
           if (index === -1) {
-            currentData[cID].unreadMessages.push({ messageHash, createdHeight })
+            currentData[contractID].unreadMessages.push({ messageHash, createdHeight })
             return currentData
           }
         }
         return null
       }
 
-      const data = await getUpdatedUnreadMessages(contractID)
+      const data = await getUpdatedUnreadMessages()
       if (data) {
         await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
       }
@@ -106,19 +115,19 @@ export default (sbp('sbp/selectors/register', {
     contractID: string, messageHash: string
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = async (cID) => {
+      const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        const index = currentData[cID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+        const index = currentData[contractID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
         // NOTE: index could be undefined if unreadMessages is not initialized
         if (Number.isInteger(index) && index >= 0) {
-          currentData[cID].unreadMessages.splice(index, 1)
+          currentData[contractID].unreadMessages.splice(index, 1)
           return currentData
         }
         return null
       }
 
-      const data = await getUpdatedUnreadMessages(contractID)
+      const data = await getUpdatedUnreadMessages()
       if (data) {
         await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
       }
@@ -126,21 +135,22 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/kv/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = async (cID) => {
+      const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
-        if (currentData[cID]) {
-          delete currentData[cID]
+        if (currentData[contractID]) {
+          delete currentData[contractID]
           return currentData
         }
         return null
       }
 
-      const data = await getUpdatedUnreadMessages(contractID)
+      const data = await getUpdatedUnreadMessages()
       if (data) {
         await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
       }
     })
   },
+  // Preferences
   'gi.actions/identity/kv/fetchPreferences': async () => {
     const { ourIdentityContractId } = sbp('state/vuex/getters')
     if (!ourIdentityContractId) {
@@ -167,7 +177,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedPreferences = async (cID) => {
+      const getUpdatedPreferences = async () => {
         const currentPreferences = await sbp('gi.actions/identity/kv/fetchPreferences')
         const hideDistributionBanner = {
           ...(currentPreferences.hideDistributionBanner || {}),
@@ -176,8 +186,100 @@ export default (sbp('sbp/selectors/register', {
         return { ...currentPreferences, hideDistributionBanner }
       }
 
-      const data = await getUpdatedPreferences(contractID)
+      const data = await getUpdatedPreferences()
       await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+    })
+  },
+  // Notifications
+  'gi.actions/identity/kv/fetchNotificationStatus': async () => {
+    const { ourIdentityContractId } = sbp('state/vuex/getters')
+    if (!ourIdentityContractId) {
+      throw new Error('Unable to fetch notification status without an active session')
+    }
+    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.NOTIFICATIONS))?.data || {}
+  },
+  'gi.actions/identity/kv/saveNotificationStatus': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
+    const { ourIdentityContractId } = sbp('state/vuex/getters')
+    if (!ourIdentityContractId) {
+      throw new Error('Unable to update notification status without an active session')
+    }
+
+    const applyStorageRules = (notificationStatus) => {
+      return Object.keys(notificationStatus).reduce((acc, hash) => {
+        if (!isExpired(notificationStatus[hash])) {
+          acc[hash] = notificationStatus[hash]
+        }
+        return acc
+      }, {})
+    }
+
+    const updatedOnConflict = async (...args) => {
+      if (typeof onconflict === 'function') {
+        return applyStorageRules(await onconflict(...args))
+      }
+      return null
+    }
+
+    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+      onconflict: updatedOnConflict
+    })
+  },
+  'gi.actions/identity/kv/loadNotificationStatus': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+      sbp('state/vuex/commit', 'setNotificationStatus', status)
+    })
+  },
+  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
+    const { hash, timestamp } = notification
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedNotificationStatus = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+        if (!currentData[hash]) {
+          return {
+            ...currentData,
+            [hash]: initNotificationStatus({ timestamp })
+          }
+        }
+        return null
+      }
+
+      const data = await getUpdatedNotificationStatus()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
+      }
+    })
+  },
+  'gi.actions/identity/kv/markNotificationStatusRead': (hashes: string | string[]) => {
+    if (typeof hashes === 'string') {
+      hashes = [hashes]
+    }
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const { notifications } = sbp('state/vuex/getters')
+      const getUpdatedNotificationStatus = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+        let isUpdated = false
+        for (const hash of hashes) {
+          if (!currentData[hash]) {
+            const existing = notifications.find(n => n.hash === hash)
+            if (existing) {
+              currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
+            }
+          }
+          if (currentData[hash].read === false) {
+            currentData[hash].read = true
+            isUpdated = true
+          }
+        }
+        return isUpdated ? currentData : null
+      }
+
+      const data = await getUpdatedNotificationStatus()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
+      }
     })
   }
 }): string[])
