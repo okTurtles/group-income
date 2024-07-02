@@ -278,6 +278,7 @@ export default ({
     }
   },
   NEW_DISTRIBUTION_PERIOD (data: { period: string, creatorID: string, memberType: string }) {
+    const { period, creatorID, memberType } = data
     const periodDisplay = humanDate(period, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
       // Display the distribution period in the notification message (issue: https://github.com/okTurtles/group-income/issues/1903)
@@ -286,11 +287,11 @@ export default ({
     }
 
     return {
-      avatarUserID: data.creatorID,
-      body: bodyTemplate[data.memberType],
+      avatarUserID: creatorID,
+      body: bodyTemplate[memberType],
       level: 'info',
       icon: 'coins',
-      linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
+      linkTo: memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
       scope: 'group',
       data: { period } // is used to check if a notification has already been sent for a particular dist-period
     }
