@@ -216,21 +216,23 @@ sbp('chelonia/defineContract', {
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }, { state }) {
+        const memberID = data.memberID || innerSigningContractID
+        const { loggedIn } = sbp('state/vuex/state')
+        if (memberID === loggedIn.identityContractID) {
+          sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
+            contractID, messageHash: hash, createdHeight: height
+          })
+        }
+
         sbp('chelonia/queueInvocation', contractID, () => {
           const rootGetters = sbp('state/vuex/getters')
           const state = sbp('state/vuex/state')[contractID]
-          const loggedIn = sbp('state/vuex/state').loggedIn
-          const memberID = data.memberID || innerSigningContractID
 
           if (!state?.members?.[memberID]) {
             return
           }
 
           if (memberID === loggedIn.identityContractID) {
-            sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
-              contractID, messageHash: hash, createdHeight: height
-            })
-
             // subscribe to founder's IdentityContract & everyone else's
             const profileIds = Object.keys(state.members).filter((id) =>
               id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]
