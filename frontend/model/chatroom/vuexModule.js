@@ -4,7 +4,6 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { KV_KEYS } from '@utils/constants.js'
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
@@ -204,7 +203,7 @@ const mutations = {
     }
   },
   setUnreadMessages (state, value) {
-    Vue.set(state, KV_KEYS.UNREAD_MESSAGES, value)
+    Vue.set(state, 'unreadMessages', value)
   },
   setChatRoomScrollPosition (state, { chatRoomID, messageHash }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomID, messageHash)

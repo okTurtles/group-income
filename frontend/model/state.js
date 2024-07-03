@@ -74,8 +74,8 @@ sbp('sbp/selectors/register', {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
     // Example:
-    // if (!state.notifications) {
-    //   state.notifications = []
+    // if (!state.preferences) {
+    //   state.preferences = {}
     // }
     if (!state.preferences) {
       state.preferences = {}
@@ -87,7 +87,7 @@ sbp('sbp/selectors/register', {
     //            Doing so will cause an infinite loop because of store.subscribe below!
     if (state.loggedIn) {
       const { identityContractID, encryptionParams } = state.loggedIn
-      state.notifications = applyStorageRules(state.notifications || [])
+      state.notifications.items = applyStorageRules(state.notifications.items || [])
       await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
     }
   }

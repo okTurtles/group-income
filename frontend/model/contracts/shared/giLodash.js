@@ -163,6 +163,20 @@ export function deepEqualJSONType (a: any, b: any): boolean {
   return true
 }
 
+export function hashableRepresentation (unsorted: any): any {
+  if (!unsorted || typeof unsorted !== 'object') {
+    return unsorted
+  }
+  if (Array.isArray(unsorted)) {
+    return unsorted.map(v => hashableRepresentation(v))
+  } else {
+    return Object.keys(unsorted).sort().reduce((acc, curKey) => {
+      acc.push([curKey, hashableRepresentation(unsorted[curKey])])
+      return acc
+    }, [])
+  }
+}
+
 /**
  * Modified version of: https://github.com/component/debounce/blob/master/index.js
  * Returns a function, that, as long as it continues to be invoked, will not
