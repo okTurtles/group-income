@@ -1,9 +1,7 @@
 <template lang='pug'>
 message-base(v-bind='$props' @wrapperAction='action')
   template(#image='')
-    .c-icon(
-      :class='{"is-warning": isYellowHorn}'
-    )
+    .c-icon(:class='{"is-warning": isYellowHorn}')
       svg-yellow-horn(v-if='isYellowHorn')
       svg-horn(v-else)
   template(#header='')
@@ -12,7 +10,7 @@ message-base(v-bind='$props' @wrapperAction='action')
       span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
   template(#body='')
     .c-text
-      | {{interactiveMessage.text}}
+      render-message-text(:text='interactiveMessage.text')
       i18n.c-link(@click='$router.push({ path: "/dashboard#proposals" })') See proposal
 </template>
 
@@ -34,14 +32,15 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
+import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
 const interactiveMessage = (proposal, baseOptions = {}) => {
-  const { proposalType, variant } = proposal
-  const { options: proposalDetails } = getProposalDetails({ data: proposal })
+  const { status } = proposal
+  const { options: proposalDetails, type } = getProposalDetails(proposal)
   const options = Object.assign(proposalDetails, baseOptions)
 
   const settingChangeMessages = (options) => ({
@@ -88,12 +87,12 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     }
   }
 
-  return get(interactiveMessages, [proposalType, options.settingType, variant].filter(key => !!key))
+  return get(interactiveMessages, [type, options.settingType, status].filter(key => !!key))
 }
 
 const proposalStatus = (proposal) => {
   const options = {}
-  if (proposal.variant === STATUS_EXPIRING) {
+  if (proposal.status === STATUS_EXPIRING) {
     options['date'] = humanDate(proposal.expires_date_ms, { month: 'short', day: 'numeric', year: 'numeric' })
   }
   return {
@@ -103,7 +102,7 @@ const proposalStatus = (proposal) => {
     [STATUS_EXPIRED]: L('Proposal expired'),
     [STATUS_EXPIRING]: L('Proposal expiring on {date}', options),
     [STATUS_CANCELLED]: L('Proposal cancelled')
-  }[proposal.variant]
+  }[proposal.status]
 }
 
 const proposalSeverity = {
@@ -125,7 +124,8 @@ export default ({
   components: {
     SvgHorn,
     SvgYellowHorn,
-    MessageBase
+    MessageBase,
+    RenderMessageText
   },
   methods: {
     humanDate,
@@ -136,17 +136,17 @@ export default ({
   computed: {
     ...mapGetters(['userDisplayNameFromID']),
     interactiveMessage () {
-      const { variant, creator } = this.proposal
-      const baseOptions = { from: this.userDisplayNameFromID(creator) }
+      const { status, creatorID } = this.proposal
+      const baseOptions = { from: `@${creatorID}` }
 
       return {
         text: interactiveMessage(this.proposal, baseOptions),
         proposalStatus: proposalStatus(this.proposal),
-        proposalSeverity: proposalSeverity[variant]
+        proposalSeverity: proposalSeverity[status]
       }
     },
     isYellowHorn () {
-      return this.proposal.variant === STATUS_EXPIRING
+      return this.proposal.status === STATUS_EXPIRING
     }
   }
 }: Object)
@@ -161,9 +161,9 @@ export default ({
   align-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  margin-right: 0.5rem;
   border-radius: 50%;
   background: $primary_2;
+  flex-shrink: 0;
 
   &.is-warning {
     background-color: $warning_2;
@@ -204,6 +204,11 @@ export default ({
     background-color: $success_2;
     color: $success_0;
   }
+}
+
+.c-text {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .c-link {

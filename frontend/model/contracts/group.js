@@ -928,7 +928,12 @@ sbp('chelonia/defineContract', {
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
         sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, height, cloneDeep(proposal)]
+          ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
+            contractID,
+            innerSigningContractID,
+            height,
+            proposal: cloneDeep(proposal)
+          }]
         )
       },
       sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
@@ -997,12 +1002,6 @@ sbp('chelonia/defineContract', {
             Vue.set(getters.groupStreaks.noVotes, memberID, memberHasVoted ? 0 : memberCurrentStreak + 1)
           }
         }
-      },
-      sideEffect ({ data, height, contractID }, { state }) {
-        const proposal = state.proposals[data.proposalHash]
-        if (proposal.dateClosed) {
-          sbp('gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, height, cloneDeep(proposal))
-        }
       }
     },
     'gi.contracts/group/proposalCancel': {
@@ -1021,18 +1020,14 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         Vue.set(proposal, 'dateClosed', meta.createdDate)
-
-        sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, height, cloneDeep(proposal)]
-        )
-        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
+        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, innerSigningContractID, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID, height }, { state }) {
+      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
         if (data.proposalIds.length) {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
@@ -1041,10 +1036,7 @@ sbp('chelonia/defineContract', {
               Vue.set(proposal, 'status', STATUS_EXPIRED)
               Vue.set(proposal, 'dateClosed', meta.createdDate)
 
-              sbp('gi.contracts/group/pushSideEffect', contractID,
-                ['gi.contracts/group/notifyProposalStateInGeneralChatroom', contractID, height, cloneDeep(proposal)]
-              )
-              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
+              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, innerSigningContractID, contractID, meta, height })
             }
           }
         }
@@ -1742,16 +1734,12 @@ sbp('chelonia/defineContract', {
         }])
       }
     },
-    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function (contractID, height, proposals) {
-      if (!Array.isArray(proposals)) {
-        proposals = [proposals]
-      }
-
+    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function ({ contractID, innerSigningContractID, height, proposal }) {
       const rootState = sbp('state/vuex/state')
       const { profiles, generalChatRoomId } = rootState[contractID]
       const myProfile = profiles[rootState.loggedIn.identityContractID]
-      if (isActionOlderThanUser(contractID, height, myProfile)) {
-        for (const proposal of proposals) {
+      if (rootState.loggedIn.identityContractID === innerSigningContractID) {
+        if (isActionOlderThanUser(contractID, height, myProfile)) {
           await sbp('gi.actions/chatroom/addMessage', {
             contractID: generalChatRoomId,
             data: { type: MESSAGE_TYPES.INTERACTIVE, proposal }

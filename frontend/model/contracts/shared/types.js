@@ -9,13 +9,7 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
-  POLL_TYPES,
-  STATUS_OPEN,
-  STATUS_PASSED,
-  STATUS_FAILED,
-  STATUS_EXPIRING,
-  STATUS_EXPIRED,
-  STATUS_CANCELLED
+  POLL_TYPES
 } from './constants.js'
 
 // group.js related
@@ -41,21 +35,7 @@ export const chatRoomAttributesType: any = objectOf({
 export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   text: string,
-  proposal: objectMaybeOf({
-    proposalId: string,
-    proposalType: string,
-    expires_date_ms: number,
-    createdDate: string,
-    creatorID: string,
-    variant: unionOf([
-      STATUS_OPEN,
-      STATUS_PASSED,
-      STATUS_FAILED,
-      STATUS_EXPIRING,
-      STATUS_EXPIRED,
-      STATUS_CANCELLED
-    ].map(v => literalOf(v)))
-  }),
+  proposal: object,
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
