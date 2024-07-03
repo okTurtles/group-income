@@ -457,8 +457,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user1 deletes a channel and logout', () => {
-    const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
-    deleteChannel(channel)
+    const channelName = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
+    deleteChannel(channelName)
 
     cy.giLogout()
   })
