@@ -762,5 +762,6 @@ Cypress.Commands.add('giSwitchChannel', (channelName) => {
     })
   })
   cy.getByDT('channelName').should('contain', channelName)
+
   cy.giWaitUntilMessagesLoaded()
 })
