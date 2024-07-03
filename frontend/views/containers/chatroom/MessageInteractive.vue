@@ -23,6 +23,7 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   STATUS_OPEN,
   STATUS_PASSED,
   STATUS_FAILED,
@@ -39,8 +40,12 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
 const interactiveMessage = (proposal, baseOptions = {}) => {
-  const { status } = proposal
-  const { options: proposalDetails, type } = getProposalDetails(proposal)
+  const { status, creatorID, proposalType, proposalData } = proposal
+  const { options: proposalDetails } = getProposalDetails({
+    status,
+    creatorID,
+    data: { proposalType, proposalData }
+  })
   const options = Object.assign(proposalDetails, baseOptions)
 
   const settingChangeMessages = (options) => ({
@@ -87,7 +92,7 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     }
   }
 
-  return get(interactiveMessages, [type, options.settingType, status].filter(key => !!key))
+  return get(interactiveMessages, [proposalType, options.settingType, status].filter(key => !!key))
 }
 
 const proposalStatus = (proposal) => {
@@ -137,7 +142,7 @@ export default ({
     ...mapGetters(['userDisplayNameFromID']),
     interactiveMessage () {
       const { status, creatorID } = this.proposal
-      const baseOptions = { from: `@${creatorID}` }
+      const baseOptions = { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` }
 
       return {
         text: interactiveMessage(this.proposal, baseOptions),

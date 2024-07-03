@@ -31,7 +31,12 @@ export function notifyAndArchiveProposal ({ state, proposalHash, innerSigningCon
   Vue.delete(state.proposals, proposalHash)
 
   sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/notifyProposalStateInGeneralChatroom', { contractID, innerSigningContractID, height, proposal }]
+    ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
+      contractID,
+      innerSigningContractID,
+      height,
+      proposal: { ...proposal, proposalId: proposalHash }
+    }]
   )
 
   // NOTE: we can not make notification for the proposal closal

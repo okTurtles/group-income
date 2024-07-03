@@ -877,13 +877,12 @@ export default (sbp('sbp/selectors/register', {
     const { generalChatRoomId } = rootState[params.contractID]
 
     for (let i = 0; i < proposals.length; i++) {
-      const proposal = proposals[i]
       const isLastProposal = i === proposals.length - 1
       await sbp('gi.actions/chatroom/addMessage', {
         contractID: generalChatRoomId,
         data: {
           type: MESSAGE_TYPES.INTERACTIVE,
-          proposal: { ...proposal, status: STATUS_EXPIRING }
+          proposal: { ...proposals[i], status: STATUS_EXPIRING }
         },
         hooks: {
           prepublish: null,

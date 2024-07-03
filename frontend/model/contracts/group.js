@@ -932,7 +932,7 @@ sbp('chelonia/defineContract', {
             contractID,
             innerSigningContractID,
             height,
-            proposal: cloneDeep(proposal)
+            proposal: { ...proposal, proposalId: hash }
           }]
         )
       },
@@ -1742,7 +1742,18 @@ sbp('chelonia/defineContract', {
         if (isActionOlderThanUser(contractID, height, myProfile)) {
           await sbp('gi.actions/chatroom/addMessage', {
             contractID: generalChatRoomId,
-            data: { type: MESSAGE_TYPES.INTERACTIVE, proposal }
+            data: {
+              type: MESSAGE_TYPES.INTERACTIVE,
+              proposal: {
+                proposalId: proposal.proposalId,
+                proposalType: proposal.data.proposalType,
+                proposalData: proposal.data.proposalData,
+                expires_date_ms: proposal.data.expires_date_ms,
+                createdDate: proposal.meta.createdDate,
+                creatorID: proposal.creatorID,
+                status: proposal.status
+              }
+            }
           })
         }
       }
