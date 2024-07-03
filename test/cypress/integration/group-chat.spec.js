@@ -447,7 +447,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    // cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
