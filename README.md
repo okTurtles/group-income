@@ -108,6 +108,9 @@ grunt test --browser=debug
 grunt dev
 # and in another terminal run Cypress in "open" mode
 npm run cy:open
+
+# Run a specific Cypress spec against the running 'grunt dev' server:
+npx cypress run -c 'baseUrl=http://localhost:8000' --spec "test/cypress/integration/group-chat.spec.js"
 ```
 
 #### Using Docker for extra security
