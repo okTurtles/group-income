@@ -89,7 +89,6 @@ export const MESSAGE_NOTIFICATIONS = {
   KICK_MEMBER: 'kick-member',
   UPDATE_DESCRIPTION: 'update-description',
   UPDATE_NAME: 'update-name',
-  DELETE_CHANNEL: 'delete-channel',
   VOTE_ON_POLL: 'vote-on-poll',
   CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
 }
