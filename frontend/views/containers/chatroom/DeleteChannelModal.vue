@@ -81,21 +81,21 @@ export default ({
           hooks: {
             postpublish: (message) => {
               const contractID = this.groupGeneralChatRoomId
-              // TODO: This should be moved to a side-effect
-              sbp('gi.actions/chatroom/addMessage', {
-                contractID,
-                data: {
-                  type: MESSAGE_TYPES.NOTIFICATION,
-                  notification: {
-                    type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
-                    channelName: this.chatRoomAttributes.name,
-                    channelDescription: this.chatRoomAttributes.description
+              sbp('gi.actions/chatroom/delete', { contractID: chatRoomID, data: {} }).then(() => {
+                sbp('gi.actions/chatroom/addMessage', {
+                  contractID,
+                  data: {
+                    type: MESSAGE_TYPES.NOTIFICATION,
+                    notification: {
+                      type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
+                      channelName: this.chatRoomAttributes.name,
+                      channelDescription: this.chatRoomAttributes.description
+                    }
                   }
-                }
+                }).catch(e => {
+                  console.log(`Error sending chatroom removal notification to ${contractID} for ${chatRoomID}`, e)
+                })
               }).catch(e => {
-                console.log(`Error sending chatroom removal notification to ${contractID} for ${chatRoomID}`, e)
-              })
-              sbp('gi.actions/chatroom/delete', { contractID: chatRoomID, data: {} }).catch(e => {
                 console.log(`Error sending chatroom removal action for ${chatRoomID}`, e)
               })
             }
