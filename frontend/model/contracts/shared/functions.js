@@ -210,8 +210,14 @@ export function makeMentionFromUserID (userID: string): {
   }
 }
 
-export function makeChannelMention (channelName: string): string {
-  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${channelName}`
+export function makeChannelMention (str: string, withId: boolean = false): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
+}
+
+export function getIdFromChannelMention (str: string): string {
+  return str.includes(':chatID:')
+    ? str.split(':chatID:')[1]
+    : ''
 }
 
 export function swapMentionIDForDisplayname (
@@ -222,7 +228,6 @@ export function swapMentionIDForDisplayname (
   }
 ): string {
   const {
-    chatRoomsInDetail,
     ourContactProfilesById,
     getChatroomNameById,
     usernameFromID,
@@ -230,7 +235,7 @@ export function swapMentionIDForDisplayname (
   } = sbp('state/vuex/getters')
   const possibleMentions = [
     ...Object.keys(ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-    ...Object.values(chatRoomsInDetail).map((details: any) => makeChannelMention(details.id))
+    makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
   ]
 
   const { escaped, forChat } = options
@@ -247,7 +252,7 @@ export function swapMentionIDForDisplayname (
       return prefix + body
     } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
       // swap channel mention
-      const channelID = t.slice(1)
+      const channelID = getIdFromChannelMention(t)
       const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
       return prefix + getChatroomNameById(channelID)
     }
@@ -256,6 +261,6 @@ export function swapMentionIDForDisplayname (
 
   return text
     .split(regEx)
-    .map(t => possibleMentions.includes(t) ? swap(t) : t)
+    .map(t => regEx.test(t) ? swap(t) : t)
     .join('')
 }
