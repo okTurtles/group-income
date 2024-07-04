@@ -123,7 +123,7 @@ export default ({
         this.$router.push({
           path: '/pending-approval',
           // NOTE: during a series of consecutive async steps of group-creation, error can occur that leads to displaying 'Prompt.vue' pop-up.
-          //       in that case, leave that pop-up open. (reference: https://github.com/okTurtles/group-income/pull/2091) 
+          //       in that case, leave that pop-up open. (reference: https://github.com/okTurtles/group-income/pull/2091)
           query: this.$route.query?.modal === 'Prompt'
             ? this.$route.query
             : undefined
