@@ -119,9 +119,14 @@ export default ({
             distributionDate: this.form.distributionDate
           }
         })
+
         this.$router.push({
           path: '/pending-approval',
-          query: this.$route.query
+          // NOTE: during a series of consecutive async steps of group-creation, error can occur that leads to displaying 'Prompt.vue' pop-up.
+          //       in that case, leave that pop-up open. (reference: https://github.com/okTurtles/group-income/pull/2091)
+          query: this.$route.query?.modal === 'Prompt'
+            ? this.$route.query
+            : undefined
         })
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
