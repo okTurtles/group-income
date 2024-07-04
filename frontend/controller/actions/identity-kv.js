@@ -25,10 +25,13 @@ export default (sbp('sbp/selectors/register', {
     if (!ourIdentityContractId) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
-      onconflict
+
+    return sbp('chelonia/queueInvocation', ourIdentityContractId, () => {
+      return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+        onconflict
+      })
     })
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
@@ -163,10 +166,13 @@ export default (sbp('sbp/selectors/register', {
     if (!ourIdentityContractId) {
       throw new Error('Unable to update preferences without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.PREFERENCES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
-      onconflict
+
+    return sbp('chelonia/queueInvocation', ourIdentityContractId, () => {
+      return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.PREFERENCES, data, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+        onconflict
+      })
     })
   },
   'gi.actions/identity/kv/loadPreferences': () => {
@@ -220,10 +226,12 @@ export default (sbp('sbp/selectors/register', {
       return null
     }
 
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
-      onconflict: updatedOnConflict
+    return sbp('chelonia/queueInvocation', ourIdentityContractId, () => {
+      return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+        onconflict: updatedOnConflict
+      })
     })
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
