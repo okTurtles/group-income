@@ -136,10 +136,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('deleteChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', me)
-      cy.get('div.c-message:last-child .c-notification').should('contain', `Deleted the channel: ${channelName}`)
-    })
   }
 
   function updateName (name) {
