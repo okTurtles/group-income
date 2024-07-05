@@ -24,6 +24,7 @@ fieldset(data-test='paymentMethods')
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
           input.input(
             type='text'
+            :maxlength='config.paymentMethodMaxChar'
             :aria-label='L("Payment value")'
             v-model='method.value'
           )
@@ -47,6 +48,7 @@ fieldset(data-test='paymentMethods')
 <script>
 import { mapGetters } from 'vuex'
 import { Vue, L } from '@common/common.js'
+import { GROUP_PAYMENT_METHOD_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'PaymentMethods',
@@ -60,7 +62,8 @@ export default ({
         paypal: L('Paypal'),
         venmo: L('Venmo'),
         other: L('Other')
-      }
+      },
+      paymentMethodMaxChar: GROUP_PAYMENT_METHOD_MAX_CHAR
     },
     form: {
       methods: []

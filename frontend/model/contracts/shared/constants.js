@@ -14,6 +14,7 @@ export const PROFILE_STATUS = {
   REMOVED: 'removed'
 }
 export const GROUP_DESCRIPTION_MAX_CHAR = 500
+export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
 
 // group-proposal related
 
