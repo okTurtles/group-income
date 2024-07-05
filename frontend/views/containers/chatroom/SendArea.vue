@@ -643,7 +643,7 @@ export default ({
       }
       const convertChannelMentionToId = name => {
         const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
-        return found ? makeChannelMention(found.id) : ''
+        return found ? makeChannelMention(found.id, true) : ''
       }
       const convertAllMentions = str => {
         return str.replace(

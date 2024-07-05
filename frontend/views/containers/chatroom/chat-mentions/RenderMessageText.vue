@@ -38,8 +38,9 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { makeMentionFromUserID, makeChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/contracts/shared/functions.js'
 import { TextObjectType } from '@utils/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'RenderMessageText',
@@ -71,7 +72,7 @@ export default ({
     possibleMentions () {
       return [
         ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-        ...Object.values(this.chatRoomsInDetail).map(details => makeChannelMention(details.id))
+        makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
       ]
     }
   },
@@ -93,6 +94,7 @@ export default ({
         return [{ type: TextObjectType.Text, text }]
       }
       const allMention = makeMentionFromUserID('').all
+      const regExpPossibleMentions = new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
 
       return text
         // We try to find all the mentions and render them as mentions instead
@@ -100,13 +102,13 @@ export default ({
         // preceded by a space or is the start of a line and the `(?=[^\\w\\d]|$)`
         // ensures that it's followed by an end-of-line or a character that's not
         // a letter or a number (so `Hi @user!` works).
-        .split(new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+        .split(regExpPossibleMentions)
         .map(t => {
           const genDefaultTextObj = (text) => ({
             type: TextObjectType.Text, text
           })
           const genChannelMentionObj = (text) => {
-            const chatRoomID = text.slice(1)
+            const chatRoomID = getIdFromChannelMention(text)
             const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
             return found
@@ -117,7 +119,13 @@ export default ({
                   disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
                   chatRoomID: found.id
                 }
-              : genDefaultTextObj(text)
+              : {
+                  type: TextObjectType.ChannelMention,
+                  text: L('unknown chatroom'),
+                  icon: 'ban',
+                  disabled: true,
+                  chatRoomID
+                }
           }
 
           const genMemberMentionObj = (text) => {
@@ -134,7 +142,7 @@ export default ({
             return { type: TextObjectType.MemberMention, text: t, toMe: true }
           }
 
-          return this.possibleMentions.includes(t)
+          return regExpPossibleMentions.test(t)
             ? t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
               ? genMemberMentionObj(t)
               : genChannelMentionObj(t)
@@ -163,7 +171,7 @@ export default ({
 .c-channel-mention {
   background-color: $primary_2;
   color: $primary_0;
-  padding: 0 0.1rem 0.1rem;
+  padding: 0 0.2rem 0.2rem;
 }
 
 .c-member-mention.c-mention-to-me {
@@ -220,7 +228,7 @@ export default ({
 
   i {
     font-size: 0.75em;
-    margin-right: 2px;
+    margin-right: 4px;
   }
 }
 
