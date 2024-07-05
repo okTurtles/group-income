@@ -111,21 +111,26 @@ export default ({
             const chatRoomID = getIdFromChannelMention(text)
             const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
-            return found
-              ? {
-                  type: TextObjectType.ChannelMention,
-                  text: found.name,
-                  icon: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'lock' : 'hashtag',
-                  disabled: found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && !found.joined,
-                  chatRoomID: found.id
-                }
-              : {
-                  type: TextObjectType.ChannelMention,
-                  text: L('unknown chatroom'),
-                  icon: 'ban',
-                  disabled: true,
-                  chatRoomID
-                }
+            if (found) {
+              const isPrivate = found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+              const shouldDisable = isPrivate && !found.joined
+
+              return {
+                type: TextObjectType.ChannelMention,
+                text: shouldDisable ? L('private channel') : found.name,
+                icon: isPrivate ? 'lock' : 'hashtag',
+                disabled: shouldDisable,
+                chatRoomID: found.id
+              }
+            } else {
+              return {
+                type: TextObjectType.ChannelMention,
+                text: L('unknown chatroom'),
+                icon: 'ban',
+                disabled: true,
+                chatRoomID
+              }
+            }
           }
 
           const genMemberMentionObj = (text) => {
