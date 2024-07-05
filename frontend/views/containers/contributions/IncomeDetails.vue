@@ -171,12 +171,13 @@ export default ({
       const paymentMethods = []
 
       if (this.needsIncome) {
+        this.$refs.paymentMethods.$v.form.$touch()
+
         // Find the methods that have some info filled...
         const filledMethods = this.$refs.paymentMethods.form.methods.filter(method => method.name !== 'choose' || method.value)
 
         if (!filledMethods.length) {
           this.$refs.formMsg.danger(L('Payment details required. Please let people know how they can pay you.'))
-
           return
         }
         // From those, find a method with missing info
@@ -188,6 +189,12 @@ export default ({
           } else {
             this.$refs.formMsg.danger(L('The method name for "{methodValue}" is missing.', { methodValue: incompletedMethod.value }))
           }
+          return
+        }
+
+        // check other validations
+        if (this.$refs.paymentMethods.$v.form.$invalid) {
+          this.$refs.formMsg.danger(L('Your payment methods are invalid. Please review them and try again.'))
           return
         }
 

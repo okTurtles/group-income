@@ -1330,10 +1330,12 @@ sbp('chelonia/defineContract', {
           )
         })(data)
 
-        for (const paymentMethod of data.paymentMethods) {
-          const { value } = paymentMethod
-          if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
-            throw new TypeError(L('Payment info cannot exceed {maxLength} characters.', { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }))
+        if (data.paymentMethods) {
+          for (const paymentMethod of data.paymentMethods) {
+            const { value } = paymentMethod
+            if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
+              throw new TypeError(L('Payment info cannot exceed {maxLength} characters.', { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }))
+            }
           }
         }
       }),
