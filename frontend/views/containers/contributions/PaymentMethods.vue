@@ -24,7 +24,6 @@ fieldset(data-test='paymentMethods')
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
           input.input(
             type='text'
-            maxlength='250'
             :aria-label='L("Payment value")'
             v-model='method.value'
           )
