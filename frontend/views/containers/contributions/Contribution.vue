@@ -5,10 +5,13 @@ transition(name='replace-list')
       @submit.prevent=''
       novalidate='true'
     )
+      .c-label-container
+        span.c-char-len {{ contributionCharLen }}
       input.input(
         type='text'
         :placeholder='randomPlaceholder'
         :aria-label='L("Your contribution")'
+        :maxLength='contributionMaxChar'
         v-error:contribution=''
         v-focus=''
         v-model='$v.form.contribution.$model'
@@ -68,6 +71,7 @@ import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'Contribution',
@@ -100,7 +104,8 @@ export default ({
       placeholders: [L('Portuguese classes'), L('Programming'), L('Cooking'), L('Parties'), L('Free cinema tickets')],
       form: {
         contribution: this.initialValue
-      }
+      },
+      contributionMaxChar: GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR
     }
   },
   computed: {
@@ -121,6 +126,10 @@ export default ({
     },
     randomPlaceholder () {
       return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
+    },
+    contributionCharLen () {
+      const len = this.form.contribution?.length || 0
+      return `${len}/${this.contributionMaxChar}`
     }
   },
   methods: {
@@ -215,6 +224,17 @@ export default ({
 
 .c-spacer-above {
   padding-top: 1.5rem;
+}
+
+.c-label-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.625rem;
+
+  .c-char-len {
+    font-size: $size_5;
+    color: $text_1;
+  }
 }
 
 .buttons {
