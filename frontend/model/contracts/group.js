@@ -1446,7 +1446,10 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
-      process ({ data }, { state }) {
+      process ({ contractID, data }, { state }) {
+        sbp('gi.contracts/group/pushSideEffect', contractID,
+          ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
+        )
         Vue.delete(state.chatRooms, data.chatRoomID)
       }
     },
@@ -1629,6 +1632,14 @@ sbp('chelonia/defineContract', {
       ).catch(e => {
         console.error(`[gi.contracts/group/_cleanup] Error removing entries for archive for ${contractID}`, e)
       })
+    },
+    'gi.contracts/group/releaseDeletedChatRoom': (contractID, members) => {
+      const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+      if (identityContractID && members[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
+        sbp('chelonia/contract/release', contractID).catch(e => {
+          console.error('[gi.contracts/group/releaseDeletedChatRoom] Error', e)
+        })
+      }
     },
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
       const { identityContractID } = sbp('state/vuex/state').loggedIn
