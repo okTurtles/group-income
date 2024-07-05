@@ -77,8 +77,7 @@ export default ({
           [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member from {title}: {displayName}', { displayName, title: channelName }),
           [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
           [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]:
-            L('Updated the channel description to: {description}', { description: channelDescription }),
-          [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName })
+            L('Updated the channel description to: {description}', { description: channelDescription })
         }
       }
       const pollNotificationTemplates = {

@@ -169,6 +169,7 @@ page(
               i.icon-angle-left icon-angle-left
               i.icon-angle-down icon-angle-down
               i.icon-arrow-right icon-arrow-right
+              i.icon-ban icon-ban
               i.icon-bars icon-bars
               i.icon-bell icon-bell
               i.icon-bold icon-bold

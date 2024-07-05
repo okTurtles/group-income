@@ -58,7 +58,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import { makeMentionFromUserID, makeChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/contracts/shared/functions.js'
 
 export default {
   name: 'PinnedMessages',
@@ -82,7 +82,7 @@ export default {
     possibleMentions () {
       return [
         ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-        ...Object.values(this.chatRoomsInDetail).map(details => makeChannelMention(details.id))
+        makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
       ]
     },
     messageSentVariant () {
@@ -108,13 +108,15 @@ export default {
     renderTextMessage (text) {
       // TODO: Update this after PR #2016 is merged
       const replaceChannelMention = (text) => {
-        const chatRoomID = text.slice(1)
+        const chatRoomID = getIdFromChannelMention(text)
         const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
         return found ? `#${found.name}` : text
       }
-      const mentionReplacedText = text.split(new RegExp(`(?<=\\s|^)(${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`))
+
+      const regExpPossibleMentions = new RegExp(`(?<=\\s|^)(${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
+      const mentionReplacedText = text.split(regExpPossibleMentions)
         .map(t => {
-          if (this.possibleMentions.includes(t)) {
+          if (regExpPossibleMentions.test(t)) {
             if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
               return CHATROOM_MEMBER_MENTION_SPECIAL_CHAR + this.usernameFromID(t.slice(1))
             } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {

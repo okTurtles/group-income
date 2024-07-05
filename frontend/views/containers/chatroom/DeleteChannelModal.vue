@@ -44,7 +44,6 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { MESSAGE_TYPES, MESSAGE_NOTIFICATIONS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'DeleteChannelModal',
@@ -80,21 +79,7 @@ export default ({
           data: { chatRoomID },
           hooks: {
             postpublish: (message) => {
-              const contractID = this.groupGeneralChatRoomId
               // TODO: This should be moved to a side-effect
-              sbp('gi.actions/chatroom/addMessage', {
-                contractID,
-                data: {
-                  type: MESSAGE_TYPES.NOTIFICATION,
-                  notification: {
-                    type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
-                    channelName: this.chatRoomAttributes.name,
-                    channelDescription: this.chatRoomAttributes.description
-                  }
-                }
-              }).catch(e => {
-                console.log(`Error sending chatroom removal notification to ${contractID} for ${chatRoomID}`, e)
-              })
               sbp('gi.actions/chatroom/delete', { contractID: chatRoomID, data: {} }).catch(e => {
                 console.log(`Error sending chatroom removal action for ${chatRoomID}`, e)
               })

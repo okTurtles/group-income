@@ -15,6 +15,7 @@ export const PROFILE_STATUS = {
 }
 export const GROUP_DESCRIPTION_MAX_CHAR = 500
 export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
+export const GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150
 
 // group-proposal related
 
@@ -90,7 +91,6 @@ export const MESSAGE_NOTIFICATIONS = {
   KICK_MEMBER: 'kick-member',
   UPDATE_DESCRIPTION: 'update-description',
   UPDATE_NAME: 'update-name',
-  DELETE_CHANNEL: 'delete-channel',
   VOTE_ON_POLL: 'vote-on-poll',
   CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
 }
