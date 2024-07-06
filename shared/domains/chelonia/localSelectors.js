@@ -23,25 +23,25 @@ export default (sbp('sbp/selectors/register', {
   // 3. Each tab calls this selector once to set up event listeners on EVENT_HANDLED
   //    and CONTRACTS_MODIFIED, which will keep each tab's state updated every
   //    time Chelonia handles an event.
-  'chelonia/externalStateSetup': ({ reactiveSet, reactiveDel } = {
+  'chelonia/externalStateSetup': ({ stateSelector, reactiveSet, reactiveDel } = {
     reactiveSet: Reflect.set.bind(Reflect),
     reactiveDel: Reflect.deleteProperty.bind(Reflect)
   }) => {
     sbp('okTurtles.events/on', EVENT_HANDLED, async (contractID, message) => {
       const { contractState, cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
-      const vuexState = sbp('state/vuex/state')
+      const externalState = sbp(stateSelector)
       if (cheloniaState) {
-        if (!vuexState.contracts) {
-          reactiveSet(vuexState, 'contracts', Object.create(null))
+        if (!externalState.contracts) {
+          reactiveSet(externalState, 'contracts', Object.create(null))
         }
-        reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))
-      } else if (vuexState.contracts) {
-        reactiveDel(vuexState.contracts, contractID)
+        reactiveSet(externalState.contracts, contractID, cloneDeep(cheloniaState))
+      } else if (externalState.contracts) {
+        reactiveDel(externalState.contracts, contractID)
       }
       if (contractState) {
-        reactiveSet(vuexState, contractID, cloneDeep(contractState))
+        reactiveSet(externalState, contractID, cloneDeep(contractState))
       } else {
-        reactiveDel(vuexState, contractID)
+        reactiveDel(externalState, contractID)
       }
 
       // This EVENT_HANDLED_READY event lets the current context (e.g., tab)
@@ -68,8 +68,7 @@ export default (sbp('sbp/selectors/register', {
         reactiveDel(vuexState.contracts, contractID)
         reactiveDel(vuexState, contractID)
       })
-      for (let i = 0; i < newContracts.length; i++) {
-        const contractID = newContracts[i]
+      for (const contractID of newContracts) {
         const { contractState, cheloniaState } = states[contractID]
         if (cheloniaState) {
           reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))

@@ -17,7 +17,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, serializeKey, keyId, keygen, deserializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { encryptedAction } from './utils.js'
+import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -251,52 +251,13 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      const contractIDs = Object.create(null)
-
-      if (cheloniaState) {
-        await sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
-        // $FlowFixMe[incompatible-use]
-        Object.entries(cheloniaState.contracts).forEach(([id, { type }]) => {
-          if (!contractIDs[type]) {
-            contractIDs[type] = []
-          }
-          contractIDs[type].push(id)
-        })
-      }
-
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
       sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
-      // We need to sync contracts in this order to ensure that we have all the
-      // corresponding secret keys. Group chatrooms use group keys but there's
-      // no OP_KEY_SHARE, which will result in the keys not being available when
-      // the group keys are rotated.
-      // TODO: This functionality could be moved into Chelonia by keeping track
-      // of when secret keys without OP_KEY_SHARE become available.
-      const contractSyncPriorityList = [
-        'gi.contracts/identity',
-        'gi.contracts/group',
-        'gi.contracts/chatroom'
-      ]
-      const getContractSyncPriority = (key) => {
-        const index = contractSyncPriorityList.indexOf(key)
-        return index === -1 ? contractSyncPriorityList.length : index
-      }
-
       await sbp('gi.actions/identity/kv/load')
 
-      try {
-        // $FlowFixMe[incompatible-call]
-        await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
-          // Sync contracts in order based on type
-          return getContractSyncPriority(a) - getContractSyncPriority(b)
-        }).map(([, ids]) => {
-          return sbp('okTurtles.eventQueue/queueEvent', `login:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
-        }))
-      } catch (err) {
-        console.error('Error during contract sync upon login (syncing all contractIDs)', err)
-        throw err
-      }
+      const contractIDs = groupContractsByType(cheloniaState?.contracts)
+      await syncContractsInOrder(identityContractID, 'login', contractIDs)
 
       try {
         // The state above might be null, so we re-grab it

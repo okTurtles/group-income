@@ -47,7 +47,8 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   // This function restores the state after a successful login. It's complex
   // because it deals with _three_ different states.
   // * `state` (input parameter): (optional). This is the _saved_ Vuex state
-  //   that we'll use to replace the current Vuex state (`vuexState`).
+  //   that we'll use to replace the current Vuex state (`vuexState`). Passed in
+  //   when there is an active session with state.
   // * `vuexState`: This is the root Vuex state as it exists. This is accessed
   //   using the `state/vuex/state` selector. When `state` is provided, it'll
   //   be replaced by `state`. Otherwise, it'll not be replaced.
@@ -62,6 +63,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       // This shouldn't happen. It means that we received a LOGIN event but
       // there's an active session for a different user. If this happens, it
       // means that there's buggy login logic that should be reported and fixed
+      console.error('Received login event during active session', { receivedIdentityContractID: identityContractID, existingIdentityContractID: vuexState.loggedIn.identityContractID })
       throw new Error('Received login event but there already is an active session')
     }
     const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
@@ -247,7 +249,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.app/identity/login': async function ({ username, password: wpassword, identityContractID }: {
-    username: ?string, password: ?Secret<string>, identityContractID: ?string
+    username: ?string, password: ?Secret<string>, identityContractID: string
   }) {
     if (username) {
       identityContractID = await sbp('namespace/lookup', username)
@@ -280,8 +282,9 @@ export default (sbp('sbp/selectors/register', {
           const loginCompleteHandler = ({ identityContractID: id }) => {
             sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
             if (id === identityContractID) {
-              // We need to save the state to ensure it's possible to refresh
-              // the page
+              // Before the promise resolves, we need to save the state
+              // by calling 'state/vuex/save' to ensure that refreshing the page
+              // results in a page with the same state.
               resolve(sbp('state/vuex/save'))
             } else {
               reject(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${id}`))
@@ -362,7 +365,7 @@ export default (sbp('sbp/selectors/register', {
       const { encryptionParams } = state.loggedIn
       if (encryptionParams) {
         // If we're logging out, save the current Chelonia state under the
-        // `.cheloniaState1 key. This will be used later when logging in
+        // `.cheloniaState` key. This will be used later when logging in
         // to restore both the Vuex and Chelonia states
         state.cheloniaState = cheloniaState
 

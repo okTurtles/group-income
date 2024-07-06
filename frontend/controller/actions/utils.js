@@ -305,3 +305,48 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
     invitee
   }
 }
+
+export function groupContractsByType (contracts: Object): Object {
+  const contractIDs = Object.create(null)
+  if (contracts) {
+    // $FlowFixMe[incompatible-use]
+    Object.entries(contracts).forEach(([id, { type }]) => {
+      if (!contractIDs[type]) {
+        contractIDs[type] = []
+      }
+      contractIDs[type].push(id)
+    })
+  }
+  return contractIDs
+}
+
+export async function syncContractsInOrder (identityContractID: string | null, queuePrefix: string, groupedContractIDs: Object): Promise<any> {
+  // We need to sync contracts in this order to ensure that we have all the
+  // corresponding secret keys. Group chatrooms use group keys but there's
+  // no OP_KEY_SHARE, which will result in the keys not being available when
+  // the group keys are rotated.
+  // TODO: This functionality could be moved into Chelonia by keeping track
+  // of when secret keys without OP_KEY_SHARE become available.
+  const contractSyncPriorityList = [
+    'gi.contracts/identity',
+    'gi.contracts/group',
+    'gi.contracts/chatroom'
+  ]
+  const getContractSyncPriority = (key) => {
+    const index = contractSyncPriorityList.indexOf(key)
+    return index === -1 ? contractSyncPriorityList.length : index
+  }
+
+  try {
+    // $FlowFixMe[incompatible-call]
+    await Promise.all(Object.entries(groupedContractIDs).sort(([a], [b]) => {
+      // Sync contracts in order based on type
+      return getContractSyncPriority(a) - getContractSyncPriority(b)
+    }).map(([, ids]) => {
+      return sbp('okTurtles.eventQueue/queueEvent', `${queuePrefix}:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+    }))
+  } catch (err) {
+    console.error('Error during contract sync (syncing all contractIDs)', err)
+    throw err
+  }
+}

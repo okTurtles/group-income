@@ -39,6 +39,7 @@ import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import { debounce, has } from '@model/contracts/shared/giLodash.js'
+import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
 import { KV_KEYS } from './utils/constants.js'
@@ -108,7 +109,7 @@ async function startApp () {
   }
 
   // Set up event listeners to keep local (Vuex) and Chelonia states in sync
-  sbp('chelonia/externalStateSetup', { reactiveSet: Vue.set, reactiveDel: Vue.delete })
+  sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
 
   // Load Chelonia state (this needs to be done in the SW when Chelonia is
   // running there)
@@ -116,6 +117,19 @@ async function startApp () {
   // currently, Chelonia only has meaningful persistent state when there's
   // an active session. If there's no logged in user, it means that there's
   // no state to restore.
+  // Note that `gi.app/identity/login` and `gi.actions/identity/login` also
+  // load Chelonia state. The difference between this and that case is that
+  // the code immediately below loads Chelonia state when there already is
+  // an active sessin (e.g., when refreshing the page). On the other hand, the
+  // login functions _replace_ the Chelonia state with a saved state when a
+  // fresh session is started. For example, when logging back in on a device.
+  // In short:
+  //   - Active session on this device: load state from CHELONIA_STATE directly.
+  //   - Completely fresh session (no saved state): fresh state (not loaded from
+  //     anywhere).
+  //   - Fresh session with saved state: /login logic, CHELONIA_STATE is
+  //     decrypyted from the saved state and loaded. This is also saved in
+  //     CHELONIA_STATE so that refreshing the page works.
   await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
@@ -490,23 +504,9 @@ async function startApp () {
         const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
         if (!cheloniaState || !identityContractID) return
         if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
-        const contractSyncPriorityList = [
-          'gi.contracts/identity',
-          'gi.contracts/group',
-          'gi.contracts/chatroom'
-        ]
-        const getContractSyncPriority = (key) => {
-          const index = contractSyncPriorityList.indexOf(key)
-          return index === -1 ? contractSyncPriorityList.length : index
-        }
         await sbp('chelonia/contract/sync', identityContractID, { force: true })
-        const contractIDs = Object.keys(cheloniaState.contracts)
-        await Promise.all(Object.entries(contractIDs).sort(([a], [b]) => {
-          // Sync contracts in order based on type
-          return getContractSyncPriority(a) - getContractSyncPriority(b)
-        }).map(([, ids]) => {
-          return sbp('okTurtles.eventQueue/queueEvent', `appStart:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
-        }))
+        const contractIDs = groupContractsByType(cheloniaState.contracts)
+        await syncContractsInOrder(identityContractID, 'appStart', contractIDs)
 
         if (this.ephemeral.finishedLogin === 'yes') return
         return sbp('gi.app/identity/login', { identityContractID }).catch((e) => {
