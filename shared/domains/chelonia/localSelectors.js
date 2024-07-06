@@ -68,7 +68,8 @@ export default (sbp('sbp/selectors/register', {
         reactiveDel(vuexState.contracts, contractID)
         reactiveDel(vuexState, contractID)
       })
-      newContracts.forEach(contractID => {
+      for (let i = 0; i < newContracts.length; i++) {
+        const contractID = newContracts[i]
         const { contractState, cheloniaState } = states[contractID]
         if (cheloniaState) {
           reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))
@@ -76,7 +77,7 @@ export default (sbp('sbp/selectors/register', {
         if (contractState) {
           reactiveSet(vuexState, contractID, cloneDeep(contractState))
         }
-      })
+      }
     })
   }
 }): string[])

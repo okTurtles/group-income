@@ -27,7 +27,7 @@ import './controller/service-worker.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -38,7 +38,7 @@ import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
-import { cloneDeep, debounce, has } from '@model/contracts/shared/giLodash.js'
+import { debounce, has } from '@model/contracts/shared/giLodash.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
 import { KV_KEYS } from './utils/constants.js'
@@ -107,8 +107,16 @@ async function startApp () {
     sbp('appLogs/save')
   }
 
+  // Set up event listeners to keep local (Vuex) and Chelonia states in sync
+  sbp('chelonia/externalStateSetup', { reactiveSet: Vue.set, reactiveDel: Vue.delete })
+
+  // Load Chelonia state (this needs to be done in the SW when Chelonia is
+  // running there)
+  // We only load Chelonia state when SETTING_CURRENT_USER is set because,
+  // currently, Chelonia only has meaningful persistent state when there's
+  // an active session. If there's no logged in user, it means that there's
+  // no state to restore.
   await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
-    // TODO: PLACEHOLDER TO SIMULATE CHELONIA IN A SW
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
@@ -120,18 +128,22 @@ async function startApp () {
   })
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
 
+  // When running in a SW, this call here needs to be moved to be made from the
+  // SW itself
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
-    // stateSelector: 'state/vuex/state',
+    // Because Chelonia state is kept separately from Vuex state, there is
+    // no need to override stateSelector. However, `reactiveSet` and `reactiveDel`
+    // are still needed to persist Chelonia state (this separation means that
+    // Chelonia state and Vuex state need to be persisted separately).
+    // // stateSelector: 'state/vuex/state',
     reactiveSet: (o: Object, k: string, v: string) => {
-      // Simulate SW environment
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
       }
     },
     reactiveDel: (o: Object, k: string) => {
-      // Simulate SW environment
       if (has(o, k)) {
         delete o[k]
         saveCheloniaDebounced()
@@ -143,6 +155,9 @@ async function startApp () {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
+          // TODO: [SW] the `state/` selectors should _not_ be used from contracts
+          // since they refer to Vuex (i.e., tab / window) state and not to
+          // Chelonia state.
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
@@ -205,8 +220,9 @@ async function startApp () {
     }
   })
 
-  sbp('chelonia/externalStateSetup', { reactiveSet: Vue.set, reactiveDel: Vue.delete })
-
+  // TODO: [SW] The following will be needed to keep namespace registrations
+  // in sync between the SW and each tab. It is not needed now because everything
+  // is running in the same context
   /* sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
     const cache = sbp('state/vuex/state').namespaceLookups
     Vue.set(cache, name, value)
@@ -374,95 +390,24 @@ async function startApp () {
           console.error('Logout event: error deleting Chelonia state')
         })
       })
-      sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams, state }) => {
-        try {
-          const vuexState = sbp('state/vuex/state')
-          if (vuexState.loggedIn && vuexState.loggedIn.identityContractID !== identityContractID) {
-            throw new Error('Received login event but there already is an active session')
-          }
-          const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
-          if (state) {
-          // TODO Do this in a cleaner way
-          // Exclude contracts from the state
-            Object.keys(state).forEach(k => {
-              if (k.startsWith('z9br')) {
-                delete state[k]
-              }
-            })
-            Object.keys(cheloniaState.contracts).forEach(k => {
-              if (cheloniaState[k]) {
-                state[k] = cheloniaState[k]
-              }
-            })
-            state.contracts = cheloniaState.contracts
-            if (cheloniaState.namespaceLookups) {
-              state.namespaceLookups = cheloniaState.namespaceLookups
-            }
-            // End exclude contracts
-            sbp('state/vuex/postUpgradeVerification', state)
-            sbp('state/vuex/replace', state)
-          } else {
-            const state = vuexState
-            // Exclude contracts from the state
-            Object.keys(state).forEach(k => {
-              if (k.startsWith('z9br')) {
-                Vue.delete(state, k)
-              }
-            })
-            Object.keys(cheloniaState.contracts).forEach(k => {
-              if (cheloniaState[k]) {
-                Vue.set(state, k, cheloniaState[k])
-              }
-            })
-            Vue.set(state, 'contracts', cheloniaState.contracts)
-            if (cheloniaState.namespaceLookups) {
-              Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
-            }
-          // End exclude contracts
-          }
+      sbp('okTurtles.events/on', LOGIN_COMPLETE, (a) => {
+        const state = sbp('state/vuex/state')
+        if (!state.loggedIn) return
+        this.ephemeral.finishedLogin = 'yes'
 
-          if (encryptionParams) {
-            sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
-          }
-
-          // NOTE: users could notice that they leave the group by someone
-          // else when they log in
-          const currentState = sbp('state/vuex/state')
-          if (!currentState.currentGroupId) {
-            const gId = Object.keys(currentState.contracts)
-              .find(cID => has(currentState[identityContractID].groups, cID))
-
-            if (gId) {
-              sbp('gi.app/group/switch', gId)
-            }
-          }
-
-          // Whenever there's an active session, the encrypted save state should be
-          // removed, as it is only used for recovering the state when logging in
-          sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
-            console.error('Error deleting encrypted settings after login')
-          })
-
-          this.ephemeral.finishedLogin = 'yes'
-
-          if (this.$store.state.currentGroupId) {
-            this.initOrResetPeriodicNotifications()
-            this.checkAndEmitOneTimeNotifications()
-          }
-          const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
-          sbp('chelonia.persistentActions/configure', { databaseKey })
-          await sbp('chelonia.persistentActions/load')
-
-          // NOTE: should set IdleVue plugin here because state could be replaced while logging in
-          Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
-
-          // TODO: [SW] This should be done by the service worker when logging
-          // in
-          await saveChelonia()
-          sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
-        } catch (e) {
-          sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
+        if (this.$store.state.currentGroupId) {
+          this.initOrResetPeriodicNotifications()
+          this.checkAndEmitOneTimeNotifications()
         }
+
+        // NOTE: should set IdleVue plugin here because state could be replaced while logging in
+        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
+
+        // TODO: [SW] This should be done by the service worker when logging
+        // in
+        saveChelonia().catch(e => {
+          console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
+        })
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         const state = sbp('state/vuex/state')
@@ -474,7 +419,6 @@ async function startApp () {
           console.error('Logout event: error deleting settings')
         })
         sbp('state/vuex/reset')
-        sbp('chelonia.persistentActions/unload')
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {

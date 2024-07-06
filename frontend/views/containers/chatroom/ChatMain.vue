@@ -995,8 +995,7 @@ export default ({
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              // TODO: is this fromOurselves check needed?
-              const fromOurselves = isNaN(0) && this.isMsgSender(this.messages[this.messages.length - 1].from)
+              const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
               if (!fromOurselves && isScrollable) {
                 this.updateScroll()
               } else {

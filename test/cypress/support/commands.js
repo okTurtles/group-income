@@ -744,7 +744,7 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  cy.getByDT('conversationWrapper').within(() => {
+  cy.getByDT('conversationWrapper').within(($el) => {
     if (inviter) {
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
     }

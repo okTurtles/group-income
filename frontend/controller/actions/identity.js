@@ -284,12 +284,6 @@ export default (sbp('sbp/selectors/register', {
       }
 
       await sbp('gi.actions/identity/kv/load')
-      // NOTE: update chatRoomUnreadMessages to the latest one we do this here
-      //       just after the identity contract is synced because
-      //       while syncing the chatroom contract it could be necessary to update chatRoomUnreadMessages
-      await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
-      // NOTE: load users preferences config which is saved in KV store
-      await sbp('gi.actions/identity/kv/loadPreferences')
 
       try {
         // $FlowFixMe[incompatible-call]
@@ -365,7 +359,7 @@ export default (sbp('sbp/selectors/register', {
 
       return identityContractID
     } catch (e) {
-      // TODO: Remove transient secret keys
+      sbp('chelonia/clearTransientSecretKeys', transientSecretKeys.map(({ key }) => keyId(key)))
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
       await sbp('gi.actions/identity/logout')
