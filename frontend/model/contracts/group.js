@@ -10,7 +10,8 @@ import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
-  STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
+  STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS,
+  PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS, GROUP_PAYMENT_METHOD_MAX_CHAR,
   INVITE_INITIAL_CREATOR, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES
 } from './shared/constants.js'
@@ -1310,23 +1311,34 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/groupProfileUpdate': {
-      validate: actionRequireActiveMember(objectMaybeOf({
-        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
-        incomeAmount: x => typeof x === 'number' && x >= 0,
-        pledgeAmount: x => typeof x === 'number' && x >= 0,
-        nonMonetaryAdd: string,
-        nonMonetaryEdit: objectOf({
-          replace: string,
-          with: string
-        }),
-        nonMonetaryRemove: string,
-        paymentMethods: arrayOf(
-          objectOf({
-            name: string,
-            value: string
-          })
-        )
-      })),
+      validate: actionRequireActiveMember((data, props) => {
+        objectMaybeOf({
+          incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
+          incomeAmount: x => typeof x === 'number' && x >= 0,
+          pledgeAmount: x => typeof x === 'number' && x >= 0,
+          nonMonetaryAdd: string,
+          nonMonetaryEdit: objectOf({
+            replace: string,
+            with: string
+          }),
+          nonMonetaryRemove: string,
+          paymentMethods: arrayOf(
+            objectOf({
+              name: string,
+              value: string
+            })
+          )
+        })(data)
+
+        if (data.paymentMethods) {
+          for (const paymentMethod of data.paymentMethods) {
+            const { value } = paymentMethod
+            if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
+              throw new TypeError(L('Payment info cannot exceed {maxLength} characters.', { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }))
+            }
+          }
+        }
+      }),
       process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
