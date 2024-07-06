@@ -23,7 +23,11 @@ export default (sbp('sbp/selectors/register', {
   // 3. Each tab calls this selector once to set up event listeners on EVENT_HANDLED
   //    and CONTRACTS_MODIFIED, which will keep each tab's state updated every
   //    time Chelonia handles an event.
-  'chelonia/externalStateSetup': ({ stateSelector, reactiveSet, reactiveDel } = {
+  'chelonia/externalStateSetup': ({ stateSelector, reactiveSet, reactiveDel }: {
+    stateSelector: string,
+    reactiveSet: Function,
+    reactiveDel: Function
+  } = {
     reactiveSet: Reflect.set.bind(Reflect),
     reactiveDel: Reflect.deleteProperty.bind(Reflect)
   }) => {

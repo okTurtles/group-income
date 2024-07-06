@@ -134,7 +134,7 @@ async function startApp () {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
-    Object.assign(sbp('chelonia/rootState'), cheloniaState)
+    await sbp('chelonia/reset', cheloniaState)
   })
 
   const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {

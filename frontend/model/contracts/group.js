@@ -1855,7 +1855,9 @@ sbp('chelonia/defineContract', {
           encryptionKeyId
         }).then(() => {
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
+          console.error('@@@@@JOIN SUCCESS', { chatRoomID, memberID })
         }).catch(e => {
+          console.error('@@@@@JOIN ERROR', { chatRoomID, memberID }, e.message, e.stack)
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
           }
