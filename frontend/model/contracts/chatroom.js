@@ -4,14 +4,14 @@
 
 import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, object, number, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
   MESSAGE_NOTIFICATIONS,
@@ -27,6 +27,7 @@ import {
   makeMentionFromUserID,
   swapMentionIDForDisplayname
 } from './shared/functions.js'
+import chatroomGetters from './shared/getters/chatroom.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
@@ -130,7 +131,12 @@ sbp('chelonia/defineContract', {
       }
     }
   },
-  getters: {},
+  getters: {
+    currentChatRoomState (state) {
+      return state
+    },
+    ...chatroomGetters
+  },
   actions: {
     // This is the constructor of Chat contract
     'gi.contracts/chatroom': {
@@ -365,7 +371,7 @@ sbp('chelonia/defineContract', {
           Vue.delete(existingMsg, 'pending')
         }
       },
-      async sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state }) {
+      async sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
 
         if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
@@ -384,7 +390,7 @@ sbp('chelonia/defineContract', {
           isDMOrMention: isMentionedMe || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE,
           messageType: data.type,
           memberID: innerSigningContractID,
-          chatRoomName: state.settings.name
+          chatRoomName: getters.chatRoomAttributes.name
         })
       }
     },
@@ -414,7 +420,7 @@ sbp('chelonia/defineContract', {
           }
         })
       },
-      async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state }) {
+      async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (me === innerSigningContractID || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
@@ -441,7 +447,7 @@ sbp('chelonia/defineContract', {
             isDMOrMention: isMentionedMe,
             messageType: MESSAGE_TYPES.TEXT,
             memberID: innerSigningContractID,
-            chatRoomName: state.settings.name
+            chatRoomName: getters.chatRoomAttributes.name
           })
         } else if (!isMentionedMe) {
           sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })

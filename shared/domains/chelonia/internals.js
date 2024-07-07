@@ -619,7 +619,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
-    const opFns: { [GIOpType]: (any) => void } = {
+    const opFns: { [GIOpType]: (any) => void | Promise<void> } = {
       async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
         for (const u of v) {
           if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')

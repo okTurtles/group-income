@@ -7,6 +7,7 @@ import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
+import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
 import {
   allowedUsernameCharacters,
@@ -75,7 +76,12 @@ const checkUsernameConsistency = async (contractID: string, username: string) =>
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
-  getters: {},
+  getters: {
+    currentIdentityState (state) {
+      return state
+    },
+    ...identityGetters
+  },
   actions: {
     'gi.contracts/identity': {
       validate: (data) => {

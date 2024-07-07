@@ -10,9 +10,12 @@ import { LOGOUT } from '~/frontend/utils/events.js'
 import Vuex from 'vuex'
 import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { omit, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import chatroomGetters from './contracts/shared/getters/chatroom.js'
+import groupGetters from './contracts/shared/getters/group.js'
+import identityGetters from './contracts/shared/getters/identity.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
@@ -561,7 +564,10 @@ const getters = {
   },
   ourDirectMessages (state, getters) {
     return getters.currentIdentityState.chatRooms || {}
-  }
+  },
+  ...chatroomGetters,
+  ...groupGetters,
+  ...identityGetters
 }
 
 const store: any = new Vuex.Store({
@@ -609,23 +615,11 @@ if (process.env.NODE_ENV === 'development') {
   }, 500))
 }
 
-// See the "IMPORTANT" comment above where the Vuex getters are defined for details.
-// handle contracts being registered
-const omitGetters = {
-  'gi.contracts/group': ['currentGroupState', 'currentGroupLastLoggedIn'],
-  'gi.contracts/identity': ['currentIdentityState'],
-  'gi.contracts/chatroom': ['currentChatRoomState']
-}
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, async (contract) => {
   const { contracts: { manifests } } = await sbp('chelonia/config')
   // check to make sure we're only loading the getters for the version of the contract
   // that this build of GI was compiled with
   if (manifests[contract.name] === contract.manifest) {
-    console.debug(`registering getters for '${contract.name}' (${contract.manifest})`)
-    store.registerModule(contract.name, {
-      getters: omit(contract.getters, omitGetters[contract.name] || [])
-    })
-
     if (contract.name === 'gi.contracts/group') {
       store.watch(
         (state, getters) => getters.currentPaymentPeriod,

@@ -183,21 +183,6 @@ const getters = {
     return getters.groupMembersSorted
       .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
       .filter(member => !!getters.chatRoomMembers[member.contractID]) || []
-  },
-  chatRoomSettings (state, getters, rootState) {
-    return rootState[getters.currentChatRoomId]?.settings || {}
-  },
-  chatRoomAttributes (state, getters, rootState) {
-    return rootState[getters.currentChatRoomId]?.attributes || {}
-  },
-  chatRoomMembers (state, getters, rootState) {
-    return rootState[getters.currentChatRoomId]?.members || {}
-  },
-  chatRoomRecentMessages (state, getters, rootState) {
-    return rootState[getters.currentChatRoomId]?.messages || []
-  },
-  chatRoomPinnedMessages (state, getters, rootState) {
-    return (rootState[getters.currentChatRoomId]?.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
   }
 }
 
