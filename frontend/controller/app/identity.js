@@ -113,7 +113,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
     }
 
     if (encryptionParams) {
-      sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
+      sbp('state/vuex/commit', 'APP-LOGIN', { identityContractID, encryptionParams })
     }
 
     // NOTE: users could notice that they leave the group by someone
@@ -347,7 +347,7 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.app/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
       alert(humanErr)
-      await sbp('gi.app/identity/logout')
+      await sbp('gi.app/identity/_private/logout')
         .catch((e) => {
           console.error('[gi.app/identity/login] Error calling logout (after failure to login)', e)
         })
@@ -382,9 +382,9 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.app/identity/login': (...params) => {
-    return sbp('okTurtles.eventQueue/queueEvent', 'LOGIN', ['gi.app/identity/_private/login', ...params])
+    return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/login', ...params])
   },
   'gi.app/identity/logout': (...params) => {
-    return sbp('okTurtles.eventQueue/queueEvent', 'LOGIN', ['gi.app/identity/_private/logout', ...params])
+    return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/logout', ...params])
   }
 }): string[])

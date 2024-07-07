@@ -226,7 +226,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return userID
   },
-  'gi.actions/identity/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
+  'gi.actions/identity/_private/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
     transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
     console.error('@@@[actions/login]REPLACING CHEL STATE WITH', { ...cheloniaState, loggedIn: { identityContractID } })
@@ -324,7 +324,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/clearTransientSecretKeys', transientSecretKeys.map(({ key }) => keyId(key)))
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
-      await sbp('gi.actions/identity/logout')
+      await sbp('gi.actions/identity/_private/logout')
         .catch((e) => {
           console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
         })
@@ -336,7 +336,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/identity/login', { username, passwordFn })
     return contractIDs
   },
-  'gi.actions/identity/logout': async function () {
+  'gi.actions/identity/_private/logout': async function () {
     let cheloniaState
     try {
       console.info('logging out, waiting for any events to finish...')
@@ -644,6 +644,12 @@ export default (sbp('sbp/selectors/register', {
         deleteResult?.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
       throw new Error('Some CIDs could not be deleted')
     }
+  },
+  'gi.actions/identity/login': (...params) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/login', ...params])
+  },
+  'gi.actions/identity/logout': (...params) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
