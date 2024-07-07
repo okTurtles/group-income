@@ -450,7 +450,6 @@ async function startApp () {
       sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID, isNewlyCreated }) => {
         this.initOrResetPeriodicNotifications()
         this.checkAndEmitOneTimeNotifications()
-        sbp('state/vuex/commit', 'setCurrentGroupId', { contractID, isNewlyCreated })
       })
 
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {

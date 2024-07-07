@@ -1418,7 +1418,7 @@ sbp('chelonia/defineContract', {
             const { identityContractID } = sbp('state/vuex/state').loggedIn
             if (
               state.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
-                      state.chatRooms?.[contractID]?.members[identityContractID]?.status !== PROFILE_STATUS.ACTIVE
+              state.chatRooms?.[contractID]?.members[identityContractID]?.status !== PROFILE_STATUS.ACTIVE
             ) {
               sbp('gi.actions/group/joinChatRoom', {
                 contractID,

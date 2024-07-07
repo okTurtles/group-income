@@ -2,7 +2,7 @@
 
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
