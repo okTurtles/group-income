@@ -15,7 +15,8 @@ fieldset(data-test='paymentMethods')
         .selectgroup.is-reversed.c-select(
           :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
         )
-          select.select(v-model='method.name'
+          select.select(
+            v-model='method.name'
             :class='{ "is-empty": method.name === "choose"}'
             :aria-label='L("Payment method")'
             @change='handleSelectChange($event.target.value, index)'
@@ -24,8 +25,9 @@ fieldset(data-test='paymentMethods')
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
           input.input(
             type='text'
-            :aria-label='L("Payment value")'
             v-model='method.value'
+            :aria-label='L("Payment value")'
+            :class='{error: $v.form.methods.$each[index].value.$error}'
           )
           button.is-icon-small.is-btn-shifted(
             type='button'
@@ -34,6 +36,7 @@ fieldset(data-test='paymentMethods')
             data-test='remove'
           )
             i.icon-times
+        span.error(v-if='$v.form.methods.$each[index].value.$error') {{ getFirstErrorMessage(index) }}
 
   button.link.has-icon(
     type='button'
@@ -46,11 +49,15 @@ fieldset(data-test='paymentMethods')
 
 <script>
 import { mapGetters } from 'vuex'
+import { validationMixin } from 'vuelidate'
 import { Vue, L } from '@common/common.js'
+import { maxLength, required } from 'vuelidate/lib/validators'
+import { GROUP_PAYMENT_METHOD_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'PaymentMethods',
   components: {},
+  mixins: [validationMixin],
   data: () => ({
     config: {
       options: {
@@ -66,6 +73,22 @@ export default ({
       methods: []
     }
   }),
+  validations () {
+    return {
+      form: {
+        methods: {
+          $each: {
+            value: {
+              [L('Payment info is required.')]: required,
+              [L('Payment info cannot exceed {maxChars} characters.', {
+                maxChars: GROUP_PAYMENT_METHOD_MAX_CHAR
+              })]: maxLength(GROUP_PAYMENT_METHOD_MAX_CHAR)
+            }
+          }
+        }
+      }
+    }
+  },
   created () {
     const savedMethods = this.ourGroupProfile.paymentMethods || []
     const savedMethodsCount = savedMethods.length
@@ -99,6 +122,17 @@ export default ({
     handleSelectChange (methName, index) {
       // Focus the respective input
       this.$refs.fields.childNodes[index].getElementsByTagName('input')[0].focus()
+    },
+    getFirstErrorMessage (index) {
+      const cur = this.$v.form.methods.$each[index].value
+      if (cur.$error) {
+        for (const key in cur.$params) {
+          if (!cur[key]) {
+            return key
+          }
+        }
+      }
+      return ''
     },
     handleAddMethod () {
       Vue.set(this.form.methods, this.methodsCount, {

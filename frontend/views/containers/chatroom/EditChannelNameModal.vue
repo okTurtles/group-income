@@ -15,7 +15,7 @@
           ref='name'
           type='text'
           name='name'
-          maxlength='maxNameCharacters'
+          :maxlength='maxNameCharacters'
           :class='{ error: $v.form.name.$error }'
           v-model='form.name'
           @input='debounceField("name")'
