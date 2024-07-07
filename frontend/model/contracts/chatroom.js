@@ -387,7 +387,7 @@ sbp('chelonia/defineContract', {
           messageHash: newMessage.hash,
           height: newMessage.height,
           text: newMessage.text,
-          isDMOrMention: isMentionedMe || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
           messageType: data.type,
           memberID: innerSigningContractID,
           chatRoomName: getters.chatRoomAttributes.name
@@ -422,7 +422,7 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
-        if (me === innerSigningContractID || state.settings.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+        if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
