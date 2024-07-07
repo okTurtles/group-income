@@ -620,14 +620,14 @@ export default (sbp('sbp/selectors/register', {
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
-      [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        v.forEach((u) => {
+      async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
+        for (const u of v) {
           if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
           if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
             throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
           }
-          opFns[u[0]](u[1])
-        })
+          await opFns[u[0]](u[1])
+        }
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
@@ -648,9 +648,9 @@ export default (sbp('sbp/selectors/register', {
           }
           return
         }
-        opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
+        return opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
+      async [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
           let innerSigningKeyId: string | typeof undefined
           if (isSignedData(v)) {
@@ -664,7 +664,7 @@ export default (sbp('sbp/selectors/register', {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
 
-          sbp(
+          await sbp(
             `${manifestHash}/${action}/process`,
             {
               data,
@@ -1111,7 +1111,7 @@ export default (sbp('sbp/selectors/register', {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
     if (processOp) {
-      opFns[opT](opV)
+      await opFns[opT](opV)
       config.postOp?.(message, state)
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }

@@ -229,6 +229,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
     transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
+    console.error('@@@[actions/login]REPLACING CHEL STATE WITH', { ...cheloniaState, loggedIn: { identityContractID } })
     await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
     await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
@@ -257,7 +258,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/load')
 
       const contractIDs = groupContractsByType(cheloniaState?.contracts)
-      await syncContractsInOrder(identityContractID, 'login', contractIDs)
+      await syncContractsInOrder(identityContractID, contractIDs)
 
       try {
         // The state above might be null, so we re-grab it
@@ -350,7 +351,6 @@ export default (sbp('sbp/selectors/register', {
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
       cheloniaState = await sbp('chelonia/rootState')
-      await sbp('okTurtles.eventQueue/queueEvent', `login:${cheloniaState.loggedIn?.identityContractID ?? '(null)'}`, () => {})
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       // reset will wait until we have processed any remaining actions
       cheloniaState = await sbp('chelonia/reset', async () => {

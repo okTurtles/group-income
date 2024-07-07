@@ -8,7 +8,7 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
 import { JOINED_GROUP } from '../../../frontend/utils/events.js'
-import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
+import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -42,8 +42,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
           resolved = true
           resolve()
           // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED, check)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED, check)
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, check)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
           clearInterval(x)
@@ -51,8 +51,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
 
         // Register event listeners. The following events could change the
         // state and affect the result of customCheckFn
-        sbp('okTurtles.events/on', EVENT_HANDLED, check)
-        sbp('okTurtles.events/on', CONTRACTS_MODIFIED, check)
+        sbp('okTurtles.events/on', EVENT_HANDLED_READY, check)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, check)
         sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
         sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
 

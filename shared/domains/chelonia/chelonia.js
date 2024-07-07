@@ -658,7 +658,7 @@ export default (sbp('sbp/selectors/register', {
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
       this.defContractSelectors.push(...sbp('sbp/selectors/register', {
-        [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
+        [`${contract.manifest}/${action}/process`]: async (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
           // TODO: Note: when sandboxing contracts, contracts may not have
@@ -666,9 +666,16 @@ export default (sbp('sbp/selectors/register', {
           // to be re-applied
           state = state || contract.state(contractID)
           const gProxy = gettersProxy(state, contract.getters)
-          contract.metadata.validate(meta, { state, ...gProxy, contractID })
-          contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
-          contract.actions[action].process(message, { state, ...gProxy })
+          // These `await` are here to help with sandboxing in the future
+          // Sandboxing may mean that contracts are executed in another context
+          // (e.g., a worker), which would require asynchronous communication
+          // between Chelonia and the contract.
+          // Even though these are asynchronous calls, contracts should not
+          // call side effects from these functions
+          await contract.metadata.validate(meta, { state, ...gProxy, contractID })
+
+          await contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
+          await contract.actions[action].process(message, { state, ...gProxy })
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {

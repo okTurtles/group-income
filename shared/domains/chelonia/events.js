@@ -2,6 +2,7 @@
 
 export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
 export const CONTRACTS_MODIFIED = 'contracts-modified'
+export const CONTRACTS_MODIFIED_READY = 'contracts-modified-ready'
 export const EVENT_HANDLED = 'event-handled'
 export const EVENT_PUBLISHED = 'event-published'
 export const EVENT_PUBLISHING_ERROR = 'event-publishing-error'

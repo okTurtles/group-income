@@ -176,7 +176,7 @@ sbp('chelonia/defineContract', {
           }
         }
 
-        Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
+        Vue.set(state.members, memberID, { joinedDate: meta.createdDate, joinedHeight: height })
 
         // NOTE: this patch solves the issue of the action failing to process.
         //       when the contract was not fully synced because some encryption keys are missing.
@@ -278,7 +278,8 @@ sbp('chelonia/defineContract', {
           }
         }
 
-        Vue.delete(state.members, memberID)
+        state.members[memberID].leftHeight = height
+        delete state.members[memberID]
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for leaving in direct messages

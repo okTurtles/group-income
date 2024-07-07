@@ -1821,7 +1821,7 @@ sbp('chelonia/defineContract', {
         return
       }
 
-      try {
+      {
         // We need to be subscribed to the chatroom before writing to it, and
         // also because of the following check (hasKeysToPerformOperation),
         // which requires state.
@@ -1849,25 +1849,23 @@ sbp('chelonia/defineContract', {
         // non-members can remove members when they leave the group
         const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
 
-        await sbp('gi.actions/chatroom/join', {
+        sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
         }).then(() => {
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
-          console.error('@@@@@JOIN SUCCESS', { chatRoomID, memberID })
         }).catch(e => {
-          console.error('@@@@@JOIN ERROR', { chatRoomID, memberID }, e.message, e.stack)
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
           }
 
           console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
+        }).finally(() => {
+          if (actorID !== memberID) {
+            sbp('chelonia/contract/release', chatRoomID, { ephemeral: true }).catch(e => console.error('[gi.contracts/group/joinGroupChatrooms] Error during release', e))
+          }
         })
-      } finally {
-        if (actorID !== memberID) {
-          await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
-        }
       }
     },
     // eslint-disable-next-line require-await

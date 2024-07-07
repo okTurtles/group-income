@@ -3,7 +3,7 @@
 // using `chelonia/*`
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
-import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_HANDLED_READY } from './events.js'
+import { CONTRACTS_MODIFIED, CONTRACTS_MODIFIED_READY, EVENT_HANDLED, EVENT_HANDLED_READY } from './events.js'
 
 export default (sbp('sbp/selectors/register', {
   // This selector sets up event listeners on EVENT_HANDLED and CONTRACTS_MODIFIED
@@ -81,6 +81,7 @@ export default (sbp('sbp/selectors/register', {
           reactiveSet(vuexState, contractID, cloneDeep(contractState))
         }
       }
+      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet)
     })
   }
 }): string[])

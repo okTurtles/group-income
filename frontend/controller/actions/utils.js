@@ -320,7 +320,7 @@ export function groupContractsByType (contracts: Object): Object {
   return contractIDs
 }
 
-export async function syncContractsInOrder (identityContractID: string | null, queuePrefix: string, groupedContractIDs: Object): Promise<any> {
+export async function syncContractsInOrder (identityContractID: string | null, groupedContractIDs: Object): Promise<any> {
   // We need to sync contracts in this order to ensure that we have all the
   // corresponding secret keys. Group chatrooms use group keys but there's
   // no OP_KEY_SHARE, which will result in the keys not being available when
@@ -343,7 +343,7 @@ export async function syncContractsInOrder (identityContractID: string | null, q
       // Sync contracts in order based on type
       return getContractSyncPriority(a) - getContractSyncPriority(b)
     }).map(([, ids]) => {
-      return sbp('okTurtles.eventQueue/queueEvent', `${queuePrefix}:${identityContractID ?? '(null)'}`, ['chelonia/contract/sync', ids, { force: true }])
+      return sbp('chelonia/contract/sync', ids, { force: true })
     }))
   } catch (err) {
     console.error('Error during contract sync (syncing all contractIDs)', err)

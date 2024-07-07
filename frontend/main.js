@@ -15,7 +15,7 @@ import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import '~/shared/domains/chelonia/localSelectors.js'
-import '~/shared/domains/chelonia/persistent-actions.js'
+// import '~/shared/domains/chelonia/persistent-actions.js' // Commented out as persistentActions are not being used
 import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import './controller/actions/index.js'
 import './controller/app/index.js'
@@ -134,6 +134,7 @@ async function startApp () {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
+    console.error('@@@[main]REPLACING CHEL STATE WITH', cheloniaState)
     await sbp('chelonia/reset', cheloniaState)
   })
 
@@ -346,7 +347,11 @@ async function startApp () {
           reject(new Error('Timed out setting up service worker'))
         }, 15e3)
       })]
-  )
+  ).catch(e => {
+    console.error('[main] Error setting up service worker', e)
+    alert(L('Error while setting up service worker'))
+    throw e
+  })
 
   /* eslint-disable no-new */
   new Vue({
@@ -404,9 +409,12 @@ async function startApp () {
           console.error('Logout event: error deleting Chelonia state')
         })
       })
-      sbp('okTurtles.events/on', LOGIN_COMPLETE, (a) => {
+      sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
         const state = sbp('state/vuex/state')
-        if (!state.loggedIn) return
+        if (!state.loggedIn) {
+          console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
+          return
+        }
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
@@ -506,7 +514,7 @@ async function startApp () {
         if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
         await sbp('chelonia/contract/sync', identityContractID, { force: true })
         const contractIDs = groupContractsByType(cheloniaState.contracts)
-        await syncContractsInOrder(identityContractID, 'appStart', contractIDs)
+        await syncContractsInOrder(identityContractID, contractIDs)
 
         if (this.ephemeral.finishedLogin === 'yes') return
         return sbp('gi.app/identity/login', { identityContractID }).catch((e) => {

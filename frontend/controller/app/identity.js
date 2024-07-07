@@ -134,11 +134,13 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       console.error('Error deleting encrypted settings after login')
     })
 
+    /* Commented out as persistentActions are not being used
     // TODO: [SW] It may make more sense to load persistent actions in
     // actions in the SW instead of on each tab
     const databaseKey = `chelonia/persistentActions/${identityContractID}`
     sbp('chelonia.persistentActions/configure', { databaseKey })
     await sbp('chelonia.persistentActions/load')
+    */
 
     sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
   } catch (e) {
@@ -146,11 +148,13 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   }
 })
 
+/* Commented out as persistentActions are not being used
 sbp('okTurtles.events/on', LOGOUT, (a) => {
   // TODO: [SW] It may make more sense to load persistent actions in
   // actions in the SW instead of on each tab
   sbp('chelonia.persistentActions/unload')
 })
+*/
 
 export default (sbp('sbp/selectors/register', {
   'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>) => {
@@ -371,6 +375,7 @@ export default (sbp('sbp/selectors/register', {
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
+        sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
