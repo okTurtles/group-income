@@ -439,6 +439,9 @@ sbp('chelonia/defineContract', {
     currentGroupState (state) {
       return state
     },
+    currentGroupLastLoggedIn () {
+      return {}
+    },
     ...groupGetters
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.

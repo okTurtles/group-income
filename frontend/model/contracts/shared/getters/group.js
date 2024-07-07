@@ -11,9 +11,6 @@ import { PAYMENT_COMPLETED } from '../payments/index.js'
 import { addTimeToDate, dateFromPeriodStamp, dateIsWithinPeriod, dateToPeriodStamp, periodStampsForDate } from '../time.js'
 
 export default ({
-  currentGroupLastLoggedIn () {
-    return {}
-  },
   currentGroupOwnerID (state, getters) {
     return getters.currentGroupState.groupOwnerID
   },

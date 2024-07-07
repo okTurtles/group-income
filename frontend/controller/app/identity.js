@@ -252,7 +252,7 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
-  'gi.app/identity/login': async function ({ username, password: wpassword, identityContractID }: {
+  'gi.app/identity/_private/login': async function ({ username, password: wpassword, identityContractID }: {
     username: ?string, password: ?Secret<string>, identityContractID: string
   }) {
     if (username) {
@@ -359,7 +359,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.app/identity/login', { username, password })
     return contractIDs
   },
-  'gi.app/identity/logout': async function () {
+  'gi.app/identity/_private/logout': async function () {
     try {
       const state = cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return
@@ -380,5 +380,11 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
+  },
+  'gi.app/identity/login': (...params) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'LOGIN', ['gi.app/identity/_private/login', ...params])
+  },
+  'gi.app/identity/logout': (...params) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'LOGIN', ['gi.app/identity/_private/logout', ...params])
   }
 }): string[])
