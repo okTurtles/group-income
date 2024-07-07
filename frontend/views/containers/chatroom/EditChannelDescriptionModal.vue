@@ -16,7 +16,7 @@
           ref='description'
           name='description'
           :placeholder='L("Description of the channel")'
-          maxlength='maxDescriptionCharacters'
+          :maxlength='maxDescriptionCharacters'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
           @input='debounceField("description")'

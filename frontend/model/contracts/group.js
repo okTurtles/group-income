@@ -11,6 +11,7 @@ import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES,
+  GROUP_PAYMENT_METHOD_MAX_CHAR,
   INVITE_EXPIRES_IN_DAYS,
   MAX_ARCHIVED_PERIODS,
   MAX_ARCHIVED_PROPOSALS,
@@ -1068,23 +1069,34 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/groupProfileUpdate': {
-      validate: actionRequireActiveMember(objectMaybeOf({
-        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
-        incomeAmount: x => typeof x === 'number' && x >= 0,
-        pledgeAmount: x => typeof x === 'number' && x >= 0,
-        nonMonetaryAdd: string,
-        nonMonetaryEdit: objectOf({
-          replace: string,
-          with: string
-        }),
-        nonMonetaryRemove: string,
-        paymentMethods: arrayOf(
-          objectOf({
-            name: string,
-            value: string
-          })
-        )
-      })),
+      validate: actionRequireActiveMember((data, props) => {
+        objectMaybeOf({
+          incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
+          incomeAmount: x => typeof x === 'number' && x >= 0,
+          pledgeAmount: x => typeof x === 'number' && x >= 0,
+          nonMonetaryAdd: string,
+          nonMonetaryEdit: objectOf({
+            replace: string,
+            with: string
+          }),
+          nonMonetaryRemove: string,
+          paymentMethods: arrayOf(
+            objectOf({
+              name: string,
+              value: string
+            })
+          )
+        })(data)
+
+        if (data.paymentMethods) {
+          for (const paymentMethod of data.paymentMethods) {
+            const { value } = paymentMethod
+            if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
+              throw new TypeError(L('Payment info cannot exceed {maxLength} characters.', { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }))
+            }
+          }
+        }
+      }),
       process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
