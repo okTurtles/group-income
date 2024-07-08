@@ -451,6 +451,10 @@ export default (sbp('sbp/selectors/register', {
             await sbp('gi.actions/group/inviteAccept', {
               ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
               data: {
+                // The 'reference' value is used to help keep group joins
+                // updated. A matching value is required when leaving a group,
+                // which prevents us from accidentally leaving a group due to
+                // a previous leave action when re-joining
                 reference: rootState[userID].groups[params.contractID].hash
               },
               hooks: {

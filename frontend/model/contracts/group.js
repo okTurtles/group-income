@@ -357,6 +357,21 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     data: sendingData,
     ...extraParams
   }).then(() => {
+    // using 'state/vuex/state' here instead of 'chelonia/rootState' to fetch
+    // the identityContractID because although both 'chelonia/rootState' and
+    // 'state/vuex/state' both have the same logged in information
+    // all calls to 'state/vuex/state' will need to be replaced in the future
+    // with something else. Using 'state/vuex/state' here now makes it easier
+    // to find these calls in the future.
+    // `chelonia/rootState` contains that same information but it's a bad
+    // choice because:
+    //    1. Once sandboxing is implemented, it may need to be an async call
+    //    2. Generally, contracts should _not_ access the root state because
+    //       it makes it difficult or impossible to contain them (meaning there
+    //       would be no point in sandboxing)
+    // Instead, in the future contracts will have an 'environment', provided
+    // by Chelonia, which will include global / environment / ambient
+    // information they need.
     if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
       sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
     }
@@ -1548,7 +1563,7 @@ sbp('chelonia/defineContract', {
       //   2) pop out the prompt message notifying them of this automatic change,
       //   3) and send 'MINCOME_CHANGED' notification.
       const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
-      const myProfile = sbp('chelonia/rootState')[contractID].profiles[identityContractID]
+      const myProfile = (await sbp('chelonia/contract/state', contractID)).profiles[identityContractID]
       const { fromAmount, toAmount } = data
 
       if (isActionOlderThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {

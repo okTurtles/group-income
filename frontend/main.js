@@ -130,6 +130,19 @@ async function startApp () {
   //   - Fresh session with saved state: /login logic, CHELONIA_STATE is
   //     decrypyted from the saved state and loaded. This is also saved in
   //     CHELONIA_STATE so that refreshing the page works.
+  // Difference between Chelonia state (chelonia/rootState) and Vuex state
+  // (state/vuex/state):
+  //   1. Chelonia state is authoritative for Chelonia
+  //   2. Vuex state is authoritative for Vue
+  //   3. There is a single Chelonia state, but there could be many different
+  //      instances of Vuex state. (E.g., with a SW, Chelonia is running in a
+  //      SW and has a single state there, but each tab has a different Vuex
+  //      state)
+  //   4. A copy of (parts of) Chelonia state is kept in Vuex state so that
+  //      the application can react to contract state changes. However, these
+  //      copies are to be considered a cache and are not authoritative.
+  //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
+  //      in a single direction: Chelonia -> Vuex)
   await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)

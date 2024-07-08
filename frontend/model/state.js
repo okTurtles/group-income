@@ -85,7 +85,7 @@ sbp('sbp/selectors/register', {
       state.preferences = {}
     }
   },
-  'state/vuex/save': async function (encrypted: ?boolean, state: ?Object) {
+  'state/vuex/_private/save': async function (encrypted: ?boolean, state: ?Object) {
     state = state || store.state
     // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
     //            Doing so will cause an infinite loop because of store.subscribe below!
@@ -100,6 +100,9 @@ sbp('sbp/selectors/register', {
     } else {
       await sbp('gi.db/settings/save', identityContractID, state)
     }
+  },
+  'state/vuex/save': (...params) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', ['state/vuex/_private/save', ...params])
   }
 })
 
@@ -602,7 +605,7 @@ store.subscribe((commit) => {
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 // logout will call 'state/vuex/save', so we clear any debounced calls to it before it gets run
-sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
+sbp('sbp/filters/selector/add', 'gi.app/identity/logout', function () {
   logoutInProgress = true
   debouncedSave.clear()
 })
