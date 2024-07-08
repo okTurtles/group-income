@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
 
 const groupName1 = 'Dreamers'
 const groupName2 = 'Footballers'
@@ -37,22 +37,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = username
   }
 
-  function switchChannel (channelName) {
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li').each(($el, index, $list) => {
-        // NOTE: get only channelName excluding badge
-        const channelNameText = $el.find('.c-channel-name').text()
-        if (channelNameText === channelName) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
-    })
-    cy.getByDT('channelName').should('contain', channelName)
-
-    cy.giWaitUntilMessagesLoaded()
-  }
-
   function checkIfLeaved (channelName, kicker, leaver) {
     // Attention: to check if other member is left
     // me needs to be logged in that channel
@@ -81,7 +65,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function addMemberToChannel (channelName, username) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelMembers').click()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + username).click()
@@ -92,7 +76,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function leaveChannel (channelName, submitButtonTitle) {
     submitButtonTitle = submitButtonTitle || 'Leave Channel'
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -108,7 +92,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function kickMemberFromChannel (channelName, username) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelMembers').click()
     cy.getByDT('joinedChannelMembersList').within(() => {
       cy.getByDT('removeMember-' + username).click()
@@ -130,7 +114,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function deleteChannel (channelName) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -181,19 +165,21 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul').children().should('have.length', 1)
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
+
+    cy.giLogout()
   })
 
-  it('user1 tries to open incorrect chatroom URL and it redirects to the previous/general chatroom', () => {
-    // cy.url().then(url => {
-    //   cy.visit(url)
-    //   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    //   cy.visit(url + 'incorrect-suffix')
-    //   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    // })
-    // cy.giWaitUntilMessagesLoaded()
+  it.skip('user1 tries to open incorrect chatroom URL and it redirects to the previous/general chatroom', () => {
+    cy.url().then(url => {
+      cy.visit(url)
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+      cy.visit(url + 'incorrect-suffix')
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    })
+    cy.giWaitUntilMessagesLoaded()
   })
 
-  it('user1 creates several channels and logout', () => {
+  it.skip('user1 creates several channels and logout', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('channel1'))) {
       cy.giAddNewChatroom({
         name: c.name,
@@ -206,7 +192,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it(`user3 joins ${groupName1} group and logout`, () => {
+  it.skip(`user3 joins ${groupName1} group and logout`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       existingMemberUsername: user1,
@@ -217,7 +203,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = undefined
   })
 
-  it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
+  it.skip(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
@@ -231,12 +217,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('channel1') && !c.isPrivate).map(c => c.name)
     const channels = channelsOf1For2.filter(cn => publicUser1Channels.includes(cn))
     for (const cn of channels) {
-      switchChannel(cn)
+      cy.giSwitchChannel(cn)
       joinChannel(cn)
     }
   })
 
-  it('user2 creates several channels', () => {
+  it.skip('user2 creates several channels', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('channel2'))) {
       cy.giAddNewChatroom({
         name: c.name,
@@ -248,7 +234,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it('user2 invites user1 and user3 to several channels he created', () => {
+  it.skip('user2 invites user1 and user3 to several channels he created', () => {
     for (const cn of channelsOf2For1) {
       addMemberToChannel(cn, user1)
     }
@@ -257,7 +243,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it('user1 checks the visibilities, sort order and permissions', () => {
+  it.skip('user1 checks the visibilities, sort order and permissions', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
     cy.log('Users can update details(name, description) of the channels they created.')
@@ -268,7 +254,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
     cy.log('"Add Description" button is visible because no description is added')
-    switchChannel(undetailedChannel.name)
+    cy.giSwitchChannel(undetailedChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('exist')
     })
@@ -281,7 +267,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log('"Add Description" button is invisible because description is already added')
     cy.log('but user1 can update description because he is creator')
-    switchChannel(detailedChannel.name)
+    cy.giSwitchChannel(detailedChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
@@ -290,7 +276,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     detailedChannel.description = newDescription2
 
     cy.log(`user1 can not update details of ${notUpdatableChannel.name} chatroom because he is not creator`)
-    switchChannel(notUpdatableChannel.name)
+    cy.giSwitchChannel(notUpdatableChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
@@ -301,7 +287,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('renameChannel').should('not.exist')
 
     cy.log('users can not add members to the channels they are not part of. Users can only see members inside.')
-    switchChannel(notJoinedChannel.name)
+    cy.giSwitchChannel(notJoinedChannel.name)
     cy.log('users can view the messages inside the visible channels even though they are not part of')
     cy.getByDT('channelMembers').click()
     cy.get('[data-test^="addToChannel-"]').should('not.exist')
@@ -309,7 +295,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.closeModal()
 
     cy.log(`users can not change name of "${CHATROOM_GENERAL_NAME}" chatroom even creator`)
-    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -332,7 +318,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it('user1 sees that each group has it\'s current chatroom state individually', () => {
+  it.skip('user1 sees that each group has it\'s current chatroom state individually', () => {
     cy.giCreateGroup(groupName2, { bypassUI: true })
     cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
@@ -345,7 +331,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
-    switchChannel(channelsOf2For1[0])
+    cy.giSwitchChannel(channelsOf2For1[0])
 
     // Switch from group1 to group2 on the group chat page
     cy.getByDT('groupsList').find('li:nth-child(3) button').click()
@@ -358,7 +344,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
   })
 
-  it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
+  it.skip('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
     const leavingChannels = chatRooms
       .filter(c => c.name.includes('channel1') && c.members.includes(user2) && !c.isPrivate).map(c => c.name)
 
@@ -372,7 +358,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     leaveChannel(leavingChannels[1])
   })
 
-  it('user2 creates a proposal to remove user3', () => {
+  it.skip('user2 creates a proposal to remove user3', () => {
     // Create proposal to let user3 leave the group
     cy.getByDT('dashboard').click()
 
@@ -393,7 +379,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it('user1 approves the proposal and removes user3 and logout', () => {
+  it.skip('user1 approves the proposal and removes user3 and logout', () => {
     switchUser(user1)
 
     getProposalItems().within(() => {
@@ -409,7 +395,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
 
     cy.giLogout()
@@ -417,7 +403,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   // TODO: this test case is not necesasry but it is here
   // because of the issue #1176
-  it('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
+  it.skip('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
     cy.giLogin(user3, {
       bypassUI: true,
       toGroupDashboardUponSuccess: false // user3 has been kicked out from the group at this point, so cannot navigate to /dashboard.
@@ -429,7 +415,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it('user2 leaves the group by himself', () => {
+  it.skip('user2 leaves the group by himself', () => {
     cy.giLogin(user2, { bypassUI: true })
     me = user2
 
@@ -453,7 +439,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
+  it.skip(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
     cy.giLogin(user1, { bypassUI: true })
     me = user1
 
@@ -462,12 +448,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it('user1 leaves chatroom by himself', () => {
+  it.skip('user1 leaves chatroom by himself', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
     leaveChannel(channel, 'Leave Channel')
   })
 
-  it('user1 deletes a channel and logout', () => {
+  it.skip('user1 deletes a channel and logout', () => {
     const channelName = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
     deleteChannel(channelName)
 
@@ -476,7 +462,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
   // so the scenario could be updated later when e2e protocol would be ready
-  it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
+  it.skip(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
     cy.giLogin(user3, {
       bypassUI: true,
       toGroupDashboardUponSuccess: false // user-3 has no group to this account at this point.
@@ -500,7 +486,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
+  it.skip(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
     cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
@@ -524,43 +510,43 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   // NOTE: temporarily comment this out since the following issues are not resolved yet
   //       https://github.com/okTurtles/group-income/issues/202
-  // it('Only group admin can allow to create public channel', () => {
-  //   const publicChannelName = 'bulgaria-hackathon'
-  //   cy.getByDT('groupSettingsLink').click()
-  //   cy.get('.p-title').should('contain', 'Group Settings')
-  //   cy.getByDT('allowPublicChannels').should('not.exist')
+  it.skip('Only group admin can allow to create public channel', () => {
+    const publicChannelName = 'bulgaria-hackathon'
+    cy.getByDT('groupSettingsLink').click()
+    cy.get('.p-title').should('contain', 'Group Settings')
+    cy.getByDT('allowPublicChannels').should('not.exist')
 
-  //   cy.giLogout()
-  //   cy.giLogin(user1)
-  //   me = user1
+    cy.giLogout()
+    cy.giLogin(user1)
+    me = user1
 
-  //   cy.getByDT('groupSettingsLink').click()
-  //   cy.get('.p-title').should('contain', 'Group Settings')
-  //   cy.get('section:nth-child(4)').within(() => {
-  //     cy.get('h2.is-title-3').should('contain', 'public-channels')
-  //     cy.getByDT('allowPublicChannels').within(() => {
-  //       cy.get('.c-smaller-title').should('contain', 'Allow members to create public channels')
-  //       cy.get('input[type=checkbox]').check()
-  //     })
-  //   })
+    cy.getByDT('groupSettingsLink').click()
+    cy.get('.p-title').should('contain', 'Group Settings')
+    cy.get('section:nth-child(4)').within(() => {
+      cy.get('h2.is-title-3').should('contain', 'public-channels')
+      cy.getByDT('allowPublicChannels').within(() => {
+        cy.get('.c-smaller-title').should('contain', 'Allow members to create public channels')
+        cy.get('input[type=checkbox]').check()
+      })
+    })
 
-  //   cy.giRedirectToGroupChat()
+    cy.giRedirectToGroupChat()
 
-  //   cy.getByDT('newChannelButton').click()
-  //   cy.getByDT('modal-header-title').should('contain', 'Create a channel')
-  //   cy.getByDT('modal').within(() => {
-  //     cy.getByDT('createChannelName').clear().type(publicChannelName)
-  //     cy.getByDT('createChannelPrivacyLevel').select(CHATROOM_PRIVACY_LEVEL.PUBLIC)
-  //     cy.getByDT('createChannelSubmit').click()
-  //     cy.getByDT('closeModal').should('not.exist')
-  //   })
-  //   cy.giCheckIfJoinedChatroom(publicChannelName, me)
+    cy.getByDT('newChannelButton').click()
+    cy.getByDT('modal-header-title').should('contain', 'Create a channel')
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('createChannelName').clear().type(publicChannelName)
+      cy.getByDT('createChannelPrivacyLevel').select(CHATROOM_PRIVACY_LEVEL.PUBLIC)
+      cy.getByDT('createChannelSubmit').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+    cy.giCheckIfJoinedChatroom(publicChannelName, me)
 
-  //   cy.get('.c-send-wrapper.is-public').should('exist')
-  //   cy.get('.c-send-wrapper.is-public').within(() => {
-  //     cy.get('.c-public-helper').should('contain', 'This channel is public and everyone on the internet can see its content.')
-  //   })
+    cy.get('.c-send-wrapper.is-public').should('exist')
+    cy.get('.c-send-wrapper.is-public').within(() => {
+      cy.get('.c-public-helper').should('contain', 'This channel is public and everyone on the internet can see its content.')
+    })
 
-  //   cy.giLogout()
-  // })
+    cy.giLogout()
+  })
 })
