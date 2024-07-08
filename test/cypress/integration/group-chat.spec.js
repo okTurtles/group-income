@@ -201,7 +201,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = undefined
   })
 
-  it.skip(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
+  it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
@@ -220,7 +220,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it.skip('user2 creates several channels', () => {
+  it('user2 creates several channels', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('channel2'))) {
       cy.giAddNewChatroom({
         name: c.name,
@@ -232,7 +232,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it.skip('user2 invites user1 and user3 to several channels he created', () => {
+  it('user2 invites user1 and user3 to several channels he created', () => {
     for (const cn of channelsOf2For1) {
       addMemberToChannel(cn, user1)
     }
@@ -241,7 +241,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it.skip('user1 checks the visibilities, sort order and permissions', () => {
+  it('user1 checks the visibilities, sort order and permissions', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
     cy.log('Users can update details(name, description) of the channels they created.')
@@ -316,7 +316,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it.skip('user1 sees that each group has it\'s current chatroom state individually', () => {
+  it('user1 sees that each group has it\'s current chatroom state individually', () => {
     cy.giCreateGroup(groupName2, { bypassUI: true })
     cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
@@ -342,7 +342,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
   })
 
-  it.skip('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
+  it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
     const leavingChannels = chatRooms
       .filter(c => c.name.includes('channel1') && c.members.includes(user2) && !c.isPrivate).map(c => c.name)
 
@@ -356,7 +356,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     leaveChannel(leavingChannels[1])
   })
 
-  it.skip('user2 creates a proposal to remove user3', () => {
+  it('user2 creates a proposal to remove user3', () => {
     // Create proposal to let user3 leave the group
     cy.getByDT('dashboard').click()
 
@@ -377,7 +377,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it.skip('user1 approves the proposal and removes user3 and logout', () => {
+  it('user1 approves the proposal and removes user3 and logout', () => {
     switchUser(user1)
 
     getProposalItems().within(() => {
@@ -399,8 +399,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  // TODO: this test case is not necesasry but it is here
-  // because of the issue #1176
+  // TODO: this test case is not necesasry but it is here because of the issue #1176
   it.skip('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
     cy.giLogin(user3, {
       bypassUI: true,
@@ -506,7 +505,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  // NOTE: temporarily comment this out since the following issues are not resolved yet
+  // NOTE: skip this test case temporarily since the following issue is not resolved yet
   //       https://github.com/okTurtles/group-income/issues/202
   it.skip('Only group admin can allow to create public channel', () => {
     const publicChannelName = 'bulgaria-hackathon'
