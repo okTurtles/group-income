@@ -735,7 +735,7 @@ sbp('chelonia/defineContract', {
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       })),
-      process (message, { state, getters }) {
+      async process (message, { state, getters }) {
         const { data, hash, meta, innerSigningContractID } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
@@ -756,7 +756,7 @@ sbp('chelonia/defineContract', {
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
           Vue.set(proposal, 'dateClosed', meta.createdDate)
-          proposals[proposal.data.proposalType][result](state, message)
+          await proposals[proposal.data.proposalType][result](state, message)
 
           // update 'streaks.noVotes' which records the number of proposals that each member did NOT vote for
           const votedMemberIDs = Object.keys(proposal.votes)
