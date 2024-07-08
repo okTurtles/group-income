@@ -14,14 +14,17 @@ export default (sbp('sbp/selectors/register', {
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    // Using 'chelonia/rootState' here as 'state/vuex/state' is not available
+    // in the SW, and because, even without a SW, 'loggedIn' is not yet there
+    // in Vuex state when logging in
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch chatroom unreadMessages without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
   'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
@@ -153,14 +156,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // Preferences
   'gi.actions/identity/kv/fetchPreferences': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch preferences without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.PREFERENCES))?.data || {}
   },
   'gi.actions/identity/kv/savePreferences': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update preferences without an active session')
     }
@@ -194,14 +197,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch notification status without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NOTIFICATIONS))?.data || {}
   },
   'gi.actions/identity/kv/saveNotificationStatus': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }

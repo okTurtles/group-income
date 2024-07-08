@@ -414,7 +414,8 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGOUT, () => {
-        // TODO: This is to be done by the SW
+        // TODO: [SW] This is to be done by the SW
+        saveCheloniaDebounced.clear()
         Promise.all([
           sbp('chelonia/reset'),
           sbp('gi.db/settings/delete', 'CHELONIA_STATE')
