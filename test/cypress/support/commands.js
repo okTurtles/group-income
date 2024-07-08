@@ -750,19 +750,3 @@ Cypress.Commands.add('giSendMessage', (sender, message) => {
     cy.get('.c-message.sent:last-child .c-text').should('contain', message)
   })
 })
-
-Cypress.Commands.add('giSwitchChannel', (channelName) => {
-  cy.getByDT('channelsList').within(() => {
-    cy.get('ul > li').each(($el, index, $list) => {
-      // NOTE: get only channelName excluding badge
-      const channelNameText = $el.find('.c-channel-name').text()
-      if (channelNameText === channelName) {
-        cy.wrap($el).click()
-        return false
-      }
-    })
-  })
-  cy.getByDT('channelName').should('contain', channelName)
-
-  cy.giWaitUntilMessagesLoaded()
-})

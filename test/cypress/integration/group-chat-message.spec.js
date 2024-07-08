@@ -137,6 +137,22 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
   }
 
+  function switchChannel (channelName) {
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul > li').each(($el, index, $list) => {
+        // NOTE: get only channelName excluding badge
+        const channelNameText = $el.find('.c-channel-name').text()
+        if (channelNameText === channelName) {
+          cy.wrap($el).click()
+          return false
+        }
+      })
+    })
+    cy.getByDT('channelName').should('contain', channelName)
+
+    cy.giWaitUntilMessagesLoaded()
+  }
+
   function replyToMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-message-menu').within(() => {
@@ -447,7 +463,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
     cy.giCheckIfJoinedChatroom(additionalChannelName, me)
 
-    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    switchChannel(CHATROOM_GENERAL_NAME)
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.contains('Sending three profile pictures which are designed by Apple. Cute, right?').should('be.visible')
@@ -467,8 +483,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user1 checks how the infinite scroll works', () => {
-    cy.giSwitchChannel(additionalChannelName)
-    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    switchChannel(additionalChannelName)
+    switchChannel(CHATROOM_GENERAL_NAME)
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.contains('Yeah, they are pretty!').should('be.visible')

@@ -37,6 +37,22 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = username
   }
 
+  function switchChannel (channelName) {
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul > li').each(($el, index, $list) => {
+        // NOTE: get only channelName excluding badge
+        const channelNameText = $el.find('.c-channel-name').text()
+        if (channelNameText === channelName) {
+          cy.wrap($el).click()
+          return false
+        }
+      })
+    })
+    cy.getByDT('channelName').should('contain', channelName)
+
+    cy.giWaitUntilMessagesLoaded()
+  }
+
   function checkIfLeaved (channelName, kicker, leaver) {
     // Attention: to check if other member is left
     // me needs to be logged in that channel
@@ -62,22 +78,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('joinChannel').should('not.exist')
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(channelName, me)
-  }
-
-  function switchChannel (channelName) {
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li').each(($el, index, $list) => {
-        // NOTE: get only channelName excluding badge
-        const channelNameText = $el.find('.c-channel-name').text()
-        if (channelNameText === channelName) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
-    })
-    cy.getByDT('channelName').should('contain', channelName)
-
-    cy.giWaitUntilMessagesLoaded()
   }
 
   function addMemberToChannel (channelName, username) {
