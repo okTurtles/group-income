@@ -151,7 +151,9 @@ async function startApp () {
     await sbp('chelonia/reset', cheloniaState)
   })
 
+  let logoutInProgress = false
   const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+    if (logoutInProgress) return
     return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
   })
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
@@ -415,12 +417,15 @@ async function startApp () {
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGOUT, () => {
         // TODO: [SW] This is to be done by the SW
+        logoutInProgress = true
         saveCheloniaDebounced.clear()
         Promise.all([
           sbp('chelonia/reset'),
           sbp('gi.db/settings/delete', 'CHELONIA_STATE')
         ]).catch(e => {
           console.error('Logout event: error deleting Chelonia state')
+        }).finally(() => {
+          logoutInProgress = false
         })
       })
       sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
