@@ -458,12 +458,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
-  // so the scenario could be updated later when e2e protocol would be ready
-  it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
-    cy.giLogin(user3, {
-      bypassUI: true,
-      toGroupDashboardUponSuccess: false // user-3 has no group to this account at this point.
-    })
+  //       so the scenario could be updated later when e2e protocol would be ready
+  it.skip(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
+    cy.giLogin(user3, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user3
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
@@ -483,7 +480,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it.skip(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
+  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
     cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
@@ -501,7 +498,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
     cy.getByDT('channelMembers').should('contain', '3 members')
-
     cy.giLogout()
   })
 
