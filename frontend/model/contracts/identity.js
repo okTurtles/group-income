@@ -1,6 +1,6 @@
 'use strict'
 
-import { L, Vue } from '@common/common.js'
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
@@ -103,7 +103,7 @@ sbp('chelonia/defineContract', {
           fileDeleteTokens: {}
         }, data)
         for (const key in initialState) {
-          Vue.set(state, key, initialState[key])
+          state[key] = initialState[key]
         }
       },
       async sideEffect ({ contractID, data }) {
@@ -119,7 +119,7 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state }) {
         for (const key in data) {
-          Vue.set(state.attributes, key, data[key])
+          state.attributes[key] = data[key]
         }
       },
       async sideEffect ({ contractID, data }) {
@@ -137,7 +137,7 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state }) {
         for (const attribute of data) {
-          Vue.delete(state.attributes, attribute)
+          delete state.attributes[attribute]
         }
       }
     },
@@ -145,7 +145,7 @@ sbp('chelonia/defineContract', {
       validate: object,
       process ({ data }, { state }) {
         for (const key in data) {
-          Vue.set(state.settings, key, data[key])
+          state.settings[key] = data[key]
         }
       }
     },
@@ -157,9 +157,9 @@ sbp('chelonia/defineContract', {
       },
       process ({ data }, { state }) {
         const { contractID } = data
-        Vue.set(state.chatRooms, contractID, {
+        state.chatRooms[contractID] = {
           visible: true // NOTE: this attr is used to hide/show direct message
-        })
+        }
       },
       sideEffect ({ data }) {
         sbp('chelonia/contract/retain', data.contractID).catch((e) => {
@@ -178,9 +178,9 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Already joined direct message.'))
         }
 
-        Vue.set(state.chatRooms, contractID, {
+        state.chatRooms[contractID] = {
           visible: true
-        })
+        }
       },
       sideEffect ({ data }, { state }) {
         if (state.chatRooms[data.contractID].visible) {
@@ -204,7 +204,7 @@ sbp('chelonia/defineContract', {
 
         const inviteSecretId = await sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
 
-        Vue.set(state.groups, groupContractID, { hash, inviteSecretId })
+        state.groups[groupContractID] = { hash, inviteSecretId }
       },
       async sideEffect ({ hash, data, contractID }, { state }) {
         const { groupContractID, inviteSecret } = data
@@ -283,7 +283,7 @@ sbp('chelonia/defineContract', {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        Vue.delete(state.groups, groupContractID)
+        delete state.groups[groupContractID]
       },
       sideEffect ({ data, contractID }) {
         sbp('chelonia/queueInvocation', contractID, async () => {
@@ -314,7 +314,7 @@ sbp('chelonia/defineContract', {
 
           // Remove last logged in information
           if (sbp('state/vuex/state').lastLoggedIn?.[contractID]) {
-            Vue.delete(sbp('state/vuex/state').lastLoggedIn, contractID)
+            delete sbp('state/vuex/state').lastLoggedIn[contractID]
           }
 
           sbp('gi.contracts/identity/revokeGroupKeyAndRotateOurPEK', contractID, state, data.groupContractID)
@@ -335,7 +335,7 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data }, { state }) {
-        Vue.set(state.chatRooms[data.contractID], 'visible', data.visible)
+        state.chatRooms[data.contractID]['visible'] = data.visible
       }
     },
     'gi.contracts/identity/saveFileDeleteToken': {
@@ -347,7 +347,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data }, { state }) {
         for (const { manifestCid, token } of data.tokensByManifestCid) {
-          Vue.set(state.fileDeleteTokens, manifestCid, token)
+          state.fileDeleteTokens[manifestCid] = token
         }
       }
     },
@@ -357,21 +357,21 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data }, { state }) {
         for (const manifestCid of data.manifestCids) {
-          Vue.delete(state.fileDeleteTokens, manifestCid)
+          delete state.fileDeleteTokens[manifestCid]
         }
       }
     }
   },
   methods: {
     'gi.contracts/identity/revokeGroupKeyAndRotateOurPEK': (identityContractID, state, groupContractID) => {
-      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
-      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+      if (!state._volatile) state['_volatile'] = Object.create(null)
+      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
 
       const CSKid = findKeyIdByName(state, 'csk')
       const CEKid = findKeyIdByName(state, 'cek')
       const PEKid = findKeyIdByName(state, 'pek')
 
-      Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
+      state._volatile.pendingKeyRevocations[PEKid] = true
 
       const groupCSKids = findForeignKeysByContractID(state, groupContractID)
 

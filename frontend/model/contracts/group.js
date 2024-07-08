@@ -2,7 +2,7 @@
 
 'use strict'
 
-import { Errors, L, Vue } from '@common/common.js'
+import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
@@ -37,10 +37,10 @@ import { chatRoomAttributesType, inviteType } from './shared/types.js'
 import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.js'
 import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType } from './shared/voting/rules.js'
 
-function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
+function fetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
   if (!value) {
-    Vue.set(obj, key, initialValue)
+    obj[key] = initialValue
     value = obj[key]
   }
   return value
@@ -93,9 +93,9 @@ function clearOldPayments ({ contractID, state, getters }) {
     archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period])
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
       archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash])
-      Vue.delete(state.payments, paymentHash)
+      delete state.payments[paymentHash]
     }
-    Vue.delete(state.paymentsByPeriod, period)
+    delete state.paymentsByPeriod[period]
   }
 
   sbp('gi.contracts/group/pushSideEffect', contractID,
@@ -105,7 +105,7 @@ function clearOldPayments ({ contractID, state, getters }) {
 
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
+  const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
   // Update the '.end' field of the previous in-memory period, if any.
   if (previousPeriod in state.paymentsByPeriod) {
@@ -187,14 +187,14 @@ function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, s
   // TODO: Improve this API. Developers should not modify state that is managed
   // by Chelonia.
   // Example: sbp('chelonia/contract/markKeyForRevocation', contractID, 'csk')
-  if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
-  if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+  if (!state._volatile) state['_volatile'] = Object.create(null)
+  if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
 
   const CSKid = findKeyIdByName(state, 'csk')
   const CEKid = findKeyIdByName(state, 'cek')
 
-  Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
-  Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
+  state._volatile.pendingKeyRevocations[CSKid] = true
+  state._volatile.pendingKeyRevocations[CEKid] = true
 }
 
 function isActionOlderThanUser (contractID: string, height: number, userProfile: ?Object): boolean {
@@ -211,14 +211,14 @@ function isActionOlderThanUser (contractID: string, height: number, userProfile:
 }
 
 function updateGroupStreaks ({ state, getters }) {
-  const streaks = vueFetchInitKV(state, 'streaks', initGroupStreaks())
+  const streaks = fetchInitKV(state, 'streaks', initGroupStreaks())
   const cPeriod = getters.groupSettings.distributionDate
   const thisPeriodPayments = getters.groupPeriodPayments[cPeriod]
   const noPaymentsAtAll = !thisPeriodPayments
 
   if (streaks.lastStreakPeriod === cPeriod) return
   else {
-    Vue.set(streaks, 'lastStreakPeriod', cPeriod)
+    streaks['lastStreakPeriod'] = cPeriod
   }
 
   // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
@@ -237,15 +237,12 @@ function updateGroupStreaks ({ state, getters }) {
   // --- update 'fullMonthlyPledgesCount' streak ---
   // if the group has made 100% pledges in this period, +1 the streak value.
   // or else, reset the value to '0'
-  Vue.set(
-    streaks,
-    'fullMonthlyPledges',
+  streaks['fullMonthlyPledges'] =
     noPaymentsAtAll
       ? 0
       : thisPeriodDistribution.length === 0
         ? streaks.fullMonthlyPledges + 1
         : 0
-  )
 
   const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
   const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
@@ -259,13 +256,10 @@ function updateGroupStreaks ({ state, getters }) {
   const totalPledgesDone = thisPeriodPaymentDetails.reduce(
     (total, paymentItem) => paymentItem.amount + total, 0
   )
-  const fullMonthlySupportCurrent = vueFetchInitKV(streaks, 'fullMonthlySupport', 0)
+  const fullMonthlySupportCurrent = fetchInitKV(streaks, 'fullMonthlySupport', 0)
 
-  Vue.set(
-    streaks,
-    'fullMonthlySupport',
+  streaks['fullMonthlySupport'] =
     totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0
-  )
 
   // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   for (const memberID in getters.groupProfiles) {
@@ -273,10 +267,9 @@ function updateGroupStreaks ({ state, getters }) {
 
     // 1) update 'onTimePayments'
     const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, memberID)
-    const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, memberID, 0)
-    Vue.set(
-      streaks.onTimePayments,
-      memberID,
+    const userCurrentStreak = fetchInitKV(streaks.onTimePayments, memberID, 0)
+
+    streaks.onTimePayments[memberID] =
       noPaymentsAtAll
         ? 0
         : myMissedPaymentsInThisPeriod.length === 0 &&
@@ -285,24 +278,20 @@ function updateGroupStreaks ({ state, getters }) {
           // check-2. all those payments by the user were done on time.
           ? userCurrentStreak + 1
           : 0
-    )
 
     // 2) update 'missedPayments'
-    const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, memberID, 0)
-    Vue.set(
-      streaks.missedPayments,
-      memberID,
+    const myMissedPaymentsStreak = fetchInitKV(streaks.missedPayments, memberID, 0)
+    streaks.missedPayments[memberID] =
       noPaymentsAtAll
         ? myMissedPaymentsStreak + 1
         : myMissedPaymentsInThisPeriod.length >= 1
           ? myMissedPaymentsStreak + 1
           : 0
-    )
   }
 }
 
 const removeGroupChatroomProfile = (state, chatRoomID, member) => {
-  Vue.set(state.chatRooms[chatRoomID], 'members',
+  state.chatRooms[chatRoomID]['members'] =
     Object.fromEntries(
       Object.entries(state.chatRooms[chatRoomID].members)
         .map(([memberKey, profile]) => {
@@ -312,7 +301,6 @@ const removeGroupChatroomProfile = (state, chatRoomID, member) => {
           return [memberKey, profile]
         })
     )
-  )
 }
 
 const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID, leavingGroup) => {
@@ -508,7 +496,7 @@ sbp('chelonia/defineContract', {
           totalPledgeAmount: 0
         }, data)
         for (const key in initialState) {
-          Vue.set(state, key, initialState[key])
+          state[key] = initialState[key]
         }
         initFetchPeriodPayments({ contractID, meta, state, getters })
       },
@@ -570,7 +558,7 @@ sbp('chelonia/defineContract', {
           console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBan('payments cannot be instantly completed!')
         }
-        Vue.set(state.payments, hash, {
+        state.payments[hash] = {
           data: {
             ...data,
             fromMemberID: innerSigningContractID,
@@ -579,10 +567,10 @@ sbp('chelonia/defineContract', {
           height,
           meta,
           history: [[meta.createdDate, hash]]
-        })
+        }
         const { paymentsFrom } = initFetchPeriodPayments({ contractID, meta, state, getters })
-        const fromMemberID = vueFetchInitKV(paymentsFrom, innerSigningContractID, {})
-        const toMemberID = vueFetchInitKV(fromMemberID, data.toMemberID, [])
+        const fromMemberID = fetchInitKV(paymentsFrom, innerSigningContractID, {})
+        const toMemberID = fetchInitKV(fromMemberID, data.toMemberID, [])
         toMemberID.push(hash)
         // TODO: handle completed payments here too! (for manual payment support)
       }
@@ -627,7 +615,7 @@ sbp('chelonia/defineContract', {
 
           // NOTE: if 'PAYMENT_REVERSED' is implemented, subtract
           //       the amount from 'totalPledgeAmount'.
-          const currentTotalPledgeAmount = vueFetchInitKV(state, 'totalPledgeAmount', 0)
+          const currentTotalPledgeAmount = fetchInitKV(state, 'totalPledgeAmount', 0)
           state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount
         }
       },
@@ -657,8 +645,8 @@ sbp('chelonia/defineContract', {
         memo: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
-        const fromMemberID = vueFetchInitKV(state.thankYousFrom, innerSigningContractID, {})
-        Vue.set(fromMemberID, data.toMemberID, data.memo)
+        const fromMemberID = fetchInitKV(state.thankYousFrom, innerSigningContractID, {})
+        fromMemberID[data.toMemberID] = data.memo
       },
       sideEffect ({ contractID, meta, data, innerSigningContractID }) {
         const { loggedIn } = sbp('state/vuex/state')
@@ -702,7 +690,7 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        Vue.set(state.proposals, hash, {
+        state.proposals[hash] = {
           data,
           meta,
           height,
@@ -711,7 +699,7 @@ sbp('chelonia/defineContract', {
           status: STATUS_OPEN,
           notifiedBeforeExpire: false,
           payload: null // set later by group/proposalVote
-        })
+        }
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
@@ -758,7 +746,7 @@ sbp('chelonia/defineContract', {
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBan('proposalVote without existing proposal')
         }
-        Vue.set(proposal.votes, innerSigningContractID, data.vote)
+        proposal.votes[innerSigningContractID] = data.vote
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
         if (new Date(meta.createdDate).getTime() > proposal.data.expires_date_ms) {
@@ -770,16 +758,16 @@ sbp('chelonia/defineContract', {
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
-          Vue.set(proposal, 'dateClosed', meta.createdDate)
+          proposal['dateClosed'] = meta.createdDate
           await proposals[proposal.data.proposalType][result](state, message)
 
           // update 'streaks.noVotes' which records the number of proposals that each member did NOT vote for
           const votedMemberIDs = Object.keys(proposal.votes)
           for (const memberID of getters.groupMembersByContractID) {
-            const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, memberID, 0)
+            const memberCurrentStreak = fetchInitKV(getters.groupStreaks.noVotes, memberID, 0)
             const memberHasVoted = votedMemberIDs.includes(memberID)
 
-            Vue.set(getters.groupStreaks.noVotes, memberID, memberHasVoted ? 0 : memberCurrentStreak + 1)
+            getters.groupStreaks.noVotes[memberID] = memberHasVoted ? 0 : memberCurrentStreak + 1
           }
         }
       }
@@ -798,8 +786,8 @@ sbp('chelonia/defineContract', {
           console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.creatorID} not ${innerSigningContractID}!`, { data, meta })
           throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
-        Vue.set(proposal, 'status', STATUS_CANCELLED)
-        Vue.set(proposal, 'dateClosed', meta.createdDate)
+        proposal['status'] = STATUS_CANCELLED
+        proposal['dateClosed'] = meta.createdDate
         notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
       }
     },
@@ -813,8 +801,8 @@ sbp('chelonia/defineContract', {
             const proposal = state.proposals[proposalId]
 
             if (proposal) {
-              Vue.set(proposal, 'status', STATUS_EXPIRED)
-              Vue.set(proposal, 'dateClosed', meta.createdDate)
+              proposal['status'] = STATUS_EXPIRED
+              proposal['dateClosed'] = meta.createdDate
               notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
             }
           }
@@ -827,7 +815,7 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data }, { state }) {
         for (const proposalId of data.proposalIds) {
-          Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
+          state.proposals[proposalId]['notifiedBeforeExpire'] = true
         }
       },
       sideEffect ({ data, contractID }, { state }) {
@@ -903,7 +891,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/invite': {
       validate: actionRequireActiveMember(inviteType),
       process ({ data }, { state }) {
-        Vue.set(state.invites, data.inviteKeyId, data)
+        state.invites[data.inviteKeyId] = data
       }
     },
     'gi.contracts/group/inviteAccept': {
@@ -912,7 +900,7 @@ sbp('chelonia/defineContract', {
         if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`)
         }
-        Vue.set(state.profiles, innerSigningContractID, initGroupProfile(meta.createdDate, height, data.reference))
+        state.profiles[innerSigningContractID] = initGroupProfile(meta.createdDate, height, data.reference)
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -1058,11 +1046,11 @@ sbp('chelonia/defineContract', {
         const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
 
         for (const key in data) {
-          Vue.set(state.settings, key, data[key])
+          state.settings[key] = data[key]
         }
 
         if ('distributionDate' in data) {
-          Vue.set(state, 'paymentsByPeriod', {})
+          state['paymentsByPeriod'] = {}
           initFetchPeriodPayments({ contractID, meta, state, getters })
         }
 
@@ -1128,13 +1116,13 @@ sbp('chelonia/defineContract', {
               nonMonetary.splice(nonMonetary.indexOf(value.replace), 1, value.with)
               break
             default:
-              Vue.set(groupProfile, key, value)
+              groupProfile[key] = value
           }
         }
 
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
-          Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
+          groupProfile['incomeDetailsLastUpdatedDate'] = meta.createdDate
           updateCurrentDistribution({ contractID, meta, state, getters })
         }
       }
@@ -1149,15 +1137,15 @@ sbp('chelonia/defineContract', {
         // Update all types of proposal settings for simplicity
         if (data.ruleName && data.ruleThreshold) {
           for (const proposalSettings in state.settings.proposals) {
-            Vue.set(state.settings.proposals[proposalSettings], 'rule', data.ruleName)
-            Vue.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+            state.settings.proposals[proposalSettings]['rule'] = data.ruleName
+            state.settings.proposals[proposalSettings].ruleSettings[data.ruleName]['threshold'] = data.ruleThreshold
           }
         }
 
         // TODO later - support update expires_ms
         // if (data.ruleName && data.expires_ms) {
         //   for (const proposalSetting in state.settings.proposals) {
-        //     Vue.set(state.settings.proposals[proposalSetting].ruleSettings[data.ruleName], 'expires_ms', data.expires_ms)
+        //     state.settings.proposals[proposalSetting].ruleSettings[data.ruleName]['expires_ms'] = data.expires_ms
         //   }
         // }
       }
@@ -1190,7 +1178,7 @@ sbp('chelonia/defineContract', {
         if (!!innerSigningContractID === (data.attributes.name === CHATROOM_GENERAL_NAME)) {
           throw new Error('All chatrooms other than #General must have an inner signature and the #General chatroom must have no inner signature')
         }
-        Vue.set(state.chatRooms, data.chatRoomID, {
+        state.chatRooms[data.chatRoomID] = {
           creatorID: innerSigningContractID || contractID,
           name,
           description,
@@ -1198,9 +1186,9 @@ sbp('chelonia/defineContract', {
           privacyLevel,
           deletedDate: null,
           members: {}
-        })
+        }
         if (!state.generalChatRoomId) {
-          Vue.set(state, 'generalChatRoomId', data.chatRoomID)
+          state['generalChatRoomId'] = data.chatRoomID
         }
       },
       sideEffect ({ contractID, data }, { state }) {
@@ -1244,9 +1232,14 @@ sbp('chelonia/defineContract', {
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
         )
-        Vue.delete(state.chatRooms, data.chatRoomID)
+        delete state.chatRooms[data.chatRoomID]
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
+        // identityContractID intentionally left out because deleted chatrooms
+        // affect all users. If it's set, it should be set to
+        // sbp('state/vuex/state').loggedIn, _not_ innerSigningContractID, for
+        // the same reason. If innerSigningContractID doesn't match the current
+        // session, the handler for this event will be skipped
         sbp('okTurtles.events/emit', DELETED_CHATROOM, { groupContractID: contractID, chatRoomID: data.chatRoomID })
         const { identityContractID } = sbp('state/vuex/state').loggedIn
         if (identityContractID === innerSigningContractID) {
@@ -1315,7 +1308,7 @@ sbp('chelonia/defineContract', {
         // removed members, we would need to possibly fetch every chatroom
         // contract to account for chatrooms for which the removed member is
         // a part of.
-        Vue.set(state.chatRooms[chatRoomID].members, memberID, { status: PROFILE_STATUS.ACTIVE })
+        state.chatRooms[chatRoomID].members[memberID] = { status: PROFILE_STATUS.ACTIVE }
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
         const memberID = data.memberID || innerSigningContractID
@@ -1364,7 +1357,7 @@ sbp('chelonia/defineContract', {
         name: string
       })),
       process ({ data }, { state }) {
-        Vue.set(state.chatRooms[data.chatRoomID], 'name', data.name)
+        state.chatRooms[data.chatRoomID]['name'] = data.name
       }
     },
     'gi.contracts/group/changeChatRoomDescription': {
@@ -1373,7 +1366,7 @@ sbp('chelonia/defineContract', {
         description: string
       })),
       process ({ data }, { state }) {
-        Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
+        state.chatRooms[data.chatRoomID]['description'] = data.description
       }
     },
     'gi.contracts/group/updateDistributionDate': {
@@ -1788,12 +1781,12 @@ sbp('chelonia/defineContract', {
       const { identityContractID } = rootState.loggedIn
       const state = rootState[identityContractID]
 
-      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
-      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+      if (!state._volatile) state['_volatile'] = Object.create(null)
+      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
 
       const PEKid = findKeyIdByName(state, 'pek')
 
-      Vue.set(state._volatile.pendingKeyRevocations, PEKid, true)
+      state._volatile.pendingKeyRevocations[PEKid] = true
 
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
