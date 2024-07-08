@@ -165,8 +165,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul').children().should('have.length', 1)
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.giLogout()
   })
 
   it.skip('user1 tries to open incorrect chatroom URL and it redirects to the previous/general chatroom', () => {
@@ -179,7 +177,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giWaitUntilMessagesLoaded()
   })
 
-  it.skip('user1 creates several channels and logout', () => {
+  it('user1 creates several channels and logout', () => {
     for (const c of chatRooms.filter(cr => cr.name.startsWith('channel1'))) {
       cy.giAddNewChatroom({
         name: c.name,
@@ -192,7 +190,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it.skip(`user3 joins ${groupName1} group and logout`, () => {
+  it(`user3 joins ${groupName1} group and logout`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       existingMemberUsername: user1,
