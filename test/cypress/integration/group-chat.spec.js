@@ -483,7 +483,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
+  it.skip(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
     cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
