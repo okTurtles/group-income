@@ -85,24 +85,23 @@ sbp('sbp/selectors/register', {
       state.preferences = {}
     }
   },
-  'state/vuex/_private/save': async function (encrypted: ?boolean, state: ?Object) {
-    state = state || store.state
-    // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
-    //            Doing so will cause an infinite loop because of store.subscribe below!
-    if (!state.loggedIn) {
-      return
-    }
+  'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
+    return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
+      state = state || store.state
+      // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
+      //            Doing so will cause an infinite loop because of store.subscribe below!
+      if (!state.loggedIn) {
+        return
+      }
 
-    const { identityContractID, encryptionParams } = state.loggedIn
-    state.notifications.items = applyStorageRules(state.notifications.items || [])
-    if (encrypted) {
-      await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
-    } else {
-      await sbp('gi.db/settings/save', identityContractID, state)
-    }
-  },
-  'state/vuex/save': (...params) => {
-    return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', ['state/vuex/_private/save', ...params])
+      const { identityContractID, encryptionParams } = state.loggedIn
+      state.notifications.items = applyStorageRules(state.notifications.items || [])
+      if (encrypted) {
+        await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
+      } else {
+        await sbp('gi.db/settings/save', identityContractID, state)
+      }
+    })
   }
 })
 
