@@ -147,7 +147,6 @@ async function startApp () {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
-    console.error('@@@[main]REPLACING CHEL STATE WITH', cheloniaState)
     await sbp('chelonia/reset', cheloniaState)
   })
 

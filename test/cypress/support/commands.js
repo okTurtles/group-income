@@ -469,12 +469,10 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.giSignup(username, { bypassUI: true })
     }
 
-    cy.log('@@will gi.app/group/joinWithInviteSecret')
     cy.window().its('sbp').then(async sbp => {
       await sbp('gi.app/group/joinWithInviteSecret', groupId, inviteSecret)
       await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
     })
-    cy.log('@@done joining')
   } else {
     cy.visit(invitationLink)
 
