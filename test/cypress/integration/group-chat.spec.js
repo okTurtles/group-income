@@ -400,7 +400,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   // TODO: this test case is not necesasry but it is here because of the issue #1176
-  it.skip('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
+  it('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
     cy.giLogin(user3, {
       bypassUI: true,
       toGroupDashboardUponSuccess: false // user3 has been kicked out from the group at this point, so cannot navigate to /dashboard.
@@ -412,7 +412,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it.skip('user2 leaves the group by himself', () => {
+  it('user2 leaves the group by himself', () => {
     cy.giLogin(user2, { bypassUI: true })
     me = user2
 
@@ -436,7 +436,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it.skip(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
+  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
     cy.giLogin(user1, { bypassUI: true })
     me = user1
 
@@ -445,12 +445,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it.skip('user1 leaves chatroom by himself', () => {
+  it('user1 leaves chatroom by himself', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
     leaveChannel(channel, 'Leave Channel')
   })
 
-  it.skip('user1 deletes a channel and logout', () => {
+  it('user1 deletes a channel and logout', () => {
     const channelName = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
     deleteChannel(channelName)
 
