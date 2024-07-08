@@ -37,19 +37,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = username
   }
 
-  function switchChannel (channelName) {
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li').each(($el, index, $list) => {
-        if ($el.text() === channelName) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
-    })
-    cy.giWaitUntilMessagesLoaded()
-    cy.getByDT('channelName').should('contain', channelName)
-  }
-
   function checkIfLeaved (channelName, kicker, leaver) {
     // Attention: to check if other member is left
     // me needs to be logged in that channel
@@ -78,7 +65,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function addMemberToChannel (channelName, username) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelMembers').click()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + username).click()
@@ -89,7 +76,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function leaveChannel (channelName, submitButtonTitle) {
     submitButtonTitle = submitButtonTitle || 'Leave Channel'
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -105,7 +92,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function kickMemberFromChannel (channelName, username) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelMembers').click()
     cy.getByDT('joinedChannelMembersList').within(() => {
       cy.getByDT('removeMember-' + username).click()
@@ -127,7 +114,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function deleteChannel (channelName) {
-    switchChannel(channelName)
+    cy.giSwitchChannel(channelName)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -228,7 +215,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('channel1') && !c.isPrivate).map(c => c.name)
     const channels = channelsOf1For2.filter(cn => publicUser1Channels.includes(cn))
     for (const cn of channels) {
-      switchChannel(cn)
+      cy.giSwitchChannel(cn)
       joinChannel(cn)
     }
   })
@@ -265,7 +252,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
     cy.log('"Add Description" button is visible because no description is added')
-    switchChannel(undetailedChannel.name)
+    cy.giSwitchChannel(undetailedChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('exist')
     })
@@ -278,7 +265,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log('"Add Description" button is invisible because description is already added')
     cy.log('but user1 can update description because he is creator')
-    switchChannel(detailedChannel.name)
+    cy.giSwitchChannel(detailedChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
@@ -287,7 +274,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     detailedChannel.description = newDescription2
 
     cy.log(`user1 can not update details of ${notUpdatableChannel.name} chatroom because he is not creator`)
-    switchChannel(notUpdatableChannel.name)
+    cy.giSwitchChannel(notUpdatableChannel.name)
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
@@ -298,7 +285,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('renameChannel').should('not.exist')
 
     cy.log('users can not add members to the channels they are not part of. Users can only see members inside.')
-    switchChannel(notJoinedChannel.name)
+    cy.giSwitchChannel(notJoinedChannel.name)
     cy.log('users can view the messages inside the visible channels even though they are not part of')
     cy.getByDT('channelMembers').click()
     cy.get('[data-test^="addToChannel-"]').should('not.exist')
@@ -306,7 +293,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.closeModal()
 
     cy.log(`users can not change name of "${CHATROOM_GENERAL_NAME}" chatroom even creator`)
-    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -342,7 +329,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
-    switchChannel(channelsOf2For1[0])
+    cy.giSwitchChannel(channelsOf2For1[0])
 
     // Switch from group1 to group2 on the group chat page
     cy.getByDT('groupsList').find('li:nth-child(3) button').click()
@@ -406,7 +393,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
 
     cy.giLogout()
@@ -456,7 +443,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    // switchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
@@ -466,8 +452,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user1 deletes a channel and logout', () => {
-    const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
-    deleteChannel(channel)
+    const channelName = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
+    deleteChannel(channelName)
 
     cy.giLogout()
   })

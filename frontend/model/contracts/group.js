@@ -13,7 +13,7 @@ import {
   STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS,
   PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS, GROUP_PAYMENT_METHOD_MAX_CHAR,
   INVITE_INITIAL_CREATOR, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS,
-  CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES
+  CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, MESSAGE_TYPES
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
@@ -913,8 +913,8 @@ sbp('chelonia/defineContract', {
           // TODO - verify if type of proposal already exists (SETTING_CHANGE).
         }
       }),
-      process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        Vue.set(state.proposals, hash, {
+      process ({ data, meta, hash, contractID, height, innerSigningContractID }, { state }) {
+        const proposal = {
           data,
           meta,
           height,
@@ -923,10 +923,19 @@ sbp('chelonia/defineContract', {
           status: STATUS_OPEN,
           notifiedBeforeExpire: false,
           payload: null // set later by group/proposalVote
-        })
+        }
+        Vue.set(state.proposals, hash, proposal)
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
+        sbp('gi.contracts/group/pushSideEffect', contractID,
+          ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
+            contractID,
+            innerSigningContractID,
+            height,
+            proposal: { ...proposal, proposalId: hash }
+          }]
+        )
       },
       sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
@@ -1012,14 +1021,14 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         Vue.set(proposal, 'dateClosed', meta.createdDate)
-        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
+        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, innerSigningContractID, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID, height }, { state }) {
+      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
         if (data.proposalIds.length) {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
@@ -1027,7 +1036,8 @@ sbp('chelonia/defineContract', {
             if (proposal) {
               Vue.set(proposal, 'status', STATUS_EXPIRED)
               Vue.set(proposal, 'dateClosed', meta.createdDate)
-              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
+
+              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, innerSigningContractID, contractID, meta, height })
             }
           }
         }
@@ -1745,6 +1755,30 @@ sbp('chelonia/defineContract', {
           notificationName: 'PROPOSAL_CLOSED',
           notificationData: { createdDate, groupID: contractID, proposal }
         }])
+      }
+    },
+    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function ({ contractID, innerSigningContractID, height, proposal }) {
+      const rootState = sbp('state/vuex/state')
+      const { profiles, generalChatRoomId } = rootState[contractID]
+      const myProfile = profiles[rootState.loggedIn.identityContractID]
+      if (rootState.loggedIn.identityContractID === innerSigningContractID) {
+        if (isActionOlderThanUser(contractID, height, myProfile)) {
+          await sbp('gi.actions/chatroom/addMessage', {
+            contractID: generalChatRoomId,
+            data: {
+              type: MESSAGE_TYPES.INTERACTIVE,
+              proposal: {
+                proposalId: proposal.proposalId,
+                proposalType: proposal.data.proposalType,
+                proposalData: proposal.data.proposalData,
+                expires_date_ms: proposal.data.expires_date_ms,
+                createdDate: proposal.meta.createdDate,
+                creatorID: proposal.creatorID,
+                status: proposal.status
+              }
+            }
+          })
+        }
       }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {

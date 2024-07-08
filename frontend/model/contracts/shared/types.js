@@ -10,7 +10,12 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
   POLL_TYPES,
-  STATUS_EXPIRING
+  STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED,
+  STATUS_EXPIRING,
+  STATUS_EXPIRED,
+  STATUS_CANCELLED
 } from './constants.js'
 
 // group.js related
@@ -36,13 +41,21 @@ export const chatRoomAttributesType: any = objectOf({
 export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   text: string,
-  proposal: objectMaybeOf({
+  proposal: objectOf({
     proposalId: string,
     proposalType: string,
+    proposalData: object,
     expires_date_ms: number,
     createdDate: string,
     creatorID: string,
-    variant: unionOf([STATUS_EXPIRING].map(v => literalOf(v))) // NOTE: only expiring proposals could be notified at the moment
+    status: unionOf(...[
+      STATUS_OPEN,
+      STATUS_PASSED,
+      STATUS_FAILED,
+      STATUS_EXPIRING,
+      STATUS_EXPIRED,
+      STATUS_CANCELLED
+    ].map(v => literalOf(v)))
   }),
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),

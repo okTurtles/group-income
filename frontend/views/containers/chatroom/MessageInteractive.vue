@@ -1,9 +1,7 @@
 <template lang='pug'>
 message-base(v-bind='$props' @wrapperAction='action')
   template(#image='')
-    .c-icon(
-      :class='{"is-warning": isYellowHorn}'
-    )
+    .c-icon(:class='{"is-warning": isYellowHorn}')
       svg-yellow-horn(v-if='isYellowHorn')
       svg-horn(v-else)
   template(#header='')
@@ -12,7 +10,7 @@ message-base(v-bind='$props' @wrapperAction='action')
       span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
   template(#body='')
     .c-text
-      | {{interactiveMessage.text}}
+      render-message-text(:text='interactiveMessage.text')
       i18n.c-link(@click='$router.push({ path: "/dashboard#proposals" })') See proposal
 </template>
 
@@ -25,22 +23,29 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   STATUS_OPEN,
   STATUS_PASSED,
   STATUS_FAILED,
+  STATUS_EXPIRING,
   STATUS_EXPIRED,
-  STATUS_EXPIRING
+  STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
+import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
 const interactiveMessage = (proposal, baseOptions = {}) => {
-  const { proposalType, variant } = proposal
-  const { options: proposalDetails } = getProposalDetails({ data: proposal })
+  const { status, creatorID, proposalType, proposalData } = proposal
+  const { options: proposalDetails } = getProposalDetails({
+    status,
+    creatorID,
+    data: { proposalType, proposalData }
+  })
   const options = Object.assign(proposalDetails, baseOptions)
 
   const settingChangeMessages = (options) => ({
@@ -48,7 +53,8 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     [STATUS_PASSED]: L('Proposal from {from} to change the {setting} is accepted.', options),
     [STATUS_FAILED]: L('Proposal from {from} to change the {setting} is rejected.', options),
     [STATUS_EXPIRED]: L('Proposal from {from} to change the {setting} is expired.', options),
-    [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options)
+    [STATUS_EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
+    [STATUS_CANCELLED]: L('Proposal from {from} to change the {setting} is cancelled.', options)
   })
 
   const interactiveMessages = {
@@ -57,14 +63,16 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [STATUS_PASSED]: L('Proposal from {from} to add {member} is accepted.', options),
       [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
       [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} to add {member} is expiring.', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} to add {member} is cancelled.', options)
     },
     [PROPOSAL_REMOVE_MEMBER]: {
       [STATUS_OPEN]: L('{from} wants to remove {member} from the group.', options),
       [STATUS_PASSED]: L('Proposal from {from} to remove {member} is accepted.', options),
       [STATUS_FAILED]: L('Proposal from {from} to add {member} is rejected.', options),
       [STATUS_EXPIRED]: L('Proposal from {from} to add {member} is expired.', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} to remove {member} is expiring.', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} to remove {member} is cancelled.', options)
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: settingChangeMessages(options),
@@ -79,16 +87,17 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [STATUS_PASSED]: L('Proposal from {from} is accepted. "{title}"', options),
       [STATUS_FAILED]: L('Proposal from {from} is rejected. "{title}"', options),
       [STATUS_EXPIRED]: L('Proposal from {from} is expired. "{title}"', options),
-      [STATUS_EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options)
+      [STATUS_EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
+      [STATUS_CANCELLED]: L('Proposal from {from} is cancelled. "{title}"', options)
     }
   }
 
-  return get(interactiveMessages, [proposalType, options.settingType, variant].filter(key => !!key))
+  return get(interactiveMessages, [proposalType, options.settingType, status].filter(key => !!key))
 }
 
 const proposalStatus = (proposal) => {
   const options = {}
-  if (proposal.variant === STATUS_EXPIRING) {
+  if (proposal.status === STATUS_EXPIRING) {
     options['date'] = humanDate(proposal.expires_date_ms, { month: 'short', day: 'numeric', year: 'numeric' })
   }
   return {
@@ -96,8 +105,9 @@ const proposalStatus = (proposal) => {
     [STATUS_PASSED]: L('Proposal Accepted'),
     [STATUS_FAILED]: L('Proposal rejected'),
     [STATUS_EXPIRED]: L('Proposal expired'),
-    [STATUS_EXPIRING]: L('Proposal expiring on {date}', options)
-  }[proposal.variant]
+    [STATUS_EXPIRING]: L('Proposal expiring on {date}', options),
+    [STATUS_CANCELLED]: L('Proposal cancelled')
+  }[proposal.status]
 }
 
 const proposalSeverity = {
@@ -105,7 +115,8 @@ const proposalSeverity = {
   [STATUS_PASSED]: 'is-success',
   [STATUS_FAILED]: 'is-danger',
   [STATUS_EXPIRED]: 'is-neutral',
-  [STATUS_EXPIRING]: 'is-warning'
+  [STATUS_EXPIRING]: 'is-warning',
+  [STATUS_CANCELLED]: 'is-neutral'
 }
 
 export default ({
@@ -118,7 +129,8 @@ export default ({
   components: {
     SvgHorn,
     SvgYellowHorn,
-    MessageBase
+    MessageBase,
+    RenderMessageText
   },
   methods: {
     humanDate,
@@ -129,17 +141,17 @@ export default ({
   computed: {
     ...mapGetters(['userDisplayNameFromID']),
     interactiveMessage () {
-      const { variant, creator } = this.proposal
-      const baseOptions = { from: this.userDisplayNameFromID(creator) }
+      const { status, creatorID } = this.proposal
+      const baseOptions = { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` }
 
       return {
         text: interactiveMessage(this.proposal, baseOptions),
         proposalStatus: proposalStatus(this.proposal),
-        proposalSeverity: proposalSeverity[variant]
+        proposalSeverity: proposalSeverity[status]
       }
     },
     isYellowHorn () {
-      return this.proposal.variant === STATUS_EXPIRING
+      return this.proposal.status === STATUS_EXPIRING
     }
   }
 }: Object)
@@ -154,9 +166,9 @@ export default ({
   align-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  margin-right: 0.5rem;
   border-radius: 50%;
   background: $primary_2;
+  flex-shrink: 0;
 
   &.is-warning {
     background-color: $warning_2;
@@ -197,6 +209,11 @@ export default ({
     background-color: $success_2;
     color: $success_0;
   }
+}
+
+.c-text {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .c-link {
