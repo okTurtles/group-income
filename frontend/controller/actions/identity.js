@@ -229,7 +229,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/_private/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
     transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
-    console.error('@@@[actions/login]REPLACING CHEL STATE WITH', { ...cheloniaState, loggedIn: { identityContractID } })
     await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
     await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
@@ -286,7 +285,6 @@ export default (sbp('sbp/selectors/register', {
               // //     re-joining is handled by the group contract itself.
               // !state[groupId]?.profiles?.[identityContractID] && // ?.status !== PROFILE_STATUS.
               cheloniaState[groupId]?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
-              (console.error('IDENTITY ACTION WILL CALL /join', { groupId }) || true) &&
               // (3) Call join
               sbp('gi.actions/group/join', {
                 originatingContractID: identityContractID,

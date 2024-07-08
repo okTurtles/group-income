@@ -113,7 +113,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
     }
 
     if (encryptionParams) {
-      sbp('state/vuex/commit', 'APP-LOGIN', { identityContractID, encryptionParams })
+      sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
     }
 
     // NOTE: users could notice that they leave the group by someone
