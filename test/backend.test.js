@@ -1,19 +1,20 @@
 /* eslint-env mocha */
 
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
-import '~/shared/domains/chelonia/chelonia.js'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { createCID } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
-import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
-import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
-import '~/frontend/controller/namespace.js'
+import '@sbp/okturtles.eventqueue'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
 import chalk from 'chalk'
-import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
+import '~/frontend/controller/namespace.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
+import { PROFILE_STATUS, PROPOSAL_GENERIC, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.js'
+import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
+import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
+import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
+import '~/shared/domains/chelonia/chelonia.js'
+import { createCID } from '~/shared/functions.js'
+import { Secret } from '../shared/domains/chelonia/Secret.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
 
@@ -53,7 +54,7 @@ const vuexState = {
   namespaceLookups: Object.create(null),
   reducedMotion: false,
   appLogsFilter: ['error', 'info', 'warn'],
-  contractSiginingKeys: Object.create(null)
+  contractSigningKeys: Object.create(null)
 }
 
 // this is to ensure compatibility between frontend and test/backend.test.js
@@ -129,7 +130,7 @@ describe('Full walkthrough', function () {
     const SAKp = serializeKey(SAK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK, SAK].map(key => ({ key, transient: true }))
+      new Secret([CSK, SAK].map(key => ({ key, transient: true })))
     )
 
     // append random id to username to prevent conflict across runs
@@ -177,7 +178,7 @@ describe('Full walkthrough', function () {
     const CSKp = serializeKey(CSK, false)
 
     sbp('chelonia/storeSecretKeys',
-      () => [CSK].map(key => ({ key, transient: true }))
+      new Secret([CSK].map(key => ({ key, transient: true })))
     )
 
     /* const initialInvite = createInvite({

@@ -2,16 +2,16 @@
 
 'use strict'
 
-import { L, Vue } from '@common/common.js'
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { objectOf, optional, object, number, string, arrayOf, actionRequireInnerSignature } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
   MESSAGE_NOTIFICATIONS,
@@ -27,6 +27,7 @@ import {
   makeMentionFromUserID,
   swapMentionIDForDisplayname
 } from './shared/functions.js'
+import chatroomGetters from './shared/getters/chatroom.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
@@ -47,7 +48,7 @@ function createNotificationData (
   }
 }
 
-function messageReceivePostEffect ({
+async function messageReceivePostEffect ({
   contractID, messageHash, height, text,
   isDMOrMention, messageType, memberID, chatRoomName
 }: {
@@ -59,8 +60,9 @@ function messageReceivePostEffect ({
   isDMOrMention: boolean,
   memberID: string,
   chatRoomName: string
-}): void {
-  const rootGetters = sbp('state/vuex/getters')
+}): Promise<void> {
+  // TODO: This can't be a root getter when running in a SW
+  const rootGetters = await sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
@@ -133,21 +135,7 @@ sbp('chelonia/defineContract', {
     currentChatRoomState (state) {
       return state
     },
-    chatRoomSettings (state, getters) {
-      return getters.currentChatRoomState.settings || {}
-    },
-    chatRoomAttributes (state, getters) {
-      return getters.currentChatRoomState.attributes || {}
-    },
-    chatRoomMembers (state, getters) {
-      return getters.currentChatRoomState.members || {}
-    },
-    chatRoomRecentMessages (state, getters) {
-      return getters.currentChatRoomState.messages || []
-    },
-    chatRoomPinnedMessages (state, getters) {
-      return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
-    }
+    ...chatroomGetters
   },
   actions: {
     // This is the constructor of Chat contract
@@ -170,7 +158,7 @@ sbp('chelonia/defineContract', {
           pinnedMessages: []
         }, data)
         for (const key in initialState) {
-          Vue.set(state, key, initialState[key])
+          state[key] = initialState[key]
         }
       }
     },
@@ -187,14 +175,14 @@ sbp('chelonia/defineContract', {
 
         if (!state.renderingContext) {
           if (!state.members) {
-            Vue.set(state, 'members', {})
+            state['members'] = {}
           }
           if (state.members[memberID]) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
 
-        Vue.set(state.members, memberID, { joinedDate: meta.createdDate })
+        state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height }
 
         // NOTE: this patch solves the issue of the action failing to process.
         //       when the contract was not fully synced because some encryption keys are missing.
@@ -215,35 +203,31 @@ sbp('chelonia/defineContract', {
         )
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
-      sideEffect ({ data, contractID, hash, height, meta, innerSigningContractID }, { state }) {
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const rootGetters = sbp('state/vuex/getters')
-          const state = sbp('state/vuex/state')[contractID]
-          const loggedIn = sbp('state/vuex/state').loggedIn
+      sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           const memberID = data.memberID || innerSigningContractID
 
           if (!state?.members?.[memberID]) {
             return
           }
 
-          if (memberID === loggedIn.identityContractID) {
+          const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+
+          if (memberID === identityContractID) {
             sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
 
             // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(state.members).filter((id) =>
-              id !== loggedIn.identityContractID && !rootGetters.ourContactProfilesById[id]
-            )
-            sbp('chelonia/contract/sync', profileIds).catch((e) => {
+            const profileIds = Object.keys(state.members)
+            sbp('chelonia/contract/retain', profileIds).catch((e) => {
               console.error('Error while syncing other members\' contracts at chatroom join', e)
             })
           } else {
-            if (!rootGetters.ourContactProfilesById[memberID]) {
-              sbp('chelonia/contract/sync', memberID).catch((e) => {
-                console.error(`Error while syncing new memberID's contract ${memberID}`, e)
-              })
-            }
+            sbp('chelonia/contract/retain', memberID).catch((e) => {
+              console.error(`Error while syncing new memberID's contract ${memberID}`, e)
+            })
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)
@@ -259,7 +243,7 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        Vue.set(state.attributes, 'name', data.name)
+        state.attributes['name'] = data.name
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
         const newMessage = createMessage({ meta, hash, height, data: notificationData, state, innerSigningContractID })
@@ -275,7 +259,7 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        Vue.set(state.attributes, 'description', data.description)
+        state.attributes['description'] = data.description
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {})
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       }
@@ -300,7 +284,8 @@ sbp('chelonia/defineContract', {
           }
         }
 
-        Vue.delete(state.members, memberID)
+        state.members[memberID].leftHeight = height
+        delete state.members[memberID]
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for leaving in direct messages
@@ -321,19 +306,20 @@ sbp('chelonia/defineContract', {
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
       },
-      sideEffect ({ data, hash, contractID, meta, innerSigningContractID }) {
-        const rootState = sbp('state/vuex/state')
+      async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }) {
         const memberID = data.memberID || innerSigningContractID
-        const itsMe = memberID === rootState.loggedIn.identityContractID
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
 
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
         if (itsMe) {
-          leaveChatRoom(contractID)
+          await leaveChatRoom(contractID).catch(e => {
+            console.error('[gi.contracts/chatroom/leave] Error at leaveChatRoom', e)
+          })
         }
 
-        sbp('chelonia/queueInvocation', contractID, () => {
-          const state = rootState[contractID]
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
           if (!state || !!state.members?.[data.memberID]) {
             return
           }
@@ -355,16 +341,16 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ meta }, { state }) {
-        Vue.set(state.attributes, 'deletedDate', meta.createdDate)
+        state.attributes['deletedDate'] = meta.createdDate
         for (const memberID in state.members) {
-          Vue.delete(state.members, memberID)
+          delete state.members[memberID]
         }
       },
-      sideEffect ({ contractID }) {
+      async sideEffect ({ contractID }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
-        leaveChatRoom(contractID)
+        await leaveChatRoom(contractID)
       }
     },
     'gi.contracts/chatroom/addMessage': {
@@ -382,10 +368,10 @@ sbp('chelonia/defineContract', {
           addMessage(state, createMessage({ meta, data, hash, height, state, pending, innerSigningContractID }))
         } else if (direction !== 'outgoing') {
           // If an existing message is found, it's no longer pending.
-          Vue.delete(existingMsg, 'pending')
+          delete existingMsg['pending']
         }
       },
-      sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
+      async sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
 
         if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
@@ -396,7 +382,7 @@ sbp('chelonia/defineContract', {
         const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
-        messageReceivePostEffect({
+        await messageReceivePostEffect({
           contractID,
           messageHash: newMessage.hash,
           height: newMessage.height,
@@ -417,13 +403,13 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state }) {
         const { hash, text } = data
         const fnEditMessage = (message) => {
-          Vue.set(message, 'text', text)
-          Vue.set(message, 'updatedDate', meta.createdDate)
+          message['text'] = text
+          message['updatedDate'] = meta.createdDate
 
           if (state.renderingContext && message.pending) {
             // NOTE: 'pending' message attribute is not the original message attribute
             //       and it is only set and used in Chat page
-            Vue.delete(message, 'pending')
+            delete message['pending']
           }
         }
 
@@ -434,20 +420,20 @@ sbp('chelonia/defineContract', {
           }
         })
       },
-      sideEffect ({ contractID, data, innerSigningContractID }, { getters }) {
-        const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.identityContractID
+      async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
+        const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
+        // TODO: This can't be a root getter when running in a SW
         const isAlreadyAdded = !!sbp('state/vuex/getters')
           .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUserID(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
         if (!isAlreadyAdded) {
-          messageReceivePostEffect({
+          await messageReceivePostEffect({
             contractID,
             messageHash: data.hash,
             /*
@@ -482,6 +468,7 @@ sbp('chelonia/defineContract', {
           if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             throw new TypeError(L('Only the person who sent the message can delete it.'))
           } else {
+            // TODO: This can't be a root getter when running in a SW
             const groupID = sbp('state/vuex/getters').groupIdFromChatRoomId(contractID)
             if (sbp('state/vuex/state')[groupID]?.groupOwnerID !== innerSigningContractID) {
               throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))
@@ -549,7 +536,7 @@ sbp('chelonia/defineContract', {
             const newAttachments = oldAttachments.filter(attachment => {
               return attachment.downloadData.manifestCid !== data.manifestCid
             })
-            Vue.set(message, 'attachments', newAttachments)
+            message['attachments'] = newAttachments
           }
         }
 
@@ -598,9 +585,9 @@ sbp('chelonia/defineContract', {
             emoticons[emoticon] = [innerSigningContractID]
           }
           if (emoticons) {
-            Vue.set(message, 'emoticons', emoticons)
+            message['emoticons'] = emoticons
           } else {
-            Vue.delete(message, 'emoticons')
+            delete message['emoticons']
           }
         }
 
@@ -630,7 +617,7 @@ sbp('chelonia/defineContract', {
             optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+          message['pollData'] = { ...pollData, options: optsCopy }
 
           // TODO: https://github.com/okTurtles/group-income/issues/2010
           shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
@@ -679,7 +666,7 @@ sbp('chelonia/defineContract', {
             optsCopy.find(x => x.id === optId)?.voted.push(innerSigningContractID)
           })
 
-          Vue.set(message, 'pollData', { ...pollData, options: optsCopy })
+          message['pollData'] = { ...pollData, options: optsCopy }
 
           // TODO: https://github.com/okTurtles/group-income/issues/2010
           shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
@@ -711,7 +698,7 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data }, { state }) {
         const fnClosePoll = (message) => {
-          Vue.set(message.pollData, 'status', POLL_STATUS.CLOSED)
+          message.pollData['status'] = POLL_STATUS.CLOSED
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
@@ -739,7 +726,7 @@ sbp('chelonia/defineContract', {
 
         const msgIndex = findMessageIdx(message.hash, state.messages)
         if (msgIndex >= 0) {
-          Vue.set(state.messages[msgIndex], 'pinnedBy', innerSigningContractID)
+          state.messages[msgIndex]['pinnedBy'] = innerSigningContractID
         }
       }
     },
@@ -755,21 +742,28 @@ sbp('chelonia/defineContract', {
 
         const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
-          Vue.delete(state.messages[msgIndex], 'pinnedBy')
+          delete state.messages[msgIndex]['pinnedBy']
         }
       }
     }
   },
   methods: {
+    'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
+      if (state) {
+        sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
+          console.error(`[gi.contracts/chatroom/_cleanup] Error releasing chatroom members for ${contractID}`, Object.keys(state.members), e)
+        })
+      }
+    },
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
-      if (!state._volatile) Vue.set(state, '_volatile', Object.create(null))
-      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+      if (!state._volatile) state['_volatile'] = Object.create(null)
+      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
 
       const CSKid = findKeyIdByName(state, 'csk')
       const CEKid = findKeyIdByName(state, 'cek')
 
-      Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
-      Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
+      state._volatile.pendingKeyRevocations[CSKid] = true
+      state._volatile.pendingKeyRevocations[CEKid] = true
 
       sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys').catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)

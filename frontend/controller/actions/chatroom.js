@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { has, omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -63,12 +63,12 @@ export default (sbp('sbp/selectors/register', {
       }
 
       // Before creating the contract, put all keys into transient store
-      sbp('chelonia/storeSecretKeys',
+      await sbp('chelonia/storeSecretKeys',
         // $FlowFixMe[incompatible-use]
-        () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true }))
+        new Secret([cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true })))
       )
 
-      const userCSKid = findKeyIdByName(rootState[userID], 'csk')
+      const userCSKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
       if (!userCSKid) throw new Error('User CSK id not found')
 
       const SAK = keygen(EDWARDS25519SHA512BATCH)
@@ -160,9 +160,9 @@ export default (sbp('sbp/selectors/register', {
       })
 
       // After the contract has been created, store pesistent keys
-      sbp('chelonia/storeSecretKeys',
+      await sbp('chelonia/storeSecretKeys',
         // $FlowFixMe[incompatible-use]
-        () => [cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key }))
+        new Secret([cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key })))
       )
 
       return chatroom
@@ -178,11 +178,11 @@ export default (sbp('sbp/selectors/register', {
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
     // $FlowFixMe
-    return Promise.all(Object.keys(state.members).map((pContractID) => {
-      const CEKid = findKeyIdByName(rootState[pContractID], 'cek')
+    return Promise.all(Object.keys(state.members).map(async (pContractID) => {
+      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
       if (!CEKid) {
         console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
-        return Promise.resolve()
+        return
       }
       return {
         contractID,
@@ -221,7 +221,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
     }
 
-    const CEKid = params.encryptionKeyId || sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+    const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
     const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
     return await sbp('chelonia/out/atomic', {
@@ -253,7 +253,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
     const userID = params.data.memberID
-    const keyIds = userID && sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+    const keyIds = userID && await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
     if (keyIds?.length) {
       return await sbp('chelonia/out/atomic', {

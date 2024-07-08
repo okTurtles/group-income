@@ -6,9 +6,9 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME, CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
-import { LOGIN, JOINED_GROUP } from '../../../frontend/utils/events.js'
-import { CONTRACTS_MODIFIED, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
+import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
+import { JOINED_GROUP } from '../../../frontend/utils/events.js'
+import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '../../../shared/domains/chelonia/events.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -42,8 +42,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
           resolved = true
           resolve()
           // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED, check)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED, check)
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, check)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
           sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
           clearInterval(x)
@@ -51,8 +51,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
 
         // Register event listeners. The following events could change the
         // state and affect the result of customCheckFn
-        sbp('okTurtles.events/on', EVENT_HANDLED, check)
-        sbp('okTurtles.events/on', CONTRACTS_MODIFIED, check)
+        sbp('okTurtles.events/on', EVENT_HANDLED_READY, check)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, check)
         sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
         sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
 
@@ -167,7 +167,7 @@ Cypress.Commands.add('giSignup', (username, {
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { username, email, passwordFn: () => password })
+      await sbp('gi.app/identity/signupAndLogin', { username, email, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -211,18 +211,25 @@ Cypress.Commands.add('giLogin', (username, {
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(sbp => {
-      return new Promise(resolve => {
-        const ourUsername = sbp('state/vuex/getters').ourUsername
-        if (ourUsername === username) {
-          throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+      const joinedGroupPromise = new Promise((resolve) => {
+        if (firstLoginAfterJoinGroup) {
+          sbp('okTurtles.events/once', JOINED_GROUP, ({ groupContractID }) => {
+            resolve(
+              sbp('chelonia/contract/wait', groupContractID)
+            )
+          })
+        } else {
+          resolve()
         }
-        sbp('okTurtles.events/once', LOGIN, async ({ username: name }) => {
-          if (name === username) {
-            await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-            resolve()
-          }
-        })
-        sbp('gi.actions/identity/login', { username, passwordFn: () => password })
+      })
+      return sbp('gi.app/identity/login', { username, password }).then(() => {
+        return joinedGroupPromise
+      }).then(() => {
+        if (firstLoginAfterJoinGroup) {
+          const router = sbp('controller/router')
+          if (router.history.current.path === '/dashboard') return
+          return router.push({ path: '/dashboard' }) // .catch(() => {})
+        }
       })
     })
 
@@ -260,7 +267,7 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
+    cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
@@ -303,7 +310,20 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         (async () => {
-          const message = await sbp('gi.actions/group/createAndSwitch', {
+          const eventHandler = ({ groupContractID }) => {
+            if (groupContractID === cID) {
+              sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
+              const invervalId = setInterval(() => {
+                if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
+                  clearTimeout(invervalId)
+                  resolve()
+                }
+              }, 5)
+            }
+          }
+          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
+
+          const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
               sharedValues,
@@ -313,16 +333,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
               ruleThreshold
             }
           })
-
-          const eventHandler = async ({ contractID }) => {
-            if (contractID === message.contractID()) {
-              await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-              sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-              resolve()
-            }
-          }
-          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
         })()
+      }).then(() => {
+        const router = sbp('controller/router')
+        if (router.history.current.path === '/dashboard') return
+        return router.push({ path: '/dashboard' })
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
@@ -455,7 +470,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     }
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+      await sbp('gi.app/group/joinWithInviteSecret', groupId, inviteSecret)
       await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
     })
   } else {
@@ -486,6 +501,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
+    cy.giEmptyInvocationQueue()
+
     cy.giLogout()
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
@@ -529,7 +546,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     if (bypassUI) {
       cy.giSignup(username, { bypassUI })
       cy.window().its('sbp').then(async sbp => {
-        await sbp('gi.actions/group/joinWithInviteSecret', groupId, inviteSecret)
+        await sbp('gi.app/group/joinWithInviteSecret', groupId, inviteSecret)
         await sbp('controller/router').push({ path: '/pending-approval' }).catch(e => {})
       })
     } else {
@@ -615,7 +632,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
   // Needs to be in 'Group Chat' page
   if (bypassUI) {
     cy.window().its('sbp').then(sbp => {
-      sbp('gi.actions/group/addAndJoinChatRoom', {
+      sbp('gi.app/group/addAndJoinChatRoom', {
         contractID: sbp('state/vuex/state').currentGroupId,
         data: {
           attributes: {
@@ -670,11 +687,22 @@ Cypress.Commands.add('giAddNewChatroom', ({
 Cypress.Commands.add('giForceDistributionDateToNow', () => {
   cy.window().its('sbp').then(sbp => {
     return new Promise((resolve) => {
+      const contractID = sbp('state/vuex/state').currentGroupId
+      const handler = (cID, entry) => {
+        if (cID === contractID && entry.hash() === hash) {
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, handler)
+          resolve()
+        }
+      }
+      let hash
+      sbp('okTurtles.events/on', EVENT_HANDLED_READY, handler)
       sbp('gi.actions/group/forceDistributionDate', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID,
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
-          onprocessed: () => resolve()
+          beforeRequest: (entry) => {
+            hash = entry.hash()
+          }
         }
       })
     })
@@ -714,7 +742,7 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  cy.getByDT('conversationWrapper').within(() => {
+  cy.getByDT('conversationWrapper').within(($el) => {
     if (inviter) {
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
     }

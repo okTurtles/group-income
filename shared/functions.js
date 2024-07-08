@@ -1,6 +1,7 @@
 'use strict'
 
 import nacl from 'tweetnacl'
+import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake2b256stream } from '~/shared/blake2bstream.js'
 import { base58btc } from '~/shared/multiformats/bases/base58.js'
 import { blake2b256 } from '~/shared/multiformats/blake2b.js'
@@ -10,10 +11,11 @@ import { CID } from '~/shared/multiformats/cid.js'
 const multicodes = { JSON: 0x0200, RAW: 0x00 }
 
 // Makes the `Buffer` global available in the browser if needed.
-if (typeof window === 'object' && typeof Buffer === 'undefined') {
+// $FlowFixMe[cannot-resolve-name]
+if (typeof globalThis === 'object' && !has(globalThis, 'Buffer')) {
   // Only import `Buffer` to hopefully help treeshaking.
   const { Buffer } = require('buffer')
-  window.Buffer = Buffer
+  globalThis.Buffer = Buffer
 }
 
 export async function createCIDfromStream (data: string | Uint8Array | ReadableStream, multicode: number = multicodes.RAW): Promise<string> {

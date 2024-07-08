@@ -14,26 +14,30 @@ export default (sbp('sbp/selectors/register', {
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    // Using 'chelonia/rootState' here as 'state/vuex/state' is not available
+    // in the SW, and because, even without a SW, 'loggedIn' is not yet there
+    // in Vuex state when logging in
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to fetch chatroom unreadMessages without an active session')
     }
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES))?.data || {}
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
   'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.UNREAD_MESSAGES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+    return sbp('chelonia/kv/set', identityContractID, KV_KEYS.UNREAD_MESSAGES, data, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       onconflict
     })
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
     })
   },
@@ -152,26 +156,27 @@ export default (sbp('sbp/selectors/register', {
   },
   // Preferences
   'gi.actions/identity/kv/fetchPreferences': async () => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to fetch preferences without an active session')
     }
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.PREFERENCES))?.data || {}
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.PREFERENCES))?.data || {}
   },
   'gi.actions/identity/kv/savePreferences': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update preferences without an active session')
     }
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.PREFERENCES, data, {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+    return sbp('chelonia/kv/set', identityContractID, KV_KEYS.PREFERENCES, data, {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       onconflict
     })
   },
   'gi.actions/identity/kv/loadPreferences': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
+      // TODO: Can't use state/vuex/commit
       sbp('state/vuex/commit', 'setPreferences', preferences)
     })
   },
@@ -192,15 +197,15 @@ export default (sbp('sbp/selectors/register', {
   },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to fetch notification status without an active session')
     }
-    return (await sbp('chelonia/kv/get', ourIdentityContractId, KV_KEYS.NOTIFICATIONS))?.data || {}
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NOTIFICATIONS))?.data || {}
   },
   'gi.actions/identity/kv/saveNotificationStatus': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const { ourIdentityContractId } = sbp('state/vuex/getters')
-    if (!ourIdentityContractId) {
+    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
 
@@ -220,9 +225,9 @@ export default (sbp('sbp/selectors/register', {
       return null
     }
 
-    return sbp('chelonia/kv/set', ourIdentityContractId, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek'),
-      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'csk'),
+    return sbp('chelonia/kv/set', identityContractID, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       onconflict: updatedOnConflict
     })
   },
