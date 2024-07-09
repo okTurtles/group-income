@@ -13,13 +13,14 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
+import type { Secret } from './Secret.js'
 import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './internals.js'
 import './files.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
+import { buildShelterAuthorizationHeader, clearObject, checkCanBeGarbageCollected, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -311,7 +312,11 @@ export default (sbp('sbp/selectors/register', {
     this.pending = []
   },
   'chelonia/config': function () {
-    return cloneDeep(this.config)
+    return {
+      ...cloneDeep(this.config),
+      reactiveSet: this.config.reactiveSet,
+      reactiveDel: this.config.reactiveDel
+    }
   },
   'chelonia/configure': async function (config: Object) {
     merge(this.config, config)
@@ -328,7 +333,12 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/reset': async function (postCleanupFn) {
+  'chelonia/reset': async function (newState, postCleanupFn) {
+    // Allow optional newState OR postCleanupFn
+    if (typeof newState === 'function' && typeof postCleanupFn === 'undefined') {
+      postCleanupFn = newState
+      newState = undefined
+    }
     sbp('chelonia/private/stopClockSync')
     // wait for any pending sync operations to finish before saving
     Object.keys(this.postSyncOperations).forEach(cID => {
@@ -343,16 +353,16 @@ export default (sbp('sbp/selectors/register', {
     })
     await sbp('chelonia/contract/waitPublish')
     await sbp('chelonia/contract/wait')
-    await postCleanupFn?.()
+    const result = await postCleanupFn?.()
     // The following are all synchronous operations
     const rootState = sbp(this.config.stateSelector)
-    const contracts = rootState.contracts
     // Cancel all outgoing messages by replacing this._instance
     this._instance = Object.create(null)
     this.abortController.abort()
     this.abortController = new AbortController()
     // Remove all contracts, including all contracts from pending
-    reactiveClearObject(contracts, this.config.reactiveDel)
+    reactiveClearObject(rootState, this.config.reactiveDel)
+    this.config.reactiveSet(rootState, 'contracts', Object.create(null))
     clearObject(this.ephemeralReferenceCount)
     this.pending.splice(0)
     clearObject(this.currentSyncs)
@@ -360,13 +370,19 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.sideEffectStacks)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     sbp('chelonia/private/startClockSync')
+    if (newState) {
+      Object.entries(newState).forEach(([key, value]) => {
+        this.config.reactiveSet(rootState, key, value)
+      })
+    }
+    return result
   },
-  'chelonia/storeSecretKeys': function (keysFn: () => {key: Key, transient?: boolean}[]) {
+  'chelonia/storeSecretKeys': function (wkeys: Secret<{key: Key | string, transient?: boolean}[]>) {
     const rootState = sbp(this.config.stateSelector)
     if (!rootState.secretKeys) this.config.reactiveSet(rootState, 'secretKeys', Object.create(null))
-    let keys = keysFn?.()
+    let keys = wkeys.valueOf()
     if (!keys) return
     if (!Array.isArray(keys)) keys = [keys]
     keys.forEach(({ key, transient }) => {
@@ -523,8 +539,8 @@ export default (sbp('sbp/selectors/register', {
   // This function takes a function as a parameter that returns a string
   // It does not a string directly to prevent accidentally logging the value,
   // which is a secret
-  'chelonia/crypto/keyId': (inKeyFn: { (): Key | string }) => {
-    return keyId(inKeyFn())
+  'chelonia/crypto/keyId': (inKey: Secret<Key | string>) => {
+    return keyId(inKey.valueOf())
   },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (options = {}): Object {
@@ -642,14 +658,24 @@ export default (sbp('sbp/selectors/register', {
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
       this.defContractSelectors.push(...sbp('sbp/selectors/register', {
-        [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
+        [`${contract.manifest}/${action}/process`]: async (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
-          const gProxy = gettersProxy(state, contract.getters)
+          // TODO: Note: when sandboxing contracts, contracts may not have
+          // access to the state directly, meaning that modifications would need
+          // to be re-applied
           state = state || contract.state(contractID)
-          contract.metadata.validate(meta, { state, ...gProxy, contractID })
-          contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
-          contract.actions[action].process(message, { state, ...gProxy })
+          const gProxy = gettersProxy(state, contract.getters)
+          // These `await` are here to help with sandboxing in the future
+          // Sandboxing may mean that contracts are executed in another context
+          // (e.g., a worker), which would require asynchronous communication
+          // between Chelonia and the contract.
+          // Even though these are asynchronous calls, contracts should not
+          // call side effects from these functions
+          await contract.metadata.validate(meta, { state, ...gProxy, contractID })
+
+          await contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
+          await contract.actions[action].process(message, { state, ...gProxy })
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
@@ -659,8 +685,12 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`[${contract.manifest}/${action}/sideEffect]: Skipping side-effect since there is no contract state for contract ${mutation.contractID}`)
               return
             }
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+            // TODO: Copy to simulate a sandbox boundary without direct access
+            // as well as to enforce the rule that side-effects must not mutate
+            // state
+            const stateCopy = cloneDeep(state)
+            const gProxy = gettersProxy(stateCopy, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state: stateCopy, ...gProxy })
           }
           // since both /process and /sideEffect could call /pushSideEffect, we make sure
           // to process the side effects on the stack after calling /sideEffect.
@@ -768,7 +798,10 @@ export default (sbp('sbp/selectors/register', {
     const forcedSync = !!params?.force
     return Promise.all(listOfIds.map(contractID => {
       if (!forcedSync && this.subscriptionSet.has(contractID)) {
-        return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        const rootState = sbp(this.config.stateSelector)
+        if (!rootState[contractID]?._volatile?.dirty) {
+          return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        }
       }
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
@@ -789,7 +822,12 @@ export default (sbp('sbp/selectors/register', {
       ? isSyncing && this.currentSyncs[contractID].firstSync
       : isSyncing
   },
-  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
+  // Because `/remove` is done asynchronously and a contract might be removed
+  // much later than when the call to remove was made, an optional callback
+  // can be passed to verify whether to proceed with removal. This is used as
+  // part of the `/release` mechanism to prevent removing contracts that have
+  // acquired new references since the call to `/remove`.
+  'chelonia/contract/remove': function (contractIDs: string | string[], confirmRemovalCallback?: (contractID: string) => boolean): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -798,6 +836,14 @@ export default (sbp('sbp/selectors/register', {
       }
 
       return sbp('chelonia/private/queueEvent', contractID, () => {
+        // This allows us to double-check that the contract is meant to be
+        // removed, as circumstances could have changed from the time remove
+        // was called and this function is executed. For example, `/release`
+        // makes a synchronous check, but processing of other events since
+        // require this to be re-checked (in this case, for reference counts).
+        if (confirmRemovalCallback && !confirmRemovalCallback(contractID)) {
+          return
+        }
         const rootState = sbp(this.config.stateSelector)
         const fkContractIDs = Array.from(new Set(Object.values(rootState[contractID]?._vm?.authorizedKeys ?? {}).filter((k) => {
           return !!(k: any).foreignKey
@@ -822,7 +868,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }))
   },
-  'chelonia/contract/retain': function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
+  'chelonia/contract/retain': async function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     if (listOfIds.length === 0) return Promise.resolve()
     if (!params?.ephemeral) {
@@ -842,7 +888,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }
-    return sbp('chelonia/contract/sync', listOfIds)
+    return await sbp('chelonia/contract/sync', listOfIds)
   },
   // the `try` parameter does not affect (ephemeral or persistent) reference
   // counts, but rather removes a contract if the reference count is zero
@@ -850,7 +896,7 @@ export default (sbp('sbp/selectors/register', {
   // is meant mostly for internal chelonia use, so that removing or releasing
   // a contract can also remove other contracts that this first contract
   // was monitoring.
-  'chelonia/contract/release': function (contractIDs: string | string[], params?: { ephemeral?: boolean, try?: boolean }): Promise<*> {
+  'chelonia/contract/release': async function (contractIDs: string | string[], params?: { ephemeral?: boolean, try?: boolean }): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     const rootState = sbp(this.config.stateSelector)
     if (!params?.try) {
@@ -859,6 +905,7 @@ export default (sbp('sbp/selectors/register', {
           if (has(rootState.contracts, id) && has(rootState.contracts[id], 'references')) {
             const current = rootState.contracts[id].references
             if (current === 0) {
+              console.error('[chelonia/contract/release] Invalid negative reference count for', id)
               throw new Error('Invalid negative reference count')
             }
             if (current <= 1) {
@@ -867,6 +914,7 @@ export default (sbp('sbp/selectors/register', {
               this.config.reactiveSet(rootState.contracts[id], 'references', current - 1)
             }
           } else {
+            console.error('[chelonia/contract/release] Invalid negative reference count for', id)
             throw new Error('Invalid negative reference count')
           }
         })
@@ -880,21 +928,19 @@ export default (sbp('sbp/selectors/register', {
               this.ephemeralReferenceCount[id] = current - 1
             }
           } else {
+            console.error('[chelonia/contract/release] Invalid negative ephemeral reference count for', id)
             throw new Error('Invalid negative ephemeral reference count')
           }
         })
       }
     }
-    const idsToRemove = listOfIds.filter((id) => {
-      return (
-        // Check persistent references
-        (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
-        // Check ephemeral references
-        !has(this.ephemeralReferenceCount, id)) &&
-        // Check foreign keys (i.e., that no keys are being watched)
-        (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
-    })
-    return idsToRemove.length ? sbp('chelonia/contract/remove', idsToRemove) : Promise.resolve()
+
+    // This function will be called twice. The first time, it provides a list of
+    // candidate contracts to remove. The second time, it confirms that the
+    // contract is safe to remove
+    const boundCheckCanBeGarbageCollected = checkCanBeGarbageCollected.bind(this)
+    const idsToRemove = listOfIds.filter(boundCheckCanBeGarbageCollected)
+    return idsToRemove.length ? await sbp('chelonia/contract/remove', idsToRemove, boundCheckCanBeGarbageCollected) : undefined
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)
@@ -1006,6 +1052,24 @@ export default (sbp('sbp/selectors/register', {
       })
     }
     return stateCopy
+  },
+  'chelonia/contract/fullState': function (contractID: string | string[]) {
+    const rootState = sbp(this.config.stateSelector)
+    if (Array.isArray(contractID)) {
+      return Object.fromEntries(contractID.map(contractID => {
+        return [
+          contractID,
+          {
+            contractState: rootState[contractID],
+            cheloniaState: rootState.contracts[contractID]
+          }
+        ]
+      }))
+    }
+    return {
+      contractState: rootState[contractID],
+      cheloniaState: rootState.contracts[contractID]
+    }
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {

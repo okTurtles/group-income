@@ -76,15 +76,7 @@ export default ({
         const chatRoomID = this.currentChatRoomId
         await sbp('gi.actions/group/deleteChatRoom', {
           contractID: this.currentGroupId,
-          data: { chatRoomID },
-          hooks: {
-            postpublish: (message) => {
-              // TODO: This should be moved to a side-effect
-              sbp('gi.actions/chatroom/delete', { contractID: chatRoomID, data: {} }).catch(e => {
-                console.log(`Error sending chatroom removal action for ${chatRoomID}`, e)
-              })
-            }
-          }
+          data: { chatRoomID }
         })
         this.close()
       } catch (e) {

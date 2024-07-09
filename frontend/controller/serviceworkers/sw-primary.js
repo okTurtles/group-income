@@ -57,6 +57,20 @@ self.addEventListener('message', function (event) {
       case 'store-client-id':
         store.clientId = event.source.id
         break
+      case 'ping':
+        event.source.postMessage({ type: 'pong' })
+        break
+      case 'shutdown':
+        self.registration.unregister()
+          .then(function () {
+            return self.clients.matchAll()
+          })
+          .then(function (clients) {
+            // Force a refresh of each SW window. This ensures that the service
+            // worker is completely removed
+            clients.forEach(client => client.navigate(client.url))
+          })
+        break
       default:
         console.error('[sw] unknown message type:', event.data)
         break

@@ -1,48 +1,52 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.data'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
-import IdleVue from 'idle-vue'
-import { mapMutations, mapGetters, mapState } from 'vuex'
-import 'wicg-inert'
-import '@model/captureLogs.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
-import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT, LOGIN_ERROR, SWITCH_GROUP, THEME_CHANGE, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from './utils/events.js'
-import './controller/namespace.js'
-import './controller/actions/index.js'
-import './controller/backend.js'
-import './controller/service-worker.js'
-import '~/shared/domains/chelonia/persistent-actions.js'
-import manifests from './model/contracts/manifests.json'
-import router from './controller/router.js'
-import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
-import store from './model/state.js'
-import { SETTING_CURRENT_USER } from './model/database.js'
-import BackgroundSounds from './views/components/sounds/Background.vue'
-import BannerGeneral from './views/components/banners/BannerGeneral.vue'
-import Navigation from './views/containers/navigation/Navigation.vue'
-import AppStyles from './views/components/AppStyles.vue'
-import Modal from './views/components/modal/Modal.vue'
+import '@model/captureLogs.js'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.eventqueue'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import IdleVue from 'idle-vue'
+import { mapGetters, mapMutations, mapState } from 'vuex'
+import 'wicg-inert'
+import '~/shared/domains/chelonia/chelonia.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import '~/shared/domains/chelonia/localSelectors.js'
+// import '~/shared/domains/chelonia/persistent-actions.js' // Commented out as persistentActions are not being used
+import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
+import './controller/actions/index.js'
+import './controller/app/index.js'
+import './controller/backend.js'
+import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import './controller/namespace.js'
+import router from './controller/router.js'
+import './controller/service-worker.js'
+import manifests from './model/contracts/manifests.json'
+import { SETTING_CURRENT_USER } from './model/database.js'
+import store from './model/state.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import AppStyles from './views/components/AppStyles.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+import Modal from './views/components/modal/Modal.vue'
+import BackgroundSounds from './views/components/sounds/Background.vue'
+import Navigation from './views/containers/navigation/Navigation.vue'
 import './views/utils/avatar.js'
 import './views/utils/ui.js'
-import './views/utils/vFocus.js'
 import './views/utils/vError.js'
+import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
-import './views/utils/vStyle.js'
-import './utils/touchInteractions.js'
-import './model/notifications/periodicNotifications.js'
+import { debounce, has } from '@model/contracts/shared/giLodash.js'
+import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
-import { showNavMixin } from './views/utils/misc.js'
-import FaviconBadge from './utils/faviconBadge.js'
+import './model/notifications/periodicNotifications.js'
 import { KV_KEYS } from './utils/constants.js'
+import FaviconBadge from './utils/faviconBadge.js'
+import './utils/touchInteractions.js'
+import { showNavMixin } from './views/utils/misc.js'
+import './views/utils/vStyle.js'
 
 const { Vue, L } = Common
 
@@ -103,19 +107,88 @@ async function startApp () {
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save')
   }
+
+  // Set up event listeners to keep local (Vuex) and Chelonia states in sync
+  sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
+
+  // Load Chelonia state (this needs to be done in the SW when Chelonia is
+  // running there)
+  // We only load Chelonia state when SETTING_CURRENT_USER is set because,
+  // currently, Chelonia only has meaningful persistent state when there's
+  // an active session. If there's no logged in user, it means that there's
+  // no state to restore.
+  // Note that `gi.app/identity/login` and `gi.actions/identity/login` also
+  // load Chelonia state. The difference between this and that case is that
+  // the code immediately below loads Chelonia state when there already is
+  // an active sessin (e.g., when refreshing the page). On the other hand, the
+  // login functions _replace_ the Chelonia state with a saved state when a
+  // fresh session is started. For example, when logging back in on a device.
+  // In short:
+  //   - Active session on this device: load state from CHELONIA_STATE directly.
+  //   - Completely fresh session (no saved state): fresh state (not loaded from
+  //     anywhere).
+  //   - Fresh session with saved state: /login logic, CHELONIA_STATE is
+  //     decrypyted from the saved state and loaded. This is also saved in
+  //     CHELONIA_STATE so that refreshing the page works.
+  // Difference between Chelonia state (chelonia/rootState) and Vuex state
+  // (state/vuex/state):
+  //   1. Chelonia state is authoritative for Chelonia
+  //   2. Vuex state is authoritative for Vue
+  //   3. There is a single Chelonia state, but there could be many different
+  //      instances of Vuex state. (E.g., with a SW, Chelonia is running in a
+  //      SW and has a single state there, but each tab has a different Vuex
+  //      state)
+  //   4. A copy of (parts of) Chelonia state is kept in Vuex state so that
+  //      the application can react to contract state changes. However, these
+  //      copies are to be considered a cache and are not authoritative.
+  //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
+  //      in a single direction: Chelonia -> Vuex)
+  await sbp('gi.db/settings/load', 'CHELONIA_STATE').then(async (cheloniaState) => {
+    if (!cheloniaState) return
+    const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    if (!identityContractID) return
+    await sbp('chelonia/reset', cheloniaState)
+  })
+
+  let logoutInProgress = false
+  const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', () => {
+    if (logoutInProgress) return
+    return sbp('gi.db/settings/save', 'CHELONIA_STATE', sbp('chelonia/rootState'))
+  })
+  const saveCheloniaDebounced = debounce(saveChelonia, 200)
+
+  // When running in a SW, this call here needs to be moved to be made from the
+  // SW itself
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
-    stateSelector: 'state/vuex/state',
-    reactiveSet: Vue.set,
-    reactiveDel: Vue.delete,
+    // Because Chelonia state is kept separately from Vuex state, there is
+    // no need to override stateSelector. However, `reactiveSet` and `reactiveDel`
+    // are still needed to persist Chelonia state (this separation means that
+    // Chelonia state and Vuex state need to be persisted separately).
+    // // stateSelector: 'state/vuex/state',
+    reactiveSet: (o: Object, k: string, v: string) => {
+      if (o[k] !== v) {
+        o[k] = v
+        saveCheloniaDebounced()
+      }
+    },
+    reactiveDel: (o: Object, k: string) => {
+      if (has(o, k)) {
+        delete o[k]
+        saveCheloniaDebounced()
+      }
+    },
     contracts: {
       ...manifests,
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
+          // TODO: [SW] the `state/` selectors should _not_ be used from contracts
+          // since they refer to Vuex (i.e., tab / window) state and not to
+          // Chelonia state.
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
-          'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
+          'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',
@@ -124,6 +197,7 @@ async function startApp () {
           'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
           'gi.actions/group/join', 'gi.actions/group/joinChatRoom',
           'gi.actions/identity/addJoinDirectMessageKey', 'gi.actions/identity/leaveGroup',
+          'gi.actions/chatroom/delete',
           'gi.notifications/emit',
           'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel',
@@ -173,6 +247,14 @@ async function startApp () {
       }
     }
   })
+
+  // TODO: [SW] The following will be needed to keep namespace registrations
+  // in sync between the SW and each tab. It is not needed now because everything
+  // is running in the same context
+  /* sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+    const cache = sbp('state/vuex/state').namespaceLookups
+    Vue.set(cache, name, value)
+  }) */
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
@@ -271,7 +353,18 @@ async function startApp () {
   }
 
   // register service-worker
-  await sbp('service-workers/setup')
+  await Promise.race(
+    [sbp('service-workers/setup'),
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(new Error('Timed out setting up service worker'))
+        }, 15e3)
+      })]
+  ).catch(e => {
+    console.error('[main] Error setting up service worker', e)
+    alert(L('Error while setting up service worker'))
+    throw e
+  })
 
   /* eslint-disable no-new */
   new Vue({
@@ -320,32 +413,58 @@ async function startApp () {
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
-      sbp('okTurtles.events/on', LOGIN, async () => {
+      sbp('okTurtles.events/on', LOGOUT, () => {
+        // TODO: [SW] This is to be done by the SW
+        logoutInProgress = true
+        saveCheloniaDebounced.clear()
+        Promise.all([
+          sbp('chelonia/reset'),
+          sbp('gi.db/settings/delete', 'CHELONIA_STATE')
+        ]).catch(e => {
+          console.error('Logout event: error deleting Chelonia state')
+        }).finally(() => {
+          logoutInProgress = false
+        })
+      })
+      sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+        const state = sbp('state/vuex/state')
+        if (!state.loggedIn) {
+          console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
+          return
+        }
         this.ephemeral.finishedLogin = 'yes'
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-        const databaseKey = `chelonia/persistentActions/${sbp('state/vuex/getters').ourIdentityContractId}`
-        sbp('chelonia.persistentActions/configure', { databaseKey })
-        await sbp('chelonia.persistentActions/load')
 
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
+
+        // TODO: [SW] This should be done by the service worker when logging
+        // in
+        saveChelonia().catch(e => {
+          console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
+        })
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
+        const state = sbp('state/vuex/state')
+        if (!state.loggedIn) return
         this.ephemeral.finishedLogin = 'no'
-        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         // Stop timers related to periodic notifications or persistent actions.
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
-        sbp('chelonia.persistentActions/unload')
+        sbp('gi.db/settings/delete', state.loggedIn.identityContractID).catch(e => {
+          console.error('Logout event: error deleting settings')
+        })
+        sbp('state/vuex/reset')
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
         // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
         this.removeLoadingAnimation()
       })
-      sbp('okTurtles.events/on', SWITCH_GROUP, () => {
+      sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID, isNewlyCreated }) => {
         this.initOrResetPeriodicNotifications()
         this.checkAndEmitOneTimeNotifications()
       })
@@ -404,9 +523,17 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(identityContractID => {
-        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.actions/identity/login', { identityContractID }).catch((e) => {
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+        // This loads CHELONIA_STATE when _not_ running as a service worker
+        const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
+        if (!cheloniaState || !identityContractID) return
+        if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        const contractIDs = groupContractsByType(cheloniaState.contracts)
+        await syncContractsInOrder(identityContractID, contractIDs)
+
+        if (this.ephemeral.finishedLogin === 'yes') return
+        return sbp('gi.app/identity/login', { identityContractID }).catch((e) => {
           console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
           console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
         })

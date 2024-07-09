@@ -212,7 +212,7 @@ export default ({
 
       const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
       if (itemId === 'add-new-member' && (this.groupShouldPropose || isWelcomeInviteExpired)) {
-        return sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
+        return sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID: this.$store.state.currentGroupId })
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)

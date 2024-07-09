@@ -6,6 +6,7 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
     get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
   }) : x)(function(x) {
@@ -25,6 +26,10 @@
     return to;
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
+  var __publicField = (obj, key, value) => {
+    __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+    return value;
+  };
 
   // (disabled):crypto
   var require_crypto = __commonJS({
@@ -5491,29 +5496,8 @@
   });
 
   // frontend/model/contracts/identity.js
-  var import_sbp4 = __toESM(__require("@sbp/sbp"));
   var import_common = __require("@common/common.js");
-
-  // frontend/model/contracts/shared/giLodash.js
-  function cloneDeep(obj) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-  function isMergeableObject(val) {
-    const nonNullObject = val && typeof val === "object";
-    return nonNullObject && Object.prototype.toString.call(val) !== "[object RegExp]" && Object.prototype.toString.call(val) !== "[object Date]";
-  }
-  function merge(obj, src2) {
-    for (const key in src2) {
-      const clone = isMergeableObject(src2[key]) ? cloneDeep(src2[key]) : void 0;
-      if (clone && isMergeableObject(obj[key])) {
-        merge(obj[key], clone);
-        continue;
-      }
-      obj[key] = clone || src2[key];
-    }
-    return obj;
-  }
-  var has = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+  var import_sbp4 = __toESM(__require("@sbp/sbp"));
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -5676,15 +5660,187 @@ ${this.getErrorInfo()}`;
   }
   var unionOf = unionOf_;
 
-  // frontend/model/contracts/shared/validators.js
-  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
-  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
-  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
-  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
-  var noUppercase = (value) => value.toLowerCase() === value;
+  // frontend/utils/events.js
+  var LEFT_GROUP = "left-group";
+
+  // shared/serdes/index.js
+  var raw = Symbol("raw");
+  var serdesTagSymbol = Symbol("tag");
+  var serdesSerializeSymbol = Symbol("serialize");
+  var serdesDeserializeSymbol = Symbol("deserialize");
+  var rawResult = (obj) => {
+    Object.defineProperty(obj, raw, { value: true });
+    return obj;
+  };
+  var serializer = (data) => {
+    const verbatim = [];
+    const transferables = /* @__PURE__ */ new Set();
+    const revokables = /* @__PURE__ */ new Set();
+    const result = JSON.parse(JSON.stringify(data, (_key, value) => {
+      if (value && value[raw])
+        return value;
+      if (value === void 0)
+        return rawResult(["_", "_"]);
+      if (!value)
+        return value;
+      if (Array.isArray(value) && value[0] === "_")
+        return rawResult(["_", "_", ...value]);
+      if (value instanceof Map) {
+        return rawResult(["_", "Map", Array.from(value.entries())]);
+      }
+      if (value instanceof Set) {
+        return rawResult(["_", "Set", Array.from(value.entries())]);
+      }
+      if (value instanceof Error || value instanceof Blob || value instanceof File) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        return rawResult(["_", "_ref", pos]);
+      }
+      if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || ArrayBuffer.isView(value) || value instanceof ArrayBuffer) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        transferables.add(value);
+        return rawResult(["_", "_ref", pos]);
+      }
+      if (typeof value === "function") {
+        const mc = new MessageChannel();
+        mc.port1.onmessage = async (ev) => {
+          try {
+            try {
+              const result2 = await value(...deserializer(ev.data[1]));
+              const { data: data2, transferables: transferables2 } = serializer(result2);
+              ev.data[0].postMessage([true, data2], transferables2);
+            } catch (e) {
+              const { data: data2, transferables: transferables2 } = serializer(e);
+              ev.data[0].postMessage([false, data2], transferables2);
+            }
+          } catch (e) {
+            console.error("Async error on onmessage handler", e);
+          }
+        };
+        transferables.add(mc.port2);
+        revokables.add(mc.port1);
+        return rawResult(["_", "_fn", mc.port2]);
+      }
+      const proto3 = Object.getPrototypeOf(value);
+      if (proto3?.constructor?.[serdesTagSymbol] && proto3.constructor[serdesSerializeSymbol]) {
+        return rawResult(["_", "_custom", proto3.constructor[serdesTagSymbol], proto3.constructor[serdesSerializeSymbol](value)]);
+      }
+      return value;
+    }), (_key, value) => {
+      if (Array.isArray(value) && value[0] === "_" && value[1] === "_ref") {
+        return verbatim[value[2]];
+      }
+      return value;
+    });
+    return {
+      data: result,
+      transferables: Array.from(transferables),
+      revokables: Array.from(revokables)
+    };
+  };
+  var deserializerTable = /* @__PURE__ */ Object.create(null);
+  var deserializer = (data) => {
+    const verbatim = [];
+    return JSON.parse(JSON.stringify(data, (_key, value) => {
+      if (value && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        return rawResult(["_", "_ref", pos]);
+      }
+      return value;
+    }), (_key, value) => {
+      if (Array.isArray(value) && value[0] === "_") {
+        switch (value[1]) {
+          case "_":
+            if (value.length >= 3) {
+              return value.slice(2);
+            } else {
+              return void 0;
+            }
+          case "Map":
+            return new Map(value[2]);
+          case "Set":
+            return new Set(value[2]);
+          case "_custom":
+            if (deserializerTable[value[2]]) {
+              return deserializerTable[value[2]](value[3]);
+            } else {
+              throw new Error("Invalid or unknown tag: " + value[2]);
+            }
+          case "_ref":
+            return verbatim[value[2]];
+          case "_fn": {
+            const mp = value[2];
+            return (...args) => {
+              return new Promise((resolve, reject) => {
+                const mc = new MessageChannel();
+                const { data: data2, transferables } = serializer(args);
+                mc.port1.onmessage = (ev) => {
+                  if (ev.data[0]) {
+                    resolve(deserializer(ev.data[1]));
+                  } else {
+                    reject(deserializer(ev.data[1]));
+                  }
+                };
+                mp.postMessage([mc.port2, data2], [mc.port2, ...transferables]);
+              });
+            };
+          }
+        }
+      }
+      return value;
+    });
+  };
+  deserializer.register = (y) => {
+    if (typeof y === "function" && typeof y[serdesTagSymbol] === "string" && typeof y[serdesDeserializeSymbol] === "function") {
+      deserializerTable[y[serdesTagSymbol]] = y[serdesDeserializeSymbol].bind(y);
+    }
+  };
+
+  // shared/domains/chelonia/Secret.js
+  var Secret = class {
+    _content;
+    static [serdesDeserializeSymbol](secret) {
+      return new this(secret);
+    }
+    static [serdesSerializeSymbol](secret) {
+      return secret._content;
+    }
+    static get [serdesTagSymbol]() {
+      return "__chelonia_Secret";
+    }
+    constructor(value) {
+      this._content = value;
+    }
+    valueOf() {
+      return this._content;
+    }
+  };
 
   // shared/domains/chelonia/utils.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/giLodash.js
+  function cloneDeep(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+  function isMergeableObject(val) {
+    const nonNullObject = val && typeof val === "object";
+    return nonNullObject && Object.prototype.toString.call(val) !== "[object RegExp]" && Object.prototype.toString.call(val) !== "[object Date]";
+  }
+  function merge(obj, src2) {
+    for (const key in src2) {
+      const clone = isMergeableObject(src2[key]) ? cloneDeep(src2[key]) : void 0;
+      if (clone && isMergeableObject(obj[key])) {
+        merge(obj[key], clone);
+        continue;
+      }
+      obj[key] = clone || src2[key];
+    }
+    return obj;
+  }
+  var has = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
 
   // shared/functions.js
   var import_tweetnacl = __toESM(require_nacl_fast());
@@ -6842,14 +6998,222 @@ ${this.getErrorInfo()}`;
   var cidSymbol = Symbol.for("@ipld/js-cid/CID");
 
   // shared/functions.js
-  if (typeof window === "object" && typeof Buffer === "undefined") {
+  var multicodes = { JSON: 512, RAW: 0 };
+  if (typeof globalThis === "object" && !has(globalThis, "Buffer")) {
     const { Buffer: Buffer2 } = require_buffer();
-    window.Buffer = Buffer2;
+    globalThis.Buffer = Buffer2;
   }
+  function createCID(data, multicode = multicodes.RAW) {
+    const uint8array = typeof data === "string" ? new TextEncoder().encode(data) : data;
+    const digest = blake2b256.digest(uint8array);
+    return CID.create(1, multicode, digest).toString(base58btc.encoder);
+  }
+  function blake32Hash(data) {
+    const uint8array = typeof data === "string" ? new TextEncoder().encode(data) : data;
+    const digest = blake2b256.digest(uint8array);
+    return base58btc.encode(digest.bytes);
+  }
+  var b64ToBuf = (b64) => Buffer.from(b64, "base64");
+  var strToBuf = (str) => Buffer.from(str, "utf8");
+  var bytesToB64 = (ary) => Buffer.from(ary).toString("base64");
 
   // shared/domains/chelonia/crypto.js
   var import_tweetnacl2 = __toESM(require_nacl_fast());
   var import_scrypt_async = __toESM(require_scrypt_async());
+  var EDWARDS25519SHA512BATCH = "edwards25519sha512batch";
+  var CURVE25519XSALSA20POLY1305 = "curve25519xsalsa20poly1305";
+  var XSALSA20POLY1305 = "xsalsa20poly1305";
+  var bytesOrObjectToB64 = (ary) => {
+    if (!(ary instanceof Uint8Array)) {
+      throw Error("Unsupported type");
+    }
+    return bytesToB64(ary);
+  };
+  var serializeKey = (key, saveSecretKey) => {
+    if (false) {
+      return JSON.stringify([
+        key.type,
+        saveSecretKey ? null : key.publicKey,
+        saveSecretKey ? key.secretKey : null
+      ], void 0, 0);
+    }
+    if (key.type === EDWARDS25519SHA512BATCH || key.type === CURVE25519XSALSA20POLY1305) {
+      if (!saveSecretKey) {
+        if (!key.publicKey) {
+          throw new Error("Unsupported operation: no public key to export");
+        }
+        return JSON.stringify([
+          key.type,
+          bytesOrObjectToB64(key.publicKey),
+          null
+        ], void 0, 0);
+      }
+      if (!key.secretKey) {
+        throw new Error("Unsupported operation: no secret key to export");
+      }
+      return JSON.stringify([
+        key.type,
+        null,
+        bytesOrObjectToB64(key.secretKey)
+      ], void 0, 0);
+    } else if (key.type === XSALSA20POLY1305) {
+      if (!saveSecretKey) {
+        throw new Error("Unsupported operation: no public key to export");
+      }
+      if (!key.secretKey) {
+        throw new Error("Unsupported operation: no secret key to export");
+      }
+      return JSON.stringify([
+        key.type,
+        null,
+        bytesOrObjectToB64(key.secretKey)
+      ], void 0, 0);
+    }
+    throw new Error("Unsupported key type");
+  };
+  var deserializeKey = (data) => {
+    const keyData = JSON.parse(data);
+    if (!keyData || keyData.length !== 3) {
+      throw new Error("Invalid key object");
+    }
+    if (false) {
+      const res = {
+        type: keyData[0]
+      };
+      if (keyData[2]) {
+        Object.defineProperty(res, "secretKey", { value: keyData[2] });
+        res.publicKey = keyData[2];
+      } else {
+        res.publicKey = keyData[1];
+      }
+      return res;
+    }
+    if (keyData[0] === EDWARDS25519SHA512BATCH) {
+      if (keyData[2]) {
+        const key = import_tweetnacl2.default.sign.keyPair.fromSecretKey(b64ToBuf(keyData[2]));
+        const res = {
+          type: keyData[0],
+          publicKey: key.publicKey
+        };
+        Object.defineProperty(res, "secretKey", { value: key.secretKey });
+        return res;
+      } else if (keyData[1]) {
+        return {
+          type: keyData[0],
+          publicKey: new Uint8Array(b64ToBuf(keyData[1]))
+        };
+      }
+      throw new Error("Missing secret or public key");
+    } else if (keyData[0] === CURVE25519XSALSA20POLY1305) {
+      if (keyData[2]) {
+        const key = import_tweetnacl2.default.box.keyPair.fromSecretKey(b64ToBuf(keyData[2]));
+        const res = {
+          type: keyData[0],
+          publicKey: key.publicKey
+        };
+        Object.defineProperty(res, "secretKey", { value: key.secretKey });
+        return res;
+      } else if (keyData[1]) {
+        return {
+          type: keyData[0],
+          publicKey: new Uint8Array(b64ToBuf(keyData[1]))
+        };
+      }
+      throw new Error("Missing secret or public key");
+    } else if (keyData[0] === XSALSA20POLY1305) {
+      if (!keyData[2]) {
+        throw new Error("Secret key missing");
+      }
+      const res = {
+        type: keyData[0]
+      };
+      Object.defineProperty(res, "secretKey", { value: new Uint8Array(b64ToBuf(keyData[2])) });
+      return res;
+    }
+    throw new Error("Unsupported key type");
+  };
+  var keyId = (inKey) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    const serializedKey = serializeKey(key, !key.publicKey);
+    return blake32Hash(serializedKey);
+  };
+  var verifySignature = (inKey, data, signature) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    if (false) {
+      if (!key.publicKey) {
+        throw new Error("Public key missing");
+      }
+      if (key.publicKey + ";" + blake32Hash(data) !== signature) {
+        throw new Error("Invalid signature");
+      }
+      return;
+    }
+    if (key.type !== EDWARDS25519SHA512BATCH) {
+      throw new Error("Unsupported algorithm");
+    }
+    if (!key.publicKey) {
+      throw new Error("Public key missing");
+    }
+    const decodedSignature = b64ToBuf(signature);
+    const messageUint8 = strToBuf(data);
+    const result = import_tweetnacl2.default.sign.detached.verify(messageUint8, decodedSignature, key.publicKey);
+    if (!result) {
+      throw new Error("Invalid signature");
+    }
+  };
+  var decrypt = (inKey, data, ad) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    if (false) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      if (!data.startsWith(key.secretKey + ";") || !data.endsWith(";" + (ad ?? ""))) {
+        throw new Error("Additional data mismatch");
+      }
+      return data.slice(String(key.secretKey).length + 1, data.length - 1 - (ad ?? "").length);
+    }
+    if (key.type === XSALSA20POLY1305) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      const messageWithNonceAsUint8Array = b64ToBuf(data);
+      const nonce = messageWithNonceAsUint8Array.slice(0, import_tweetnacl2.default.secretbox.nonceLength);
+      const message = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.secretbox.nonceLength, messageWithNonceAsUint8Array.length);
+      if (ad) {
+        const adHash = import_tweetnacl2.default.hash(strToBuf(ad));
+        const len = Math.min(adHash.length, nonce.length);
+        for (let i = 0; i < len; i++) {
+          nonce[i] ^= adHash[i];
+        }
+      }
+      const decrypted = import_tweetnacl2.default.secretbox.open(message, nonce, key.secretKey);
+      if (!decrypted) {
+        throw new Error("Could not decrypt message");
+      }
+      return Buffer.from(decrypted).toString("utf-8");
+    } else if (key.type === CURVE25519XSALSA20POLY1305) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      const messageWithNonceAsUint8Array = b64ToBuf(data);
+      const ephemeralPublicKey = messageWithNonceAsUint8Array.slice(0, import_tweetnacl2.default.box.publicKeyLength);
+      const nonce = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.box.publicKeyLength, import_tweetnacl2.default.box.publicKeyLength + import_tweetnacl2.default.box.nonceLength);
+      const message = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.box.publicKeyLength + import_tweetnacl2.default.box.nonceLength);
+      if (ad) {
+        const adHash = import_tweetnacl2.default.hash(strToBuf(ad));
+        const len = Math.min(adHash.length, nonce.length);
+        for (let i = 0; i < len; i++) {
+          nonce[i] ^= adHash[i];
+        }
+      }
+      const decrypted = import_tweetnacl2.default.box.open(message, nonce, ephemeralPublicKey, key.secretKey);
+      if (!decrypted) {
+        throw new Error("Could not decrypt message");
+      }
+      return Buffer.from(decrypted).toString("utf-8");
+    }
+    throw new Error("Unsupported algorithm");
+  };
 
   // shared/domains/chelonia/encryptedData.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
@@ -6882,18 +7246,635 @@ ${this.getErrorInfo()}`;
 
   // shared/domains/chelonia/signedData.js
   var import_sbp = __toESM(__require("@sbp/sbp"));
+  var rootStateFn = () => (0, import_sbp.default)("chelonia/rootState");
   var proto = Object.create(null, {
     _isSignedData: {
       value: true
     }
   });
+  var wrapper = (o) => {
+    return Object.setPrototypeOf(o, proto);
+  };
+  var isSignedData = (o) => {
+    return !!o && !!Object.getPrototypeOf(o)?._isSignedData;
+  };
+  var verifySignatureData = function(height, data, additionalData) {
+    if (!this) {
+      throw new ChelErrorSignatureError("Missing contract state");
+    }
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    if (!Number.isSafeInteger(height) || height < 0) {
+      throw new ChelErrorSignatureError(`Height ${height} is invalid or out of range`);
+    }
+    const [serializedMessage, sKeyId, signature] = data._signedData;
+    const designatedKey = this._vm?.authorizedKeys?.[sKeyId];
+    if (!designatedKey || height > designatedKey._notAfterHeight || height < designatedKey._notBeforeHeight || !designatedKey.purpose.includes("sig")) {
+      if ("") {
+        console.error(`Key ${sKeyId} is unauthorized or expired for the current contract`, { designatedKey, height, state: JSON.parse(JSON.stringify((0, import_sbp.default)("state/vuex/state"))) });
+        Promise.reject(new ChelErrorSignatureKeyUnauthorized(`Key ${sKeyId} is unauthorized or expired for the current contract`));
+      }
+      throw new ChelErrorSignatureKeyUnauthorized(`Key ${sKeyId} is unauthorized or expired for the current contract`);
+    }
+    const deserializedKey = designatedKey.data;
+    const payloadToSign = blake32Hash(`${blake32Hash(additionalData)}${blake32Hash(serializedMessage)}`);
+    try {
+      verifySignature(deserializedKey, payloadToSign, signature);
+      const message = JSON.parse(serializedMessage);
+      return [sKeyId, message];
+    } catch (e) {
+      throw new ChelErrorSignatureError(e?.message || e);
+    }
+  };
+  var signedIncomingData = (contractID, state, data, height, additionalData, mapperFn) => {
+    const stringValueFn = () => data;
+    let verifySignedValue;
+    const verifySignedValueFn = () => {
+      if (verifySignedValue) {
+        return verifySignedValue[1];
+      }
+      verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData);
+      if (mapperFn)
+        verifySignedValue[1] = mapperFn(verifySignedValue[1]);
+      return verifySignedValue[1];
+    };
+    return wrapper({
+      get signingKeyId() {
+        if (verifySignedValue)
+          return verifySignedValue[0];
+        return signedDataKeyId(data);
+      },
+      get serialize() {
+        return stringValueFn;
+      },
+      get context() {
+        return [contractID, data, height, additionalData];
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return verifySignedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      },
+      get get() {
+        return (k) => k !== "_signedData" ? data[k] : void 0;
+      }
+    });
+  };
+  var signedDataKeyId = (data) => {
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    return data._signedData[1];
+  };
+  var isRawSignedData = (data) => {
+    if (!data || typeof data !== "object" || !has(data, "_signedData") || !Array.isArray(data._signedData) || data._signedData.length !== 3 || data._signedData.map((v) => typeof v).filter((v) => v !== "string").length !== 0) {
+      return false;
+    }
+    return true;
+  };
+  var rawSignedIncomingData = (data) => {
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    const stringValueFn = () => data;
+    let verifySignedValue;
+    const verifySignedValueFn = () => {
+      if (verifySignedValue) {
+        return verifySignedValue[1];
+      }
+      verifySignedValue = [data._signedData[1], JSON.parse(data._signedData[0])];
+      return verifySignedValue[1];
+    };
+    return wrapper({
+      get signingKeyId() {
+        if (verifySignedValue)
+          return verifySignedValue[0];
+        return signedDataKeyId(data);
+      },
+      get serialize() {
+        return stringValueFn;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return verifySignedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      },
+      get get() {
+        return (k) => k !== "_signedData" ? data[k] : void 0;
+      }
+    });
+  };
 
   // shared/domains/chelonia/encryptedData.js
+  var rootStateFn2 = () => (0, import_sbp2.default)("chelonia/rootState");
   var proto2 = Object.create(null, {
     _isEncryptedData: {
       value: true
     }
   });
+  var wrapper2 = (o) => {
+    return Object.setPrototypeOf(o, proto2);
+  };
+  var isEncryptedData = (o) => {
+    return !!o && !!Object.getPrototypeOf(o)?._isEncryptedData;
+  };
+  var decryptData = function(height, data, additionalKeys, additionalData, validatorFn) {
+    if (!this) {
+      throw new ChelErrorDecryptionError("Missing contract state");
+    }
+    if (typeof data.valueOf === "function")
+      data = data.valueOf();
+    if (!isRawEncryptedData(data)) {
+      throw new ChelErrorDecryptionError("Invalid message format");
+    }
+    const [eKeyId, message] = data;
+    const key = additionalKeys[eKeyId];
+    if (!key) {
+      throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`);
+    }
+    const designatedKey = this._vm?.authorizedKeys?.[eKeyId];
+    if (!designatedKey || height > designatedKey._notAfterHeight || height < designatedKey._notBeforeHeight || !designatedKey.purpose.includes("enc")) {
+      throw new ChelErrorUnexpected(`Key ${eKeyId} is unauthorized or expired for the current contract`);
+    }
+    const deserializedKey = typeof key === "string" ? deserializeKey(key) : key;
+    try {
+      const result = JSON.parse(decrypt(deserializedKey, message, additionalData));
+      if (typeof validatorFn === "function")
+        validatorFn(result, eKeyId);
+      return result;
+    } catch (e) {
+      throw new ChelErrorDecryptionError(e?.message || e);
+    }
+  };
+  var encryptedIncomingData = (contractID, state, data, height, additionalKeys, additionalData, validatorFn) => {
+    let decryptedValue;
+    const decryptedValueFn = () => {
+      if (decryptedValue) {
+        return decryptedValue;
+      }
+      if (!state || !additionalKeys) {
+        const rootState = rootStateFn2();
+        state = state || rootState[contractID];
+        additionalKeys = additionalKeys ?? rootState.secretKeys;
+      }
+      decryptedValue = decryptData.call(state, height, data, additionalKeys, additionalData || "", validatorFn);
+      if (isRawSignedData(decryptedValue)) {
+        decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || "");
+      }
+      return decryptedValue;
+    };
+    return wrapper2({
+      get encryptionKeyId() {
+        return encryptedDataKeyId(data);
+      },
+      get serialize() {
+        return () => data;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return decryptedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      }
+    });
+  };
+  var encryptedIncomingForeignData = (contractID, _0, data, _1, additionalKeys, additionalData, validatorFn) => {
+    let decryptedValue;
+    const decryptedValueFn = () => {
+      if (decryptedValue) {
+        return decryptedValue;
+      }
+      const rootState = rootStateFn2();
+      const state = rootState[contractID];
+      decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || "", validatorFn);
+      if (isRawSignedData(decryptedValue)) {
+        return signedIncomingData(contractID, state, decryptedValue, NaN, additionalData || "");
+      }
+      return decryptedValue;
+    };
+    return wrapper2({
+      get encryptionKeyId() {
+        return encryptedDataKeyId(data);
+      },
+      get serialize() {
+        return () => data;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return decryptedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      }
+    });
+  };
+  var encryptedDataKeyId = (data) => {
+    if (!isRawEncryptedData(data)) {
+      throw new ChelErrorDecryptionError("Invalid message format");
+    }
+    return data[0];
+  };
+  var isRawEncryptedData = (data) => {
+    if (!Array.isArray(data) || data.length !== 2 || data.map((v) => typeof v).filter((v) => v !== "string").length !== 0) {
+      return false;
+    }
+    return true;
+  };
+  var unwrapMaybeEncryptedData = (data) => {
+    if (isEncryptedData(data)) {
+      if (false)
+        return;
+      try {
+        return {
+          encryptionKeyId: data.encryptionKeyId,
+          data: data.valueOf()
+        };
+      } catch (e) {
+        console.warn("unwrapMaybeEncryptedData: Unable to decrypt", e);
+      }
+    } else {
+      return {
+        encryptionKeyId: null,
+        data
+      };
+    }
+  };
+  var maybeEncryptedIncomingData = (contractID, state, data, height, additionalKeys, additionalData, validatorFn) => {
+    if (isRawEncryptedData(data)) {
+      return encryptedIncomingData(contractID, state, data, height, additionalKeys, additionalData, validatorFn);
+    } else {
+      validatorFn?.(data, "");
+      return data;
+    }
+  };
+
+  // shared/domains/chelonia/GIMessage.js
+  var decryptedAndVerifiedDeserializedMessage = (head, headJSON, contractID, parsedMessage, additionalKeys, state) => {
+    const op = head.op;
+    const height = head.height;
+    const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys, headJSON, void 0) : parsedMessage;
+    if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
+      return message.map((key) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key2, eKeyId) => {
+          if (key2.meta?.private?.content) {
+            key2.meta.private.content = encryptedIncomingData(contractID, state, key2.meta.private.content, height, additionalKeys, headJSON, (value) => {
+              const computedKeyId = keyId(value);
+              if (computedKeyId !== key2.id) {
+                throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key2.id} but got ${computedKeyId}`);
+              }
+            });
+          }
+          if (key2.meta?.keyRequest?.reference) {
+            try {
+              key2.meta.keyRequest.reference = maybeEncryptedIncomingData(contractID, state, key2.meta.keyRequest.reference, height, additionalKeys, headJSON)?.valueOf();
+            } catch {
+              delete key2.meta.keyRequest.reference;
+            }
+          }
+          if (key2.meta?.keyRequest?.contractID) {
+            try {
+              key2.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key2.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf();
+            } catch {
+              delete key2.meta.keyRequest.contractID;
+            }
+          }
+        });
+      });
+    }
+    if (op === GIMessage.OP_CONTRACT) {
+      message.keys = message.keys?.map((key, eKeyId) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key2) => {
+          if (!key2.meta?.private?.content)
+            return;
+          const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData;
+          const decryptionContract = message.foreignContractID ? message.foreignContractID : contractID;
+          key2.meta.private.content = decryptionFn(decryptionContract, state, key2.meta.private.content, height, additionalKeys, headJSON, (value) => {
+            const computedKeyId = keyId(value);
+            if (computedKeyId !== key2.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key2.id} but got ${computedKeyId}`);
+            }
+          });
+        });
+      });
+    }
+    if (op === GIMessage.OP_KEY_SHARE) {
+      return maybeEncryptedIncomingData(contractID, state, message, height, additionalKeys, headJSON, (message2) => {
+        message2.keys?.forEach((key) => {
+          if (!key.meta?.private?.content)
+            return;
+          const decryptionFn = message2.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData;
+          const decryptionContract = message2.foreignContractID || contractID;
+          key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+            const computedKeyId = keyId(value);
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`);
+            }
+          });
+        });
+      });
+    }
+    if (op === GIMessage.OP_KEY_REQUEST) {
+      return maybeEncryptedIncomingData(contractID, state, message, height, additionalKeys, headJSON, (msg) => {
+        msg.replyWith = signedIncomingData(msg.contractID, void 0, msg.replyWith, msg.height, headJSON);
+      });
+    }
+    if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
+      return signedIncomingData(contractID, state, message, height, headJSON);
+    }
+    if (op === GIMessage.OP_ACTION_ENCRYPTED) {
+      return message;
+    }
+    if (op === GIMessage.OP_KEY_DEL) {
+      return message.map((key) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, void 0);
+      });
+    }
+    if (op === GIMessage.OP_KEY_REQUEST_SEEN) {
+      return maybeEncryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys, headJSON, void 0);
+    }
+    if (op === GIMessage.OP_ATOMIC) {
+      return message.map(([opT, opV]) => [
+        opT,
+        decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, opV, additionalKeys, state)
+      ]);
+    }
+    return message;
+  };
+  var _GIMessage = class {
+    _mapping;
+    _head;
+    _message;
+    _signedMessageData;
+    _direction;
+    _decryptedValue;
+    static createV1_0({
+      contractID,
+      originatingContractID,
+      originatingContractHeight,
+      previousHEAD = null,
+      height = 0,
+      op,
+      manifest
+    }) {
+      const head = {
+        version: "1.0.0",
+        previousHEAD,
+        height,
+        contractID,
+        originatingContractID,
+        originatingContractHeight,
+        op: op[0],
+        manifest
+      };
+      return new this(messageToParams(head, op[1]));
+    }
+    static cloneWith(targetHead, targetOp, sources) {
+      const head = Object.assign({}, targetHead, sources);
+      return new this(messageToParams(head, targetOp[1]));
+    }
+    static deserialize(value, additionalKeys, state) {
+      if (!value)
+        throw new Error(`deserialize bad value: ${value}`);
+      const { head: headJSON, ...parsedValue } = JSON.parse(value);
+      const head = JSON.parse(headJSON);
+      const contractID = head.op === _GIMessage.OP_CONTRACT ? createCID(value) : head.contractID;
+      if (!state?._vm?.authorizedKeys && head.op === _GIMessage.OP_CONTRACT) {
+        const value2 = rawSignedIncomingData(parsedValue);
+        const authorizedKeys = Object.fromEntries(value2.valueOf()?.keys.map((k) => [k.id, k]));
+        state = {
+          _vm: {
+            authorizedKeys
+          }
+        };
+      }
+      const signedMessageData = signedIncomingData(contractID, state, parsedValue, head.height, headJSON, (message) => decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, message, additionalKeys, state));
+      return new this({
+        direction: "incoming",
+        mapping: { key: createCID(value), value },
+        head,
+        signedMessageData
+      });
+    }
+    static deserializeHEAD(value) {
+      if (!value)
+        throw new Error(`deserialize bad value: ${value}`);
+      let head, hash;
+      const result = {
+        get head() {
+          if (head === void 0) {
+            head = JSON.parse(JSON.parse(value).head);
+          }
+          return head;
+        },
+        get hash() {
+          if (!hash) {
+            hash = createCID(value);
+          }
+          return hash;
+        },
+        get contractID() {
+          return result.head?.contractID ?? result.hash;
+        },
+        description() {
+          const type = this.head.op;
+          return `<op_${type}|${this.hash} of ${this.contractID}>`;
+        },
+        get isFirstMessage() {
+          return !result.head?.contractID;
+        }
+      };
+      return result;
+    }
+    constructor(params) {
+      this._direction = params.direction;
+      this._mapping = params.mapping;
+      this._head = params.head;
+      this._signedMessageData = params.signedMessageData;
+      const type = this.opType();
+      let atomicTopLevel = true;
+      const validate = (type2, message) => {
+        switch (type2) {
+          case _GIMessage.OP_CONTRACT:
+            if (!this.isFirstMessage() || !atomicTopLevel)
+              throw new Error("OP_CONTRACT: must be first message");
+            break;
+          case _GIMessage.OP_ATOMIC:
+            if (!atomicTopLevel) {
+              throw new Error("OP_ATOMIC not allowed inside of OP_ATOMIC");
+            }
+            if (!Array.isArray(message)) {
+              throw new TypeError("OP_ATOMIC must be of an array type");
+            }
+            atomicTopLevel = false;
+            message.forEach(([t, m]) => validate(t, m));
+            break;
+          case _GIMessage.OP_KEY_ADD:
+          case _GIMessage.OP_KEY_DEL:
+          case _GIMessage.OP_KEY_UPDATE:
+            if (!Array.isArray(message))
+              throw new TypeError("OP_KEY_{ADD|DEL|UPDATE} must be of an array type");
+            break;
+          case _GIMessage.OP_KEY_SHARE:
+          case _GIMessage.OP_KEY_REQUEST:
+          case _GIMessage.OP_KEY_REQUEST_SEEN:
+          case _GIMessage.OP_ACTION_ENCRYPTED:
+          case _GIMessage.OP_ACTION_UNENCRYPTED:
+            break;
+          default:
+            throw new Error(`unsupported op: ${type2}`);
+        }
+      };
+      Object.defineProperty(this, "_message", {
+        get: ((validated) => () => {
+          const message = this._signedMessageData.valueOf();
+          if (!validated) {
+            validate(type, message);
+            validated = true;
+          }
+          return message;
+        })()
+      });
+    }
+    decryptedValue() {
+      if (this._decryptedValue)
+        return this._decryptedValue;
+      try {
+        const value = this.message();
+        const data = unwrapMaybeEncryptedData(value);
+        if (data?.data) {
+          if (isSignedData(data.data)) {
+            this._decryptedValue = data.data.valueOf();
+          } else {
+            this._decryptedValue = data.data;
+          }
+        }
+        return this._decryptedValue;
+      } catch {
+        return void 0;
+      }
+    }
+    head() {
+      return this._head;
+    }
+    message() {
+      return this._message;
+    }
+    op() {
+      return [this.head().op, this.message()];
+    }
+    rawOp() {
+      return [this.head().op, this._signedMessageData];
+    }
+    opType() {
+      return this.head().op;
+    }
+    opValue() {
+      return this.message();
+    }
+    signingKeyId() {
+      return this._signedMessageData.signingKeyId;
+    }
+    manifest() {
+      return this.head().manifest;
+    }
+    description() {
+      const type = this.opType();
+      let desc = `<op_${type}`;
+      if (type === _GIMessage.OP_ACTION_UNENCRYPTED) {
+        const value = this.opValue();
+        if (typeof value.type === "string") {
+          desc += `|${value.type}`;
+        }
+      }
+      return `${desc}|${this.hash()} of ${this.contractID()}>`;
+    }
+    isFirstMessage() {
+      return !this.head().contractID;
+    }
+    contractID() {
+      return this.head().contractID || this.hash();
+    }
+    originatingContractID() {
+      return this.head().originatingContractID || this.contractID();
+    }
+    serialize() {
+      return this._mapping.value;
+    }
+    hash() {
+      return this._mapping.key;
+    }
+    height() {
+      return this._head.height;
+    }
+    id() {
+      throw new Error("GIMessage.id() was called but it has been removed");
+    }
+    direction() {
+      return this._direction;
+    }
+    static get [serdesTagSymbol]() {
+      return "GIMessage";
+    }
+    static [serdesSerializeSymbol](m) {
+      return [m.serialize(), m.direction(), m.decryptedValue()];
+    }
+    static [serdesDeserializeSymbol]([serialized, direction, decryptedValue]) {
+      const m = _GIMessage.deserialize(serialized);
+      m._direction = direction;
+      m._decryptedValue = decryptedValue;
+      return m;
+    }
+  };
+  var GIMessage = _GIMessage;
+  __publicField(GIMessage, "OP_CONTRACT", "c");
+  __publicField(GIMessage, "OP_ACTION_ENCRYPTED", "ae");
+  __publicField(GIMessage, "OP_ACTION_UNENCRYPTED", "au");
+  __publicField(GIMessage, "OP_KEY_ADD", "ka");
+  __publicField(GIMessage, "OP_KEY_DEL", "kd");
+  __publicField(GIMessage, "OP_KEY_UPDATE", "ku");
+  __publicField(GIMessage, "OP_PROTOCOL_UPGRADE", "pu");
+  __publicField(GIMessage, "OP_PROP_SET", "ps");
+  __publicField(GIMessage, "OP_PROP_DEL", "pd");
+  __publicField(GIMessage, "OP_CONTRACT_AUTH", "ca");
+  __publicField(GIMessage, "OP_CONTRACT_DEAUTH", "cd");
+  __publicField(GIMessage, "OP_ATOMIC", "a");
+  __publicField(GIMessage, "OP_KEY_SHARE", "ks");
+  __publicField(GIMessage, "OP_KEY_REQUEST", "kr");
+  __publicField(GIMessage, "OP_KEY_REQUEST_SEEN", "krs");
+  function messageToParams(head, message) {
+    let mapping;
+    return {
+      direction: has(message, "recreate") ? "outgoing" : "incoming",
+      get mapping() {
+        if (!mapping) {
+          const headJSON = JSON.stringify(head);
+          const messageJSON = { ...message.serialize(headJSON), head: headJSON };
+          const value = JSON.stringify(messageJSON);
+          mapping = {
+            key: createCID(value),
+            value
+          };
+        }
+        return mapping;
+      },
+      head,
+      signedMessageData: message
+    };
+  }
 
   // shared/domains/chelonia/utils.js
   var MAX_EVENTS_AFTER = Number.parseInt("", 10) || Infinity;
@@ -6902,6 +7883,23 @@ ${this.getErrorInfo()}`;
 
   // frontend/model/contracts/shared/constants.js
   var IDENTITY_USERNAME_MAX_CHARS = 80;
+
+  // frontend/model/contracts/shared/getters/identity.js
+  var identity_default = {
+    loginState(state, getters) {
+      return getters.currentIdentityState.loginState;
+    },
+    ourDirectMessages(state, getters) {
+      return getters.currentIdentityState.chatRooms || {};
+    }
+  };
+
+  // frontend/model/contracts/shared/validators.js
+  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
+  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
+  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
+  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
+  var noUppercase = (value) => value.toLowerCase() === value;
 
   // frontend/model/contracts/identity.js
   var attributesType = objectMaybeOf({
@@ -6940,12 +7938,12 @@ ${this.getErrorInfo()}`;
     if (lookupResult === contractID)
       return;
     console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`);
-    (0, import_sbp4.default)("chelonia/queueInvocation", contractID, () => {
-      const rootState = (0, import_sbp4.default)("state/vuex/state");
-      if (!has(rootState, contractID))
+    (0, import_sbp4.default)("chelonia/queueInvocation", contractID, async () => {
+      const state = await (0, import_sbp4.default)("chelonia/contract/state", contractID);
+      if (!state)
         return;
-      const username2 = rootState[contractID].attributes.username;
-      if ((0, import_sbp4.default)("namespace/lookupCached", username2) !== contractID) {
+      const username2 = state[contractID].attributes.username;
+      if (await (0, import_sbp4.default)("namespace/lookupCached", username2) !== contractID) {
         (0, import_sbp4.default)("gi.notifications/emit", "WARNING", {
           contractID,
           message: (0, import_common.L)("Unable to confirm that the username {username} belongs to this identity contract", { username: username2 })
@@ -6959,12 +7957,7 @@ ${this.getErrorInfo()}`;
       currentIdentityState(state) {
         return state;
       },
-      loginState(state, getters) {
-        return getters.currentIdentityState.loginState;
-      },
-      ourDirectMessages(state, getters) {
-        return getters.currentIdentityState.chatRooms || {};
-      }
+      ...identity_default
     },
     actions: {
       "gi.contracts/identity": {
@@ -6987,7 +7980,7 @@ ${this.getErrorInfo()}`;
             fileDeleteTokens: {}
           }, data);
           for (const key in initialState) {
-            import_common.Vue.set(state, key, initialState[key]);
+            state[key] = initialState[key];
           }
         },
         async sideEffect({ contractID, data }) {
@@ -7003,7 +7996,7 @@ ${this.getErrorInfo()}`;
         },
         process({ data }, { state }) {
           for (const key in data) {
-            import_common.Vue.set(state.attributes, key, data[key]);
+            state.attributes[key] = data[key];
           }
         },
         async sideEffect({ contractID, data }) {
@@ -7021,7 +8014,7 @@ ${this.getErrorInfo()}`;
         },
         process({ data }, { state }) {
           for (const attribute of data) {
-            import_common.Vue.delete(state.attributes, attribute);
+            delete state.attributes[attribute];
           }
         }
       },
@@ -7029,7 +8022,7 @@ ${this.getErrorInfo()}`;
         validate: object,
         process({ data }, { state }) {
           for (const key in data) {
-            import_common.Vue.set(state.settings, key, data[key]);
+            state.settings[key] = data[key];
           }
         }
       },
@@ -7041,9 +8034,9 @@ ${this.getErrorInfo()}`;
         },
         process({ data }, { state }) {
           const { contractID } = data;
-          import_common.Vue.set(state.chatRooms, contractID, {
+          state.chatRooms[contractID] = {
             visible: true
-          });
+          };
         },
         sideEffect({ data }) {
           (0, import_sbp4.default)("chelonia/contract/retain", data.contractID).catch((e) => {
@@ -7055,17 +8048,17 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           contractID: string
         }),
-        process({ data }, { state, getters }) {
+        process({ data }, { state }) {
           const { contractID } = data;
-          if (getters.ourDirectMessages[contractID]) {
+          if (state.chatRooms[contractID]) {
             throw new TypeError((0, import_common.L)("Already joined direct message."));
           }
-          import_common.Vue.set(state.chatRooms, contractID, {
+          state.chatRooms[contractID] = {
             visible: true
-          });
+          };
         },
-        sideEffect({ data }, { getters }) {
-          if (getters.ourDirectMessages[data.contractID].visible) {
+        sideEffect({ data }, { state }) {
+          if (state.chatRooms[data.contractID].visible) {
             (0, import_sbp4.default)("chelonia/contract/retain", data.contractID).catch((e) => {
               console.error("[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain", e);
             });
@@ -7078,35 +8071,34 @@ ${this.getErrorInfo()}`;
           inviteSecret: string,
           creatorID: optional(boolean)
         }),
-        process({ hash, data }, { state }) {
+        async process({ hash, data }, { state }) {
           const { groupContractID, inviteSecret } = data;
           if (has(state.groups, groupContractID)) {
             throw new Error(`Cannot join already joined group ${groupContractID}`);
           }
-          const inviteSecretId = (0, import_sbp4.default)("chelonia/crypto/keyId", () => inviteSecret);
-          import_common.Vue.set(state.groups, groupContractID, { hash, inviteSecretId });
+          const inviteSecretId = await (0, import_sbp4.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
+          state.groups[groupContractID] = { hash, inviteSecretId };
         },
-        sideEffect({ hash, data, contractID }, { state }) {
+        async sideEffect({ hash, data, contractID }, { state }) {
           const { groupContractID, inviteSecret } = data;
-          (0, import_sbp4.default)("chelonia/storeSecretKeys", () => [{
+          await (0, import_sbp4.default)("chelonia/storeSecretKeys", new Secret([{
             key: inviteSecret,
             transient: true
-          }]);
-          (0, import_sbp4.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp4.default)("state/vuex/state");
-            const state2 = rootState[contractID];
-            if (!state2 || contractID !== rootState.loggedIn.identityContractID) {
+          }]));
+          (0, import_sbp4.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp4.default)("chelonia/contract/state", contractID);
+            if (!state2 || contractID !== (0, import_sbp4.default)("state/vuex/state").loggedIn.identityContractID) {
               return;
             }
             if (!has(state2.groups, groupContractID)) {
               return;
             }
-            const inviteSecretId = (0, import_sbp4.default)("chelonia/crypto/keyId", () => inviteSecret);
+            const inviteSecretId = (0, import_sbp4.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
             if (state2.groups[groupContractID].hash !== hash) {
               return;
             }
             return inviteSecretId;
-          }).then((inviteSecretId) => {
+          }).then(async (inviteSecretId) => {
             if (!inviteSecretId)
               return;
             (0, import_sbp4.default)("chelonia/contract/retain", data.groupContractID).catch((e) => {
@@ -7119,8 +8111,8 @@ ${this.getErrorInfo()}`;
               contractName: "gi.contracts/group",
               reference: hash,
               signingKeyId: inviteSecretId,
-              innerSigningKeyId: (0, import_sbp4.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
-              encryptionKeyId: (0, import_sbp4.default)("chelonia/contract/currentKeyIdByName", state, "cek")
+              innerSigningKeyId: await (0, import_sbp4.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
+              encryptionKeyId: await (0, import_sbp4.default)("chelonia/contract/currentKeyIdByName", state, "cek")
             }).catch((e) => {
               console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e);
             });
@@ -7131,70 +8123,61 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/leaveGroup": {
         validate: objectOf({
-          groupContractID: string
+          groupContractID: string,
+          reference: string
         }),
         process({ data }, { state }) {
           const { groupContractID } = data;
           if (!has(state.groups, groupContractID)) {
             throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`);
           }
-          import_common.Vue.delete(state.groups, groupContractID);
+          if (state.groups[groupContractID].hash !== data.reference) {
+            throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`);
+          }
+          delete state.groups[groupContractID];
         },
         sideEffect({ data, contractID }) {
-          (0, import_sbp4.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp4.default)("state/vuex/state");
-            const state = rootState[contractID];
-            if (!state || contractID !== rootState.loggedIn.identityContractID) {
+          (0, import_sbp4.default)("chelonia/queueInvocation", contractID, async () => {
+            const state = await (0, import_sbp4.default)("chelonia/contract/state", contractID);
+            if (!state || contractID !== (0, import_sbp4.default)("state/vuex/state").loggedIn.identityContractID) {
               return;
             }
             const { groupContractID } = data;
             if (has(state.groups, groupContractID)) {
               return;
             }
-            if (has(rootState.contracts, groupContractID)) {
-              (0, import_sbp4.default)("gi.actions/group/removeOurselves", {
-                contractID: groupContractID
-              }).catch((e) => {
-                console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
-              });
-            }
+            (0, import_sbp4.default)("gi.actions/group/removeOurselves", {
+              contractID: groupContractID
+            }).catch((e) => {
+              if (e?.name === "GIErrorUIRuntimeError" && e.cause?.name === "GIGroupNotJoinedError")
+                return;
+              console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
+            });
             (0, import_sbp4.default)("chelonia/contract/release", data.groupContractID).catch((e) => {
               console.error("[gi.contracts/identity/leaveGroup/sideEffect] Error calling release", e);
             });
-            if (!rootState.currentGroupId || rootState.currentGroupId === data.groupContractID) {
-              const groupIdToSwitch = Object.keys(state.groups).filter((cID) => cID !== data.groupContractID).sort((cID) => rootState[cID]?.profiles?.[contractID] ? -1 : 1)[0] || null;
-              (0, import_sbp4.default)("state/vuex/commit", "setCurrentChatRoomId", {});
-              (0, import_sbp4.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
-            }
-            import_common.Vue.delete(rootState.lastLoggedIn, contractID);
-            try {
-              const router = (0, import_sbp4.default)("controller/router");
-              const switchFrom = router.currentRoute.path;
-              const switchTo = rootState.currentGroupId ? "/dashboard" : "/";
-              if (switchFrom !== "/join" && switchFrom !== switchTo) {
-                router.push({ path: switchTo }).catch((e) => console.error("Error switching groups", e));
-              }
-            } catch (e) {
-              console.error(`[gi.contracts/identity/leaveGroup/sideEffect]: ${e.name} thrown updating routes:`, e);
+            if ((0, import_sbp4.default)("state/vuex/state").lastLoggedIn?.[contractID]) {
+              delete (0, import_sbp4.default)("state/vuex/state").lastLoggedIn[contractID];
             }
             (0, import_sbp4.default)("gi.contracts/identity/revokeGroupKeyAndRotateOurPEK", contractID, state, data.groupContractID);
+            (0, import_sbp4.default)("okTurtles.events/emit", LEFT_GROUP, { identityContractID: contractID, groupContractID: data.groupContractID });
           }).catch((e) => {
             console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e);
           });
         }
       },
       "gi.contracts/identity/setDirectMessageVisibility": {
-        validate: (data, { getters }) => {
+        validate: (data, { state }) => {
           objectOf({
             contractID: string,
             visible: boolean
           })(data);
-          if (!getters.ourDirectMessages[data.contractID]) {
+          if (!state.chatRooms[data.contractID]) {
             throw new TypeError((0, import_common.L)("Not existing direct message."));
           }
         },
         process({ data }, { state }) {
-          import_common.Vue.set(state.chatRooms[data.contractID], "visible", data.visible);
+          state.chatRooms[data.contractID]["visible"] = data.visible;
         }
       },
       "gi.contracts/identity/saveFileDeleteToken": {
@@ -7206,7 +8189,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data }, { state }) {
           for (const { manifestCid, token } of data.tokensByManifestCid) {
-            import_common.Vue.set(state.fileDeleteTokens, manifestCid, token);
+            state.fileDeleteTokens[manifestCid] = token;
           }
         }
       },
@@ -7216,7 +8199,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data }, { state }) {
           for (const manifestCid of data.manifestCids) {
-            import_common.Vue.delete(state.fileDeleteTokens, manifestCid);
+            delete state.fileDeleteTokens[manifestCid];
           }
         }
       }
@@ -7224,13 +8207,13 @@ ${this.getErrorInfo()}`;
     methods: {
       "gi.contracts/identity/revokeGroupKeyAndRotateOurPEK": (identityContractID, state, groupContractID) => {
         if (!state._volatile)
-          import_common.Vue.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
+          state["_volatile"] = /* @__PURE__ */ Object.create(null);
         if (!state._volatile.pendingKeyRevocations)
-          import_common.Vue.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
+          state._volatile["pendingKeyRevocations"] = /* @__PURE__ */ Object.create(null);
         const CSKid = findKeyIdByName(state, "csk");
         const CEKid = findKeyIdByName(state, "cek");
         const PEKid = findKeyIdByName(state, "pek");
-        import_common.Vue.set(state._volatile.pendingKeyRevocations, PEKid, true);
+        state._volatile.pendingKeyRevocations[PEKid] = true;
         const groupCSKids = findForeignKeysByContractID(state, groupContractID);
         if (groupCSKids?.length) {
           if (!CEKid) {

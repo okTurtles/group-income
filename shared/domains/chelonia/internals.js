@@ -6,6 +6,7 @@ import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/fro
 import { createCID } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
+import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
@@ -178,26 +179,26 @@ export default (sbp('sbp/selectors/register', {
 
     // Now, start the signature verification process
     const rootState = sbp(this.config.stateSelector)
-    if (!has(rootState, 'contractSiginingKeys')) {
-      this.config.reactiveSet(rootState, 'contractSiginingKeys', Object.create(null))
+    if (!has(rootState, 'contractSigningKeys')) {
+      this.config.reactiveSet(rootState, 'contractSigningKeys', Object.create(null))
     }
     // Because `contractName` comes from potentially unsafe sources (for
     // instance, from `processMessage`), the key isn't used directly because
     // it could overlap with current or future 'special' key names in JavaScript,
     // such as `prototype`, `__proto__`, etc. We also can't guarantee that the
-    // `contractSiginingKeys` always has a null prototype, and, because of the
+    // `contractSigningKeys` always has a null prototype, and, because of the
     // way we manage state, neither can we use `Map`. So, we use prefix for the
     // lookup key that's unlikely to ever be part of a special JS name.
     const contractNameLookupKey = `name:${contractName}`
     // If the contract name has been seen before, validate its signature now
     let signatureValidated = false
-    if (has(rootState.contractSiginingKeys, contractNameLookupKey)) {
+    if (has(rootState.contractSigningKeys, contractNameLookupKey)) {
       console.info(`[chelonia] verifying signature for ${manifestHash} with an existing key`)
-      if (!has(rootState.contractSiginingKeys[contractNameLookupKey], manifest.signature.keyId)) {
-        console.error(`The manifest with ${manifestHash} (named ${contractName}) claims to be signed with a key with ID ${manifest.signature.keyId}, which is not trusted. The trusted key IDs for this name are:`, Object.keys(rootState.contractSiginingKeys[contractNameLookupKey]))
+      if (!has(rootState.contractSigningKeys[contractNameLookupKey], manifest.signature.keyId)) {
+        console.error(`The manifest with ${manifestHash} (named ${contractName}) claims to be signed with a key with ID ${manifest.signature.keyId}, which is not trusted. The trusted key IDs for this name are:`, Object.keys(rootState.contractSigningKeys[contractNameLookupKey]))
         throw new Error(`Invalid or missing signature in manifest ${manifestHash} (named ${contractName}). It claims to be signed with a key with ID ${manifest.signature.keyId}, which has not been authorized for this contract before.`)
       }
-      const signingKey = rootState.contractSiginingKeys[contractNameLookupKey][manifest.signature.keyId]
+      const signingKey = rootState.contractSigningKeys[contractNameLookupKey][manifest.signature.keyId]
       verifySignature(signingKey, manifest.body + manifest.head, manifest.signature.value)
       console.info(`[chelonia] successful signature verification for ${manifestHash} (named ${contractName}) using the already-trusted key ${manifest.signature.keyId}.`)
       signatureValidated = true
@@ -230,7 +231,7 @@ export default (sbp('sbp/selectors/register', {
       verifySignature(contractSigningKeys[manifest.signature.keyId], manifest.body + manifest.head, manifest.signature.value)
       console.info(`[chelonia] successful signature verification for ${manifestHash} (named ${contractName}) using ${manifest.signature.keyId}. The following key IDs will now be trusted for this contract name`, Object.keys(contractSigningKeys))
       signatureValidated = true
-      rootState.contractSiginingKeys[contractNameLookupKey] = contractSigningKeys
+      rootState.contractSigningKeys[contractNameLookupKey] = contractSigningKeys
     }
 
     // If verification was successful, return the parsed body to make the newly-
@@ -390,7 +391,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractName = state.contracts[contractID]?.type
     if (!contractName) {
-      console.error('[chelonia/private/removeImmediately] Called on non-existing contract', { contractID })
+      console.error('[chelonia/private/removeImmediately] Missing contract name for contract', { contractID })
       return
     }
 
@@ -401,7 +402,7 @@ export default (sbp('sbp/selectors/register', {
       if (sbp('sbp/selectors/fn', destructor)) {
         // And call it
         try {
-          sbp(destructor, { contractID, resync: !!params?.resync })
+          sbp(destructor, { contractID, resync: !!params?.resync, state: state[contractID] })
         } catch (e) {
           console.error(`[chelonia/private/removeImmediately] Error at destructor for ${contractID}`, e)
         }
@@ -430,7 +431,7 @@ export default (sbp('sbp/selectors/register', {
 
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -475,7 +476,7 @@ export default (sbp('sbp/selectors/register', {
           }
 
           if (hooks?.preSendCheck) {
-            if (!hooks.preSendCheck(entry, state)) {
+            if (!await hooks.preSendCheck(entry, state)) {
               console.info(`[chelonia] Not sending message as preSendCheck hook returned non-truish value: ${entry.description()}`)
               return
             }
@@ -506,7 +507,7 @@ export default (sbp('sbp/selectors/register', {
         // If there is no event to send, return
         if (!newEntry) return
 
-        hooks?.beforeRequest?.(newEntry, entry)
+        await hooks?.beforeRequest?.(newEntry, entry)
         entry = newEntry
 
         const r = await fetch(`${this.config.connectionURL}/event`, {
@@ -618,15 +619,15 @@ export default (sbp('sbp/selectors/register', {
       return
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
-    const opFns: { [GIOpType]: (any) => void } = {
-      [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        v.forEach((u) => {
+    const opFns: { [GIOpType]: (any) => void | Promise<void> } = {
+      async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
+        for (const u of v) {
           if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
           if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
             throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
           }
-          opFns[u[0]](u[1])
-        })
+          await opFns[u[0]](u[1])
+        }
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
@@ -647,9 +648,9 @@ export default (sbp('sbp/selectors/register', {
           }
           return
         }
-        opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
+        return opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
+      async [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
           let innerSigningKeyId: string | typeof undefined
           if (isSignedData(v)) {
@@ -663,7 +664,7 @@ export default (sbp('sbp/selectors/register', {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
 
-          sbp(
+          await sbp(
             `${manifestHash}/${action}/process`,
             {
               data,
@@ -735,10 +736,10 @@ export default (sbp('sbp/selectors/register', {
               ) {
                 try {
                   const decrypted = key.meta.private.content.valueOf()
-                  sbp('chelonia/storeSecretKeys', () => [{
+                  sbp('chelonia/storeSecretKeys', new Secret([{
                     key: deserializeKey(decrypted),
                     transient
-                  }])
+                  }]))
                   if (
                     targetState?._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
@@ -777,19 +778,21 @@ export default (sbp('sbp/selectors/register', {
             // Note: The following may be problematic when several tabs are open
             // sharing the same state. This is more of a general issue in this
             // situation, not limited to the following sequence of events
-            const resync = sbp('chelonia/private/queueEvent', v.contractID, [
-              'chelonia/private/in/syncContract', v.contractID
-            ]).catch((e) => {
-              console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
-              if (v.contractID === contractID) {
-                throw e
-              }
-            })
+            if (self.subscriptionSet.has(v.contractID)) {
+              const resync = sbp('chelonia/private/queueEvent', v.contractID, [
+                'chelonia/private/in/syncContract', v.contractID
+              ]).catch((e) => {
+                console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
+                if (v.contractID === contractID) {
+                  throw e
+                }
+              })
 
-            // If the keys received were for the current contract, we can't
-            // use queueEvent as we're already on that same queue
-            if (v.contractID !== contractID) {
-              await resync
+              // If the keys received were for the current contract, we can't
+              // use queueEvent as we're already on that same queue
+              if (v.contractID !== contractID) {
+                await resync
+              }
             }
           }
 
@@ -1108,7 +1111,7 @@ export default (sbp('sbp/selectors/register', {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
     if (processOp) {
-      opFns[opT](opV)
+      await opFns[opT](opV)
       config.postOp?.(message, state)
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
@@ -1126,6 +1129,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
+    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
     // If the dirty flag is set (indicating that new encryption keys were received),
     // we remove the current state before syncing (this has the effect of syncing
@@ -1151,8 +1156,6 @@ export default (sbp('sbp/selectors/register', {
         this.pending.push({ contractID })
       }
     }
-    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
       if (latestHEAD !== recentHEAD) {
@@ -1183,7 +1186,7 @@ export default (sbp('sbp/selectors/register', {
         }
       } else if (!isSubcribed) {
         this.subscriptionSet.add(contractID)
-        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
         const entryIndex = this.pending.findIndex((entry) => entry?.contractID === contractID)
         if (entryIndex !== -1) {
           this.pending.splice(entryIndex, 1)
@@ -1482,6 +1485,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractState = state[contractID]
     const entry = contractState?._vm?.pendingKeyshares?.[hash]
+    const instance = this._instance
 
     if (!Array.isArray(entry) || entry.length !== 4) {
       return
@@ -1495,6 +1499,7 @@ export default (sbp('sbp/selectors/register', {
     // 1. Sync (originating) identity contract
 
     await sbp('chelonia/private/in/syncContract', originatingContractID)
+    if (instance !== this._instance) return
 
     const originatingState = state[originatingContractID]
     const contractName = state.contracts[contractID].type
@@ -1513,15 +1518,16 @@ export default (sbp('sbp/selectors/register', {
     // This is safe to do without await because it's sending actions
     // If we had await it could deadlock when retrying to send the event
     Promise.resolve().then(() => {
+      if (instance !== this._instance) return
       if (!has(originatingState._vm.authorizedKeys, responseKeyId) || originatingState._vm.authorizedKeys[responseKeyId]._notAfterHeight != null) {
         throw new Error(`Unable to respond to key request for ${originatingContractID}. Key ${responseKeyId} is not valid.`)
       }
 
       // We don't need to worry about persistence (if it was an outgoing
       // message) here as this is done from an internal side-effect.
-      sbp('chelonia/storeSecretKeys', () => [
+      sbp('chelonia/storeSecretKeys', new Secret([
         { key: deserializedResponseKey }
-      ])
+      ]))
 
       const keys = pick(
         state.secretKeys,
@@ -1558,7 +1564,7 @@ export default (sbp('sbp/selectors/register', {
 
       return keySharePayload
     }).then((keySharePayload) => {
-      if (!keySharePayload) return
+      if (instance !== this._instance || !keySharePayload) return
 
       return sbp('chelonia/out/keyShare', {
         contractID: originatingContractID,
@@ -1572,6 +1578,8 @@ export default (sbp('sbp/selectors/register', {
           : keySharePayload,
         signingKeyId: responseKeyId
       }).then((msg) => {
+        if (instance !== this._instance) return
+
         // 4(i). Remove originating contract and update current contract with information
         const payload = { keyRequestHash: hash, keyShareHash: msg.hash(), success: true }
         const connectionKeyPayload = {
@@ -1860,7 +1868,7 @@ const handleEvent = {
     if (message.isFirstMessage()) {
       // Allow having _volatile but nothing else if this is the first message,
       // as we should be starting off with a clean state
-      if (Object.keys(state).length > 0 && !('_volatile' in state)) {
+      if (Object.keys(state).some(k => k !== '_volatile')) {
         throw new ChelErrorUnrecoverable(`state for ${contractID} is already set`)
       }
     }
@@ -1975,7 +1983,7 @@ const handleEvent = {
         }
       }
       this.subscriptionSet.add(contractID)
-      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, this.subscriptionSet)
+      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     }
 
     if (!processingErrored) {

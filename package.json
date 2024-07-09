@@ -1,7 +1,7 @@
 {
   "name": "group-income",
-  "version": "0.6.0",
-  "contractsVersion": "0.6.0",
+  "version": "0.7.0",
+  "contractsVersion": "0.7.0",
   "private": true,
   "description": "",
   "scripts": {
@@ -117,7 +117,7 @@
     "@sbp/okturtles.data": "0.1.5",
     "@sbp/okturtles.eventqueue": "1.2.0",
     "@sbp/okturtles.events": "0.1.5",
-    "@sbp/sbp": "2.2.0",
+    "@sbp/sbp": "2.4.0",
     "babel-plugin-module-resolver": "5.0.0",
     "babel-plugin-root-import": "6.6.0",
     "blakejs": "1.2.1",
@@ -132,7 +132,6 @@
     "grunt-exec": "3.0.0",
     "idle-vue": "2.0.5",
     "load-grunt-tasks": "5.1.0",
-    "localforage": "1.9.0",
     "lru-cache": "7.14.0",
     "marked": "11.1.1",
     "multihashes": "0.4.15",

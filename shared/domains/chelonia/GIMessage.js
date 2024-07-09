@@ -10,6 +10,7 @@ import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
+import { serdesTagSymbol, serdesSerializeSymbol, serdesDeserializeSymbol } from '~/shared/serdes/index.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -212,6 +213,7 @@ export class GIMessage {
   _message: Object
   _signedMessageData: SignedData<GIOpValue>
   _direction: GIMsgDirection
+  _decryptedValue: Object
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -393,6 +395,7 @@ export class GIMessage {
   }
 
   decryptedValue (): any {
+    if (this._decryptedValue) return this._decryptedValue
     try {
       const value = this.message()
       const data = unwrapMaybeEncryptedData(value)
@@ -402,11 +405,12 @@ export class GIMessage {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
         if (isSignedData(data.data)) {
-          return data.data.valueOf()
+          this._decryptedValue = data.data.valueOf()
         } else {
-          return data.data
+          this._decryptedValue = data.data
         }
       }
+      return this._decryptedValue
     } catch {
       // Signature or encryption error
       // We don't log this error because it's already logged when the value is
@@ -462,6 +466,24 @@ export class GIMessage {
 
   direction (): 'incoming' | 'outgoing' {
     return this._direction
+  }
+
+  // $FlowFixMe[unsupported-syntax]
+  static get [serdesTagSymbol] () {
+    return 'GIMessage'
+  }
+
+  // $FlowFixMe[unsupported-syntax]
+  static [serdesSerializeSymbol] (m: GIMessage) {
+    return [m.serialize(), m.direction(), m.decryptedValue()]
+  }
+
+  // $FlowFixMe[unsupported-syntax]
+  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue]) {
+    const m = GIMessage.deserialize(serialized)
+    m._direction = direction
+    m._decryptedValue = decryptedValue
+    return m
   }
 }
 

@@ -6,6 +6,7 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
     get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
   }) : x)(function(x) {
@@ -25,6 +26,10 @@
     return to;
   };
   var __toESM = (mod, isNodeMode, target2) => (target2 = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target2, "default", { value: mod, enumerable: true }) : target2, mod));
+  var __publicField = (obj, key, value) => {
+    __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+    return value;
+  };
 
   // node_modules/dompurify/dist/purify.js
   var require_purify = __commonJS({
@@ -6253,9 +6258,6 @@
     }
   });
 
-  // frontend/model/contracts/identity.js
-  var import_sbp5 = __toESM(__require("@sbp/sbp"));
-
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
   function isUndef(v) {
@@ -10951,14 +10953,14 @@
   }
   function genComponentModel(el, value, modifiers) {
     var ref2 = modifiers || {};
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var baseValueExpression = "$$v";
     var valueExpression = baseValueExpression;
     if (trim) {
       valueExpression = "(typeof " + baseValueExpression + " === 'string'? " + baseValueExpression + ".trim(): " + baseValueExpression + ")";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var assignment = genAssignmentCode(value, valueExpression);
@@ -11087,23 +11089,23 @@
     return true;
   }
   function genCheckboxModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
     var trueValueBinding = getBindingAttr(el, "true-value") || "true";
     var falseValueBinding = getBindingAttr(el, "false-value") || "false";
     addProp(el, "checked", "Array.isArray(" + value + ")?_i(" + value + "," + valueBinding + ")>-1" + (trueValueBinding === "true" ? ":(" + value + ")" : ":_q(" + value + "," + trueValueBinding + ")"));
-    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
+    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number3 ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
   }
   function genRadioModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
-    valueBinding = number ? "_n(" + valueBinding + ")" : valueBinding;
+    valueBinding = number3 ? "_n(" + valueBinding + ")" : valueBinding;
     addProp(el, "checked", "_q(" + value + "," + valueBinding + ")");
     addHandler(el, "change", genAssignmentCode(value, valueBinding), null, true);
   }
   function genSelect(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
-    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number ? "_n(val)" : "val") + "})";
+    var number3 = modifiers && modifiers.number;
+    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number3 ? "_n(val)" : "val") + "})";
     var assignment = "$event.target.multiple ? $$selectedVal : $$selectedVal[0]";
     var code = "var $$selectedVal = " + selectedVal + ";";
     code = code + " " + genAssignmentCode(value, assignment);
@@ -11121,7 +11123,7 @@
     }
     var ref2 = modifiers || {};
     var lazy = ref2.lazy;
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var needCompositionGuard = !lazy && type !== "range";
     var event = lazy ? "change" : type === "range" ? RANGE_TOKEN : "input";
@@ -11129,7 +11131,7 @@
     if (trim) {
       valueExpression = "$event.target.value.trim()";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var code = genAssignmentCode(value, valueExpression);
@@ -11138,7 +11140,7 @@
     }
     addProp(el, "value", "(" + value + ")");
     addHandler(el, event, code, null, true);
-    if (trim || number) {
+    if (trim || number3) {
       addHandler(el, "blur", "$forceUpdate()");
     }
   }
@@ -14355,12 +14357,16 @@
   var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
   var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
 
+  // frontend/model/contracts/chatroom.js
+  var import_sbp7 = __toESM(__require("@sbp/sbp"));
+
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
   var isNil = (v) => v === null;
   var isUndef2 = (v) => typeof v === "undefined";
   var isBoolean = (v) => typeof v === "boolean";
+  var isNumber = (v) => typeof v === "number";
   var isString = (v) => typeof v === "string";
   var isObject2 = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -14419,6 +14425,33 @@ ${this.getErrorInfo()}`;
     }
     array.type = () => `Array<${getType2(typeFn)}>`;
     return array;
+  };
+  var literalOf = (primitive) => {
+    function literal(value, _scope = "") {
+      if (isEmpty(value) || value === primitive)
+        return primitive;
+      throw validatorError(literal, value, _scope);
+    }
+    literal.type = () => {
+      if (isBoolean(primitive))
+        return `${primitive ? "true" : "false"}`;
+      else
+        return `"${primitive}"`;
+    };
+    return literal;
+  };
+  var mapOf = (keyTypeFn, typeFn) => {
+    function mapOf2(value) {
+      if (isEmpty(value))
+        return {};
+      const o = object(value);
+      const reducer = (acc, key) => Object.assign(acc, {
+        [keyTypeFn(key, "Map[_]")]: typeFn(o[key], `Map.${key}`)
+      });
+      return Object.keys(o).reduce(reducer, {});
+    }
+    mapOf2.type = () => `{ [_:${getType2(keyTypeFn)}]: ${getType2(typeFn)} }`;
+    return mapOf2;
   };
   var object = function(value) {
     if (isEmpty(value))
@@ -14494,6 +14527,13 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(boolean2, value, _scope);
   };
+  var number = function number2(value, _scope = "") {
+    if (isEmpty(value))
+      return 0;
+    if (isNumber(value))
+      return value;
+    throw validatorError(number2, value, _scope);
+  };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
       return "";
@@ -14515,13 +14555,13 @@ ${this.getErrorInfo()}`;
     return union;
   }
   var unionOf = unionOf_;
-
-  // frontend/model/contracts/shared/validators.js
-  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
-  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
-  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
-  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
-  var noUppercase = (value) => value.toLowerCase() === value;
+  var actionRequireInnerSignature = (next2) => (data, props2) => {
+    const innerSigningContractID = props2.message.innerSigningContractID;
+    if (!innerSigningContractID || innerSigningContractID === props2.contractID) {
+      throw new Error("Missing inner signature");
+    }
+    return next2(data, props2);
+  };
 
   // shared/domains/chelonia/utils.js
   var import_sbp4 = __toESM(__require("@sbp/sbp"));
@@ -15682,32 +15722,1012 @@ ${this.getErrorInfo()}`;
   var cidSymbol = Symbol.for("@ipld/js-cid/CID");
 
   // shared/functions.js
-  if (typeof window === "object" && typeof Buffer === "undefined") {
+  var multicodes = { JSON: 512, RAW: 0 };
+  if (typeof globalThis === "object" && !has2(globalThis, "Buffer")) {
     const { Buffer: Buffer2 } = require_buffer();
-    window.Buffer = Buffer2;
+    globalThis.Buffer = Buffer2;
   }
+  function createCID(data, multicode = multicodes.RAW) {
+    const uint8array = typeof data === "string" ? new TextEncoder().encode(data) : data;
+    const digest = blake2b256.digest(uint8array);
+    return CID.create(1, multicode, digest).toString(base58btc.encoder);
+  }
+  function blake32Hash(data) {
+    const uint8array = typeof data === "string" ? new TextEncoder().encode(data) : data;
+    const digest = blake2b256.digest(uint8array);
+    return base58btc.encode(digest.bytes);
+  }
+  var b64ToBuf = (b64) => Buffer.from(b64, "base64");
+  var strToBuf = (str2) => Buffer.from(str2, "utf8");
+  var bytesToB64 = (ary) => Buffer.from(ary).toString("base64");
 
   // shared/domains/chelonia/crypto.js
   var import_tweetnacl2 = __toESM(require_nacl_fast());
   var import_scrypt_async = __toESM(require_scrypt_async());
+  var EDWARDS25519SHA512BATCH = "edwards25519sha512batch";
+  var CURVE25519XSALSA20POLY1305 = "curve25519xsalsa20poly1305";
+  var XSALSA20POLY1305 = "xsalsa20poly1305";
+  var bytesOrObjectToB64 = (ary) => {
+    if (!(ary instanceof Uint8Array)) {
+      throw Error("Unsupported type");
+    }
+    return bytesToB64(ary);
+  };
+  var serializeKey = (key, saveSecretKey) => {
+    if (false) {
+      return JSON.stringify([
+        key.type,
+        saveSecretKey ? null : key.publicKey,
+        saveSecretKey ? key.secretKey : null
+      ], void 0, 0);
+    }
+    if (key.type === EDWARDS25519SHA512BATCH || key.type === CURVE25519XSALSA20POLY1305) {
+      if (!saveSecretKey) {
+        if (!key.publicKey) {
+          throw new Error("Unsupported operation: no public key to export");
+        }
+        return JSON.stringify([
+          key.type,
+          bytesOrObjectToB64(key.publicKey),
+          null
+        ], void 0, 0);
+      }
+      if (!key.secretKey) {
+        throw new Error("Unsupported operation: no secret key to export");
+      }
+      return JSON.stringify([
+        key.type,
+        null,
+        bytesOrObjectToB64(key.secretKey)
+      ], void 0, 0);
+    } else if (key.type === XSALSA20POLY1305) {
+      if (!saveSecretKey) {
+        throw new Error("Unsupported operation: no public key to export");
+      }
+      if (!key.secretKey) {
+        throw new Error("Unsupported operation: no secret key to export");
+      }
+      return JSON.stringify([
+        key.type,
+        null,
+        bytesOrObjectToB64(key.secretKey)
+      ], void 0, 0);
+    }
+    throw new Error("Unsupported key type");
+  };
+  var deserializeKey = (data) => {
+    const keyData = JSON.parse(data);
+    if (!keyData || keyData.length !== 3) {
+      throw new Error("Invalid key object");
+    }
+    if (false) {
+      const res = {
+        type: keyData[0]
+      };
+      if (keyData[2]) {
+        Object.defineProperty(res, "secretKey", { value: keyData[2] });
+        res.publicKey = keyData[2];
+      } else {
+        res.publicKey = keyData[1];
+      }
+      return res;
+    }
+    if (keyData[0] === EDWARDS25519SHA512BATCH) {
+      if (keyData[2]) {
+        const key = import_tweetnacl2.default.sign.keyPair.fromSecretKey(b64ToBuf(keyData[2]));
+        const res = {
+          type: keyData[0],
+          publicKey: key.publicKey
+        };
+        Object.defineProperty(res, "secretKey", { value: key.secretKey });
+        return res;
+      } else if (keyData[1]) {
+        return {
+          type: keyData[0],
+          publicKey: new Uint8Array(b64ToBuf(keyData[1]))
+        };
+      }
+      throw new Error("Missing secret or public key");
+    } else if (keyData[0] === CURVE25519XSALSA20POLY1305) {
+      if (keyData[2]) {
+        const key = import_tweetnacl2.default.box.keyPair.fromSecretKey(b64ToBuf(keyData[2]));
+        const res = {
+          type: keyData[0],
+          publicKey: key.publicKey
+        };
+        Object.defineProperty(res, "secretKey", { value: key.secretKey });
+        return res;
+      } else if (keyData[1]) {
+        return {
+          type: keyData[0],
+          publicKey: new Uint8Array(b64ToBuf(keyData[1]))
+        };
+      }
+      throw new Error("Missing secret or public key");
+    } else if (keyData[0] === XSALSA20POLY1305) {
+      if (!keyData[2]) {
+        throw new Error("Secret key missing");
+      }
+      const res = {
+        type: keyData[0]
+      };
+      Object.defineProperty(res, "secretKey", { value: new Uint8Array(b64ToBuf(keyData[2])) });
+      return res;
+    }
+    throw new Error("Unsupported key type");
+  };
+  var keyId = (inKey) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    const serializedKey = serializeKey(key, !key.publicKey);
+    return blake32Hash(serializedKey);
+  };
+  var verifySignature = (inKey, data, signature) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    if (false) {
+      if (!key.publicKey) {
+        throw new Error("Public key missing");
+      }
+      if (key.publicKey + ";" + blake32Hash(data) !== signature) {
+        throw new Error("Invalid signature");
+      }
+      return;
+    }
+    if (key.type !== EDWARDS25519SHA512BATCH) {
+      throw new Error("Unsupported algorithm");
+    }
+    if (!key.publicKey) {
+      throw new Error("Public key missing");
+    }
+    const decodedSignature = b64ToBuf(signature);
+    const messageUint8 = strToBuf(data);
+    const result = import_tweetnacl2.default.sign.detached.verify(messageUint8, decodedSignature, key.publicKey);
+    if (!result) {
+      throw new Error("Invalid signature");
+    }
+  };
+  var decrypt = (inKey, data, ad) => {
+    const key = Object(inKey) instanceof String ? deserializeKey(inKey) : inKey;
+    if (false) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      if (!data.startsWith(key.secretKey + ";") || !data.endsWith(";" + (ad ?? ""))) {
+        throw new Error("Additional data mismatch");
+      }
+      return data.slice(String(key.secretKey).length + 1, data.length - 1 - (ad ?? "").length);
+    }
+    if (key.type === XSALSA20POLY1305) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      const messageWithNonceAsUint8Array = b64ToBuf(data);
+      const nonce = messageWithNonceAsUint8Array.slice(0, import_tweetnacl2.default.secretbox.nonceLength);
+      const message = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.secretbox.nonceLength, messageWithNonceAsUint8Array.length);
+      if (ad) {
+        const adHash = import_tweetnacl2.default.hash(strToBuf(ad));
+        const len2 = Math.min(adHash.length, nonce.length);
+        for (let i = 0; i < len2; i++) {
+          nonce[i] ^= adHash[i];
+        }
+      }
+      const decrypted = import_tweetnacl2.default.secretbox.open(message, nonce, key.secretKey);
+      if (!decrypted) {
+        throw new Error("Could not decrypt message");
+      }
+      return Buffer.from(decrypted).toString("utf-8");
+    } else if (key.type === CURVE25519XSALSA20POLY1305) {
+      if (!key.secretKey) {
+        throw new Error("Secret key missing");
+      }
+      const messageWithNonceAsUint8Array = b64ToBuf(data);
+      const ephemeralPublicKey = messageWithNonceAsUint8Array.slice(0, import_tweetnacl2.default.box.publicKeyLength);
+      const nonce = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.box.publicKeyLength, import_tweetnacl2.default.box.publicKeyLength + import_tweetnacl2.default.box.nonceLength);
+      const message = messageWithNonceAsUint8Array.slice(import_tweetnacl2.default.box.publicKeyLength + import_tweetnacl2.default.box.nonceLength);
+      if (ad) {
+        const adHash = import_tweetnacl2.default.hash(strToBuf(ad));
+        const len2 = Math.min(adHash.length, nonce.length);
+        for (let i = 0; i < len2; i++) {
+          nonce[i] ^= adHash[i];
+        }
+      }
+      const decrypted = import_tweetnacl2.default.box.open(message, nonce, ephemeralPublicKey, key.secretKey);
+      if (!decrypted) {
+        throw new Error("Could not decrypt message");
+      }
+      return Buffer.from(decrypted).toString("utf-8");
+    }
+    throw new Error("Unsupported algorithm");
+  };
 
   // shared/domains/chelonia/encryptedData.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // shared/domains/chelonia/signedData.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var rootStateFn = () => (0, import_sbp2.default)("chelonia/rootState");
   var proto = Object.create(null, {
     _isSignedData: {
       value: true
     }
   });
+  var wrapper = (o) => {
+    return Object.setPrototypeOf(o, proto);
+  };
+  var isSignedData = (o) => {
+    return !!o && !!Object.getPrototypeOf(o)?._isSignedData;
+  };
+  var verifySignatureData = function(height, data, additionalData) {
+    if (!this) {
+      throw new ChelErrorSignatureError("Missing contract state");
+    }
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    if (!Number.isSafeInteger(height) || height < 0) {
+      throw new ChelErrorSignatureError(`Height ${height} is invalid or out of range`);
+    }
+    const [serializedMessage, sKeyId, signature] = data._signedData;
+    const designatedKey = this._vm?.authorizedKeys?.[sKeyId];
+    if (!designatedKey || height > designatedKey._notAfterHeight || height < designatedKey._notBeforeHeight || !designatedKey.purpose.includes("sig")) {
+      if ("") {
+        console.error(`Key ${sKeyId} is unauthorized or expired for the current contract`, { designatedKey, height, state: JSON.parse(JSON.stringify((0, import_sbp2.default)("state/vuex/state"))) });
+        Promise.reject(new ChelErrorSignatureKeyUnauthorized(`Key ${sKeyId} is unauthorized or expired for the current contract`));
+      }
+      throw new ChelErrorSignatureKeyUnauthorized(`Key ${sKeyId} is unauthorized or expired for the current contract`);
+    }
+    const deserializedKey = designatedKey.data;
+    const payloadToSign = blake32Hash(`${blake32Hash(additionalData)}${blake32Hash(serializedMessage)}`);
+    try {
+      verifySignature(deserializedKey, payloadToSign, signature);
+      const message = JSON.parse(serializedMessage);
+      return [sKeyId, message];
+    } catch (e) {
+      throw new ChelErrorSignatureError(e?.message || e);
+    }
+  };
+  var signedIncomingData = (contractID, state, data, height, additionalData, mapperFn) => {
+    const stringValueFn = () => data;
+    let verifySignedValue;
+    const verifySignedValueFn = () => {
+      if (verifySignedValue) {
+        return verifySignedValue[1];
+      }
+      verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData);
+      if (mapperFn)
+        verifySignedValue[1] = mapperFn(verifySignedValue[1]);
+      return verifySignedValue[1];
+    };
+    return wrapper({
+      get signingKeyId() {
+        if (verifySignedValue)
+          return verifySignedValue[0];
+        return signedDataKeyId(data);
+      },
+      get serialize() {
+        return stringValueFn;
+      },
+      get context() {
+        return [contractID, data, height, additionalData];
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return verifySignedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      },
+      get get() {
+        return (k) => k !== "_signedData" ? data[k] : void 0;
+      }
+    });
+  };
+  var signedDataKeyId = (data) => {
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    return data._signedData[1];
+  };
+  var isRawSignedData = (data) => {
+    if (!data || typeof data !== "object" || !has2(data, "_signedData") || !Array.isArray(data._signedData) || data._signedData.length !== 3 || data._signedData.map((v) => typeof v).filter((v) => v !== "string").length !== 0) {
+      return false;
+    }
+    return true;
+  };
+  var rawSignedIncomingData = (data) => {
+    if (!isRawSignedData(data)) {
+      throw new ChelErrorSignatureError("Invalid message format");
+    }
+    const stringValueFn = () => data;
+    let verifySignedValue;
+    const verifySignedValueFn = () => {
+      if (verifySignedValue) {
+        return verifySignedValue[1];
+      }
+      verifySignedValue = [data._signedData[1], JSON.parse(data._signedData[0])];
+      return verifySignedValue[1];
+    };
+    return wrapper({
+      get signingKeyId() {
+        if (verifySignedValue)
+          return verifySignedValue[0];
+        return signedDataKeyId(data);
+      },
+      get serialize() {
+        return stringValueFn;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return verifySignedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      },
+      get get() {
+        return (k) => k !== "_signedData" ? data[k] : void 0;
+      }
+    });
+  };
 
   // shared/domains/chelonia/encryptedData.js
+  var rootStateFn2 = () => (0, import_sbp3.default)("chelonia/rootState");
   var proto2 = Object.create(null, {
     _isEncryptedData: {
       value: true
     }
   });
+  var wrapper2 = (o) => {
+    return Object.setPrototypeOf(o, proto2);
+  };
+  var isEncryptedData = (o) => {
+    return !!o && !!Object.getPrototypeOf(o)?._isEncryptedData;
+  };
+  var decryptData = function(height, data, additionalKeys, additionalData, validatorFn) {
+    if (!this) {
+      throw new ChelErrorDecryptionError("Missing contract state");
+    }
+    if (typeof data.valueOf === "function")
+      data = data.valueOf();
+    if (!isRawEncryptedData(data)) {
+      throw new ChelErrorDecryptionError("Invalid message format");
+    }
+    const [eKeyId, message] = data;
+    const key = additionalKeys[eKeyId];
+    if (!key) {
+      throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`);
+    }
+    const designatedKey = this._vm?.authorizedKeys?.[eKeyId];
+    if (!designatedKey || height > designatedKey._notAfterHeight || height < designatedKey._notBeforeHeight || !designatedKey.purpose.includes("enc")) {
+      throw new ChelErrorUnexpected(`Key ${eKeyId} is unauthorized or expired for the current contract`);
+    }
+    const deserializedKey = typeof key === "string" ? deserializeKey(key) : key;
+    try {
+      const result = JSON.parse(decrypt(deserializedKey, message, additionalData));
+      if (typeof validatorFn === "function")
+        validatorFn(result, eKeyId);
+      return result;
+    } catch (e) {
+      throw new ChelErrorDecryptionError(e?.message || e);
+    }
+  };
+  var encryptedIncomingData = (contractID, state, data, height, additionalKeys, additionalData, validatorFn) => {
+    let decryptedValue;
+    const decryptedValueFn = () => {
+      if (decryptedValue) {
+        return decryptedValue;
+      }
+      if (!state || !additionalKeys) {
+        const rootState = rootStateFn2();
+        state = state || rootState[contractID];
+        additionalKeys = additionalKeys ?? rootState.secretKeys;
+      }
+      decryptedValue = decryptData.call(state, height, data, additionalKeys, additionalData || "", validatorFn);
+      if (isRawSignedData(decryptedValue)) {
+        decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || "");
+      }
+      return decryptedValue;
+    };
+    return wrapper2({
+      get encryptionKeyId() {
+        return encryptedDataKeyId(data);
+      },
+      get serialize() {
+        return () => data;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return decryptedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      }
+    });
+  };
+  var encryptedIncomingForeignData = (contractID, _0, data, _1, additionalKeys, additionalData, validatorFn) => {
+    let decryptedValue;
+    const decryptedValueFn = () => {
+      if (decryptedValue) {
+        return decryptedValue;
+      }
+      const rootState = rootStateFn2();
+      const state = rootState[contractID];
+      decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || "", validatorFn);
+      if (isRawSignedData(decryptedValue)) {
+        return signedIncomingData(contractID, state, decryptedValue, NaN, additionalData || "");
+      }
+      return decryptedValue;
+    };
+    return wrapper2({
+      get encryptionKeyId() {
+        return encryptedDataKeyId(data);
+      },
+      get serialize() {
+        return () => data;
+      },
+      get toString() {
+        return () => JSON.stringify(this.serialize());
+      },
+      get valueOf() {
+        return decryptedValueFn;
+      },
+      get toJSON() {
+        return this.serialize;
+      }
+    });
+  };
+  var encryptedDataKeyId = (data) => {
+    if (!isRawEncryptedData(data)) {
+      throw new ChelErrorDecryptionError("Invalid message format");
+    }
+    return data[0];
+  };
+  var isRawEncryptedData = (data) => {
+    if (!Array.isArray(data) || data.length !== 2 || data.map((v) => typeof v).filter((v) => v !== "string").length !== 0) {
+      return false;
+    }
+    return true;
+  };
+  var unwrapMaybeEncryptedData = (data) => {
+    if (isEncryptedData(data)) {
+      if (false)
+        return;
+      try {
+        return {
+          encryptionKeyId: data.encryptionKeyId,
+          data: data.valueOf()
+        };
+      } catch (e) {
+        console.warn("unwrapMaybeEncryptedData: Unable to decrypt", e);
+      }
+    } else {
+      return {
+        encryptionKeyId: null,
+        data
+      };
+    }
+  };
+  var maybeEncryptedIncomingData = (contractID, state, data, height, additionalKeys, additionalData, validatorFn) => {
+    if (isRawEncryptedData(data)) {
+      return encryptedIncomingData(contractID, state, data, height, additionalKeys, additionalData, validatorFn);
+    } else {
+      validatorFn?.(data, "");
+      return data;
+    }
+  };
+
+  // shared/serdes/index.js
+  var raw = Symbol("raw");
+  var serdesTagSymbol = Symbol("tag");
+  var serdesSerializeSymbol = Symbol("serialize");
+  var serdesDeserializeSymbol = Symbol("deserialize");
+  var rawResult = (obj) => {
+    Object.defineProperty(obj, raw, { value: true });
+    return obj;
+  };
+  var serializer = (data) => {
+    const verbatim = [];
+    const transferables = /* @__PURE__ */ new Set();
+    const revokables = /* @__PURE__ */ new Set();
+    const result = JSON.parse(JSON.stringify(data, (_key, value) => {
+      if (value && value[raw])
+        return value;
+      if (value === void 0)
+        return rawResult(["_", "_"]);
+      if (!value)
+        return value;
+      if (Array.isArray(value) && value[0] === "_")
+        return rawResult(["_", "_", ...value]);
+      if (value instanceof Map) {
+        return rawResult(["_", "Map", Array.from(value.entries())]);
+      }
+      if (value instanceof Set) {
+        return rawResult(["_", "Set", Array.from(value.entries())]);
+      }
+      if (value instanceof Error || value instanceof Blob || value instanceof File) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        return rawResult(["_", "_ref", pos]);
+      }
+      if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || ArrayBuffer.isView(value) || value instanceof ArrayBuffer) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        transferables.add(value);
+        return rawResult(["_", "_ref", pos]);
+      }
+      if (typeof value === "function") {
+        const mc = new MessageChannel();
+        mc.port1.onmessage = async (ev) => {
+          try {
+            try {
+              const result2 = await value(...deserializer(ev.data[1]));
+              const { data: data2, transferables: transferables2 } = serializer(result2);
+              ev.data[0].postMessage([true, data2], transferables2);
+            } catch (e) {
+              const { data: data2, transferables: transferables2 } = serializer(e);
+              ev.data[0].postMessage([false, data2], transferables2);
+            }
+          } catch (e) {
+            console.error("Async error on onmessage handler", e);
+          }
+        };
+        transferables.add(mc.port2);
+        revokables.add(mc.port1);
+        return rawResult(["_", "_fn", mc.port2]);
+      }
+      const proto3 = Object.getPrototypeOf(value);
+      if (proto3?.constructor?.[serdesTagSymbol] && proto3.constructor[serdesSerializeSymbol]) {
+        return rawResult(["_", "_custom", proto3.constructor[serdesTagSymbol], proto3.constructor[serdesSerializeSymbol](value)]);
+      }
+      return value;
+    }), (_key, value) => {
+      if (Array.isArray(value) && value[0] === "_" && value[1] === "_ref") {
+        return verbatim[value[2]];
+      }
+      return value;
+    });
+    return {
+      data: result,
+      transferables: Array.from(transferables),
+      revokables: Array.from(revokables)
+    };
+  };
+  var deserializerTable = /* @__PURE__ */ Object.create(null);
+  var deserializer = (data) => {
+    const verbatim = [];
+    return JSON.parse(JSON.stringify(data, (_key, value) => {
+      if (value && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype) {
+        const pos = verbatim.length;
+        verbatim[verbatim.length] = value;
+        return rawResult(["_", "_ref", pos]);
+      }
+      return value;
+    }), (_key, value) => {
+      if (Array.isArray(value) && value[0] === "_") {
+        switch (value[1]) {
+          case "_":
+            if (value.length >= 3) {
+              return value.slice(2);
+            } else {
+              return void 0;
+            }
+          case "Map":
+            return new Map(value[2]);
+          case "Set":
+            return new Set(value[2]);
+          case "_custom":
+            if (deserializerTable[value[2]]) {
+              return deserializerTable[value[2]](value[3]);
+            } else {
+              throw new Error("Invalid or unknown tag: " + value[2]);
+            }
+          case "_ref":
+            return verbatim[value[2]];
+          case "_fn": {
+            const mp = value[2];
+            return (...args) => {
+              return new Promise((resolve, reject) => {
+                const mc = new MessageChannel();
+                const { data: data2, transferables } = serializer(args);
+                mc.port1.onmessage = (ev) => {
+                  if (ev.data[0]) {
+                    resolve(deserializer(ev.data[1]));
+                  } else {
+                    reject(deserializer(ev.data[1]));
+                  }
+                };
+                mp.postMessage([mc.port2, data2], [mc.port2, ...transferables]);
+              });
+            };
+          }
+        }
+      }
+      return value;
+    });
+  };
+  deserializer.register = (y) => {
+    if (typeof y === "function" && typeof y[serdesTagSymbol] === "string" && typeof y[serdesDeserializeSymbol] === "function") {
+      deserializerTable[y[serdesTagSymbol]] = y[serdesDeserializeSymbol].bind(y);
+    }
+  };
+
+  // shared/domains/chelonia/GIMessage.js
+  var decryptedAndVerifiedDeserializedMessage = (head, headJSON, contractID, parsedMessage, additionalKeys, state) => {
+    const op = head.op;
+    const height = head.height;
+    const message = op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys, headJSON, void 0) : parsedMessage;
+    if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
+      return message.map((key) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key2, eKeyId) => {
+          if (key2.meta?.private?.content) {
+            key2.meta.private.content = encryptedIncomingData(contractID, state, key2.meta.private.content, height, additionalKeys, headJSON, (value) => {
+              const computedKeyId = keyId(value);
+              if (computedKeyId !== key2.id) {
+                throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key2.id} but got ${computedKeyId}`);
+              }
+            });
+          }
+          if (key2.meta?.keyRequest?.reference) {
+            try {
+              key2.meta.keyRequest.reference = maybeEncryptedIncomingData(contractID, state, key2.meta.keyRequest.reference, height, additionalKeys, headJSON)?.valueOf();
+            } catch {
+              delete key2.meta.keyRequest.reference;
+            }
+          }
+          if (key2.meta?.keyRequest?.contractID) {
+            try {
+              key2.meta.keyRequest.contractID = maybeEncryptedIncomingData(contractID, state, key2.meta.keyRequest.contractID, height, additionalKeys, headJSON)?.valueOf();
+            } catch {
+              delete key2.meta.keyRequest.contractID;
+            }
+          }
+        });
+      });
+    }
+    if (op === GIMessage.OP_CONTRACT) {
+      message.keys = message.keys?.map((key, eKeyId) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key2) => {
+          if (!key2.meta?.private?.content)
+            return;
+          const decryptionFn = message.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData;
+          const decryptionContract = message.foreignContractID ? message.foreignContractID : contractID;
+          key2.meta.private.content = decryptionFn(decryptionContract, state, key2.meta.private.content, height, additionalKeys, headJSON, (value) => {
+            const computedKeyId = keyId(value);
+            if (computedKeyId !== key2.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key2.id} but got ${computedKeyId}`);
+            }
+          });
+        });
+      });
+    }
+    if (op === GIMessage.OP_KEY_SHARE) {
+      return maybeEncryptedIncomingData(contractID, state, message, height, additionalKeys, headJSON, (message2) => {
+        message2.keys?.forEach((key) => {
+          if (!key.meta?.private?.content)
+            return;
+          const decryptionFn = message2.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData;
+          const decryptionContract = message2.foreignContractID || contractID;
+          key.meta.private.content = decryptionFn(decryptionContract, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
+            const computedKeyId = keyId(value);
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`);
+            }
+          });
+        });
+      });
+    }
+    if (op === GIMessage.OP_KEY_REQUEST) {
+      return maybeEncryptedIncomingData(contractID, state, message, height, additionalKeys, headJSON, (msg) => {
+        msg.replyWith = signedIncomingData(msg.contractID, void 0, msg.replyWith, msg.height, headJSON);
+      });
+    }
+    if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
+      return signedIncomingData(contractID, state, message, height, headJSON);
+    }
+    if (op === GIMessage.OP_ACTION_ENCRYPTED) {
+      return message;
+    }
+    if (op === GIMessage.OP_KEY_DEL) {
+      return message.map((key) => {
+        return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, void 0);
+      });
+    }
+    if (op === GIMessage.OP_KEY_REQUEST_SEEN) {
+      return maybeEncryptedIncomingData(contractID, state, parsedMessage, height, additionalKeys, headJSON, void 0);
+    }
+    if (op === GIMessage.OP_ATOMIC) {
+      return message.map(([opT, opV]) => [
+        opT,
+        decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, opV, additionalKeys, state)
+      ]);
+    }
+    return message;
+  };
+  var _GIMessage = class {
+    _mapping;
+    _head;
+    _message;
+    _signedMessageData;
+    _direction;
+    _decryptedValue;
+    static createV1_0({
+      contractID,
+      originatingContractID,
+      originatingContractHeight,
+      previousHEAD = null,
+      height = 0,
+      op,
+      manifest
+    }) {
+      const head = {
+        version: "1.0.0",
+        previousHEAD,
+        height,
+        contractID,
+        originatingContractID,
+        originatingContractHeight,
+        op: op[0],
+        manifest
+      };
+      return new this(messageToParams(head, op[1]));
+    }
+    static cloneWith(targetHead, targetOp, sources) {
+      const head = Object.assign({}, targetHead, sources);
+      return new this(messageToParams(head, targetOp[1]));
+    }
+    static deserialize(value, additionalKeys, state) {
+      if (!value)
+        throw new Error(`deserialize bad value: ${value}`);
+      const { head: headJSON, ...parsedValue } = JSON.parse(value);
+      const head = JSON.parse(headJSON);
+      const contractID = head.op === _GIMessage.OP_CONTRACT ? createCID(value) : head.contractID;
+      if (!state?._vm?.authorizedKeys && head.op === _GIMessage.OP_CONTRACT) {
+        const value2 = rawSignedIncomingData(parsedValue);
+        const authorizedKeys = Object.fromEntries(value2.valueOf()?.keys.map((k) => [k.id, k]));
+        state = {
+          _vm: {
+            authorizedKeys
+          }
+        };
+      }
+      const signedMessageData = signedIncomingData(contractID, state, parsedValue, head.height, headJSON, (message) => decryptedAndVerifiedDeserializedMessage(head, headJSON, contractID, message, additionalKeys, state));
+      return new this({
+        direction: "incoming",
+        mapping: { key: createCID(value), value },
+        head,
+        signedMessageData
+      });
+    }
+    static deserializeHEAD(value) {
+      if (!value)
+        throw new Error(`deserialize bad value: ${value}`);
+      let head, hash2;
+      const result = {
+        get head() {
+          if (head === void 0) {
+            head = JSON.parse(JSON.parse(value).head);
+          }
+          return head;
+        },
+        get hash() {
+          if (!hash2) {
+            hash2 = createCID(value);
+          }
+          return hash2;
+        },
+        get contractID() {
+          return result.head?.contractID ?? result.hash;
+        },
+        description() {
+          const type = this.head.op;
+          return `<op_${type}|${this.hash} of ${this.contractID}>`;
+        },
+        get isFirstMessage() {
+          return !result.head?.contractID;
+        }
+      };
+      return result;
+    }
+    constructor(params) {
+      this._direction = params.direction;
+      this._mapping = params.mapping;
+      this._head = params.head;
+      this._signedMessageData = params.signedMessageData;
+      const type = this.opType();
+      let atomicTopLevel = true;
+      const validate = (type2, message) => {
+        switch (type2) {
+          case _GIMessage.OP_CONTRACT:
+            if (!this.isFirstMessage() || !atomicTopLevel)
+              throw new Error("OP_CONTRACT: must be first message");
+            break;
+          case _GIMessage.OP_ATOMIC:
+            if (!atomicTopLevel) {
+              throw new Error("OP_ATOMIC not allowed inside of OP_ATOMIC");
+            }
+            if (!Array.isArray(message)) {
+              throw new TypeError("OP_ATOMIC must be of an array type");
+            }
+            atomicTopLevel = false;
+            message.forEach(([t, m]) => validate(t, m));
+            break;
+          case _GIMessage.OP_KEY_ADD:
+          case _GIMessage.OP_KEY_DEL:
+          case _GIMessage.OP_KEY_UPDATE:
+            if (!Array.isArray(message))
+              throw new TypeError("OP_KEY_{ADD|DEL|UPDATE} must be of an array type");
+            break;
+          case _GIMessage.OP_KEY_SHARE:
+          case _GIMessage.OP_KEY_REQUEST:
+          case _GIMessage.OP_KEY_REQUEST_SEEN:
+          case _GIMessage.OP_ACTION_ENCRYPTED:
+          case _GIMessage.OP_ACTION_UNENCRYPTED:
+            break;
+          default:
+            throw new Error(`unsupported op: ${type2}`);
+        }
+      };
+      Object.defineProperty(this, "_message", {
+        get: ((validated) => () => {
+          const message = this._signedMessageData.valueOf();
+          if (!validated) {
+            validate(type, message);
+            validated = true;
+          }
+          return message;
+        })()
+      });
+    }
+    decryptedValue() {
+      if (this._decryptedValue)
+        return this._decryptedValue;
+      try {
+        const value = this.message();
+        const data = unwrapMaybeEncryptedData(value);
+        if (data?.data) {
+          if (isSignedData(data.data)) {
+            this._decryptedValue = data.data.valueOf();
+          } else {
+            this._decryptedValue = data.data;
+          }
+        }
+        return this._decryptedValue;
+      } catch {
+        return void 0;
+      }
+    }
+    head() {
+      return this._head;
+    }
+    message() {
+      return this._message;
+    }
+    op() {
+      return [this.head().op, this.message()];
+    }
+    rawOp() {
+      return [this.head().op, this._signedMessageData];
+    }
+    opType() {
+      return this.head().op;
+    }
+    opValue() {
+      return this.message();
+    }
+    signingKeyId() {
+      return this._signedMessageData.signingKeyId;
+    }
+    manifest() {
+      return this.head().manifest;
+    }
+    description() {
+      const type = this.opType();
+      let desc = `<op_${type}`;
+      if (type === _GIMessage.OP_ACTION_UNENCRYPTED) {
+        const value = this.opValue();
+        if (typeof value.type === "string") {
+          desc += `|${value.type}`;
+        }
+      }
+      return `${desc}|${this.hash()} of ${this.contractID()}>`;
+    }
+    isFirstMessage() {
+      return !this.head().contractID;
+    }
+    contractID() {
+      return this.head().contractID || this.hash();
+    }
+    originatingContractID() {
+      return this.head().originatingContractID || this.contractID();
+    }
+    serialize() {
+      return this._mapping.value;
+    }
+    hash() {
+      return this._mapping.key;
+    }
+    height() {
+      return this._head.height;
+    }
+    id() {
+      throw new Error("GIMessage.id() was called but it has been removed");
+    }
+    direction() {
+      return this._direction;
+    }
+    static get [serdesTagSymbol]() {
+      return "GIMessage";
+    }
+    static [serdesSerializeSymbol](m) {
+      return [m.serialize(), m.direction(), m.decryptedValue()];
+    }
+    static [serdesDeserializeSymbol]([serialized, direction, decryptedValue]) {
+      const m = _GIMessage.deserialize(serialized);
+      m._direction = direction;
+      m._decryptedValue = decryptedValue;
+      return m;
+    }
+  };
+  var GIMessage = _GIMessage;
+  __publicField(GIMessage, "OP_CONTRACT", "c");
+  __publicField(GIMessage, "OP_ACTION_ENCRYPTED", "ae");
+  __publicField(GIMessage, "OP_ACTION_UNENCRYPTED", "au");
+  __publicField(GIMessage, "OP_KEY_ADD", "ka");
+  __publicField(GIMessage, "OP_KEY_DEL", "kd");
+  __publicField(GIMessage, "OP_KEY_UPDATE", "ku");
+  __publicField(GIMessage, "OP_PROTOCOL_UPGRADE", "pu");
+  __publicField(GIMessage, "OP_PROP_SET", "ps");
+  __publicField(GIMessage, "OP_PROP_DEL", "pd");
+  __publicField(GIMessage, "OP_CONTRACT_AUTH", "ca");
+  __publicField(GIMessage, "OP_CONTRACT_DEAUTH", "cd");
+  __publicField(GIMessage, "OP_ATOMIC", "a");
+  __publicField(GIMessage, "OP_KEY_SHARE", "ks");
+  __publicField(GIMessage, "OP_KEY_REQUEST", "kr");
+  __publicField(GIMessage, "OP_KEY_REQUEST_SEEN", "krs");
+  function messageToParams(head, message) {
+    let mapping;
+    return {
+      direction: has2(message, "recreate") ? "outgoing" : "incoming",
+      get mapping() {
+        if (!mapping) {
+          const headJSON = JSON.stringify(head);
+          const messageJSON = { ...message.serialize(headJSON), head: headJSON };
+          const value = JSON.stringify(messageJSON);
+          mapping = {
+            key: createCID(value),
+            value
+          };
+        }
+        return mapping;
+      },
+      head,
+      signedMessageData: message
+    };
+  }
+
+  // shared/domains/chelonia/Secret.js
+  var Secret = class {
+    _content;
+    static [serdesDeserializeSymbol](secret) {
+      return new this(secret);
+    }
+    static [serdesSerializeSymbol](secret) {
+      return secret._content;
+    }
+    static get [serdesTagSymbol]() {
+      return "__chelonia_Secret";
+    }
+    constructor(value) {
+      this._content = value;
+    }
+    valueOf() {
+      return this._content;
+    }
+  };
 
   // shared/domains/chelonia/utils.js
   var MAX_EVENTS_AFTER = Number.parseInt("", 10) || Infinity;
@@ -15715,355 +16735,889 @@ ${this.getErrorInfo()}`;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
-  var IDENTITY_USERNAME_MAX_CHARS = 80;
+  var STATUS_EXPIRING = "expiring";
+  var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
+  var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
+  var CHATROOM_MAX_MESSAGES = 20;
+  var CHATROOM_ACTIONS_PER_PAGE = 40;
+  var CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = "@";
+  var CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = "#";
+  var MESSAGE_RECEIVE = "message-receive";
+  var CHATROOM_TYPES = {
+    DIRECT_MESSAGE: "direct-message",
+    GROUP: "group"
+  };
+  var CHATROOM_PRIVACY_LEVEL = {
+    GROUP: "group",
+    PRIVATE: "private",
+    PUBLIC: "public"
+  };
+  var MESSAGE_TYPES = {
+    POLL: "poll",
+    TEXT: "text",
+    INTERACTIVE: "interactive",
+    NOTIFICATION: "notification"
+  };
+  var MESSAGE_NOTIFICATIONS = {
+    ADD_MEMBER: "add-member",
+    JOIN_MEMBER: "join-member",
+    LEAVE_MEMBER: "leave-member",
+    KICK_MEMBER: "kick-member",
+    UPDATE_DESCRIPTION: "update-description",
+    UPDATE_NAME: "update-name",
+    VOTE_ON_POLL: "vote-on-poll",
+    CHANGE_VOTE_ON_POLL: "change-vote-on-poll"
+  };
+  var MESSAGE_NOTIFY_SETTINGS = {
+    ALL_MESSAGES: "all-messages",
+    DIRECT_MESSAGES: "direct-messages",
+    NOTHING: "nothing"
+  };
+  var POLL_TYPES = {
+    SINGLE_CHOICE: "single-vote",
+    MULTIPLE_CHOICES: "multiple-votes"
+  };
+  var POLL_STATUS = {
+    ACTIVE: "active",
+    CLOSED: "closed"
+  };
 
-  // frontend/model/contracts/identity.js
-  var attributesType = objectMaybeOf({
-    username: string,
-    email: string,
-    picture: unionOf(string, objectOf({
-      manifestCid: string,
-      downloadParams: optional(object)
-    }))
-  });
-  var validateUsername = (username) => {
-    if (!username) {
-      throw new TypeError("A username is required");
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp5 = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/time.js
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+
+  // frontend/model/contracts/shared/functions.js
+  function createMessage({ meta, data, hash: hash2, height, state, pending: pending2, innerSigningContractID }) {
+    const { type, text: text2, replyingMessage, attachments } = data;
+    const { createdDate } = meta;
+    const newMessage = {
+      type,
+      hash: hash2,
+      height,
+      from: innerSigningContractID,
+      datetime: new Date(createdDate).toISOString()
+    };
+    if (pending2) {
+      newMessage.pending = true;
     }
-    if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-      throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
-    }
-    if (!allowedUsernameCharacters(username)) {
-      throw new TypeError("A username cannot contain disallowed characters.");
-    }
-    if (!noConsecutiveHyphensOrUnderscores(username)) {
-      throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
-    }
-    if (!noLeadingOrTrailingHyphen(username)) {
-      throw new TypeError("A username cannot start or end with a hyphen.");
-    }
-    if (!noLeadingOrTrailingUnderscore(username)) {
-      throw new TypeError("A username cannot start or end with an underscore.");
-    }
-    if (!noUppercase(username)) {
-      throw new TypeError("A username cannot contain uppercase letters.");
-    }
-  };
-  var checkUsernameConsistency = async (contractID, username) => {
-    const lookupResult = await (0, import_sbp5.default)("namespace/lookup", username, { skipCache: true });
-    if (lookupResult === contractID)
-      return;
-    console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`);
-    (0, import_sbp5.default)("chelonia/queueInvocation", contractID, () => {
-      const rootState = (0, import_sbp5.default)("state/vuex/state");
-      if (!has2(rootState, contractID))
-        return;
-      const username2 = rootState[contractID].attributes.username;
-      if ((0, import_sbp5.default)("namespace/lookupCached", username2) !== contractID) {
-        (0, import_sbp5.default)("gi.notifications/emit", "WARNING", {
-          contractID,
-          message: L("Unable to confirm that the username {username} belongs to this identity contract", { username: username2 })
-        });
+    if (type === MESSAGE_TYPES.TEXT) {
+      newMessage.text = text2;
+      if (replyingMessage) {
+        newMessage.replyingMessage = replyingMessage;
       }
+      if (attachments) {
+        newMessage.attachments = attachments;
+      }
+    } else if (type === MESSAGE_TYPES.POLL) {
+      newMessage.pollData = {
+        ...data.pollData,
+        creatorID: innerSigningContractID,
+        status: POLL_STATUS.ACTIVE,
+        options: data.pollData.options.map((opt) => ({ ...opt, voted: [] }))
+      };
+    } else if (type === MESSAGE_TYPES.NOTIFICATION) {
+      const params = {
+        channelName: state?.attributes.name,
+        channelDescription: state?.attributes.description,
+        ...data.notification
+      };
+      delete params.type;
+      newMessage.notification = { type: data.notification.type, params };
+    } else if (type === MESSAGE_TYPES.INTERACTIVE) {
+      newMessage.proposal = data.proposal;
+    }
+    return newMessage;
+  }
+  async function leaveChatRoom(contractID) {
+    if (await (0, import_sbp5.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
+      return;
+    }
+    (0, import_sbp5.default)("gi.actions/identity/kv/deleteChatRoomUnreadMessages", { contractID }).catch((e) => {
+      console.error("[leaveChatroom] Error at deleteChatRoomUnreadMessages ", contractID, e);
     });
+    await (0, import_sbp5.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomID: contractID });
+  }
+  function findMessageIdx(hash2, messages = []) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].hash === hash2) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  function makeMentionFromUserID(userID) {
+    return {
+      me: userID ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${userID}` : "",
+      all: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}all`
+    };
+  }
+  function makeChannelMention(str2, withId = false) {
+    return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ":chatID:" : ""}${str2}`;
+  }
+  function getIdFromChannelMention(str2) {
+    return str2.includes(":chatID:") ? str2.split(":chatID:")[1] : "";
+  }
+  function swapMentionIDForDisplayname(text2, options = {
+    escaped: true,
+    forChat: true
+  }) {
+    const {
+      ourContactProfilesById,
+      getChatroomNameById,
+      usernameFromID,
+      userDisplayNameFromID
+    } = (0, import_sbp5.default)("state/vuex/getters");
+    const possibleMentions = [
+      ...Object.keys(ourContactProfilesById).map((u) => makeMentionFromUserID(u).me).filter((v) => !!v),
+      makeChannelMention("[^\\s]+", true)
+    ];
+    const { escaped, forChat } = options;
+    const regEx = escaped ? new RegExp(`(?<=\\s|^)(${possibleMentions.join("|")})(?=[^\\w\\d]|$)`) : new RegExp(`(${possibleMentions.join("|")})`);
+    const swap = (t) => {
+      if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
+        const userID = t.slice(1);
+        const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : "";
+        const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID);
+        return prefix + body;
+      } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
+        const channelID = getIdFromChannelMention(t);
+        const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : "";
+        return prefix + getChatroomNameById(channelID);
+      }
+      return t;
+    };
+    return text2.split(regEx).map((t) => regEx.test(t) ? swap(t) : t).join("");
+  }
+
+  // frontend/model/contracts/shared/getters/chatroom.js
+  var chatroom_default = {
+    chatRoomSettings(state, getters) {
+      return getters.currentChatRoomState.settings || {};
+    },
+    chatRoomAttributes(state, getters) {
+      return getters.currentChatRoomState.attributes || {};
+    },
+    chatRoomMembers(state, getters) {
+      return getters.currentChatRoomState.members || {};
+    },
+    chatRoomRecentMessages(state, getters) {
+      return getters.currentChatRoomState.messages || [];
+    },
+    chatRoomPinnedMessages(state, getters) {
+      return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1);
+    }
   };
-  (0, import_sbp5.default)("chelonia/defineContract", {
-    name: "gi.contracts/identity",
-    getters: {
-      currentIdentityState(state) {
-        return state;
-      },
-      loginState(state, getters) {
-        return getters.currentIdentityState.loginState;
-      },
-      ourDirectMessages(state, getters) {
-        return getters.currentIdentityState.chatRooms || {};
+
+  // frontend/model/contracts/shared/nativeNotification.js
+  var import_sbp6 = __toESM(__require("@sbp/sbp"));
+  function makeNotification({ title, body, icon, path }) {
+    if (Notification?.permission === "granted" && (0, import_sbp6.default)("state/vuex/settings").notificationEnabled) {
+      try {
+        const notification = new Notification(title, { body, icon });
+        if (path) {
+          notification.onclick = (event) => {
+            (0, import_sbp6.default)("controller/router").push({ path }).catch(console.warn);
+          };
+        }
+      } catch {
+        try {
+          navigator.serviceWorker?.ready.then((registration) => {
+            registration.showNotification(title, { body, icon });
+          }).catch(console.warn);
+        } catch (error) {
+          console.error("makeNotification: ", error.message);
+        }
+      }
+    }
+  }
+
+  // frontend/model/contracts/shared/types.js
+  var inviteType = objectOf({
+    inviteKeyId: string,
+    creatorID: string,
+    invitee: optional(string)
+  });
+  var chatRoomAttributesType = objectOf({
+    name: string,
+    description: string,
+    creatorID: optional(string),
+    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
+  });
+  var messageType = objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
+    text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creatorID: string,
+      variant: unionOf([STATUS_EXPIRING].map((v) => literalOf(v)))
+    }),
+    notification: objectMaybeOf({
+      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
+      params: mapOf(string, string)
+    }),
+    attachments: arrayOf(objectOf({
+      name: string,
+      mimeType: string,
+      dimension: optional(objectOf({
+        width: number,
+        height: number
+      })),
+      downloadData: objectOf({
+        manifestCid: string,
+        downloadParams: optional(object)
+      })
+    })),
+    replyingMessage: objectOf({
+      hash: string,
+      text: string
+    }),
+    pollData: objectOf({
+      question: string,
+      options: arrayOf(objectOf({ id: string, value: string })),
+      expires_date_ms: number,
+      hideVoters: boolean,
+      pollType: unionOf(...Object.values(POLL_TYPES).map((v) => literalOf(v)))
+    }),
+    onlyVisibleTo: arrayOf(string)
+  });
+
+  // frontend/model/contracts/chatroom.js
+  var GIChatroomAlreadyMemberError = ChelErrorGenerator("GIChatroomAlreadyMemberError");
+  var GIChatroomNotMemberError = ChelErrorGenerator("GIChatroomNotMemberError");
+  function createNotificationData(notificationType, moreParams = {}) {
+    return {
+      type: MESSAGE_TYPES.NOTIFICATION,
+      notification: {
+        type: notificationType,
+        ...moreParams
+      }
+    };
+  }
+  async function messageReceivePostEffect({
+    contractID,
+    messageHash,
+    height,
+    text: text2,
+    isDMOrMention,
+    messageType: messageType2,
+    memberID,
+    chatRoomName
+  }) {
+    const rootGetters = await (0, import_sbp7.default)("state/vuex/getters");
+    const isDirectMessage = rootGetters.isDirectMessage(contractID);
+    const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType2);
+    if (shouldAddToUnreadMessages) {
+      (0, import_sbp7.default)("gi.actions/identity/kv/addChatRoomUnreadMessage", { contractID, messageHash, createdHeight: height });
+    }
+    if ((0, import_sbp7.default)("chelonia/contract/isSyncing", contractID)) {
+      return;
+    }
+    let title = `# ${chatRoomName}`;
+    let icon;
+    if (isDirectMessage) {
+      title = rootGetters.ourGroupDirectMessages[contractID].title;
+      icon = rootGetters.ourGroupDirectMessages[contractID].picture;
+    }
+    const path = `/group-chat/${contractID}`;
+    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default;
+    const { messageNotification, messageSound } = chatNotificationSettings;
+    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
+    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
+    shouldNotifyMessage && makeNotification({
+      title,
+      body: messageType2 === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text2) : L("New message"),
+      icon,
+      path
+    });
+    shouldSoundMessage && (0, import_sbp7.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+  }
+  async function deleteEncryptedFiles(manifestCids, option) {
+    if (Object.values(option).reduce((a, c) => a || c, false)) {
+      if (!Array.isArray(manifestCids)) {
+        manifestCids = [manifestCids];
+      }
+      await (0, import_sbp7.default)("gi.actions/identity/removeFiles", { manifestCids, option });
+    }
+  }
+  function addMessage(state, message) {
+    state.messages.push(message);
+    if (state.renderingContext) {
+      return;
+    }
+    while (state.messages.length > CHATROOM_MAX_MESSAGES) {
+      state.messages.shift();
+    }
+  }
+  (0, import_sbp7.default)("chelonia/defineContract", {
+    name: "gi.contracts/chatroom",
+    metadata: {
+      validate: objectOf({
+        createdDate: string
+      }),
+      async create() {
+        return {
+          createdDate: await fetchServerTime()
+        };
       }
     },
+    getters: {
+      currentChatRoomState(state) {
+        return state;
+      },
+      ...chatroom_default
+    },
     actions: {
-      "gi.contracts/identity": {
-        validate: (data) => {
-          objectMaybeOf({
-            attributes: attributesType
-          })(data);
-          const { username } = data.attributes;
-          if (!username) {
-            throw new TypeError("A username is required");
-          }
-          validateUsername(username);
-        },
+      "gi.contracts/chatroom": {
+        validate: objectOf({
+          attributes: chatRoomAttributesType
+        }),
         process({ data }, { state }) {
           const initialState = merge({
-            settings: {},
-            attributes: {},
-            chatRooms: {},
-            groups: {},
-            fileDeleteTokens: {}
+            settings: {
+              actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
+              maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
+              maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+            },
+            attributes: {
+              deletedDate: null
+            },
+            members: {},
+            messages: [],
+            pinnedMessages: []
           }, data);
           for (const key in initialState) {
-            vue_esm_default.set(state, key, initialState[key]);
-          }
-        },
-        async sideEffect({ contractID, data }) {
-          await checkUsernameConsistency(contractID, data.attributes.username);
-        }
-      },
-      "gi.contracts/identity/setAttributes": {
-        validate: (data) => {
-          attributesType(data);
-          if (has2(data, "username")) {
-            validateUsername(data.username);
-          }
-        },
-        process({ data }, { state }) {
-          for (const key in data) {
-            vue_esm_default.set(state.attributes, key, data[key]);
-          }
-        },
-        async sideEffect({ contractID, data }) {
-          if (has2(data, "username")) {
-            await checkUsernameConsistency(contractID, data.username);
+            state[key] = initialState[key];
           }
         }
       },
-      "gi.contracts/identity/deleteAttributes": {
-        validate: (data) => {
-          arrayOf(string)(data);
-          if (data.includes("username")) {
-            throw new Error("Username can't be deleted");
+      "gi.contracts/chatroom/join": {
+        validate: actionRequireInnerSignature(objectOf({
+          memberID: optional(string)
+        })),
+        process({ data, meta, hash: hash2, height, contractID, innerSigningContractID }, { state }) {
+          const memberID = data.memberID || innerSigningContractID;
+          if (!memberID) {
+            throw new Error("The new member must be given either explicitly or implcitly with an inner signature");
           }
+          if (!state.renderingContext) {
+            if (!state.members) {
+              state["members"] = {};
+            }
+            if (state.members[memberID]) {
+              throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`);
+            }
+          }
+          state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height };
+          if (!state.attributes)
+            return;
+          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+            return;
+          }
+          const notificationType = memberID === innerSigningContractID ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
+          const notificationData = createNotificationData(notificationType, notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { memberID, actorID: innerSigningContractID } : { memberID });
+          addMessage(state, createMessage({ meta, hash: hash2, height, state, data: notificationData, innerSigningContractID }));
         },
-        process({ data }, { state }) {
-          for (const attribute2 of data) {
-            vue_esm_default.delete(state.attributes, attribute2);
-          }
-        }
-      },
-      "gi.contracts/identity/updateSettings": {
-        validate: object,
-        process({ data }, { state }) {
-          for (const key in data) {
-            vue_esm_default.set(state.settings, key, data[key]);
-          }
-        }
-      },
-      "gi.contracts/identity/createDirectMessage": {
-        validate: (data) => {
-          objectOf({
-            contractID: string
-          })(data);
-        },
-        process({ data }, { state }) {
-          const { contractID } = data;
-          vue_esm_default.set(state.chatRooms, contractID, {
-            visible: true
-          });
-        },
-        sideEffect({ data }) {
-          (0, import_sbp5.default)("chelonia/contract/retain", data.contractID).catch((e) => {
-            console.error("[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain", e);
-          });
-        }
-      },
-      "gi.contracts/identity/joinDirectMessage": {
-        validate: objectOf({
-          contractID: string
-        }),
-        process({ data }, { state, getters }) {
-          const { contractID } = data;
-          if (getters.ourDirectMessages[contractID]) {
-            throw new TypeError(L("Already joined direct message."));
-          }
-          vue_esm_default.set(state.chatRooms, contractID, {
-            visible: true
-          });
-        },
-        sideEffect({ data }, { getters }) {
-          if (getters.ourDirectMessages[data.contractID].visible) {
-            (0, import_sbp5.default)("chelonia/contract/retain", data.contractID).catch((e) => {
-              console.error("[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain", e);
-            });
-          }
-        }
-      },
-      "gi.contracts/identity/joinGroup": {
-        validate: objectMaybeOf({
-          groupContractID: string,
-          inviteSecret: string,
-          creatorID: optional(boolean)
-        }),
-        process({ hash: hash2, data }, { state }) {
-          const { groupContractID, inviteSecret } = data;
-          if (has2(state.groups, groupContractID)) {
-            throw new Error(`Cannot join already joined group ${groupContractID}`);
-          }
-          const inviteSecretId = (0, import_sbp5.default)("chelonia/crypto/keyId", () => inviteSecret);
-          vue_esm_default.set(state.groups, groupContractID, { hash: hash2, inviteSecretId });
-        },
-        sideEffect({ hash: hash2, data, contractID }, { state }) {
-          const { groupContractID, inviteSecret } = data;
-          (0, import_sbp5.default)("chelonia/storeSecretKeys", () => [{
-            key: inviteSecret,
-            transient: true
-          }]);
-          (0, import_sbp5.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp5.default)("state/vuex/state");
-            const state2 = rootState[contractID];
-            if (!state2 || contractID !== rootState.loggedIn.identityContractID) {
+        sideEffect({ data, contractID, hash: hash2, meta, innerSigningContractID, height }, { state }) {
+          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp7.default)("chelonia/contract/state", contractID);
+            const memberID = data.memberID || innerSigningContractID;
+            if (!state2?.members?.[memberID]) {
               return;
             }
-            if (!has2(state2.groups, groupContractID)) {
-              return;
-            }
-            const inviteSecretId = (0, import_sbp5.default)("chelonia/crypto/keyId", () => inviteSecret);
-            if (state2.groups[groupContractID].hash !== hash2) {
-              return;
-            }
-            return inviteSecretId;
-          }).then((inviteSecretId) => {
-            if (!inviteSecretId)
-              return;
-            (0, import_sbp5.default)("chelonia/contract/retain", data.groupContractID).catch((e) => {
-              console.error("[gi.contracts/identity/joinGroup/sideEffect] Error calling retain", e);
-            });
-            (0, import_sbp5.default)("gi.actions/group/join", {
-              originatingContractID: contractID,
-              originatingContractName: "gi.contracts/identity",
-              contractID: data.groupContractID,
-              contractName: "gi.contracts/group",
-              reference: hash2,
-              signingKeyId: inviteSecretId,
-              innerSigningKeyId: (0, import_sbp5.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
-              encryptionKeyId: (0, import_sbp5.default)("chelonia/contract/currentKeyIdByName", state, "cek")
-            }).catch((e) => {
-              console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e);
-            });
-          }).catch((e) => {
-            console.error(`[gi.contracts/identity/joinGroup/sideEffect] Error at queueInvocation group ${data.groupContractID}`, e);
-          });
-        }
-      },
-      "gi.contracts/identity/leaveGroup": {
-        validate: objectOf({
-          groupContractID: string
-        }),
-        process({ data }, { state }) {
-          const { groupContractID } = data;
-          if (!has2(state.groups, groupContractID)) {
-            throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`);
-          }
-          vue_esm_default.delete(state.groups, groupContractID);
-        },
-        sideEffect({ data, contractID }) {
-          (0, import_sbp5.default)("chelonia/queueInvocation", contractID, () => {
-            const rootState = (0, import_sbp5.default)("state/vuex/state");
-            const state = rootState[contractID];
-            if (!state || contractID !== rootState.loggedIn.identityContractID) {
-              return;
-            }
-            const { groupContractID } = data;
-            if (has2(state.groups, groupContractID)) {
-              return;
-            }
-            if (has2(rootState.contracts, groupContractID)) {
-              (0, import_sbp5.default)("gi.actions/group/removeOurselves", {
-                contractID: groupContractID
-              }).catch((e) => {
-                console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
+            const identityContractID = (0, import_sbp7.default)("state/vuex/state").loggedIn.identityContractID;
+            if (memberID === identityContractID) {
+              (0, import_sbp7.default)("gi.actions/identity/kv/initChatRoomUnreadMessages", {
+                contractID,
+                messageHash: hash2,
+                createdHeight: height
+              });
+              const profileIds = Object.keys(state2.members);
+              (0, import_sbp7.default)("chelonia/contract/retain", profileIds).catch((e) => {
+                console.error("Error while syncing other members' contracts at chatroom join", e);
+              });
+            } else {
+              (0, import_sbp7.default)("chelonia/contract/retain", memberID).catch((e) => {
+                console.error(`Error while syncing new memberID's contract ${memberID}`, e);
               });
             }
-            (0, import_sbp5.default)("chelonia/contract/release", data.groupContractID).catch((e) => {
-              console.error("[gi.contracts/identity/leaveGroup/sideEffect] Error calling release", e);
-            });
-            if (!rootState.currentGroupId || rootState.currentGroupId === data.groupContractID) {
-              const groupIdToSwitch = Object.keys(state.groups).filter((cID) => cID !== data.groupContractID).sort((cID) => rootState[cID]?.profiles?.[contractID] ? -1 : 1)[0] || null;
-              (0, import_sbp5.default)("state/vuex/commit", "setCurrentChatRoomId", {});
-              (0, import_sbp5.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
-            }
-            vue_esm_default.delete(rootState.lastLoggedIn, contractID);
-            try {
-              const router = (0, import_sbp5.default)("controller/router");
-              const switchFrom = router.currentRoute.path;
-              const switchTo = rootState.currentGroupId ? "/dashboard" : "/";
-              if (switchFrom !== "/join" && switchFrom !== switchTo) {
-                router.push({ path: switchTo }).catch((e) => console.error("Error switching groups", e));
-              }
-            } catch (e) {
-              console.error(`[gi.contracts/identity/leaveGroup/sideEffect]: ${e.name} thrown updating routes:`, e);
-            }
-            (0, import_sbp5.default)("gi.contracts/identity/revokeGroupKeyAndRotateOurPEK", contractID, state, data.groupContractID);
           }).catch((e) => {
-            console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e);
+            console.error("[gi.contracts/chatroom/join/sideEffect] Error at sideEffect", e?.message || e);
           });
         }
       },
-      "gi.contracts/identity/setDirectMessageVisibility": {
-        validate: (data, { getters }) => {
-          objectOf({
-            contractID: string,
-            visible: boolean
-          })(data);
-          if (!getters.ourDirectMessages[data.contractID]) {
-            throw new TypeError(L("Not existing direct message."));
+      "gi.contracts/chatroom/rename": {
+        validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+          objectOf({ name: string })(data);
+          if (state.attributes.creatorID !== innerSigningContractID) {
+            throw new TypeError(L("Only the channel creator can rename."));
+          }
+        }),
+        process({ data, meta, hash: hash2, height, innerSigningContractID }, { state }) {
+          state.attributes["name"] = data.name;
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
+          const newMessage = createMessage({ meta, hash: hash2, height, data: notificationData, state, innerSigningContractID });
+          state.messages.push(newMessage);
+        }
+      },
+      "gi.contracts/chatroom/changeDescription": {
+        validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
+          objectOf({ description: string })(data);
+          if (state.attributes.creatorID !== innerSigningContractID) {
+            throw new TypeError(L("Only the channel creator can change description."));
+          }
+        }),
+        process({ data, meta, hash: hash2, height, innerSigningContractID }, { state }) {
+          state.attributes["description"] = data.description;
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
+          addMessage(state, createMessage({ meta, hash: hash2, height, state, data: notificationData, innerSigningContractID }));
+        }
+      },
+      "gi.contracts/chatroom/leave": {
+        validate: objectOf({
+          memberID: optional(string)
+        }),
+        process({ data, meta, hash: hash2, height, contractID, innerSigningContractID }, { state }) {
+          const memberID = data.memberID || innerSigningContractID;
+          if (!memberID) {
+            throw new Error("The removed member must be given either explicitly or implcitly with an inner signature");
+          }
+          const isKicked = innerSigningContractID && memberID !== innerSigningContractID;
+          if (!state.renderingContext) {
+            if (!state.members) {
+              throw new Error("Missing members state");
+            } else if (!state.members[memberID]) {
+              throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`);
+            }
+          }
+          state.members[memberID].leftHeight = height;
+          delete state.members[memberID];
+          if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+            return;
+          }
+          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
+          const notificationData = createNotificationData(notificationType, { memberID });
+          addMessage(state, createMessage({
+            meta,
+            hash: hash2,
+            height,
+            data: notificationData,
+            state,
+            innerSigningContractID: !isKicked ? memberID : innerSigningContractID
+          }));
+        },
+        async sideEffect({ data, hash: hash2, contractID, meta, innerSigningContractID }) {
+          const memberID = data.memberID || innerSigningContractID;
+          const itsMe = memberID === (0, import_sbp7.default)("state/vuex/state").loggedIn.identityContractID;
+          if (itsMe) {
+            await leaveChatRoom(contractID).catch((e) => {
+              console.error("[gi.contracts/chatroom/leave] Error at leaveChatRoom", e);
+            });
+          }
+          (0, import_sbp7.default)("chelonia/queueInvocation", contractID, async () => {
+            const state = await (0, import_sbp7.default)("chelonia/contract/state", contractID);
+            if (!state || !!state.members?.[data.memberID]) {
+              return;
+            }
+            if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+              (0, import_sbp7.default)("gi.contracts/chatroom/rotateKeys", contractID, state);
+            }
+            (0, import_sbp7.default)("gi.contracts/chatroom/removeForeignKeys", contractID, memberID, state);
+          }).catch((e) => {
+            console.error("[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect", e?.message || e);
+          });
+        }
+      },
+      "gi.contracts/chatroom/delete": {
+        validate: actionRequireInnerSignature((_, { state, meta, message: { innerSigningContractID } }) => {
+          if (state.attributes.creatorID !== innerSigningContractID) {
+            throw new TypeError(L("Only the channel creator can delete channel."));
+          }
+        }),
+        process({ meta }, { state }) {
+          state.attributes["deletedDate"] = meta.createdDate;
+          for (const memberID in state.members) {
+            delete state.members[memberID];
           }
         },
-        process({ data }, { state }) {
-          vue_esm_default.set(state.chatRooms[data.contractID], "visible", data.visible);
+        async sideEffect({ contractID }) {
+          await leaveChatRoom(contractID);
         }
       },
-      "gi.contracts/identity/saveFileDeleteToken": {
-        validate: objectOf({
-          tokensByManifestCid: arrayOf(objectOf({
-            manifestCid: string,
-            token: string
-          }))
-        }),
-        process({ data }, { state }) {
-          for (const { manifestCid, token } of data.tokensByManifestCid) {
-            vue_esm_default.set(state.fileDeleteTokens, manifestCid, token);
+      "gi.contracts/chatroom/addMessage": {
+        validate: actionRequireInnerSignature(messageType),
+        process({ direction, data, meta, hash: hash2, height, innerSigningContractID }, { state }) {
+          const existingMsg = state.messages.find((msg) => msg.hash === hash2);
+          if (!existingMsg) {
+            const pending2 = direction === "outgoing";
+            addMessage(state, createMessage({ meta, data, hash: hash2, height, state, pending: pending2, innerSigningContractID }));
+          } else if (direction !== "outgoing") {
+            delete existingMsg["pending"];
+          }
+        },
+        async sideEffect({ contractID, hash: hash2, height, meta, data, innerSigningContractID }, { state, getters }) {
+          const me = (0, import_sbp7.default)("state/vuex/state").loggedIn.identityContractID;
+          if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
+            return;
+          }
+          const newMessage = createMessage({ meta, data, hash: hash2, height, state, innerSigningContractID });
+          const mentions = makeMentionFromUserID(me);
+          const isMentionedMe = data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
+          await messageReceivePostEffect({
+            contractID,
+            messageHash: newMessage.hash,
+            height: newMessage.height,
+            text: newMessage.text,
+            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+            messageType: data.type,
+            memberID: innerSigningContractID,
+            chatRoomName: getters.chatRoomAttributes.name
+          });
+        }
+      },
+      "gi.contracts/chatroom/editMessage": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string,
+          createdHeight: number,
+          text: string
+        })),
+        process({ data, meta }, { state }) {
+          const { hash: hash2, text: text2 } = data;
+          const fnEditMessage = (message) => {
+            message["text"] = text2;
+            message["updatedDate"] = meta.createdDate;
+            if (state.renderingContext && message.pending) {
+              delete message["pending"];
+            }
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(hash2, messageArray);
+            if (msgIndex >= 0) {
+              fnEditMessage(messageArray[msgIndex]);
+            }
+          });
+        },
+        async sideEffect({ contractID, hash: hash2, meta, data, innerSigningContractID }, { state, getters }) {
+          const me = (0, import_sbp7.default)("state/vuex/state").loggedIn.identityContractID;
+          if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+            return;
+          }
+          const isAlreadyAdded = !!(0, import_sbp7.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);
+          const mentions = makeMentionFromUserID(me);
+          const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
+          if (!isAlreadyAdded) {
+            await messageReceivePostEffect({
+              contractID,
+              messageHash: data.hash,
+              height: data.createdHeight,
+              text: data.text,
+              isDMOrMention: isMentionedMe,
+              messageType: MESSAGE_TYPES.TEXT,
+              memberID: innerSigningContractID,
+              chatRoomName: getters.chatRoomAttributes.name
+            });
+          } else if (!isMentionedMe) {
+            (0, import_sbp7.default)("gi.actions/identity/kv/removeChatRoomUnreadMessage", { contractID, messageHash: data.hash });
           }
         }
       },
-      "gi.contracts/identity/removeFileDeleteToken": {
-        validate: objectOf({
-          manifestCids: arrayOf(string)
+      "gi.contracts/chatroom/deleteMessage": {
+        validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID }, contractID }) => {
+          objectOf({
+            hash: string,
+            manifestCids: arrayOf(string),
+            messageSender: string
+          })(data);
+          if (innerSigningContractID !== data.messageSender) {
+            if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
+              throw new TypeError(L("Only the person who sent the message can delete it."));
+            } else {
+              const groupID = (0, import_sbp7.default)("state/vuex/getters").groupIdFromChatRoomId(contractID);
+              if ((0, import_sbp7.default)("state/vuex/state")[groupID]?.groupOwnerID !== innerSigningContractID) {
+                throw new TypeError(L("Only the group creator and the person who sent the message can delete it."));
+              }
+            }
+          }
         }),
+        process({ data, innerSigningContractID }, { state }) {
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(data.hash, messageArray);
+            if (msgIndex >= 0) {
+              messageArray.splice(msgIndex, 1);
+            }
+            for (const message of messageArray) {
+              if (message.replyingMessage?.hash === data.hash) {
+                message.replyingMessage.hash = null;
+                message.replyingMessage.text = L("Original message was removed by {user}", {
+                  user: makeMentionFromUserID(innerSigningContractID).me
+                });
+              }
+            }
+          });
+        },
+        sideEffect({ data, contractID, innerSigningContractID }) {
+          const rootState = (0, import_sbp7.default)("state/vuex/state");
+          const me = rootState.loggedIn.identityContractID;
+          if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
+            (0, import_sbp7.default)("state/vuex/commit", "setChatRoomScrollPosition", {
+              chatRoomID: contractID,
+              messageHash: null
+            });
+          }
+          if (data.manifestCids.length) {
+            const option = {
+              shouldDeleteFile: me === innerSigningContractID,
+              shouldDeleteToken: me === data.messageSender
+            };
+            deleteEncryptedFiles(data.manifestCids, option).catch((e) => {
+              console.error(`[gi.contracts/chatroom/deleteMessage/sideEffect] (${contractID}):`, e);
+            });
+          }
+          if (me === innerSigningContractID) {
+            return;
+          }
+          (0, import_sbp7.default)("gi.actions/identity/kv/removeChatRoomUnreadMessage", { contractID, messageHash: data.hash });
+        }
+      },
+      "gi.contracts/chatroom/deleteAttachment": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string,
+          manifestCid: string,
+          messageSender: string
+        })),
         process({ data }, { state }) {
-          for (const manifestCid of data.manifestCids) {
-            vue_esm_default.delete(state.fileDeleteTokens, manifestCid);
+          const fnDeleteAttachment = (message) => {
+            const oldAttachments = message.attachments;
+            if (Array.isArray(oldAttachments)) {
+              const newAttachments = oldAttachments.filter((attachment) => {
+                return attachment.downloadData.manifestCid !== data.manifestCid;
+              });
+              message["attachments"] = newAttachments;
+            }
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(data.hash, messageArray);
+            if (msgIndex >= 0) {
+              fnDeleteAttachment(messageArray[msgIndex]);
+            }
+          });
+        },
+        sideEffect({ data, contractID, innerSigningContractID }) {
+          const me = (0, import_sbp7.default)("state/vuex/state").loggedIn.identityContractID;
+          const option = {
+            shouldDeleteFile: me === innerSigningContractID,
+            shouldDeleteToken: me === data.messageSender
+          };
+          deleteEncryptedFiles(data.manifestCid, option).catch((e) => {
+            console.error(`[gi.contracts/chatroom/deleteAttachment/sideEffect] (${contractID}):`, e);
+          });
+        }
+      },
+      "gi.contracts/chatroom/makeEmotion": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string,
+          emoticon: string
+        })),
+        process({ data, innerSigningContractID }, { state }) {
+          const { hash: hash2, emoticon } = data;
+          const fnMakeEmotion = (message) => {
+            let emoticons = cloneDeep(message.emoticons || {});
+            if (emoticons[emoticon]) {
+              const alreadyAdded = emoticons[emoticon].indexOf(innerSigningContractID);
+              if (alreadyAdded >= 0) {
+                emoticons[emoticon].splice(alreadyAdded, 1);
+                if (!emoticons[emoticon].length) {
+                  delete emoticons[emoticon];
+                  if (!Object.keys(emoticons).length) {
+                    emoticons = null;
+                  }
+                }
+              } else {
+                emoticons[emoticon].push(innerSigningContractID);
+              }
+            } else {
+              emoticons[emoticon] = [innerSigningContractID];
+            }
+            if (emoticons) {
+              message["emoticons"] = emoticons;
+            } else {
+              delete message["emoticons"];
+            }
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(hash2, messageArray);
+            if (msgIndex >= 0) {
+              fnMakeEmotion(messageArray[msgIndex]);
+            }
+          });
+        }
+      },
+      "gi.contracts/chatroom/voteOnPoll": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        })),
+        process({ data, meta, hash: hash2, height, innerSigningContractID }, { state }) {
+          let shouldHideVoters = false;
+          const fnVoteOnPoll = (message) => {
+            const myVotes = data.votes;
+            const pollData = message.pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            myVotes.forEach((optId) => {
+              optsCopy.find((x) => x.id === optId)?.voted.push(innerSigningContractID);
+            });
+            message["pollData"] = { ...pollData, options: optsCopy };
+            shouldHideVoters = shouldHideVoters || message.pollData.hideVoters;
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(data.hash, messageArray);
+            if (msgIndex >= 0) {
+              fnVoteOnPoll(messageArray[msgIndex]);
+            }
+          });
+          if (!shouldHideVoters) {
+            const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, {
+              votedOptions: data.votesAsString,
+              pollMessageHash: data.hash
+            });
+            addMessage(state, createMessage({ meta, hash: hash2, height, state, data: notificationData, innerSigningContractID }));
+          }
+        }
+      },
+      "gi.contracts/chatroom/changeVoteOnPoll": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string,
+          votes: arrayOf(string),
+          votesAsString: string
+        })),
+        process({ data, meta, hash: hash2, height, innerSigningContractID }, { state }) {
+          let shouldHideVoters = false;
+          const fnChangeVoteOnPoll = (message) => {
+            const myUpdatedVotes = data.votes;
+            const pollData = message.pollData;
+            const optsCopy = cloneDeep(pollData.options);
+            optsCopy.forEach((opt) => {
+              opt.voted = opt.voted.filter((votername) => votername !== innerSigningContractID);
+            });
+            myUpdatedVotes.forEach((optId) => {
+              optsCopy.find((x) => x.id === optId)?.voted.push(innerSigningContractID);
+            });
+            message["pollData"] = { ...pollData, options: optsCopy };
+            shouldHideVoters = shouldHideVoters || message.pollData.hideVoters;
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(data.hash, messageArray);
+            if (msgIndex >= 0) {
+              fnChangeVoteOnPoll(messageArray[msgIndex]);
+            }
+          });
+          if (!shouldHideVoters) {
+            const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, {
+              votedOptions: data.votesAsString,
+              pollMessageHash: data.hash
+            });
+            addMessage(state, createMessage({ meta, hash: hash2, height, state, data: notificationData, innerSigningContractID }));
+          }
+        }
+      },
+      "gi.contracts/chatroom/closePoll": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string
+        })),
+        process({ data }, { state }) {
+          const fnClosePoll = (message) => {
+            message.pollData["status"] = POLL_STATUS.CLOSED;
+          };
+          [state.messages, state.pinnedMessages].forEach((messageArray) => {
+            const msgIndex = findMessageIdx(data.hash, messageArray);
+            if (msgIndex >= 0) {
+              fnClosePoll(messageArray[msgIndex]);
+            }
+          });
+        }
+      },
+      "gi.contracts/chatroom/pinMessage": {
+        validate: actionRequireInnerSignature(objectOf({
+          message: object
+        })),
+        process({ data, innerSigningContractID }, { state }) {
+          if (!state.pinnedMessages) {
+            state.pinnedMessages = [];
+          }
+          const { message } = data;
+          state.pinnedMessages.unshift(message);
+          const msgIndex = findMessageIdx(message.hash, state.messages);
+          if (msgIndex >= 0) {
+            state.messages[msgIndex]["pinnedBy"] = innerSigningContractID;
+          }
+        }
+      },
+      "gi.contracts/chatroom/unpinMessage": {
+        validate: actionRequireInnerSignature(objectOf({
+          hash: string
+        })),
+        process({ data }, { state }) {
+          const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages);
+          if (pinnedMsgIndex >= 0) {
+            state.pinnedMessages.splice(pinnedMsgIndex, 1);
+          }
+          const msgIndex = findMessageIdx(data.hash, state.messages);
+          if (msgIndex >= 0) {
+            delete state.messages[msgIndex]["pinnedBy"];
           }
         }
       }
     },
     methods: {
-      "gi.contracts/identity/revokeGroupKeyAndRotateOurPEK": (identityContractID, state, groupContractID) => {
-        if (!state._volatile)
-          vue_esm_default.set(state, "_volatile", /* @__PURE__ */ Object.create(null));
-        if (!state._volatile.pendingKeyRevocations)
-          vue_esm_default.set(state._volatile, "pendingKeyRevocations", /* @__PURE__ */ Object.create(null));
-        const CSKid = findKeyIdByName(state, "csk");
-        const CEKid = findKeyIdByName(state, "cek");
-        const PEKid = findKeyIdByName(state, "pek");
-        vue_esm_default.set(state._volatile.pendingKeyRevocations, PEKid, true);
-        const groupCSKids = findForeignKeysByContractID(state, groupContractID);
-        if (groupCSKids?.length) {
-          if (!CEKid) {
-            throw new Error("Identity CEK not found");
-          }
-          (0, import_sbp5.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
-            contractID: identityContractID,
-            contractName: "gi.contracts/identity",
-            data: groupCSKids,
-            signingKeyId: CSKid
-          }]).catch((e) => {
-            console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
+      "gi.contracts/chatroom/_cleanup": ({ contractID, state }) => {
+        if (state) {
+          (0, import_sbp7.default)("chelonia/contract/release", Object.keys(state.members)).catch((e) => {
+            console.error(`[gi.contracts/chatroom/_cleanup] Error releasing chatroom members for ${contractID}`, Object.keys(state.members), e);
           });
         }
-        (0, import_sbp5.default)("chelonia/queueInvocation", identityContractID, ["chelonia/contract/disconnect", identityContractID, groupContractID]).catch((e) => {
-          console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
+      },
+      "gi.contracts/chatroom/rotateKeys": (contractID, state) => {
+        if (!state._volatile)
+          state["_volatile"] = /* @__PURE__ */ Object.create(null);
+        if (!state._volatile.pendingKeyRevocations)
+          state._volatile["pendingKeyRevocations"] = /* @__PURE__ */ Object.create(null);
+        const CSKid = findKeyIdByName(state, "csk");
+        const CEKid = findKeyIdByName(state, "cek");
+        state._volatile.pendingKeyRevocations[CSKid] = true;
+        state._volatile.pendingKeyRevocations[CEKid] = true;
+        (0, import_sbp7.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys").catch((e) => {
+          console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
-        (0, import_sbp5.default)("chelonia/queueInvocation", identityContractID, ["gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK"]).catch((e) => {
-          console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
+      },
+      "gi.contracts/chatroom/removeForeignKeys": (contractID, memberID, state) => {
+        const keyIds = findForeignKeysByContractID(state, memberID);
+        if (!keyIds?.length)
+          return;
+        const CSKid = findKeyIdByName(state, "csk");
+        const CEKid = findKeyIdByName(state, "cek");
+        if (!CEKid)
+          throw new Error("Missing encryption key");
+        (0, import_sbp7.default)("chelonia/out/keyDel", {
+          contractID,
+          contractName: "gi.contracts/chatroom",
+          data: keyIds,
+          signingKeyId: CSKid,
+          hooks: {
+            preSendCheck: (_, state2) => {
+              return !state2.members?.[memberID];
+            }
+          }
+        }).catch((e) => {
+          console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       }
     }

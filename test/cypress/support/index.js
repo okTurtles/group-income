@@ -18,9 +18,34 @@ import './commands.js'
 import './output-logs.js'
 
 before(function () {
+  console.log('[cypress] `before`: cleaning up')
+  if (typeof navigator === 'object' && navigator.serviceWorker) {
+    cy.wrap(navigator.serviceWorker.getRegistrations()
+      .then((registrations) => {
+        console.log('[cypress] Service worker registrations', registrations)
+        return Promise.all(registrations.map((registration) => {
+          // Shut down and unregister any existing service workers
+          registration.active?.postMessage({ type: 'shutdown' })
+          registration.installing?.postMessage({ type: 'shutdown' })
+          registration.waiting?.postMessage({ type: 'shutdown' })
+          return registration.unregister()
+        }))
+      }
+      )
+    )
+  }
   cy.clearCookies()
   cy.clearLocalStorage()
-  indexedDB.deleteDatabase('Group Income')
+  if (typeof indexedDB === 'object') {
+    cy.wrap(indexedDB.databases().then((db) => {
+      console.log('[cypress] Registered DBs', db)
+      return Promise.all(db.map(({ name }) => indexedDB.deleteDatabase(name)))
+    }
+    ))
+  }
+  // This cy.wrap().then() line is used to ensure the log is queued and emitted
+  // at the end of this function
+  cy.wrap(undefined).then(() => console.log('[cypress] Finished `before`'))
 })
 
 // Abort tests on first fail

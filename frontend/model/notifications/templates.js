@@ -1,4 +1,4 @@
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import type {
   NewProposalType,
   NotificationTemplate

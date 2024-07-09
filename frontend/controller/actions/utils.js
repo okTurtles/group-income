@@ -116,12 +116,12 @@ export const encryptedAction = (
         )
         const encryptionKeyId = params.encryptionKeyId || findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
+        if (!signingKeyId || !encryptionKeyId || !await sbp('chelonia/haveSecretKey', signingKeyId)) {
           console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
-        if (innerSigningContractID && (!innerSigningKeyId || !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
+        if (innerSigningContractID && (!innerSigningKeyId || !await sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
           console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
@@ -222,12 +222,12 @@ export const encryptedNotification = (
         )
         const encryptionKeyId = params.encryptionKeyId || findKeyIdByName(state[contractID], encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || !sbp('chelonia/haveSecretKey', signingKeyId)) {
+        if (!signingKeyId || !encryptionKeyId || !await sbp('chelonia/haveSecretKey', signingKeyId)) {
           console.warn(`Refusing to send action ${action} due to missing CSK or CEK`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID })
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
-        if (innerSigningContractID && (!innerSigningKeyId || !sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
+        if (innerSigningContractID && (!innerSigningKeyId || !await sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
           console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
@@ -252,27 +252,19 @@ export const encryptedNotification = (
   }
 }
 
-export async function createInvite ({ quantity = 1, creatorID, expires, invitee }: {
-  quantity: number, creatorID: string, expires: number, invitee?: string
+export async function createInvite ({ contractID, quantity = 1, creatorID, expires, invitee }: {
+  contractID: string, quantity?: number, creatorID: string, expires: number, invitee?: string
 }): Promise<{inviteKeyId: string; creatorID: string; invitee?: string; }> {
-  const rootState = sbp('state/vuex/state')
-
-  if (!rootState.currentGroupId) {
-    throw new Error('Current group not selected')
-  }
-
-  const contractID = rootState.currentGroupId
+  const state = await sbp('chelonia/contract/state', contractID)
 
   if (
-    !rootState[contractID] ||
-    !rootState[contractID]._vm ||
-    !findSuitableSecretKeyId(rootState[contractID], '*', ['sig']) ||
-    rootState[contractID]._volatile?.pendingKeyRequests?.length
+    !state ||
+    !state._vm ||
+    !findSuitableSecretKeyId(state, '*', ['sig']) ||
+    state._volatile?.pendingKeyRequests?.length
   ) {
     throw new Error('Invalid or missing current group state')
   }
-
-  const state = rootState[contractID]
 
   const CEKid = findKeyIdByName(state, 'cek')
   const CSKid = findKeyIdByName(state, 'csk')
@@ -311,5 +303,50 @@ export async function createInvite ({ quantity = 1, creatorID, expires, invitee 
     inviteKeyId,
     creatorID,
     invitee
+  }
+}
+
+export function groupContractsByType (contracts: Object): Object {
+  const contractIDs = Object.create(null)
+  if (contracts) {
+    // $FlowFixMe[incompatible-use]
+    Object.entries(contracts).forEach(([id, { type }]) => {
+      if (!contractIDs[type]) {
+        contractIDs[type] = []
+      }
+      contractIDs[type].push(id)
+    })
+  }
+  return contractIDs
+}
+
+export async function syncContractsInOrder (identityContractID: string | null, groupedContractIDs: Object): Promise<any> {
+  // We need to sync contracts in this order to ensure that we have all the
+  // corresponding secret keys. Group chatrooms use group keys but there's
+  // no OP_KEY_SHARE, which will result in the keys not being available when
+  // the group keys are rotated.
+  // TODO: This functionality could be moved into Chelonia by keeping track
+  // of when secret keys without OP_KEY_SHARE become available.
+  const contractSyncPriorityList = [
+    'gi.contracts/identity',
+    'gi.contracts/group',
+    'gi.contracts/chatroom'
+  ]
+  const getContractSyncPriority = (key) => {
+    const index = contractSyncPriorityList.indexOf(key)
+    return index === -1 ? contractSyncPriorityList.length : index
+  }
+
+  try {
+    // $FlowFixMe[incompatible-call]
+    await Promise.all(Object.entries(groupedContractIDs).sort(([a], [b]) => {
+      // Sync contracts in order based on type
+      return getContractSyncPriority(a) - getContractSyncPriority(b)
+    }).map(([, ids]) => {
+      return sbp('chelonia/contract/sync', ids, { force: true })
+    }))
+  } catch (err) {
+    console.error('Error during contract sync (syncing all contractIDs)', err)
+    throw err
   }
 }

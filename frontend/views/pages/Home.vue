@@ -1,5 +1,5 @@
 <template lang='pug'>
-main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
+main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
   //- TODO: split this into two files, one showing the login/signup buttons
   //-       and the other showing the create/join group buttons!
   header(v-if='!isLoggedIn' key='title-login')
@@ -61,7 +61,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
+import { ACCEPTED_GROUP, OPEN_MODAL } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
@@ -76,21 +76,40 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourGroupProfile'
+      'ourProfileActive'
     ]),
     ...mapState([
       'currentGroupId'
     ]),
     isLoggedIn () {
-      return this.$store.state.loggedIn
+      return !!this.$store.state.loggedIn
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        ourProfileActive: false,
+        listener: ({ contractID }) => {
+          if (contractID !== this.currentGroupId) return
+          // For first time joins, force redirect to /pending-approval
+          this.ephemeral.ourProfileActive = false
+        }
+      }
+    }
+  },
+  beforeMount () {
+    sbp('okTurtles.events/on', ACCEPTED_GROUP, this.ephemeral.listener)
+  },
   mounted () {
-    if (this.currentGroupId) {
+    this.ephemeral.ourProfileActive = this.ourProfileActive
+    if (this.isLoggedIn && this.currentGroupId) {
       this.navigateToGroupPage()
     } else if (this.$route.query.next) {
       this.openModal('LoginModal')
     }
+  },
+  destroyed () {
+    sbp('okTurtles.events/off', ACCEPTED_GROUP, this.ephemeral.listener)
   },
   methods: {
     openModal (mode) {
@@ -104,13 +123,19 @@ export default ({
       // In this particular condition, the app needs to immediately redirect user to '$route.query.next'
       // so that the user stays in the same page after the browser refresh.
       // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
-      const path = this.$route.query.next ?? (this.ourGroupProfile ? '/dashboard' : '/pending-approval')
+      const path = this.$route.query.next ?? (this.ephemeral.ourProfileActive ? '/dashboard' : '/pending-approval')
       this.$router.push({ path }).catch(e => ignoreWhenNavigationCancelled(e, path))
     }
   },
   watch: {
     currentGroupId (to) {
-      if (to) {
+      this.ephemeral.ourProfileActive = this.ourProfileActive
+      if (to && this.isLoggedIn) {
+        this.navigateToGroupPage()
+      }
+    },
+    isLoggedIn (to) {
+      if (to && this.currentGroupId) {
         this.navigateToGroupPage()
       }
     }

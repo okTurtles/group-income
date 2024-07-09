@@ -189,7 +189,7 @@ export default ({
     },
     goToDashboard (toGroupId) {
       if (toGroupId && this.currentGroupId !== toGroupId) {
-        sbp('gi.actions/group/switch', toGroupId)
+        sbp('gi.app/group/switch', toGroupId)
       }
 
       this.$router.push({ path: '/dashboard' })
@@ -204,9 +204,8 @@ export default ({
         return this.goToDashboard()
       }
       try {
-        await sbp('gi.actions/group/joinWithInviteSecret', groupId, secret)
+        await sbp('gi.app/group/joinWithInviteSecret', groupId, secret)
         // this.pageStatus = 'WELCOME'
-        this.$router.push({ path: '/pending-approval', query: this.$route.query })
       } catch (e) {
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message
