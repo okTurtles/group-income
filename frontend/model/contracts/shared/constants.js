@@ -4,6 +4,7 @@
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80
+export const IDENTITY_BIO_MAX_CHARS = 500
 
 // group.js related
 
@@ -14,6 +15,7 @@ export const PROFILE_STATUS = {
   REMOVED: 'removed'
 }
 export const GROUP_DESCRIPTION_MAX_CHAR = 500
+export const GROUP_CHAT_DESCRIPTION_MAX_CHAR = 300
 export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
 export const GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150
 

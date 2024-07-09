@@ -7,10 +7,11 @@
       label.field
         .c-label-group
           i18n.label Description
-          .limit(
-            v-if='form.description'
-            :class='{"is-danger": form.description.length >= maxDescriptionCharacters}'
-          ) {{ maxDescriptionCharacters - form.description.length }}
+          char-length-indicator(
+            :current-length='form.description.length || 0'
+            :max='maxDescriptionCharacters'
+            :error='$v.form.description.$error'
+          )
 
         textarea.textarea(
           ref='description'
@@ -48,6 +49,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({
@@ -57,7 +59,8 @@ export default ({
     ModalTemplate,
     BannerSimple,
     BannerScoped,
-    ButtonSubmit
+    ButtonSubmit,
+    CharLengthIndicator
   },
   data () {
     return {
@@ -124,6 +127,7 @@ export default ({
 .c-label-group {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
 }
 
 .is-danger {

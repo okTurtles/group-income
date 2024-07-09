@@ -26,7 +26,11 @@ page.c-page
       label.field
         .c-desc-label-container
           i18n.label About the group
-          span.c-char-len(:class='{ "is-error": $v.form.sharedValues.$error }') {{ descCharLen }}
+          char-length-indicator(
+            :current-length='descCharLen'
+            :max='config.descMaxChar'
+            :error='$v.form.sharedValues.$error'
+          )
 
         textarea.textarea(
           :class='{ error: $v.form.sharedValues.$error }'
@@ -129,6 +133,7 @@ import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
@@ -141,6 +146,7 @@ export default ({
     ButtonSubmit,
     GroupRulesSettings,
     InvitationsTable,
+    CharLengthIndicator,
     Page,
     PageSection
   },
@@ -180,8 +186,7 @@ export default ({
       return this.isGroupAdmin && false
     },
     descCharLen () {
-      const len = this.form.sharedValues?.length || 0
-      return `${len}/${GROUP_DESCRIPTION_MAX_CHAR}`
+      return this.form.sharedValues?.length || 0
     }
   },
   mounted () {
