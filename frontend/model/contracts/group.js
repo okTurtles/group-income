@@ -1558,10 +1558,10 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function ({ contractID, innerSigningContractID, height, proposal }) {
-      const rootState = sbp('state/vuex/state')
-      const { profiles, generalChatRoomId } = rootState[contractID]
-      const myProfile = profiles[rootState.loggedIn.identityContractID]
-      if (rootState.loggedIn.identityContractID === innerSigningContractID) {
+      const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+      const { profiles, generalChatRoomId } = await sbp('chelonia/contract/state', contractID)
+      const myProfile = profiles[identityContractID]
+      if (identityContractID === innerSigningContractID) {
         if (isActionOlderThanUser(contractID, height, myProfile)) {
           await sbp('gi.actions/chatroom/addMessage', {
             contractID: generalChatRoomId,

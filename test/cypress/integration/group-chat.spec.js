@@ -123,6 +123,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('deleteChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+
+    cy.giWaitUntilMessagesLoaded()
   }
 
   function updateName (name) {
@@ -457,7 +459,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
   //       so the scenario could be updated later when e2e protocol would be ready
-  it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again`, () => {
+  it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again and logout`, () => {
     cy.giLogin(user3, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user3
 
@@ -478,7 +480,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it.skip(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
+  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again and logout`, () => {
     cy.giLogin(user2, { bypassUI: true, toGroupDashboardUponSuccess: false })
     me = user2
 
