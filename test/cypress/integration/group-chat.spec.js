@@ -445,14 +445,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it('user1 leaves chatroom by himself', () => {
-    const channel = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
-    leaveChannel(channel, 'Leave Channel')
-  })
+  it('user1 leaves/deletes chatroom by himself and logs out', () => {
+    const channelToLeave = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
+    leaveChannel(channelToLeave, 'Leave Channel')
 
-  it('user1 deletes a channel and logout', () => {
-    const channelName = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
-    deleteChannel(channelName)
+    const channelToDelete = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
+    deleteChannel(channelToDelete)
 
     cy.giLogout()
   })
