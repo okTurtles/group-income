@@ -170,7 +170,6 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function votePoll (nthForMessage, nthForOption) {
-    const option = pollData.options[nthForOption - 1]
     cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
       cy.get('fieldset').within(() => {
         cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
