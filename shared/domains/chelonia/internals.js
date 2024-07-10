@@ -1129,6 +1129,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    const emitContractSyncStop = () => sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
@@ -1144,6 +1146,12 @@ export default (sbp('sbp/selectors/register', {
       this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
     }
     const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
+      .catch(e => {
+        console.error(`[chelonia] chelonia/out/latestHEADInfo error: ${e.message || e}`, e)
+        emitContractSyncStop()
+        throw e
+      })
+
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
@@ -1208,7 +1216,7 @@ export default (sbp('sbp/selectors/register', {
         this.config.reactiveDel(state[contractID]._volatile, 'resyncing')
       }
       delete this.currentSyncs[contractID]
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+      emitContractSyncStop()
     }
   },
   'chelonia/private/enqueuePostSyncOps': function (contractID: string) {

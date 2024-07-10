@@ -10,7 +10,7 @@ import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel
 import type { Key } from './crypto.js'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED, CONTRACT_IS_SYNCING } from './events.js'
+import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
@@ -812,7 +812,6 @@ export default (sbp('sbp/selectors/register', {
         'chelonia/private/in/syncContract', contractID, params
       ]).catch((err) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
-        sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
         throw err // re-throw the error
       })
     }))
