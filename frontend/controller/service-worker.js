@@ -37,7 +37,6 @@ sbp('sbp/selectors/register', {
       }
 
       navigator.serviceWorker.addEventListener('message', event => {
-        console.debug('[sw] Received a message from the service worker :', event)
         const data = event.data
 
         if (typeof data === 'object' && data.type) {
@@ -45,6 +44,7 @@ sbp('sbp/selectors/register', {
             case 'pong':
               break
             case 'pushsubscriptionchange': {
+              console.debug('[sw] Received pushsubscriptionchange:', data)
               sbp('service-worker/resubscribe-push', data.subscription)
               break
             }

@@ -4,6 +4,7 @@
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80
+export const IDENTITY_BIO_MAX_CHARS = 500
 
 // group.js related
 
@@ -90,9 +91,7 @@ export const MESSAGE_NOTIFICATIONS = {
   LEAVE_MEMBER: 'leave-member',
   KICK_MEMBER: 'kick-member',
   UPDATE_DESCRIPTION: 'update-description',
-  UPDATE_NAME: 'update-name',
-  VOTE_ON_POLL: 'vote-on-poll',
-  CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
+  UPDATE_NAME: 'update-name'
 }
 
 export const MESSAGE_VARIANTS = {

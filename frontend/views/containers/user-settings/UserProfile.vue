@@ -21,10 +21,19 @@
           i18n.helper This is how others will see your name accross the platform.
 
         label.field
-          i18n.label Bio
+          .c-bio-label-container
+            i18n.label Bio
+            char-length-indicator(
+              v-if='form.bio'
+              :current-length='form.bio.length || 0'
+              :max='config.bioMaxChar'
+              :error='$v.form.bio.$error'
+            )
           textarea.textarea(
             name='bio'
             v-model='form.bio'
+            :maxlength='config.bioMaxChar'
+            :class='{ error: $v.form.bio.$error }'
             placeholder='Bio'
             data-test='bio'
           )
@@ -88,15 +97,17 @@ import { mapGetters, mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L } from '@common/common.js'
-
+import { IDENTITY_BIO_MAX_CHARS } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     AvatarUpload,
     BannerScoped,
-    ButtonSubmit
+    ButtonSubmit,
+    CharLengthIndicator
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
@@ -107,6 +118,9 @@ export default ({
         displayName: attrsCopy.displayName,
         bio: attrsCopy.bio,
         email: attrsCopy.email
+      },
+      config: {
+        bioMaxChar: IDENTITY_BIO_MAX_CHARS
       }
     }
   },
@@ -115,6 +129,11 @@ export default ({
       email: {
         [L('An email is required.')]: required,
         [L('Please enter a valid email.')]: email
+      },
+      bio: {
+        [L('Reached character limit.')]: (value) => {
+          return !value || Number(value.length) <= IDENTITY_BIO_MAX_CHARS
+        }
       }
     }
   },
@@ -175,6 +194,12 @@ export default ({
   @include desktop {
     display: block;
   }
+}
+
+.c-bio-label-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 }
 
 .fake-password {

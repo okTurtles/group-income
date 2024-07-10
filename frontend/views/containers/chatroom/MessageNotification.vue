@@ -4,7 +4,6 @@ message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
     .c-notification
       p.c-text(v-if='message')
         | {{message.text}}
-        i18n.c-link(v-if='isPollNotification' @click='jumpToPoll') Jump to poll
 </template>
 
 <script>
@@ -53,14 +52,9 @@ export default ({
       const {
         memberID,
         channelName,
-        channelDescription,
-        votedOptions
+        channelDescription
       } = this.notification.params
       const displayName = this.userDisplayNameFromID(memberID)
-      const isPollRelatedNotification = [
-        MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-        MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL
-      ].includes(this.notification.type)
 
       const notificationTemplates = {
         // NOTE: 'onDirectMessage' is not being used at the moment
@@ -80,30 +74,15 @@ export default ({
             L('Updated the channel description to: {description}', { description: channelDescription })
         }
       }
-      const pollNotificationTemplates = {
-        [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on {options}', { options: votedOptions }),
-        [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed vote to {options}', { options: votedOptions })
-      }
 
-      const templates = isPollRelatedNotification
-        ? pollNotificationTemplates
-        : notificationTemplates[this.isDirectMessage() ? 'onDirectMessage' : 'default']
+      const templates = notificationTemplates[this.isDirectMessage() ? 'onDirectMessage' : 'default']
       const text = templates[this.notification.type]
       return { text }
-    },
-    isPollNotification () {
-      return [
-        MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-        MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL
-      ].includes(this.notification.type)
     }
   },
   methods: {
     addEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon)
-    },
-    jumpToPoll () {
-      this.chatMessageUtils.scrollToMessage(this.notification.params.pollMessageHash)
     }
   }
 }: Object)

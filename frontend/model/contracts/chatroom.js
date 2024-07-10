@@ -606,8 +606,6 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        let shouldHideVoters = false
-
         const fnVoteOnPoll = (message) => {
           const myVotes = data.votes
           const pollData = message.pollData
@@ -618,9 +616,6 @@ sbp('chelonia/defineContract', {
           })
 
           message['pollData'] = { ...pollData, options: optsCopy }
-
-          // TODO: https://github.com/okTurtles/group-income/issues/2010
-          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
@@ -629,18 +624,6 @@ sbp('chelonia/defineContract', {
             fnVoteOnPoll(messageArray[msgIndex])
           }
         })
-
-        if (!shouldHideVoters) {
-          // create & add a notification-message for user having voted.
-          const notificationData = createNotificationData(
-            MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-            {
-              votedOptions: data.votesAsString,
-              pollMessageHash: data.hash
-            }
-          )
-          addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-        }
       }
     },
     'gi.contracts/chatroom/changeVoteOnPoll': {
@@ -650,8 +633,6 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
-        let shouldHideVoters = false
-
         const fnChangeVoteOnPoll = (message) => {
           const myUpdatedVotes = data.votes
           const pollData = message.pollData
@@ -667,9 +648,6 @@ sbp('chelonia/defineContract', {
           })
 
           message['pollData'] = { ...pollData, options: optsCopy }
-
-          // TODO: https://github.com/okTurtles/group-income/issues/2010
-          shouldHideVoters = shouldHideVoters || message.pollData.hideVoters
         }
 
         [state.messages, state.pinnedMessages].forEach(messageArray => {
@@ -678,18 +656,6 @@ sbp('chelonia/defineContract', {
             fnChangeVoteOnPoll(messageArray[msgIndex])
           }
         })
-
-        if (!shouldHideVoters) {
-          // create & add a notification-message for user having update his/her votes.
-          const notificationData = createNotificationData(
-            MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
-            {
-              votedOptions: data.votesAsString,
-              pollMessageHash: data.hash
-            }
-          )
-          addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
-        }
       }
     },
     'gi.contracts/chatroom/closePoll': {

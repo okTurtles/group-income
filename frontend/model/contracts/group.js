@@ -12,6 +12,8 @@ import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/c
 import {
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES,
   GROUP_PAYMENT_METHOD_MAX_CHAR,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   INVITE_EXPIRES_IN_DAYS,
   MAX_ARCHIVED_PERIODS,
   MAX_ARCHIVED_PROPOSALS,
@@ -1169,9 +1171,15 @@ sbp('chelonia/defineContract', {
 
         // Validation on the chatroom name (reference: https://github.com/okTurtles/group-income/issues/1987)
         const chatroomName = data.attributes.name
+        const chatroomDesc = data.attributes.description
         const nameValidationMap: {[string]: Function} = {
           [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v)
+          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v),
+          [L('Chatroom name cannot exceed {maxLength} characters.', { maxLength: CHATROOM_NAME_LIMITS_IN_CHARS })]: (v: string): boolean => v.length > CHATROOM_NAME_LIMITS_IN_CHARS
+        }
+
+        if (chatroomDesc && chatroomDesc.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
+          throw new TypeError(L('Chatroom description cannot exceed {maxLength} characters.', { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }))
         }
 
         for (const key in nameValidationMap) {
@@ -1370,10 +1378,16 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/changeChatRoomDescription': {
-      validate: actionRequireActiveMember(objectOf({
-        chatRoomID: string,
-        description: string
-      })),
+      validate: (data, props) => {
+        actionRequireActiveMember(objectOf({
+          chatRoomID: string,
+          description: string
+        }))(data, props)
+
+        if (data?.description.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
+          throw new TypeError(L('Chatroom description cannot exceed {maxLength} characters.', { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }))
+        }
+      },
       process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['description'] = data.description
       }
