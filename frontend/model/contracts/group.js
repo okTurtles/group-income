@@ -969,7 +969,7 @@ sbp('chelonia/defineContract', {
             }
 
             // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(profiles)
+            const profileIds = Object.keys(profiles).filter(cID => cID !== userID)
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
@@ -1436,13 +1436,14 @@ sbp('chelonia/defineContract', {
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
     'gi.contracts/group/_cleanup': ({ contractID, state }) => {
-      // NOTE: should remove archived data from IndexedStorage
-      //       regarding the current group (proposals, payments)
-      const possiblyUselessContractIDs = Object.keys(state.profiles || {})
+      // unsubscribe from other group members identity contract
+      const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+      const possiblyUselessContractIDs = Object.keys(state.profiles || {}).filter(cID => cID !== identityContractID)
       sbp('chelonia/contract/release', possiblyUselessContractIDs).catch(e =>
         console.error('[gi.contracts/group/leaveGroup] Error calling release on all members', e)
       )
 
+      // NOTE: should remove archived data from IndexedStorage regarding the current group (proposals, payments)
       Promise.all([
         () => sbp('gi.contracts/group/removeArchivedProposals', contractID),
         () => sbp('gi.contracts/group/removeArchivedPayments', contractID)]
