@@ -48,7 +48,7 @@ import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
-const { Vue, L, LTags, LError } = Common
+const { Vue, L, LError } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
@@ -540,9 +540,7 @@ async function startApp () {
 
         sbp('gi.ui/prompt', {
           heading: L('Failed to login'),
-          question: e.message
-            ? L('Error details:{br_}{err}', { err: e.message, ...LTags() })
-            : L('Error details: {reportError}', ...LError(e)),
+          question: L('Error details: {reportError}', LError(e)),
           primaryButton: L('Close')
         })
       }).finally(() => {
