@@ -6,7 +6,7 @@ import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, un
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
+import { IDENTITY_USERNAME_MAX_CHARS, IDENTITY_BIO_MAX_CHARS } from './shared/constants.js'
 import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
 import {
@@ -115,6 +115,10 @@ sbp('chelonia/defineContract', {
         attributesType(data)
         if (has(data, 'username')) {
           validateUsername(data.username)
+        }
+
+        if (has(data, 'bio') && data.bio > IDENTITY_BIO_MAX_CHARS) {
+          throw new TypeError(`A user bio cannot exceed ${IDENTITY_BIO_MAX_CHARS} characters.`)
         }
       },
       process ({ data }, { state }) {

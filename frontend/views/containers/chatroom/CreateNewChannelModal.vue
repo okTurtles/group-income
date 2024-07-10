@@ -5,8 +5,13 @@
 
     form(novalidate @submit.prevent='' data-test='createChannel')
       label.field
-        i18n.label.c-label-name Name
-        .c-max-count(v-if='form.name') {{50 - form.name.length}}
+        .c-name-label-container
+          i18n.label.c-label-name Name
+          char-length-indicator(
+            v-if='form.name'
+            :current-length='form.name.length || 0'
+            :max='maxNameCharacters'
+          )
         input.input(
           ref='name'
           type='text'
@@ -21,11 +26,19 @@
         )
 
       label.field
-        i18n.label Description
+        .c-desc-label-container
+          i18n.label Description
+          char-length-indicator(
+            v-if='form.description'
+            :current-length='form.description.length || 0'
+            :max='maxDescriptionCharacters'
+            :error='$v.form.description.$error'
+          )
+
         textarea.textarea(
           name='description'
           :placeholder='L("Description of the channel")'
-          maxlength='500'
+          :maxlength='maxDescriptionCharacters'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
           data-test='createChannelDescription'
@@ -92,6 +105,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import {
   CHATROOM_TYPES,
@@ -124,7 +138,8 @@ export default ({
   components: {
     ModalTemplate,
     BannerScoped,
-    ButtonSubmit
+    ButtonSubmit,
+    CharLengthIndicator
   },
   computed: {
     ...mapState(['currentGroupId']),
@@ -244,6 +259,13 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-name-label-container,
+.c-desc-label-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 .c-label-name {
   float: left;

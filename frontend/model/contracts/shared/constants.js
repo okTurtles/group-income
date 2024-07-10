@@ -4,6 +4,7 @@
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80
+export const IDENTITY_BIO_MAX_CHARS = 500
 
 // group.js related
 
