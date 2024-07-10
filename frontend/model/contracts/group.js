@@ -967,7 +967,7 @@ sbp('chelonia/defineContract', {
             }
 
             // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(profiles)
+            const profileIds = Object.keys(profiles).filter(cID => cID !== userID)
             if (profileIds.length !== 0) {
               sbp('chelonia/contract/retain', profileIds).catch((e) => {
                 console.error('Error while syncing other members\' contracts at inviteAccept', e)
