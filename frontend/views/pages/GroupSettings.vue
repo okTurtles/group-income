@@ -39,11 +39,17 @@ page.c-page
         )
 
       label.field
-        i18n.label Default currency
+        .c-current-label-container
+          i18n.label Default currency
+          .c-coming-soon
+            i.icon-info-circle
+            i18n Feature coming soon
+
         .selectbox.c-currency
           select.select(
             name='mincomeCurrency'
             v-model='form.mincomeCurrency'
+            :disabled='true'
           )
             option(
               v-for='(currency, code) in currencies'
@@ -288,6 +294,22 @@ export default ({
 
     &.is-error {
       color: $danger_0;
+    }
+  }
+}
+
+.c-current-label-container {
+  display: flex;
+  align-items: flex-end;
+  column-gap: 0.5rem;
+
+  .c-coming-soon {
+    color: $text_1;
+    margin-bottom: 0.5rem;
+    user-select: none;
+
+    i {
+      margin-right: 0.2rem;
     }
   }
 }
