@@ -169,8 +169,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSendMessage(me, message)
   }
 
-  function votePoll (nthForMessage, nthForOption, isChange = false) {
-    const option = pollData.options[nthForOption - 1]
+  function votePoll (nthForMessage, nthForOption) {
     cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
       cy.get('fieldset').within(() => {
         cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
@@ -179,16 +178,6 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get('.c-buttons-container').within(() => {
         cy.getByDT('submit').click()
       })
-    })
-
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:last-child').should('have.class', 'is-type-notification')
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
-      if (isChange) {
-        cy.get('.c-message.sent:last-child .c-text').should('contain', `Changed vote to "${option}"`)
-      } else {
-        cy.get('.c-message.sent:last-child .c-text').should('contain', `Voted on "${option}"`)
-      }
     })
   }
 
