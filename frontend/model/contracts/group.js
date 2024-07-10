@@ -199,7 +199,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, s
   state._volatile.pendingKeyRevocations[CEKid] = true
 }
 
-function isActionOlderThanUser (contractID: string, height: number, userProfile: ?Object): boolean {
+function isActionOlderThanUser (height: number, userProfile: ?Object): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
@@ -721,7 +721,7 @@ sbp('chelonia/defineContract', {
 
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
-        if (isActionOlderThanUser(contractID, height, myProfile)) {
+        if (isActionOlderThanUser(height, myProfile)) {
           sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
             notificationName: 'NEW_PROPOSAL',
             notificationData: {
@@ -986,7 +986,7 @@ sbp('chelonia/defineContract', {
               const { profiles = {} } = state
               const myProfile = profiles[userID]
 
-              if (isActionOlderThanUser(contractID, height, myProfile)) {
+              if (isActionOlderThanUser(height, myProfile)) {
                 sbp('gi.contracts/group/emitNotificationsAfterSyncing', [], [{
                   notificationName: 'MEMBER_ADDED',
                   notificationData: {
@@ -1556,7 +1556,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposal) {
       const { loggedIn } = sbp('state/vuex/state')
       const { createdDate } = meta
-      if (isActionOlderThanUser(contractID, height, state.profiles[loggedIn.identityContractID])) {
+      if (isActionOlderThanUser(height, state.profiles[loggedIn.identityContractID])) {
         sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, [{
           notificationName: 'PROPOSAL_CLOSED',
           notificationData: { createdDate, groupID: contractID, proposal }
@@ -1574,7 +1574,7 @@ sbp('chelonia/defineContract', {
       const myProfile = (await sbp('chelonia/contract/state', contractID)).profiles[identityContractID]
       const { fromAmount, toAmount } = data
 
-      if (isActionOlderThanUser(contractID, height, myProfile) && myProfile.incomeDetailsType) {
+      if (isActionOlderThanUser(height, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
         const mincomeIncreased = toAmount > fromAmount
         const actionNeeded = mincomeIncreased ||
@@ -1757,7 +1757,7 @@ sbp('chelonia/defineContract', {
         // somewhere in the state or local storage and remove the contract
         // // sbp('chelonia/contract/release', memberID)
 
-        if (isActionOlderThanUser(contractID, height, myProfile)) {
+        if (isActionOlderThanUser(height, myProfile)) {
           if (!proposalHash) {
             // NOTE: Do not make notification when the member is removed by proposal
             const memberRemovedThemselves = memberID === innerSigningContractID
