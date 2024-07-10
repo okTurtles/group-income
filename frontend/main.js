@@ -48,7 +48,7 @@ import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
-const { Vue, L } = Common
+const { Vue, L, LTags, LError } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
@@ -534,12 +534,17 @@ async function startApp () {
         await syncContractsInOrder(identityContractID, contractIDs)
 
         if (this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.app/identity/login', { identityContractID }).catch((e) => {
-          console.error(`[main] caught ${e?.name} while logging in: ${e?.message || e}`, e)
-          console.warn(`It looks like the local user '${identityContractID}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        })
+        return sbp('gi.app/identity/login', { identityContractID })
       }).catch(e => {
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+
+        sbp('gi.ui/prompt', {
+          heading: L('Failed to login'),
+          question: e.message
+            ? L('Error details:{br_}{err}', { err: e.message, ...LTags() })
+            : L('Error details: {reportError}', ...LError(e)),
+          primaryButton: L('Close')
+        })
       }).finally(() => {
         this.ephemeral.ready = true
         this.removeLoadingAnimation()

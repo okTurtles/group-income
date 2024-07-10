@@ -1129,8 +1129,6 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
-    const emitContractSyncStop = () => sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     const currentVolatileState = state[contractID]?._volatile || Object.create(null)
@@ -1145,27 +1143,23 @@ export default (sbp('sbp/selectors/register', {
       this.config.reactiveSet(state, contractID, Object.create(null))
       this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
     }
-    const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
-      .catch(e => {
-        console.error(`[chelonia] chelonia/out/latestHEADInfo error: ${e.message || e}`, e)
-        emitContractSyncStop()
-        throw e
-      })
 
-    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
-    // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
-    const isSubcribed = this.subscriptionSet.has(contractID)
-    if (!isSubcribed) {
-      const entry = this.pending.find((entry) => entry?.contractID === contractID)
-      // we're syncing a contract for the first time, make sure to add to pending
-      // so that handleEvents knows to expect events from this contract
-      if (!entry) {
-        this.pending.push({ contractID })
-      }
-    }
-    this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
+      const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
+      console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
+      // there is a chance two users are logged in to the same machine and must check their contracts before syncing
+      const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
+      const isSubcribed = this.subscriptionSet.has(contractID)
+      if (!isSubcribed) {
+        const entry = this.pending.find((entry) => entry?.contractID === contractID)
+        // we're syncing a contract for the first time, make sure to add to pending
+        // so that handleEvents knows to expect events from this contract
+        if (!entry) {
+          this.pending.push({ contractID })
+        }
+      }
+      this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
+
       if (latestHEAD !== recentHEAD) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recentHEAD || 'undefined'} but the latest is ${latestHEAD}`)
         // TODO: fetch events from localStorage instead of server if we have them
@@ -1216,7 +1210,7 @@ export default (sbp('sbp/selectors/register', {
         this.config.reactiveDel(state[contractID]._volatile, 'resyncing')
       }
       delete this.currentSyncs[contractID]
-      emitContractSyncStop()
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }
   },
   'chelonia/private/enqueuePostSyncOps': function (contractID: string) {
