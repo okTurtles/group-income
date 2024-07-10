@@ -1129,35 +1129,38 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
-    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
-    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-    const currentVolatileState = state[contractID]?._volatile || Object.create(null)
-    // If the dirty flag is set (indicating that new encryption keys were received),
-    // we remove the current state before syncing (this has the effect of syncing
-    // from the beginning, recreating the entire state). When this is the case,
-    // the _volatile state is preserved
-    if (currentVolatileState?.dirty || params?.resync) {
-      delete currentVolatileState.dirty
-      currentVolatileState.resyncing = true
-      sbp('chelonia/private/removeImmediately', contractID, { resync: true })
-      this.config.reactiveSet(state, contractID, Object.create(null))
-      this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
-    }
-    const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
-    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
-    // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
-    const isSubcribed = this.subscriptionSet.has(contractID)
-    if (!isSubcribed) {
-      const entry = this.pending.find((entry) => entry?.contractID === contractID)
-      // we're syncing a contract for the first time, make sure to add to pending
-      // so that handleEvents knows to expect events from this contract
-      if (!entry) {
-        this.pending.push({ contractID })
-      }
-    }
-    this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
+
     try {
+      this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
+      const currentVolatileState = state[contractID]?._volatile || Object.create(null)
+      // If the dirty flag is set (indicating that new encryption keys were received),
+      // we remove the current state before syncing (this has the effect of syncing
+      // from the beginning, recreating the entire state). When this is the case,
+      // the _volatile state is preserved
+      if (currentVolatileState?.dirty || params?.resync) {
+        delete currentVolatileState.dirty
+        currentVolatileState.resyncing = true
+        sbp('chelonia/private/removeImmediately', contractID, { resync: true })
+        this.config.reactiveSet(state, contractID, Object.create(null))
+        this.config.reactiveSet(state[contractID], '_volatile', currentVolatileState)
+      }
+
+      const { HEAD: latestHEAD } = await sbp('chelonia/out/latestHEADInfo', contractID)
+      console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
+      // there is a chance two users are logged in to the same machine and must check their contracts before syncing
+      const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
+      const isSubcribed = this.subscriptionSet.has(contractID)
+      if (!isSubcribed) {
+        const entry = this.pending.find((entry) => entry?.contractID === contractID)
+        // we're syncing a contract for the first time, make sure to add to pending
+        // so that handleEvents knows to expect events from this contract
+        if (!entry) {
+          this.pending.push({ contractID })
+        }
+      }
+      this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
+
       if (latestHEAD !== recentHEAD) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recentHEAD || 'undefined'} but the latest is ${latestHEAD}`)
         // TODO: fetch events from localStorage instead of server if we have them
