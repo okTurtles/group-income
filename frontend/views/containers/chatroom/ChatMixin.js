@@ -37,6 +37,7 @@ const ChatMixin: Object = {
       'currentChatRoomState',
       'currentGroupState',
       'groupIdFromChatRoomId',
+      'ourDirectMessages',
       'ourGroupDirectMessages',
       'chatRoomMembers',
       'groupGeneralChatRoomId',
@@ -140,6 +141,19 @@ const ChatMixin: Object = {
     'currentChatRoomId' (to: string, from: string) {
       if (to) {
         this.redirectChat(to)
+      }
+    },
+    'ourGroupDirectMessages': {
+      immediate: true,
+      handler (to, from) {
+        if (Object.keys(this.ourDirectMessages).includes(this.currentChatRoomId)) {
+          if (this.currentGroupId) {
+            const isNotGroupDirectMessage = !Object.keys(to).includes(this.currentChatRoomId)
+            if (isNotGroupDirectMessage) {
+              sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: this.currentGroupId })
+            }
+          }
+        }
       }
     }
   }

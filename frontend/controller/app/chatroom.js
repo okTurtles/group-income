@@ -6,13 +6,7 @@ const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, cha
   if (identityContractID && rootState.loggedIn?.identityContractID !== identityContractID) return
   if (!rootState[groupContractID]) return
   if (rootState.chatroom.currentChatRoomIDs[groupContractID] === chatRoomID) {
-    const id = rootState[groupContractID].generalChatRoomId || Object.entries(rootState[groupContractID].chatRooms).find(([id, value]) => {
-      // $FlowFixMe[incompatible-use]
-      return id !== chatRoomID && value.members[identityContractID]?.status === 'active'
-    })?.[0]
-    if (id) {
-      sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID: id })
-    }
+    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID })
   }
 }
 
