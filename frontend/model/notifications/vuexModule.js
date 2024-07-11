@@ -97,7 +97,7 @@ const mutations = {
   },
 
   [keys.REMOVE_NOTIFICATION] (state, hash: string) {
-    const index = state.items.indexOf(item => item.hash === hash)
+    const index = state.items.findIndex(item => item.hash === hash)
 
     if (index > -1) {
       state.items.splice(index, 1)
