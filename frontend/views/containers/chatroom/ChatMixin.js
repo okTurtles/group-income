@@ -146,6 +146,9 @@ const ChatMixin: Object = {
     'ourGroupDirectMessages': {
       immediate: true,
       handler (to, from) {
+        // NOTE: whenever any group members leave the group, and the ourGroupDirectMessage is changed
+        //       currentChatRoomId needs to be considered to needs to be changed
+        //       if the currentChatRoomId (if it's DM) is no longer group direct message
         if (Object.keys(this.ourDirectMessages).includes(this.currentChatRoomId)) {
           if (this.currentGroupId) {
             const isNotGroupDirectMessage = !Object.keys(to).includes(this.currentChatRoomId)
