@@ -87,7 +87,7 @@ const mutations = {
   },
 
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
-    if (state.items.includes(notification)) {
+    if (state.items.some(item => item.hash === notification.hash)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
       return console.error('This notification is already in the store.')
     }
@@ -96,8 +96,8 @@ const mutations = {
     state.items.sort(compareOnTimestamp)
   },
 
-  [keys.REMOVE_NOTIFICATION] (state, notification: Notification) {
-    const index = state.items.indexOf(notification)
+  [keys.REMOVE_NOTIFICATION] (state, hash: string) {
+    const index = state.items.indexOf(item => item.hash === hash)
 
     if (index > -1) {
       state.items.splice(index, 1)

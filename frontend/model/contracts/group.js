@@ -621,22 +621,25 @@ sbp('chelonia/defineContract', {
           state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount
         }
       },
-      sideEffect ({ meta, contractID, data, innerSigningContractID }, { state, getters }) {
+      sideEffect ({ meta, contractID, height, data, innerSigningContractID }, { state, getters }) {
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
           const { loggedIn } = sbp('state/vuex/state')
           const payment = state.payments[data.paymentHash]
 
           if (loggedIn.identityContractID === payment.data.toMemberID) {
-            sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
-              notificationName: 'PAYMENT_RECEIVED',
-              notificationData: {
-                createdDate: meta.createdDate,
-                groupID: contractID,
-                creatorID: innerSigningContractID,
-                paymentHash: data.paymentHash,
-                amount: getters.withGroupCurrency(payment.data.amount)
-              }
-            }])
+            const myProfile = getters.groupProfile(loggedIn.identityContractID)
+            if (isActionOlderThanUser(height, myProfile)) {
+              sbp('gi.contracts/group/emitNotifications', [{
+                notificationName: 'PAYMENT_RECEIVED',
+                notificationData: {
+                  createdDate: meta.createdDate,
+                  groupID: contractID,
+                  creatorID: innerSigningContractID,
+                  paymentHash: data.paymentHash,
+                  amount: getters.withGroupCurrency(payment.data.amount)
+                }
+              }])
+            }
           }
         }
       }
@@ -650,19 +653,22 @@ sbp('chelonia/defineContract', {
         const fromMemberID = fetchInitKV(state.thankYousFrom, innerSigningContractID, {})
         fromMemberID[data.toMemberID] = data.memo
       },
-      sideEffect ({ contractID, meta, data, innerSigningContractID }) {
+      sideEffect ({ contractID, meta, height, data, innerSigningContractID }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
 
         if (data.toMemberID === loggedIn.identityContractID) {
-          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
-            notificationName: 'PAYMENT_THANKYOU_SENT',
-            notificationData: {
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              fromMemberID: innerSigningContractID,
-              toMemberID: data.toMemberID
-            }
-          }])
+          const myProfile = getters.groupProfile(loggedIn.identityContractID)
+          if (isActionOlderThanUser(height, myProfile)) {
+            sbp('gi.contracts/group/emitNotifications', [{
+              notificationName: 'PAYMENT_THANKYOU_SENT',
+              notificationData: {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                fromMemberID: innerSigningContractID,
+                toMemberID: data.toMemberID
+              }
+            }])
+          }
         }
       }
     },
@@ -722,7 +728,7 @@ sbp('chelonia/defineContract', {
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (isActionOlderThanUser(height, myProfile)) {
-          sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+          sbp('gi.contracts/group/emitNotifications', [{
             notificationName: 'NEW_PROPOSAL',
             notificationData: {
               createdDate: meta.createdDate,
@@ -820,7 +826,7 @@ sbp('chelonia/defineContract', {
           state.proposals[proposalId]['notifiedBeforeExpire'] = true
         }
       },
-      sideEffect ({ data, contractID }, { state }) {
+      sideEffect ({ data, height, contractID }, { state, getters }) {
         const notifications = []
         for (const proposalId of data.proposalIds) {
           const proposal = state.proposals[proposalId]
@@ -830,7 +836,11 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, notifications)
+        const { loggedIn } = sbp('state/vuex/state')
+        const myProfile = getters.groupProfile(loggedIn.identityContractID)
+        if (isActionOlderThanUser(height, myProfile)) {
+          sbp('gi.contracts/group/emitNotifications', notifications)
+        }
       }
     },
     'gi.contracts/group/removeMember': {
@@ -912,24 +922,36 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      sideEffect ({ meta, contractID, height, innerSigningContractID }) {
+      sideEffect ({ meta, contractID, height, innerSigningContractID }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
+        const userID = loggedIn.identityContractID
+        const myProfile = getters.groupProfile(loggedIn.identityContractID)
+
+        if (innerSigningContractID !== userID) {
+          if (isActionOlderThanUser(height, myProfile)) {
+            sbp('gi.contracts/group/emitNotifications', [{
+              notificationName: 'MEMBER_ADDED',
+              notificationData: {
+                createdDate: meta.createdDate,
+                groupID: contractID,
+                memberID: innerSigningContractID
+              }
+            }])
+          }
+        }
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
+          const { profiles = {} } = state
 
           if (!state) {
             console.info(`[gi.contracts/group/inviteAccept] Contract ${contractID} has been removed`)
             return
           }
 
-          const { profiles = {} } = state
-
           if (profiles[innerSigningContractID].status !== PROFILE_STATUS.ACTIVE) {
             return
           }
-
-          const userID = loggedIn.identityContractID
 
           // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
           // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
@@ -982,21 +1004,7 @@ sbp('chelonia/defineContract', {
             // new member has joined, so subscribe to their identity contract
             // TODO: Check if member is active; will be easier once profiles
             // are indexed by contract ID
-            sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
-              const { profiles = {} } = state
-              const myProfile = profiles[userID]
-
-              if (isActionOlderThanUser(height, myProfile)) {
-                sbp('gi.contracts/group/emitNotificationsAfterSyncing', [], [{
-                  notificationName: 'MEMBER_ADDED',
-                  notificationData: {
-                    createdDate: meta.createdDate,
-                    groupID: contractID,
-                    memberID: innerSigningContractID
-                  }
-                }])
-              }
-            }).catch((e) => {
+            sbp('chelonia/contract/retain', innerSigningContractID).catch((e) => {
               console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e)
             })
           }
@@ -1557,7 +1565,7 @@ sbp('chelonia/defineContract', {
       const { loggedIn } = sbp('state/vuex/state')
       const { createdDate } = meta
       if (isActionOlderThanUser(height, state.profiles[loggedIn.identityContractID])) {
-        sbp('gi.contracts/group/emitNotificationsAfterSyncing', contractID, [{
+        sbp('gi.contracts/group/emitNotifications', [{
           notificationName: 'PROPOSAL_CLOSED',
           notificationData: { createdDate, groupID: contractID, proposal }
         }])
@@ -1570,7 +1578,7 @@ sbp('chelonia/defineContract', {
       //   1) automatically switch that user to a 'pledging' member with 0 contribution,
       //   2) pop out the prompt message notifying them of this automatic change,
       //   3) and send 'MINCOME_CHANGED' notification.
-      const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
       const myProfile = (await sbp('chelonia/contract/state', contractID)).profiles[identityContractID]
       const { fromAmount, toAmount } = data
 
@@ -1604,7 +1612,7 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        sbp('gi.contracts/group/emitNotificationsAfterSyncing', [contractID, innerSigningContractID], [{
+        sbp('gi.contracts/group/emitNotifications', [{
           notificationName: 'MINCOME_CHANGED',
           notificationData: {
             createdDate: meta.createdDate,
@@ -1695,7 +1703,7 @@ sbp('chelonia/defineContract', {
         // NOTE: remove all notifications whose scope is in this group
         // TODO: FIND ANOTHER WAY OF DOING THIS WITHOUT ROOTGETTERS
         for (const notification of sbp('state/vuex/getters').notificationsByGroup(contractID)) {
-          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification)
+          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification.hash)
         }
 
         // The following detects whether we're in the process of joining, and if
@@ -1761,7 +1769,7 @@ sbp('chelonia/defineContract', {
           if (!proposalHash) {
             // NOTE: Do not make notification when the member is removed by proposal
             const memberRemovedThemselves = memberID === innerSigningContractID
-            sbp('gi.contracts/group/emitNotificationsAfterSyncing', memberID, [{
+            sbp('gi.contracts/group/emitNotifications', [{
               notificationName: memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
               notificationData: { createdDate: meta.createdDate, groupID: contractID, memberID }
             }])
@@ -1823,12 +1831,7 @@ sbp('chelonia/defineContract', {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
     },
-    'gi.contracts/group/emitNotificationsAfterSyncing': async (contractIDs, notifications) => {
-      const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-      for (const id of listOfIds) {
-        await sbp('chelonia/contract/wait', id)
-      }
-
+    'gi.contracts/group/emitNotifications': (notifications) => {
       notifications.forEach(({ notificationName, notificationData }) => {
         sbp('gi.notifications/emit', notificationName, notificationData)
       })
