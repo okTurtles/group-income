@@ -552,8 +552,7 @@ async function startApp () {
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
-          // TODO: need to remove the '|| []' after we release 0.2.*
-          .map(cId => (this.ourUnreadMessages[cId].unreadMessages || []).length)
+          .map(cId => (this.ourUnreadMessages[cId].unreadMessages).length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {

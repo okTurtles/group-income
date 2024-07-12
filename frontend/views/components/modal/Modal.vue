@@ -1,7 +1,7 @@
 <template lang='pug'>
   div
-    component(:is='content' ref='content' v-bind='childData')
-    component(:is='subcontent[subcontent.length-1]' ref='subcontent' v-bind='childData')
+    component(:is='content' ref='content' v-bind='childData[content]')
+    component(v-if='activeSubContent' :is='activeSubContent' ref='subcontent' v-bind='childData[activeSubContent]')
 </template>
 <script>
 import sbp from '@sbp/sbp'
@@ -18,9 +18,14 @@ export default ({
         // [modalName]: { queryKey: queryValue }
       },
       replacementQueries: {}, // queries to be used for REPLACE_MODAL
-      childData: null,
+      childData: {},
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
+    }
+  },
+  computed: {
+    activeSubContent () {
+      return this.subcontent.length ? this.subcontent[this.subcontent.length - 1] : null
     }
   },
   created () {
@@ -54,7 +59,7 @@ export default ({
           else this.content = toModal
         }
         const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
-        if (subcontent !== this.activeSubcontent()) {
+        if (subcontent !== this.activeSubContent) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
           if (i !== -1) {
@@ -79,9 +84,6 @@ export default ({
         e.preventDefault()
         this.unloadModal()
       }
-    },
-    activeSubcontent () {
-      return this.subcontent[this.subcontent.length - 1]
     },
     updateUrl () {
       if (this.content) {
@@ -123,12 +125,14 @@ export default ({
       }
       this.queries[componentName] = queries
       this.updateUrl()
-      this.childData = childData
+      this.childData[componentName] = childData
     },
     unloadModal () {
       if (this.subcontent.length) {
+        delete this.childData[this.activeSubContent]
         this.subcontent.pop()
       } else {
+        delete this.childData[this.content]
         this.content = null
         // Refocus on the button that opened this modal, if any.
         // TODO - find a way to support lastFocus when opened through profile|notifications card.
@@ -151,7 +155,7 @@ export default ({
         this.replacementQueries[componentName] = queries
       }
 
-      this.$refs[this.activeSubcontent() ? 'subcontent' : 'content'].$children[0].close()
+      this.$refs[this.activeSubContent ? 'subcontent' : 'content'].$children[0].close()
     },
     setModalQueries (componentName, queries) {
       this.queries[componentName] = queries
