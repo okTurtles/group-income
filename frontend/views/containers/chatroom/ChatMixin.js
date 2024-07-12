@@ -45,7 +45,8 @@ const ChatMixin: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfilesById',
-      'isDirectMessage'
+      'isDirectMessage',
+      'isGroupDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -55,7 +56,7 @@ const ChatMixin: Object = {
 
       let title = this.currentChatRoomState.attributes.name
       let picture
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
         picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
@@ -122,7 +123,7 @@ const ChatMixin: Object = {
     },
     updateCurrentChatRoomID (chatRoomID: string) {
       if (chatRoomID !== this.currentChatRoomId) {
-        if (this.isDirectMessage(chatRoomID)) {
+        if (this.isGroupDirectMessage(chatRoomID)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID })
         } else {
           const groupID = this.groupIdFromChatRoomId(chatRoomID)
@@ -149,7 +150,7 @@ const ChatMixin: Object = {
         // NOTE: whenever any group members leave the group, and the ourGroupDirectMessage is changed
         //       currentChatRoomId needs to be considered to needs to be changed
         //       if the currentChatRoomId (if it's DM) is no longer group direct message
-        if (Object.keys(this.ourDirectMessages).includes(this.currentChatRoomId)) {
+        if (this.isDirectMessage(this.currentChatRoomId)) {
           if (this.currentGroupId) {
             const isNotGroupDirectMessage = !Object.keys(to).includes(this.currentChatRoomId)
             if (isNotGroupDirectMessage) {

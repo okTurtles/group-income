@@ -1,5 +1,5 @@
 <template lang='pug'>
-page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
+page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
   template(#header='')
     .c-header(data-test='channelName')
       .avatar-wrapper(v-if='summary.picture')
@@ -20,38 +20,38 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
 
           ul
             menu-item(
-              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
             menu-item(
-              v-if='ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
+              v-if='ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
               @click='editDescription'
               data-test='updateDescription'
             )
               i18n(v-if='!summary.attributes.description') Add description
               i18n(v-else) Update description
-            menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
+            menu-item(v-if='!isGroupDirectMessage()' @click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
             menu-item.hide-desktop(v-if='pinnedMessages.length')
               i18n(@click='showPinnedMessages($event)') Pinned Messages
             menu-item(
-              :class='`${!summary.isGeneral && !isDirectMessage() ? "c-separator" : ""}`'
+              :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
               i18n Notification settings
             menu-item(
-              v-if='!summary.isGeneral && !isDirectMessage()'
+              v-if='!summary.isGeneral && !isGroupDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
@@ -66,7 +66,7 @@ page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
       )
         i.icon-thumbtack
         i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
-      template(v-if='!isDirectMessage()')
+      template(v-if='!isGroupDirectMessage()')
         span(v-if='pinnedMessages.length') ∙
         i18n.is-unstyled.c-link(
           tag='button'

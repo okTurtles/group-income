@@ -7,7 +7,7 @@ const DMMixin: Object = {
   computed: {
     ...mapGetters([
       'currentChatRoomId',
-      'isDirectMessage',
+      'isGroupDirectMessage',
       'ourGroupDirectMessages',
       'ourIdentityContractId',
       'ourGroupDirectMessageFromUserIds'

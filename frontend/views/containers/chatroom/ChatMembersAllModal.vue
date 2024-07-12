@@ -57,7 +57,7 @@ modal-base-template.has-background(
                     strong {{ localizedName(contractID, username, displayName) }}
                     .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-              .c-actions(v-if='!isDirectMessage() && isJoined && removable(contractID)')
+              .c-actions(v-if='!isGroupDirectMessage() && isJoined && removable(contractID)')
                 button.is-icon(
                   v-if='!departedDate'
                   :data-test='"removeMember-" + username'
@@ -107,7 +107,7 @@ modal-base-template.has-background(
                 i.icon-check
                 i18n Added.
                 button-submit.is-unstyled.c-action-undo(
-                  v-if='!isDirectMessage()'
+                  v-if='!isGroupDirectMessage()'
                   @click.stop='removeMember(contractID, true)'
                 )
                   i18n Undo
@@ -187,7 +187,7 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.chatRoomAttribute
       let title = name
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
       }
       const privacy = {
@@ -219,7 +219,7 @@ export default ({
   },
   methods: {
     initializeMembers () {
-      if (this.isDirectMessage()) {
+      if (this.isGroupDirectMessage()) {
         this.addedMembers = Object.keys(this.chatRoomMembers)
           .map(contractID => {
             const profile = contractID === this.ourIdentityContractId ? this.globalProfile(contractID) : this.ourContactProfilesById[contractID]
@@ -301,7 +301,7 @@ export default ({
       }
     },
     async addToChannel (contractID: string, undoing = false) {
-      if (this.isDirectMessage()) {
+      if (this.isGroupDirectMessage()) {
         const currentPartnerIDs = this.ourGroupDirectMessages[this.currentChatRoomId].partners.map(p => p.contractID)
         const memberIDs = uniq(currentPartnerIDs.concat(contractID))
         const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIDs)

@@ -309,7 +309,7 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
-      'isDirectMessage',
+      'isGroupDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil'
     ]),
@@ -329,7 +329,7 @@ export default ({
       return this.messageState.contract?.messages || []
     },
     isGroupCreator () {
-      if (!this.isDirectMessage(this.summary.chatRoomID)) {
+      if (!this.isGroupDirectMessage(this.summary.chatRoomID)) {
         return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
