@@ -564,9 +564,6 @@ const getters = {
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
-  ourDirectMessages (state, getters) {
-    return getters.currentIdentityState.chatRooms || {}
-  },
   ...chatroomGetters,
   ...groupGetters,
   ...identityGetters
