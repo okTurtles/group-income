@@ -169,10 +169,10 @@ const proposals: Object = {
       const messageData = proposal.data.proposalData
       const forMessage = { ...message, data: messageData, proposalHash }
       await sbp('gi.contracts/group/removeMember/process', forMessage, state)
+      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
       sbp('gi.contracts/group/pushSideEffect', contractID,
         ['gi.contracts/group/removeMember/sideEffect', forMessage]
       )
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
