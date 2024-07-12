@@ -209,7 +209,7 @@ function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object):
   if (!userProfile) {
     return false
   }
-  return userProfile.joinedHeight < height
+  return userProfile.status === PROFILE_STATUS.ACTIVE && userProfile.joinedHeight < height
 }
 
 function updateGroupStreaks ({ state, getters }) {
