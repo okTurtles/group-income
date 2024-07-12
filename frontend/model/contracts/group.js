@@ -1572,29 +1572,31 @@ sbp('chelonia/defineContract', {
         }])
       }
     },
-    'gi.contracts/group/notifyProposalStateInGeneralChatroom': async function ({ contractID, innerSigningContractID, height, proposal }) {
-      const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
-      const { profiles, generalChatRoomId } = await sbp('chelonia/contract/state', contractID)
-      const myProfile = profiles[identityContractID]
-      if (identityContractID === innerSigningContractID) {
-        if (isActionOlderThanUser(contractID, height, myProfile)) {
-          await sbp('gi.actions/chatroom/addMessage', {
-            contractID: generalChatRoomId,
-            data: {
-              type: MESSAGE_TYPES.INTERACTIVE,
-              proposal: {
-                proposalId: proposal.proposalId,
-                proposalType: proposal.data.proposalType,
-                proposalData: proposal.data.proposalData,
-                expires_date_ms: proposal.data.expires_date_ms,
-                createdDate: proposal.meta.createdDate,
-                creatorID: proposal.creatorID,
-                status: proposal.status
+    'gi.contracts/group/notifyProposalStateInGeneralChatroom': function ({ contractID, innerSigningContractID, height, proposal }) {
+      sbp('chelonia/queueInvocation', contractID, async () => {
+        const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+        const { profiles, generalChatRoomId } = await sbp('chelonia/contract/state', contractID)
+        const myProfile = profiles[identityContractID]
+        if (identityContractID === innerSigningContractID) {
+          if (isActionOlderThanUser(contractID, height, myProfile)) {
+            await sbp('gi.actions/chatroom/addMessage', {
+              contractID: generalChatRoomId,
+              data: {
+                type: MESSAGE_TYPES.INTERACTIVE,
+                proposal: {
+                  proposalId: proposal.proposalId,
+                  proposalType: proposal.data.proposalType,
+                  proposalData: proposal.data.proposalData,
+                  expires_date_ms: proposal.data.expires_date_ms,
+                  createdDate: proposal.meta.createdDate,
+                  creatorID: proposal.creatorID,
+                  status: proposal.status
+                }
               }
-            }
-          })
+            })
+          }
         }
-      }
+      })
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
       // NOTE: When group's mincome has changed, below actions should be taken.
@@ -1694,7 +1696,11 @@ sbp('chelonia/defineContract', {
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
         }).then(() => {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
+            identityContractID: memberID,
+            groupContractID: sbp('state/vuex/state').currentGroupId,
+            chatRoomID
+          })
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
