@@ -1568,7 +1568,7 @@ sbp('chelonia/defineContract', {
         const { profiles, generalChatRoomId } = await sbp('chelonia/contract/state', contractID)
         const myProfile = profiles[identityContractID]
         if (identityContractID === innerSigningContractID) {
-          if (isActionOlderThanUser(contractID, height, myProfile)) {
+          if (isActionNewerThanUserJoinedDate(height, myProfile)) {
             await sbp('gi.actions/chatroom/addMessage', {
               contractID: generalChatRoomId,
               data: {
