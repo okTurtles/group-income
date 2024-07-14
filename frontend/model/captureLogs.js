@@ -191,6 +191,12 @@ sbp('sbp/selectors/register', {
   'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture': captureLogsPause,
   'appLogs/startCapture': captureLogsStart,
+  'appLogs/clearLogs': function (userID) {
+    const savedID = identityContractID
+    identityContractID = userID
+    try { clearLogs() } catch {}
+    identityContractID = savedID
+  },
   // only log to server if we're in development mode and connected over the tunnel (which creates URLs that
   // begin with 'https://gi' per Gruntfile.js)
   'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')

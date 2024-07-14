@@ -7,7 +7,7 @@ div(:class='isReady ? "" : "c-ready"')
   i18n(tag='p') Percentage of payments completed by those pledging.
 
   p(v-if='history.length === 0')
-    i18n Your group is still in its first month.
+    i18n The first distribution period hasn't started yet.
 
   div(v-else)
     bar-graph(:bars='history')
@@ -16,7 +16,6 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
@@ -28,7 +27,7 @@ export default ({
   data () {
     return {
       isReady: false,
-      history: null
+      history: []
     }
   },
   mixins: [PaymentsMixin],
@@ -38,7 +37,8 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
-      'groupCreatedDate'
+      'groupCreatedDate',
+      'thisPeriodPaymentInfo'
     ])
   },
   created () {
@@ -46,36 +46,36 @@ export default ({
   },
   methods: {
     async updateHistory () {
-      this.history = []
-
-      let period = null
-      const firstDistributionPeriod = await this.historicalPeriodStampGivenDate(this.groupCreatedDate)
+      // let period = null
+      // const periods = await this.getAllSortedPeriodKeys()
+      // const firstDistributionPeriod = await this.historicalPeriodStampGivenDate(this.groupCreatedDate)
       const getLen = obj => Object.keys(obj).length
 
-      for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
-        period = period === null ? this.currentPaymentPeriod : await this.historicalPeriodBeforePeriod(period)
-        if (!period || comparePeriodStamps(period, firstDistributionPeriod) < 0) break
-
+      const allPeriods = await this.getAllSortedPeriodKeys()
+      const periods = allPeriods.slice(-MAX_HISTORY_PERIODS)
+      this.history = await Promise.all(periods.map(async (period) => {
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPaymentPeriod(period)
-
         const doneCount = getLen(paymentDetails)
         const markedAsNotReceivedCount = Object.values(paymentDetails)
           .filter(({ data }) => data.status === PAYMENT_NOT_RECEIVED).length
         const missedCount = getLen(lastAdjustedDistribution || {})
-        this.history.unshift({
+        return {
           total: doneCount === 0 ? 0 : (doneCount - markedAsNotReceivedCount) / (doneCount + missedCount),
-          title: this.getPeriodFromStartToDueDate(period),
+          title: this.getPeriodFromStartToDueDate(period, periods),
           tooltipContent: [
             L('Total: {total}', { total: doneCount + missedCount }),
             L('Completed: {completed}', { completed: doneCount - markedAsNotReceivedCount })
           ]
-        })
-      }
+        }
+      }))
     }
   },
   watch: {
     currentPaymentPeriod () {
+      this.updateHistory()
+    },
+    thisPeriodPaymentInfo () {
       this.updateHistory()
     }
   }

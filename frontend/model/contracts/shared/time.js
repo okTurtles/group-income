@@ -15,12 +15,15 @@ export const minusOnePeriodLength = (timestamp: string, periodLength: number): s
   dateToPeriodStamp(addTimeToDate(timestamp, -periodLength))
 )
 
-// @parameter knownSortedStamps:
+// @param knownSortedStamps
 // - MUST be sorted in ascending order (lower timestamps first)
 // - MAY NOT contain duplicate elements
+// @param guess
+// - when truthy, will use periodLength to guess the period stamp for the return values
+// - otherwise, will return undefined if the date is not in the knownSortedStamps
 export function periodStampsForDate (
   date: Date | string,
-  { knownSortedStamps, periodLength }: { knownSortedStamps: string[], periodLength: number }
+  { knownSortedStamps, periodLength, guess }: { knownSortedStamps: string[], periodLength: number, guess?: boolean }
 ): Object {
   // $FlowFixMe - Pedantic '[method-unbinding]' error
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
@@ -30,19 +33,27 @@ export function periodStampsForDate (
   let previous, current, next
   if (knownSortedStamps.length) {
     const latest = knownSortedStamps[knownSortedStamps.length - 1]
+    const earliest = knownSortedStamps[0]
     if (timestamp >= latest) {
       current = periodStampGivenDate({ recentDate: timestamp, periodStart: latest, periodLength })
       next = plusOnePeriodLength(current, periodLength)
       previous = current > latest
         ? minusOnePeriodLength(current, periodLength)
         : knownSortedStamps[knownSortedStamps.length - 2]
+    } else if (guess && timestamp < earliest) {
+      // handle dates earlier than all known stamps
+      current = periodStampGivenDate({ recentDate: timestamp, periodStart: earliest, periodLength })
+      next = plusOnePeriodLength(current, periodLength)
+      previous = minusOnePeriodLength(current, periodLength)
     } else {
       for (let i = knownSortedStamps.length - 2; i >= 0; i--) {
         if (timestamp >= knownSortedStamps[i]) {
           current = knownSortedStamps[i]
           // `i + 1` is always a valid index.
           next = knownSortedStamps[i + 1]
-          previous = knownSortedStamps[i - 1]
+          previous = i > 0
+            ? knownSortedStamps[i - 1]
+            : (guess ? minusOnePeriodLength(current, periodLength) : undefined)
           break
         }
       }
