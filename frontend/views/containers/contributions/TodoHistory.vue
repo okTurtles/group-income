@@ -46,11 +46,7 @@ export default ({
   },
   methods: {
     async updateHistory () {
-      // let period = null
-      // const periods = await this.getAllSortedPeriodKeys()
-      // const firstDistributionPeriod = await this.historicalPeriodStampGivenDate(this.groupCreatedDate)
       const getLen = obj => Object.keys(obj).length
-
       const allPeriods = await this.getAllSortedPeriodKeys()
       const periods = allPeriods.slice(-MAX_HISTORY_PERIODS)
       this.history = await Promise.all(periods.map(async (period) => {
