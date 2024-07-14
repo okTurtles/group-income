@@ -68,9 +68,11 @@ export default ({
     }
   },
   watch: {
+    // update the graph when we enter a new payment period
     currentPaymentPeriod () {
       this.updateHistory()
     },
+    // update the graph updates when a payment is made
     thisPeriodPaymentInfo () {
       this.updateHistory()
     }
