@@ -31,7 +31,7 @@ $bannerGeneralHeight: 2.3rem;
     grid-template-columns: auto 1fr;
     grid-template-rows: min-content 1fr;
 
-    .l-banner ~ .l-navigation {
+    .l-banner ~ .l-navigation { // this is a fix for https://github.com/okTurtles/group-income/issues/2174
       height: 100%;
     }
   }
