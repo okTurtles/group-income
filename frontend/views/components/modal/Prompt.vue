@@ -45,11 +45,11 @@ export default ({
   methods: {
     closeModal () {
       sbp('okTurtles.events/emit', MODAL_RESPONSE, false)
-      this.$refs.modal.unload()
+      this.$refs.modal.unload('Prompt')
     },
     submit () {
       sbp('okTurtles.events/emit', MODAL_RESPONSE, true)
-      this.$refs.modal.unload()
+      this.$refs.modal.unload('Prompt')
     }
   }
 }: Object)
