@@ -29,11 +29,17 @@
 
       banner-scoped(ref='doneMsg' data-test='doneMsg')
 
-      i18n.c-cta(
-        v-if='ephemeral.status !== "recovering"'
-        tag='button'
-        @click='startResync'
-      ) Re-sync
+      .c-cta-container
+        i18n.c-cta(
+          v-if='ephemeral.status !== "recovering"'
+          tag='button'
+          :disabled='true'
+          @click='startResync'
+        ) Re-sync
+
+        .c-coming-soon
+          i.icon-info-circle
+          i18n Feature coming soon
 </template>
 
 <script>
@@ -206,6 +212,24 @@ export default ({
     display: flex;
     justify-content: space-between;
     margin-top: 0.5rem;
+  }
+}
+
+.c-cta-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 0.5rem;
+}
+
+.c-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  color: $text_1;
+  user-select: none;
+
+  i {
+    margin-right: 0.2rem;
   }
 }
 </style>
