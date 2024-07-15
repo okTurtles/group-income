@@ -116,7 +116,7 @@ export default ({
       }
 
       const checkAndSetTimer = () => {
-        if (Date.now() - this.pollData.expires_date_ms) {
+        if (Date.now() - this.pollData.expires_date_ms >= 0) {
           markPollClosed()
         } else {
           this.expirationTimeoutId = setTimeout(checkAndSetTimer, MINS_MILLIS)
