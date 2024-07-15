@@ -86,7 +86,7 @@ function initPaymentPeriod ({ meta, getters }) {
 
 // NOTE: do not call any of these helper functions from within a getter b/c they modify state!
 
-function clearOldPayments ({ contractID, state, getters }) {
+function clearOldPayments ({ direction, contractID, state, getters }) {
   const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
   // save two periods worth of payments, max
   const archivingPayments = { paymentsByPeriod: {}, payments: {} }
@@ -100,12 +100,14 @@ function clearOldPayments ({ contractID, state, getters }) {
     delete state.paymentsByPeriod[period]
   }
 
-  sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/archivePayments', contractID, archivingPayments]
-  )
+  if (direction === 'incoming') {
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/archivePayments', contractID, archivingPayments]
+    )
+  }
 }
 
-function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
+function initFetchPeriodPayments ({ direction, contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
@@ -113,7 +115,7 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   if (previousPeriod in state.paymentsByPeriod) {
     state.paymentsByPeriod[previousPeriod].end = period
   }
-  clearOldPayments({ contractID, state, getters })
+  clearOldPayments({ direction, contractID, state, getters })
   return periodPayments
 }
 
@@ -130,8 +132,8 @@ function initGroupStreaks () {
 
 // this function is called each time a payment is completed or a user adjusts their income details.
 // TODO: call also when mincome is adjusted
-function updateCurrentDistribution ({ contractID, meta, state, getters }) {
-  const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters })
+function updateCurrentDistribution ({ direction, contractID, meta, state, getters }) {
+  const curPeriodPayments = initFetchPeriodPayments({ direction, contractID, meta, state, getters })
   const period = getters.periodStampGivenDate(meta.createdDate)
   const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
   // update distributionDate if we've passed into the next period
@@ -167,7 +169,7 @@ function updateAdjustedDistribution ({ period, getters }) {
   }
 }
 
-function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, state, getters }) {
+function memberLeaves ({ memberID, dateLeft, heightLeft }, { direction, contractID, meta, state, getters }) {
   if (!state.profiles[memberID] || state.profiles[memberID].status !== PROFILE_STATUS.ACTIVE) {
     throw new Error(`[gi.contracts/group memberLeaves] Can't remove non-exisiting member ${memberID}`)
   }
@@ -176,7 +178,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft }, { contractID, meta, s
   state.profiles[memberID].departedDate = dateLeft
   state.profiles[memberID].departedHeight = heightLeft
   // remove any todos for this member from the adjusted distribution
-  updateCurrentDistribution({ contractID, meta, state, getters })
+  updateCurrentDistribution({ direction, contractID, meta, state, getters })
 
   Object.keys(state.chatRooms).forEach((chatroomID) => {
     removeGroupChatroomProfile(state, chatroomID, memberID)
@@ -342,6 +344,7 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     extraParams.innerSigningContractID = null
   }
 
+  const { identityContractID } = sbp('state/vuex/state').loggedIn
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
@@ -362,8 +365,8 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     // Instead, in the future contracts will have an 'environment', provided
     // by Chelonia, which will include global / environment / ambient
     // information they need.
-    if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-      sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
+    if (memberID === identityContractID) {
+      sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID, groupContractID: groupID, chatRoomID })
     }
   }).catch((e) => {
     if (
@@ -384,7 +387,7 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
 
-  if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+  if (memberID === identityContractID) {
     sbp('chelonia/contract/release', chatRoomID).catch(e => {
       console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
     })
@@ -478,7 +481,7 @@ sbp('chelonia/defineContract', {
           })
         })
       }),
-      process ({ data, meta, contractID }, { state, getters }) {
+      process ({ direction, data, meta, contractID }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           payments: {},
@@ -500,7 +503,7 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           state[key] = initialState[key]
         }
-        initFetchPeriodPayments({ contractID, meta, state, getters })
+        initFetchPeriodPayments({ direction, contractID, meta, state, getters })
       },
       sideEffect ({ contractID }, { state }) {
         if (!state.generalChatRoomId) {
@@ -555,7 +558,7 @@ sbp('chelonia/defineContract', {
         details: optional(object),
         memo: optional(string)
       })),
-      process ({ data, meta, hash, contractID, height, innerSigningContractID }, { state, getters }) {
+      process ({ direction, data, meta, hash, contractID, height, innerSigningContractID }, { state, getters }) {
         if (data.status === PAYMENT_COMPLETED) {
           console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBan('payments cannot be instantly completed!')
@@ -570,7 +573,7 @@ sbp('chelonia/defineContract', {
           meta,
           history: [[meta.createdDate, hash]]
         }
-        const { paymentsFrom } = initFetchPeriodPayments({ contractID, meta, state, getters })
+        const { paymentsFrom } = initFetchPeriodPayments({ direction, contractID, meta, state, getters })
         const fromMemberID = fetchInitKV(paymentsFrom, innerSigningContractID, {})
         const toMemberID = fetchInitKV(fromMemberID, data.toMemberID, [])
         toMemberID.push(hash)
@@ -586,7 +589,7 @@ sbp('chelonia/defineContract', {
           memo: string
         })
       })),
-      process ({ data, meta, hash, contractID, innerSigningContractID }, { state, getters }) {
+      process ({ direction, data, meta, hash, contractID, innerSigningContractID }, { state, getters }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income/issues/426
         const payment = state.payments[data.paymentHash]
@@ -612,7 +615,7 @@ sbp('chelonia/defineContract', {
           if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
             updateAdjustedDistribution({ period: paymentPeriodStamp, getters })
           } else {
-            updateCurrentDistribution({ contractID, meta, state, getters })
+            updateCurrentDistribution({ direction, contractID, meta, state, getters })
           }
 
           // NOTE: if 'PAYMENT_REVERSED' is implemented, subtract
@@ -691,7 +694,7 @@ sbp('chelonia/defineContract', {
           // TODO - verify if type of proposal already exists (SETTING_CHANGE).
         }
       }),
-      process ({ data, meta, hash, contractID, height, innerSigningContractID }, { state }) {
+      process ({ direction, data, meta, hash, contractID, height, innerSigningContractID }, { state }) {
         const proposal = {
           data,
           meta,
@@ -706,14 +709,16 @@ sbp('chelonia/defineContract', {
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
-        sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
-            contractID,
-            innerSigningContractID,
-            height,
-            proposal: { ...proposal, proposalId: hash }
-          }]
-        )
+        if (direction === 'incoming') {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
+              contractID,
+              innerSigningContractID,
+              height,
+              proposal: { ...proposal, proposalId: hash }
+            }]
+          )
+        }
       },
       sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
@@ -784,7 +789,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectOf({
         proposalHash: string
       })),
-      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
+      process ({ direction, data, meta, contractID, innerSigningContractID, height }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
@@ -796,14 +801,14 @@ sbp('chelonia/defineContract', {
         }
         proposal['status'] = STATUS_CANCELLED
         proposal['dateClosed'] = meta.createdDate
-        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+        notifyAndArchiveProposal({ direction, state, proposalHash: data.proposalHash, proposal, innerSigningContractID, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
+      process ({ direction, data, meta, contractID, innerSigningContractID, height }, { state }) {
         if (data.proposalIds.length) {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
@@ -811,7 +816,7 @@ sbp('chelonia/defineContract', {
             if (proposal) {
               proposal['status'] = STATUS_EXPIRED
               proposal['dateClosed'] = meta.createdDate
-              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, innerSigningContractID, contractID, meta, height })
+              notifyAndArchiveProposal({ direction, state, proposalHash: proposalId, proposal, innerSigningContractID, contractID, meta, height })
             }
           }
         }
@@ -880,17 +885,16 @@ sbp('chelonia/defineContract', {
           }
         }
       }),
-      process ({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
+      process ({ direction, data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
         memberLeaves(
           { memberID: data.memberID || innerSigningContractID, dateLeft: meta.createdDate, heightLeft: height },
-          { contractID, meta, state, getters }
+          { direction, contractID, meta, state, getters }
         )
       },
-      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
-        // Put this invocation at the end of a sync to ensure that leaving and
-        // re-joining works
+      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash, direction }, { state, getters }) {
+        // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
-          data, meta, contractID, getters, height, innerSigningContractID, proposalHash
+          data, meta, contractID, getters, height, innerSigningContractID, proposalHash, direction
         })).catch(e => {
           console.warn(`[gi.contracts/group/removeMember/sideEffect] Error ${e.name} during queueInvocation for ${contractID}`, e)
         })
@@ -1046,7 +1050,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Can\'t change distribution date because distribution period has already started.'))
         }
       }),
-      process ({ contractID, meta, data, height, innerSigningContractID, proposalHash }, { state, getters }) {
+      process ({ contractID, meta, data, height, innerSigningContractID, proposalHash, direction }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
         const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
 
@@ -1056,23 +1060,25 @@ sbp('chelonia/defineContract', {
 
         if ('distributionDate' in data) {
           state['paymentsByPeriod'] = {}
-          initFetchPeriodPayments({ contractID, meta, state, getters })
+          initFetchPeriodPayments({ direction, contractID, meta, state, getters })
         }
 
         if (mincomeCache !== null && !proposalHash) {
           // NOTE: Do not make notification when the mincome is changed by proposal
-          sbp('gi.contracts/group/pushSideEffect', contractID,
-            ['gi.contracts/group/sendMincomeChangedNotification',
-              contractID,
-              meta,
-              {
-                toAmount: data.mincomeAmount,
-                fromAmount: mincomeCache
-              },
-              height,
-              innerSigningContractID
-            ]
-          )
+          if (direction === 'incoming') {
+            sbp('gi.contracts/group/pushSideEffect', contractID,
+              ['gi.contracts/group/sendMincomeChangedNotification',
+                contractID,
+                meta,
+                {
+                  toAmount: data.mincomeAmount,
+                  fromAmount: mincomeCache
+                },
+                height,
+                innerSigningContractID
+              ]
+            )
+          }
         }
       }
     },
@@ -1105,7 +1111,7 @@ sbp('chelonia/defineContract', {
           }
         }
       }),
-      process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
+      process ({ direction, data, meta, contractID, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -1128,7 +1134,7 @@ sbp('chelonia/defineContract', {
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
           groupProfile['incomeDetailsLastUpdatedDate'] = meta.createdDate
-          updateCurrentDistribution({ contractID, meta, state, getters })
+          updateCurrentDistribution({ direction, contractID, meta, state, getters })
         }
       }
     },
@@ -1239,10 +1245,12 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
-      process ({ contractID, data }, { state }) {
-        sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
-        )
+      process ({ direction, contractID, data }, { state }) {
+        if (direction === 'incoming') {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
+          )
+        }
         delete state.chatRooms[data.chatRoomID]
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
@@ -1702,7 +1710,7 @@ sbp('chelonia/defineContract', {
       }
     },
     // eslint-disable-next-line require-await
-    'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID, proposalHash }) => {
+    'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID, proposalHash, direction }) => {
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const memberID = data.memberID || innerSigningContractID
       const state = await sbp('chelonia/contract/state', contractID)

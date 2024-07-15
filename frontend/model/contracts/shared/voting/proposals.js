@@ -19,7 +19,8 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function notifyAndArchiveProposal ({ state, proposalHash, innerSigningContractID, proposal, contractID, meta, height }: {
+export function notifyAndArchiveProposal ({ direction, state, proposalHash, innerSigningContractID, proposal, contractID, meta, height }: {
+  direction: string,
   state: Object,
   proposalHash: string,
   proposal: any,
@@ -30,25 +31,27 @@ export function notifyAndArchiveProposal ({ state, proposalHash, innerSigningCon
 }) {
   Vue.delete(state.proposals, proposalHash)
 
-  sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
-      contractID,
-      innerSigningContractID,
-      height,
-      proposal: { ...proposal, proposalId: proposalHash }
-    }]
-  )
+  if (direction === 'incoming') {
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/notifyProposalStateInGeneralChatroom', {
+        contractID,
+        innerSigningContractID,
+        height,
+        proposal: { ...proposal, proposalId: proposalHash }
+      }]
+    )
 
-  // NOTE: we can not make notification for the proposal closal
-  //       in the /proposalVote/sideEffect
-  //       because we remove the state.proposals[proposalHash] in the process function
-  //       and can not access the proposal data in the sideEffect
-  sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposal]
-  )
-  sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
-  )
+    // NOTE: we can not make notification for the proposal closal
+    //       in the /proposalVote/sideEffect
+    //       because we remove the state.proposals[proposalHash] in the process function
+    //       and can not access the proposal data in the sideEffect
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposal]
+    )
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
+    )
+  }
 }
 
 export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creatorID?: string): string {
@@ -91,12 +94,12 @@ export function oneVoteToPass (state: Object, proposalHash: string): boolean {
   return newResult === VOTE_FOR
 }
 
-function voteAgainst (state: any, { meta, data, contractID, innerSigningContractID, height }: any) {
+function voteAgainst (state: any, { direction, meta, data, contractID, innerSigningContractID, height }: any) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
   sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_AGAINST, data)
-  notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+  notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
 }
 
 // NOTE: The code is ready to receive different proposals settings,
@@ -114,7 +117,7 @@ const proposals: Object = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {
-      const { data, innerSigningContractID, contractID, meta, height } = message
+      const { direction, data, innerSigningContractID, contractID, meta, height } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.payload = data.passPayload
@@ -124,7 +127,7 @@ const proposals: Object = {
       const forMessage = { ...message, data: data.passPayload }
       await sbp('gi.contracts/group/invite/process', forMessage, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+      notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
       // TODO: for now, generate the link and send it to the user's inbox
       //       however, we cannot send GIMessages in any way from here
       //       because that means each time someone synchronizes this contract
@@ -161,7 +164,7 @@ const proposals: Object = {
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {
-      const { data, innerSigningContractID, contractID, meta, height } = message
+      const { direction, data, innerSigningContractID, contractID, meta, height } = message
       const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
@@ -169,17 +172,19 @@ const proposals: Object = {
       const messageData = proposal.data.proposalData
       const forMessage = { ...message, data: messageData, proposalHash }
       await sbp('gi.contracts/group/removeMember/process', forMessage, state)
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
-      sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/removeMember/sideEffect', forMessage]
-      )
+      notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+      if (direction === 'incoming') {
+        sbp('gi.contracts/group/pushSideEffect', contractID,
+          ['gi.contracts/group/removeMember/sideEffect', forMessage]
+        )
+      }
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {
-      const { data, innerSigningContractID, contractID, meta, height } = message
+      const { direction, data, innerSigningContractID, contractID, meta, height } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
@@ -192,16 +197,18 @@ const proposals: Object = {
         proposalHash
       }
       await sbp('gi.contracts/group/updateSettings/process', forMessage, state)
-      sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/updateSettings/sideEffect', forMessage])
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+      if (direction === 'incoming') {
+        sbp('gi.contracts/group/pushSideEffect', contractID,
+          ['gi.contracts/group/updateSettings/sideEffect', forMessage])
+      }
+      notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {
-      const { data, innerSigningContractID, contractID, meta, height } = message
+      const { direction, data, innerSigningContractID, contractID, meta, height } = message
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
@@ -211,18 +218,18 @@ const proposals: Object = {
         proposalHash
       }
       await sbp('gi.contracts/group/updateAllVotingRules/process', forMessage, state)
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+      notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GENERIC]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { data, innerSigningContractID, contractID, meta, height }) {
+    [VOTE_FOR]: function (state, { direction, data, innerSigningContractID, contractID, meta, height }) {
       const { proposalHash } = data
       const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      notifyAndArchiveProposal({ state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+      notifyAndArchiveProposal({ direction, state, proposalHash, proposal, innerSigningContractID, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
   }
