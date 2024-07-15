@@ -1577,6 +1577,9 @@ sbp('chelonia/defineContract', {
         const myProfile = profiles[identityContractID]
         if (identityContractID === innerSigningContractID) {
           if (isActionNewerThanUserJoinedDate(height, myProfile)) {
+            // TODO: need to add message only once
+            //       but when the innerSigningContractID login in another device
+            //       this `addMessage` will be called again. This needs to be fixed
             await sbp('gi.actions/chatroom/addMessage', {
               contractID: generalChatRoomId,
               data: {
