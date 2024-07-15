@@ -112,11 +112,6 @@ export default ({
       this.showBanner()
     }
   },
-  mounted () {
-    setTimeout(() => {
-      sbp('gi.ui/showBanner', 'Random text by Sebin', 'wifi')
-    }, 2000)
-  },
   beforeDestroy () {
     sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.hideBanner)
   },
