@@ -44,7 +44,7 @@ const modalMixins = {
       'setTemporaryReducedMotion'
     ]): any),
     close (e: any) {
-      this.modalIsActive = false
+      this.unload()
     },
     unload (targetModal?: string) {
       if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL, targetModal)
