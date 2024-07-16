@@ -912,19 +912,27 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
-  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), (sendMessage, params) => {
-    return sendMessage(
+  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), async (sendMessage, params) => {
+    const { contractID } = params
+    await sendMessage({
       ...params,
       hooks: {
         onprocessed: (message) => {
-          console.log(message, message.hash())
+          (async () => {
+            const proposalId = message.hash()
+            const state = await sbp('chelonia/contract/state', contractID)
+            const proposal = state.proposals[proposalId]
+            const proposalToSend = { ...extractProposalData(proposal, { proposalId }), status: STATUS_OPEN }
+
+            await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+          })()
         }
       }
-    )
+    })
   }),
   ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.'), async (sendMessage, params) => {
-    const state = await sbp('chelonia/contract/state', params.contractID)
-    const data = params.data
+    const { contractID, data } = params
+    const state = await sbp('chelonia/contract/state', contractID)
     const proposalHash = data.proposalHash
     const proposal = state.proposals[proposalHash]
     const type = proposal.data.proposalType
@@ -939,16 +947,16 @@ export default (sbp('sbp/selectors/register', {
     if (willBePassed && isVoteFor) {
       if (type === PROPOSAL_INVITE_MEMBER) {
         passPayload = await createInvite({
-          contractID: params.contractID,
+          contractID,
           invitee: proposal.data.proposalData.memberName,
           creatorID: proposal.creatorID,
           expires: state.settings.inviteExpiryProposal
         })
       }
 
-      proposalToSend = { ...extractProposalData(proposal) status: STATUS_PASSED }
+      proposalToSend = { ...extractProposalData(proposal, { proposalId: proposalHash }), status: STATUS_PASSED }
     } else if (willBeFailed && isVoteAgainst) {
-      proposalToSend = { ...extractProposalData(proposal) status: STATUS_FAILED }
+      proposalToSend = { ...extractProposalData(proposal, { proposalId: proposalHash }), status: STATUS_FAILED }
     }
 
     await sendMessage({
@@ -963,7 +971,7 @@ export default (sbp('sbp/selectors/register', {
     const { contractID, data } = params
     const state = await sbp('chelonia/contract/state', contractID)
     const proposal = state.proposals[data.proposalHash]
-    const proposalToSend = { ...extractProposalData(proposal) status: STATUS_CANCELLED }
+    const proposalToSend = { ...extractProposalData(proposal, { proposalId: data.proposalHash }), status: STATUS_CANCELLED }
 
     await sendMessage(params)
 
@@ -973,7 +981,7 @@ export default (sbp('sbp/selectors/register', {
     const { contractID, data } = params
     const state = await sbp('chelonia/contract/state', contractID)
     const proposal = state.proposals[data.proposalHash]
-    const proposalToSend = { ...extractProposalData(proposal) status: STATUS_EXPIRED }
+    const proposalToSend = { ...extractProposalData(proposal, { proposalId: data.proposalHash }), status: STATUS_EXPIRED }
 
     await sendMessage(params)
 

@@ -26,7 +26,6 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  MESSAGE_TYPES,
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
