@@ -450,6 +450,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it('user1 leaves chatroom by himself', () => {
     const channelToLeave = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[0]
     leaveChannel(channelToLeave, 'Leave Channel')
+
+    cy.giLogout()
   })
 
   it.skip('user1 deletes chatroom by himself and logs out', () => {
