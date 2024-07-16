@@ -128,7 +128,6 @@ export function makeNotificationHash (notification: Object): string {
 
 export function extractProposalData (proposal: Object, extraFields: Object = {}): Object {
   return {
-    proposalId: proposal.proposalId,
     proposalType: proposal.data.proposalType,
     proposalData: proposal.data.proposalData,
     expires_date_ms: proposal.data.expires_date_ms,
