@@ -144,7 +144,7 @@ const periodicNotificationEntries = [
               expiredProposalIds.push(proposalId)
             } else if (proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) { // the proposal is going to expire in next 24 hrs
               if (!proposal.notifiedBeforeExpire) { // there is no group-chat notification sent for this proposal
-                expiringProposals.push(extractProposalData(proposal))
+                expiringProposals.push(extractProposalData(proposal, { proposalId }))
               }
 
               if (!Object.keys(proposal.votes).includes(rootGetters.ourIdentityContractId) && // check if the user hasn't voted for this proposal.
