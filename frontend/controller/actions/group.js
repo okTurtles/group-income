@@ -959,13 +959,13 @@ export default (sbp('sbp/selectors/register', {
       proposalToSend = { ...extractProposalData(proposal, { proposalId: proposalHash }), status: STATUS_FAILED }
     }
 
-    await sendMessage({
+    return sendMessage({
       ...params,
       data: { ...data, passPayload },
       hooks: {
-        postpublish: (...args) => {
+        postpublish: async (...args) => {
           if (proposalToSend) {
-            sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
+            await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
               groupID: contractID,
               proposal: proposalToSend
             })
