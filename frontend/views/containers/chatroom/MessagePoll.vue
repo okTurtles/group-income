@@ -128,7 +128,7 @@ export default ({
         // if the poll has been expired, mark it 'closed' immediately.
         markPollClosed()
       } else if (Math.abs(timeDiff) < DAYS_MILLIS) {
-        // if the poll is expiring soon(at least within 24 hrs), periodically check & mark it 'closed'.
+        // if the poll is expiring soon(at least within 24 hours), periodically check & mark it 'closed'.
         // NOTE: this logic is actually a good candidate for a periodic-notification entry in mainNotificationsMixin.js,
         //       but there is a challenge in accessing a particular chat-message data in there.
         //       (couldn't find a way to access a chat-message item via vuex state/getters)
