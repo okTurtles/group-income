@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile, writeFile } = require('fs/promises')
+const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -50,7 +50,8 @@ const {
 if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
-const CONTRACTS_VERSION = packageJSON.contractsVersion
+// 'grunt pin' can override this
+let CONTRACTS_VERSION = packageJSON.contractsVersion
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
 const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' ? `@${new Date().toISOString()}` : '')
@@ -147,9 +148,7 @@ module.exports = (grunt) => {
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
-    fs.writeFileSync(manifestJSON,
-      JSON.stringify({ manifests }, null, 2) + '\n',
-      'utf8')
+    fs.writeFileSync(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n', 'utf8')
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
@@ -534,25 +533,28 @@ module.exports = (grunt) => {
         throw new Error(`already exists: ${dirPath}`)
       }
     }
-    // since the copied manifest files might not have the correct version on them
-    // we need to delete the old ones and regenerate them
-    await execWithErrMsg(`rm -f ${distContracts}/*.manifest.json`)
-    await genManifestsAndDeploy(distContracts, version)
+    if (!fs.existsSync('contracts')) {
+      console.error(chalk`{red folder needed but doesn't exist:} {bold contracts/}`)
+      throw new Error("doesn't exist: contracts/")
+    }
     await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
     console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    // it's possible for the UI to get updated without the contracts getting updated,
-    // so we keep their version numbers separate.
-    packageJSON.contractsVersion = version
-    writeFile('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated package.json "contractsVersion" to:'), version)
     done()
   })
 
   grunt.registerTask('pin', function (version) {
     if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
-
-    grunt.task.run('build')
-    grunt.task.run(`_pin:${version}`)
+    // it's possible for the UI to get updated without the contracts getting updated,
+    // so we keep their version numbers separate.
+    // we do this here first so that any code that uses `process.env.CONTRACTS_VERSION` inside the contracts
+    // themselves will be built using this latest version number, and so that the contract manifests
+    // are generated using this version number
+    packageJSON.contractsVersion = CONTRACTS_VERSION = process.env.CONTRACTS_VERSION = version
+    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
+    console.log(chalk.green('updated package.json "contractsVersion" to:'), packageJSON.contractsVersion)
+    // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
+    // registering handlers for 'unhandledRejection' or 'uncaughtException'
+    grunt.task.run(['build', `_pin:${version}`])
   })
 
   grunt.registerTask('deploy', function () {
