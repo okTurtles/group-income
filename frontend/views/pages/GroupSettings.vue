@@ -7,6 +7,7 @@ page.c-page
   avatar-upload(
     :avatar='$store.getters.groupSettings.groupPicture'
     :sbpParams='sbpParams'
+    avatar-type='group'
   )
 
   page-section
