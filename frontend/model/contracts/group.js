@@ -694,7 +694,7 @@ sbp('chelonia/defineContract', {
           // TODO - verify if type of proposal already exists (SETTING_CHANGE).
         }
       }),
-      process ({ data, meta, hash, contractID, height, innerSigningContractID }, { state }) {
+      process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         state.proposals[hash] = {
           data,
           meta,

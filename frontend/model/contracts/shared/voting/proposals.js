@@ -191,7 +191,8 @@ const proposals: Object = {
         proposalHash
       }
       await sbp('gi.contracts/group/updateSettings/process', forMessage, state)
-      sbp('gi.contracts/group/pushSideEffect', contractID, ['gi.contracts/group/updateSettings/sideEffect', forMessage])
+      sbp('gi.contracts/group/pushSideEffect', contractID,
+        ['gi.contracts/group/updateSettings/sideEffect', forMessage])
       notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
     },
     [VOTE_AGAINST]: voteAgainst
