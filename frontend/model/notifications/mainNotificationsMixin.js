@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 import { compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import { STATUS_OPEN, PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import { extractProposalData } from './utils.js'
 
 // util functions
 const myNotificationHas = (checkFunc, groupId = '') => {
@@ -143,14 +144,7 @@ const periodicNotificationEntries = [
               expiredProposalIds.push(proposalId)
             } else if (proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) { // the proposal is going to expire in next 24 hrs
               if (!proposal.notifiedBeforeExpire) { // there is no group-chat notification sent for this proposal
-                expiringProposals.push({
-                  proposalId,
-                  proposalType: proposal.data.proposalType,
-                  proposalData: proposal.data.proposalData,
-                  expires_date_ms: proposal.data.expires_date_ms,
-                  createdDate: proposal.meta.createdDate,
-                  creatorID: proposal.creatorID
-                })
+                expiringProposals.push(extractProposalData(proposal))
               }
 
               if (!Object.keys(proposal.votes).includes(rootGetters.ourIdentityContractId) && // check if the user hasn't voted for this proposal.

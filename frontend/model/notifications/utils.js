@@ -125,3 +125,14 @@ export function maxAge (notification: Notification): number {
 export function makeNotificationHash (notification: Object): string {
   return blake32Hash(JSON.stringify(hashableRepresentation(notification)))
 }
+
+export function extractProposalData (proposal: Object): Object {
+  return {
+    proposalId: proposal.proposalId,
+    proposalType: proposal.data.proposalType,
+    proposalData: proposal.data.proposalData,
+    expires_date_ms: proposal.data.expires_date_ms,
+    createdDate: proposal.meta.createdDate,
+    creatorID: proposal.creatorID
+  }
+}

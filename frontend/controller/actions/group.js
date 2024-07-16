@@ -12,12 +12,16 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
+  STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED,
   STATUS_EXPIRING,
-  STATUS_OPEN
+  STATUS_EXPIRED,
+  STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
-import proposals, { oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
+import proposals, { oneVoteToPass, oneVoteToFail } from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
 import {
@@ -37,6 +41,7 @@ import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
+import { extractProposalData } from '@model/notifications/utils.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
@@ -831,6 +836,13 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
+    const { generalChatRoomId } = sbp('chelonia/rootState')[groupID]
+    return sbp('gi.actions/chatroom/addMessage', {
+      contractID: generalChatRoomId,
+      data: { type: MESSAGE_TYPES.INTERACTIVE, proposal }
+    })
+  },
   ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.'), async function (sendMessage, params) {
     const { proposals } = params.data
     await sendMessage({
@@ -842,21 +854,10 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    const rootState = sbp('chelonia/rootState')
-    const { generalChatRoomId } = rootState[params.contractID]
-
     for (let i = 0; i < proposals.length; i++) {
-      const isLastProposal = i === proposals.length - 1
-      await sbp('gi.actions/chatroom/addMessage', {
-        contractID: generalChatRoomId,
-        data: {
-          type: MESSAGE_TYPES.INTERACTIVE,
-          proposal: { ...proposals[i], status: STATUS_EXPIRING }
-        },
-        hooks: {
-          prepublish: null,
-          postpublish: isLastProposal ? params.hooks?.postpublish : null
-        }
+      await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
+        groupID: params.contractID,
+        proposal: { ...proposals[i], status: STATUS_EXPIRING }
       })
     }
   }),
@@ -911,41 +912,75 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
-  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.')),
+  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), (sendMessage, params) => {
+    return sendMessage(
+      ...params,
+      hooks: {
+        onprocessed: (message) => {
+          console.log(message, message.hash())
+        }
+      }
+    )
+  }),
   ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
     const data = params.data
     const proposalHash = data.proposalHash
     const proposal = state.proposals[proposalHash]
     const type = proposal.data.proposalType
-    let passPayload
 
-    if (data.vote === VOTE_FOR) {
-      passPayload = {}
-      if (oneVoteToPass(state, proposalHash)) {
-        if (type === PROPOSAL_INVITE_MEMBER) {
-          passPayload = await createInvite({
-            contractID: params.contractID,
-            invitee: proposal.data.proposalData.memberName,
-            creatorID: proposal.creatorID,
-            expires: state.settings.inviteExpiryProposal
-          })
-        }
+    const willBePassed = oneVoteToPass(state, proposalHash)
+    const willBeFailed = oneVoteToFail(state, proposalHash)
+    const isVoteFor = data.vote === VOTE_FOR
+    const isVoteAgainst = !isVoteFor
+    let passPayload = isVoteFor ? {} : undefined
+    let proposalToSend
+
+    if (willBePassed && isVoteFor) {
+      if (type === PROPOSAL_INVITE_MEMBER) {
+        passPayload = await createInvite({
+          contractID: params.contractID,
+          invitee: proposal.data.proposalData.memberName,
+          creatorID: proposal.creatorID,
+          expires: state.settings.inviteExpiryProposal
+        })
       }
+
+      proposalToSend = { ...extractProposalData(proposal) status: STATUS_PASSED }
+    } else if (willBeFailed && isVoteAgainst) {
+      proposalToSend = { ...extractProposalData(proposal) status: STATUS_FAILED }
     }
 
-    return sendMessage({
-      ...params,
-      data: {
-        ...data,
-        passPayload
-      }
+    await sendMessage({
+      ...params, data: { ...data, passPayload }
     })
+
+    if (proposalToSend) {
+      await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+    }
   }),
-  ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
+  ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.'), async function (sendMessage, params) {
+    const { contractID, data } = params
+    const state = await sbp('chelonia/contract/state', contractID)
+    const proposal = state.proposals[data.proposalHash]
+    const proposalToSend = { ...extractProposalData(proposal) status: STATUS_CANCELLED }
+
+    await sendMessage(params)
+
+    await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+  }),
+  ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.'), async function (sendMessage, params) {
+    const { contractID, data } = params
+    const state = await sbp('chelonia/contract/state', contractID)
+    const proposal = state.proposals[data.proposalHash]
+    const proposalToSend = { ...extractProposalData(proposal) status: STATUS_EXPIRED }
+
+    await sendMessage(params)
+
+    await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+  }),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
