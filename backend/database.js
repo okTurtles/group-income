@@ -187,6 +187,7 @@ export default async () => {
     const numKeys = keys.length
     let numVisitedKeys = 0
     let numNewKeys = 0
+    const savedProgress = { value: 0, numKeys: 0 }
 
     console.info('[chelonia.db] Preloading...')
     for (const key of keys) {
@@ -200,8 +201,12 @@ export default async () => {
         }
       }
       numVisitedKeys++
-      if (numVisitedKeys % Math.floor(numKeys / 10) === 0) {
-        console.info(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
+      const progress = numVisitedKeys === numKeys ? 100 : Math.floor(100 * numVisitedKeys / numKeys)
+      // Display progress lines between at least 10% increments, and no more than every 10 visited keys.
+      if (progress === 100 || (progress - savedProgress.value >= 10 && numVisitedKeys - savedProgress.numKeys >= 10)) {
+        console.info(`[chelonia.db] Preloading... ${progress}% done`)
+        savedProgress.numKeys = numVisitedKeys
+        savedProgress.value = progress
       }
     }
     numNewKeys && console.info(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
