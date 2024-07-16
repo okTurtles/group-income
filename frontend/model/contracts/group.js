@@ -1233,10 +1233,10 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ contractID, data }, { state }) {
-        sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
-        )
-        delete state.chatRooms[data.chatRoomID]
+        const { chatRoomID } = data
+        const members = { ...state.chatRooms[chatRoomID].members }
+        delete state.chatRooms[chatRoomID]
+        sbp('gi.contracts/group/pushSideEffect', contractID, ['gi.contracts/group/releaseDeletedChatRoom', chatRoomID, members])
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
         // identityContractID intentionally left out because deleted chatrooms

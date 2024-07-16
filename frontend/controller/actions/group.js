@@ -893,7 +893,7 @@ export default (sbp('sbp/selectors/register', {
         ...params?.hooks,
         postpublish: (...args) => {
           sbp('okTurtles.events/emit', ACCEPTED_GROUP, { contractID: params.contractID })
-          params.hooks?.postpublish?.(...args)
+          return params.hooks?.postpublish?.(...args)
         }
       }
     })
@@ -963,13 +963,14 @@ export default (sbp('sbp/selectors/register', {
       ...params,
       data: { ...data, passPayload },
       hooks: {
+        ...params?.hooks,
         postpublish: async (...args) => {
           if (proposalToSend) {
             await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
               groupID: contractID,
               proposal: proposalToSend
             })
-            params.hooks?.postpublish?.(...args)
+            return params.hooks?.postpublish?.(...args)
           }
         }
       }
