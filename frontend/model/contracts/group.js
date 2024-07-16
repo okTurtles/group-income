@@ -790,14 +790,14 @@ sbp('chelonia/defineContract', {
         }
         proposal['status'] = STATUS_CANCELLED
         proposal['dateClosed'] = meta.createdDate
-        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, innerSigningContractID, contractID, meta, height })
+        notifyAndArchiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID, meta, height })
       }
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
         proposalIds: arrayOf(string)
       })),
-      process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
+      process ({ data, meta, contractID, height }, { state }) {
         if (data.proposalIds.length) {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
@@ -805,7 +805,7 @@ sbp('chelonia/defineContract', {
             if (proposal) {
               proposal['status'] = STATUS_EXPIRED
               proposal['dateClosed'] = meta.createdDate
-              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, innerSigningContractID, contractID, meta, height })
+              notifyAndArchiveProposal({ state, proposalHash: proposalId, proposal, contractID, meta, height })
             }
           }
         }

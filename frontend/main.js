@@ -203,7 +203,7 @@ async function startApp () {
           'chelonia/out/keyDel',
           'chelonia/contract/disconnect',
           'gi.actions/identity/removeFiles',
-          'gi.actions/chatroom/join', 'gi.actions/chatroom/leave', 'gi.actions/chatroom/addMessage',
+          'gi.actions/chatroom/join', 'gi.actions/chatroom/leave',
           'chelonia/contract/hasKeysToPerformOperation',
           'gi.actions/identity/kv/initChatRoomUnreadMessages', 'gi.actions/identity/kv/deleteChatRoomUnreadMessages',
           'gi.actions/identity/kv/setChatRoomReadUntil',
