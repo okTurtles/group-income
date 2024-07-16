@@ -62,6 +62,8 @@ export default ({
       this.revokableObjectURL = this.blobURL = URL.createObjectURL(blob)
     },
     async downloadFile (src) {
+      // convert Blob to/from ArrayBuffer for Safari compatibility
+      // see: https://github.com/okTurtles/group-income/issues/2191
       const cachedArrayBuffer = await sbp('gi.db/filesCache/load', src.manifestCid).catch((e) => {
         console.error('[Avatar.vue] Error loading file from cache', e)
       })
