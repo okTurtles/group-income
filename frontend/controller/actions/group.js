@@ -960,12 +960,20 @@ export default (sbp('sbp/selectors/register', {
     }
 
     await sendMessage({
-      ...params, data: { ...data, passPayload }
+      ...params,
+      data: { ...data, passPayload },
+      hooks: {
+        postpublish: async (...args) => {
+          if (proposalToSend) {
+            await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
+              groupID: contractID,
+              proposal: proposalToSend
+            })
+            params.hooks?.postpublish?.(...args)
+          }
+        }
+      }
     })
-
-    if (proposalToSend) {
-      await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
-    }
   }),
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.'), async function (sendMessage, params) {
     const { contractID, data } = params
