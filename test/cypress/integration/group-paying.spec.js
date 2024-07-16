@@ -61,7 +61,7 @@ function openNotificationCard ({
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
 
-  cy.getByDT('notificationCard').within(() => {
+  return cy.getByDT('notificationCard').within(() => {
     cy.getByDT('notificationList').find('ul > li').as('items')
 
     if (messageToAssert) {

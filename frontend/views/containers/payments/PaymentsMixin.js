@@ -35,11 +35,18 @@ const PaymentsMixin: Object = {
 
     // Oldest key first.
     async getAllSortedPeriodKeys () {
-      const historicalPeriodPayments = await this.getHistoricalPeriodPayments()
-      return [
-        ...Object.keys(historicalPeriodPayments).sort(),
+      const currentDate = new Date()
+      const distributionDate = new Date(this.groupSettings.distributionDate)
+      const historicalPeriodPayments = Object.keys(await this.getHistoricalPeriodPayments()).sort()
+      const periods = [
+        ...historicalPeriodPayments,
         ...this.groupSortedPeriodKeys
-      ]
+      ].filter(period => new Date(period) <= currentDate) // show only started periods
+      // remove the waiting period from the list. it's useful for the contract but not in the UI
+      if (periods.length === 1 && new Date(periods[0]) < distributionDate) {
+        return []
+      }
+      return periods
     },
 
     async historicalPeriodStampGivenDate (givenDate: string | Date) {
@@ -173,8 +180,8 @@ const PaymentsMixin: Object = {
       return this.groupPeriodPayments[period] ?? (await this.getHistoricalPeriodPayments())[period] ?? {}
     },
     // Returns a human-readable description of the time interval identified by a given period stamp.
-    getPeriodFromStartToDueDate (period) {
-      const dueDate = this.dueDateForPeriod(period)
+    getPeriodFromStartToDueDate (period, knownPeriods) {
+      const dueDate = this.dueDateForPeriod(period, knownPeriods)
       return `${humanDate(dateFromPeriodStamp(period))} - ${humanDate(dateFromPeriodStamp(dueDate))}`
     }
   }

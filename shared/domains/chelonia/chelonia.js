@@ -675,6 +675,9 @@ export default (sbp('sbp/selectors/register', {
           await contract.metadata.validate(meta, { state, ...gProxy, contractID })
 
           await contract.actions[action].validate(data, { state, ...gProxy, meta, message, contractID })
+          // it's possible that the sideEffect stack got filled up by the call to `processMessage` from
+          // a call to `publishEvent` (when an outgoing message is being sent).
+          this.sideEffectStacks[contractID] = []
           await contract.actions[action].process(message, { state, ...gProxy })
         },
         // 'mutation' is an object that's similar to 'message', but not identical
