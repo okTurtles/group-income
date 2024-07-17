@@ -367,6 +367,7 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     // NOTE: comment out the code below and run it just inside the /leaveChatRoom/sideEffect
     //       this code shouldn't be here because group members who are leaving can not reach to this code
     //       when they are kicked by someone else
+    //       however, I didn't remove this code, because of the detailed comment above
     // if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
     //   sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
     // }
