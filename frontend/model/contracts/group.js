@@ -346,21 +346,7 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
-    ...extraParams,
-    hooks: {
-      onprocessed: (message) => {
-        if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-          (async () => {
-            const chatRoomState = await sbp('chelonia/contract/state', chatRoomID)
-            if (chatRoomState) {
-              sbp('chelonia/contract/release', chatRoomID).catch(e => {
-                console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
-              })
-            }
-          })()
-        }
-      }
-    }
+    ...extraParams
   }).then(() => {
     // using 'state/vuex/state' here instead of 'chelonia/rootState' to fetch
     // the identityContractID because although both 'chelonia/rootState' and
