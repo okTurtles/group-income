@@ -14,3 +14,7 @@ export const decimals = (digits: number): ((value: number) => boolean) => (value
 export const noUppercase = (value: string): boolean => value.toLowerCase() === value
 
 export const noWhitespace = (value: string): boolean => /^\S+$/.test(value)
+
+export function stringMax (maxChar: number): ((value: string) => boolean) {
+  return (value: string): boolean => new String(value).length <= maxChar
+}

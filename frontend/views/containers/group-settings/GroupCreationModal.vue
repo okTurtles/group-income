@@ -21,7 +21,7 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
       @input='payload => updateGroupData(payload)'
     )
 
-      banner-scoped(ref='formMsg')
+      banner-scoped(ref='formMsg' :allowA='true')
 
       .buttons(v-if='currentStep < config.steps.length')
         button.is-outlined(
@@ -53,7 +53,11 @@ import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
-import { PROPOSAL_GENERIC, GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
+import {
+  PROPOSAL_GENERIC,
+  GROUP_NAME_MAX_CHAR,
+  GROUP_DESCRIPTION_MAX_CHAR
+} from '@model/contracts/shared/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import { L } from '@common/common.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
@@ -171,7 +175,10 @@ export default ({
   },
   validations: {
     form: {
-      groupName: { required },
+      groupName: {
+        [L('Group name is required')]: required,
+        [L('Group name cannot exceed {maxchar} characters', { maxchar: GROUP_NAME_MAX_CHAR })]: maxLength(GROUP_NAME_MAX_CHAR),
+      },
       groupPicture: { },
       sharedValues: {
         [L('Group purpose cannot exceed {maxchar} characters', { maxchar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR)

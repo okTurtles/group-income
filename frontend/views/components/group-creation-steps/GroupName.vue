@@ -40,6 +40,7 @@
         @input='updateName'
         @keyup.enter='next'
         data-test='groupName'
+        v-error:groupName=''
       )
 
     slot
@@ -160,16 +161,6 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.username {
-  display: none;
-  margin-bottom: 2rem;
-  color: $text_1;
-
-  @include tablet {
-    display: block;
-  }
-}
-
 .avatar {
   height: 10rem;
   margin: 2.5rem auto 2rem auto;
@@ -201,5 +192,13 @@ export default ({
 .groupPictureInput {
   position: absolute;
   opacity: 0;
+}
+
+.c-label-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 }
 </style>
