@@ -341,6 +341,18 @@ export const string = (
   : TypeValidator<string>
 )
 
+export const stringMax = (numChar: number, key: string = ''): TypeValidator<string> => {
+  if (!isNumber(numChar)) { throw new Error('param for stringMax must be number') }
+
+  return function stringMax (value, _scope = '') {
+    string(value, _scope)
+    if (value.length <= numChar) return value
+    throw new TypeError(
+      key ? `[stringMax] string type '${key}' cannot exceed ${numChar} characters` : `[stringMax] cannot exceed ${numChar} characters`
+    )
+  }
+}
+
 type V<T> = TypeValidator<T>
 type TupleT =
     (<A>(V<A>) => TypeValidator<[A]>)

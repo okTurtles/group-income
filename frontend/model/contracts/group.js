@@ -5,11 +5,10 @@
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { stringMax } from './shared/validators.js'
 import {
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES,
   GROUP_PAYMENT_METHOD_MAX_CHAR,
@@ -458,36 +457,29 @@ sbp('chelonia/defineContract', {
   actions: {
     // this is the constructor
     'gi.contracts/group': {
-      validate: (data) => {
-        objectMaybeOf({
-          settings: objectMaybeOf({
-            // TODO: add 'groupPubkey'
-            groupName: string,
-            groupPicture: unionOf(string, objectOf({
-              manifestCid: string,
-              downloadParams: optional(object)
-            })),
-            sharedValues: string,
-            mincomeAmount: number,
-            mincomeCurrency: string,
-            distributionDate: isPeriodStamp,
-            distributionPeriodLength: number,
-            minimizeDistribution: boolean,
-            proposals: objectOf({
-              [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
-              [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
-              [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
-              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
-              [PROPOSAL_GENERIC]: proposalSettingsType
-            })
+      validate: objectMaybeOf({
+        settings: objectMaybeOf({
+          // TODO: add 'groupPubkey'
+          groupName: stringMax(GROUP_NAME_MAX_CHAR, 'groupName'),
+          groupPicture: unionOf(string, objectOf({
+            manifestCid: string,
+            downloadParams: optional(object)
+          })),
+          sharedValues: string,
+          mincomeAmount: number,
+          mincomeCurrency: string,
+          distributionDate: isPeriodStamp,
+          distributionPeriodLength: number,
+          minimizeDistribution: boolean,
+          proposals: objectOf({
+            [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+            [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+            [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+            [PROPOSAL_GENERIC]: proposalSettingsType
           })
-        })(data)
-
-        const groupName = data.settings.groupName
-        if (!stringMax(GROUP_NAME_MAX_CHAR)(groupName)) {
-          throw new TypeError(`A group name cannot exceed ${GROUP_NAME_MAX_CHAR} characters.`)
-        }
-      },
+        })
+      }),
       process ({ data, meta, contractID }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
