@@ -350,13 +350,14 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     hooks: {
       onprocessed: (message) => {
         if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-          sbp('chelonia/contract/state', chatRoomID).then((chatRoomState) => {
+          (async () => {
+            const chatRoomState = await sbp('chelonia/contract/state', chatRoomID)
             if (chatRoomState) {
               sbp('chelonia/contract/release', chatRoomID).catch(e => {
                 console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
               })
             }
-          })
+          })()
         }
       }
     }
