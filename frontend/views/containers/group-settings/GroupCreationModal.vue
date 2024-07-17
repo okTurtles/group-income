@@ -177,7 +177,7 @@ export default ({
     form: {
       groupName: {
         [L('Group name is required')]: required,
-        [L('Group name cannot exceed {maxchar} characters', { maxchar: GROUP_NAME_MAX_CHAR })]: maxLength(GROUP_NAME_MAX_CHAR),
+        [L('Group name cannot exceed {maxchar} characters', { maxchar: GROUP_NAME_MAX_CHAR })]: maxLength(GROUP_NAME_MAX_CHAR)
       },
       groupPicture: { },
       sharedValues: {

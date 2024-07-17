@@ -16,5 +16,5 @@ export const noUppercase = (value: string): boolean => value.toLowerCase() === v
 export const noWhitespace = (value: string): boolean => /^\S+$/.test(value)
 
 export function stringMax (maxChar: number): ((value: string) => boolean) {
-  return (value: string): boolean => new String(value).length <= maxChar
+  return (value: string): boolean => value.length <= maxChar
 }
