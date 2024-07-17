@@ -21,11 +21,20 @@
 
   .card
     label.field
-      i18n.label What is the name of your group?
+      .c-label-container
+        i18n.label What is the name of your group?
+        char-length-indicator(
+          v-if='group.groupName'
+          :current-length='group.groupName.length || 0'
+          :max='config.nameMaxChar'
+          :error='$v.form.groupName.$error'
+        )
+
       input.input.is-large.is-primary(
         ref='name'
         type='text'
         name='groupName'
+        :maxlength='config.nameMaxChar'
         :class='{ error: $v.form.groupName.$error }'
         :value='group.groupName'
         @input='updateName'
@@ -39,8 +48,10 @@
 <script>
 import sbp from '@sbp/sbp'
 import Avatar from '@components/Avatar.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
 import { imageDataURItoBlob } from '@utils/image.js'
+import { GROUP_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupName',
@@ -48,9 +59,17 @@ export default ({
     group: { type: Object },
     $v: { type: Object }
   },
+  data () {
+    return {
+      config: {
+        nameMaxChar: GROUP_NAME_MAX_CHAR
+      }
+    }
+  },
   inject: ['$assistant'],
   components: {
-    Avatar
+    Avatar,
+    CharLengthIndicator
   },
   watch: {
     'groupInitials': function (initials) {
