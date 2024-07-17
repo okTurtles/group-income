@@ -1,5 +1,8 @@
 'use strict'
 
+export const MAX_HASH_LEN = 300
+export const MAX_MEMO_LEN = 4096
+
 // identity.js related
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
@@ -18,6 +21,7 @@ export const GROUP_NAME_MAX_CHAR = 50 // https://github.com/okTurtles/group-inco
 export const GROUP_DESCRIPTION_MAX_CHAR = 500
 export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
 export const GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150
+export const GROUP_CURRENCY_MAX_CHAR = 10
 
 // group-proposal related
 

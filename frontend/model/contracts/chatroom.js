@@ -4,10 +4,11 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
+  MAX_HASH_LEN,
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
@@ -236,7 +237,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/rename': {
       validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-        objectOf({ name: string })(data)
+        objectOf({ name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name') })(data)
 
         if (state.attributes.creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can rename.'))
@@ -252,7 +253,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/changeDescription': {
       validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-        objectOf({ description: string })(data)
+        objectOf({ description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, 'description') })(data)
 
         if (state.attributes.creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can change description.'))
@@ -396,7 +397,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/editMessage': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string,
+        hash: stringMax(MAX_HASH_LEN, 'hash'),
         createdHeight: number,
         text: string
       })),
@@ -457,11 +458,11 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/deleteMessage': {
       validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID }, contractID }) => {
         objectOf({
-          hash: string,
+          hash: stringMax(MAX_HASH_LEN, 'hash'),
           // NOTE: manifestCids of the attachments which belong to the message
           //       if the message is deleted, those attachments should be deleted too
           manifestCids: arrayOf(string),
-          messageSender: string
+          messageSender: stringMax(MAX_HASH_LEN, 'messageSender')
         })(data)
 
         if (innerSigningContractID !== data.messageSender) {
@@ -525,9 +526,9 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/deleteAttachment': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string,
-        manifestCid: string,
-        messageSender: string
+        hash: stringMax(MAX_HASH_LEN, 'hash'),
+        manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
+        messageSender: stringMax(MAX_HASH_LEN, 'messageSender')
       })),
       process ({ data }, { state }) {
         const fnDeleteAttachment = (message) => {
@@ -560,7 +561,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/makeEmotion': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string,
+        hash: stringMax(MAX_HASH_LEN, 'hash'),
         emoticon: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
@@ -601,7 +602,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/voteOnPoll': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string,
+        hash: stringMax(MAX_HASH_LEN, 'hash'),
         votes: arrayOf(string),
         votesAsString: string
       })),
@@ -660,7 +661,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/closePoll': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string
+        hash: stringMax(MAX_HASH_LEN, 'hash')
       })),
       process ({ data }, { state }) {
         const fnClosePoll = (message) => {
@@ -698,7 +699,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/unpinMessage': {
       validate: actionRequireInnerSignature(objectOf({
-        hash: string
+        hash: stringMax(MAX_HASH_LEN, 'hash')
       })),
       process ({ data }, { state }) {
         const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
