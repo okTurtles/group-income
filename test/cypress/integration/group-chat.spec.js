@@ -454,7 +454,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     const channelToDelete = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
     deleteChannel(channelToDelete)
 
-    cy.wait(5 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giLogout()
   })
 
