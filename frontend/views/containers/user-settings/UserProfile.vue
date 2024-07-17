@@ -5,6 +5,7 @@
     avatar-upload(
       :avatar='attributes.picture'
       :sbpParams='sbpParams'
+      avatar-type='user'
     )
 
     section.card

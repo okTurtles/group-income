@@ -62,9 +62,12 @@ export default ({
       this.revokableObjectURL = this.blobURL = URL.createObjectURL(blob)
     },
     async downloadFile (src) {
-      const cached = await sbp('gi.db/filesCache/load', src.manifestCid).catch((e) => {
+      // convert Blob to/from ArrayBuffer for Safari compatibility
+      // see: https://github.com/okTurtles/group-income/issues/2191
+      const cachedArrayBuffer = await sbp('gi.db/filesCache/load', src.manifestCid).catch((e) => {
         console.error('[Avatar.vue] Error loading file from cache', e)
       })
+      const cached = cachedArrayBuffer ? new Blob([cachedArrayBuffer]) : null
       if (src !== this.src) return
       if (cached) {
         this.setFromBlob(cached)
@@ -72,7 +75,8 @@ export default ({
       }
       try {
         const blob = await sbp('chelonia/fileDownload', new Secret(src))
-        sbp('gi.db/filesCache/save', src.manifestCid, blob).catch((e) => {
+        const arrayBuffer = await blob.arrayBuffer()
+        sbp('gi.db/filesCache/save', src.manifestCid, arrayBuffer).catch((e) => {
           console.error('[Avatar.vue] Error caching avatar blob', e)
         })
         if (src !== this.src) return
