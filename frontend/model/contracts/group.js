@@ -346,7 +346,20 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
-    ...extraParams
+    ...extraParams,
+    hooks: {
+      onprocessed: (message) => {
+        if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+          sbp('chelonia/contract/state', chatRoomID).then((chatRoomState) => {
+            if (chatRoomState) {
+              sbp('chelonia/contract/release', chatRoomID).catch(e => {
+                console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
+              })
+            }
+          })
+        }
+      }
+    }
   }).then(() => {
     // using 'state/vuex/state' here instead of 'chelonia/rootState' to fetch
     // the identityContractID because although both 'chelonia/rootState' and
@@ -370,12 +383,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     // if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
     //   sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
     // }
-
-    if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-      sbp('chelonia/contract/release', chatRoomID).catch(e => {
-        console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
-      })
-    }
   }).catch((e) => {
     if (
       leavingGroup &&

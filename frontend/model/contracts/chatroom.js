@@ -163,14 +163,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/join': {
-      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-        objectOf({ memberID: optional(string) })(data)
-
-        const memberID = data.memberID || innerSigningContractID
-        if (state.members[memberID]) {
-          throw new TypeError(L('Can not join chatroom which {memberID} have already joined.', { memberID }))
-        }
-      }),
+      validate: objectOf({ memberID: optional(string) }),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
 
@@ -270,14 +263,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/leave': {
-      validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-        objectOf({ memberID: optional(string) })(data)
-
-        const memberID = data.memberID || innerSigningContractID
-        if (!state.members[memberID]) {
-          throw new TypeError(L('Can not leave chatroom which {memberID} have already left or have not joined yet.', { memberID }))
-        }
-      }),
+      validate: objectOf({ memberID: optional(string) }),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
         if (!memberID) {
