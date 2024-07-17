@@ -38,8 +38,8 @@ export type ChelRegParams = {
     postpublishContract?: (GIMessage) => void;
     preSendCheck?: (GIMessage, Object) => void;
     beforeRequest?: (GIMessage, GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
     onprocessed?: (GIMessage) => void;
   };
   publishOptions?: { headers: ?Object, billableContractID: ?string, maxAttempts: number };
@@ -55,8 +55,8 @@ export type ChelActionParams = {
   encryptionKeyId: ?string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -69,8 +69,8 @@ export type ChelKeyAddParams = {
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -83,8 +83,8 @@ export type ChelKeyDelParams = {
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -97,8 +97,8 @@ export type ChelKeyUpdateParams = {
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -114,8 +114,8 @@ export type ChelKeyShareParams = {
   signingKey?: Key;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -138,8 +138,8 @@ export type ChelKeyRequestParams = {
   reference?: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -152,8 +152,8 @@ export type ChelKeyRequestResponseParams = {
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
   atomic: boolean;
@@ -168,8 +168,8 @@ export type ChelAtomicParams = {
   data: [string, Object][];
   hooks?: {
     prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void | Promise<*>;
-    postpublish?: (GIMessage) => void | Promise<*>;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }

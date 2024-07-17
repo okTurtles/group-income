@@ -964,9 +964,9 @@ export default (sbp('sbp/selectors/register', {
       data: { ...data, passPayload },
       hooks: {
         ...params?.hooks,
-        postpublish: async (...args) => {
+        postpublish: (...args) => {
           if (proposalToSend) {
-            await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
+            sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
               groupID: contractID,
               proposal: proposalToSend
             })

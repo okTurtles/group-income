@@ -454,6 +454,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     const channelToDelete = chatRooms.filter(c => c.name.startsWith('channel1')).map(c => c.name)[1]
     deleteChannel(channelToDelete)
 
+    // TODO: this is temporary hack, but not sure why this fixes the Cypress error
+    //       https://cloud.cypress.io/projects/q6whky/runs/2663/test-results
     cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giLogout()
   })
