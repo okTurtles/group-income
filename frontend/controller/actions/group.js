@@ -964,17 +964,13 @@ export default (sbp('sbp/selectors/register', {
       data: { ...data, passPayload },
       hooks: {
         ...params?.hooks,
-        prepublish: (...args) => {
-          // NOTE: this should be postpublish but calling notifyProposalStateInGeneralChatRoom function
-          //       in a postpublish hook sometimes makes Cypress fails
-          //       https://cloud.cypress.io/projects/q6whky/runs/2676/test-results?utm_source=github&statuses=%5B%7B%22value%22%3A%22FAILED%22%2C%22label%22%3A%22FAILED%22%7D%5D
-          //       However, calling it in a prepublish has also problem that the sendMessage could break
+        postpublish: (...args) => {
           if (proposalToSend) {
             sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
               groupID: contractID,
               proposal: proposalToSend
             })
-            return params.hooks?.prepublish?.(...args)
+            return params.hooks?.postpublish?.(...args)
           }
         }
       }
