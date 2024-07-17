@@ -370,6 +370,12 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     // if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
     //   sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
     // }
+
+    if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+      sbp('chelonia/contract/release', chatRoomID).catch(e => {
+        console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
+      })
+    }
   }).catch((e) => {
     if (
       leavingGroup &&
@@ -388,12 +394,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
   }).catch((e) => {
     console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
-
-  if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-    sbp('chelonia/contract/release', chatRoomID).catch(e => {
-      console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
-    })
-  }
 }
 
 const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
