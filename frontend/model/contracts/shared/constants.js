@@ -14,7 +14,7 @@ export const PROFILE_STATUS = {
   PENDING: 'pending', // shortly after being approved to join the group
   REMOVED: 'removed'
 }
-export const GROUP_NAME_MAX_CHAR = 50
+export const GROUP_NAME_MAX_CHAR = 50 // https://github.com/okTurtles/group-income/issues/2196
 export const GROUP_DESCRIPTION_MAX_CHAR = 500
 export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
 export const GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150
