@@ -344,13 +344,20 @@ export const string = (
 export const stringMax = (numChar: number, key: string = ''): TypeValidator<string> => {
   if (!isNumber(numChar)) { throw new Error('param for stringMax must be number') }
 
-  return function stringMax (value, _scope = '') {
+  function stringMax (value, _scope = '') {
     string(value, _scope)
     if (value.length <= numChar) return value
-    throw new TypeError(
-      key ? `[stringMax] string type '${key}' cannot exceed ${numChar} characters` : `[stringMax] cannot exceed ${numChar} characters`
+    throw validatorError(
+      stringMax,
+      value,
+      _scope,
+      key
+        ? `string type '${key}' cannot exceed ${numChar} characters`
+        : `cannot exceed ${numChar} characters`
     )
   }
+  stringMax.type = () => `string(max: ${numChar})`
+  return stringMax
 }
 
 type V<T> = TypeValidator<T>
