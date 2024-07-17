@@ -348,29 +348,21 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     data: sendingData,
     ...extraParams
   }).then(() => {
-    // using 'state/vuex/state' here instead of 'chelonia/rootState' to fetch
-    // the identityContractID because although both 'chelonia/rootState' and
-    // 'state/vuex/state' both have the same logged in information
-    // all calls to 'state/vuex/state' will need to be replaced in the future
-    // with something else. Using 'state/vuex/state' here now makes it easier
-    // to find these calls in the future.
-    // `chelonia/rootState` contains that same information but it's a bad
-    // choice because:
-    //    1. Once sandboxing is implemented, it may need to be an async call
-    //    2. Generally, contracts should _not_ access the root state because
-    //       it makes it difficult or impossible to contain them (meaning there
-    //       would be no point in sandboxing)
-    // Instead, in the future contracts will have an 'environment', provided
-    // by Chelonia, which will include global / environment / ambient
-    // information they need.
-
-    // NOTE: comment out the code below and run it just inside the /leaveChatRoom/sideEffect
-    //       this code shouldn't be here because group members who are leaving can not reach to this code
-    //       when they are kicked by someone else
-    //       however, I didn't remove this code, because of the detailed comment above
-    // if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-    //   sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID })
-    // }
+    // NOTE: using 'state/vuex/state' instead of 'chelonia/rootState' to fetch
+    //       the identityContractID because although both 'chelonia/rootState' and
+    //       'state/vuex/state' both have the same logged in information
+    //       all calls to 'state/vuex/state' will need to be replaced in the future
+    //       with something else. Using 'state/vuex/state' here now makes it easier
+    //       to find these calls in the future.
+    //       `chelonia/rootState` contains that same information but it's a bad
+    //       choice because:
+    //          1. Once sandboxing is implemented, it may need to be an async call
+    //          2. Generally, contracts should _not_ access the root state because
+    //             it makes it difficult or impossible to contain them (meaning there
+    //             would be no point in sandboxing)
+    //       Instead, in the future contracts will have an 'environment', provided
+    //       by Chelonia, which will include global / environment / ambient
+    //       information they need.
   }).catch((e) => {
     if (
       leavingGroup &&
