@@ -7,7 +7,7 @@ div(:class='isReady ? "" : "c-ready"')
   i18n(tag='p') Percentage of the group income goal reached by the group.
 
   p(v-if='history.length === 0')
-    i18n Your group is still in its first month.
+    i18n The first distribution period hasn't started yet.
 
   div(v-else)
     bar-graph(:bars='history')
@@ -23,9 +23,10 @@ import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 
 export default ({
-  name: 'GroupSupportHistory',
+  name: 'SupportHistory',
   data () {
     return {
       isReady: false,
@@ -41,7 +42,8 @@ export default ({
       'currentPaymentPeriod',
       'withGroupCurrency',
       'groupTotalPledgeAmount',
-      'groupCreatedDate'
+      'groupCreatedDate',
+      'thisPeriodPaymentInfo'
     ])
   },
   mounted () {
@@ -49,14 +51,15 @@ export default ({
   },
   methods: {
     async updateHistory () {
-      const periods = await this.getAllSortedPeriodKeys()
-      this.history = await Promise.all(periods.map(async (period, i) => {
+      const allPeriods = await this.getAllSortedPeriodKeys()
+      const periods = allPeriods.slice(-MAX_HISTORY_PERIODS)
+      this.history = await Promise.all(periods.map(async (period) => {
         const totalTodo = await this.getTotalTodoAmountForPeriod(period)
         const totalDone = await this.getTotalPledgesDoneForPeriod(period)
 
         return {
-          total: totalDone === 0 ? 0 : totalDone / totalTodo,
-          title: this.getPeriodFromStartToDueDate(period),
+          total: totalDone === 0 || totalTodo === 0 ? 0 : totalDone / totalTodo,
+          title: this.getPeriodFromStartToDueDate(period, periods),
           tooltipContent: [
             L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
             L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
@@ -67,6 +70,9 @@ export default ({
   },
   watch: {
     currentPaymentPeriod () {
+      this.updateHistory()
+    },
+    thisPeriodPaymentInfo () {
       this.updateHistory()
     }
   }

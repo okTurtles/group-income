@@ -85,35 +85,35 @@ export default ({
   // or a predicted one according to the period length.
   // They may also return 'undefined', in which case the caller should check archived data.
   periodStampGivenDate (state, getters) {
-    return (date: string | Date): string | void => {
+    return (date: string | Date, periods?: string[]): string | void => {
       return periodStampsForDate(date, {
-        knownSortedStamps: getters.groupSortedPeriodKeys,
+        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
         periodLength: getters.groupSettings.distributionPeriodLength
       }).current
     }
   },
   periodBeforePeriod (state, getters) {
-    return (periodStamp: string): string | void => {
+    return (periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: getters.groupSortedPeriodKeys,
+        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
         periodLength: getters.groupSettings.distributionPeriodLength
       }).previous
     }
   },
   periodAfterPeriod (state, getters) {
-    return (periodStamp: string): string | void => {
+    return (periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: getters.groupSortedPeriodKeys,
+        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
         periodLength: getters.groupSettings.distributionPeriodLength
       }).next
     }
   },
   dueDateForPeriod (state, getters) {
-    return (periodStamp: string) => {
+    return (periodStamp: string, periods?: string[]) => {
       // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
       //       1 mili-second doesn't make any difference to the users
       //       so periodAfterPeriod is used to make it simple
-      return getters.periodAfterPeriod(periodStamp)
+      return getters.periodAfterPeriod(periodStamp, periods)
     }
   },
   paymentHashesForPeriod (state, getters) {

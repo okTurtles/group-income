@@ -524,7 +524,9 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
+      let oldIdentityContractID = null
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+        oldIdentityContractID = identityContractID
         // This loads CHELONIA_STATE when _not_ running as a service worker
         const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
         if (!cheloniaState || !identityContractID) return
@@ -536,6 +538,7 @@ async function startApp () {
         if (this.ephemeral.finishedLogin === 'yes') return
         return sbp('gi.app/identity/login', { identityContractID })
       }).catch(e => {
+        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
 
         sbp('gi.ui/prompt', {

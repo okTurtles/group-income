@@ -99,7 +99,8 @@ function clearOldPayments ({ contractID, state, getters }) {
     }
     delete state.paymentsByPeriod[period]
   }
-
+  // remove the waiting period from the archivingPayments to prevent it from appearing in Support History UI
+  delete archivingPayments.paymentsByPeriod[state.waitingPeriod]
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/archivePayments', contractID, archivingPayments]
   )
@@ -505,6 +506,8 @@ sbp('chelonia/defineContract', {
           state[key] = initialState[key]
         }
         initFetchPeriodPayments({ contractID, meta, state, getters })
+        // remember the waiting period so tha we can skip archiving it (hack for hiding it in the Support History)
+        state.waitingPeriod = getters.periodStampGivenDate(meta.createdDate)
       },
       sideEffect ({ contractID }, { state }) {
         if (!state.generalChatRoomId) {

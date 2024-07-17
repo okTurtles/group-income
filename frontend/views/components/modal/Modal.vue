@@ -86,19 +86,20 @@ export default ({
       }
     },
     updateUrl () {
-      if (this.content) {
+      const subContentLen = this.subcontent.length
+      if (this.content || subContentLen > 0) {
         const contentQueries = this.queries[this.content] || {}
-        const subContentQueries = this.queries[this.subcontent[this.subcontent.length - 1]] || {}
+        const subContentQueries = this.queries[this.subcontent[subContentLen - 1]] || {}
         this.$router.push({
           query: {
             ...this.$route.query,
             ...contentQueries,
             ...subContentQueries,
             modal: this.content,
-            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
+            subcontent: subContentLen ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
-      } else if (this.$route.query.modal) {
+      } else if (this.$route.query.modal || this.$route.query.subcontent) {
         const rQueries = { ...this.$route.query }
         const queriesToDelete = {
           modal: true,
@@ -127,17 +128,41 @@ export default ({
       this.updateUrl()
       this.childData[componentName] = childData
     },
-    unloadModal () {
-      if (this.subcontent.length) {
-        delete this.childData[this.activeSubContent]
-        this.subcontent.pop()
-      } else {
-        delete this.childData[this.content]
+    unloadModal (targetModal = '') {
+      const clearChildData = key => { delete this.childData[key] }
+      const hasSubContent = this.subcontent.length > 0
+      let unloadDone = false
+      const unloadFromContentAndReFocus = (targetModal) => {
+        clearChildData(targetModal)
         this.content = null
+        unloadDone = true
         // Refocus on the button that opened this modal, if any.
         // TODO - find a way to support lastFocus when opened through profile|notifications card.
         if (this.lastFocus) this.lastFocus.focus()
       }
+
+      if (targetModal) {
+        // when it's queried to close a particular modal, check if it's being presented now and unload it if so.
+        if (hasSubContent && this.subcontent.indexOf(targetModal) >= 0) {
+          clearChildData(targetModal)
+          this.subcontent = this.subcontent.filter(modalName => modalName !== targetModal)
+          unloadDone = true
+        } else if (this.content === targetModal) {
+          unloadFromContentAndReFocus(targetModal)
+        }
+      } else {
+        // when there is no particular modal queried, unload the latest one first.
+        if (hasSubContent) {
+          clearChildData(this.activeSubContent)
+          this.subcontent.pop()
+          unloadDone = true
+        } else {
+          unloadFromContentAndReFocus(this.content)
+        }
+      }
+
+      if (!unloadDone) { return } // If nothing has been unloaded, no need to perform below actions.
+
       if (this.replacement) {
         this.openModal(this.replacement, this.replacementQueries[this.replacement])
 
