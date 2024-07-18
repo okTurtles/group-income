@@ -57,6 +57,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       //       when the group member is kicked by proposal
       let isLastElement = true
       if (byProposal) {
+        cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
         cy.get('div.c-message:last-child').then(($el) => {
           isLastElement = $el.attr('class').includes('is-type-notification')
         })
