@@ -2,11 +2,17 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { IDENTITY_USERNAME_MAX_CHARS, IDENTITY_BIO_MAX_CHARS } from './shared/constants.js'
+import {
+  IDENTITY_USERNAME_MAX_CHARS,
+  IDENTITY_EMAIL_MAX_CHARS,
+  IDENTITY_BIO_MAX_CHARS,
+  MAX_HASH_LEN,
+  MAX_URL_LEN
+} from './shared/constants.js'
 import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
 import {
@@ -18,10 +24,11 @@ import {
 } from './shared/validators.js'
 
 const attributesType = objectMaybeOf({
-  username: string,
-  email: string,
-  picture: unionOf(string, objectOf({
-    manifestCid: string,
+  username: stringMax(IDENTITY_USERNAME_MAX_CHARS, 'username'),
+  email: stringMax(IDENTITY_EMAIL_MAX_CHARS, 'email'),
+  bio: optional(stringMax(IDENTITY_BIO_MAX_CHARS, 'bio')),
+  picture: unionOf(stringMax(MAX_URL_LEN), objectOf({
+    manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
     downloadParams: optional(object)
   }))
 })
@@ -29,9 +36,6 @@ const attributesType = objectMaybeOf({
 const validateUsername = (username: string) => {
   if (!username) {
     throw new TypeError('A username is required')
-  }
-  if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-    throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
   }
   if (!allowedUsernameCharacters(username)) {
     throw new TypeError('A username cannot contain disallowed characters.')
@@ -116,10 +120,6 @@ sbp('chelonia/defineContract', {
         if (has(data, 'username')) {
           validateUsername(data.username)
         }
-
-        if (has(data, 'bio') && data.bio > IDENTITY_BIO_MAX_CHARS) {
-          throw new TypeError(`A user bio cannot exceed ${IDENTITY_BIO_MAX_CHARS} characters.`)
-        }
       },
       process ({ data }, { state }) {
         for (const key in data) {
@@ -156,7 +156,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/createDirectMessage': {
       validate: (data) => {
         objectOf({
-          contractID: string // NOTE: chatroom contract id
+          contractID: stringMax(MAX_HASH_LEN, 'contractID') // NOTE: chatroom contract id
         })(data)
       },
       process ({ data }, { state }) {
@@ -173,7 +173,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinDirectMessage': {
       validate: objectOf({
-        contractID: string
+        contractID: stringMax(MAX_HASH_LEN, 'contractID')
       }),
       process ({ data }, { state }) {
         // NOTE: this method is always created by another
@@ -196,7 +196,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/joinGroup': {
       validate: objectMaybeOf({
-        groupContractID: string,
+        groupContractID: stringMax(MAX_HASH_LEN, 'groupContractID'),
         inviteSecret: string,
         creatorID: optional(boolean)
       }),
@@ -273,7 +273,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/leaveGroup': {
       validate: objectOf({
-        groupContractID: string,
+        groupContractID: stringMax(MAX_HASH_LEN, 'groupContractID'),
         reference: string
       }),
       process ({ data }, { state }) {
@@ -331,7 +331,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/setDirectMessageVisibility': {
       validate: (data, { state }) => {
         objectOf({
-          contractID: string,
+          contractID: stringMax(MAX_HASH_LEN, 'contractID'),
           visible: boolean
         })(data)
         if (!state.chatRooms[data.contractID]) {
@@ -345,7 +345,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity/saveFileDeleteToken': {
       validate: objectOf({
         tokensByManifestCid: arrayOf(objectOf({
-          manifestCid: string,
+          manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
           token: string
         }))
       }),

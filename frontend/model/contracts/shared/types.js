@@ -2,7 +2,7 @@
 
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf, boolean,
-  object, string, optional, number, mapOf, literalOf
+  object, string, stringMax, optional, number, mapOf, literalOf
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES,
@@ -15,7 +15,9 @@ import {
   STATUS_FAILED,
   STATUS_EXPIRING,
   STATUS_EXPIRED,
-  STATUS_CANCELLED
+  STATUS_CANCELLED,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from './constants.js'
 
 // group.js related
@@ -29,8 +31,8 @@ export const inviteType: any = objectOf({
 // chatroom.js related
 
 export const chatRoomAttributesType: any = objectOf({
-  name: string,
-  description: string,
+  name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS),
+  description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS),
   // NOTE: creatorID is optional parameter which is not being used
   //       in group contract function gi.actions/group/addChatRoom
   creatorID: optional(string),

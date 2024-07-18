@@ -1035,7 +1035,7 @@
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "Fatal error: {reportError}";
 
-/* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
+/* views/containers/user-settings/Troubleshooting.vue, views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
 "Feature coming soon" = "Feature coming soon";
 
 /* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
@@ -2339,9 +2339,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "This invite link is only available during the onboarding period." = "This invite link is only available during the onboarding period.";
-
-/* views/pages/Home.vue */
-"This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}" = "This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}";
 
 /* views/containers/user-settings/UserProfile.vue */
 "This is how others will see your name accross the platform." = "This is how others will see your name accross the platform.";

@@ -5,13 +5,19 @@
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
+  MAX_HASH_LEN,
+  MAX_MEMO_LEN,
   CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES,
+  GROUP_CURRENCY_MAX_CHAR,
   GROUP_PAYMENT_METHOD_MAX_CHAR,
+  GROUP_DESCRIPTION_MAX_CHAR,
+  GROUP_NAME_MAX_CHAR,
+  GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   INVITE_EXPIRES_IN_DAYS,
@@ -431,14 +437,14 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         settings: objectMaybeOf({
           // TODO: add 'groupPubkey'
-          groupName: string,
+          groupName: stringMax(GROUP_NAME_MAX_CHAR, 'groupName'),
           groupPicture: unionOf(string, objectOf({
-            manifestCid: string,
+            manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
             downloadParams: optional(object)
           })),
-          sharedValues: string,
+          sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
           mincomeAmount: number,
-          mincomeCurrency: string,
+          mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
           distributionDate: isPeriodStamp,
           distributionPeriodLength: number,
           minimizeDistribution: boolean,
@@ -516,7 +522,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectMaybeOf({
         // TODO: how to handle donations to okTurtles?
         // TODO: how to handle payments to groups or users outside of this group?
-        toMemberID: string,
+        toMemberID: stringMax(MAX_HASH_LEN, 'toMemberID'),
         amount: number,
         currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income/issues/603
         // multiply 'amount' by 'exchangeRate', which must always be
@@ -524,11 +530,11 @@ sbp('chelonia/defineContract', {
         // it is then further multiplied by the period's 'mincomeExchangeRate', which
         // is modified if any proposals pass to change the mincomeCurrency
         exchangeRate: number,
-        txid: string,
+        txid: stringMax(MAX_HASH_LEN, 'txid'),
         status: paymentStatusType,
         paymentType: paymentType,
         details: optional(object),
-        memo: optional(string)
+        memo: optional(stringMax(MAX_MEMO_LEN, 'memo'))
       })),
       process ({ data, meta, hash, contractID, height, innerSigningContractID }, { state, getters }) {
         if (data.status === PAYMENT_COMPLETED) {
@@ -554,11 +560,11 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/paymentUpdate': {
       validate: actionRequireActiveMember(objectMaybeOf({
-        paymentHash: string,
+        paymentHash: stringMax(MAX_HASH_LEN, 'paymentHash'),
         updatedProperties: objectMaybeOf({
           status: paymentStatusType,
           details: object,
-          memo: string
+          memo: stringMax(MAX_MEMO_LEN, 'memo')
         })
       })),
       process ({ data, meta, hash, contractID, innerSigningContractID }, { state, getters }) {
@@ -618,8 +624,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/sendPaymentThankYou': {
       validate: actionRequireActiveMember(objectOf({
-        toMemberID: string,
-        memo: string
+        toMemberID: stringMax(MAX_HASH_LEN, 'toMemberID'),
+        memo: stringMax(MAX_MEMO_LEN, 'memo')
       })),
       process ({ data, innerSigningContractID }, { state }) {
         const fromMemberID = fetchInitKV(state.thankYousFrom, innerSigningContractID, {})
@@ -708,7 +714,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/proposalVote': {
       validate: actionRequireActiveMember(objectOf({
-        proposalHash: string,
+        proposalHash: stringMax(MAX_HASH_LEN, 'proposalHash'),
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       })),
@@ -748,7 +754,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/proposalCancel': {
       validate: actionRequireActiveMember(objectOf({
-        proposalHash: string
+        proposalHash: stringMax(MAX_HASH_LEN, 'proposalHash')
       })),
       process ({ data, meta, contractID, innerSigningContractID, height }, { state }) {
         const proposal = state.proposals[data.proposalHash]
@@ -976,7 +982,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/inviteRevoke': {
       validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
-          inviteKeyId: string
+          inviteKeyId: stringMax(MAX_HASH_LEN, 'inviteKeyId')
         })(data)
 
         if (!state._vm.invites[data.inviteKeyId]) {
@@ -992,11 +998,11 @@ sbp('chelonia/defineContract', {
       // reusable accross other future validators
       validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
         objectMaybeOf({
-          groupName: x => typeof x === 'string',
+          groupName: stringMax(GROUP_NAME_MAX_CHAR, 'groupName'),
           groupPicture: x => typeof x === 'string',
-          sharedValues: x => typeof x === 'string',
+          sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
           mincomeAmount: x => typeof x === 'number' && x > 0,
-          mincomeCurrency: x => typeof x === 'string',
+          mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
           distributionDate: x => typeof x === 'string',
           allowPublicChannels: x => typeof x === 'boolean'
         })(data)
@@ -1042,34 +1048,23 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/groupProfileUpdate': {
-      validate: actionRequireActiveMember((data, props) => {
-        objectMaybeOf({
-          incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
-          incomeAmount: x => typeof x === 'number' && x >= 0,
-          pledgeAmount: x => typeof x === 'number' && x >= 0,
-          nonMonetaryAdd: string,
-          nonMonetaryEdit: objectOf({
-            replace: string,
-            with: string
-          }),
-          nonMonetaryRemove: string,
-          paymentMethods: arrayOf(
-            objectOf({
-              name: string,
-              value: string
-            })
-          )
-        })(data)
-
-        if (data.paymentMethods) {
-          for (const paymentMethod of data.paymentMethods) {
-            const { value } = paymentMethod
-            if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
-              throw new TypeError(L('Payment info cannot exceed {maxLength} characters.', { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }))
-            }
-          }
-        }
-      }),
+      validate: actionRequireActiveMember(objectMaybeOf({
+        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
+        incomeAmount: x => typeof x === 'number' && x >= 0,
+        pledgeAmount: x => typeof x === 'number' && x >= 0,
+        nonMonetaryAdd: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryAdd'),
+        nonMonetaryEdit: objectOf({
+          replace: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'replace'),
+          with: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'with')
+        }),
+        nonMonetaryRemove: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryRemove'),
+        paymentMethods: arrayOf(
+          objectOf({
+            name: string,
+            value: stringMax(GROUP_PAYMENT_METHOD_MAX_CHAR, 'paymentMethods.value')
+          })
+        )
+      })),
       process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
@@ -1124,21 +1119,15 @@ sbp('chelonia/defineContract', {
       // The #General chatroom is added without an inner signature
       validate: (data) => {
         objectOf({
-          chatRoomID: string,
+          chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
           attributes: chatRoomAttributesType
         })(data)
 
         // Validation on the chatroom name (reference: https://github.com/okTurtles/group-income/issues/1987)
         const chatroomName = data.attributes.name
-        const chatroomDesc = data.attributes.description
         const nameValidationMap: {[string]: Function} = {
           [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v),
-          [L('Chatroom name cannot exceed {maxLength} characters.', { maxLength: CHATROOM_NAME_LIMITS_IN_CHARS })]: (v: string): boolean => v.length > CHATROOM_NAME_LIMITS_IN_CHARS
-        }
-
-        if (chatroomDesc && chatroomDesc.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
-          throw new TypeError(L('Chatroom description cannot exceed {maxLength} characters.', { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }))
+          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v)
         }
 
         for (const key in nameValidationMap) {
@@ -1198,7 +1187,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/deleteChatRoom': {
       validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
-        objectOf({ chatRoomID: string })(data)
+        objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID') })(data)
 
         if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
@@ -1227,7 +1216,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/leaveChatRoom': {
       validate: actionRequireActiveMember(objectOf({
-        chatRoomID: string,
+        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
         memberID: optional(string)
       })),
       process ({ data, innerSigningContractID }, { state }) {
@@ -1281,7 +1270,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/joinChatRoom': {
       validate: actionRequireActiveMember(objectMaybeOf({
         memberID: optional(string),
-        chatRoomID: string
+        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID')
       })),
       process ({ data, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
@@ -1356,24 +1345,18 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/renameChatRoom': {
       validate: actionRequireActiveMember(objectOf({
-        chatRoomID: string,
-        name: string
+        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
+        name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name')
       })),
       process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['name'] = data.name
       }
     },
     'gi.contracts/group/changeChatRoomDescription': {
-      validate: (data, props) => {
-        actionRequireActiveMember(objectOf({
-          chatRoomID: string,
-          description: string
-        }))(data, props)
-
-        if (data?.description.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
-          throw new TypeError(L('Chatroom description cannot exceed {maxLength} characters.', { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }))
-        }
-      },
+      validate: actionRequireActiveMember(objectOf({
+        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
+        description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, 'description')
+      })),
       process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['description'] = data.description
       }
