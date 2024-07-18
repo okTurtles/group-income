@@ -507,6 +507,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = user2
 
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+    // BUG: there is a heisenbug here: https://github.com/okTurtles/group-income/issues/2215
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName: groupName1,
