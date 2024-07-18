@@ -475,7 +475,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // TODO: this is a temporary hack, but not sure why this fixes the Cypress error
     //       https://cloud.cypress.io/projects/q6whky/runs/2663/test-results
-    // cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giLogout()
   })
 
