@@ -163,7 +163,9 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/join': {
-      validate: objectOf({ memberID: optional(string) }),
+      validate: actionRequireInnerSignature(objectOf({
+        memberID: optional(string) // user id of joining memberID
+      })),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
 
@@ -263,7 +265,9 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/leave': {
-      validate: objectOf({ memberID: optional(string) }),
+      validate: objectOf({
+        memberID: optional(string) // member to be removed
+      }),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
         if (!memberID) {
