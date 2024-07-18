@@ -4,7 +4,7 @@
 
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
+import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
@@ -1336,12 +1336,6 @@ sbp('chelonia/defineContract', {
               })
             }
           })
-
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
-            identityContractID,
-            groupContractID: contractID,
-            chatRoomID: data.chatRoomID
-          })
         }
       }
     },
@@ -1633,8 +1627,6 @@ sbp('chelonia/defineContract', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
-        }).then(() => {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
