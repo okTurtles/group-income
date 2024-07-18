@@ -338,7 +338,7 @@ export const numberRange = (from: number, to: number, key: string = ''): TypeVal
 
   function numberRange (value, _scope = '') {
     number(value, _scope)
-    if (value >= from && value <= to) return true
+    if (value >= from && value <= to) return value
     throw validatorError(
       numberRange,
       value,

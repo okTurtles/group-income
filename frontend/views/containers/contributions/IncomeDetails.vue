@@ -85,7 +85,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { L } from '@common/common.js'
 import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
-import { GROUP_MAX_PLEDGE_AMOUNT, GROUP_MAX_PLEDGE_AMOUNT_STRING } from '@model/contracts/shared/constants.js'
+import { GROUP_MAX_PLEDGE_AMOUNT } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'IncomeDetails',
@@ -115,6 +115,7 @@ export default ({
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
       'ourIdentityContractId',
+      'withGroupCurrency',
       'ourGroupProfile',
       'usernameFromID'
     ]),
@@ -173,6 +174,7 @@ export default ({
         return
       }
 
+      const normalizedAmount = normalizeCurrency(this.form.amount)
       const paymentMethods = []
 
       if (this.needsIncome) {
@@ -206,6 +208,9 @@ export default ({
         for (const method of filledMethods) {
           paymentMethods.push(method)
         }
+      } else if (normalizedAmount > GROUP_MAX_PLEDGE_AMOUNT) {
+        this.$refs.formMsg.danger(L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) }))
+        return
       }
 
       try {
@@ -214,7 +219,7 @@ export default ({
           contractID: this.$store.state.currentGroupId,
           data: {
             incomeDetailsType,
-            [incomeDetailsType]: normalizeCurrency(this.form.amount),
+            [incomeDetailsType]: normalizedAmount,
             paymentMethods
           }
         })
@@ -224,6 +229,13 @@ export default ({
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)
         this.$refs.formMsg.danger(e.message)
+      }
+    }
+  },
+  watch: {
+    'form.incomeDetailsType' (newVal) {
+      if (newVal) {
+        this.$refs?.formMsg.clean()
       }
     }
   },
@@ -239,9 +251,6 @@ export default ({
         },
         [L('Oops, you entered a negative number')]: function (value) {
           return normalizeCurrency(value) >= 0
-        },
-        [L('Pledge amount cannot exceed {max}', { max: GROUP_MAX_PLEDGE_AMOUNT_STRING })]: function (value) {
-          return !this.isPledging || normalizeCurrency(value) <= GROUP_MAX_PLEDGE_AMOUNT
         },
         [L('Your income must be lower than the group mincome')]: function (value) {
           return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
