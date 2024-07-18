@@ -29,10 +29,10 @@ page(
         @click='handleAnchorClick'
         tag='div'
         :args='{ \
-          r1: `<button class="link js-btnDistribute">`, \
+          r1: `<button class="link js-btnSimulator">`, \
           r2: "</button>" \
         }'
-      ) Learn more about {r1}how we distribute income.{r2}
+      ) Try out the {r1}payments simulator.{r2}
 
     section(v-if='!distributionStarted')
       .c-container-empty
@@ -478,8 +478,11 @@ export default ({
 
       if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
-      } else if (contains('js-btnDistribute')) {
-        alert("We'll share this soon in an upcoming blog post!")
+      } else if (contains('js-btnSimulator')) {
+        window.open(
+          'https://groupincome.org/simulator/',
+          '_blank'
+        )
       }
     },
     handlePageChange (type) {
