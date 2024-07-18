@@ -905,7 +905,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
-  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), async (sendMessage, params) => {
+  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), (sendMessage, params) => {
     const { contractID } = params
     return sendMessage({
       ...params,
@@ -919,7 +919,7 @@ export default (sbp('sbp/selectors/register', {
 
             await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
           } catch (e) {
-            console.error(`[gi.actions/group/proposal] Error while notifying proposal creation in general chatroom ${params.contractID}:`, e)
+            console.error(`[gi.actions/group/proposal] Error while notifying proposal creation in general chatroom ${contractID}:`, e)
             throw e
           }
         }
