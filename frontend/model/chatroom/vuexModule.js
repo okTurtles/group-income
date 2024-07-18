@@ -107,9 +107,13 @@ const getters = {
       })
     }
   },
-  isDirectMessage (state, getters) {
+  isGroupDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomID => !!getters.ourGroupDirectMessages[chatRoomID || getters.currentChatRoomId]
+  },
+  isDirectMessage (state, getters) {
+    // NOTE: identity contract could not be synced at the time of calling this getter
+    return chatRoomID => !!getters.ourDirectMessages[chatRoomID || getters.currentChatRoomId]
   },
   isJoinedChatRoom (state, getters, rootState) {
     return (chatRoomID: string, memberID?: string) => !!rootState[chatRoomID]?.members?.[memberID || getters.ourIdentityContractId]

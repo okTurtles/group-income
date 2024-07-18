@@ -170,6 +170,10 @@ export async function leaveChatRoom (contractID: string) {
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
   // contract (for DMs).
+
+  sbp('chelonia/contract/release', contractID).catch(e => {
+    console.error(`[gi.contracts/chatroom/leave/sideEffect] Error releasing chatroom ${contractID}`, e)
+  })
 }
 
 export function findMessageIdx (hash: string, messages: Array<Object> = []): number {

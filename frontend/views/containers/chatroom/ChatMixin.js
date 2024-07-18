@@ -37,6 +37,7 @@ const ChatMixin: Object = {
       'currentChatRoomState',
       'currentGroupState',
       'groupIdFromChatRoomId',
+      'ourDirectMessages',
       'ourGroupDirectMessages',
       'chatRoomMembers',
       'groupGeneralChatRoomId',
@@ -44,7 +45,8 @@ const ChatMixin: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfilesById',
-      'isDirectMessage'
+      'isDirectMessage',
+      'isGroupDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -54,7 +56,7 @@ const ChatMixin: Object = {
 
       let title = this.currentChatRoomState.attributes.name
       let picture
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
         picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
@@ -121,7 +123,7 @@ const ChatMixin: Object = {
     },
     updateCurrentChatRoomID (chatRoomID: string) {
       if (chatRoomID !== this.currentChatRoomId) {
-        if (this.isDirectMessage(chatRoomID)) {
+        if (this.isGroupDirectMessage(chatRoomID)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID })
         } else {
           const groupID = this.groupIdFromChatRoomId(chatRoomID)
@@ -140,6 +142,22 @@ const ChatMixin: Object = {
     'currentChatRoomId' (to: string, from: string) {
       if (to) {
         this.redirectChat(to)
+      }
+    },
+    'ourGroupDirectMessages': {
+      immediate: true,
+      handler (to, from) {
+        // NOTE: whenever any group members leave the group, and the ourGroupDirectMessage is changed
+        //       we need to consider if currentChatRoomId needs to be changed
+        //       if the currentChatRoomId (if it's DM) is no longer group direct message
+        if (this.isDirectMessage(this.currentChatRoomId)) {
+          if (this.currentGroupId) {
+            const isNotGroupDirectMessage = !Object.keys(to).includes(this.currentChatRoomId)
+            if (isNotGroupDirectMessage) {
+              sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: this.currentGroupId })
+            }
+          }
+        }
       }
     }
   }
