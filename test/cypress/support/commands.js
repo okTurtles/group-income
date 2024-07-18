@@ -266,6 +266,8 @@ Cypress.Commands.add('giLogin', (username, {
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+  cy.giEmptyInvocationQueue()
+
   if (hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
@@ -493,16 +495,12 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
     cy.giKeyRequestedGroupIDs(groupId)
-    cy.giEmptyInvocationQueue()
-
     cy.giLogout()
 
     cy.giLogin(existingMemberUsername, { bypassUI })
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
-    cy.giEmptyInvocationQueue()
-
     cy.giLogout()
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
@@ -777,4 +775,19 @@ Cypress.Commands.add('giSendMessage', (sender, message) => {
     cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
     cy.get('.c-message.sent:last-child .c-text').should('contain', message)
   })
+})
+
+Cypress.Commands.add('giSwitchChannel', (channelName) => {
+  cy.getByDT('channelsList').within(() => {
+    cy.get('ul > li').each(($el, index, $list) => {
+      // NOTE: get only channel name excluding badge
+      const channelNameText = $el.find('.c-channel-name').text()
+      if (channelNameText === channelName) {
+        cy.wrap($el).click()
+        return false
+      }
+    })
+  })
+  cy.giWaitUntilMessagesLoaded()
+  cy.getByDT('channelName').should('contain', channelName)
 })
