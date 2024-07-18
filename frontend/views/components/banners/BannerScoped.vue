@@ -4,7 +4,7 @@
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
           .c-inner-text(v-if='allowA' :data-test='dataTest' role='alert')
-            render-message-with-markdown(:text='ephemeral.text')
+            span(v-safe-html:a='ephemeral.text')
           .c-inner-text(v-else :data-test='dataTest' role='alert' v-safe-html='ephemeral.text')
           button.is-icon-small.c-button(
             type='button'
@@ -18,14 +18,12 @@
 <script>
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 
 export default ({
   name: 'BannerScoped',
   components: {
     BannerSimple,
-    TransitionExpand,
-    RenderMessageWithMarkdown
+    TransitionExpand
   },
   props: {
     dataTest: {
