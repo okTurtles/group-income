@@ -1095,11 +1095,11 @@
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
 "Ok" = "Ok";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue, views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
+"Feature coming soon" = "Feature coming soon";
+
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
 "Sorry, this feature has not been implemented yet.{br_}Please check back later." = "Sorry, this feature has not been implemented yet.{br_}Please check back later.";
-
-/* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
-"Feature coming soon" = "Feature coming soon";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
 "Failed to add a contribution" = "Failed to add a contribution";
@@ -1133,9 +1133,6 @@
 
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "Group description cannot exceed {maxchar} characters" = "Group description cannot exceed {maxchar} characters";
-
-/* MISSING TRANSLATION - views/pages/Home.vue */
-"This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}" = "This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}";
 
 /* MISSING TRANSLATION - views/pages/Join.vue */
 "(group name unavailable)" = "(group name unavailable)";
