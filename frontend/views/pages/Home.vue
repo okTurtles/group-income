@@ -50,12 +50,12 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
         @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
-
-  footer.c-footer(v-if='!isLoggedIn')
-    banner-simple.c-demo-warning(severity='warning')
-      i18n(
-        :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
-      ) This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}
+  //- TODO: conditionally show this depending on environment variable
+  //- footer.c-footer(v-if='!isLoggedIn')
+  //-   banner-simple.c-demo-warning(severity='warning')
+  //-     i18n(
+  //-       :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
+  //-     ) This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}
 </template>
 
 <script>
