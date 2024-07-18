@@ -8,8 +8,10 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   IDENTITY_USERNAME_MAX_CHARS,
+  IDENTITY_EMAIL_MAX_CHARS,
   IDENTITY_BIO_MAX_CHARS,
-  MAX_HASH_LEN
+  MAX_HASH_LEN,
+  MAX_URL_LEN
 } from './shared/constants.js'
 import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
@@ -23,9 +25,9 @@ import {
 
 const attributesType = objectMaybeOf({
   username: stringMax(IDENTITY_USERNAME_MAX_CHARS, 'username'),
-  email: string,
+  email: stringMax(IDENTITY_EMAIL_MAX_CHARS, 'email'),
   bio: optional(stringMax(IDENTITY_BIO_MAX_CHARS, 'bio')),
-  picture: unionOf(string, objectOf({
+  picture: unionOf(stringMax(MAX_URL_LEN), objectOf({
     manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
     downloadParams: optional(object)
   }))

@@ -13,6 +13,7 @@ import {
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
   CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_MAX_MESSAGE_LEN,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
   MESSAGE_NOTIFICATIONS,
@@ -399,7 +400,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireInnerSignature(objectOf({
         hash: stringMax(MAX_HASH_LEN, 'hash'),
         createdHeight: number,
-        text: string
+        text: stringMax(CHATROOM_MAX_MESSAGE_LEN, 'text')
       })),
       process ({ data, meta }, { state }) {
         const { hash, text } = data
@@ -461,7 +462,7 @@ sbp('chelonia/defineContract', {
           hash: stringMax(MAX_HASH_LEN, 'hash'),
           // NOTE: manifestCids of the attachments which belong to the message
           //       if the message is deleted, those attachments should be deleted too
-          manifestCids: arrayOf(string),
+          manifestCids: arrayOf(stringMax(MAX_HASH_LEN, 'manifestCids')),
           messageSender: stringMax(MAX_HASH_LEN, 'messageSender')
         })(data)
 
