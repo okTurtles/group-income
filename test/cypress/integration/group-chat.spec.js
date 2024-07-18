@@ -37,7 +37,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     me = username
   }
 
-  function checkIfLeaved (channelName, kicker, leaver) {
+  function checkIfLeaved (channelName, kicker, leaver, byProposal = false) {
     // Attention: to check if other member is left
     // me needs to be logged in that channel
     kicker = kicker || me
@@ -52,16 +52,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       // considering it sync the chatroom contract from the beginning
     } else {
       const message = selfLeave ? `Left ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
-      // cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)
-      // cy.get('div.c-message:last-child .c-notification').should('contain', message)
 
-      // NOTE: the code below is the temporary hack and the ideal code is the commented-out two lines above
-      //       but sometimes the INTERACTIVE message are created after the NOTIFICATION message
+      // NOTE: sometimes the INTERACTIVE message are created after the NOTIFICATION message
       //       when the group member is kicked by proposal
       let isLastElement = true
-      cy.get('div.c-message:last-child').then(($el) => {
-        isLastElement = $el.attr('class').includes('c-notification')
-      })
+      if (byProposal) {
+        cy.get('div.c-message:last-child').then(($el) => {
+          isLastElement = $el.attr('class').includes('c-notification')
+        })
+      }
 
       if (isLastElement) {
         cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)

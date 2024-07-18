@@ -886,17 +886,9 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
-  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), function (sendMessage, params) {
-    return sendMessage({
-      ...params,
-      hooks: {
-        ...params?.hooks,
-        postpublish: (...args) => {
-          sbp('okTurtles.events/emit', ACCEPTED_GROUP, { contractID: params.contractID })
-          return params.hooks?.postpublish?.(...args)
-        }
-      }
-    })
+  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), async function (sendMessage, params) {
+    await sendMessage(params)
+    sbp('okTurtles.events/emit', ACCEPTED_GROUP, { contractID: params.contractID })
   }),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
     await sbp('chelonia/out/keyDel', {
