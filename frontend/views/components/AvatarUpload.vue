@@ -34,6 +34,10 @@ export default ({
     sbpParams: {
       type: Object,
       required: true
+    },
+    avatarType: {
+      type: String,
+      validator: v => ['user', 'group'].includes(v) // feel free to extend this list.
     }
   },
   components: {
@@ -45,9 +49,10 @@ export default ({
       if (!fileList.length) return
       const imageUrl = URL.createObjectURL(fileList[0])
 
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl, avatarType: this.avatarType })
     },
-    async uploadEditedImage ({ blob }) {
+    async uploadEditedImage ({ blob, avatarType }) {
+      if (avatarType !== this.avatarType) { return }
       let picture
 
       try {

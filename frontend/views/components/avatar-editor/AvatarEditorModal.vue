@@ -122,7 +122,7 @@ export default ({
     },
     submit () {
       const blob = this.$refs.editorCanvas.extractEditedImage()
-      sbp('okTurtles.events/emit', AVATAR_EDITED, { blob })
+      sbp('okTurtles.events/emit', AVATAR_EDITED, { blob, avatarType: this.$route.query.avatarType || '' })
 
       this.close()
     },
