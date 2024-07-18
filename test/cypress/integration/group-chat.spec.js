@@ -38,8 +38,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function checkIfLeaved (channelName, kicker, leaver, byProposal = false) {
-    // Attention: to check if other member is left
-    // me needs to be logged in that channel
+    // Attention: to check if other member is left me needs to be logged in that channel
     kicker = kicker || me
     leaver = leaver || me
     const selfLeave = kicker === leaver
