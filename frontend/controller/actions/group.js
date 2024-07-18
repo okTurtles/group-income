@@ -673,10 +673,6 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
-    const response = await sendMessage({
-      ...omit(params, ['options', 'action'])
-    })
-
     const switchChannelAfterJoined = (contractID: string) => {
       if (contractID === chatRoomID) {
         if (rootState[chatRoomID]?.members?.[identityContractID]) {
@@ -687,7 +683,9 @@ export default (sbp('sbp/selectors/register', {
     }
     sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
 
-    return response
+    return sendMessage({
+      ...omit(params, ['options', 'action'])
+    })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
