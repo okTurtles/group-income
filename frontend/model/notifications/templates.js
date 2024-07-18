@@ -208,7 +208,8 @@ export default ({
     }
 
     if (options.memberID) {
-      // NOTE: update member only when the type is  PROPOSAL_REMOVE_MEMBER
+      // NOTE: replace member with their mention when their contractID is provided
+      //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
       args['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
     }
 
