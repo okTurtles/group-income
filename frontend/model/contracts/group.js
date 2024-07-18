@@ -33,8 +33,7 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  STATUS_CANCELLED, STATUS_EXPIRED,
-  STATUS_OPEN
+  STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod } from './shared/functions.js'
@@ -217,7 +216,7 @@ function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object):
   if (!userProfile) {
     return false
   }
-  return userProfile.joinedHeight < height
+  return userProfile.status === PROFILE_STATUS.ACTIVE && userProfile.joinedHeight < height
 }
 
 function updateGroupStreaks ({ state, getters }) {
@@ -861,8 +860,7 @@ sbp('chelonia/defineContract', {
         )
       },
       sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
-        // Put this invocation at the end of a sync to ensure that leaving and
-        // re-joining works
+        // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
           data, meta, contractID, getters, height, innerSigningContractID, proposalHash
         })).catch(e => {
@@ -1198,7 +1196,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ contractID, data }, { state }) {
         sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/releaseDeletedChatRoom', state.chatRooms[data.chatRoomID].members, data.chatRoomID]
+          ['gi.contracts/group/releaseDeletedChatRoom', data.chatRoomID, state.chatRooms[data.chatRoomID].members]
         )
         delete state.chatRooms[data.chatRoomID]
       },
@@ -1635,7 +1633,11 @@ sbp('chelonia/defineContract', {
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
         }).then(() => {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: sbp('state/vuex/state').currentGroupId, chatRoomID })
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
+            identityContractID: memberID,
+            groupContractID: sbp('state/vuex/state').currentGroupId,
+            chatRoomID
+          })
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
