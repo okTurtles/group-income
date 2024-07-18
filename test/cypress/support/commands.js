@@ -501,8 +501,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
-    cy.giEmptyInvocationQueue()
-
     cy.giLogout()
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })

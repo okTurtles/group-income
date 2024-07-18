@@ -60,7 +60,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         //       INTERACTIVE message should be created before the NOTIFICATION message
         //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
         //       this block is to handle that heisenbug
-        cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
+        // cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
         cy.get('div.c-message:last-child').invoke('attr', 'class').then(classNames => {
           isLastElement = classNames.includes('is-type-notification')
         })
@@ -475,7 +475,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // TODO: this is a temporary hack, but not sure why this fixes the Cypress error
     //       https://cloud.cypress.io/projects/q6whky/runs/2663/test-results
-    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    // cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giLogout()
   })
 
