@@ -411,7 +411,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giRedirectToGroupChat()
 
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
-    checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
+    checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3, true)
 
     cy.giLogout()
   })
