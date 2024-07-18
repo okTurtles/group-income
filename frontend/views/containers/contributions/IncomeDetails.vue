@@ -209,6 +209,8 @@ export default ({
           paymentMethods.push(method)
         }
       } else if (normalizedAmount > GROUP_MAX_PLEDGE_AMOUNT) {
+        // 'this' for this.withGroupCurrency() cannot be used and throws an error when it's used for defining the error message in validations {} block below.
+        // So, displaying the error message in the banner instead.
         this.$refs.formMsg.danger(L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) }))
         return
       }
