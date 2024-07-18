@@ -58,7 +58,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       let isLastElement = true
       if (byProposal) {
         cy.get('div.c-message:last-child').then(($el) => {
-          isLastElement = $el.attr('class').includes('c-notification')
+          isLastElement = $el.attr('class').includes('is-type-notification')
         })
       }
 

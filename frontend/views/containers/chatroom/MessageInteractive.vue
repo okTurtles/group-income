@@ -123,6 +123,7 @@ export default ({
   name: 'MessageInteractive',
   props: {
     id: String,
+    type: String,
     datetime: Date,
     proposal: Object
   },
