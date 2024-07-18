@@ -887,8 +887,9 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), async function (sendMessage, params) {
-    await sendMessage(params)
+    const response = await sendMessage(params)
     sbp('okTurtles.events/emit', ACCEPTED_GROUP, { contractID: params.contractID })
+    return response
   }),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
     await sbp('chelonia/out/keyDel', {
@@ -906,7 +907,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
   ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), async (sendMessage, params) => {
     const { contractID } = params
-    await sendMessage({
+    return sendMessage({
       ...params,
       hooks: {
         onprocessed: async (message) => {
@@ -954,7 +955,7 @@ export default (sbp('sbp/selectors/register', {
       proposalToSend = extractProposalData(proposal, { proposalId: proposalHash, status: STATUS_FAILED })
     }
 
-    await sendMessage({ ...params, data: { ...data, passPayload } })
+    const response = await sendMessage({ ...params, data: { ...data, passPayload } })
 
     if (proposalToSend) {
       await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
@@ -962,6 +963,8 @@ export default (sbp('sbp/selectors/register', {
         proposal: proposalToSend
       })
     }
+
+    return response
   }),
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.'), async function (sendMessage, params) {
     const { contractID, data } = params
@@ -969,9 +972,11 @@ export default (sbp('sbp/selectors/register', {
     const proposal = state.proposals[data.proposalHash]
     const proposalToSend = extractProposalData(proposal, { proposalId: data.proposalHash, status: STATUS_CANCELLED })
 
-    await sendMessage(params)
+    const response = await sendMessage(params)
 
     await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+
+    return response
   }),
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.'), async function (sendMessage, params) {
     const { contractID, data } = params
@@ -979,9 +984,11 @@ export default (sbp('sbp/selectors/register', {
     const proposal = state.proposals[data.proposalHash]
     const proposalToSend = extractProposalData(proposal, { proposalId: data.proposalHash, status: STATUS_EXPIRED })
 
-    await sendMessage(params)
+    const response = await sendMessage(params)
 
     await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+
+    return response
   }),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),

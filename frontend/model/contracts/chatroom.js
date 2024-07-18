@@ -191,6 +191,7 @@ sbp('chelonia/defineContract', {
         //       this normally happens when the user (not a member of PRIVATE chatroom)
         //       is trying to sync the contract.
         //       this comment works same for another checks like `if (!state.members)` of above and below codes
+        //       https://github.com/okTurtles/group-income/pull/2147#discussion_r1680495897
         if (!state.attributes) return
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
