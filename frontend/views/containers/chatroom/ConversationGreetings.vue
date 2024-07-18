@@ -4,7 +4,7 @@
   p {{text}}
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
-      v-if='!isDirectMessage() && joined && members < 2'
+      v-if='!isGroupDirectMessage() && joined && members < 2'
       tag='button'
       @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
@@ -12,7 +12,7 @@
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!isDirectMessage() && joined && !description && creatorID === ourIdentityContractId'
+      v-if='!isGroupDirectMessage() && joined && !description && creatorID === ourIdentityContractId'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -55,7 +55,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourIdentityContractId', 'isDirectMessage']),
+    ...mapGetters(['ourIdentityContractId', 'isGroupDirectMessage']),
     text () {
       return {
         GIBot: L('I’m here to keep you update while you are away.'),

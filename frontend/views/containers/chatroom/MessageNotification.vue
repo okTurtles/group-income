@@ -47,7 +47,7 @@ export default ({
     isMsgSender: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID', 'isDirectMessage', 'currentChatRoomId']),
+    ...mapGetters(['userDisplayNameFromID', 'isGroupDirectMessage', 'currentChatRoomId']),
     message () {
       const {
         memberID,
@@ -75,7 +75,7 @@ export default ({
         }
       }
 
-      const templates = notificationTemplates[this.isDirectMessage() ? 'onDirectMessage' : 'default']
+      const templates = notificationTemplates[this.isGroupDirectMessage() ? 'onDirectMessage' : 'default']
       const text = templates[this.notification.type]
       return { text }
     }

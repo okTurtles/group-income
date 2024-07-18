@@ -38,13 +38,13 @@ export default ({
       'currentChatRoomId',
       'currentChatRoomState',
       'ourGroupDirectMessages',
-      'isDirectMessage'
+      'isGroupDirectMessage'
     ]),
     ...mapState(['loggedIn', 'currentGroupId']),
     channelName () {
       if (!this.currentChatRoomState.attributes) {
         return ''
-      } else if (this.isDirectMessage(this.currentChatRoomId)) {
+      } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         return this.ourGroupDirectMessages[this.currentChatRoomId].title
       } else {
         return this.currentChatRoomState.attributes.name

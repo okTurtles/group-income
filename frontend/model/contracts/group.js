@@ -347,25 +347,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     contractID: chatRoomID,
     data: sendingData,
     ...extraParams
-  }).then(() => {
-    // using 'state/vuex/state' here instead of 'chelonia/rootState' to fetch
-    // the identityContractID because although both 'chelonia/rootState' and
-    // 'state/vuex/state' both have the same logged in information
-    // all calls to 'state/vuex/state' will need to be replaced in the future
-    // with something else. Using 'state/vuex/state' here now makes it easier
-    // to find these calls in the future.
-    // `chelonia/rootState` contains that same information but it's a bad
-    // choice because:
-    //    1. Once sandboxing is implemented, it may need to be an async call
-    //    2. Generally, contracts should _not_ access the root state because
-    //       it makes it difficult or impossible to contain them (meaning there
-    //       would be no point in sandboxing)
-    // Instead, in the future contracts will have an 'environment', provided
-    // by Chelonia, which will include global / environment / ambient
-    // information they need.
-    if (memberID === identityContractID) {
-      sbp('okTurtles.events/emit', LEFT_CHATROOM, { identityContractID, groupContractID: groupID, chatRoomID })
-    }
   }).catch((e) => {
     if (
       leavingGroup &&
@@ -380,16 +361,8 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
       // This is fine; it just means we were removed by someone else
       return
     }
-    throw e
-  }).catch((e) => {
     console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
-
-  if (memberID === identityContractID) {
-    sbp('chelonia/contract/release', chatRoomID).catch(e => {
-      console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e)
-    })
-  }
 }
 
 const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
@@ -1270,7 +1243,23 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
-        if (innerSigningContractID === sbp('state/vuex/state').loggedIn.identityContractID) {
+        // NOTE: using 'state/vuex/state' instead of 'chelonia/rootState' to fetch
+        //       the identityContractID because although both 'chelonia/rootState' and
+        //       'state/vuex/state' both have the same logged in information
+        //       all calls to 'state/vuex/state' will need to be replaced in the future
+        //       with something else. Using 'state/vuex/state' here now makes it easier
+        //       to find these calls in the future.
+        //       `chelonia/rootState` contains that same information but it's a bad
+        //       choice because:
+        //          1. Once sandboxing is implemented, it may need to be an async call
+        //          2. Generally, contracts should _not_ access the root state because
+        //             it makes it difficult or impossible to contain them (meaning there
+        //             would be no point in sandboxing)
+        //       Instead, in the future contracts will have an 'environment', provided
+        //       by Chelonia, which will include global / environment / ambient
+        //       information they need.
+        const { identityContractID } = sbp('state/vuex/state').loggedIn
+        if (innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, async () => {
             const state = await sbp('chelonia/contract/state', contractID)
             if (state?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -1278,6 +1267,14 @@ sbp('chelonia/defineContract', {
             }
           }).catch((e) => {
             console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e })
+          })
+        }
+
+        if (memberID === identityContractID) {
+          sbp('okTurtles.events/emit', LEFT_CHATROOM, {
+            identityContractID,
+            groupContractID: contractID,
+            chatRoomID: data.chatRoomID
           })
         }
       }
@@ -1316,14 +1313,15 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
         const memberID = data.memberID || innerSigningContractID
+        const { identityContractID } = sbp('state/vuex/state').loggedIn
 
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
-        if (innerSigningContractID === sbp('state/vuex/state').loggedIn.identityContractID) {
+        if (innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, memberID)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
-        } else if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
+        } else if (memberID === identityContractID) {
           // If we were the ones added to the chatroom, we sync the chatroom.
           // This is an `else` block because joinGroupChatrooms already calls
           // sync
@@ -1348,10 +1346,12 @@ sbp('chelonia/defineContract', {
               })
             }
           })
-        }
 
-        if (memberID === sbp('state/vuex/state').loggedIn.identityContractID) {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID: memberID, groupContractID: contractID, chatRoomID: data.chatRoomID })
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
+            identityContractID,
+            groupContractID: contractID,
+            chatRoomID: data.chatRoomID
+          })
         }
       }
     },

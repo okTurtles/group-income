@@ -63,7 +63,7 @@ async function messageReceivePostEffect ({
 }): Promise<void> {
   // TODO: This can't be a root getter when running in a SW
   const rootGetters = await sbp('state/vuex/getters')
-  const isDirectMessage = rootGetters.isDirectMessage(contractID)
+  const isGroupDM = rootGetters.isGroupDirectMessage(contractID)
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
   if (shouldAddToUnreadMessages) {
@@ -76,7 +76,7 @@ async function messageReceivePostEffect ({
 
   let title = `# ${chatRoomName}`
   let icon
-  if (isDirectMessage) {
+  if (isGroupDM) {
     // NOTE: partner identity contract could not be synced yet
     title = rootGetters.ourGroupDirectMessages[contractID].title
     icon = rootGetters.ourGroupDirectMessages[contractID].picture
