@@ -479,7 +479,10 @@ export default ({
       if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       } else if (contains('js-btnSimulator')) {
-        window.open('https://groupincome.org/simulator/', '_blank')
+        window.open(
+          'https://groupincome.org/simulator/',
+          '_blank'
+        )
       }
     },
     handlePageChange (type) {
