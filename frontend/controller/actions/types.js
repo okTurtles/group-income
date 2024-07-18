@@ -25,9 +25,9 @@ export type GIActionParams = {
   hooks?: {
     preSendCheck?: null | (Object, Object) => boolean;
     prepublishContract?: null | (Object) => void;
-    prepublish?: null | (Object) => void;
-    postpublish?: null | (Object) => void;
-    onprocessed?: null | (Object) => void;
+    prepublish?: null | (Object) => Promise<void>;
+    postpublish?: null | (Object) => Promise<void>;
+    onprocessed?: null | (Object) => Promise<void>;
   };
   publishOptions?: { maxAttempts: number };
   returnInvocation?: boolean;

@@ -19,10 +19,14 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function notifyAndArchiveProposal (
-  { state, proposalHash, proposal, contractID, meta, height }: {
-    state: Object, proposalHash: string, proposal: any, contractID: string, meta: Object, height: number
-  }) {
+export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contractID, meta, height }: {
+  state: Object,
+  proposalHash: string,
+  proposal: any,
+  contractID: string,
+  meta: Object,
+  height: number
+}) {
   Vue.delete(state.proposals, proposalHash)
 
   // NOTE: we can not make notification for the proposal closal
@@ -62,19 +66,28 @@ export const proposalSettingsType: any = objectOf({
   })
 })
 
-// returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (state: Object, proposalHash: string): boolean {
+export function oneVoteToCloseWith (state: Object, proposalHash: string, expectedResult: string): boolean {
   const proposal = state.proposals[proposalHash]
   const votes = Object.assign({}, proposal.votes)
   const currentResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
-  votes[String(Math.random())] = VOTE_FOR
+  votes[String(Math.random())] = expectedResult
   const newResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
-  console.debug(`oneVoteToPass currentResult(${currentResult}) newResult(${newResult})`)
+  console.debug(`oneVoteToCloseWith currentResult(${currentResult}) newResult(${newResult})`)
 
-  // If a member was removed, currentResult could also be VOTE_FOR
+  // If a member was removed, currentResult could also be `expectedResult`
   // TODO: Re-process active proposals to handle this case
-  // return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
-  return newResult === VOTE_FOR
+  // return currentResult === VOTE_UNDECIDED && newResult === `expectedResult`
+  return newResult === expectedResult
+}
+
+// returns true IF a single YES vote is required to pass the proposal
+export function oneVoteToPass (state: Object, proposalHash: string): boolean {
+  return oneVoteToCloseWith(state, proposalHash, VOTE_FOR)
+}
+
+// returns true IF a single YES vote is required to pass the proposal
+export function oneVoteToFail (state: Object, proposalHash: string): boolean {
+  return oneVoteToCloseWith(state, proposalHash, VOTE_AGAINST)
 }
 
 function voteAgainst (state: any, { meta, data, contractID, height }: any) {

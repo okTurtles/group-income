@@ -191,6 +191,7 @@ sbp('chelonia/defineContract', {
         //       this normally happens when the user (not a member of PRIVATE chatroom)
         //       is trying to sync the contract.
         //       this comment works same for another checks like `if (!state.members)` of above and below codes
+        //       https://github.com/okTurtles/group-income/pull/2147#discussion_r1680495897
         if (!state.attributes) return
 
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -289,6 +290,7 @@ sbp('chelonia/defineContract', {
         state.members[memberID].leftHeight = height
         delete state.members[memberID]
 
+        if (!state.attributes) return
         if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           // NOTE: we don't make notification message for leaving in direct messages
           return
@@ -322,7 +324,7 @@ sbp('chelonia/defineContract', {
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state || !!state.members?.[data.memberID]) {
+          if (!state || !!state.members?.[data.memberID] || !state.attributes) {
             return
           }
 
@@ -343,6 +345,7 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ meta }, { state }) {
+        if (!state.attributes) return
         state.attributes['deletedDate'] = meta.createdDate
         for (const memberID in state.members) {
           delete state.members[memberID]
@@ -362,6 +365,7 @@ sbp('chelonia/defineContract', {
       // these situations especially, and it's meant to mark sent-by-the-user
       // but not-yet-received-over-the-network messages.
       process ({ direction, data, meta, hash, height, innerSigningContractID }, { state }) {
+        if (!state.messages) return
         const existingMsg = state.messages.find(msg => (msg.hash === hash))
 
         if (!existingMsg) {
@@ -403,6 +407,7 @@ sbp('chelonia/defineContract', {
         text: stringMax(CHATROOM_MAX_MESSAGE_LEN, 'text')
       })),
       process ({ data, meta }, { state }) {
+        if (!state.messages) return
         const { hash, text } = data
         const fnEditMessage = (message) => {
           message['text'] = text
@@ -479,6 +484,7 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ data, innerSigningContractID }, { state }) {
+        if (!state.messages) return
         [state.messages, state.pinnedMessages].forEach(messageArray => {
           const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
@@ -532,6 +538,7 @@ sbp('chelonia/defineContract', {
         messageSender: stringMax(MAX_HASH_LEN, 'messageSender')
       })),
       process ({ data }, { state }) {
+        if (!state.messages) return
         const fnDeleteAttachment = (message) => {
           const oldAttachments = message.attachments
           if (Array.isArray(oldAttachments)) {
@@ -566,6 +573,7 @@ sbp('chelonia/defineContract', {
         emoticon: string
       })),
       process ({ data, innerSigningContractID }, { state }) {
+        if (!state.messages) return
         const { hash, emoticon } = data
 
         const fnMakeEmotion = (message) => {
@@ -608,6 +616,7 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
+        if (!state.messages) return
         const fnVoteOnPoll = (message) => {
           const myVotes = data.votes
           const pollData = message.pollData
@@ -635,6 +644,7 @@ sbp('chelonia/defineContract', {
         votesAsString: string
       })),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
+        if (!state.messages) return
         const fnChangeVoteOnPoll = (message) => {
           const myUpdatedVotes = data.votes
           const pollData = message.pollData
@@ -665,6 +675,7 @@ sbp('chelonia/defineContract', {
         hash: stringMax(MAX_HASH_LEN, 'hash')
       })),
       process ({ data }, { state }) {
+        if (!state.messages) return
         const fnClosePoll = (message) => {
           message.pollData['status'] = POLL_STATUS.CLOSED
         }
@@ -682,13 +693,7 @@ sbp('chelonia/defineContract', {
         message: object
       })),
       process ({ data, innerSigningContractID }, { state }) {
-        // TODO: remove the below 'if' statement when no older version of contracts are being used
-        if (!state.pinnedMessages) {
-          // NOTE: this is temporary solution for the older version of contracts
-          //       that doesn't have 'pinnedMessages' field which is created in its constructor
-          state.pinnedMessages = []
-        }
-
+        if (!state.messages) return
         const { message } = data
         state.pinnedMessages.unshift(message)
 
@@ -703,6 +708,7 @@ sbp('chelonia/defineContract', {
         hash: stringMax(MAX_HASH_LEN, 'hash')
       })),
       process ({ data }, { state }) {
+        if (!state.messages) return
         const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages)
         if (pinnedMsgIndex >= 0) {
           state.pinnedMessages.splice(pinnedMsgIndex, 1)
