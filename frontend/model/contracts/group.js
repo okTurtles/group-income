@@ -342,7 +342,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     extraParams.innerSigningContractID = null
   }
 
-  const { identityContractID } = sbp('state/vuex/state').loggedIn
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
