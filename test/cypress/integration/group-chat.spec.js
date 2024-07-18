@@ -53,10 +53,13 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     } else {
       const message = selfLeave ? `Left ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
 
-      // NOTE: sometimes the INTERACTIVE message are created after the NOTIFICATION message
-      //       when the group member is kicked by proposal
       let isLastElement = true
       if (byProposal) {
+        // NOTE: when the member is kicked from the from by proposal
+        //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
+        //       INTERACTIVE message should be created before the NOTIFICATION message
+        //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
+        //       this block is to handle that heisenbug
         cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
         cy.get('div.c-message:last-child').invoke('attr', 'class').then(classNames => {
           isLastElement = classNames.includes('is-type-notification')
