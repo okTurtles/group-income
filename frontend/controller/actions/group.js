@@ -917,15 +917,18 @@ export default (sbp('sbp/selectors/register', {
     await sendMessage({
       ...params,
       hooks: {
-        onprocessed: (message) => {
-          (async () => {
+        onprocessed: async (message) => {
+          try {
             const proposalId = message.hash()
             const state = await sbp('chelonia/contract/state', contractID)
             const proposal = state.proposals[proposalId]
             const proposalToSend = extractProposalData(proposal, { proposalId, status: STATUS_OPEN })
 
             await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
-          })()
+          } catch (e) {
+            console.error(`[gi.actions/group/proposal] Error while notifying proposal creation in general chatroom ${params.contractID}:`, e)
+            throw e
+          }
         }
       }
     })
