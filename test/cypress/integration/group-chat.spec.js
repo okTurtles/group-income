@@ -59,7 +59,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       if (byProposal) {
         cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
         cy.get('div.c-message:last-child').invoke('attr', 'class').then(classNames => {
-          cy.log(classNames)
           isLastElement = classNames.includes('is-type-notification')
         })
       }
