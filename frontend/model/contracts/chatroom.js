@@ -321,7 +321,7 @@ sbp('chelonia/defineContract', {
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state || !!state.members?.[data.memberID]) {
+          if (!state || !!state.members?.[data.memberID] || !state.attributes) {
             return
           }
 
