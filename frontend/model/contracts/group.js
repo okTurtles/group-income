@@ -347,22 +347,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     contractID: chatRoomID,
     data: sendingData,
     ...extraParams
-  }).then(() => {
-    // NOTE: using 'state/vuex/state' instead of 'chelonia/rootState' to fetch
-    //       the identityContractID because although both 'chelonia/rootState' and
-    //       'state/vuex/state' both have the same logged in information
-    //       all calls to 'state/vuex/state' will need to be replaced in the future
-    //       with something else. Using 'state/vuex/state' here now makes it easier
-    //       to find these calls in the future.
-    //       `chelonia/rootState` contains that same information but it's a bad
-    //       choice because:
-    //          1. Once sandboxing is implemented, it may need to be an async call
-    //          2. Generally, contracts should _not_ access the root state because
-    //             it makes it difficult or impossible to contain them (meaning there
-    //             would be no point in sandboxing)
-    //       Instead, in the future contracts will have an 'environment', provided
-    //       by Chelonia, which will include global / environment / ambient
-    //       information they need.
   }).catch((e) => {
     if (
       leavingGroup &&
@@ -377,8 +361,6 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
       // This is fine; it just means we were removed by someone else
       return
     }
-    throw e
-  }).catch((e) => {
     console.warn('[gi.contracts/group] Error sending chatroom leave action', e)
   })
 }
@@ -1262,6 +1244,21 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
+        // NOTE: using 'state/vuex/state' instead of 'chelonia/rootState' to fetch
+        //       the identityContractID because although both 'chelonia/rootState' and
+        //       'state/vuex/state' both have the same logged in information
+        //       all calls to 'state/vuex/state' will need to be replaced in the future
+        //       with something else. Using 'state/vuex/state' here now makes it easier
+        //       to find these calls in the future.
+        //       `chelonia/rootState` contains that same information but it's a bad
+        //       choice because:
+        //          1. Once sandboxing is implemented, it may need to be an async call
+        //          2. Generally, contracts should _not_ access the root state because
+        //             it makes it difficult or impossible to contain them (meaning there
+        //             would be no point in sandboxing)
+        //       Instead, in the future contracts will have an 'environment', provided
+        //       by Chelonia, which will include global / environment / ambient
+        //       information they need.
         const { identityContractID } = sbp('state/vuex/state').loggedIn
         if (innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, async () => {
