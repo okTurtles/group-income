@@ -495,8 +495,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
     cy.giKeyRequestedGroupIDs(groupId)
-    cy.giEmptyInvocationQueue()
-
     cy.giLogout()
 
     cy.giLogin(existingMemberUsername, { bypassUI })
