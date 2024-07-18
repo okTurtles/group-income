@@ -24,7 +24,8 @@ export const GROUP_DESCRIPTION_MAX_CHAR = 500
 export const GROUP_PAYMENT_METHOD_MAX_CHAR = 250
 export const GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150
 export const GROUP_CURRENCY_MAX_CHAR = 10
-
+export const GROUP_MAX_PLEDGE_AMOUNT: number = Math.pow(10, 9)
+export const GROUP_MAX_PLEDGE_AMOUNT_STRING = '1,000,000,000$'
 // group-proposal related
 
 export const PROPOSAL_RESULT = 'proposal-result'

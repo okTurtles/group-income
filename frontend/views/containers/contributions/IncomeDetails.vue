@@ -60,6 +60,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
         button-submit.is-success(
           @click='submit'
           data-test='submitIncome'
+          :disabled='$v.form.$invalid'
         )
           i18n Save
 
@@ -84,6 +85,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { L } from '@common/common.js'
 import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
+import { GROUP_MAX_PLEDGE_AMOUNT, GROUP_MAX_PLEDGE_AMOUNT_STRING } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'IncomeDetails',
@@ -118,6 +120,9 @@ export default ({
     ]),
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
+    },
+    isPledging () {
+      return this.form.incomeDetailsType === 'pledgeAmount'
     },
     whoIsPledging () {
       const groupProfiles = this.groupProfiles
@@ -234,6 +239,9 @@ export default ({
         },
         [L('Oops, you entered a negative number')]: function (value) {
           return normalizeCurrency(value) >= 0
+        },
+        [L('Pledge amount cannot exceed {max}', { max: GROUP_MAX_PLEDGE_AMOUNT_STRING })]: function (value) {
+          return !this.isPledging || normalizeCurrency(value) <= GROUP_MAX_PLEDGE_AMOUNT
         },
         [L('Your income must be lower than the group mincome')]: function (value) {
           return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount

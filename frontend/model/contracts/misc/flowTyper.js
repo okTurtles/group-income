@@ -332,6 +332,26 @@ export const number = (
   : TypeValidator<number>
 )
 
+export const numberRange = (from: number, to: number, key: string = ''): TypeValidator<number> => {
+  if (!isNumber(from) || !isNumber(to)) { throw new TypeError('Params for numberRange must be numbers') }
+  if (from >= to) { throw new TypeError('Params "to" should be bigger than "from"') }
+
+  function numberRange (value, _scope = '') {
+    number(value, _scope)
+    if (value >= from && value <= to) return true
+    throw validatorError(
+      numberRange,
+      value,
+      _scope,
+      key
+        ? `number type '${key}' must be within the range of [${from}, ${to}]`
+        : `must be within the range of [${from}, ${to}]`
+    )
+  }
+  numberRange.type = `number(range: [${from}, ${to}])`
+  return numberRange
+}
+
 export const string = (
   function string (value, _scope = '') {
     if (isEmpty(value)) return ''
