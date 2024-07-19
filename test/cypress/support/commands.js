@@ -160,14 +160,12 @@ Cypress.Commands.add('giSignup', (username, {
   groupName,
   bypassUI = false
 } = {}) => {
-  const email = `${username}@email.com`
-
   if (bypassUI) {
     // Wait for the app to be ready
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.app/identity/signupAndLogin', { username, email, password })
+      await sbp('gi.app/identity/signupAndLogin', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -175,7 +173,6 @@ Cypress.Commands.add('giSignup', (username, {
       cy.getByDT('signupBtn').click()
     }
     cy.getByDT('signName').clear().type(username)
-    cy.getByDT('signEmail').clear().type(email)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(password)
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')

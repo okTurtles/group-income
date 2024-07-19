@@ -14,18 +14,6 @@
             :checked='pushNotificationGranted'
             @change='handleNotificationSettings'
           )
-      i18n.is-title-3.c-title(tag='h2') Email notifications
-      .c-divider
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Allow email notifications
-          i18n.c-description(tag='p') Know when new proposals are created, their income and get a reminder to vote if they are about to expire.
-        .switch-wrapper
-          input.switch(
-            type='checkbox'
-            name='switch'
-            :checked='emailNotificationGranted'
-          )
 </template>
 
 <script>
@@ -40,8 +28,7 @@ export default ({
   name: 'NotificationSettings',
   data () {
     return {
-      pushNotificationGranted: false,
-      emailNotificationGranted: true
+      pushNotificationGranted: false
     }
   },
   mounted () {
