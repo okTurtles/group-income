@@ -174,7 +174,6 @@ export default ({
         return
       }
 
-      const normalizedAmount = normalizeCurrency(this.form.amount)
       const paymentMethods = []
 
       if (this.needsIncome) {
@@ -208,11 +207,6 @@ export default ({
         for (const method of filledMethods) {
           paymentMethods.push(method)
         }
-      } else if (normalizedAmount > GROUP_MAX_PLEDGE_AMOUNT) {
-        // 'this' for this.withGroupCurrency() cannot be used and throws an error when it's used for defining the error message in validations {} block below.
-        // So, displaying the error message in the banner instead.
-        this.$refs.formMsg.danger(L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) }))
-        return
       }
 
       try {
@@ -221,7 +215,7 @@ export default ({
           contractID: this.$store.state.currentGroupId,
           data: {
             incomeDetailsType,
-            [incomeDetailsType]: normalizedAmount,
+            [incomeDetailsType]: normalizeCurrency(this.form.amount),
             paymentMethods
           }
         })
@@ -234,28 +228,26 @@ export default ({
       }
     }
   },
-  watch: {
-    'form.incomeDetailsType' (newVal) {
-      if (newVal) {
-        this.$refs?.formMsg.clean()
-      }
-    }
-  },
-  validations: {
-    form: {
-      incomeDetailsType: {
-        [L('This field is required')]: required
-      },
-      amount: {
-        [L('This field is required')]: required,
-        [L('The amount must be a number (e.g. 100.75)')]: function (value) {
-          return currencies[this.groupSettings.mincomeCurrency].validate(value)
+  validations () {
+    return {
+      form: {
+        incomeDetailsType: {
+          [L('This field is required')]: required
         },
-        [L('Oops, you entered a negative number')]: function (value) {
-          return normalizeCurrency(value) >= 0
-        },
-        [L('Your income must be lower than the group mincome')]: function (value) {
-          return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
+        amount: {
+          [L('This field is required')]: required,
+          [L('The amount must be a number (e.g. 100.75)')]: function (value) {
+            return currencies[this.groupSettings.mincomeCurrency].validate(value)
+          },
+          [L('Oops, you entered a negative number')]: function (value) {
+            return normalizeCurrency(value) >= 0
+          },
+          [L('Your income must be lower than the group mincome')]: function (value) {
+            return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
+          },
+          [L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) })]: function (value) {
+            return !this.isPledging || normalizeCurrency(value) < GROUP_MAX_PLEDGE_AMOUNT
+          }
         }
       }
     }
