@@ -289,9 +289,7 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
-      // NOTE: there is a heisenbug here; there are sometimes 2 or sometimes 3 notifications
-      //       so skip to check notificationsCount here and comment it out
-      // notificationsCount: 3,
+      notificationsCount: 3,
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
@@ -470,7 +468,7 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
-      notificationsCount: 4,
+      notificationsCount: 5,
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
