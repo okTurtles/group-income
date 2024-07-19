@@ -160,13 +160,7 @@
 "Cannot remove the last member." = "Cannot remove the last member.";
 
 /* MISSING TRANSLATION - model/contracts/group.js */
-"Chatroom description cannot exceed {maxLength} characters." = "Chatroom description cannot exceed {maxLength} characters.";
-
-/* MISSING TRANSLATION - model/contracts/group.js */
 "Chatroom name cannot contain white-space" = "Chatroom name cannot contain white-space";
-
-/* MISSING TRANSLATION - model/contracts/group.js */
-"Chatroom name cannot exceed {maxLength} characters." = "Chatroom name cannot exceed {maxLength} characters.";
 
 /* MISSING TRANSLATION - model/contracts/group.js */
 "Chatroom name must be lower-case only" = "Chatroom name must be lower-case only";
@@ -176,9 +170,6 @@
 
 /* MISSING TRANSLATION - model/contracts/group.js */
 "Error while joining a chatroom" = "Error while joining a chatroom";
-
-/* MISSING TRANSLATION - model/contracts/group.js */
-"Payment info cannot exceed {maxLength} characters." = "Payment info cannot exceed {maxLength} characters.";
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Unable to confirm that the username {username} belongs to this identity contract";
@@ -372,9 +363,6 @@
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
 
-/* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
-"Email" = "Email";
-
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to delete this file permanently?" = "Are you sure you want to delete this file permanently?";
 
@@ -481,10 +469,16 @@
 "you" = "you";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal cancelled" = "Proposal cancelled";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal expiring on {date}" = "Proposal expiring on {date}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} is accepted. \"{title}\"" = "Proposal from {from} is accepted. \"{title}\"";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} is cancelled. \"{title}\"" = "Proposal from {from} is cancelled. \"{title}\"";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} is expired. \"{title}\"" = "Proposal from {from} is expired. \"{title}\"";
@@ -494,6 +488,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to add {member} is accepted." = "Proposal from {from} to add {member} is accepted.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to add {member} is cancelled." = "Proposal from {from} to add {member} is cancelled.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to add {member} is expired." = "Proposal from {from} to add {member} is expired.";
@@ -508,6 +505,9 @@
 "Proposal from {from} to change the {setting} is accepted." = "Proposal from {from} to change the {setting} is accepted.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to change the {setting} is cancelled." = "Proposal from {from} to change the {setting} is cancelled.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to change the {setting} is expired." = "Proposal from {from} to change the {setting} is expired.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
@@ -515,6 +515,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to remove {member} is accepted." = "Proposal from {from} to remove {member} is accepted.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to remove {member} is cancelled." = "Proposal from {from} to remove {member} is cancelled.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to remove {member} is expiring." = "Proposal from {from} to remove {member} is expiring.";
@@ -649,6 +652,9 @@
 "Payment details required. Please let people know how they can pay you." = "Payment details required. Please let people know how they can pay you.";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
+"Pledge amount cannot exceed {max}" = "Pledge amount cannot exceed {max}";
+
+/* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Your payment methods are invalid. Please review them and try again." = "Your payment methods are invalid. Please review them and try again.";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
@@ -779,6 +785,12 @@
 
 /* MISSING TRANSLATION - views/containers/global-dashboard/DirectMessages.vue */
 "Direct Messages: Coming soon!" = "Direct Messages: Coming soon!";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
+"Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
+"Group name is required" = "Group name is required";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
 "Group purpose cannot exceed {maxchar} characters" = "Group purpose cannot exceed {maxchar} characters";
@@ -1078,16 +1090,7 @@
 "Animations" = "Animations";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Allow email notifications" = "Allow email notifications";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Email notifications" = "Email notifications";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Know when new proposals are created, their income and get a reminder to vote if they are about to expire." = "Know when new proposals are created, their income and get a reminder to vote if they are about to expire.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
 "Use system settings" = "Use system settings";
@@ -1168,10 +1171,10 @@
 "First payment sent. Distribution is now locked." = "First payment sent. Distribution is now locked.";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
-"Learn more about {r1}how we distribute income.{r2}" = "Learn more about {r1}how we distribute income.{r2}";
+"Payment date" = "Payment date";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
-"Payment date" = "Payment date";
+"Try out the {r1}payments simulator.{r2}" = "Try out the {r1}payments simulator.{r2}";
 
 /* MISSING TRANSLATION - views/pages/PendingApproval.vue */
 "Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
@@ -1622,12 +1625,6 @@
 
 /* views/containers/access/SignupForm.vue */
 "This username is already being used." = "Ce nom d’utilisateur est déjà utilisé.";
-
-/* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
-"An email is required." = "Une adresse email est requise.";
-
-/* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
-"Please enter a valid email." = "Veuillez entrer une adresse email valide.";
 
 /* views/containers/access/SignupModal.vue */
 "Sign Up" = "Créer un compte";
@@ -3106,6 +3103,9 @@
 "Amout sent" = "Montant envoyé";
 
 /* Not currently used */
+"An email is required." = "Une adresse email est requise.";
+
+/* Not currently used */
 "Are you sure you want to leave {groupName}?" = "Êtes-vous sûr(e) de vouloir quitter {groupName}?";
 
 /* Not currently used */
@@ -3359,6 +3359,9 @@
 
 /* Not currently used */
 "Percentage of the goal reached by the group." = "Pourcentage de l’objectif atteint par le groupe.";
+
+/* Not currently used */
+"Please enter a valid email." = "Veuillez entrer une adresse email valide.";
 
 /* Not currently used */
 "Proposal accepted!" = "Proposition acceptée!";
