@@ -55,7 +55,7 @@ function assertMonthOverview (items) {
 }
 
 function openNotificationCard ({
-  notificationsCount = 0, // 0 means not to check notifications count
+  notificationsCount = 0, // 0 means not to check number of notifications
   messageToAssert = '',
   clickItem = true
 } = {}) {
