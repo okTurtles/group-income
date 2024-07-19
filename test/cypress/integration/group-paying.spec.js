@@ -54,12 +54,6 @@ function assertMonthOverview (items) {
   })
 }
 
-function assetNotificationCount (n) {
-  cy.getByDT('notificationList').within(() => {
-    cy.get('ul.c-list').children().should('have.length', n)
-  })
-}
-
 function openNotificationCard ({
   notificationsCount = 0, // 0 means not to check notifications count
   messageToAssert = '',
@@ -69,7 +63,9 @@ function openNotificationCard ({
   cy.getByDT('notificationCard').should('be.visible')
 
   if (notificationsCount > 0) {
-    assetNotificationCount(notificationsCount)
+    cy.getByDT('notificationList').within(() => {
+      cy.get('ul.c-list').children().should('have.length', notificationsCount)
+    })
   }
 
   return cy.getByDT('notificationCard').within(() => {
