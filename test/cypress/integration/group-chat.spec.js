@@ -64,9 +64,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         // NOTE: when the member is kicked from the from by proposal
         //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
         //       INTERACTIVE message should be created before the NOTIFICATION message
-        //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
-        //       and the order of two messages could be changed and it can cause the heisenbug
-        //       below block is to handle that heisenbug
+        //       but sometimes (mostly in Cypress) NOTIFICATION message could be created earlier
+        //       and the order of two messages could be changed and it could cause the heisenbug.
+        //       the below block is to handle that heisenbug
         cy.get(messageSelectors.last).invoke('attr', 'class').then(classNames => {
           const isLastMsgTypeNotification = classNames.includes('is-type-notification')
           assertKickerAndMessageContent(
