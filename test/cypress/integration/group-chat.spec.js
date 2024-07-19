@@ -51,26 +51,29 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       // considering it sync the chatroom contract from the beginning
     } else {
       const message = selfLeave ? `Left ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
+      const messageSelectors = {
+        last: 'div.c-message:last-child',
+        secondList: 'div.c-message:nth-last-child(2)'
+      }
+      const assertKickerAndMessageContent = (msgSelector) => {
+        cy.get(`${msgSelector} .c-who > span:first-child`).should('contain', kicker)
+        cy.get(`${msgSelector} .c-notification`).should('contain', message)
+      }
 
-      let isLastElement = true
       if (byProposal) {
         // NOTE: when the member is kicked from the from by proposal
         //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
         //       INTERACTIVE message should be created before the NOTIFICATION message
         //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
         //       this block is to handle that heisenbug
-        cy.wait(1000) // eslint-disable-line cypress/no-unnecessary-waiting
-        cy.get('div.c-message:last-child').invoke('attr', 'class').then(classNames => {
-          isLastElement = classNames.includes('is-type-notification')
+        cy.get(messageSelectors.last).invoke('attr', 'class').then(classNames => {
+          const isLastMsgTypeNotification = classNames.includes('is-type-notification')
+          assertKickerAndMessageContent(
+            isLastMsgTypeNotification ? messageSelectors.last : messageSelectors.secondLast
+          )
         })
-      }
-
-      if (isLastElement) {
-        cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)
-        cy.get('div.c-message:last-child .c-notification').should('contain', message)
       } else {
-        cy.get('div.c-message:nth-last-child(2) .c-who > span:first-child').should('contain', kicker)
-        cy.get('div.c-message:nth-last-child(2) .c-notification').should('contain', message)
+        assertKickerAndMessageContent(messageSelectors.last)
       }
     }
   }
