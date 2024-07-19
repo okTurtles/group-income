@@ -69,7 +69,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         //       below block is to handle that heisenbug
         cy.get(messageSelectors.last).invoke('attr', 'class').then(classNames => {
           const isLastMsgTypeNotification = classNames.includes('is-type-notification')
-          assertKickerAndMessageContent(isLastMsgTypeNotification ? messageSelectors.last : messageSelectors.secondLast)
+          assertKickerAndMessageContent(
+            isLastMsgTypeNotification ? messageSelectors.last : messageSelectors.secondLast
+          )
         })
       } else {
         assertKickerAndMessageContent(messageSelectors.last)
