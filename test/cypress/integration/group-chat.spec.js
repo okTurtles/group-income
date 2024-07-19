@@ -66,7 +66,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         //       INTERACTIVE message should be created before the NOTIFICATION message
         //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
         //       and the order of two messages could be changed and it can cause the heisenbug
-        //       below block is to handle that heisenbug.
+        //       below block is to handle that heisenbug
         cy.get(messageSelectors.last).invoke('attr', 'class').then(classNames => {
           const isLastMsgTypeNotification = classNames.includes('is-type-notification')
           assertKickerAndMessageContent(isLastMsgTypeNotification ? messageSelectors.last : messageSelectors.secondLast)
