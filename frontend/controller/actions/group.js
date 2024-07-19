@@ -27,6 +27,7 @@ import sbp from '@sbp/sbp'
 import {
   ACCEPTED_GROUP,
   JOINED_GROUP,
+  JOINED_CHATROOM,
   LOGOUT,
   REPLACE_MODAL
 } from '@utils/events.js'
@@ -35,7 +36,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
-import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
+import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -656,21 +657,33 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')
-    const me = rootState.loggedIn.identityContractID
-    const memberID = params.data.memberID || me
+    const { identityContractID } = rootState.loggedIn
+    const memberID = params.data.memberID || identityContractID
+    const chatRoomID = params.data.chatRoomID
+    const groupContractID = params.contractID
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
-    if (memberID !== me && rootState[params.data.chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+    if (memberID !== identityContractID && rootState[chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: memberID,
         contractName: 'gi.contracts/identity',
-        subjectContractID: params.data.chatRoomID,
+        subjectContractID: chatRoomID,
         keyIds: '*'
       })
     }
 
-    return await sendMessage({
+    const switchChannelAfterJoined = (contractID: string) => {
+      if (contractID === chatRoomID) {
+        if (rootState[chatRoomID]?.members?.[identityContractID]) {
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID, chatRoomID })
+          sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
+        }
+      }
+    }
+    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+
+    return sendMessage({
       ...omit(params, ['options', 'action'])
     })
   }),
