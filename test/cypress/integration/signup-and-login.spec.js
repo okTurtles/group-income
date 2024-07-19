@@ -42,9 +42,6 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('displayName').clear().type('John Bot')
     cy.getByDT('bio').clear().type('Born in a test case')
 
-    cy.getByDT('profileEmail').should('have.value', `${username}@email.com`)
-    cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
-
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
 
@@ -64,7 +61,6 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('signupBtn').click()
 
     cy.getByDT('signName').type(user2)
-    cy.getByDT('signEmail').type(`${user2}@email.com`)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(wrongPassword)
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
