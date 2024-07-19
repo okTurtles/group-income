@@ -53,7 +53,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       const message = selfLeave ? `Left ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
       const messageSelectors = {
         last: 'div.c-message:last-child',
-        secondList: 'div.c-message:nth-last-child(2)'
+        secondLast: 'div.c-message:nth-last-child(2)'
       }
       const assertKickerAndMessageContent = (msgSelector) => {
         cy.get(`${msgSelector} .c-who > span:first-child`).should('contain', kicker)
