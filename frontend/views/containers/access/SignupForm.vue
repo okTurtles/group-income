@@ -141,7 +141,7 @@ export default ({
         }
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
-        this.$refs.formMsg.danger(e.message)
+        this.$refs.formMsg?.danger(e.message)
       }
     }
   },
