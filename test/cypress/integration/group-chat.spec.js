@@ -65,7 +65,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
         //       INTERACTIVE message should be created before the NOTIFICATION message
         //       but sometimes (only in Cypress) NOTIFICATION message could be created earlier
-        //       this block is to handle that heisenbug
+        //       this block is to handle that heisenbug.
         cy.get(messageSelectors.last).invoke('attr', 'class').then(classNames => {
           const isLastMsgTypeNotification = classNames.includes('is-type-notification')
           assertKickerAndMessageContent(
