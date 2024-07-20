@@ -51,12 +51,15 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
         data-test='joinGroup'
       ) Join a Group
 
-  footer.c-footer(v-if='!isLoggedIn')
-    banner-simple.hide-hoverable-device.hide-tablet.c-pwa-promo(severity='info')
+  footer.c-footer(v-if='!isLoggedIn && ephemeral.showPwaPromo')
+    banner-simple.c-pwa-promo(severity='info')
       template(#header='')
         i18n Install this web app on your device for better usability.
 
-      i18n.is-success.is-small.c-install-btn(tag='button' type='button' @click='onInstallClick') Install
+      button-submit.is-success.is-small.c-install-btn(
+        type='button'
+        @click='onInstallClick'
+      ) {{ L('Install') }}
 
   //- TODO: conditionally show this depending on environment variable
   //- footer.c-footer(v-if='!isLoggedIn')
@@ -69,8 +72,9 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { ACCEPTED_GROUP, OPEN_MODAL } from '@utils/events.js'
+import { ACCEPTED_GROUP, OPEN_MODAL, PWA_INSTALLABLE } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 import { ignoreWhenNavigationCancelled } from '~/frontend/views/utils/misc.js'
@@ -80,7 +84,8 @@ export default ({
   components: {
     SvgJoinGroup,
     SvgCreateGroup,
-    BannerSimple
+    BannerSimple,
+    ButtonSubmit
   },
   computed: {
     ...mapGetters([
@@ -101,12 +106,14 @@ export default ({
           if (contractID !== this.currentGroupId) return
           // For first time joins, force redirect to /pending-approval
           this.ephemeral.ourProfileActive = false
-        }
+        },
+        showPwaPromo: false
       }
     }
   },
   beforeMount () {
     sbp('okTurtles.events/on', ACCEPTED_GROUP, this.ephemeral.listener)
+    this.checkPwaInstallability()
   },
   mounted () {
     this.ephemeral.ourProfileActive = this.ourProfileActive
@@ -134,8 +141,14 @@ export default ({
       const path = this.$route.query.next ?? (this.ephemeral.ourProfileActive ? '/dashboard' : '/pending-approval')
       this.$router.push({ path }).catch(e => ignoreWhenNavigationCancelled(e, path))
     },
-    onInstallClick () {
-      console.log('TODO - pop out pwa install prompt!')
+    checkPwaInstallability () {
+      this.ephemeral.showPwaPromo = sbp('service-worker/check-pwa-installability')
+      sbp('okTurtles.events/once', PWA_INSTALLABLE, () => {
+        this.ephemeral.showPwaPromo = true
+      })
+    },
+    async onInstallClick () {
+      await sbp('service-worker/trigger-install-prompt')
     }
   },
   watch: {
