@@ -4,6 +4,23 @@ import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { PWA_INSTALLABLE } from '@utils/events.js'
+
+const pwa = {
+  deferredInstallPrompt: null,
+  installed: false
+}
+
+// How to provide your own in-app PWA install experience:
+// https://web.dev/articles/customize-install
+
+// PWA related event handlers
+window.addEventListener('beforeinstallprompt', e => {
+  // e.preventDefault() - uncomment this if we want to prevent the browser from displaying its own install UI.
+
+  pwa.deferredInstallPrompt = e
+  sbp('okTurtles.events/emit', PWA_INSTALLABLE)
+})
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
@@ -198,6 +215,15 @@ sbp('sbp/selectors/register', {
         console.error(`[sw] Failed to update the service-worker! - ${err.message}`)
       }
     }
+  },
+  'service-worker/check-pwa-installability': function () {
+    return Boolean(pwa.deferredInstallPrompt)
+  },
+  'service-worker/trigger-install-prompt': async function () {
+    if (!pwa.deferredInstallPrompt) { return false }
+
+    const result = await pwa.deferredInstallPrompt.prompt()
+    return result.outcome
   }
 })
 
