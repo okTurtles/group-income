@@ -50,6 +50,14 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
         @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
+
+  footer.c-footer(v-if='!isLoggedIn')
+    banner-simple.hide-hoverable-device.hide-tablet.c-pwa-promo(severity='info')
+      template(#header='')
+        i18n Install this web app on your device for better usability.
+
+      i18n.is-success.is-small.c-install-btn(tag='button' type='button' @click='onInstallClick') Install
+
   //- TODO: conditionally show this depending on environment variable
   //- footer.c-footer(v-if='!isLoggedIn')
   //-   banner-simple.c-demo-warning(severity='warning')
@@ -125,6 +133,9 @@ export default ({
       // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
       const path = this.$route.query.next ?? (this.ephemeral.ourProfileActive ? '/dashboard' : '/pending-approval')
       this.$router.push({ path }).catch(e => ignoreWhenNavigationCancelled(e, path))
+    },
+    onInstallClick () {
+      console.log('TODO - pop out pwa install prompt!')
     }
   },
   watch: {
@@ -241,5 +252,19 @@ export default ({
 
 .c-demo-warning {
   text-align: left;
+}
+
+.c-pwa-promo {
+  text-align: left;
+
+  ::v-deep .c-body {
+    margin-top: 1rem;
+    text-align: right;
+  }
+}
+
+.c-install-btn {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
 }
 </style>

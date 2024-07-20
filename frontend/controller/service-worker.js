@@ -18,6 +18,7 @@ const pwa = {
 window.addEventListener('beforeinstallprompt', e => {
   // e.preventDefault() - uncomment this if we want to prevent the browser from displaying its own install UI.
 
+  console.log('!@# beforeinstallprompt triggered!!! ', e)
   pwa.deferredInstallPrompt = e
   sbp('okTurtles.events/emit', PWA_INSTALLABLE)
 })
