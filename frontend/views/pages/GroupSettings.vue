@@ -13,10 +13,18 @@ page.c-page
   page-section
     form(@submit.prevent='')
       label.field
-        i18n.label Group name
+        .c-label-container
+          i18n.label Group name
+          char-length-indicator(
+            :current-length='nameCharLen'
+            :max='config.nameMaxChar'
+            :error='nameCharLen > config.nameMaxChar'
+          )
+
         input.input(
           type='text'
           :class='{ error: $v.form.groupName.$error }'
+          :maxlength='config.nameMaxChar'
           v-model='form.groupName'
           @input='debounceField("groupName")'
           @blur='updateField("groupName")'
@@ -25,12 +33,12 @@ page.c-page
         )
 
       label.field
-        .c-desc-label-container
+        .c-label-container
           i18n.label About the group
           char-length-indicator(
             :current-length='descCharLen'
             :max='config.descMaxChar'
-            :error='$v.form.sharedValues.$error'
+            :error='descCharLen > config.descMaxChar'
           )
 
         textarea.textarea(
@@ -64,7 +72,7 @@ page.c-page
 
         i18n.helper This is the currency that will be displayed for every member of the group, across the platform.
 
-      banner-scoped(ref='formMsg' data-test='formMsg')
+      banner-scoped(ref='formMsg' data-test='formMsg' :allowA='true')
 
       .buttons
         button-submit.is-success(
@@ -141,7 +149,7 @@ import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vu
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
+import { GROUP_NAME_MAX_CHAR, GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -166,6 +174,7 @@ export default ({
         mincomeCurrency
       },
       config: {
+        nameMaxChar: GROUP_NAME_MAX_CHAR,
         descMaxChar: GROUP_DESCRIPTION_MAX_CHAR
       },
       allowPublicChannels: false
@@ -191,6 +200,9 @@ export default ({
     configurePublicChannel () {
       // TODO: check if Chelonia server admin allows to create public channels
       return this.isGroupAdmin && false
+    },
+    nameCharLen () {
+      return this.form.groupName?.length || 0
     },
     descCharLen () {
       return this.form.sharedValues?.length || 0
@@ -257,7 +269,8 @@ export default ({
   validations: {
     form: {
       groupName: {
-        [L('This field is required')]: required
+        [L('This field is required')]: required,
+        [L('Group name cannot exceed {maxchar} characters', { maxchar: GROUP_NAME_MAX_CHAR })]: maxLength(GROUP_NAME_MAX_CHAR)
       },
       sharedValues: {
         [L('Group description cannot exceed {maxchar} characters', { maxchar: GROUP_DESCRIPTION_MAX_CHAR })]: maxLength(GROUP_DESCRIPTION_MAX_CHAR)
@@ -280,7 +293,7 @@ export default ({
   max-width: 37rem;
 }
 
-.c-desc-label-container {
+.c-label-container {
   position: relative;
   display: flex;
   column-gap: 0.5rem;
