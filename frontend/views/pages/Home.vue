@@ -51,15 +51,17 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
         data-test='joinGroup'
       ) Join a Group
 
-  footer.c-footer(v-if='!isLoggedIn && ephemeral.showPwaPromo')
-    banner-simple.c-pwa-promo(severity='info')
-      template(#header='')
-        i18n Install this web app on your device for better usability.
+  banner-simple.hide-hoverable-device.hide-tablet.c-pwa-promo(
+    v-if='!isLoggedIn && ephemeral.showPwaPromo'
+    severity='general'
+  )
+    template(#header='')
+      i18n Install this web app on your device for better usability.
 
-      button-submit.is-success.is-small.c-install-btn(
-        type='button'
-        @click='onInstallClick'
-      ) {{ L('Install') }}
+    button-submit.is-success.is-small.c-install-btn(
+      type='button'
+      @click='onInstallClick'
+    ) {{ L('Install') }}
 
   //- TODO: conditionally show this depending on environment variable
   //- footer.c-footer(v-if='!isLoggedIn')
@@ -268,13 +270,21 @@ export default ({
 }
 
 .c-pwa-promo {
+  position: fixed;
+  bottom: 1.875rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10; // should be less than modal, tooltip, prompt etc.
   text-align: left;
+  width: calc(100vw - 3rem);
+  max-width: 31.25rem;
 
   ::v-deep .c-body {
     margin-top: 1rem;
     text-align: right;
   }
 }
+
 
 .c-install-btn {
   padding-left: 1.75rem;
