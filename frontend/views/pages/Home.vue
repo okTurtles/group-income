@@ -285,7 +285,6 @@ export default ({
   }
 }
 
-
 .c-install-btn {
   padding-left: 1.75rem;
   padding-right: 1.75rem;
