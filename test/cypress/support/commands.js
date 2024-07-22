@@ -15,10 +15,10 @@ const API_URL = Cypress.config('baseUrl')
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 const getParamsFromInvitationLink = invitationLink => {
-  const params = new URLSearchParams(new URL(invitationLink).hash.slice(1))
+  const objURL = new URL(invitationLink)
   return {
-    groupId: params.get('groupId'),
-    inviteSecret: params.get('secret')
+    groupId: objURL.searchParams.get('groupId'),
+    inviteSecret: objURL.searchParams.get('secret')
   }
 }
 
