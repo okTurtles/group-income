@@ -15,6 +15,7 @@ const pwa = {
 // https://web.dev/articles/customize-install
 
 // PWA related event handlers
+// NOTE: Apparently, 'beforeinstallprompt' is not fired either when a PWA from the browser is already installed.
 window.addEventListener('beforeinstallprompt', e => {
   // e.preventDefault() - uncomment this if we want to prevent the browser from displaying its own install UI.
 
