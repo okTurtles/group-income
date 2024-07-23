@@ -408,7 +408,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
-      // NOTE: this is to wait until 5 proposals are all loaded in the modal
+      // NOTE: this is to wait until all of the 5 proposals are loaded in the modal
       cy.get('.c-container > .c-header-info .has-text-1').should('contain', '5 proposals')
 
       getProposalItems().eq(2).within(() => {
