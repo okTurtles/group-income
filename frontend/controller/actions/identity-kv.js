@@ -279,13 +279,17 @@ export default (sbp('sbp/selectors/register', {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false
         for (const hash of hashes) {
+          const existing = notifications.find(n => n.hash === hash)
           if (!currentData[hash]) {
-            const existing = notifications.find(n => n.hash === hash)
-            if (existing) {
-              currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
-            }
+            currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
           }
-          if (currentData[hash].read === false) {
+
+          const isUnRead = currentData[hash].read === false
+          // NOTE: sometimes the value from KV store could be different from the one
+          //       from client Vuex store when the device is offline or on bad network.
+          //       in this case, we need to allow users to force the notifications to be marked as read
+          const isDifferent = currentData[hash].read !== existing.read
+          if (isUnRead || isDifferent) {
             currentData[hash].read = true
             isUpdated = true
           }
