@@ -61,7 +61,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       }
 
       if (byProposal) {
-        cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
         // NOTE: when the member is kicked from the from by proposal
         //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
         //       INTERACTIVE message should be created before the NOTIFICATION message
@@ -415,6 +414,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       .should('contain', 'Proposal accepted')
 
     cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
+
+    // NOTE: this check is to wait until the 2 INTERACTIVE mesages are all created
+    //       one for creating proposal and another is for proposal approval
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
 
     cy.giRedirectToGroupChat()
 
