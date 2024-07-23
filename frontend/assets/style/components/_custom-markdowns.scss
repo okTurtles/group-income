@@ -44,7 +44,8 @@
     background-color: $general_1;
     line-height: 1.4;
     margin: 0;
-    white-space: break-spaces;
+    max-width: 100%;
+    overflow-x: auto;
   }
 
   * + pre,

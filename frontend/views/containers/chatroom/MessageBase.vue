@@ -327,6 +327,7 @@ export default ({
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  max-width: 100%;
 }
 
 .c-avatar {
@@ -342,6 +343,10 @@ export default ({
   width: 100%;
 }
 
+.c-body {
+  max-width: calc(100% - 2.5rem);
+}
+
 .c-who {
   display: flex;
 
@@ -354,6 +359,7 @@ export default ({
   word-break: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
+  max-width: 100%;
 
   // When .c-shot is the only element (when .c-who isn't rendered)
   &:first-child:last-child {
