@@ -61,6 +61,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       }
 
       if (byProposal) {
+        cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
         // NOTE: when the member is kicked from the from by proposal
         //       two messages will be created in general chatroom; INTERACTIVE, and NOTIFICATION
         //       INTERACTIVE message should be created before the NOTIFICATION message
