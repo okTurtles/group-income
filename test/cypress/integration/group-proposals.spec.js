@@ -388,7 +388,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('an invalid invitation link cannot be used', () => {
-    cy.visit('/app/join#?groupId=321&secret=123')
+    cy.visit('/app/join?groupId=321&secret=123')
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is not valid')
@@ -408,6 +408,8 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
+      cy.get('.c-container > .c-header-info .has-text-1').should('contain', '5 proposals')
+
       getProposalItems().eq(2).within(() => {
         cy.getByDT('title', 'p').should('contain', 'You proposed')
         cy.getByDT('statusDescription')
