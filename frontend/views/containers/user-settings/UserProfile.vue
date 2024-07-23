@@ -40,19 +40,6 @@
           )
 
         label.field
-          i18n.label Email
-          input.input(
-            :class='{error: $v.form.email.$error}'
-            name='email'
-            type='email'
-            v-model='form.email'
-            @input='debounceField("email")'
-            @blur='updateField("email")'
-            data-test='profileEmail'
-            v-error:email='{ attrs: { "data-test": "badEmail" } }'
-          )
-
-        label.field
           i18n.label Password
           .fake-password(aria-hidden='true') **********
 
@@ -91,7 +78,6 @@
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { required, email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { mapGetters, mapState } from 'vuex'
@@ -117,8 +103,7 @@ export default ({
     return {
       form: {
         displayName: attrsCopy.displayName,
-        bio: attrsCopy.bio,
-        email: attrsCopy.email
+        bio: attrsCopy.bio
       },
       config: {
         bioMaxChar: IDENTITY_BIO_MAX_CHARS
@@ -127,10 +112,6 @@ export default ({
   },
   validations: {
     form: {
-      email: {
-        [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email
-      },
       bio: {
         [L('Reached character limit.')]: (value) => {
           return !value || Number(value.length) <= IDENTITY_BIO_MAX_CHARS

@@ -5505,6 +5505,7 @@
   var isNil = (v) => v === null;
   var isUndef = (v) => typeof v === "undefined";
   var isBoolean = (v) => typeof v === "boolean";
+  var isNumber = (v) => typeof v === "number";
   var isString = (v) => typeof v === "string";
   var isObject = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -5644,6 +5645,19 @@ ${this.getErrorInfo()}`;
     if (isString(value))
       return value;
     throw validatorError(string2, value, _scope);
+  };
+  var stringMax = (numChar, key = "") => {
+    if (!isNumber(numChar)) {
+      throw new Error("param for stringMax must be number");
+    }
+    function stringMax2(value, _scope = "") {
+      string(value, _scope);
+      if (value.length <= numChar)
+        return value;
+      throw validatorError(stringMax2, value, _scope, key ? `string type '${key}' cannot exceed ${numChar} characters` : `cannot exceed ${numChar} characters`);
+    }
+    stringMax2.type = () => `string(max: ${numChar})`;
+    return stringMax2;
   };
   function unionOf_(...typeFuncs) {
     function union(value, _scope = "") {
@@ -7882,7 +7896,10 @@ ${this.getErrorInfo()}`;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
+  var MAX_HASH_LEN = 300;
+  var MAX_URL_LEN = 2048;
   var IDENTITY_USERNAME_MAX_CHARS = 80;
+  var IDENTITY_EMAIL_MAX_CHARS = 320;
   var IDENTITY_BIO_MAX_CHARS = 500;
 
   // frontend/model/contracts/shared/getters/identity.js
@@ -7904,19 +7921,17 @@ ${this.getErrorInfo()}`;
 
   // frontend/model/contracts/identity.js
   var attributesType = objectMaybeOf({
-    username: string,
-    email: string,
-    picture: unionOf(string, objectOf({
-      manifestCid: string,
+    username: stringMax(IDENTITY_USERNAME_MAX_CHARS, "username"),
+    email: optional(stringMax(IDENTITY_EMAIL_MAX_CHARS, "email")),
+    bio: optional(stringMax(IDENTITY_BIO_MAX_CHARS, "bio")),
+    picture: unionOf(stringMax(MAX_URL_LEN), objectOf({
+      manifestCid: stringMax(MAX_HASH_LEN, "manifestCid"),
       downloadParams: optional(object)
     }))
   });
   var validateUsername = (username) => {
     if (!username) {
       throw new TypeError("A username is required");
-    }
-    if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
-      throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
     }
     if (!allowedUsernameCharacters(username)) {
       throw new TypeError("A username cannot contain disallowed characters.");
@@ -7994,9 +8009,6 @@ ${this.getErrorInfo()}`;
           if (has(data, "username")) {
             validateUsername(data.username);
           }
-          if (has(data, "bio") && data.bio > IDENTITY_BIO_MAX_CHARS) {
-            throw new TypeError(`A user bio cannot exceed ${IDENTITY_BIO_MAX_CHARS} characters.`);
-          }
         },
         process({ data }, { state }) {
           for (const key in data) {
@@ -8033,7 +8045,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity/createDirectMessage": {
         validate: (data) => {
           objectOf({
-            contractID: string
+            contractID: stringMax(MAX_HASH_LEN, "contractID")
           })(data);
         },
         process({ data }, { state }) {
@@ -8050,7 +8062,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/joinDirectMessage": {
         validate: objectOf({
-          contractID: string
+          contractID: stringMax(MAX_HASH_LEN, "contractID")
         }),
         process({ data }, { state }) {
           const { contractID } = data;
@@ -8071,7 +8083,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/joinGroup": {
         validate: objectMaybeOf({
-          groupContractID: string,
+          groupContractID: stringMax(MAX_HASH_LEN, "groupContractID"),
           inviteSecret: string,
           creatorID: optional(boolean)
         }),
@@ -8127,7 +8139,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/identity/leaveGroup": {
         validate: objectOf({
-          groupContractID: string,
+          groupContractID: stringMax(MAX_HASH_LEN, "groupContractID"),
           reference: string
         }),
         process({ data }, { state }) {
@@ -8173,7 +8185,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity/setDirectMessageVisibility": {
         validate: (data, { state }) => {
           objectOf({
-            contractID: string,
+            contractID: stringMax(MAX_HASH_LEN, "contractID"),
             visible: boolean
           })(data);
           if (!state.chatRooms[data.contractID]) {
@@ -8187,7 +8199,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/identity/saveFileDeleteToken": {
         validate: objectOf({
           tokensByManifestCid: arrayOf(objectOf({
-            manifestCid: string,
+            manifestCid: stringMax(MAX_HASH_LEN, "manifestCid"),
             token: string
           }))
         }),

@@ -5501,7 +5501,6 @@
 
   // frontend/utils/events.js
   var JOINED_GROUP = "joined-group";
-  var JOINED_CHATROOM = "joined-chatroom";
   var LEFT_CHATROOM = "left-chatroom";
   var DELETED_CHATROOM = "deleted-chatroom";
 
@@ -5679,12 +5678,41 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(number2, value, _scope);
   };
+  var numberRange = (from3, to, key = "") => {
+    if (!isNumber(from3) || !isNumber(to)) {
+      throw new TypeError("Params for numberRange must be numbers");
+    }
+    if (from3 >= to) {
+      throw new TypeError('Params "to" should be bigger than "from"');
+    }
+    function numberRange2(value, _scope = "") {
+      number(value, _scope);
+      if (value >= from3 && value <= to)
+        return value;
+      throw validatorError(numberRange2, value, _scope, key ? `number type '${key}' must be within the range of [${from3}, ${to}]` : `must be within the range of [${from3}, ${to}]`);
+    }
+    numberRange2.type = `number(range: [${from3}, ${to}])`;
+    return numberRange2;
+  };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
       return "";
     if (isString(value))
       return value;
     throw validatorError(string2, value, _scope);
+  };
+  var stringMax = (numChar, key = "") => {
+    if (!isNumber(numChar)) {
+      throw new Error("param for stringMax must be number");
+    }
+    function stringMax2(value, _scope = "") {
+      string(value, _scope);
+      if (value.length <= numChar)
+        return value;
+      throw validatorError(stringMax2, value, _scope, key ? `string type '${key}' cannot exceed ${numChar} characters` : `cannot exceed ${numChar} characters`);
+    }
+    stringMax2.type = () => `string(max: ${numChar})`;
+    return stringMax2;
   };
   function tupleOf_(...typeFuncs) {
     function tuple(value, _scope = "") {
@@ -7983,13 +8011,20 @@ ${this.getErrorInfo()}`;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
+  var MAX_HASH_LEN = 300;
+  var MAX_MEMO_LEN = 4096;
   var INVITE_INITIAL_CREATOR = "invite-initial-creator";
   var PROFILE_STATUS = {
     ACTIVE: "active",
     PENDING: "pending",
     REMOVED: "removed"
   };
+  var GROUP_NAME_MAX_CHAR = 50;
+  var GROUP_DESCRIPTION_MAX_CHAR = 500;
   var GROUP_PAYMENT_METHOD_MAX_CHAR = 250;
+  var GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR = 150;
+  var GROUP_CURRENCY_MAX_CHAR = 10;
+  var GROUP_MAX_PLEDGE_AMOUNT = 1e9;
   var PROPOSAL_RESULT = "proposal-result";
   var PROPOSAL_INVITE_MEMBER = "invite-member";
   var PROPOSAL_REMOVE_MEMBER = "remove-member";
@@ -8552,8 +8587,8 @@ ${this.getErrorInfo()}`;
     invitee: optional(string)
   });
   var chatRoomAttributesType = objectOf({
-    name: string,
-    description: string,
+    name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS),
+    description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS),
     creatorID: optional(string),
     type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
     privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
@@ -8561,13 +8596,21 @@ ${this.getErrorInfo()}`;
   var messageType = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
     text: string,
-    proposal: objectMaybeOf({
+    proposal: objectOf({
       proposalId: string,
       proposalType: string,
+      proposalData: object,
       expires_date_ms: number,
       createdDate: string,
       creatorID: string,
-      variant: unionOf([STATUS_EXPIRING].map((v) => literalOf(v)))
+      status: unionOf(...[
+        STATUS_OPEN,
+        STATUS_PASSED,
+        STATUS_FAILED,
+        STATUS_EXPIRING,
+        STATUS_EXPIRED,
+        STATUS_CANCELLED
+      ].map((v) => literalOf(v)))
     }),
     notification: objectMaybeOf({
       type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
@@ -8900,7 +8943,7 @@ ${this.getErrorInfo()}`;
     if (!userProfile) {
       return false;
     }
-    return userProfile.joinedHeight < height;
+    return userProfile.status === PROFILE_STATUS.ACTIVE && userProfile.joinedHeight < height;
   }
   function updateGroupStreaks({ state, getters }) {
     const streaks = fetchInitKV(state, "streaks", initGroupStreaks());
@@ -8969,23 +9012,12 @@ ${this.getErrorInfo()}`;
       contractID: chatRoomID,
       data: sendingData,
       ...extraParams
-    }).then(() => {
-      if (memberID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
-        (0, import_sbp6.default)("okTurtles.events/emit", LEFT_CHATROOM, { identityContractID: memberID, groupContractID: groupID, chatRoomID });
-      }
     }).catch((e) => {
       if (leavingGroup && (e?.name === "ChelErrorSignatureKeyNotFound" || e?.name === "GIErrorUIRuntimeError" && (["ChelErrorSignatureKeyNotFound", "GIErrorMissingSigningKeyError"].includes(e?.cause?.name) || e?.cause?.name === "GIChatroomNotMemberError"))) {
         return;
       }
-      throw e;
-    }).catch((e) => {
       console.warn("[gi.contracts/group] Error sending chatroom leave action", e);
     });
-    if (memberID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
-      (0, import_sbp6.default)("chelonia/contract/release", chatRoomID).catch((e) => {
-        console.error(`[leaveChatRoomAction] Error releasing chatroom ${chatRoomID}`, e);
-      });
-    }
   };
   var leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
     const chatRooms = state.chatRooms;
@@ -9025,14 +9057,14 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group": {
         validate: objectMaybeOf({
           settings: objectMaybeOf({
-            groupName: string,
+            groupName: stringMax(GROUP_NAME_MAX_CHAR, "groupName"),
             groupPicture: unionOf(string, objectOf({
-              manifestCid: string,
+              manifestCid: stringMax(MAX_HASH_LEN, "manifestCid"),
               downloadParams: optional(object)
             })),
-            sharedValues: string,
+            sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, "sharedValues"),
             mincomeAmount: number,
-            mincomeCurrency: string,
+            mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, "mincomeCurrency"),
             distributionDate: isPeriodStamp,
             distributionPeriodLength: number,
             minimizeDistribution: boolean,
@@ -9101,15 +9133,15 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/payment": {
         validate: actionRequireActiveMember(objectMaybeOf({
-          toMemberID: string,
+          toMemberID: stringMax(MAX_HASH_LEN, "toMemberID"),
           amount: number,
           currencyFromTo: tupleOf(string, string),
           exchangeRate: number,
-          txid: string,
+          txid: stringMax(MAX_HASH_LEN, "txid"),
           status: paymentStatusType,
           paymentType,
           details: optional(object),
-          memo: optional(string)
+          memo: optional(stringMax(MAX_MEMO_LEN, "memo"))
         })),
         process({ data, meta, hash, contractID, height, innerSigningContractID }, { state, getters }) {
           if (data.status === PAYMENT_COMPLETED) {
@@ -9134,11 +9166,11 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/paymentUpdate": {
         validate: actionRequireActiveMember(objectMaybeOf({
-          paymentHash: string,
+          paymentHash: stringMax(MAX_HASH_LEN, "paymentHash"),
           updatedProperties: objectMaybeOf({
             status: paymentStatusType,
             details: object,
-            memo: string
+            memo: stringMax(MAX_MEMO_LEN, "memo")
           })
         })),
         process({ data, meta, hash, contractID, innerSigningContractID }, { state, getters }) {
@@ -9187,8 +9219,8 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/sendPaymentThankYou": {
         validate: actionRequireActiveMember(objectOf({
-          toMemberID: string,
-          memo: string
+          toMemberID: stringMax(MAX_HASH_LEN, "toMemberID"),
+          memo: stringMax(MAX_MEMO_LEN, "memo")
         })),
         process({ data, innerSigningContractID }, { state }) {
           const fromMemberID = fetchInitKV(state.thankYousFrom, innerSigningContractID, {});
@@ -9265,7 +9297,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/proposalVote": {
         validate: actionRequireActiveMember(objectOf({
-          proposalHash: string,
+          proposalHash: stringMax(MAX_HASH_LEN, "proposalHash"),
           vote: string,
           passPayload: optional(unionOf(object, string))
         })),
@@ -9296,7 +9328,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/proposalCancel": {
         validate: actionRequireActiveMember(objectOf({
-          proposalHash: string
+          proposalHash: stringMax(MAX_HASH_LEN, "proposalHash")
         })),
         process({ data, meta, contractID, innerSigningContractID, height }, { state }) {
           const proposal = state.proposals[data.proposalHash];
@@ -9483,7 +9515,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/inviteRevoke": {
         validate: actionRequireActiveMember((data, { state }) => {
           objectOf({
-            inviteKeyId: string
+            inviteKeyId: stringMax(MAX_HASH_LEN, "inviteKeyId")
           })(data);
           if (!state._vm.invites[data.inviteKeyId]) {
             throw new TypeError((0, import_common4.L)("The link does not exist."));
@@ -9495,11 +9527,11 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/updateSettings": {
         validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
           objectMaybeOf({
-            groupName: (x) => typeof x === "string",
+            groupName: stringMax(GROUP_NAME_MAX_CHAR, "groupName"),
             groupPicture: (x) => typeof x === "string",
-            sharedValues: (x) => typeof x === "string",
+            sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, "sharedValues"),
             mincomeAmount: (x) => typeof x === "number" && x > 0,
-            mincomeCurrency: (x) => typeof x === "string",
+            mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, "mincomeCurrency"),
             distributionDate: (x) => typeof x === "string",
             allowPublicChannels: (x) => typeof x === "boolean"
           })(data);
@@ -9537,31 +9569,21 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/group/groupProfileUpdate": {
-        validate: actionRequireActiveMember((data, props) => {
-          objectMaybeOf({
-            incomeDetailsType: (x) => ["incomeAmount", "pledgeAmount"].includes(x),
-            incomeAmount: (x) => typeof x === "number" && x >= 0,
-            pledgeAmount: (x) => typeof x === "number" && x >= 0,
-            nonMonetaryAdd: string,
-            nonMonetaryEdit: objectOf({
-              replace: string,
-              with: string
-            }),
-            nonMonetaryRemove: string,
-            paymentMethods: arrayOf(objectOf({
-              name: string,
-              value: string
-            }))
-          })(data);
-          if (data.paymentMethods) {
-            for (const paymentMethod of data.paymentMethods) {
-              const { value } = paymentMethod;
-              if (value.length > GROUP_PAYMENT_METHOD_MAX_CHAR) {
-                throw new TypeError((0, import_common4.L)("Payment info cannot exceed {maxLength} characters.", { maxLength: GROUP_PAYMENT_METHOD_MAX_CHAR }));
-              }
-            }
-          }
-        }),
+        validate: actionRequireActiveMember(objectMaybeOf({
+          incomeDetailsType: (x) => ["incomeAmount", "pledgeAmount"].includes(x),
+          incomeAmount: (x) => typeof x === "number" && x >= 0,
+          pledgeAmount: numberRange(0, GROUP_MAX_PLEDGE_AMOUNT, "pledgeAmount"),
+          nonMonetaryAdd: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, "nonMonetaryAdd"),
+          nonMonetaryEdit: objectOf({
+            replace: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, "replace"),
+            with: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, "with")
+          }),
+          nonMonetaryRemove: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, "nonMonetaryRemove"),
+          paymentMethods: arrayOf(objectOf({
+            name: string,
+            value: stringMax(GROUP_PAYMENT_METHOD_MAX_CHAR, "paymentMethods.value")
+          }))
+        })),
         process({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
           const groupProfile = state.profiles[innerSigningContractID];
           const nonMonetary = groupProfile.nonMonetaryContributions;
@@ -9605,19 +9627,14 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/addChatRoom": {
         validate: (data) => {
           objectOf({
-            chatRoomID: string,
+            chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID"),
             attributes: chatRoomAttributesType
           })(data);
           const chatroomName = data.attributes.name;
-          const chatroomDesc = data.attributes.description;
           const nameValidationMap = {
             [(0, import_common4.L)("Chatroom name cannot contain white-space")]: (v) => /\s/g.test(v),
-            [(0, import_common4.L)("Chatroom name must be lower-case only")]: (v) => /[A-Z]/g.test(v),
-            [(0, import_common4.L)("Chatroom name cannot exceed {maxLength} characters.", { maxLength: CHATROOM_NAME_LIMITS_IN_CHARS })]: (v) => v.length > CHATROOM_NAME_LIMITS_IN_CHARS
+            [(0, import_common4.L)("Chatroom name must be lower-case only")]: (v) => /[A-Z]/g.test(v)
           };
-          if (chatroomDesc && chatroomDesc.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
-            throw new TypeError((0, import_common4.L)("Chatroom description cannot exceed {maxLength} characters.", { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }));
-          }
           for (const key in nameValidationMap) {
             const check = nameValidationMap[key];
             if (check(chatroomName)) {
@@ -9669,13 +9686,13 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/deleteChatRoom": {
         validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
-          objectOf({ chatRoomID: string })(data);
+          objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID") })(data);
           if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
             throw new TypeError((0, import_common4.L)("Only the channel creator can delete channel."));
           }
         }),
         process({ contractID, data }, { state }) {
-          (0, import_sbp6.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/releaseDeletedChatRoom", state.chatRooms[data.chatRoomID].members, data.chatRoomID]);
+          (0, import_sbp6.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/releaseDeletedChatRoom", data.chatRoomID, state.chatRooms[data.chatRoomID].members]);
           delete state.chatRooms[data.chatRoomID];
         },
         sideEffect({ data, contractID, innerSigningContractID }) {
@@ -9690,7 +9707,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/group/leaveChatRoom": {
         validate: actionRequireActiveMember(objectOf({
-          chatRoomID: string,
+          chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID"),
           memberID: optional(string)
         })),
         process({ data, innerSigningContractID }, { state }) {
@@ -9705,7 +9722,8 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, innerSigningContractID }, { state }) {
           const memberID = data.memberID || innerSigningContractID;
-          if (innerSigningContractID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
+          const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+          if (innerSigningContractID === identityContractID) {
             (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
               const state2 = await (0, import_sbp6.default)("chelonia/contract/state", contractID);
               if (state2?.profiles?.[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -9715,12 +9733,19 @@ ${this.getErrorInfo()}`;
               console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error for ${contractID}`, { contractID, data, error: e });
             });
           }
+          if (memberID === identityContractID) {
+            (0, import_sbp6.default)("okTurtles.events/emit", LEFT_CHATROOM, {
+              identityContractID,
+              groupContractID: contractID,
+              chatRoomID: data.chatRoomID
+            });
+          }
         }
       },
       "gi.contracts/group/joinChatRoom": {
         validate: actionRequireActiveMember(objectMaybeOf({
           memberID: optional(string),
-          chatRoomID: string
+          chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID")
         })),
         process({ data, innerSigningContractID }, { state }) {
           const memberID = data.memberID || innerSigningContractID;
@@ -9738,11 +9763,12 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, innerSigningContractID }) {
           const memberID = data.memberID || innerSigningContractID;
-          if (innerSigningContractID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
+          const { identityContractID } = (0, import_sbp6.default)("state/vuex/state").loggedIn;
+          if (innerSigningContractID === identityContractID) {
             (0, import_sbp6.default)("chelonia/queueInvocation", contractID, () => (0, import_sbp6.default)("gi.contracts/group/joinGroupChatrooms", contractID, data.chatRoomID, memberID)).catch((e) => {
               console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data });
             });
-          } else if (memberID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
+          } else if (memberID === identityContractID) {
             (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
               const state = await (0, import_sbp6.default)("chelonia/contract/state", contractID);
               if (state?.chatRooms[data.chatRoomID]?.members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -9752,30 +9778,22 @@ ${this.getErrorInfo()}`;
               }
             });
           }
-          if (memberID === (0, import_sbp6.default)("state/vuex/state").loggedIn.identityContractID) {
-            (0, import_sbp6.default)("okTurtles.events/emit", JOINED_CHATROOM, { identityContractID: memberID, groupContractID: contractID, chatRoomID: data.chatRoomID });
-          }
         }
       },
       "gi.contracts/group/renameChatRoom": {
         validate: actionRequireActiveMember(objectOf({
-          chatRoomID: string,
-          name: string
+          chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID"),
+          name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, "name")
         })),
         process({ data }, { state }) {
           state.chatRooms[data.chatRoomID]["name"] = data.name;
         }
       },
       "gi.contracts/group/changeChatRoomDescription": {
-        validate: (data, props) => {
-          actionRequireActiveMember(objectOf({
-            chatRoomID: string,
-            description: string
-          }))(data, props);
-          if (data?.description.length > CHATROOM_DESCRIPTION_LIMITS_IN_CHARS) {
-            throw new TypeError((0, import_common4.L)("Chatroom description cannot exceed {maxLength} characters.", { maxLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS }));
-          }
-        },
+        validate: actionRequireActiveMember(objectOf({
+          chatRoomID: stringMax(MAX_HASH_LEN, "chatRoomID"),
+          description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, "description")
+        })),
         process({ data }, { state }) {
           state.chatRooms[data.chatRoomID]["description"] = data.description;
         }
@@ -9946,8 +9964,6 @@ ${this.getErrorInfo()}`;
             contractID: chatRoomID,
             data: actorID === memberID ? {} : { memberID },
             encryptionKeyId
-          }).then(() => {
-            (0, import_sbp6.default)("okTurtles.events/emit", JOINED_CHATROOM, { identityContractID: memberID, groupContractID: (0, import_sbp6.default)("state/vuex/state").currentGroupId, chatRoomID });
           }).catch((e) => {
             if (e.name === "GIErrorUIRuntimeError" && e.cause?.name === "GIChatroomAlreadyMemberError") {
               return;

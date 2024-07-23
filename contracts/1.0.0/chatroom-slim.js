@@ -5680,6 +5680,19 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
+  var stringMax = (numChar, key = "") => {
+    if (!isNumber(numChar)) {
+      throw new Error("param for stringMax must be number");
+    }
+    function stringMax2(value, _scope = "") {
+      string(value, _scope);
+      if (value.length <= numChar)
+        return value;
+      throw validatorError(stringMax2, value, _scope, key ? `string type '${key}' cannot exceed ${numChar} characters` : `cannot exceed ${numChar} characters`);
+    }
+    stringMax2.type = () => `string(max: ${numChar})`;
+    return stringMax2;
+  };
   function unionOf_(...typeFuncs) {
     function union(value, _scope = "") {
       for (const typeFn of typeFuncs) {
@@ -7921,9 +7934,16 @@ ${this.getErrorInfo()}`;
   var findForeignKeysByContractID = (state, contractID) => state._vm?.authorizedKeys && Object.values(state._vm.authorizedKeys).filter((k) => k._notAfterHeight == null && k.foreignKey?.includes(contractID)).map((k) => k.id);
 
   // frontend/model/contracts/shared/constants.js
+  var MAX_HASH_LEN = 300;
+  var STATUS_OPEN = "open";
+  var STATUS_PASSED = "passed";
+  var STATUS_FAILED = "failed";
   var STATUS_EXPIRING = "expiring";
+  var STATUS_EXPIRED = "expired";
+  var STATUS_CANCELLED = "cancelled";
   var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
   var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
+  var CHATROOM_MAX_MESSAGE_LEN = 2e4;
   var CHATROOM_MAX_MESSAGES = 20;
   var CHATROOM_ACTIONS_PER_PAGE = 40;
   var CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = "@";
@@ -8027,6 +8047,9 @@ ${this.getErrorInfo()}`;
       console.error("[leaveChatroom] Error at deleteChatRoomUnreadMessages ", contractID, e);
     });
     await (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomID: contractID });
+    (0, import_sbp4.default)("chelonia/contract/release", contractID).catch((e) => {
+      console.error(`[gi.contracts/chatroom/leave/sideEffect] Error releasing chatroom ${contractID}`, e);
+    });
   }
   function findMessageIdx(hash, messages = []) {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -8129,8 +8152,8 @@ ${this.getErrorInfo()}`;
     invitee: optional(string)
   });
   var chatRoomAttributesType = objectOf({
-    name: string,
-    description: string,
+    name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS),
+    description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS),
     creatorID: optional(string),
     type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
     privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
@@ -8138,13 +8161,21 @@ ${this.getErrorInfo()}`;
   var messageType = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
     text: string,
-    proposal: objectMaybeOf({
+    proposal: objectOf({
       proposalId: string,
       proposalType: string,
+      proposalData: object,
       expires_date_ms: number,
       createdDate: string,
       creatorID: string,
-      variant: unionOf([STATUS_EXPIRING].map((v) => literalOf(v)))
+      status: unionOf(...[
+        STATUS_OPEN,
+        STATUS_PASSED,
+        STATUS_FAILED,
+        STATUS_EXPIRING,
+        STATUS_EXPIRED,
+        STATUS_CANCELLED
+      ].map((v) => literalOf(v)))
     }),
     notification: objectMaybeOf({
       type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
@@ -8199,7 +8230,7 @@ ${this.getErrorInfo()}`;
     chatRoomName
   }) {
     const rootGetters = await (0, import_sbp6.default)("state/vuex/getters");
-    const isDirectMessage = rootGetters.isDirectMessage(contractID);
+    const isGroupDM = rootGetters.isGroupDirectMessage(contractID);
     const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType2);
     if (shouldAddToUnreadMessages) {
       (0, import_sbp6.default)("gi.actions/identity/kv/addChatRoomUnreadMessage", { contractID, messageHash, createdHeight: height });
@@ -8209,7 +8240,7 @@ ${this.getErrorInfo()}`;
     }
     let title = `# ${chatRoomName}`;
     let icon;
-    if (isDirectMessage) {
+    if (isGroupDM) {
       title = rootGetters.ourGroupDirectMessages[contractID].title;
       icon = rootGetters.ourGroupDirectMessages[contractID].picture;
     }
@@ -8342,7 +8373,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/rename": {
         validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-          objectOf({ name: string })(data);
+          objectOf({ name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, "name") })(data);
           if (state.attributes.creatorID !== innerSigningContractID) {
             throw new TypeError((0, import_common3.L)("Only the channel creator can rename."));
           }
@@ -8356,7 +8387,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/changeDescription": {
         validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
-          objectOf({ description: string })(data);
+          objectOf({ description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, "description") })(data);
           if (state.attributes.creatorID !== innerSigningContractID) {
             throw new TypeError((0, import_common3.L)("Only the channel creator can change description."));
           }
@@ -8386,6 +8417,8 @@ ${this.getErrorInfo()}`;
           }
           state.members[memberID].leftHeight = height;
           delete state.members[memberID];
+          if (!state.attributes)
+            return;
           if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
@@ -8410,7 +8443,7 @@ ${this.getErrorInfo()}`;
           }
           (0, import_sbp6.default)("chelonia/queueInvocation", contractID, async () => {
             const state = await (0, import_sbp6.default)("chelonia/contract/state", contractID);
-            if (!state || !!state.members?.[data.memberID]) {
+            if (!state || !!state.members?.[data.memberID] || !state.attributes) {
               return;
             }
             if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
@@ -8429,6 +8462,8 @@ ${this.getErrorInfo()}`;
           }
         }),
         process({ meta }, { state }) {
+          if (!state.attributes)
+            return;
           state.attributes["deletedDate"] = meta.createdDate;
           for (const memberID in state.members) {
             delete state.members[memberID];
@@ -8441,6 +8476,8 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/addMessage": {
         validate: actionRequireInnerSignature(messageType),
         process({ direction, data, meta, hash, height, innerSigningContractID }, { state }) {
+          if (!state.messages)
+            return;
           const existingMsg = state.messages.find((msg) => msg.hash === hash);
           if (!existingMsg) {
             const pending = direction === "outgoing";
@@ -8471,11 +8508,13 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/editMessage": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string,
+          hash: stringMax(MAX_HASH_LEN, "hash"),
           createdHeight: number,
-          text: string
+          text: stringMax(CHATROOM_MAX_MESSAGE_LEN, "text")
         })),
         process({ data, meta }, { state }) {
+          if (!state.messages)
+            return;
           const { hash, text } = data;
           const fnEditMessage = (message) => {
             message["text"] = text;
@@ -8518,9 +8557,9 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/deleteMessage": {
         validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID }, contractID }) => {
           objectOf({
-            hash: string,
-            manifestCids: arrayOf(string),
-            messageSender: string
+            hash: stringMax(MAX_HASH_LEN, "hash"),
+            manifestCids: arrayOf(stringMax(MAX_HASH_LEN, "manifestCids")),
+            messageSender: stringMax(MAX_HASH_LEN, "messageSender")
           })(data);
           if (innerSigningContractID !== data.messageSender) {
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
@@ -8534,6 +8573,8 @@ ${this.getErrorInfo()}`;
           }
         }),
         process({ data, innerSigningContractID }, { state }) {
+          if (!state.messages)
+            return;
           [state.messages, state.pinnedMessages].forEach((messageArray) => {
             const msgIndex = findMessageIdx(data.hash, messageArray);
             if (msgIndex >= 0) {
@@ -8575,11 +8616,13 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/deleteAttachment": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string,
-          manifestCid: string,
-          messageSender: string
+          hash: stringMax(MAX_HASH_LEN, "hash"),
+          manifestCid: stringMax(MAX_HASH_LEN, "manifestCid"),
+          messageSender: stringMax(MAX_HASH_LEN, "messageSender")
         })),
         process({ data }, { state }) {
+          if (!state.messages)
+            return;
           const fnDeleteAttachment = (message) => {
             const oldAttachments = message.attachments;
             if (Array.isArray(oldAttachments)) {
@@ -8609,10 +8652,12 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/makeEmotion": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string,
+          hash: stringMax(MAX_HASH_LEN, "hash"),
           emoticon: string
         })),
         process({ data, innerSigningContractID }, { state }) {
+          if (!state.messages)
+            return;
           const { hash, emoticon } = data;
           const fnMakeEmotion = (message) => {
             let emoticons = cloneDeep(message.emoticons || {});
@@ -8648,11 +8693,13 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/voteOnPoll": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string,
+          hash: stringMax(MAX_HASH_LEN, "hash"),
           votes: arrayOf(string),
           votesAsString: string
         })),
         process({ data, meta, hash, height, innerSigningContractID }, { state }) {
+          if (!state.messages)
+            return;
           const fnVoteOnPoll = (message) => {
             const myVotes = data.votes;
             const pollData = message.pollData;
@@ -8677,6 +8724,8 @@ ${this.getErrorInfo()}`;
           votesAsString: string
         })),
         process({ data, meta, hash, height, innerSigningContractID }, { state }) {
+          if (!state.messages)
+            return;
           const fnChangeVoteOnPoll = (message) => {
             const myUpdatedVotes = data.votes;
             const pollData = message.pollData;
@@ -8699,9 +8748,11 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/closePoll": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string
+          hash: stringMax(MAX_HASH_LEN, "hash")
         })),
         process({ data }, { state }) {
+          if (!state.messages)
+            return;
           const fnClosePoll = (message) => {
             message.pollData["status"] = POLL_STATUS.CLOSED;
           };
@@ -8718,9 +8769,8 @@ ${this.getErrorInfo()}`;
           message: object
         })),
         process({ data, innerSigningContractID }, { state }) {
-          if (!state.pinnedMessages) {
-            state.pinnedMessages = [];
-          }
+          if (!state.messages)
+            return;
           const { message } = data;
           state.pinnedMessages.unshift(message);
           const msgIndex = findMessageIdx(message.hash, state.messages);
@@ -8731,9 +8781,11 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/unpinMessage": {
         validate: actionRequireInnerSignature(objectOf({
-          hash: string
+          hash: stringMax(MAX_HASH_LEN, "hash")
         })),
         process({ data }, { state }) {
+          if (!state.messages)
+            return;
           const pinnedMsgIndex = findMessageIdx(data.hash, state.pinnedMessages);
           if (pinnedMsgIndex >= 0) {
             state.pinnedMessages.splice(pinnedMsgIndex, 1);

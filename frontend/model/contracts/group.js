@@ -4,8 +4,8 @@
 
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -17,6 +17,7 @@ import {
   GROUP_PAYMENT_METHOD_MAX_CHAR,
   GROUP_DESCRIPTION_MAX_CHAR,
   GROUP_NAME_MAX_CHAR,
+  GROUP_MAX_PLEDGE_AMOUNT,
   GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
@@ -1051,7 +1052,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectMaybeOf({
         incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
-        pledgeAmount: x => typeof x === 'number' && x >= 0,
+        pledgeAmount: numberRange(0, GROUP_MAX_PLEDGE_AMOUNT, 'pledgeAmount'),
         nonMonetaryAdd: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryAdd'),
         nonMonetaryEdit: objectOf({
           replace: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'replace'),
@@ -1333,12 +1334,6 @@ sbp('chelonia/defineContract', {
                 console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
               })
             }
-          })
-
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
-            identityContractID,
-            groupContractID: contractID,
-            chatRoomID: data.chatRoomID
           })
         }
       }
@@ -1631,12 +1626,6 @@ sbp('chelonia/defineContract', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
           encryptionKeyId
-        }).then(() => {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, {
-            identityContractID: memberID,
-            groupContractID: sbp('state/vuex/state').currentGroupId,
-            chatRoomID
-          })
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return

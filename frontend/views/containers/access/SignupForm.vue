@@ -13,19 +13,6 @@ form(data-test='signup' @submit.prevent='')
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
     )
 
-  label.field
-    i18n.label Email
-    input.input(
-      :class='{error: $v.form.email.$error}'
-      name='email'
-      type='email'
-      v-model.trim='form.email'
-      @input='debounceField("email")'
-      @blur='updateField("email")'
-      data-test='signEmail'
-      v-error:email='{ attrs: { "data-test": "badEmail" } }'
-    )
-
   .c-password-fields-container
     password-form(:label='L("Password")' name='password' :$v='$v')
 
@@ -56,7 +43,7 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { email, maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
+import { maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -118,7 +105,6 @@ export default ({
     return {
       form: {
         username: '',
-        email: '',
         password: '',
         passwordConfirm: '',
         terms: false,
@@ -140,7 +126,6 @@ export default ({
       try {
         await sbp('gi.app/identity/signupAndLogin', {
           username: this.form.username,
-          email: this.form.email,
           password: new Secret(this.form.password)
         })
         await this.postSubmit()
@@ -156,7 +141,7 @@ export default ({
         }
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
-        this.$refs.formMsg.danger(e.message)
+        this.$refs.formMsg?.danger(e.message)
       }
     }
   },
@@ -195,10 +180,6 @@ export default ({
         },
         passwordConfirm: {
           [L('Passwords do not match.')]: sameAs('password')
-        },
-        email: {
-          [L('An email is required.')]: required,
-          [L('Please enter a valid email.')]: email
         },
         terms: {
           [L('You need to agree to the terms and conditions.')]: (value) => {

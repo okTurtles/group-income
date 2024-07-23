@@ -207,6 +207,12 @@ export default ({
       name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}`
     }
 
+    if (options.memberID) {
+      // NOTE: replace member with their mention when their contractID is provided
+      //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
+      args['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
+    }
+
     const bodyTemplateMap = {
       [PROPOSAL_INVITE_MEMBER]:
         L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
