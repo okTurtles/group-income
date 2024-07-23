@@ -971,6 +971,14 @@ export default (sbp('sbp/selectors/register', {
     const response = await sendMessage({ ...params, data: { ...data, passPayload } })
 
     if (proposalToSend) {
+      // NOTE: sometimes 'notifyProposalStateInGeneralChatRoom' function could be called
+      //       after the 'proposalVote' event is finished its processing (published, received, called process/sideEffect)
+      //       it's not a big problem unless the proposal to remove someone from the group is accepted by the current vote.
+      //       it's when the two messages will be created in general chatroom; one is to tells the proposal is approved
+      //       and the other is to tell the member is left general chatroom.
+      //       the order of two functions that will be called means the order of the two messages in general chatroom.
+      //       so the order of messages isn't always same and that could cause the heisenbug below
+      // https://github.com/okTurtles/group-income/tree/2226-heisenbug-in-group-chatspecjs-more-persistent-one
       await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', {
         groupID: contractID,
         proposal: proposalToSend
