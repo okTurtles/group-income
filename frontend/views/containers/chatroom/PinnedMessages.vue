@@ -306,7 +306,11 @@ export default {
 
     .c-pinned-message-content {
       margin: 0.5rem 0;
-      word-break: break-word;
+
+      .c-text {
+        white-space: pre-line;
+        word-break: break-word;
+      }
 
       .c-poll-inner {
         position: relative;
