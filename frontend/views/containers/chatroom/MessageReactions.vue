@@ -82,6 +82,7 @@ export default ({
 .c-emoticons-list {
   padding-left: 3rem;
   display: flex;
+  flex-wrap: wrap;
 
   &.for-type-poll {
     @include phone {

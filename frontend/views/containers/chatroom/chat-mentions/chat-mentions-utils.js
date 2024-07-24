@@ -59,11 +59,19 @@ function createRecursiveDomObjects (element: any): DomObject {
     This outcome will be used by a Vue render function to render converted markdown cleanly without breaking the html structure.
   */
 
-  const isNodeTypeText = (el: any): boolean => el?.nodeType === Node.TEXT_NODE
+  const isNodeTypeText = element?.nodeType === Node.TEXT_NODE
+  const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat.
 
-  const nodeObj: DomObject = isNodeTypeText(element)
+  const nodeObj: DomObject = isNodeTypeText
     ? { tagName: null, attributes: {}, text: element.textContent }
-    : { tagName: element.tagName, attributes: {} }
+    : {
+        tagName: element.tagName,
+        text: isNodeCodeElement
+          // $FlowFixMe[prop-missing]
+          ? element.innerText.replaceAll('<br>', '')
+          : undefined,
+        attributes: {}
+      }
 
   if (element.attributes?.length) {
     for (const attr of element.attributes) {
@@ -71,7 +79,7 @@ function createRecursiveDomObjects (element: any): DomObject {
     }
   }
 
-  if (element.childNodes?.length) {
+  if (!isNodeCodeElement && element.childNodes?.length) {
     nodeObj.children = []
 
     for (const child of element.childNodes) {
