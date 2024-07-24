@@ -288,10 +288,14 @@ export default ({
       }
     },
     showRevokeLinkMenu (inviteItem) {
-      return inviteItem.isAnyoneLink
-        ? this.isUserGroupCreator &&
-          this.groupShouldPropose // 'Anyone' link must only be revokable when the group size is >= 3 (context: https://github.com/okTurtles/group-income/issues/1670)
-        : inviteItem.status.isActive
+      if (inviteItem.status.isActive) {
+        if (inviteItem.isAnyoneLink) {
+          // 'Anyone' link must only be revokable when the group size is >= 3 (context: https://github.com/okTurtles/group-income/issues/1670)
+          return this.isUserGroupCreator && this.groupShouldPropose
+        }
+        return true
+      }
+      return false
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
