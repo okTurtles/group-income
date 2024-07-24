@@ -246,7 +246,6 @@ export default ({
       const { chatRoomID } = to.params
       const { mhash } = to.query
       const prevChatRoomId = from.params.chatRoomID || ''
-
       if (chatRoomID) {
         if (chatRoomID !== prevChatRoomId) {
           if (!this.isJoinedChatRoom(chatRoomID)) {
