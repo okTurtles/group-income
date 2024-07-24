@@ -252,6 +252,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
+      cy.get('.c-container > .c-header-info .has-text-1').should('contain', '4 proposals')
       assertInvitationLinkFor(2, 'user4')
       assertInvitationLinkFor(1, 'user6')
     })
