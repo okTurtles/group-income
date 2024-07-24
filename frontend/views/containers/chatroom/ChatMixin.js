@@ -80,14 +80,21 @@ const ChatMixin: Object = {
   },
   methods: {
     redirectChat (chatRoomID: string) {
-      const name = 'GroupChatConversation'
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
-      chatRoomID = chatRoomID || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId)
+
+      // NOTE: for better understanding created a variable `shouldUseAlternative` instead of using !chatRoomID.
+      //       to skip passing `chatRoomID` parameter means an intention to redirect to another chatroom
+      //       this happens when the wrong (or cannot accessable) chatRoomID is used while opening group-chat URL
+      const shouldUseAlternative = !chatRoomID
+      if (shouldUseAlternative) {
+        chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId
+      }
 
       this.$router.push({
-        name,
-        params: { chatRoomID }
+        name: 'GroupChatConversation',
+        params: { chatRoomID },
+        query: !shouldUseAlternative ? { ...this.$route.query } : {}
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
