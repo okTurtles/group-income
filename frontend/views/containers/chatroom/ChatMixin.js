@@ -87,8 +87,7 @@ const ChatMixin: Object = {
 
       this.$router.push({
         name,
-        params: { chatRoomID },
-        query: { ...this.$route.query }
+        params: { chatRoomID }
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
