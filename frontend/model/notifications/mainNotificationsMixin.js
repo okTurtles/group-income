@@ -205,8 +205,12 @@ const periodicNotificationEntries = [
 
 const notificationMixin = {
   methods: {
+    getPendingQueuedInvocationsCount (): number {
+      return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+        .flatMap(([, list]) => list).length
+    },
     initOrResetPeriodicNotifications () {
-      if (this.ephemeral.syncs.length) { // If contracts are still syncing, delay the initialisation
+      if (this.getPendingQueuedInvocationsCount() > 0) {
         setTimeout(() => this.initOrResetPeriodicNotifications(), 1000)
         return
       }
