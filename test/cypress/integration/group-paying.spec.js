@@ -55,11 +55,18 @@ function assertMonthOverview (items) {
 }
 
 function openNotificationCard ({
+  notificationsCount = 0, // 0 means not to check number of notifications
   messageToAssert = '',
   clickItem = true
 } = {}) {
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
+
+  if (notificationsCount > 0) {
+    cy.getByDT('notificationList').within(() => {
+      cy.get('ul.c-list').children().should('have.length', notificationsCount)
+    })
+  }
 
   return cy.getByDT('notificationCard').within(() => {
     cy.getByDT('notificationList').find('ul > li').as('items')
@@ -282,6 +289,7 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
+      notificationsCount: 3,
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
@@ -317,6 +325,7 @@ describe('Group Payments', () => {
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`)
     openNotificationCard({
+      notificationsCount: 5,
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
@@ -459,6 +468,7 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
+      notificationsCount: 5,
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
