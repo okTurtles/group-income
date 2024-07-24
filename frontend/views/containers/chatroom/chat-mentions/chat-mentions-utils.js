@@ -60,7 +60,7 @@ function createRecursiveDomObjects (element: any): DomObject {
   */
 
   const isNodeTypeText = element?.nodeType === Node.TEXT_NODE
-  const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat
+  const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat.
 
   const nodeObj: DomObject = isNodeTypeText
     ? { tagName: null, attributes: {}, text: element.textContent }
