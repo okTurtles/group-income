@@ -46,10 +46,13 @@ menu-parent.c-message-menu(ref='menu')
 
     menu-trigger.is-icon-small(
       :aria-label='L("More options")'
+      @trigger='moreOptionsTriggered'
     )
       i.icon-ellipsis-h
 
-  menu-content.c-responsive-menu
+  menu-content.c-responsive-menu(
+    :class='{ "is-to-down": isToDown }'
+  )
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
@@ -130,6 +133,27 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
+const getAvailableMoreOptions = function () {
+  const moreOptions = [{
+    name: 'Copy message text',
+    conditionToShow: this.isText
+  }, {
+    name: 'Copy message link',
+    conditionToShow: true
+  }, {
+    name: 'Pin to channel',
+    conditionToShow: !this.isAlreadyPinned && this.isPinnable
+  }, {
+    name: 'Unpin from channel',
+    conditionToShow: this.isAlreadyPinned
+  }, {
+    name: 'Delete message',
+    conditionToShow: this.isDeletable
+  }]
+
+  return moreOptions.filter(option => option.conditionToShow)
+}
+
 export default ({
   name: 'MessageActions',
   components: {
@@ -152,6 +176,11 @@ export default ({
     isMsgSender: Boolean,
     isGroupCreator: Boolean,
     isAlreadyPinned: Boolean
+  },
+  data () {
+    return {
+      isToDown: false
+    }
   },
   computed: {
     isText () {
@@ -196,6 +225,19 @@ export default ({
           // Change to sbp action
           this.$emit(type, e)
         }
+      }
+    },
+    moreOptionsTriggered () {
+      const eleMessage = this.$el.closest('.c-message')
+      const eleParent = eleMessage.parentElement
+      const heightOfAvailableSpace = eleMessage.offsetTop - eleParent.scrollTop
+      const availableMoreOptions = getAvailableMoreOptions.call(this)
+      const calculatedMoreOptionsMenuHeight = availableMoreOptions.length * 36 + 2 * 8 // 8px = padding of 0.5rem for bottom and top
+      const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
+
+      this.isToDown = false
+      if (heightOfAvailableSpace < calculatedHeightOfNeededSpace) {
+        this.isToDown = true
       }
     }
   }
@@ -254,6 +296,11 @@ export default ({
       right: 0.5rem;
       top: auto;
       bottom: calc(100% + 1.5rem);
+
+      &.is-to-down {
+        top: 1.75rem;
+        bottom: auto;
+      }
 
       &.is-active {
         min-width: 13rem;
