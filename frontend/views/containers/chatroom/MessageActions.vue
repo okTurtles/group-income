@@ -85,74 +85,22 @@ menu-parent.c-message-menu(ref='menu')
         i.icon-undo
         i18n Add emoticons
 
-      menu-item.is-icon-small(
-        v-if='isText'
-        tag='button'
-        @click.stop='action("copyMessageText")'
-      )
-        i.icon-copy
-        i18n Copy message text
-
-      menu-item.is-icon-small(
-        tag='button'
-        @click.stop='action("copyMessageLink")'
-      )
-        i.icon-link
-        i18n Copy message link
-
-      menu-item.is-icon-small(
-        v-if='!isAlreadyPinned && isPinnable'
-        tag='button'
-        data-test='pinMessage'
-        @click.stop='action("pinToChannel")'
-      )
-        i.icon-thumbtack
-        i18n Pin to channel
-
-      menu-item.is-icon-small(
-        v-if='isAlreadyPinned'
-        tag='button'
-        data-test='unpinMessage'
-        @click.stop='action("unpinFromChannel")'
-      )
-        i.icon-thumbtack
-        i18n Unpin from channel
-
-      menu-item.is-icon-small.is-danger(
-        tag='button'
-        data-test='deleteMessage'
-        v-if='isDeletable'
-        @click.stop='action("deleteMessage")'
-      )
-        i.icon-trash-alt
-        i18n Delete message
+      template(v-for='(option, index) in moreOptions')
+        menu-item.is-icon-small(
+          :key='index'
+          tag='button'
+          :data-test='option.action'
+          @click.stop='action(option.action)'
+        )
+          i(:class='`icon-${option.icon}`')
+          span {{ option.name }}
 </template>
 
 <script>
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-
-const getAvailableMoreOptions = function () {
-  const moreOptions = [{
-    name: 'Copy message text',
-    conditionToShow: this.isText
-  }, {
-    name: 'Copy message link',
-    conditionToShow: true
-  }, {
-    name: 'Pin to channel',
-    conditionToShow: !this.isAlreadyPinned && this.isPinnable
-  }, {
-    name: 'Unpin from channel',
-    conditionToShow: this.isAlreadyPinned
-  }, {
-    name: 'Delete message',
-    conditionToShow: this.isDeletable
-  }]
-
-  return moreOptions.filter(option => option.conditionToShow)
-}
+import { L } from '@common/common.js'
 
 export default ({
   name: 'MessageActions',
@@ -198,6 +146,36 @@ export default ({
     isDeletable () {
       return this.isGroupCreator ||
         (this.isMsgSender && (this.isText || this.isPoll))
+    },
+    moreOptions () {
+      const possibleMoreOptions = [{
+        name: L('Copy message text'),
+        action: 'copyMessageText',
+        icon: 'copy',
+        conditionToShow: this.isText
+      }, {
+        name: L('Copy message link'),
+        action: 'copyMessageLink',
+        icon: 'link',
+        conditionToShow: true
+      }, {
+        name: L('Pin to channel'),
+        action: 'pinToChannel',
+        icon: 'thumbtack',
+        conditionToShow: !this.isAlreadyPinned && this.isPinnable
+      }, {
+        name: L('Unpin from channel'),
+        action: 'unpinFromChannel',
+        icon: 'thumbtack',
+        conditionToShow: this.isAlreadyPinned
+      }, {
+        name: L('Delete message'),
+        action: 'deleteMessage',
+        icon: 'trash-alt',
+        conditionToShow: this.isDeletable
+      }]
+
+      return possibleMoreOptions.filter(option => option.conditionToShow)
     }
   },
   methods: {
@@ -231,8 +209,7 @@ export default ({
       const eleMessage = this.$el.closest('.c-message')
       const eleParent = eleMessage.parentElement
       const heightOfAvailableSpace = eleMessage.offsetTop - eleParent.scrollTop
-      const availableMoreOptions = getAvailableMoreOptions.call(this)
-      const calculatedMoreOptionsMenuHeight = availableMoreOptions.length * 36 + 2 * 8 // 8px = padding of 0.5rem for bottom and top
+      const calculatedMoreOptionsMenuHeight = this.moreOptions.length * 36 + 2 * 8 // 8px = padding of 0.5rem for bottom and top
       const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
 
       this.isToDown = false
