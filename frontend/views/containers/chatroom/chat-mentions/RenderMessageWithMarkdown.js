@@ -38,6 +38,9 @@ const RenderMessageWithMarkdown: any = {
               query[key] = value
             }
             routerOptions.route = { path, query }
+            if (url.hash) {
+              routerOptions.route['hash'] = url.hash
+            }
             routerOptions.href = this.$router.resolve(routerOptions.route).href
             routerOptions.isInAppRouter = true
           }

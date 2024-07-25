@@ -83,7 +83,7 @@ export default ({
         pageStatus: 'LOADING',
         invitation: {},
         groupInfo: {},
-        query: null
+        hash: null
       }
     }
   },
@@ -102,8 +102,8 @@ export default ({
     }
   },
   mounted () {
-    // For some reason in some Cypress tests it loses the route query when initialized is called
-    this.ephemeral.query = Object.assign({}, this.$route.query)
+    // For some reason in some Cypress tests it loses the route hash when initialized is called
+    this.ephemeral.hash = new URLSearchParams(this.$route.hash.slice(1))
     if (syncFinished || !this.ourIdentityContractId) {
       this.initialize()
     } else {
@@ -114,8 +114,8 @@ export default ({
     async initialize () {
       try {
         const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
-        const groupId = this.ephemeral.query.groupId
-        const secret = this.ephemeral.query.secret
+        const groupId = this.ephemeral.hash.get('groupId')
+        const secret = this.ephemeral.hash.get('secret')
         if (!groupId || !secret) {
           console.error('Invalid invite link: missing group ID or secret')
           this.ephemeral.errorMsg = messageToAskAnother
@@ -143,7 +143,7 @@ export default ({
         }
         if (this.ourIdentityContractId) {
           const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
-          const targetGroupId = this.ephemeral.query?.groupId || ''
+          const targetGroupId = this.ephemeral.hash?.get('groupId') || ''
           const targetGroupState = this.$store.state[targetGroupId] || {}
 
           if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(targetGroupState?.profiles?.[this.ourIdentityContractId])) {
@@ -161,15 +161,15 @@ export default ({
           }
           return
         }
-        const creatorID = this.ephemeral.query.creatorID
-        const creatorUsername = this.ephemeral.query.creatorUsername
+        const creatorID = this.ephemeral.hash.get('creatorID')
+        const creatorUsername = this.ephemeral.hash.get('creatorUsername')
         const who = creatorUsername || creatorID
         const message = who
           ? L('{who} invited you to join their group!', { who })
           : L('You were invited to join')
 
         this.ephemeral.invitation = {
-          groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
+          groupName: this.ephemeral.hash.get('groupName') ?? L('(group name unavailable)'),
           creatorID,
           creatorUsername,
           message
@@ -196,8 +196,8 @@ export default ({
     },
     async accept () {
       this.ephemeral.errorMsg = null
-      const groupId = this.ephemeral.query.groupId
-      const secret = this.ephemeral.query.secret
+      const groupId = this.ephemeral.hash.get('groupId')
+      const secret = this.ephemeral.hash.get('secret')
 
       const profileStatus = this.$store.state.contracts[groupId]?.profiles?.[this.ourIdentityContractId]?.status
       if ([PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(profileStatus)) {

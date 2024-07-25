@@ -389,7 +389,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('an invalid invitation link cannot be used', () => {
-    cy.visit('/app/join?groupId=321&secret=123')
+    cy.visit('/app/join#groupId=321&secret=123')
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is not valid')
