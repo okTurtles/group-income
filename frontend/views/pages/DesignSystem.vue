@@ -580,6 +580,16 @@ page(
               |  with a&nbsp;
               a.link(href='/') link.
 
+        tr
+          td
+            pre banner-simple(severity='general')
+          td
+            banner-simple(severity='general')
+              | This is a&nbsp;
+              strong short message
+              |  with a&nbsp;
+              a.link(href='/') link.
+
       h4.is-title-4 With title
       table
         thead
