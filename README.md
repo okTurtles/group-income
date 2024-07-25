@@ -72,6 +72,15 @@ Create a tunnel to share access over the Internet:
 grunt dev --tunnel
 ```
 
+> [!IMPORTANT]
+> This service (localtunnel) doesn't seem to work anymore.
+> Instead please try [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
+> ```
+> $ grunt dev
+> # then, in another terminal:
+> $ ssh -R 80:localhost:8000 nokey@localhost.run
+> ```
+
 Build the app for distribution
 
 ```bash
