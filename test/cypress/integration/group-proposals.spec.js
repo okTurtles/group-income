@@ -252,6 +252,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
+      // NOTE: this is to wait until all of the 4 proposals are loaded inside the modal
       cy.get('.c-container > .c-header-info .has-text-1').should('contain', '4 proposals')
       assertInvitationLinkFor(2, 'user4')
       assertInvitationLinkFor(1, 'user6')
@@ -389,7 +390,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('an invalid invitation link cannot be used', () => {
-    cy.visit('/app/join#groupId=321&secret=123')
+    cy.visit('/app/join#?groupId=321&secret=123')
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is not valid')

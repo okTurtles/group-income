@@ -42,7 +42,7 @@ const loginGuard = {
 
 const inviteGuard = {
   guard: (to, from) => {
-    // ex: http://localhost:8000/app/join#groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
+    // ex: http://localhost:8000/app/join#?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
     return !(to.hash.includes('groupId=') && to.hash.includes('secret='))
   },
   redirect: (to, from) => ({ path: '/' })
