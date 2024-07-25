@@ -54,43 +54,12 @@ menu-parent.c-message-menu(ref='menu')
     :class='{ "is-to-down": isToDown }'
   )
     ul
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        @click.stop='action("openEmoticon", $event)'
-      )
-        i.icon-smile-beam
-        i18n Add reaction
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='isEditable'
-        @click.stop='action("editMessage")'
-      )
-        i.icon-pencil-alt
-        i18n Edit
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='isText'
-        @click.stop='action("reply")'
-      )
-        i.icon-reply
-        i18n Reply
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='variant==="failed"'
-        @click.stop='action("retry")'
-      )
-        i.icon-undo
-        i18n Add emoticons
-
       template(v-for='(option, index) in moreOptions')
         menu-item.is-icon-small(
           :key='index'
           tag='button'
           :data-test='option.action'
-          @click.stop='action(option.action)'
+          @click.stop='action(option.action, $event)'
         )
           i(:class='`icon-${option.icon}`')
           span {{ option.name }}
@@ -127,6 +96,7 @@ export default ({
   },
   data () {
     return {
+      isDesktopScreen: true,
       isToDown: false
     }
   },
@@ -149,6 +119,26 @@ export default ({
     },
     moreOptions () {
       const possibleMoreOptions = [{
+        name: L('Add reaction'),
+        action: 'openEmoticon',
+        icon: 'smile-beam',
+        conditionToShow: !this.isDesktopScreen
+      }, {
+        name: L('Edit'),
+        action: 'editMessage',
+        icon: 'pencil-alt',
+        conditionToShow: !this.isDesktopScreen && this.isEditable
+      }, {
+        name: L('Reply'),
+        action: 'Reply',
+        icon: 'reply',
+        conditionToShow: !this.isDesktopScreen && this.isText
+      }, {
+        name: L('Retry'),
+        action: 'retry',
+        icon: 'undo',
+        conditionToShow: !this.isDesktopScreen && this.variant === 'failed'
+      }, {
         name: L('Copy message text'),
         action: 'copyMessageText',
         icon: 'copy',
@@ -177,6 +167,17 @@ export default ({
 
       return possibleMoreOptions.filter(option => option.conditionToShow)
     }
+  },
+  created () {
+    this.matchMediaDesktop = window.matchMedia('screen and (min-width: 1200px)')
+
+    this.matchMediaDesktop.onchange = (e) => {
+      this.isDesktopScreen = e.matches
+    }
+    this.isDesktopScreen = this.matchMediaDesktop.matches
+  },
+  beforeDestroy () {
+    this.matchMediaDesktop.onchange = null
   },
   methods: {
     action (type, e) {
@@ -209,7 +210,8 @@ export default ({
       const eleMessage = this.$el.closest('.c-message')
       const eleParent = eleMessage.parentElement
       const heightOfAvailableSpace = eleMessage.offsetTop - eleParent.scrollTop
-      const calculatedMoreOptionsMenuHeight = this.moreOptions.length * 36 + 2 * 8 // 8px = padding of 0.5rem for bottom and top
+      const heightOfMenuItem = this.isDesktopScreen ? 36 : 54
+      const calculatedMoreOptionsMenuHeight = this.moreOptions.length * heightOfMenuItem + 2 * 8 // 8px = padding of 0.5rem for bottom and top
       const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
 
       this.isToDown = false
