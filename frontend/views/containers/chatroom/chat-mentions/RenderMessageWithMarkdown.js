@@ -38,7 +38,7 @@ const RenderMessageWithMarkdown: any = {
             for (const [key, value] of url.searchParams) {
               query[key] = value
             }
-            routerOptions.route = { path, query }
+            routerOptions.route = { path, query, hash: url.hash }
             routerOptions.href = this.$router.resolve(routerOptions.route).href
             routerOptions.isInAppRouter = true
           }
