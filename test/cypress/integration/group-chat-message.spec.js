@@ -80,7 +80,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
           cy.getByDT('menuTrigger').click()
         })
         cy.getByDT('menuContent').within(() => {
-          cy.getByDT('pinMessage').click()
+          cy.getByDT('pinToChannel').click()
         })
         cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
@@ -91,7 +91,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   function unpinMessage (nth) {
     cy.getByDT('numberOfPinnedMessages').click()
     cy.getByDT('pinnedMessages').find(`.c-body>.c-pinned-message:nth-child(${nth})`).within(() => {
-      cy.getByDT('unpinMessage').click()
+      cy.getByDT('unpinFromChannel').click()
     })
 
     cy.getByDT('modal').within(() => {

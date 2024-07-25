@@ -26,6 +26,7 @@ const RenderMessageWithMarkdown: any = {
     const recursiveCall = (entry: any): any => {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
+        const isCodeElement = entry.tagName === 'CODE'
 
         const routerOptions = { isInAppRouter: false, route: {}, href: '' }
         if (entry.tagName === 'A' && entry.attributes.href) {
@@ -37,7 +38,7 @@ const RenderMessageWithMarkdown: any = {
             for (const [key, value] of url.searchParams) {
               query[key] = value
             }
-            routerOptions.route = { path, query }
+            routerOptions.route = { path, query, hash: url.hash }
             routerOptions.href = this.$router.resolve(routerOptions.route).href
             routerOptions.isInAppRouter = true
           }
@@ -65,7 +66,7 @@ const RenderMessageWithMarkdown: any = {
           opts,
           hasChildren
             ? entry.children.map(child => recursiveCall(child))
-            : undefined
+            : isCodeElement ? entry.text : undefined
         )
       } else if (entry.text) {
         return createElement(

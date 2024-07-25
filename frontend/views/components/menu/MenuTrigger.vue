@@ -21,10 +21,11 @@ export default ({
     }
   },
   methods: {
-    handleClick () {
+    handleClick (e) {
       if (this.isActive) {
         this.Menu.closeMenu()
       } else {
+        this.$emit('trigger')
         this.Menu.handleTrigger()
       }
     }

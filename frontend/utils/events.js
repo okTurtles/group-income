@@ -51,3 +51,5 @@ export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
 export const NAMESPACE_REGISTRATION = 'namespace-registration'
 
 export const KV_QUEUE = 'kv-queue'
+
+export const PWA_INSTALLABLE = 'pwa-installable'

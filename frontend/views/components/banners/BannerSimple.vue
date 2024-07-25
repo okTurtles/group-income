@@ -19,7 +19,7 @@ export default ({
       default: 'info',
       validator: function (value) {
         // The value must match one of these strings
-        return ['success', 'info', 'warning', 'danger'].indexOf(value) !== -1
+        return ['success', 'info', 'warning', 'danger', 'general'].indexOf(value) !== -1
       }
     }
   },
@@ -29,7 +29,8 @@ export default ({
         warning: 'icon-exclamation-triangle c-icon',
         danger: 'icon-times-circle c-icon',
         info: 'icon-info-circle c-icon',
-        success: 'icon-check-circle c-icon'
+        success: 'icon-check-circle c-icon',
+        general: 'icon-info-circle c-icon'
       }[this.severity]
     }
   }
@@ -58,6 +59,15 @@ export default ({
     &:focus {
       color: $text_0;
       border-bottom-color: $text_0;
+    }
+  }
+
+  &.is-general {
+    background-color: $general_1;
+    color: $text_1;
+
+    .c-icon {
+      color: $text_1;
     }
   }
 

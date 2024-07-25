@@ -2,7 +2,6 @@
 .c-chat-main(
   v-if='summary.chatRoomID'
   :class='{ "is-dnd-active": dndState && dndState.isActive }'
-  @dragstart='dragStartHandler'
   @dragover='dragStartHandler'
 )
   drag-active-overlay(
@@ -1087,17 +1086,15 @@ export default ({
     }, 250),
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
-      // handler function for 'dragstart', 'dragover' events
-      const items = Array.from(e?.dataTransfer?.items) || []
+      e.preventDefault()
+      // handler function for 'dragstart', 'dragover' events.
 
-      if (items.some(entry => entry.kind === 'file')) { // check if the detected content is something attachable to the chat.
-        if (!this.dndState.isActive) {
-          this.dndState.isActive = true
-        }
-
-        // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
-        e.dataTransfer.dropEffect = 'copy'
+      if (!this.dndState.isActive) {
+        this.dndState.isActive = true
       }
+
+      // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+      e.dataTransfer.dropEffect = 'copy'
     },
     dragEndHandler (e) {
       // handler function for 'dragleave', 'dragend', 'drop' events
