@@ -46,89 +46,30 @@ menu-parent.c-message-menu(ref='menu')
 
     menu-trigger.is-icon-small(
       :aria-label='L("More options")'
+      @trigger='moreOptionsTriggered'
     )
       i.icon-ellipsis-h
 
-  menu-content.c-responsive-menu
+  menu-content.c-responsive-menu(
+    :class='{ "is-to-down": isToDown }'
+  )
     ul
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        @click.stop='action("openEmoticon", $event)'
-      )
-        i.icon-smile-beam
-        i18n Add reaction
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='isEditable'
-        @click.stop='action("editMessage")'
-      )
-        i.icon-pencil-alt
-        i18n Edit
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='isText'
-        @click.stop='action("reply")'
-      )
-        i.icon-reply
-        i18n Reply
-
-      menu-item.hide-desktop.is-icon-small(
-        tag='button'
-        v-if='variant==="failed"'
-        @click.stop='action("retry")'
-      )
-        i.icon-undo
-        i18n Add emoticons
-
-      menu-item.is-icon-small(
-        v-if='isText'
-        tag='button'
-        @click.stop='action("copyMessageText")'
-      )
-        i.icon-copy
-        i18n Copy message text
-
-      menu-item.is-icon-small(
-        tag='button'
-        @click.stop='action("copyMessageLink")'
-      )
-        i.icon-link
-        i18n Copy message link
-
-      menu-item.is-icon-small(
-        v-if='!isAlreadyPinned && isPinnable'
-        tag='button'
-        data-test='pinMessage'
-        @click.stop='action("pinToChannel")'
-      )
-        i.icon-thumbtack
-        i18n Pin to channel
-
-      menu-item.is-icon-small(
-        v-if='isAlreadyPinned'
-        tag='button'
-        data-test='unpinMessage'
-        @click.stop='action("unpinFromChannel")'
-      )
-        i.icon-thumbtack
-        i18n Unpin from channel
-
-      menu-item.is-icon-small.is-danger(
-        tag='button'
-        data-test='deleteMessage'
-        v-if='isDeletable'
-        @click.stop='action("deleteMessage")'
-      )
-        i.icon-trash-alt
-        i18n Delete message
+      template(v-for='(option, index) in moreOptions')
+        menu-item.is-icon-small(
+          :key='index'
+          tag='button'
+          :data-test='option.action'
+          @click.stop='action(option.action, $event)'
+        )
+          i(:class='`icon-${option.icon}`')
+          span {{ option.name }}
 </template>
 
 <script>
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'MessageActions',
@@ -153,6 +94,12 @@ export default ({
     isGroupCreator: Boolean,
     isAlreadyPinned: Boolean
   },
+  data () {
+    return {
+      isDesktopScreen: true,
+      isToDown: false
+    }
+  },
   computed: {
     isText () {
       return this.type === MESSAGE_TYPES.TEXT
@@ -169,7 +116,68 @@ export default ({
     isDeletable () {
       return this.isGroupCreator ||
         (this.isMsgSender && (this.isText || this.isPoll))
+    },
+    moreOptions () {
+      const possibleMoreOptions = [{
+        name: L('Add reaction'),
+        action: 'openEmoticon',
+        icon: 'smile-beam',
+        conditionToShow: !this.isDesktopScreen
+      }, {
+        name: L('Edit'),
+        action: 'editMessage',
+        icon: 'pencil-alt',
+        conditionToShow: !this.isDesktopScreen && this.isEditable
+      }, {
+        name: L('Reply'),
+        action: 'Reply',
+        icon: 'reply',
+        conditionToShow: !this.isDesktopScreen && this.isText
+      }, {
+        name: L('Retry'),
+        action: 'retry',
+        icon: 'undo',
+        conditionToShow: !this.isDesktopScreen && this.variant === 'failed'
+      }, {
+        name: L('Copy message text'),
+        action: 'copyMessageText',
+        icon: 'copy',
+        conditionToShow: this.isText
+      }, {
+        name: L('Copy message link'),
+        action: 'copyMessageLink',
+        icon: 'link',
+        conditionToShow: true
+      }, {
+        name: L('Pin to channel'),
+        action: 'pinToChannel',
+        icon: 'thumbtack',
+        conditionToShow: !this.isAlreadyPinned && this.isPinnable
+      }, {
+        name: L('Unpin from channel'),
+        action: 'unpinFromChannel',
+        icon: 'thumbtack',
+        conditionToShow: this.isAlreadyPinned
+      }, {
+        name: L('Delete message'),
+        action: 'deleteMessage',
+        icon: 'trash-alt',
+        conditionToShow: this.isDeletable
+      }]
+
+      return possibleMoreOptions.filter(option => option.conditionToShow)
     }
+  },
+  created () {
+    this.matchMediaDesktop = window.matchMedia('screen and (min-width: 1200px)')
+
+    this.matchMediaDesktop.onchange = (e) => {
+      this.isDesktopScreen = e.matches
+    }
+    this.isDesktopScreen = this.matchMediaDesktop.matches
+  },
+  beforeDestroy () {
+    this.matchMediaDesktop.onchange = null
   },
   methods: {
     action (type, e) {
@@ -196,6 +204,19 @@ export default ({
           // Change to sbp action
           this.$emit(type, e)
         }
+      }
+    },
+    moreOptionsTriggered () {
+      const eleMessage = this.$el.closest('.c-message')
+      const eleParent = eleMessage.parentElement
+      const heightOfAvailableSpace = eleMessage.offsetTop - eleParent.scrollTop
+      const heightOfMenuItem = this.isDesktopScreen ? 36 : 54
+      const calculatedMoreOptionsMenuHeight = this.moreOptions.length * heightOfMenuItem + 2 * 8 // 8px = padding of 0.5rem for bottom and top
+      const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
+
+      this.isToDown = false
+      if (heightOfAvailableSpace < calculatedHeightOfNeededSpace) {
+        this.isToDown = true
       }
     }
   }
@@ -254,6 +275,11 @@ export default ({
       right: 0.5rem;
       top: auto;
       bottom: calc(100% + 1.5rem);
+
+      &.is-to-down {
+        top: 1.75rem;
+        bottom: auto;
+      }
 
       &.is-active {
         min-width: 13rem;
