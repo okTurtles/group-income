@@ -286,8 +286,8 @@ export default (sbp('sbp/selectors/register', {
 
           const isUnRead = currentData[hash].read === false
           // NOTE: sometimes the value from KV store could be different from the one
-          //       from client Vuex store when the device is offline or on bad network.
-          //       in this case, we need to allow users to force the notifications to be marked as read.
+          //       from client Vuex store when the device is offline or on bad network
+          //       in this case, we need to allow users to force the notifications to be marked as read
           const isDifferent = currentData[hash].read !== existing.read
           if (isUnRead || isDifferent) {
             currentData[hash].read = true
