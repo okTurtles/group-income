@@ -18,7 +18,7 @@
               avatar-user(:contractID='msg.from' size='xs')
               .c-message-sender-name.has-text-bold.has-ellipsis {{ userDisplayNameFromID(msg.from) }}
             tooltip(:text='ephemeral.isDesktopScreen ? L("Unpin this message") : L("Unpin")')
-              span.c-unpin-button(data-test='unpinMessage' @click.stop='unpinMessage(msg.hash)')
+              span.c-unpin-button(data-test='unpinFromChannel' @click.stop='unpinMessage(msg.hash)')
                 i.icon-times
           .c-pinned-message-content
             render-message-with-markdown.c-text(v-if='isText(msg)' :text='msg.text' :edited='!!msg.updatedDate')
