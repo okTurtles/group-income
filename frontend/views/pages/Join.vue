@@ -83,7 +83,7 @@ export default ({
         pageStatus: 'LOADING',
         invitation: {},
         groupInfo: {},
-        query: null
+        hash: null
       }
     }
   },
@@ -102,7 +102,7 @@ export default ({
     }
   },
   mounted () {
-    // For some reason in some Cypress tests it loses the route query when initialized is called
+    // For some reason in some Cypress tests it loses the route hash when initialized is called
     this.ephemeral.hash = new URLSearchParams(this.$route.hash.slice(1))
     if (syncFinished || !this.ourIdentityContractId) {
       this.initialize()

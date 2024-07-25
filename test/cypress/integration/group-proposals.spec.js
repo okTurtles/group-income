@@ -252,6 +252,8 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
+      // NOTE: this is to wait until all of the 4 proposals are loaded inside the modal
+      cy.get('.c-container > .c-header-info .has-text-1').should('contain', '4 proposals')
       assertInvitationLinkFor(2, 'user4')
       assertInvitationLinkFor(1, 'user6')
     })
@@ -408,6 +410,9 @@ describe('Proposals - Add members', () => {
     cy.getByDT('openAllProposals').click()
     cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
+      // NOTE: this is to wait until all of the 5 proposals are loaded inside the modal
+      cy.get('.c-container > .c-header-info .has-text-1').should('contain', '5 proposals')
+
       getProposalItems().eq(2).within(() => {
         cy.getByDT('title', 'p').should('contain', 'You proposed')
         cy.getByDT('statusDescription')
