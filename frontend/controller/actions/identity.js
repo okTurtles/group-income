@@ -254,8 +254,6 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
       sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
-      await sbp('gi.actions/identity/kv/load')
-
       const contractIDs = groupContractsByType(cheloniaState?.contracts)
       await syncContractsInOrder(identityContractID, contractIDs)
 

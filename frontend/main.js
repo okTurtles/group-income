@@ -434,6 +434,8 @@ async function startApp () {
         }
         this.ephemeral.finishedLogin = 'yes'
 
+        sbp('gi.actions/identity/kv/load')
+
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
