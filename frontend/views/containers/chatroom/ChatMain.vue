@@ -1087,7 +1087,7 @@ export default ({
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
       e.preventDefault()
-      // handler function for 'dragstart', 'dragover' events
+      // handler function for 'dragstart', 'dragover' events.
 
       if (!this.dndState.isActive) {
         this.dndState.isActive = true
