@@ -434,7 +434,9 @@ async function startApp () {
         }
         this.ephemeral.finishedLogin = 'yes'
 
-        sbp('gi.actions/identity/kv/load')
+        sbp('gi.actions/identity/kv/load').catch(e => {
+          console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
+        })
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
