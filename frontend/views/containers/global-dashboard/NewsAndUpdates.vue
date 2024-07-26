@@ -21,10 +21,10 @@ import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
-{
+  {
     createdAt: new Date('2024-07-26'),
     title: 'Group Income 1.0 released!',
-    content: "See the release party footage on our blog: " +
+    content: 'See the release party footage on our blog: ' +
       '[https://groupincome.org/2024/07/group-income-released/](https://groupincome.org/2024/07/group-income-released/)'
   },
   {
