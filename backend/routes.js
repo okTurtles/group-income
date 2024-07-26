@@ -159,7 +159,7 @@ if (process.env.NODE_ENV === 'development') {
       })
     }
   }, function (request, h) {
-    const ip = request.info.remoteAddress
+    const ip = request.headers['x-real-ip'] || request.info.remoteAddress
     const log = levelToColor[request.payload.level]
     console.debug(chalk.bold.yellow(`REMOTE LOG (${ip}): `) + log(`[${request.payload.level}] ${request.payload.value}`))
     return h.response().code(200)
@@ -722,7 +722,7 @@ route.POST('/zkpp/register/{name}', {
       }
     }
   } catch (e) {
-    const ip = req.info.remoteAddress
+    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at POST /zkpp/{name}: ' + e.message, { ip })
   }
 
@@ -740,7 +740,7 @@ route.GET('/zkpp/{name}/auth_hash', {
 
     return challenge || Boom.notFound()
   } catch (e) {
-    const ip = req.info.remoteAddress
+    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message, { ip })
   }
 
@@ -765,7 +765,7 @@ route.GET('/zkpp/{name}/contract_hash', {
       return salt
     }
   } catch (e) {
-    const ip = req.info.remoteAddress
+    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message, { ip })
   }
 
@@ -791,7 +791,7 @@ route.POST('/zkpp/updatePasswordHash/{name}', {
       return result
     }
   } catch (e) {
-    const ip = req.info.remoteAddress
+    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message, { ip })
   }
 

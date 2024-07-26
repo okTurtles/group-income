@@ -156,9 +156,6 @@
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupChat.vue */
 "Add description" = "Add description";
 
-/* views/containers/chatroom/MessageActions.vue */
-"Add emoticons" = "Add emoticons";
-
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add income details" = "Add income details";
 
@@ -1122,7 +1119,7 @@
 /* views/pages/GroupSettings.vue */
 "Group name" = "Group name";
 
-/* views/containers/group-settings/GroupCreationModal.vue */
+/* views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
 "Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
 
 /* views/containers/group-settings/GroupCreationModal.vue */
@@ -1208,6 +1205,12 @@
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "Information about your pledges streaks and other streak members appears here." = "Information about your pledges streaks and other streak members appears here.";
+
+/* views/pages/Home.vue */
+"Install" = "Install";
+
+/* views/pages/Home.vue */
+"Install this web app on your device for better usability." = "Install this web app on your device for better usability.";
 
 /* views/containers/design-system/DSModalFullscreen.vue, views/containers/design-system/DSModalNested.vue */
 "Introduce the potential new member(s) to your group" = "Introduce the potential new member(s) to your group";
