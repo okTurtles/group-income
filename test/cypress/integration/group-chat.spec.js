@@ -504,6 +504,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
+    // TODO: uncomment this and fix this heisenbug: https://github.com/okTurtles/group-income/issues/2256
     // cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
     cy.getByDT('channelMembers').should('contain', '2 members')
     cy.giLogout()

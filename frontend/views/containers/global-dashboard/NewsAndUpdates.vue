@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-news-and-updates-container
-  .c-post-block(v-for='post in dummyPosts' :key='post.id')
+  .c-post-block(v-for='(post, index) in dummyPosts' :key='index')
     .c-post-created-date {{ humanDate(post.createdAt, { month: 'long', year: 'numeric', day: 'numeric' }) }}
 
     .card.c-post-card
@@ -21,8 +21,13 @@ import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
+{
+    createdAt: new Date('2024-07-26'),
+    title: 'Group Income 1.0 released!',
+    content: "See the release party footage on our blog: " +
+      '[https://groupincome.org/2024/07/group-income-released/](https://groupincome.org/2024/07/group-income-released/)'
+  },
   {
-    id: 'dummy-post-1',
     createdAt: new Date('2023-06-08'),
     title: 'The Prototype is Ready',
     content: "It's been quite a journey, but we're finally here. A new kind of software is ready for testing. " +
@@ -31,7 +36,6 @@ const dummyPosts = [
       '[https://groupincome.org/2023/06/the-prototype-is-ready/](https://groupincome.org/2023/06/the-prototype-is-ready/)'
   },
   {
-    id: 'dummy-post-2',
     createdAt: new Date('2021-06-08'),
     title: 'Roadmap Updates',
     content: "Some say it's not the destination that matters so much, but the journey and friends you meet along the way. " +
