@@ -706,9 +706,9 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
 
 Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   // TODO: Temporary. If we're in the process of joining, some messages in the
-  // chatroom are dropped. We should fix the issue in ChatMain by investigating
-  // the cause for this, but in the meantime we can address the issue by waiting
-  // for all ongoing operations to complete.
+  //       chatroom are dropped. We should fix the issue in ChatMain by investigating
+  //       the cause for this, but in the meantime we can address the issue by waiting
+  //       for all ongoing operations to complete.
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
