@@ -1,16 +1,24 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
+sbp('okTurtles.events/on', ONLINE, () => {
+  sbp('gi.actions/identity/kv/load').catch(e => {
+    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
+  })
+})
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
+    console.info('loading data from identity key-value store...')
     await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
     await sbp('gi.actions/identity/kv/loadPreferences')
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
+    console.info('identity key-value store data loaded!')
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
@@ -279,13 +287,17 @@ export default (sbp('sbp/selectors/register', {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false
         for (const hash of hashes) {
+          const existing = notifications.find(n => n.hash === hash)
           if (!currentData[hash]) {
-            const existing = notifications.find(n => n.hash === hash)
-            if (existing) {
-              currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
-            }
+            currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
           }
-          if (currentData[hash].read === false) {
+
+          const isUnRead = currentData[hash].read === false
+          // NOTE: sometimes the value from KV store could be different from the one
+          //       from client Vuex store when the device is offline or on bad network
+          //       in this case, we need to allow users to force the notifications to be marked as read
+          const isDifferent = currentData[hash].read !== existing.read
+          if (isUnRead || isDifferent) {
             currentData[hash].read = true
             isUpdated = true
           }

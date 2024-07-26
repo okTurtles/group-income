@@ -27,7 +27,7 @@ import './controller/service-worker.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, ONLINE, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -434,6 +434,10 @@ async function startApp () {
         }
         this.ephemeral.finishedLogin = 'yes'
 
+        sbp('gi.actions/identity/kv/load').catch(e => {
+          console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
+        })
+
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
@@ -479,6 +483,8 @@ async function startApp () {
           },
           online () {
             sbp('gi.ui/clearBanner')
+            sbp('okTurtles.events/emit', ONLINE)
+            console.info('back online!')
           },
           'reconnection-attempt' () {
             sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
@@ -488,6 +494,8 @@ async function startApp () {
           },
           'reconnection-succeeded' () {
             sbp('gi.ui/clearBanner')
+            sbp('okTurtles.events/emit', ONLINE)
+            console.info('reconnected to pubsub!')
           },
           'subscription-succeeded' (event) {
             const { channelID } = event.detail

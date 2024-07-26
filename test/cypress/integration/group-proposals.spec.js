@@ -334,7 +334,7 @@ describe('Proposals - Add members', () => {
 
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
     // Expiry check in Group Settings page and Dashboard
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
 
