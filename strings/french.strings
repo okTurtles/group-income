@@ -787,13 +787,13 @@
 "Direct Messages: Coming soon!" = "Direct Messages: Coming soon!";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
-"Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
-
-/* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
 "Group name is required" = "Group name is required";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
 "Group purpose cannot exceed {maxchar} characters" = "Group purpose cannot exceed {maxchar} characters";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
+"Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupJoinModal.vue */
 "2. Wait for an existing member to use the app" = "2. Wait for an existing member to use the app";
@@ -1136,6 +1136,12 @@
 
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "Group description cannot exceed {maxchar} characters" = "Group description cannot exceed {maxchar} characters";
+
+/* MISSING TRANSLATION - views/pages/Home.vue */
+"Install this web app on your device for better usability." = "Install this web app on your device for better usability.";
+
+/* MISSING TRANSLATION - views/pages/Home.vue */
+"Install" = "Install";
 
 /* MISSING TRANSLATION - views/pages/Join.vue */
 "(group name unavailable)" = "(group name unavailable)";
@@ -1811,9 +1817,6 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "You will no longer be able to send or see messages in this channel." = "Vous ne pourrez plus envoyer ni recevoir des messages dans ce salon.";
-
-/* views/containers/chatroom/MessageActions.vue */
-"Add emoticons" = "Ajouter des émoticônes";
 
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "Autres options";
@@ -3083,6 +3086,9 @@
 
 /* Not currently used */
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
+
+/* Not currently used */
+"Add emoticons" = "Ajouter des émoticônes";
 
 /* Not currently used */
 "Add {span_} to channel{_span}" = "Ajouter {span_} au salon{_span}";
