@@ -504,8 +504,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
     cy.getByDT('channelMembers').should('contain', '2 members')
+    cy.giSendMessage(me, 'Hi. I am back!')
     cy.giLogout()
   })
 
@@ -526,8 +526,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
     cy.getByDT('channelMembers').should('contain', '3 members')
+    cy.giSendMessage(me, 'Hi. I am back, too!')
     cy.giLogout()
   })
 
