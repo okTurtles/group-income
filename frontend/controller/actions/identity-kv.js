@@ -1,10 +1,16 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
+
+sbp('okTurtles.events/on', ONLINE, () => {
+  sbp('gi.actions/identity/kv/load').catch(e => {
+    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
+  })
+})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
