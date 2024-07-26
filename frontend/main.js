@@ -483,6 +483,8 @@ async function startApp () {
           },
           online () {
             sbp('gi.ui/clearBanner')
+            sbp('okTurtles.events/emit', ONLINE)
+            console.info('back online!')
           },
           'reconnection-attempt' () {
             sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
@@ -493,6 +495,7 @@ async function startApp () {
           'reconnection-succeeded' () {
             sbp('gi.ui/clearBanner')
             sbp('okTurtles.events/emit', ONLINE)
+            console.info('reconnected to pubsub!')
           },
           'subscription-succeeded' (event) {
             const { channelID } = event.detail
