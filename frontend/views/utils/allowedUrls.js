@@ -13,7 +13,7 @@ const ALLOWED_URLS: Object = Object.freeze(Object.fromEntries([
   ['BLOG_PAGE', 'https://groupincome.org/blog'],
   ['DONATE_PAGE', 'https://groupincome.org/donate'],
   ['FAQ_PAGE', 'https://groupincome.org/faq'],
-  ['COMMUNITY_PAGE', 'https://groupincome.org/community'],
+  ['COMMUNITY_PAGE', 'https://github.com/okTurtles/group-income/discussions'],
   ['TERMS_PAGE', 'https://groupincome.org/terms-and-conditions'],
   ['WIKIPEDIA_DUNBARS_NUMBER', "https://en.wikipedia.org/wiki/Dunbar's_number"]
 ]))
