@@ -54,7 +54,7 @@ if (!['development', 'production'].includes(NODE_ENV)) {
 let CONTRACTS_VERSION = packageJSON.contractsVersion
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' ? `@${new Date().toISOString()}` : '')
+const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
