@@ -750,10 +750,11 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
+  cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
   if (inviter) {
     // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
     cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').scrollIntoView()
-    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
+    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', 'inviter')
   }
   const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
   cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-notification').should('contain', message)
