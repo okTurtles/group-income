@@ -567,7 +567,10 @@ module.exports = (grunt) => {
     if (!production) {
       grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
     }
-    grunt.task.run(['chelDeploy', 'backend:launch', 'keepalive'])
+    // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
+    // contract manifests match the ones that are the dist archive. We do this in both production
+    // and development environments to make sure they match when serving the site using grunt serve.
+    grunt.task.run(['exec:chelProdDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
