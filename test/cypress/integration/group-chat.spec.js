@@ -496,7 +496,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       groupName: groupName1,
       existingMemberUsername: user1,
       isLoggedIn: true,
-      bypassUI: true
+      bypassUI: true,
+      forTesting: true
     })
   })
 
