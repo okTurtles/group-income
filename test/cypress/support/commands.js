@@ -739,6 +739,8 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
 
   cy.getByDT('conversationWrapper').within(($el) => {
     if (inviter) {
+      // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
+      cy.get('.c-message:last-child .c-who > span:first-child').scrollIntoView()
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
     }
     const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
