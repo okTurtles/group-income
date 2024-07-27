@@ -201,8 +201,7 @@ Cypress.Commands.add('giLogin', (username, {
   bypassUI,
   // NOTE: the 'firstLoginAfterJoinGroup' attribute is true only when it's the FIRST login after joining group
   firstLoginAfterJoinGroup = false,
-  toGroupDashboardUponSuccess = true,
-  forTesting = false
+  toGroupDashboardUponSuccess = true
 } = {}) => {
   if (bypassUI) {
     // Wait for the app to be ready
@@ -259,7 +258,7 @@ Cypress.Commands.add('giLogin', (username, {
     if (!bypassUI) {
       cy.getByDT('toDashboardBtn').click()
     }
-    cy.giCheckIfJoinedGeneralChatroom(username, forTesting)
+    cy.giCheckIfJoinedGeneralChatroom(username)
   }
 })
 
@@ -461,8 +460,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   displayName,
   shouldLogoutAfter = true,
   actionBeforeLogout,
-  bypassUI,
-  forTesting = false
+  bypassUI
 }) => {
   const { groupId, inviteSecret } = getParamsFromInvitationLink(invitationLink)
   if (bypassUI) {
@@ -502,7 +500,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.giNoPendingGroupKeyShares()
     cy.giLogout()
 
-    cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true, forTesting })
+    cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
   } else {
     // NOTE: if existingMemberUsername doens't exist
     //       it means the invitation link is unique for someone
@@ -706,7 +704,7 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
   })
 })
 
-Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username, forTesting) => {
+Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   // TODO: Temporary. If we're in the process of joining, some messages in the
   //       chatroom are dropped. We should fix the issue in ChatMain by investigating
   //       the cause for this, but in the meantime we can address the issue by waiting
@@ -730,13 +728,12 @@ Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username, forTesting) =>
   })
   cy.closeModal()
 
-  cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username, username, username, forTesting)
-
+  cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username)
   cy.getByDT('dashboard').click()
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (
-  channelName, me, inviter, invitee, forTesting
+  channelName, me, inviter, invitee
 ) => {
   cy.getByDT('channelName').should('contain', channelName)
   cy.getByDT(`channel-${channelName}-in`).within(() => {
@@ -753,18 +750,10 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  if (forTesting) {
-    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
-  }
-
   if (inviter) {
     // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
     cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').scrollIntoView()
-    if (forTesting) {
-      cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', 'inviter')
-    } else {
-      cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
-    }
+    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
   }
   const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
   cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-notification').should('contain', message)
