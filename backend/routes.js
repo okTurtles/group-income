@@ -42,6 +42,9 @@ const route = new Proxy({}, {
 
 // RESTful API routes
 
+// TODO: Update this regex once `chel` uses prefixed manifests
+const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
@@ -52,8 +55,7 @@ route.POST('/event', {
   },
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
-  // TODO: Update this regex once `chel` uses prefixed manifests
-  const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+  const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
@@ -89,6 +91,7 @@ route.POST('/event', {
             if (Boom.isBoom(r)) {
               return r
             }
+            console.info(`new user: ${name}=${deserializedHEAD.contractID} (${ip})`)
           }
         }
       }
@@ -113,6 +116,7 @@ route.POST('/event', {
     }
     return deserializedHEAD.hash
   } catch (err) {
+    err.ip = ip
     logger.error(err, 'POST /event', err.message)
     return err
   }
@@ -120,6 +124,7 @@ route.POST('/event', {
 
 route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
   const { contractID, since, limit } = request.params
+  const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
     if (contractID.startsWith('_private') || since.startsWith('_private')) {
       return Boom.notFound()
@@ -138,6 +143,7 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
+    err.ip = ip
     logger.error(err, `GET /eventsAfter/${contractID}/${since}`, err.message)
     return err
   }
@@ -722,8 +728,8 @@ route.POST('/zkpp/register/{name}', {
       }
     }
   } catch (e) {
-    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/{name}: ' + e.message, { ip })
+    e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
+    console.error(e, 'Error at POST /zkpp/{name}: ' + e.message)
   }
 
   return Boom.internal('internal error')
@@ -740,8 +746,8 @@ route.GET('/zkpp/{name}/auth_hash', {
 
     return challenge || Boom.notFound()
   } catch (e) {
-    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message, { ip })
+    e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
+    console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
@@ -765,8 +771,8 @@ route.GET('/zkpp/{name}/contract_hash', {
       return salt
     }
   } catch (e) {
-    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message, { ip })
+    e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
+    console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
@@ -791,8 +797,8 @@ route.POST('/zkpp/updatePasswordHash/{name}', {
       return result
     }
   } catch (e) {
-    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message, { ip })
+    e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
+    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message)
   }
 
   return Boom.internal('internal error')
