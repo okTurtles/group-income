@@ -559,15 +559,13 @@ module.exports = (grunt) => {
 
   grunt.registerTask('deploy', function () {
     if (!production) {
-      grunt.log.error(chalk.red('Please run with NODE_ENV=production'))
-      process.exit(1)
+      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
     }
     grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
   })
   grunt.registerTask('serve', function () {
     if (!production) {
-      grunt.log.error(chalk.red('Please run with NODE_ENV=production'))
-      process.exit(1)
+      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
     }
     grunt.task.run(['chelDeploy', 'backend:launch', 'keepalive'])
   })
