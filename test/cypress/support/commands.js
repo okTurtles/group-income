@@ -720,7 +720,8 @@ Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Members')
   cy.getByDT('modal').within(() => {
     if (username) {
-      // NOTE: username is not provided only when creating group
+      // NOTE: username is not provided only when creating group.
+      //       so there is always only one member in the list, and no need to type username
       cy.getByDT('search').clear().type(username)
     }
     cy.getByDT('joinedChannelMembersList').children().should('have.length', 1)
