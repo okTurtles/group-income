@@ -715,6 +715,18 @@ Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   cy.giEmptyInvocationQueue()
 
   cy.giRedirectToGroupChat()
+
+  cy.getByDT('channelMembers').click()
+  cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Members')
+  cy.getByDT('modal').within(() => {
+    if (username) {
+      // NOTE: username is not provided only when creating group
+      cy.getByDT('search').clear().type(username)
+    }
+    cy.getByDT('joinedChannelMembersList').children().should('have.length', 1)
+  })
+  cy.closeModal()
+
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username)
   cy.getByDT('dashboard').click()
 })
