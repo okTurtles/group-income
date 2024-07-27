@@ -219,10 +219,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       existingMemberUsername: user1,
       groupName: groupName1,
-      shouldLogoutAfter: true,
       bypassUI: true
     })
-    me = undefined
   })
 
   it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
