@@ -156,9 +156,13 @@ export default ({
     checkHasUpdates () {
       // check if the payment details have been updated since load.
       const entriesToCheck = this.form.methods.filter(method => method.name !== 'choose')
-      return entriesToCheck.some(
-        method => this.savedMethods.findIndex(saved => saved.name === method.name && saved.value === method.value) === -1
-      )
+
+      if (entriesToCheck.length !== this.savedMethods.length) { return true }
+      else {
+        return entriesToCheck.some(
+          method => this.savedMethods.findIndex(saved => saved.name === method.name && saved.value === method.value) === -1
+        )
+      }
     }
   }
 }: Object)
