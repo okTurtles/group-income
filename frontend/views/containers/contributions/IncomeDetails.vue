@@ -174,9 +174,9 @@ export default ({
         return
       }
 
-      const paymentMethods = []
+      let paymentMethodsUpdates = null
 
-      if (this.needsIncome) {
+      if (this.needsIncome && this.$refs.paymentMethods.checkHasUpdates()) {
         this.$refs.paymentMethods.$v.form.$touch()
 
         // Find the methods that have some info filled...
@@ -204,8 +204,9 @@ export default ({
           return
         }
 
+        paymentMethodsUpdates = []
         for (const method of filledMethods) {
-          paymentMethods.push(method)
+          paymentMethodsUpdates.push(method)
         }
       }
 
@@ -216,7 +217,11 @@ export default ({
           data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
-            paymentMethods
+            ...(
+              paymentMethodsUpdates?.length
+                ? { paymentMethods: paymentMethodsUpdates }
+                : {}
+            )
           }
         })
 

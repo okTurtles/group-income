@@ -71,7 +71,8 @@ export default ({
     },
     form: {
       methods: []
-    }
+    },
+    savedMethods: []
   }),
   validations () {
     return {
@@ -90,8 +91,8 @@ export default ({
     }
   },
   created () {
-    const savedMethods = this.ourGroupProfile.paymentMethods || []
-    const savedMethodsCount = savedMethods.length
+    this.savedMethods = this.ourGroupProfile.paymentMethods || []
+    const savedMethodsCount = this.savedMethods.length
 
     if (savedMethodsCount === 0) {
       // set the minimum necessary to show the first empty field.
@@ -103,7 +104,7 @@ export default ({
     }
 
     for (let index = 0; index < savedMethodsCount; index++) {
-      const method = savedMethods[index]
+      const method = this.savedMethods[index]
       Vue.set(this.form.methods, index, {
         name: method.name,
         value: method.value
@@ -151,6 +152,13 @@ export default ({
           value: ''
         })
       }
+    },
+    checkHasUpdates () {
+      // check if the payment details have been updated since load.
+      const entriesToCheck = this.form.methods.filter(method => method.name !== 'choose')
+      return entriesToCheck.some(
+        method => this.savedMethods.findIndex(saved => saved.name === method.name && saved.value === method.value) === -1
+      )
     }
   }
 }: Object)
