@@ -205,7 +205,7 @@ export default ({
         }
 
         if (this.$refs.paymentMethods.checkHasUpdates()) {
-          // if payment methods have been updated, add them to the payload too.
+          // if payment methods have been updated, add them to the payload too
           paymentMethodsUpdates = filledMethods
         }
       }
