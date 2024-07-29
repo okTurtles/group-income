@@ -176,7 +176,7 @@ export default ({
 
       let paymentMethodsUpdates = null
 
-      if (this.needsIncome && this.$refs.paymentMethods.checkHasUpdates()) {
+      if (this.needsIncome) {
         this.$refs.paymentMethods.$v.form.$touch()
 
         // Find the methods that have some info filled...
@@ -204,9 +204,8 @@ export default ({
           return
         }
 
-        paymentMethodsUpdates = []
-        for (const method of filledMethods) {
-          paymentMethodsUpdates.push(method)
+        if (this.$refs.paymentMethods.checkHasUpdates()) {
+          paymentMethodsUpdates = filledMethods
         }
       }
 
