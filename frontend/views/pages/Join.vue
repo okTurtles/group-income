@@ -142,13 +142,12 @@ export default ({
           return
         }
         if (this.ourIdentityContractId) {
-          const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
           const targetGroupId = this.ephemeral.hash?.get('groupId') || ''
           const targetGroupState = this.$store.state[targetGroupId] || {}
 
           if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(targetGroupState?.profiles?.[this.ourIdentityContractId])) {
             this.goToDashboard()
-          } else if (myGroupIds.includes(targetGroupId)) { // if the user is already part of the target group.
+          } else if (this.checkAlreadyJoinedGroup(targetGroupId)) { // if the user is already part of the target group.
             this.ephemeral.groupInfo = {
               name: targetGroupState.settings?.groupName || '',
               id: targetGroupId
@@ -187,6 +186,12 @@ export default ({
     goHome () {
       this.$router.push({ path: '/' })
     },
+    checkAlreadyJoinedGroup (targetGroupId) {
+      if (this.ourIdentityContractId) {
+        const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
+        return myGroupIds.includes(targetGroupId)
+      } else return false
+    },
     goToDashboard (toGroupId) {
       if (toGroupId && this.currentGroupId !== toGroupId) {
         sbp('gi.app/group/switch', toGroupId)
@@ -209,7 +214,17 @@ export default ({
       } catch (e) {
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message
-        this.pageStatus = 'INVALID'
+
+        const alreadyJoinedErr = this.checkAlreadyJoinedGroup(groupId)
+        this.pageStatus = alreadyJoinedErr ? 'JOINED' : 'INVALID'
+        if (alreadyJoinedErr) {
+          const targetGroupState = this.$store.state[groupId] || {}
+
+          this.ephemeral.groupInfo = {
+            name: targetGroupState.settings?.groupName || '',
+            id: groupId
+          }
+        }
       }
     }
   }
