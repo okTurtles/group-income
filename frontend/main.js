@@ -305,7 +305,7 @@ async function startApp () {
             theirContractsVersion
           })
           if (isContractVersionDiff || isGIVersionDiff) {
-            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, msg.data)
           }
         },
         [REQUEST_TYPE.PUSH_ACTION] (msg) {
@@ -358,11 +358,12 @@ async function startApp () {
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
-        }, 15e3)
+        }, 8e3)
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
     alert(L('Error while setting up service worker'))
+    window.location.reload() // try again, sometimes it fixes it
     throw e
   })
 
@@ -421,7 +422,7 @@ async function startApp () {
           sbp('chelonia/reset'),
           sbp('gi.db/settings/delete', 'CHELONIA_STATE')
         ]).catch(e => {
-          console.error('Logout event: error deleting Chelonia state')
+          console.error('Logout event: error deleting Chelonia state:', e)
         }).finally(() => {
           logoutInProgress = false
         })
@@ -538,17 +539,19 @@ async function startApp () {
         const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
         if (!cheloniaState || !identityContractID) return
         if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
+        if (this.ephemeral.finishedLogin === 'yes') return
+        // it is important we first login before syncing any contracts here since that will load the
+        // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
+        await sbp('gi.app/identity/login', { identityContractID })
         await sbp('chelonia/contract/sync', identityContractID, { force: true })
         const contractIDs = groupContractsByType(cheloniaState.contracts)
-        await syncContractsInOrder(identityContractID, contractIDs)
-
-        if (this.ephemeral.finishedLogin === 'yes') return
-        return sbp('gi.app/identity/login', { identityContractID })
-      }).catch(e => {
+        await syncContractsInOrder(contractIDs)
+      }).catch(async e => {
+        this.removeLoadingAnimation()
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-
-        sbp('gi.ui/prompt', {
+        await sbp('gi.app/identity/logout')
+        await sbp('gi.ui/prompt', {
           heading: L('Failed to login'),
           question: L('Error details: {reportError}', LError(e)),
           primaryButton: L('Close')

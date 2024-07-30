@@ -320,7 +320,7 @@ export function groupContractsByType (contracts: Object): Object {
   return contractIDs
 }
 
-export async function syncContractsInOrder (identityContractID: string | null, groupedContractIDs: Object): Promise<any> {
+export async function syncContractsInOrder (groupedContractIDs: Object): Promise<any> {
   // We need to sync contracts in this order to ensure that we have all the
   // corresponding secret keys. Group chatrooms use group keys but there's
   // no OP_KEY_SHARE, which will result in the keys not being available when
