@@ -63,6 +63,7 @@
       :disabled='loading'
       :placeholder='L("Write your message...")'
       :style='textareaStyles'
+      :maxlength='config.messageMaxChar'
       @blur='textAreaBlur'
       @keydown.enter.exact.prevent='handleKeyDownEnter'
       @keydown.tab.exact='handleKeyDownTab'
@@ -273,7 +274,8 @@ import { makeMentionFromUsername, makeChannelMention } from '@model/contracts/sh
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
-  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
+  CHATROOM_MAX_MESSAGE_LEN
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
@@ -350,6 +352,9 @@ export default ({
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
         typingUsers: []
+      },
+      config: {
+        messageMaxChar: CHATROOM_MAX_MESSAGE_LEN
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
