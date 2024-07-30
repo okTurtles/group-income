@@ -218,6 +218,7 @@ export default ({
         const alreadyJoinedErr = this.checkAlreadyJoinedGroup(groupId)
         this.pageStatus = alreadyJoinedErr ? 'JOINED' : 'INVALID'
         if (alreadyJoinedErr) {
+          // if errored by attempting to join an already-joined group, show a different UI informing it.
           const targetGroupState = this.$store.state[groupId] || {}
 
           this.ephemeral.groupInfo = {
