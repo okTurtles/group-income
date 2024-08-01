@@ -1303,7 +1303,6 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, contractID, innerSigningContractID }) {
         const memberID = data.memberID || innerSigningContractID
         const { identityContractID } = sbp('state/vuex/state').loggedIn
-        console.info(`!!~~ SIDEFFECT JOINCHATROOM: ID(${identityContractID}) === INNER(${innerSigningContractID}) ${innerSigningContractID === identityContractID}`)
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
         if (innerSigningContractID === identityContractID) {
