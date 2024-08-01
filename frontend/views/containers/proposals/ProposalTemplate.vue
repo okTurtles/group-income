@@ -136,7 +136,7 @@ export default ({
   data () {
     return {
       form: {
-        reason: ''
+        reason: '' // optional
       },
       config: {
         reasonMaxChar: GROUP_DESCRIPTION_MAX_CHAR
