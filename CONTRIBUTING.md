@@ -18,7 +18,7 @@
 - Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), [`level: starter`](../../labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/Style-Guide.md)__
 
-Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:
+Then, [tell folks what you'll be working on](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ), and:
 
 ### 2. Create a fork of the repo, or work in a topic branch
 

@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
+import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.js'
 import CircularList from '~/shared/CircularList.js'
 import { L } from '@common/common.js'
 
@@ -9,7 +10,7 @@ import { L } from '@common/common.js'
 */
 
 const config = {
-  maxEntries: 2000
+  maxEntries: MAX_LOG_ENTRIES
 }
 const consoleCopy = { ...console }
 const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']

@@ -33,3 +33,5 @@ export const KV_KEYS = {
   PREFERENCES: 'preferences',
   NOTIFICATIONS: 'notifications'
 }
+
+export const MAX_LOG_ENTRIES = 2000
