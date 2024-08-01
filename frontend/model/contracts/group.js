@@ -19,6 +19,8 @@ import {
   GROUP_NAME_MAX_CHAR,
   GROUP_MAX_PLEDGE_AMOUNT,
   GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR,
+  GROUP_MINCOME_MAX,
+  GROUP_DISTRIBUTION_PERIOD_MAX_DAYS,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   INVITE_EXPIRES_IN_DAYS,
@@ -43,7 +45,7 @@ import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/paym
 import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp, isPeriodStamp, plusOnePeriodLength } from './shared/time.js'
 import { chatRoomAttributesType, inviteType } from './shared/types.js'
 import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.js'
-import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType } from './shared/voting/rules.js'
+import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType, voteType } from './shared/voting/rules.js'
 
 function fetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -444,10 +446,10 @@ sbp('chelonia/defineContract', {
             downloadParams: optional(object)
           })),
           sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
-          mincomeAmount: number,
+          mincomeAmount: numberRange(1, GROUP_MINCOME_MAX),
           mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
           distributionDate: isPeriodStamp,
-          distributionPeriodLength: number,
+          distributionPeriodLength: numberRange(1 * DAYS_MILLIS, GROUP_DISTRIBUTION_PERIOD_MAX_DAYS * DAYS_MILLIS),
           minimizeDistribution: boolean,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
@@ -524,13 +526,13 @@ sbp('chelonia/defineContract', {
         // TODO: how to handle donations to okTurtles?
         // TODO: how to handle payments to groups or users outside of this group?
         toMemberID: stringMax(MAX_HASH_LEN, 'toMemberID'),
-        amount: number,
+        amount: numberRange(0, GROUP_MINCOME_MAX),
         currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income/issues/603
         // multiply 'amount' by 'exchangeRate', which must always be
         // based on the initialCurrency of the period in which this payment was created.
         // it is then further multiplied by the period's 'mincomeExchangeRate', which
         // is modified if any proposals pass to change the mincomeCurrency
-        exchangeRate: number,
+        exchangeRate: numberRange(0, GROUP_MINCOME_MAX),
         txid: stringMax(MAX_HASH_LEN, 'txid'),
         status: paymentStatusType,
         paymentType: paymentType,
@@ -654,7 +656,7 @@ sbp('chelonia/defineContract', {
           proposalType: proposalType,
           proposalData: object, // data for Vue widgets
           votingRule: ruleType,
-          expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
+          expires_date_ms: numberRange(0, Number.MAX_SAFE_INTEGER) // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
         })(data)
 
         const dataToCompare = omit(data.proposalData, ['reason'])
@@ -716,7 +718,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/proposalVote': {
       validate: actionRequireActiveMember(objectOf({
         proposalHash: stringMax(MAX_HASH_LEN, 'proposalHash'),
-        vote: string,
+        vote: voteType,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       })),
       async process (message, { state, getters }) {
@@ -774,7 +776,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/markProposalsExpired': {
       validate: actionRequireActiveMember(objectOf({
-        proposalIds: arrayOf(string)
+        proposalIds: arrayOf(stringMax(MAX_HASH_LEN))
       })),
       process ({ data, meta, contractID, height }, { state }) {
         if (data.proposalIds.length) {
@@ -815,8 +817,8 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/removeMember': {
       validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID, proposalHash } }) => {
         objectOf({
-          memberID: optional(string), // member to remove
-          reason: optional(string),
+          memberID: optional(stringMax(MAX_HASH_LEN)), // member to remove
+          reason: optional(stringMax(GROUP_DESCRIPTION_MAX_CHAR)),
           automated: optional(boolean)
         })(data)
 
@@ -1061,7 +1063,7 @@ sbp('chelonia/defineContract', {
         nonMonetaryRemove: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryRemove'),
         paymentMethods: arrayOf(
           objectOf({
-            name: string,
+            name: stringMax(GROUP_NAME_MAX_CHAR),
             value: stringMax(GROUP_PAYMENT_METHOD_MAX_CHAR, 'paymentMethods.value')
           })
         )
@@ -1218,7 +1220,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/leaveChatRoom': {
       validate: actionRequireActiveMember(objectOf({
         chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
-        memberID: optional(string)
+        memberID: optional(stringMax(MAX_HASH_LEN), 'memberID')
       })),
       process ({ data, innerSigningContractID }, { state }) {
         if (!state.chatRooms[data.chatRoomID]) {
@@ -1270,7 +1272,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/joinChatRoom': {
       validate: actionRequireActiveMember(objectMaybeOf({
-        memberID: optional(string),
+        memberID: optional(stringMax(MAX_HASH_LEN, 'memberID')),
         chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID')
       })),
       process ({ data, innerSigningContractID }, { state }) {

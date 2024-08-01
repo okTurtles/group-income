@@ -19,10 +19,17 @@
       slot
 
       label.field(v-if='isReasonStep' key='reason')
-        i18n.label Why are you proposing this change?
+        .c-reason-label-container
+          i18n.label Why are you proposing this change?
+          char-length-indicator(
+            v-if='form.reason'
+            :current-length='form.reason.length || 0'
+            :max='config.reasonMaxChar'
+          )
         textarea.textarea(
+          v-model='form.reason'
           ref='reason'
-          maxlength='500'
+          :maxlength='config.reasonMaxChar'
           data-test='reason'
         )
         i18n.helper This is optional.
@@ -93,9 +100,11 @@
 <script>
 import { mapGetters } from 'vuex'
 import { L, LTags } from '@common/common.js'
+import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
 export default ({
@@ -103,7 +112,8 @@ export default ({
   components: {
     ModalTemplate,
     SvgProposal,
-    ButtonSubmit
+    ButtonSubmit,
+    CharLengthIndicator
   },
   props: {
     title: {
@@ -122,6 +132,16 @@ export default ({
       }
     },
     shouldImmediateChange: Boolean
+  },
+  data () {
+    return {
+      form: {
+        reason: ''
+      },
+      config: {
+        reasonMaxChar: GROUP_DESCRIPTION_MAX_CHAR
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -251,6 +271,13 @@ export default ({
 
 .c-sprite {
   display: none;
+}
+
+.c-reason-label-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  column-gap: 0.5rem;
 }
 
 .c-confirmation {
