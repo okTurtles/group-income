@@ -102,12 +102,17 @@ export default ({
     }
   },
   mounted () {
+    console.error('UNIT 17!!!')
     // For some reason in some Cypress tests it loses the route hash when initialized is called
     this.ephemeral.hash = new URLSearchParams(this.$route.hash.slice(1))
     if (syncFinished || !this.ourIdentityContractId) {
       this.initialize()
+      // sbp('chelonia/queueInvocation', this.ourIdentityContractId, () => this.initialize())
     } else {
       sbp('okTurtles.events/once', LOGIN, () => this.initialize())
+      // sbp('okTurtles.events/once', LOGIN, () => {
+      //   sbp('chelonia/queueInvocation', this.ourIdentityContractId, () => this.initialize())
+      // })
     }
   },
   methods: {
@@ -116,6 +121,7 @@ export default ({
         const messageToAskAnother = L('You should ask for a new one. Sorry about that!')
         const groupId = this.ephemeral.hash.get('groupId')
         const secret = this.ephemeral.hash.get('secret')
+        console.error('UNIT 19!!!!', { groupId, secret })
         if (!groupId || !secret) {
           console.error('Invalid invite link: missing group ID or secret')
           this.ephemeral.errorMsg = messageToAskAnother
@@ -141,14 +147,17 @@ export default ({
           this.pageStatus = 'INVALID'
           return
         }
+        console.error('UNIT 20!!')
         if (this.ourIdentityContractId) {
           const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
           const targetGroupId = this.ephemeral.hash?.get('groupId') || ''
           const targetGroupState = this.$store.state[targetGroupId] || {}
-
+          console.error('UNIT 21!!', { targetGroupId })
           if (this.currentGroupId && [PROFILE_STATUS.ACTIVE, PROFILE_STATUS.PENDING].includes(targetGroupState?.profiles?.[this.ourIdentityContractId])) {
+            console.error('UNIT 22 !!')
             this.goToDashboard()
           } else if (myGroupIds.includes(targetGroupId)) { // if the user is already part of the target group.
+            console.error('UNIT 23 !!')
             this.ephemeral.groupInfo = {
               name: targetGroupState.settings?.groupName || '',
               id: targetGroupId
@@ -157,6 +166,7 @@ export default ({
 
             return
           } else {
+            console.error('UNIT 24 !!')
             await this.accept()
           }
           return

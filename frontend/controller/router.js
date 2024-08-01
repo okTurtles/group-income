@@ -43,7 +43,11 @@ const loginGuard = {
 const inviteGuard = {
   guard: (to, from) => {
     // ex: http://localhost:8000/app/join#?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
-    return !(to.hash.includes('groupId=') && to.hash.includes('secret='))
+    const result = !(to.hash.includes('groupId=') && to.hash.includes('secret='))
+    if (result) {
+      console.error(`REDIRECTING UNIT 7! to=${JSON.stringify(to)}`)
+    }
+    return result
   },
   redirect: (to, from) => ({ path: '/' })
 }
@@ -179,6 +183,9 @@ const router: any = new Router({
 })
 
 router.beforeEach((to, from, next) => {
+  const { path: toPath, query: toQuery, hash: toHash } = to
+  const { path: fromPath, query: fromQuery, hash: fromHash } = from
+  console.error('UNIT 6 FROM', { fromPath, fromQuery, fromHash }, 'to', { toPath, toQuery, toHash })
   if (to.query.modal &&
     !['SignupModal', 'LoginModal'].includes(to.query.modal) &&
     !store.state.loggedIn) {

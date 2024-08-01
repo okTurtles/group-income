@@ -427,12 +427,17 @@ async function startApp () {
           logoutInProgress = false
         })
       })
-      sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+      sbp('okTurtles.events/on', LOGIN_COMPLETE, async () => {
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) {
           console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
           return
         }
+        const { identityContractID } = state.loggedIn
+
+        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        await syncContractsInOrder(groupContractsByType(state.contracts))
+
         this.ephemeral.finishedLogin = 'yes'
 
         sbp('gi.actions/identity/kv/load').catch(e => {
@@ -543,11 +548,11 @@ async function startApp () {
         // it is important we first login before syncing any contracts here since that will load the
         // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
         await sbp('gi.app/identity/login', { identityContractID })
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
-        const contractIDs = groupContractsByType(cheloniaState.contracts)
-        await syncContractsInOrder(contractIDs)
+        // await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        // const contractIDs = groupContractsByType(cheloniaState.contracts)
+        // await syncContractsInOrder(contractIDs)
       }).catch(async e => {
-        this.removeLoadingAnimation()
+        this.removeLoadingAnimation() // needs to be done to show the gi.ui/prompt
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
         await sbp('gi.app/identity/logout')
