@@ -1191,6 +1191,10 @@ export default ({
   padding: 0.25rem 0.25rem;
 }
 
+.c-send-textarea {
+  max-height: 9rem;
+}
+
 @media (hover: none) and (pointer: coarse) {
   // fix for some mobile-specific issue: https://github.com/okTurtles/group-income/issues/1934
   .c-send-textarea {
