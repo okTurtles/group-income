@@ -948,6 +948,7 @@ export default ({
     background-color: transparent;
     border: none;
     padding: 0.5rem;
+    max-height: 9rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -1189,10 +1190,6 @@ export default ({
   display: block;
   font-size: 0.675rem;
   padding: 0.25rem 0.25rem;
-}
-
-.c-send-textarea {
-  max-height: 9rem;
 }
 
 @media (hover: none) and (pointer: coarse) {
