@@ -363,7 +363,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   })
 
   cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
-  cy.get('[data-test="AvatarEditorModal"]').within(() => {
+  cy.getByDT('AvatarEditorModal').within(() => {
     cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
     cy.getByDT('imageHelperTag').invoke('attr', 'src', groupPictureDataURI)
     cy.getByDT('imageCanvas').should('exist')
@@ -715,6 +715,19 @@ Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (username) => {
   cy.giEmptyInvocationQueue()
 
   cy.giRedirectToGroupChat()
+
+  cy.getByDT('channelMembers').click()
+  cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Members')
+  cy.getByDT('modal').within(() => {
+    if (username) {
+      // NOTE: username is not provided only when creating group.
+      //       so there is always only one member in the list, and no need to type username
+      cy.getByDT('search').clear().type(username)
+    }
+    cy.getByDT('joinedChannelMembersList').children().should('have.length', 1)
+  })
+  cy.closeModal()
+
   cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, username)
   cy.getByDT('dashboard').click()
 })
@@ -737,15 +750,13 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  cy.getByDT('conversationWrapper').within(($el) => {
-    if (inviter) {
-      // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
-      cy.get('.c-message:last-child .c-who > span:first-child').scrollIntoView()
-      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
-    }
-    const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
-    cy.get('.c-message:last-child .c-notification').should('contain', message)
-  })
+  if (inviter) {
+    // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
+    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').scrollIntoView()
+    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
+  }
+  const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
+  cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-notification').should('contain', message)
 })
 
 Cypress.Commands.add('giRedirectToGroupChat', () => {

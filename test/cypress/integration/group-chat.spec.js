@@ -219,10 +219,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       existingMemberUsername: user1,
       groupName: groupName1,
-      shouldLogoutAfter: true,
       bypassUI: true
     })
-    me = undefined
   })
 
   it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
@@ -497,16 +495,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       groupName: groupName1,
       existingMemberUsername: user1,
-      shouldLogoutAfter: false,
       isLoggedIn: true,
       bypassUI: true
     })
-
-    cy.giRedirectToGroupChat()
-
-    // cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me) // giAcceptGroupInvite already checks this
-    cy.getByDT('channelMembers').should('contain', '2 members')
-    cy.giLogout()
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again and logout`, () => {
@@ -519,16 +510,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user2,
       groupName: groupName1,
       existingMemberUsername: user3,
-      shouldLogoutAfter: false,
       isLoggedIn: true,
       bypassUI: true
     })
-
-    cy.giRedirectToGroupChat()
-
-    // cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me) // giAcceptGroupInvite already checks this
-    cy.getByDT('channelMembers').should('contain', '3 members')
-    cy.giLogout()
   })
 
   // NOTE: skip this test case temporarily since the following issue is not resolved yet
