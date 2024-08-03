@@ -737,15 +737,20 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  cy.getByDT('conversationWrapper').within(($el) => {
-    if (inviter) {
-      // TODO: fix this heisenbug here: https://github.com/okTurtles/group-income/issues/2256
-      // cy.get('.c-message:last-child .c-who > span:first-child').scrollIntoView()
-      // cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
-    }
-    const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
-    cy.get('.c-message:last-child .c-notification').should('contain', message)
-  })
+  // attempt to fix heisenbug: https://github.com/okTurtles/group-income/issues/2256
+  if (inviter) {
+    cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
+  }
+  cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-notification').should('contain', message)
+  // cy.getByDT('conversationWrapper').within(($el) => {
+  //   if (inviter) {
+  //     // TODO: fix heisenbug: https://github.com/okTurtles/group-income/issues/2256
+  //     // cy.get('.c-message:last-child .c-who > span:first-child').scrollIntoView()
+  //     // cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
+  //   }
+  //   const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
+  //   cy.get('.c-message:last-child .c-notification').should('contain', message)
+  // })
 })
 
 Cypress.Commands.add('giRedirectToGroupChat', () => {
