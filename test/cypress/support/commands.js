@@ -729,7 +729,7 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
   // NOTE: need to check just after joined, not after making other activities
   inviter = inviter || me
   invitee = invitee || me
-  const selfJoin = inviter === invitee
+  // const selfJoin = inviter === invitee // commented out because of unused var error because of heisenbug below
   const selfCheck = me === invitee
   if (selfCheck) {
     cy.getByDT('messageInputWrapper').within(() => {
