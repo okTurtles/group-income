@@ -10,6 +10,29 @@ import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
+import Bottleneck from 'bottleneck'
+
+const limiterPerMinute = new Bottleneck.Group({
+  strategy: Bottleneck.strategy.LEAK,
+  highWater: 0,
+  reservoir: 1,
+  reservoirRefreshInterval: 60 * 1000,
+  reservoirRefreshAmount: 1
+})
+const limiterPerHour = new Bottleneck.Group({
+  strategy: Bottleneck.strategy.LEAK,
+  highWater: 0,
+  reservoir: 10,
+  reservoirRefreshInterval: 60 * 60 * 1000,
+  reservoirRefreshAmount: 10
+})
+const limiterPerDay = new Bottleneck.Group({
+  strategy: Bottleneck.strategy.LEAK,
+  highWater: 0,
+  reservoir: 50,
+  reservoirRefreshInterval: 24 * 60 * 60 * 1000,
+  reservoirRefreshAmount: 50
+})
 
 // Constant-time equal
 const ctEq = (expected: string, actual: string) => {
@@ -69,6 +92,17 @@ route.POST('/event', {
         const parsedManifest = JSON.parse(manifest)
         const { name } = JSON.parse(parsedManifest.body)
         if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
+        // rate limit signups in production
+        if (process.env.NODE_ENV === 'production') {
+          try {
+            await limiterPerMinute.key(ip).schedule(() => Promise.resolve())
+            await limiterPerHour.key(ip).schedule(() => Promise.resolve())
+            await limiterPerDay.key(ip).schedule(() => Promise.resolve())
+          } catch {
+            console.warn('rate limit hit for IP:', ip)
+            throw Boom.tooManyRequests('Rate limit exceeded')
+          }
+        }
       }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
       if (deserializedHEAD.isFirstMessage) {
