@@ -741,6 +741,7 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
   if (inviter) {
     cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-who > span:first-child').should('contain', inviter)
   }
+  const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
   cy.get('[data-test="conversationWrapper"] .c-message:last-child .c-notification').should('contain', message)
   // cy.getByDT('conversationWrapper').within(($el) => {
   //   if (inviter) {
