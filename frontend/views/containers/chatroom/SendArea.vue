@@ -949,6 +949,11 @@ export default ({
     border: none;
     padding: 0.5rem;
     max-height: 9rem;
+    overflow-y: auto;
+
+    @include tablet {
+      max-height: 12.25rem;
+    }
 
     &::-webkit-scrollbar {
       display: none;
