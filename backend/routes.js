@@ -12,26 +12,34 @@ import './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
+const MEGABYTE = 1048576 // TODO: add settings for these
+const SECOND = 1000
+
+const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
+const SIGNUP_LIMIT_MIN = parseInt(process.env.SIGNUP_LIMIT_MIN) || 2
+const SIGNUP_LIMIT_HOUR = parseInt(process.env.SIGNUP_LIMIT_HOUR) || 10
+const SIGNUP_LIMIT_DAY = parseInt(process.env.SIGNUP_LIMIT_DAY) || 50
+const SIGNUP_LIMIT_DISABLED = process.env.NODE_ENV !== 'production' || process.env.SIGNUP_LIMIT_DISABLED === 'true'
 const limiterPerMinute = new Bottleneck.Group({
   strategy: Bottleneck.strategy.LEAK,
   highWater: 0,
-  reservoir: 1,
-  reservoirRefreshInterval: 60 * 1000,
-  reservoirRefreshAmount: 1
+  reservoir: SIGNUP_LIMIT_MIN,
+  reservoirRefreshInterval: 60 * SECOND,
+  reservoirRefreshAmount: SIGNUP_LIMIT_MIN
 })
 const limiterPerHour = new Bottleneck.Group({
   strategy: Bottleneck.strategy.LEAK,
   highWater: 0,
-  reservoir: 10,
-  reservoirRefreshInterval: 60 * 60 * 1000,
-  reservoirRefreshAmount: 10
+  reservoir: SIGNUP_LIMIT_HOUR,
+  reservoirRefreshInterval: 60 * 60 * SECOND,
+  reservoirRefreshAmount: SIGNUP_LIMIT_HOUR
 })
 const limiterPerDay = new Bottleneck.Group({
   strategy: Bottleneck.strategy.LEAK,
   highWater: 0,
-  reservoir: 50,
-  reservoirRefreshInterval: 24 * 60 * 60 * 1000,
-  reservoirRefreshAmount: 50
+  reservoir: SIGNUP_LIMIT_DAY,
+  reservoirRefreshInterval: 24 * 60 * 60 * SECOND,
+  reservoirRefreshAmount: SIGNUP_LIMIT_DAY
 })
 
 // Constant-time equal
@@ -78,6 +86,8 @@ route.POST('/event', {
   },
   validate: { payload: Joi.string().required() }
 }, async function (request, h) {
+  // IMPORTANT: IT IS A REQUIREMENT THAT ANY PROXY SERVERS (E.G. nginx) IN FRONT OF US SET THE
+  // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
@@ -93,8 +103,10 @@ route.POST('/event', {
         const { name } = JSON.parse(parsedManifest.body)
         if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
         // rate limit signups in production
-        if (process.env.NODE_ENV === 'production') {
+        if (!SIGNUP_LIMIT_DISABLED) {
           try {
+            // IMPORTANT: if the server is using IPv6 addresses, this isn't sufficient!
+            // See discussion: https://github.com/okTurtles/group-income/pull/2280#pullrequestreview-2219347378
             await limiterPerMinute.key(ip).schedule(() => Promise.resolve())
             await limiterPerHour.key(ip).schedule(() => Promise.resolve())
             await limiterPerDay.key(ip).schedule(() => Promise.resolve())
@@ -265,9 +277,6 @@ route.GET('/time', {}, function (request, h) {
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
 
-const MEGABYTE = 1048576 // TODO: add settings for these
-const SECOND = 1000
-
 // API endpoint to check for streams support
 route.POST('/streams-test', {
   payload: {
@@ -338,7 +347,7 @@ route.POST('/file', {
       console.error(err, 'failAction error')
       return err
     },
-    maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
+    maxBytes: FILE_UPLOAD_MAX_BYTES,
     timeout: 10 * SECOND // TODO: make this a configurable setting
   }
 }, async function (request, h) {
