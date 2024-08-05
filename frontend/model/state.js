@@ -112,10 +112,17 @@ const mutations = {
     state.loggedIn = user
   },
   // isNewlyCreated will force a redirect to /pending-approval
-  setCurrentGroupId (state, { contractID: currentGroupId, isNewlyCreated }) {
+  // forceRefresh will force a redirect to / (this is useful for closing
+  // the modal when leaving a group; usually, it's not needed and should be
+  // false)
+  setCurrentGroupId (state, { contractID: currentGroupId, forceRefresh, isNewlyCreated }) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
-    if (!currentGroupId) {
+    if (!currentGroupId || forceRefresh) {
+      // If we're joining a group, we should not react to group membership
+      // changes. Instead, we should remain where we are until the join process
+      // is complete.
+      if (sbp('controller/router').history.current.path === '/join') return
       sbp('controller/router').push({ path: '/' }).catch(() => {})
     } else if (isNewlyCreated) {
       sbp('controller/router').push({ path: '/pending-approval' }).catch(() => {})

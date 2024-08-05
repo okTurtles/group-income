@@ -1,6 +1,6 @@
 {
   "name": "group-income",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "contractsVersion": "1.0.0",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
@@ -121,6 +121,7 @@
     "babel-plugin-module-resolver": "5.0.0",
     "babel-plugin-root-import": "6.6.0",
     "blakejs": "1.2.1",
+    "bottleneck": "2.19.5",
     "buffer": "6.0.3",
     "chalk": "4.1.0",
     "dompurify": "2.2.7",

@@ -8,7 +8,7 @@ This guide assumes you know how to use `git` and GitHub!
 
 If you already fully grok modern web dev and want to get started immediately, skip ahead to [Frontend Workflow](#frontend-workflow).
 
-*And if you'd like to help out with this project, [get in touch!](https://gitter.im/okTurtles/group-income)*
+*And if you'd like to help out with this project, [get in touch!](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ)*
 
 - ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
     + [What Happened To Web Development?](#what-happened-to-web-development)
@@ -393,7 +393,7 @@ Any use of `require` (without code splitting) will result in that module's direc
 
 NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access global variables that were `require`'d elsewhere.
 
-*Please ask before adding any new project dependencies! (Either in [our chat](https://gitter.im/okTurtles/group-income), on the [forums](https://forums.okturtles.com/index.php?board=9.0), or via a GitHub issue.)*
+*Please ask before adding any new project dependencies! (Either in [our chat](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ), on the [discussions](https://github.com/okTurtles/group-income/discussions), or via a GitHub issue.)*
 
 ----
 
@@ -412,7 +412,7 @@ See Methods 1.1. and 1.2 in [Where should I put JavaScript *someone else* wrote 
 
 #### My question isn't listed here!
 
-That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the [forums](https://forums.okturtles.com/index.php?board=9.0) or open a GitHub issue! :)
+That's OK! Ask us in the [chat](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ) or the [discussions](https://github.com/okTurtles/group-income/discussions) or open a GitHub issue! :)
 
 ## Appendix
 

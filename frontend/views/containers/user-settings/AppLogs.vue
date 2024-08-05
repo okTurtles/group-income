@@ -48,6 +48,7 @@
 import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
+import { MAX_LOG_ENTRIES } from '@utils/constants.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
 import { L, LError } from '@common/common.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -118,6 +119,11 @@ export default ({
     addLog (entry: Object) {
       if (entry) {
         this.ephemeral.logs.push(entry)
+        // prevent the amount of logs from growing beyond MAX_LOG_ENTRIES
+        // remove 100 excess logs each time we reach that amount
+        if (this.ephemeral.logs.length >= MAX_LOG_ENTRIES + 100) {
+          this.ephemeral.logs.splice(0, 100)
+        }
       }
     },
     openTroubleshooting () {

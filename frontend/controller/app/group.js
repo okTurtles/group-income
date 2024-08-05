@@ -36,10 +36,11 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
         sbp('state/vuex/state')[cID]?.profiles?.[groupContractID] ? -1 : 1
       )[0] || null
     sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
-    sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupIdToSwitch })
-    if (currentGroupId === groupContractID) {
-      sbp('controller/router').push({ path: '/' }).catch(() => {})
-    }
+    // If currentGroupId === groupContractID (i.e., if the current group is
+    // the one being left), we set `forceRefresh` to force a redirect to the
+    // dashboard route. This closes the modal for leaving a group if it was
+    // open.
+    sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupIdToSwitch, forceRefresh: currentGroupId === groupContractID })
   }
 })
 
