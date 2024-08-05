@@ -18,7 +18,8 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
 // NOTE: Below value was obtained from the '413 Payload Too Large' server error
 //       meaning if this limit is updated on the server-side, an update is required here too.
 // TODO: fetch this value from a server API
-export const CHAT_ATTACHMENT_SIZE_LIMIT = 6291456 // in byte.
+export const MEGABYTE = 1 << 20
+export const CHAT_ATTACHMENT_SIZE_LIMIT = 30 * MEGABYTE // in byte.
 
 export const TextObjectType = {
   Text: 'TEXT',
