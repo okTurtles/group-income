@@ -53,6 +53,8 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
+      non-monetary-pledges.c-non-monetary-pledges
+
       banner-scoped(ref='formMsg' :allowA='true')
 
       .buttons
@@ -77,6 +79,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import PaymentMethods from './PaymentMethods.vue'
+import NonMonetaryPledges from './NonMonetaryPledges.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -97,6 +100,7 @@ export default ({
     ButtonSubmit,
     Tooltip,
     PaymentMethods,
+    NonMonetaryPledges,
     GroupPledgesGraph
   },
   data () {
@@ -305,7 +309,8 @@ export default ({
   }
 }
 
-.c-methods {
+.c-methods,
+.c-non-monetary-pledges {
   margin-top: 1.5rem;
 }
 
