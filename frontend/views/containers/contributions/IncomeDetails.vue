@@ -174,7 +174,7 @@ export default ({
         return
       }
 
-      const paymentMethods = []
+      let paymentMethodsUpdates = null
 
       if (this.needsIncome) {
         this.$refs.paymentMethods.$v.form.$touch()
@@ -204,8 +204,9 @@ export default ({
           return
         }
 
-        for (const method of filledMethods) {
-          paymentMethods.push(method)
+        if (this.$refs.paymentMethods.checkHasUpdates()) {
+          // if payment methods have been updated, add them to the payload too
+          paymentMethodsUpdates = filledMethods
         }
       }
 
@@ -216,7 +217,11 @@ export default ({
           data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
-            paymentMethods
+            ...(
+              paymentMethodsUpdates?.length
+                ? { paymentMethods: paymentMethodsUpdates }
+                : {}
+            )
           }
         })
 
