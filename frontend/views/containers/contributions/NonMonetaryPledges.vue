@@ -78,13 +78,9 @@ export default {
     return {
       form: {
         pledges: {
-          $each: {
-            value: {
-              [L('Non-monetary pledge is required.')]: required,
-              [L('Non-monetary pledge cannot exceed {maxChars} characters.', {
-                maxChars: GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR
-              })]: maxLength(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR)
-            }
+          [L('At least one non-monetary pledge is required.')]: (value) => {
+            return this.optional ||
+              (value?.length && value.some(entry => entry.value))
           }
         }
       }
