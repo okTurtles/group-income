@@ -2,6 +2,7 @@
 fieldset(data-test='nonMonetaryPledges')
   legend.has-text-bold.c-legend
     i18n.is-title-4 Non-monetary pledge
+    i18n.c-optional(v-if='optional') (optional)
 
   i18n.has-text-1 All members can support each other with non-monetary contributions. There's value in time, skills, and willingness to help the group.
 
@@ -45,6 +46,12 @@ import { randomHexString } from '@model/contracts/shared/giLodash.js'
 export default {
   name: 'NonMonetaryPledges',
   mixins: [validationMixin],
+  props: {
+    optional: {
+      type: Boolean,
+      default: false
+    }
+  },
   data () {
     return {
       form: {
@@ -88,6 +95,14 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-optional {
+  display: inline-block;
+  color: $text_1;
+  user-select: none;
+  font-size: $size_5;
+  margin-left: 0.5rem;
+}
 
 .c-legend {
   margin-bottom: 0.25rem;

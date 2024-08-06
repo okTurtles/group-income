@@ -51,9 +51,10 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
+
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
-      non-monetary-pledges.c-non-monetary-pledges
+          non-monetary-pledges.c-non-monetary-pledges(:optional='isPledging')
 
       banner-scoped(ref='formMsg' :allowA='true')
 
