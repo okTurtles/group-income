@@ -573,14 +573,14 @@ export default (sbp('sbp/selectors/register', {
                     console.info(`[chelonia] Discarding pub event for ${msg.channelID} because it's not in the current subscriptionSet`)
                     return
                   }
-                  try {
+                  sbp('chelonia/queueInvocation', msg.channelID, () => {
                     (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       serializedData: msg.data
                     }))
-                  } catch (e) {
+                  }).catch(e => {
                     console.error(`[chelonia] Error processing pub event for ${msg.channelID}`, e)
-                  }
+                  })
                 }]
               case NOTIFICATION_TYPE.KV:
                 return [k, (msg) => {
@@ -592,15 +592,15 @@ export default (sbp('sbp/selectors/register', {
                     console.info(`[chelonia] Discarding kv event for ${msg.channelID} because it's not in the current subscriptionSet`)
                     return
                   }
-                  try {
+                  sbp('chelonia/queueInvocation', msg.channelID, () => {
                     (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       meta: msg.key,
                       serializedData: JSON.parse(Buffer.from(msg.data).toString())
                     })])
-                  } catch (e) {
+                  }).catch(e => {
                     console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
-                  }
+                  })
                 }]
               default:
                 return [k, v]
