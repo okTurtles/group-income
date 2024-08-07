@@ -98,7 +98,7 @@ export default {
 
       if (currValidation.$error) {
         for (const key in currValidation.$params) {
-          if (!cur[key]) {
+          if (!currValidation[key]) {
             return key
           }
         }

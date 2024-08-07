@@ -218,7 +218,7 @@ export default ({
       }
 
       // - validations in the children components : 2. nonMonetaryPledges.vue
-      if(!this.$refs.nonMonetaryPledges.validate()) return
+      if (!this.$refs.nonMonetaryPledges.validate()) return
 
       if (this.$refs.nonMonetaryPledges.checkHasUpdates()) {
         nonMonetaryPledgeUpdates = this.$refs.nonMonetaryPledges.getValues()
