@@ -54,7 +54,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
-          non-monetary-pledges.c-non-monetary-pledges(:optional='isPledging')
+          non-monetary-pledges.c-non-monetary-pledges( ref='nonMonetaryPledges' :optional='isPledging')
 
       banner-scoped(ref='formMsg' :allowA='true')
 
@@ -180,8 +180,10 @@ export default ({
       }
 
       let paymentMethodsUpdates = null
+      let nonMonetaryPledgeUpdates = null
 
       if (this.needsIncome) {
+        // - validations in the children components : 1. PaymentMethods.vue
         this.$refs.paymentMethods.$v.form.$touch()
 
         // Find the methods that have some info filled...
@@ -215,6 +217,13 @@ export default ({
         }
       }
 
+      // - validations in the children components : 2. nonMonetaryPledges.vue
+      if(!this.$refs.nonMonetaryPledges.validate()) return
+
+      if (this.$refs.nonMonetaryPledges.checkHasUpdates()) {
+        nonMonetaryPledgeUpdates = this.$refs.nonMonetaryPledges.getValues()
+      }
+
       try {
         const incomeDetailsType = this.form.incomeDetailsType
         await sbp('gi.actions/group/groupProfileUpdate', {
@@ -222,10 +231,10 @@ export default ({
           data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
-            ...(
-              paymentMethodsUpdates?.length
-                ? { paymentMethods: paymentMethodsUpdates }
-                : {}
+            ...Object.assign(
+              {},
+              Boolean(paymentMethodsUpdates?.length) && { paymentMethods: paymentMethodsUpdates },
+              Boolean(nonMonetaryPledgeUpdates) && { nonMonetaryReplace: nonMonetaryPledgeUpdates }
             )
           }
         })
