@@ -624,10 +624,13 @@ Cypress.Commands.add('randomPaymentMethodInIncomeDetails', () => {
 
 Cypress.Commands.add('randomNonMonetaryInIncomeDetails', () => {
   const randomClass = () => {
-    const langs = ['English', 'Korean', 'German', 'French', 'Japanese', 'Chinese', 'Javascript', 'Typescript', 'Python']
-    const randomIndex = Math.floor(Math.random() * langs.length)
+    const classes = [
+      'English', 'Korean', 'German', 'French', 'Japanese', 'Mandarin', 'Cantonese', 'Portuguese', 'Spanish',
+      'Javascript', 'Typescript', 'Python', 'React', 'Vue', 'Angular', 'Node.js', 'Express', 'PHP'
+    ]
+    const randomIndex = Math.floor(Math.random() * classes.length)
 
-    return `${langs[randomIndex]} class`
+    return `${classes[randomIndex]} class`
   }
 
   cy.getByDT('inputNonMonetaryPledge').type(randomClass())
