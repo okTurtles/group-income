@@ -131,7 +131,7 @@ export default {
       form: {
         pledges: {
           [L('At least one non-monetary pledge is required')]: (value) => {
-            return this.optional ||
+            return this.optional || // Don't need to validate when 'optional'
               (value?.length && value.some(entry => entry.value))
           },
           $each: {
