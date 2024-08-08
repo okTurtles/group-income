@@ -63,7 +63,7 @@
     margin: 0.75rem 0;
   }
 
-  ul li {
+  ul > li {
     position: relative;
     display: block;
     padding: 0 0 0.2rem 1.125rem;
@@ -85,7 +85,7 @@
     }
   }
 
-  ol li {
+  ol > li {
     position: relative;
     padding-bottom: 0.2rem;
     margin-left: 1.125rem;
@@ -102,7 +102,7 @@
       margin-bottom: 0;
     }
 
-    > ul li::before {
+    > ul > li::before {
       background-color: rgba(0, 0, 0, 0);
       border: 1px solid $text_0;
       top: 0.6rem;
