@@ -1,7 +1,7 @@
 <template lang='pug'>
 fieldset(
   data-test='nonMonetaryPledges'
-  v-error:pledges=''
+  v-error:pledges='{ attrs: { "data-test": "badPledges" } }'
 )
   legend.has-text-bold.c-legend
     i18n.is-title-4 Non-monetary pledge
@@ -20,6 +20,7 @@ fieldset(
           input.input(
             type='text'
             v-model='pledge.value'
+            data-test='inputNonMonetaryPledge'
             :aria-label='L("Pledge value")'
             :class='{ error: $v.form.pledges.$each[index].value.$error }'
           )
@@ -125,13 +126,13 @@ export default {
     return {
       form: {
         pledges: {
-          [L('At least one non-monetary pledge is required.')]: (value) => {
+          [L('At least one non-monetary pledge is required')]: (value) => {
             return this.optional ||
               (value?.length && value.some(entry => entry.value))
           },
           $each: {
             value: {
-              [L('Non-monetary pledge cannot exceed {maxChars} characters.', {
+              [L('Non-monetary pledge cannot exceed {maxChars} characters', {
                 maxChars: GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR
               })]: maxLength(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR)
             }
