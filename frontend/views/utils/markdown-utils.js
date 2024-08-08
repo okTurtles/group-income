@@ -40,14 +40,13 @@ export function renderMarkdown (str: string): any {
       entryText = entryText.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
       entryText = entryText.replace(/\n(?=\n)/g, '\n<br>')
-        .replace(/<br>\n(\s*)(\d+\.|-|```)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of block-code (```)
+        .replace(/<br>\n(\s*)(\d+\.|-)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of ordered/unordered lists
         .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
 
       entry.text = entryText
     }
   })
 
-  console.log('!@# strSplitByCodeMarkdown: ', strSplitByCodeMarkdown)
   str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
 
   // STEP 2. convert the markdown into html DOM string.
