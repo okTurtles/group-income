@@ -196,7 +196,7 @@ describe('Contributions', () => {
 
     // When 'need income' is selected, at least 1 non-monetary contribution is mandatory
     cy.getByDT('badPledges').should('contain', 'At least one non-monetary pledge is required')
-    cy.getByDT('inputNonMonetaryPledge').type('Cooking')
+    cy.randomNonMonetaryInIncomeDetails()
     // Adding a non-monetary pledge will clear the error message
     cy.getByDT('badPledges').should('not.be.visible')
 
