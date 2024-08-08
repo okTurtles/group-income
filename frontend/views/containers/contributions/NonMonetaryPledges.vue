@@ -21,6 +21,7 @@ fieldset(
             type='text'
             v-model='pledge.value'
             data-test='inputNonMonetaryPledge'
+            :maxlength='config.maxChar'
             :aria-label='L("Pledge value")'
             :class='{ error: $v.form.pledges.$each[index].value.$error }'
           )
@@ -66,6 +67,9 @@ export default {
         pledges: [
           { id: randomHexString(10), value: '' }
         ]
+      },
+      config: {
+        maxChar: GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR
       }
     }
   },
