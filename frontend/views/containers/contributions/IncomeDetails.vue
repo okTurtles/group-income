@@ -51,7 +51,10 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
+
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
+
+          non-monetary-pledges.c-non-monetary-pledges( ref='nonMonetaryPledges' :optional='isPledging')
 
       banner-scoped(ref='formMsg' :allowA='true')
 
@@ -77,6 +80,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import PaymentMethods from './PaymentMethods.vue'
+import NonMonetaryPledges from './NonMonetaryPledges.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -97,6 +101,7 @@ export default ({
     ButtonSubmit,
     Tooltip,
     PaymentMethods,
+    NonMonetaryPledges,
     GroupPledgesGraph
   },
   data () {
@@ -175,8 +180,10 @@ export default ({
       }
 
       let paymentMethodsUpdates = null
+      let nonMonetaryPledgeUpdates = null
 
       if (this.needsIncome) {
+        // - validations in the children components : 1. PaymentMethods.vue
         this.$refs.paymentMethods.$v.form.$touch()
 
         // Find the methods that have some info filled...
@@ -210,6 +217,13 @@ export default ({
         }
       }
 
+      // - validations in the children components : 2. nonMonetaryPledges.vue
+      if (!this.$refs.nonMonetaryPledges.validate()) return
+
+      if (this.$refs.nonMonetaryPledges.checkHasUpdates()) {
+        nonMonetaryPledgeUpdates = this.$refs.nonMonetaryPledges.getValues()
+      }
+
       try {
         const incomeDetailsType = this.form.incomeDetailsType
         await sbp('gi.actions/group/groupProfileUpdate', {
@@ -217,10 +231,10 @@ export default ({
           data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
-            ...(
-              paymentMethodsUpdates?.length
-                ? { paymentMethods: paymentMethodsUpdates }
-                : {}
+            ...Object.assign(
+              {},
+              Boolean(paymentMethodsUpdates?.length) && { paymentMethods: paymentMethodsUpdates },
+              Boolean(nonMonetaryPledgeUpdates) && { nonMonetaryReplace: nonMonetaryPledgeUpdates }
             )
           }
         })
@@ -305,7 +319,8 @@ export default ({
   }
 }
 
-.c-methods {
+.c-methods,
+.c-non-monetary-pledges {
   margin-top: 1.5rem;
 }
 
