@@ -33,11 +33,22 @@ export function renderMarkdown (str: string): any {
   // There is some caveats discovered with 'dompurify' and DOMParser() API regarding how they interpret '<' and '>' characters.
   // So manually converting them to '&lt;' and '&gt;' here first.
   // ( context: https://github.com/okTurtles/group-income/issues/2130 )
-  str = str.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const strSplitByCodeMarkdown = splitStringByMarkdownCode(str)
+  strSplitByCodeMarkdown.forEach((entry, index) => {
+    if (entry.type === 'plain' && strSplitByCodeMarkdown[index - 1]?.text !== '```') {
+      let entryText = entry.text
+      entryText = entryText.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  str = str.replace(/\n(?=\n)/g, '\n<br>')
-    .replace(/<br>\n(\s*)(\d+\.|-|```)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of block-code (```)
-    .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
+      entryText = entryText.replace(/\n(?=\n)/g, '\n<br>')
+        .replace(/<br>\n(\s*)(\d+\.|-|```)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of block-code (```)
+        .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
+
+      entry.text = entryText
+    }
+  })
+
+  console.log('!@# strSplitByCodeMarkdown: ', strSplitByCodeMarkdown)
+  str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
 
   // STEP 2. convert the markdown into html DOM string.
   let converted = marked.parse(str, { gfm: true })
@@ -145,7 +156,7 @@ export function splitStringByMarkdownCode (
   // This function takes a markdown string and split it by texts written as either inline/block code.
   // (e.g. `asdf`, ```const var = 123```)
 
-  const regExCodeMultiple = /(^```\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
+  const regExCodeMultiple = /(^[\s]*```\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
   const regExCodeInline = /(`.+`)/g
   const splitByMulitpleCode = str.split(regExCodeMultiple)
   const finalArr = []
