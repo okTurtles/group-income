@@ -7,7 +7,7 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import * as Common from '@common/common.js'
-import { cloneDeep, has } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 
@@ -121,7 +121,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
     const currentState = sbp('state/vuex/state')
     if (!currentState.currentGroupId) {
       const gId = Object.keys(currentState.contracts)
-        .find(cID => has(currentState[identityContractID].groups, cID))
+        .find(cID => currentState[identityContractID].groups[cID]?.active)
 
       if (gId) {
         sbp('gi.app/group/switch', gId)

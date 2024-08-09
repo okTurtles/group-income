@@ -28,9 +28,11 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
   // grab the groupID of any group that we're a part of
   const currentGroupId = rootState.currentGroupId
   if (!currentGroupId || currentGroupId === groupContractID) {
-    const groupIdToSwitch = Object.keys(state.groups)
+    const groupIdToSwitch = Object.entries(state.groups)
+      // $FlowFixMe[incompatible-use]
+      .map(([cID, { active }]) => active && cID)
       .filter(cID =>
-        cID !== groupContractID
+        cID && cID !== groupContractID
       ).sort(cID =>
       // prefer successfully joined groups
         sbp('state/vuex/state')[cID]?.profiles?.[groupContractID] ? -1 : 1

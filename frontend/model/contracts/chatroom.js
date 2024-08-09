@@ -177,7 +177,7 @@ sbp('chelonia/defineContract', {
 
         if (!state.renderingContext) {
           if (!state.members) {
-            state['members'] = {}
+            state.members = {}
           }
           if (state.members[memberID]) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
@@ -287,7 +287,6 @@ sbp('chelonia/defineContract', {
           }
         }
 
-        state.members[memberID].leftHeight = height
         delete state.members[memberID]
 
         if (!state.attributes) return

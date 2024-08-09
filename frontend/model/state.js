@@ -434,8 +434,10 @@ const getters = {
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     // we return event pending groups that we haven't finished joining so that we are not stuck
     // on the /pending-approval page if we are part of another working group already
-    return Object.keys(groups)
-      .map(contractID => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
+    return Object.entries(groups)
+      // $FlowFixMe[incompatible-use]
+      .filter(([, { active }]) => active)
+      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
   },
   profilesByGroup (state, getters) {
     return groupID => {

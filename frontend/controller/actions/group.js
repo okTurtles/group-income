@@ -896,7 +896,23 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
-  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
+    const state = await sbp('chelonia/contract/state', params.contractID)
+    const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
+    const reference = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
+
+    // For more efficient and correct processing, augment the leaveChatRoom
+    // action with the height of the join action. This helps prevent reduce
+    // the logic running as side-effects when syncing contracts from scratch
+    // by only considering the most recent join/leave events.
+    await sendMessage({
+      ...params,
+      data: {
+        ...params.data,
+        reference
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), async function (sendMessage, params) {

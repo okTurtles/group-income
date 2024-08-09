@@ -909,6 +909,10 @@ export default (sbp('sbp/selectors/register', {
             const current = rootState.contracts[id].references
             if (current === 0) {
               console.error('[chelonia/contract/release] Invalid negative reference count for', id)
+              if (process.env.CI) {
+                // If running in CI, force tests to fail
+                Promise.reject(new Error('Invalid negative reference count: ' + id))
+              }
               throw new Error('Invalid negative reference count')
             }
             if (current <= 1) {
@@ -918,6 +922,10 @@ export default (sbp('sbp/selectors/register', {
             }
           } else {
             console.error('[chelonia/contract/release] Invalid negative reference count for', id)
+            if (process.env.CI) {
+              // If running in CI, force tests to fail
+              Promise.reject(new Error('Invalid negative reference count: ' + id))
+            }
             throw new Error('Invalid negative reference count')
           }
         })
@@ -932,6 +940,10 @@ export default (sbp('sbp/selectors/register', {
             }
           } else {
             console.error('[chelonia/contract/release] Invalid negative ephemeral reference count for', id)
+            if (process.env.CI) {
+              // If running in CI, force tests to fail
+              Promise.reject(new Error('Invalid negative ephemeral reference count: ' + id))
+            }
             throw new Error('Invalid negative ephemeral reference count')
           }
         })

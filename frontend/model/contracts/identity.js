@@ -202,13 +202,13 @@ sbp('chelonia/defineContract', {
       }),
       async process ({ hash, data }, { state }) {
         const { groupContractID, inviteSecret } = data
-        if (has(state.groups, groupContractID)) {
+        if (has(state.groups, groupContractID) && state.groups[groupContractID].active) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
         }
 
         const inviteSecretId = await sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
 
-        state.groups[groupContractID] = { hash, inviteSecretId }
+        state.groups[groupContractID] = { hash, inviteSecretId, active: true }
       },
       async sideEffect ({ hash, data, contractID }, { state }) {
         const { groupContractID, inviteSecret } = data
@@ -226,16 +226,13 @@ sbp('chelonia/defineContract', {
           }
 
           // If we've left the group, return
-          if (!has(state.groups, groupContractID)) {
+          // If the hash doesn't match (could happen after re-joining), return
+          if (!has(state.groups, groupContractID) || !state.groups[groupContractID].active || state.groups[groupContractID].hash !== hash) {
+            sbp('okTurtles.data/set', `gi.contracts/identity/group-skipped-${groupContractID}-${hash}`, true)
             return
           }
 
           const inviteSecretId = sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
-
-          // If the hash doesn't match (could happen after re-joining), return
-          if (state.groups[groupContractID].hash !== hash) {
-            return
-          }
 
           return inviteSecretId
         }).then(async (inviteSecretId) => {
@@ -277,17 +274,18 @@ sbp('chelonia/defineContract', {
         reference: string
       }),
       process ({ data }, { state }) {
-        const { groupContractID } = data
+        const { groupContractID, reference } = data
 
-        if (!has(state.groups, groupContractID)) {
+        if (!has(state.groups, groupContractID) || !state.groups[groupContractID].active) {
           throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
         }
 
-        if (state.groups[groupContractID].hash !== data.reference) {
+        if (state.groups[groupContractID].hash !== reference) {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        delete state.groups[groupContractID]
+        state.groups[groupContractID].active = false
+        delete state.groups[groupContractID].inviteSecret
       },
       sideEffect ({ data, contractID }) {
         sbp('chelonia/queueInvocation', contractID, async () => {
@@ -298,10 +296,19 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const { groupContractID } = data
+          const { groupContractID, reference } = data
+
+          // For an explanation of skippedRetain, see the chatroom contract.
+          // TL;DR: This ensures that the reference count is correct when a
+          // group has been joined and then left and the state is being
+          // synced from scratch.
+          const skippedRetain = sbp('okTurtles.data/get', `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`)
+          // No use for this value beyond this point.
+          sbp('okTurtles.data/delete', `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`)
 
           // If we've re-joined since, return
-          if (has(state.groups, groupContractID)) {
+          // If the hash doesn't match (could happen after re-joining), return
+          if (!has(state.groups, groupContractID) || state.groups[groupContractID].active || state.groups[groupContractID].hash !== reference) {
             return
           }
 
@@ -312,9 +319,11 @@ sbp('chelonia/defineContract', {
             console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
           })
 
-          sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
-            console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
-          })
+          if (!skippedRetain) {
+            sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
+              console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
+            })
+          }
 
           // Remove last logged in information
           if (sbp('state/vuex/state').lastLoggedIn?.[contractID]) {
