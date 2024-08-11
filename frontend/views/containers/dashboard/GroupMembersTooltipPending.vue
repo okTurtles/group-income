@@ -29,7 +29,6 @@ export default ({
   computed: {
     ...mapGetters([
       'ourIdentityContractId',
-      'groupMembersPending',
       'globalProfile'
     ]),
     tooltipText () {
