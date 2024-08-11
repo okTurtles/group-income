@@ -34,7 +34,6 @@ export default ({
     ]),
     tooltipText () {
       const invitedBy = this.getDisplayName(this.data?.invitedBy)
-      console.log('!@# groupMembersPending: ', invitedBy)
 
       return this.ourIdentityContractId === this.data?.invitedBy
         ? L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you).', { invitedBy })
