@@ -21,9 +21,9 @@ export default ({
     data: Object
   },
   methods: {
-    getDisplayName (memberId) {
-      const profile = this.globalProfile(memberId)
-      return profile?.displayName || profile?.username || memberId
+    getDisplayName (memberID) {
+      const profile = this.globalProfile(memberID)
+      return profile?.displayName || profile?.username || memberID
     }
   },
   computed: {
