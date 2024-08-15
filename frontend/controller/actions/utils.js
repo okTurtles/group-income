@@ -310,7 +310,8 @@ export function groupContractsByType (contracts: Object): Object {
   const contractIDs = Object.create(null)
   if (contracts) {
     // $FlowFixMe[incompatible-use]
-    Object.entries(contracts).forEach(([id, { type }]) => {
+    Object.entries(contracts).forEach(([id, { references, type }]) => {
+      if (!references) return
       if (!contractIDs[type]) {
         contractIDs[type] = []
       }
@@ -343,7 +344,7 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
       // Sync contracts in order based on type
       return getContractSyncPriority(a) - getContractSyncPriority(b)
     }).map(([, ids]) => {
-      return sbp('chelonia/contract/sync', ids, { force: true })
+      return sbp('chelonia/contract/sync', ids)
     }))
   } catch (err) {
     console.error('Error during contract sync (syncing all contractIDs)', err)

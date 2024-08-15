@@ -54,14 +54,21 @@ export default ({
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
-      await sbp('chelonia/contract/sync', this.ephemeral.groupIdWhenMounted)
+    this.ephemeral.syncPromise = sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+      await sbp('chelonia/contract/retain', this.ephemeral.groupIdWhenMounted, { ephemeral: true })
       this.ephemeral.contractFinishedSyncing = true
       if (this.haveActiveGroupProfile) {
         this.ephemeral.groupJoined = true
       }
     }).catch(e => {
       console.error('[PendingApproval.vue]: Error waiting for contract to finish syncing', e)
+    })
+  },
+  beforeDestroy () {
+    this.ephemeral.syncPromise?.then(() => {
+      sbp('chelonia/contract/release', this.ephemeral.groupIdWhenMounted, { ephemeral: true }).catch(e => {
+        console.error('[PendingApproval.vue]: Error releasing group contract', e)
+      })
     })
   },
   watch: {

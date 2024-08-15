@@ -170,35 +170,39 @@ export default (sbp('sbp/selectors/register', {
         hooks: {
           postpublishContract: async (message) => {
             // We need to get the contract state
-            await sbp('chelonia/contract/sync', message.contractID())
+            await sbp('chelonia/contract/retain', message.contractID(), { ephemeral: true })
 
-            // Register password salt
-            const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
-              method: 'POST',
-              headers: {
-                'authorization': await sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
-                'content-type': 'application/x-www-form-urlencoded'
-              },
-              body: new URLSearchParams({
-                'r': r,
-                's': s,
-                'sig': sig,
-                'Eh': Eh
+            try {
+              // Register password salt
+              const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
+                method: 'POST',
+                headers: {
+                  'authorization': await sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
+                  'content-type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                  'r': r,
+                  's': s,
+                  'sig': sig,
+                  'Eh': Eh
+                })
               })
-            })
 
-            if (!res.ok) {
-              throw new Error('Unable to register hash')
-            }
-
-            userID = message.contractID()
-            if (picture) {
-              try {
-                finalPicture = await imageUpload(picture, { billableContractID: userID })
-              } catch (e) {
-                console.error('actions/identity.js picture upload error:', e)
-                throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }), { cause: e })
+              if (!res.ok) {
+                throw new Error('Unable to register hash')
               }
+
+              userID = message.contractID()
+              if (picture) {
+                try {
+                  finalPicture = await imageUpload(picture, { billableContractID: userID })
+                } catch (e) {
+                  console.error('actions/identity.js picture upload error:', e)
+                  throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }), { cause: e })
+                }
+              }
+            } finally {
+              await sbp('chelonia/contract/release', message.contractID(), { ephemeral: true })
             }
           }
         },
@@ -243,10 +247,10 @@ export default (sbp('sbp/selectors/register', {
       } else {
         // If there is a state, we've already retained the identity contract
         // but might need to fetch the latest events
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        await sbp('chelonia/contract/sync', identityContractID)
       }
     } catch (e) {
-      console.error('Error during login contract sync', e)
+      console.error('[gi.actions/identity] Error during login contract sync', e)
       throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
     }
 
@@ -346,7 +350,6 @@ export default (sbp('sbp/selectors/register', {
       //      queues), including their side-effects (the `${contractID}` queues)
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
-      cheloniaState = await sbp('chelonia/rootState')
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       // reset will wait until we have processed any remaining actions
       cheloniaState = await sbp('chelonia/reset', async () => {

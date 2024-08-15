@@ -188,7 +188,7 @@ async function startApp () {
           // since they refer to Vuex (i.e., tab / window) state and not to
           // Chelonia state.
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
-          'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
+          'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',
@@ -497,14 +497,6 @@ async function startApp () {
             sbp('gi.ui/clearBanner')
             sbp('okTurtles.events/emit', ONLINE)
             console.info('reconnected to pubsub!')
-          },
-          'subscription-succeeded' (event) {
-            const { channelID } = event.detail
-            if (channelID in sbp('state/vuex/state').contracts) {
-              sbp('chelonia/contract/sync', channelID, { force: true }).catch(err => {
-                console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
-              })
-            }
           }
         })
       })
@@ -543,7 +535,7 @@ async function startApp () {
         // it is important we first login before syncing any contracts here since that will load the
         // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
         await sbp('gi.app/identity/login', { identityContractID })
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        await sbp('chelonia/contract/sync', identityContractID)
         const contractIDs = groupContractsByType(cheloniaState.contracts)
         await syncContractsInOrder(contractIDs)
       }).catch(async e => {

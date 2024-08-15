@@ -435,6 +435,34 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
+  'chelonia/private/out/sync': function (contractIDs: string | string[], params?: { force?: boolean, resync?: boolean }): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    const forcedSync = !!params?.force
+    return Promise.all(listOfIds.map(contractID => {
+      // If this isn't a forced sync and we're already subscribed to the contract,
+      // only wait on the event queue (as events should come over the subscription)
+      if (!forcedSync && this.subscriptionSet.has(contractID)) {
+        const rootState = sbp(this.config.stateSelector)
+        // However, if the contract has been marked as dirty (meaning its state
+        // could be wrong due to newly received encryption keys), sync it anyhow
+        // (i.e., disregard the force flag and proceed to sync the contract)
+        if (!rootState[contractID]?._volatile?.dirty) {
+          return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+        }
+      }
+      // enqueue this invocation in a serial queue to ensure
+      // handleEvent does not get called on contractID while it's syncing,
+      // but after it's finished. This is used in tandem with
+      // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
+      // This prevents handleEvent getting called with the wrong previousHEAD for an event.
+      return sbp('chelonia/private/queueEvent', contractID, [
+        'chelonia/private/in/syncContract', contractID, params
+      ]).catch((err) => {
+        console.error(`[chelonia] failed to sync ${contractID}:`, err)
+        throw err // re-throw the error
+      })
+    }))
+  },
   'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers, billableContractID, bearer } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
@@ -545,7 +573,7 @@ export default (sbp('sbp/selectors/register', {
             // a call to sync and the subscription time. This is a temporary measure
             // to handle this until [pubsub] is updated.
             if (!entry.isFirstMessage() && entry.height() === lastAttemptedHeight) {
-              await sbp('chelonia/contract/sync', contractID, { force: true })
+              await sbp('chelonia/private/out/sync', contractID, { force: true })
             }
           } else {
             const message = (await r.json())?.message
@@ -782,6 +810,7 @@ export default (sbp('sbp/selectors/register', {
               const resync = sbp('chelonia/private/queueEvent', v.contractID, [
                 'chelonia/private/in/syncContract', v.contractID
               ]).catch((e) => {
+                // TODO: FIX CONFLICT WHEN MERGING FIX FOR #2277
                 console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
                 if (v.contractID === contractID) {
                   throw e
@@ -1118,7 +1147,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/enqueueHandleEvent': function (contractID: string, event: string) {
     // make sure handleEvent is called AFTER any currently-running invocations
-    // to 'chelonia/contract/sync', to prevent gi.db from throwing
+    // to 'chelonia/private/out/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
     return sbp('chelonia/private/queueEvent', contractID, async () => {
       await sbp('chelonia/private/in/handleEvent', contractID, event)
@@ -1804,7 +1833,7 @@ export default (sbp('sbp/selectors/register', {
 }): string[])
 
 const eventsToReingest = []
-const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID, { force: true }).catch((e) => {
+const reprocessDebounced = debounce((contractID) => sbp('chelonia/private/out/sync', contractID, { force: true }).catch((e) => {
   console.error(`[chelonia] Error at reprocessDebounced for ${contractID}`)
 }), 1000)
 
