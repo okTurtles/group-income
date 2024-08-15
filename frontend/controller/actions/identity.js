@@ -307,7 +307,7 @@ export default (sbp('sbp/selectors/register', {
         // that have been joined in the past)
         Object.entries(cheloniaState[identityContractID].groups)
           // $FlowFixMe[incompatible-use]
-          .filter(([, { active }]) => active)
+          .filter(([, { hasLeft }]) => !hasLeft)
           .forEach(([cId]) => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
@@ -425,7 +425,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
-    await Promise.all(Object.keys(state.groups || {}).filter(groupID => state.groups[groupID].active && !!rootState.contracts[groupID]).map(async groupID => {
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
       const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
 

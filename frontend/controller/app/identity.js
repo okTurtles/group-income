@@ -121,7 +121,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
     const currentState = sbp('state/vuex/state')
     if (!currentState.currentGroupId) {
       const gId = Object.keys(currentState.contracts)
-        .find(cID => currentState[identityContractID].groups[cID]?.active)
+        .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
 
       if (gId) {
         sbp('gi.app/group/switch', gId)

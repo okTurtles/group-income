@@ -899,7 +899,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
     const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
-    const reference = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
+    const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
 
     // For more efficient and correct processing, augment the leaveChatRoom
     // action with the height of the join action. This helps prevent reduce
@@ -909,7 +909,7 @@ export default (sbp('sbp/selectors/register', {
       ...params,
       data: {
         ...params.data,
-        reference
+        joinedHeight
       }
     })
   }),

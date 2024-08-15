@@ -30,7 +30,7 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
   if (!currentGroupId || currentGroupId === groupContractID) {
     const groupIdToSwitch = Object.entries(state.groups)
       // $FlowFixMe[incompatible-use]
-      .map(([cID, { active }]) => active && cID)
+      .map(([cID, { hasLeft }]) => !hasLeft && cID)
       .filter(cID =>
         cID && cID !== groupContractID
       ).sort(cID =>

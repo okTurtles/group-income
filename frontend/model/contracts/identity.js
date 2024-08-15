@@ -202,13 +202,13 @@ sbp('chelonia/defineContract', {
       }),
       async process ({ hash, data }, { state }) {
         const { groupContractID, inviteSecret } = data
-        if (has(state.groups, groupContractID) && state.groups[groupContractID].active) {
+        if (has(state.groups, groupContractID) && !state.groups[groupContractID].hasLeft) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
         }
 
         const inviteSecretId = await sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
 
-        state.groups[groupContractID] = { hash, inviteSecretId, active: true }
+        state.groups[groupContractID] = { hash, inviteSecretId }
       },
       async sideEffect ({ hash, data, contractID }, { state }) {
         const { groupContractID, inviteSecret } = data
@@ -227,7 +227,7 @@ sbp('chelonia/defineContract', {
 
           // If we've left the group, return
           // If the hash doesn't match (could happen after re-joining), return
-          if (!has(state.groups, groupContractID) || !state.groups[groupContractID].active || state.groups[groupContractID].hash !== hash) {
+          if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft || state.groups[groupContractID].hash !== hash) {
             sbp('okTurtles.data/set', `gi.contracts/identity/group-skipped-${groupContractID}-${hash}`, true)
             return
           }
@@ -276,7 +276,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         const { groupContractID, reference } = data
 
-        if (!has(state.groups, groupContractID) || !state.groups[groupContractID].active) {
+        if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft) {
           throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
         }
 
@@ -284,7 +284,7 @@ sbp('chelonia/defineContract', {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        state.groups[groupContractID].active = false
+        state.groups[groupContractID].hasLeft = true
         delete state.groups[groupContractID].inviteSecret
       },
       sideEffect ({ data, contractID }) {
@@ -308,7 +308,7 @@ sbp('chelonia/defineContract', {
 
           // If we've re-joined since, return
           // If the hash doesn't match (could happen after re-joining), return
-          if (!has(state.groups, groupContractID) || state.groups[groupContractID].active || state.groups[groupContractID].hash !== reference) {
+          if (!has(state.groups, groupContractID) || !state.groups[groupContractID].hasLeft || state.groups[groupContractID].hash !== reference) {
             return
           }
 

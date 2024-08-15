@@ -436,7 +436,7 @@ const getters = {
     // on the /pending-approval page if we are part of another working group already
     return Object.entries(groups)
       // $FlowFixMe[incompatible-use]
-      .filter(([, { active }]) => active)
+      .filter(([, { hasLeft }]) => !hasLeft)
       .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
   },
   profilesByGroup (state, getters) {
