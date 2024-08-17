@@ -300,16 +300,6 @@ export default (sbp('sbp/selectors/register', {
               })
           ))
         )
-
-        // update the 'lastLoggedIn' field in user's group profiles
-        Object.keys(cheloniaState[identityContractID].groups)
-          .forEach(cId => {
-            // We send this action only for groups we have fully joined (i.e.,
-            // accepted an invite and added our profile)
-            if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-              sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
-            }
-          })
       } catch (e) {
         console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
         throw e

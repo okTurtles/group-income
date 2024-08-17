@@ -7,6 +7,7 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import * as Common from '@common/common.js'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { cloneDeep, has } from '@model/contracts/shared/giLodash.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
@@ -319,6 +320,16 @@ export default (sbp('sbp/selectors/register', {
         }
 
         await loginCompletePromise
+
+        // update the 'lastLoggedIn' field in user's group profiles
+        Object.keys(state?.[identityContractID]?.groups || {})
+          .forEach(cId => {
+            // We send this action only for groups we have fully joined (i.e.,
+            // accepted an invite and added our profile)
+            if (state[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
+              sbp('chelonia/queueInvocation', cId, ['gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }]).catch((e) => console.error('Error sending updateLastLoggedIn', e))
+            }
+          })
       } catch (e) {
         sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
         sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)

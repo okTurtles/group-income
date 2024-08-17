@@ -131,6 +131,9 @@ const mutations = {
   setPreferences (state, value) {
     Vue.set(state, 'preferences', value)
   },
+  setLastLoggedIn (state, [groupID, value]) {
+    Vue.set(state.lastLoggedIn, groupID, value)
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
