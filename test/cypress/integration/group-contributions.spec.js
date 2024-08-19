@@ -149,7 +149,7 @@ describe('Contributions', () => {
 
     assertContributionsWidget({
       paymentsTitle: 'Payments sent',
-      paymentsStatus: 'At the moment, no one is in need of contributions.',
+      paymentsStatus: 'The distribution period begins on:', // distribution period hasn't started at this point
       monetaryTitle: 'You are pledging $500',
       monetaryStatus: '$0 will be used.',
       nonMonetaryStatus: 'There are no non-monetary contributions.'
@@ -211,7 +211,7 @@ describe('Contributions', () => {
 
     assertContributionsWidget({
       paymentsTitle: 'Payments received',
-      paymentsStatus: 'No members in the group are pledging yet! 😔',
+      paymentsStatus: 'The distribution period begins on:', // The distribution period hasn't started yet.
       monetaryTitle: 'You need $100',
       monetaryStatus: 'You will receive $0.',
       nonMonetaryStatus: 'You are contributing.'
@@ -456,7 +456,7 @@ describe('Contributions', () => {
       .should('have.length', 3)
 
     assertContributionsWidget({
-      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You are pledging $100',
       monetaryStatus: '$100 will be used.',
       nonMonetaryStatus: 'You and 1 other members are contributing.'
@@ -496,7 +496,7 @@ describe('Contributions', () => {
     cy.get(elReceivingFirst).should('contain', '$100 from 3 members')
 
     assertContributionsWidget({
-      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You need $100',
       monetaryStatus: 'You will receive $100.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
@@ -522,7 +522,7 @@ describe('Contributions', () => {
     updateIncome(10, true, graphicLegend2, '$39.58 from Pierre')
 
     assertContributionsWidget({
-      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You need $190',
       monetaryStatus: 'You will receive $39.58.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
@@ -545,7 +545,7 @@ describe('Contributions', () => {
       .should('contain', '$20.83 from Pierre')
 
     assertContributionsWidget({
-      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You need $100',
       monetaryStatus: 'You will receive $20.83.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
