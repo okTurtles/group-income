@@ -149,7 +149,7 @@ describe('Contributions', () => {
 
     assertContributionsWidget({
       paymentsTitle: 'Payments sent',
-      paymentsStatus: 'The distribution period begins on:', // distribution period hasn't started at this point.
+      paymentsStatus: 'The distribution period begins on:', // distribution period hasn't started at this point
       monetaryTitle: 'You are pledging $500',
       monetaryStatus: '$0 will be used.',
       nonMonetaryStatus: 'There are no non-monetary contributions.'
