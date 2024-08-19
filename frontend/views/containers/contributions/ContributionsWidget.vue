@@ -2,34 +2,44 @@
   page-section(:title='L("Contributions")')
     .c-widget(data-test='contributionsWidget')
       .c-column
-        .c-status(v-if='copy.payments.title')
-          h3.is-title-4.c-title(data-test='paymentsTitle') {{ copy.payments.title }}
-          .has-text-1(
+        .c-status(v-if='!distributionStarted')
+          h3.is-title-4.c-title(data-test='paymentsTitle') {{ pSummary.title }}
+          i18n.has-text-1(
+            tag='p'
             data-test='paymentsStatus'
-            v-safe-html='copy.payments.status'
-            @click='handlePaymentStatusClick'
-          )
-        .c-status(v-else data-test='paymentsSummary')
-          .c-pSummary
-            h3.is-title-4 {{ pSummary.title }}
-            p.c-pSummary-status(:class='{"has-text-success": pSummary.max === pSummary.value}')
-              i.icon-check.is-prefix(v-if='pSummary.max === pSummary.value')
-              span.has-text-1 {{ pSummary.label }}
-          progress-bar.c-progress(
-            :max='pSummary.max'
-            :value='pSummary.value'
-            :hasMarks='pSummary.hasMarks'
-          )
+            :args='{ startDate: distributionStart }'
+          ) The distribution period begins on: {startDate}
+        template(v-else)
+          .c-status(v-if='copy.payments.title')
+            h3.is-title-4.c-title(data-test='paymentsTitle') {{ copy.payments.title }}
+            .has-text-1(
+              data-test='paymentsStatus'
+              v-safe-html='copy.payments.status'
+              @click='handlePaymentStatusClick'
+            )
+          .c-status(v-else data-test='paymentsSummary')
+            .c-pSummary
+              h3.is-title-4 {{ pSummary.title }}
+              p.c-pSummary-status(:class='{"has-text-success": pSummary.max === pSummary.value}')
+                i.icon-check.is-prefix(v-if='pSummary.max === pSummary.value')
+                span.has-text-1 {{ pSummary.label }}
+            progress-bar.c-progress(
+              :max='pSummary.max'
+              :value='pSummary.value'
+              :hasMarks='pSummary.hasMarks'
+            )
 
-        router-link.button.is-small(
-          v-if='copy.payments.ctaText'
-          to='/payments'
-          :class='copy.payments.ctaClass'
-        ) {{ copy.payments.ctaText }}
+          router-link.button.is-small(
+            v-if='copy.payments.ctaText'
+            to='/payments'
+            :class='copy.payments.ctaClass'
+          ) {{ copy.payments.ctaText }}
+
       .c-column
         h3.is-title-4.c-title(v-safe-html='copy.monetary.title' data-test='monetaryTitle')
         .has-text-1.c-status(data-test='monetaryStatus') {{ copy.monetary.status }}
         i18n.link(tag='button' @click='openModal("IncomeDetails")') Change
+
       .c-column
         h3.is-title-4.c-title {{ copy.nonMonetary.title }}
         .has-text-1.c-status(data-test='nonMonetaryStatus') {{ copy.nonMonetary.status }}
@@ -46,6 +56,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
 import currencies from '@model/contracts/shared/currencies.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'ContributionsWidget',
@@ -63,6 +74,15 @@ export default ({
       'ourContributionSummary',
       'ourPaymentsSummary'
     ]),
+    distributionStart () {
+      return humanDate(
+        this.groupSettings.distributionDate,
+        { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }
+      )
+    },
+    distributionStarted () {
+      return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
+    },
     withCurrency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
