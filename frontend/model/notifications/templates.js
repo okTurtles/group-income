@@ -311,5 +311,21 @@ export default ({
       scope: 'group',
       data
     }
+  },
+  NONMONETARY_CONTRIBUTION_UPDATE (
+    data: {
+      creatorID: string,
+      updateData: { prev: any[], after: any[] }
+    }
+  ) {
+    return {
+      body: L('Updated non-monetary contributions. Check for the full contribution details of the group.'),
+      scope: 'group',
+      avatarUserID: data.creatorID,
+      level: 'info',
+      icon: 'coins', // TODO: change it to something else
+      linkTo: '/contributions',
+      data: data.updateData // TODO: Remove if not needed
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
