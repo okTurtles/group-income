@@ -1097,6 +1097,21 @@ sbp('chelonia/defineContract', {
           groupProfile['incomeDetailsLastUpdatedDate'] = meta.createdDate
           updateCurrentDistribution({ contractID, meta, state, getters })
         }
+      },
+      sideEffect ({ meta, contractID, height, data, innerSigningContractID }, { state, getters }) {
+        const nonMonetaryUpdateKey = Object.keys(data).find(
+          key => ['nonMonetaryAdd', 'nonMonetaryRemove', 'nonMonetaryEdit', 'nonMonetaryReplace'].includes(key)
+        )
+        const { loggedIn } = sbp('state/vuex/state')
+        const isUpdatingMyself = loggedIn.identityContractID === innerSigningContractID
+
+        if (nonMonetaryUpdateKey && !isUpdatingMyself) {
+          const myProfile = getters.groupProfile(loggedIn.identityContractID)
+
+          if (isActionNewerThanUserJoinedDate(height, myProfile)) {
+            console.log('!@# TODO: Send an in-app notification here! : ', nonMonetaryUpdateKey)
+          }
+        }
       }
     },
     'gi.contracts/group/updateAllVotingRules': {
