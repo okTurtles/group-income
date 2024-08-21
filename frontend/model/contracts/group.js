@@ -1099,7 +1099,7 @@ sbp('chelonia/defineContract', {
 
         if (isUpdatingNonMonetary && (prevNonMonetary.length || groupProfile.nonMonetaryContributions.length)) {
           sbp('gi.contracts/group/pushSideEffect', contractID,
-            ['gi.contracts/group/sendNonMonetaryUpdateNontification', {
+            ['gi.contracts/group/sendNonMonetaryUpdateNotification', {
               contractID, // group contractID
               innerSigningContractID, // identity contract ID of the group-member being updated
               meta,
@@ -1813,7 +1813,7 @@ sbp('chelonia/defineContract', {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
     },
-    'gi.contracts/group/sendNonMonetaryUpdateNontification': ({
+    'gi.contracts/group/sendNonMonetaryUpdateNotification': ({
       contractID, // group contractID
       innerSigningContractID, // identity contract ID of the group-member being updated
       meta,
