@@ -341,7 +341,7 @@ export default ({
         ? L('{first} and {rest} more', { first, rest: len - 1 })
         : first
     }
-    const bodyContentMap = { // !@#
+    const bodyContentMap = {
       added: () => L('{name} added non-monetary contribution: {strong_}{added}{_strong}', { name, added: contributionsFormatted(added), ...LTags('strong') }),
       removed: () => L('{name} removed non-monetary contribution: {strong_}{removed}{_strong}', { name, removed: contributionsFormatted(removed), ...LTags('strong') }),
       updated: () => L('{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}', {

@@ -1824,12 +1824,10 @@ sbp('chelonia/defineContract', {
       const { loggedIn } = sbp('state/vuex/state')
       const isUpdatingMyself = loggedIn.identityContractID === innerSigningContractID
 
-      console.log('!@# here - aaa: ', isUpdatingMyself)
       if (!isUpdatingMyself) {
         const myProfile = getters.groupProfile(loggedIn.identityContractID)
 
         if (isActionNewerThanUserJoinedDate(height, myProfile)) {
-          console.log('!@# here - bbb sending notification!!')
           sbp('gi.notifications/emit', 'NONMONETARY_CONTRIBUTION_UPDATE', {
             createdDate: meta.createdDate,
             groupID: contractID,
