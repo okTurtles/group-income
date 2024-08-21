@@ -1815,7 +1815,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/sendNonMonetaryUpdateNotification': ({
       contractID, // group contractID
-      innerSigningContractID, // identity contract ID of the group-member being updated
+      innerSigningContractID, // identity contractID of the group-member being updated
       meta,
       height,
       updateData,
