@@ -356,9 +356,8 @@ export default ({
       scope: 'group',
       avatarUserID: data.creatorID,
       level: 'info',
-      icon: 'coins', // TODO: change it to something else
-      linkTo: '/contributions',
-      data: data.updateData // TODO: Remove if not needed
+      icon: 'chart-pie',
+      linkTo: '/contributions'
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

@@ -1097,7 +1097,7 @@ sbp('chelonia/defineContract', {
           }
         }
 
-        if (isUpdatingNonMonetary && (prevNonMonetary.length || nonMonetary.length)) {
+        if (isUpdatingNonMonetary && (prevNonMonetary.length || groupProfile.nonMonetaryContributions.length)) {
           sbp('gi.contracts/group/pushSideEffect', contractID,
             ['gi.contracts/group/sendNonMonetaryUpdateNontification', {
               contractID, // group contractID
