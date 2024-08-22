@@ -161,14 +161,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::after,
+  *::before {
     transition: none !important;
     animation: none !important;
   }
 }
 
 .js-reducedMotion {
-  * {
+  *,
+  *::after,
+  *::before {
     transition: none !important;
     animation: none !important;
   }
