@@ -12,11 +12,6 @@ export default {
         url: 'my-account',
         component: 'UserProfile',
         index: 0
-      }, {
-        title: (L('Privacy & Safety'): string),
-        url: 'privacy-safety',
-        component: 'Placeholder',
-        index: 1
       }
     ]
   }, {
