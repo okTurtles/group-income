@@ -47,7 +47,7 @@ export default ({
     config: {
       [RULE_PERCENTAGE]: {
         sliderLabel: L('What percentage of members need to agree to pass a proposal?'),
-        sliderMin: 0,
+        sliderMin: 1,
         sliderMax: 100,
         sliderUnit: '%'
       },
