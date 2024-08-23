@@ -298,13 +298,14 @@ sbp('chelonia/defineContract', {
 
           const { groupContractID, reference } = data
 
-          // For an explanation of skippedRetain, see the chatroom contract.
+          // For an explanation of skippedRetain, see the group contract.
           // TL;DR: This ensures that the reference count is correct when a
           // group has been joined and then left and the state is being
           // synced from scratch.
-          const skippedRetain = sbp('okTurtles.data/get', `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`)
+          const skippedRetainKey = `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`
+          const skippedRetain = sbp('okTurtles.data/get', skippedRetainKey)
           // No use for this value beyond this point.
-          sbp('okTurtles.data/delete', `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`)
+          sbp('okTurtles.data/delete', skippedRetainKey)
 
           // If we've re-joined since, return
           // If the hash doesn't match (could happen after re-joining), return

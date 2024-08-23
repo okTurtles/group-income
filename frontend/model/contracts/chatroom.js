@@ -309,14 +309,14 @@ sbp('chelonia/defineContract', {
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
       },
-      async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }) {
+      async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
         const memberID = data.memberID || innerSigningContractID
         const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
 
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
         if (itsMe) {
-          await leaveChatRoom(contractID).catch(e => {
+          await leaveChatRoom(contractID, state).catch(e => {
             console.error('[gi.contracts/chatroom/leave] Error at leaveChatRoom', e)
           })
         }
@@ -350,11 +350,11 @@ sbp('chelonia/defineContract', {
           delete state.members[memberID]
         }
       },
-      async sideEffect ({ contractID }) {
+      async sideEffect ({ contractID }, { state }) {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
-        await leaveChatRoom(contractID)
+        await leaveChatRoom(contractID, state)
       }
     },
     'gi.contracts/chatroom/addMessage': {
@@ -721,13 +721,6 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
-    'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
-      if (state) {
-        sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
-          console.error(`[gi.contracts/chatroom/_cleanup] Error releasing chatroom members for ${contractID}`, Object.keys(state.members), e)
-        })
-      }
-    },
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
       if (!state._volatile) state['_volatile'] = Object.create(null)
       if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)

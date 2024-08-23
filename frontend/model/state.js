@@ -84,6 +84,28 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
+    (() => {
+      // Upgrade from version 1.0.6 to a newer version
+      // The new group chatroomo contract introduces a breaking change: the
+      // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
+      // attribute.
+      // This code checks if the attribute is missing, and if so, issues the
+      // corresponing upgrade action.
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
+      const upgradeRequired = Object.entries(state[ourIdentityContractId].groups).forEach(([groupID, { hasLeft }]) => {
+        if (hasLeft || !state[groupID]?.chatRooms) return
+        Object.values(state[groupID].chatRooms).flatMap(({ members }) => {
+          return Object.values(members)
+        }).reduce((upgradeRequired, member) => {
+          return upgradeRequired || (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null)
+        }, false)
+      })
+      if (!upgradeRequired) return
+      sbp('gi.actions/group/upgradeFrom1.0.6').catch(e => {
+        console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.6', e)
+      })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

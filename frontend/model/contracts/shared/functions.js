@@ -158,9 +158,15 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function leaveChatRoom (contractID: string) {
+export async function leaveChatRoom (contractID: string, state: Object) {
   if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
+  }
+
+  if (state) {
+    sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
+      console.error(`[gi.contracts/chatroom] leaveChatRoom: Error releasing chatroom members for ${contractID}`, Object.keys(state.members), e)
+    })
   }
 
   sbp('gi.actions/identity/kv/deleteChatRoomUnreadMessages', { contractID }).catch((e) => {

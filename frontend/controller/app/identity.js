@@ -109,7 +109,8 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       if (cheloniaState.namespaceLookups) {
         Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
       }
-    // End exclude contracts
+      // End exclude contracts
+      sbp('state/vuex/postUpgradeVerification', state)
     }
 
     if (encryptionParams) {
