@@ -615,7 +615,8 @@ export default (sbp('sbp/selectors/register', {
           const { contractID } = GIMessage.deserializeHEAD(msg.data)
           sbp('chelonia/private/in/enqueueHandleEvent', contractID, msg.data)
         }
-      }
+      },
+      handlers: options.handlers
     })
     if (!this.contractsModifiedListener) {
       // Keep pubsub in sync (logged into the right "rooms") with 'state.contracts'
