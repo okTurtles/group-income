@@ -110,9 +110,9 @@ export default ({
   },
   computed: {
     groupInitials () {
-      const intialsCombined = str => str.split(/\s+/) // 1. Pplit the groupname by white-space
-        .map(segment => segment.match(/\b\w/)?.[0] || '') // 2. extract intial from each segment
-        .join('').toUpperCase() // 3. combine them & uppercase it.
+      const intialsCombined = str => str.split(/\s+/) // 1. Split the groupname by white-space
+        .map(segment => segment.match(/\b\w/)?.[0] || '') // 2. Extract intial from each segment
+        .join('').toUpperCase() // 3. Combine them & uppercase it.
 
       return this.group.groupName
         ? intialsCombined(this.group.groupName).slice(0, 2) ?? ''
