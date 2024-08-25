@@ -222,8 +222,7 @@ export default (sbp('sbp/selectors/register', {
       strictOrdering: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
-        reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets
-        timeout: 5000
+        reconnectOnTimeout: true // can be enabled since we are not doing auth via web sockets
       },
       hooks: {
         preHandleEvent: null, // async (message: GIMessage) => {}
