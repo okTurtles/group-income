@@ -213,5 +213,14 @@ sbp('sbp/selectors/register', {
     // This prevents us from sending messages signed with just-revoked keys
     // Once the server enforces signatures, this can be removed
     await sbp('chelonia/contract/sync', contractID, { force: true })
+  },
+  'gi.actions/kv/set': ({ contractID, key, data, onconflict, encryptionKeyName = 'cek', signingKeyName = 'csk' }) => {
+    return sbp('chelonia/queueInvocation', contractID, () => {
+      return sbp('chelonia/kv/set', contractID, key, data, {
+        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, encryptionKeyName),
+        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, signingKeyName),
+        onconflict
+      })
+    })
   }
 })

@@ -41,12 +41,11 @@ export default (sbp('sbp/selectors/register', {
     //       because it uses fields of the identity contract state including height, cek, csk
     //       this conflict error can cause the heisenbug mostly in Cypress
     //       https://okturtles.slack.com/archives/C0EH7P20Y/p1720053305870019?thread_ts=1720025185.746849&cid=C0EH7P20Y
-    return sbp('chelonia/queueInvocation', identityContractID, () => {
-      return sbp('chelonia/kv/set', identityContractID, KV_KEYS.UNREAD_MESSAGES, data, {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-        onconflict
-      })
+    return sbp('gi.actions/kv/set', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      data,
+      onconflict
     })
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
@@ -183,12 +182,11 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to update preferences without an active session')
     }
 
-    return sbp('chelonia/queueInvocation', identityContractID, () => {
-      return sbp('chelonia/kv/set', identityContractID, KV_KEYS.PREFERENCES, data, {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-        onconflict
-      })
+    return sbp('gi.actions/kv/set', {
+      contractID: identityContractID,
+      key: KV_KEYS.PREFERENCES,
+      data,
+      onconflict
     })
   },
   'gi.actions/identity/kv/loadPreferences': () => {
@@ -243,12 +241,11 @@ export default (sbp('sbp/selectors/register', {
       return null
     }
 
-    return sbp('chelonia/queueInvocation', identityContractID, () => {
-      return sbp('chelonia/kv/set', identityContractID, KV_KEYS.NOTIFICATIONS, applyStorageRules(data), {
-        encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-        signingKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-        onconflict: updatedOnConflict
-      })
+    return sbp({
+      contractID: identityContractID,
+      key: KV_KEYS.NOTIFICATIONS,
+      data: applyStorageRules(data),
+      onconflict: updatedOnConflict
     })
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
