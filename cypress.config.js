@@ -20,6 +20,7 @@ module.exports = defineConfig({
     baseUrl: 'http://localhost:8000',
     specPattern: 'test/cypress/integration/**/*.{js,jsx,ts,tsx}',
     supportFile: 'test/cypress/support/index.js',
-    testIsolation: false
+    testIsolation: false,
+    experimentalRunAllSpecs: true // reference: https://www.cypress.io/blog/check-out-our-experimental-release-of-run-all-specs
   }
 })
