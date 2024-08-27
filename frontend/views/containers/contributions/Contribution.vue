@@ -24,7 +24,7 @@ transition(name='replace-list')
       .c-helper(v-if='receiverHasOnlyOneItem')
         i.icon-info-circle
         i18n At least one non-monetary contribution is required.
-      
+
       .buttons
         button-submit.is-small.is-danger.is-outlined(
           v-if='showRemoveBtn'
