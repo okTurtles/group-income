@@ -351,7 +351,7 @@ describe('Group Payments', () => {
       cy.get('@firstRowAmountInput').should('have.value', '100')
       cy.get('@firstRowAmountInput').clear({ force: true })
       // NOTE: Since this amount input element has a floating element ('$' sign) above it, cypress thinks the <input /> is not visible, which is not true.
-      //       So adding { force: true } here.
+      //       So we need to add { force: true } here.
       cy.get('@firstRowAmountInput').type('50', { force: true })
 
       cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('be.checked')
