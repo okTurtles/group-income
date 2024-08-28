@@ -231,7 +231,7 @@ Cypress.Commands.add('giLogin', (username, {
     })
 
     if (toGroupDashboardUponSuccess) {
-      cy.get('nav').within(() => {
+      cy.getByDT('navMenu').within(() => {
         cy.getByDT('dashboard').click()
       })
     }
