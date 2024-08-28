@@ -3,8 +3,6 @@
 // Copied directly from: https://github.com/cypress-io/cypress/issues/3199#issuecomment-466593084
 // ***********
 
-const APPLICATION_NAME = require('../../../package.json').name
-
 let logs = ''
 
 Cypress.on('window:before:load', (window) => {
