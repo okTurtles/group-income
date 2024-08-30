@@ -151,6 +151,9 @@ don't mix them).
 For example,
 
 ```js
+// NOTE: `retain` must be _outside_ of the `try` block and immediately followed
+// by it. This ensures that if `release` is called if and only if `retain`
+// succeeds.
 await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
 try {
   // do something

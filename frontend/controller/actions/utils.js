@@ -309,8 +309,14 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
 export function groupContractsByType (contracts: Object): Object {
   const contractIDs = Object.create(null)
   if (contracts) {
+    // Note: `references` holds non-ephemeral references (i.e., explicit
+    // calls to `retain` without `{ ephemeral: true }`). These are the contracts
+    // that we want to restore.
+    // Apart from non-ephemeral references, `references` may not be set for
+    // contracts being 'watched' for foreign keys.
     // $FlowFixMe[incompatible-use]
     Object.entries(contracts).forEach(([id, { references, type }]) => {
+      // If the contract wasn't explicitly retained, skip it
       if (!references) return
       if (!contractIDs[type]) {
         contractIDs[type] = []
