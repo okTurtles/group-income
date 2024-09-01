@@ -278,8 +278,11 @@ export const referenceTally = (selector: string): Object => {
         sbp('chelonia/queueInvocation', childContractID, () => {
           const count = sbp('okTurtles.data/get', key)
           sbp('okTurtles.data/delete', key)
-          if (count !== Math.sign(count)) {
+          if (count && count !== Math.sign(count)) {
             console.warn(`[${selector}] Unexpected value`, parentContractID, childContractID, count)
+            if (process.env.CI) {
+              Promise.reject(new Error(`Unexpected value ${parentContractID} ${childContractID}: ${count}`))
+            }
           }
           switch (Math.sign(count)) {
             case -1:
