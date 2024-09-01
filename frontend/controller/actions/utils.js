@@ -313,10 +313,14 @@ export function groupContractsByType (contracts: Object): Object {
     // calls to `retain` without `{ ephemeral: true }`). These are the contracts
     // that we want to restore.
     // Apart from non-ephemeral references, `references` may not be set for
-    // contracts being 'watched' for foreign keys.
+    // contracts being 'watched' for foreign keys. The latter are managed
+    // directly by Chelonia, so we also don't subscribe to them
     // $FlowFixMe[incompatible-use]
     Object.entries(contracts).forEach(([id, { references, type }]) => {
       // If the contract wasn't explicitly retained, skip it
+      // NB! Ignoring `references` could result in an exception being thrown, as
+      // as `sync` may only be called on contracts for which a reference count
+      // exists.
       if (!references) return
       if (!contractIDs[type]) {
         contractIDs[type] = []
