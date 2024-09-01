@@ -8,17 +8,38 @@ button.c-toggle.is-unstyled(
     slot
   i.icon-info(v-else-if='element === "sidebar"')
     slot
+    badge(v-if='showBadge && currentGroupUnreadMessagesCount') {{ currentGroupUnreadMessagesCount }}
+
 </template>
 
 <script>
+import Badge from './Badge.vue'
+import { mapState, mapGetters } from 'vuex'
+
 export default ({
   name: 'Toggle',
+  components: {
+    Badge
+  },
   props: {
     element: {
       type: String,
       validator: (value) => ['navigation', 'sidebar'].includes(value),
       required: true
-    }
+    },
+    showBadge: {
+      type: Boolean,
+      default: false
+    },
+  },
+  computed: {
+    ...mapState(['currentGroupId']),
+    ...mapGetters([
+      'groupUnreadMessages'
+    ]),
+    currentGroupUnreadMessagesCount () {
+      return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
+    },
   }
 }: Object)
 </script>
