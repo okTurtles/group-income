@@ -163,12 +163,6 @@ export async function leaveChatRoom (contractID: string, state: Object) {
     return
   }
 
-  if (state) {
-    sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
-      console.error(`[gi.contracts/chatroom] leaveChatRoom: Error releasing chatroom members for ${contractID}`, Object.keys(state.members), e)
-    })
-  }
-
   sbp('gi.actions/identity/kv/deleteChatRoomUnreadMessages', { contractID }).catch((e) => {
     console.error('[leaveChatroom] Error at deleteChatRoomUnreadMessages ', contractID, e)
   })
