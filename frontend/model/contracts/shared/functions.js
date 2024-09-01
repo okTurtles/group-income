@@ -267,3 +267,40 @@ export function swapMentionIDForDisplayname (
     .map(t => regEx.test(t) ? swap(t) : t)
     .join('')
 }
+
+export const referenceTally = (selector: string): Object => {
+  const delta = {
+    'retain': 1,
+    'release': -1
+  }
+  return {
+    [selector]: (parentContractID: string, childContractIDs: string | string[], op: 'retain' | 'release') => {
+      if (!Array.isArray(childContractIDs)) childContractIDs = [childContractIDs]
+      if (op !== 'retain' && op !== 'release') throw new Error('Invalid operation')
+      for (const childContractID of childContractIDs) {
+        const key = `${selector}-${parentContractID}-${childContractID}`
+        const count = (sbp('okTurtles.data/get', key) || 0) + delta[op]
+        sbp('okTurtles.data/set', key, count)
+        sbp('chelonia/queueInvocation', childContractID, () => {
+          const count = sbp('okTurtles.data/get', key)
+          sbp('okTurtles.data/delete', key)
+          if (count !== Math.sign(count)) {
+            console.warn(`[${selector}] Unexpected value`, parentContractID, childContractID, count)
+          }
+          switch (Math.sign(count)) {
+            case -1:
+              sbp('chelonia/contract/release', childContractID).catch(e => {
+                console.error(`[${selector}] Error calling release`, parentContractID, childContractID, e)
+              })
+              break
+            case 1:
+              sbp('chelonia/contract/retain', childContractID).catch(e => console.error(`[${selector}] Error calling retain`, parentContractID, childContractID, e))
+              break
+          }
+        }).catch(e => {
+          console.error(`[${selector}] Error in queued invocation`, parentContractID, childContractID, e)
+        })
+      }
+    }
+  }
+}

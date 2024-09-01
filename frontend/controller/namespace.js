@@ -9,6 +9,10 @@ sbp('sbp/selectors/register', {
     const cache = sbp('state/vuex/state').namespaceLookups
     return cache?.[name] ?? null
   },
+  'namespace/lookupReverseCached': (id: string) => {
+    const cache = sbp('state/vuex/state').reverseNamespaceLookups
+    return cache?.[id] ?? null
+  },
   'namespace/lookup': (name: string, { skipCache }: { skipCache: boolean } = { skipCache: false }) => {
     if (!skipCache) {
       const cached = sbp('namespace/lookupCached', name)
@@ -29,9 +33,11 @@ sbp('sbp/selectors/register', {
       }
       return r['text']()
     }).then(value => {
-      const cache = sbp('state/vuex/state').namespaceLookups
       if (value !== null) {
+        const cache = sbp('state/vuex/state').namespaceLookups
+        const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
         Vue.set(cache, name, value)
+        Vue.set(reverseCache, value, name)
       }
       return value
     })

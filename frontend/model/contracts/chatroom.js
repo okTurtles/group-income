@@ -8,14 +8,14 @@ import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optiona
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
-  MAX_HASH_LEN,
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
-  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGE_LEN,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_TYPES,
+  MAX_HASH_LEN,
   MESSAGE_NOTIFICATIONS,
   MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
@@ -27,6 +27,7 @@ import {
   findMessageIdx,
   leaveChatRoom,
   makeMentionFromUserID,
+  referenceTally,
   swapMentionIDForDisplayname
 } from './shared/functions.js'
 import chatroomGetters from './shared/getters/chatroom.js'
@@ -207,9 +208,11 @@ sbp('chelonia/defineContract', {
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
       sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
+        const memberID = data.memberID || innerSigningContractID
+        sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'retain')
+
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          const memberID = data.memberID || innerSigningContractID
 
           if (!state?.members?.[memberID]) {
             return
@@ -220,16 +223,6 @@ sbp('chelonia/defineContract', {
           if (memberID === identityContractID) {
             sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
-            })
-
-            // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(state.members)
-            sbp('chelonia/contract/retain', profileIds).catch((e) => {
-              console.error('Error while syncing other members\' contracts at chatroom join', e)
-            })
-          } else {
-            sbp('chelonia/contract/retain', memberID).catch((e) => {
-              console.error(`Error while syncing new memberID's contract ${memberID}`, e)
             })
           }
         }).catch((e) => {
@@ -321,6 +314,7 @@ sbp('chelonia/defineContract', {
           })
         }
 
+        sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
           if (!state || !!state.members?.[data.memberID] || !state.attributes) {
@@ -343,9 +337,12 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
-      process ({ meta }, { state }) {
+      process ({ meta, contractID }, { state }) {
         if (!state.attributes) return
         state.attributes['deletedDate'] = meta.createdDate
+        sbp('gi.contracts/chatroom/pushSideEffect', contractID,
+          ['gi.contracts/chatroom/referenceTally', contractID, Object.keys(state.members), 'release']
+        )
         for (const memberID in state.members) {
           delete state.members[memberID]
         }
@@ -721,6 +718,13 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
+      if (state?.members) {
+        sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
+          console.error('[gi.contracts/chatroom/_cleanup] Error calling release', contractID, e)
+        })
+      }
+    },
     'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
       if (!state._volatile) state['_volatile'] = Object.create(null)
       if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
@@ -759,6 +763,7 @@ sbp('chelonia/defineContract', {
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
-    }
+    },
+    ...referenceTally('gi.contracts/chatroom/referenceTally')
   }
 })

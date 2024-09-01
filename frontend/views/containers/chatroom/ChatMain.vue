@@ -357,7 +357,7 @@ export default ({
     },
     who (message) {
       const user = this.isMsgSender(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
-      return user?.displayName || user?.username || message.from
+      return user?.displayName || user?.username || sbp('namespace/lookupReverseCached', message.from) || message.from
     },
     variant (message) {
       if (message.hasFailed) {

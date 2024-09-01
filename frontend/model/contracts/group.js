@@ -38,7 +38,7 @@ import {
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
-import { paymentHashesFromPaymentPeriod } from './shared/functions.js'
+import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
 import groupGetters from './shared/getters/group.js'
 import { cloneDeep, deepEqualJSONType, merge, omit } from './shared/giLodash.js'
 import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
@@ -395,30 +395,6 @@ export const actionRequireActiveMember = (next: Function): Function => (data, pr
     throw new Error('Missing inner signature')
   }
   return next(data, props)
-}
-
-const hasRetainBeenSkippedOnChatRoom = (state, contractID, chatRoomID, memberID, joinedHeight) => {
-  // Has `retain` been skipped?
-  // Note: we check for 'skipped' instead of 'called' because
-  // side-effects cannot mutate state. The 'skipped' case can be
-  // checked without persistent storage, while the 'called' case
-  // would require some kind of persistent state (since the reference
-  // count is itself persisted)
-  const skippedRetainKey = `gi.contracts/group/chatroom-skipped-${contractID}-${chatRoomID}-${joinedHeight}`
-  const skippedRetain = sbp('okTurtles.data/get', skippedRetainKey)
-  // There's no use of this transient value, so it's deleted to
-  // preserve memory
-  sbp('okTurtles.data/delete', skippedRetainKey)
-
-  if (
-    state.chatRooms?.[chatRoomID]?.members[memberID]?.status === PROFILE_STATUS.ACTIVE ||
-    state.chatRooms?.[chatRoomID]?.members[memberID]?.joinedHeight !== joinedHeight ||
-    skippedRetain
-  ) {
-    return true
-  }
-
-  return false
 }
 
 export const GIGroupAlreadyJoinedError: typeof Error = ChelErrorGenerator('GIGroupAlreadyJoinedError')
@@ -888,6 +864,8 @@ sbp('chelonia/defineContract', {
         )
       },
       sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
+        const memberID = data.memberID || innerSigningContractID
+        sbp('gi.contracts/group/referenceTally', contractID, memberID, 'release')
         // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
           data, meta, contractID, getters, height, innerSigningContractID, proposalHash
@@ -921,6 +899,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ meta, contractID, height, innerSigningContractID }) {
         const { loggedIn } = sbp('state/vuex/state')
 
+        // subscribe to the contract of the new member
+        sbp('gi.contracts/group/referenceTally', contractID, innerSigningContractID, 'retain')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
@@ -974,33 +954,12 @@ sbp('chelonia/defineContract', {
               })()
             }
 
-            // subscribe to founder's IdentityContract & everyone else's
-            const profileIds = Object.keys(profiles).filter(cID => cID !== userID)
-            if (profileIds.length !== 0) {
-              sbp('chelonia/contract/retain', profileIds).catch((e) => {
-                console.error('Error while syncing other members\' contracts at inviteAccept', e)
-              })
-            }
-
             sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
-          } else {
-            // we're an existing member of the group getting notified that a
-            // new member has joined, so subscribe to their identity contract
-            // TODO: Check if member is active; will be easier once profiles
-            // are indexed by contract ID
-            sbp('chelonia/contract/retain', innerSigningContractID).then(() => {
-              const { profiles = {} } = state
-              const myProfile = profiles[userID]
-
-              if (isActionNewerThanUserJoinedDate(height, myProfile)) {
-                sbp('gi.notifications/emit', 'MEMBER_ADDED', {
-                  createdDate: meta.createdDate,
-                  groupID: contractID,
-                  memberID: innerSigningContractID
-                })
-              }
-            }).catch((e) => {
-              console.error(`Error subscribing to identity contract ${innerSigningContractID} of group member for group ${contractID}`, e)
+          } else if (isActionNewerThanUserJoinedDate(height, state?.profiles?.[userID])) {
+            sbp('gi.notifications/emit', 'MEMBER_ADDED', {
+              createdDate: meta.createdDate,
+              groupID: contractID,
+              memberID: innerSigningContractID
             })
           }
         }).catch(e => {
@@ -1223,9 +1182,12 @@ sbp('chelonia/defineContract', {
         }
       }),
       process ({ contractID, data }, { state }) {
-        sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/releaseDeletedChatRoom', data.chatRoomID, state.chatRooms[data.chatRoomID].members]
-        )
+        const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+        if (identityContractID && state?.chatRooms[data.chatRoomID]?.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/referenceTally', contractID, data.chatRoomID, 'release']
+          )
+        }
         delete state.chatRooms[data.chatRoomID]
       },
       sideEffect ({ data, contractID, innerSigningContractID }) {
@@ -1301,35 +1263,11 @@ sbp('chelonia/defineContract', {
         }
 
         if (memberID === identityContractID) {
+          sbp('gi.contracts/group/referenceTally', contractID, data.chatRoomID, 'release')
           sbp('okTurtles.events/emit', LEFT_CHATROOM, {
             identityContractID,
             groupContractID: contractID,
             chatRoomID: data.chatRoomID
-          })
-
-          // The following queued invocation handles reference counting. It uses
-          // some transient (non-persistent) state to see whether the
-          // pairing `retain` to `release` was called. This situation could
-          // arise when syncing a group from scratch (e.g., from a new device)
-          // for chatrooms that have been joined and then left. In that case,
-          // there'll be no call to `retain` and therefore calling `release`
-          // is incorrect.
-          sbp('chelonia/queueInvocation', contractID, async () => {
-            // Re-grab `identityContractID` as the active user session could
-            // have changed. For example, Cypress does things very quickly.
-            const { identityContractID } = sbp('state/vuex/state').loggedIn
-            // New user session? The rest of the code isn't relevant
-            if (memberID !== identityContractID) {
-              return
-            }
-
-            const state = await sbp('chelonia/contract/state', contractID)
-            if (hasRetainBeenSkippedOnChatRoom(state, contractID, data.chatRoomID, memberID, data.joinedHeight)) return
-
-            // Release chatroom if we're sure `retain` was called
-            sbp('chelonia/contract/release', data.chatRoomID).catch(e => {
-              console.error(`[gi.contracts/group/leaveChatRoom/sideEffect] Error releasing chatroom ${data.chatRoomID}`, e)
-            })
           })
         }
       }
@@ -1370,36 +1308,15 @@ sbp('chelonia/defineContract', {
         const memberID = data.memberID || innerSigningContractID
         const { identityContractID } = sbp('state/vuex/state').loggedIn
 
+        if (memberID === identityContractID) {
+          sbp('gi.contracts/group/referenceTally', contractID, data.chatRoomID, 'retain')
+        }
+
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
         if (innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, identityContractID, memberID, height)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
-          })
-        } else if (memberID === identityContractID) {
-          // If we were the ones added to the chatroom, we sync the chatroom.
-          // This is an `else` block because joinGroupChatrooms already calls
-          // sync
-          sbp('chelonia/queueInvocation', contractID, async () => {
-            const state = await sbp('chelonia/contract/state', contractID)
-
-            if (state?.chatRooms[data.chatRoomID]?.members[memberID]?.status === PROFILE_STATUS.ACTIVE) {
-              // If we were added by someone else, we might sync the chatroom
-              // contract before the corresponding `/join` action is issued.
-              // If we were previously a member of the chatroom, we would have
-              // a `/leave` action for ourselves, causing us to remove the
-              // chatroom contract. To handle this situation, we use
-              // `okTurtles.data/set` to define a special key that will be
-              // checked by the chatroom contract to tell it not to remove the
-              // contract if we're in the process of joining.
-              // This is a temporary measure until reference counting is
-              // implemented in Chelonia. With reference counting, we'd keep
-              // track of the 'reason' we're subscribing to a contract, and
-              // we won't need this special key.
-              sbp('chelonia/contract/retain', data.chatRoomID).catch((e) => {
-                console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error syncing chatroom contract for ${contractID}`, { e, data })
-              })
-            }
           })
         }
       }
@@ -1438,8 +1355,8 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(optional),
       process ({ height }, { state }) {
         let changed = false
-        Object.values(state.chatRooms).forEach((chatroom) => {
-          Object.values(chatroom.members).forEach(member => {
+        Object.values(state.chatRooms).forEach((chatroom: Object) => {
+          Object.values(chatroom.members).forEach((member: Object) => {
             if (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null) {
               member.joinedHeight = height
               changed = true
@@ -1493,10 +1410,16 @@ sbp('chelonia/defineContract', {
   methods: {
     'gi.contracts/group/_cleanup': ({ contractID, state }) => {
       // unsubscribe from other group members identity contract
-      // NOTE: it is safe to decrease the reference count on our own identity
-      // contract because it has an extra retain when joining a group
-      // (in the side-effect for gi.contracts/group/inviteAccept), which is
-      // the one being decremented
+      const { identityContractID } = sbp('state/vuex/state').loggedIn
+      const dependentContractIDs = [
+        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, Object]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
+        ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Object]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+      ]
+      if (dependentContractIDs.length) {
+        sbp('chelonia/contract/release', dependentContractIDs).catch(e => {
+          console.error('[gi.contracts/group/_cleanup] Error calling release', contractID, e)
+        })
+      }
 
       // NOTE: should remove archived data from IndexedStorage regarding the current group (proposals, payments)
       Promise.all([
@@ -1505,14 +1428,6 @@ sbp('chelonia/defineContract', {
       ).catch(e => {
         console.error(`[gi.contracts/group/_cleanup] Error removing entries for archive for ${contractID}`, e)
       })
-    },
-    'gi.contracts/group/releaseDeletedChatRoom': (contractID, members) => {
-      const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-      if (identityContractID && members[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-        sbp('chelonia/contract/release', contractID).catch(e => {
-          console.error('[gi.contracts/group/releaseDeletedChatRoom] Error', e)
-        })
-      }
     },
     'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
       const { identityContractID } = sbp('state/vuex/state').loggedIn
@@ -1700,7 +1615,7 @@ sbp('chelonia/defineContract', {
         // complex.
         // (*) Yes, usually we'd be a member of the chatroom in this case, but
         // we could have left afterwards.
-        await sbp('chelonia/contract/retain', chatRoomID, actorID !== memberID ? { ephemeral: true } : {})
+        await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
 
         if (!await sbp('chelonia/contract/hasKeysToPerformOperation', chatRoomID, 'gi.contracts/chatroom/join')) {
           throw new Error(`Missing keys to join chatroom ${chatRoomID}`)
@@ -1722,9 +1637,7 @@ sbp('chelonia/defineContract', {
 
           console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         }).finally(() => {
-          if (actorID !== memberID) {
-            sbp('chelonia/contract/release', chatRoomID, { ephemeral: true }).catch(e => console.error('[gi.contracts/group/joinGroupChatrooms] Error during release', e))
-          }
+          sbp('chelonia/contract/release', chatRoomID, { ephemeral: true }).catch(e => console.error('[gi.contracts/group/joinGroupChatrooms] Error during release', e))
         })
       }
     },
@@ -1792,15 +1705,6 @@ sbp('chelonia/defineContract', {
       })
 
       if (memberID === identityContractID) {
-        const possiblyUselessContractIDs = [
-          ...Object.keys(state.profiles || {}).filter(cID => cID !== identityContractID),
-          ...Object.keys(state.chatRooms || {}).filter((chatRoomID) => state.chatRooms[chatRoomID].members[identityContractID]?.status === PROFILE_STATUS.LEFT_GROUP && !hasRetainBeenSkippedOnChatRoom(state, contractID, chatRoomID, memberID, state.chatRooms[chatRoomID].members[identityContractID].joinedHeight))
-        ]
-        console.error('@@@@@XXX', memberID, identityContractID, possiblyUselessContractIDs)
-        sbp('chelonia/contract/release', possiblyUselessContractIDs).catch(e =>
-          console.error('[gi.contracts/group/leaveGroup] Error calling release on all members', e)
-        )
-
         sbp('gi.actions/identity/leaveGroup', {
           contractID: identityContractID,
           data: {
@@ -1812,12 +1716,6 @@ sbp('chelonia/defineContract', {
         })
       } else {
         const myProfile = getters.groupProfile(identityContractID)
-
-        // Do _not_ release memberID, because doing so will remove their profile
-        // from our view
-        // TODO: Instead, we could save the profile information to be deleted
-        // somewhere in the state or local storage and remove the contract
-        // // sbp('chelonia/contract/release', memberID)
 
         if (isActionNewerThanUserJoinedDate(height, myProfile)) {
           if (!proposalHash) {
@@ -1883,6 +1781,7 @@ sbp('chelonia/defineContract', {
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
-    }
+    },
+    ...referenceTally('gi.contracts/group/referenceTally')
   }
 })

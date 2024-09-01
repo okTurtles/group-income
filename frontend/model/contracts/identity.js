@@ -7,12 +7,13 @@ import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
-  IDENTITY_USERNAME_MAX_CHARS,
-  IDENTITY_EMAIL_MAX_CHARS,
   IDENTITY_BIO_MAX_CHARS,
+  IDENTITY_EMAIL_MAX_CHARS,
+  IDENTITY_USERNAME_MAX_CHARS,
   MAX_HASH_LEN,
   MAX_URL_LEN
 } from './shared/constants.js'
+import { referenceTally } from './shared/functions.js'
 import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
 import {
@@ -217,6 +218,7 @@ sbp('chelonia/defineContract', {
           key: inviteSecret, transient: true
         }]))
 
+        sbp('gi.contracts/identity/referenceTally', contractID, groupContractID, 'retain')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
@@ -246,10 +248,6 @@ sbp('chelonia/defineContract', {
           // is already blocked by queueInvocation. This would result in
           // a deadlock.
           if (!inviteSecretId) return
-
-          sbp('chelonia/contract/retain', data.groupContractID).catch((e) => {
-            console.error('[gi.contracts/identity/joinGroup/sideEffect] Error calling retain', e)
-          })
 
           sbp('gi.actions/group/join', {
             originatingContractID: contractID,
@@ -288,6 +286,7 @@ sbp('chelonia/defineContract', {
         delete state.groups[groupContractID].inviteSecret
       },
       sideEffect ({ data, contractID }) {
+        sbp('gi.contracts/identity/referenceTally', contractID, data.groupContractID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
@@ -297,15 +296,6 @@ sbp('chelonia/defineContract', {
           }
 
           const { groupContractID, reference } = data
-
-          // For an explanation of skippedRetain, see the group contract.
-          // TL;DR: This ensures that the reference count is correct when a
-          // group has been joined and then left and the state is being
-          // synced from scratch.
-          const skippedRetainKey = `gi.contracts/identity/group-skipped-${groupContractID}-${reference}`
-          const skippedRetain = sbp('okTurtles.data/get', skippedRetainKey)
-          // No use for this value beyond this point.
-          sbp('okTurtles.data/delete', skippedRetainKey)
 
           // If we've re-joined since, return
           // If the hash doesn't match (could happen after re-joining), return
@@ -319,12 +309,6 @@ sbp('chelonia/defineContract', {
             if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupNotJoinedError') return
             console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
           })
-
-          if (!skippedRetain) {
-            sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
-              console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
-            })
-          }
 
           // Remove last logged in information
           if (sbp('state/vuex/state').lastLoggedIn?.[contractID]) {
@@ -412,6 +396,7 @@ sbp('chelonia/defineContract', {
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
-    }
+    },
+    ...referenceTally('gi.contracts/identity/referenceTally')
   }
 })

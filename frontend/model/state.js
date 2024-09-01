@@ -29,6 +29,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string, height:number } (for contracts we've successfully subscribed to)
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
@@ -93,11 +94,12 @@ sbp('sbp/selectors/register', {
       // corresponing upgrade action.
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
-      const upgradeRequired = Object.entries(state[ourIdentityContractId].groups).forEach(([groupID, { hasLeft }]) => {
+      const upgradeRequired = Object.entries(state[ourIdentityContractId].groups).forEach(([groupID, { hasLeft }]: [string, Object]) => {
         if (hasLeft || !state[groupID]?.chatRooms) return
-        Object.values(state[groupID].chatRooms).flatMap(({ members }) => {
+        // $FlowFixMe[incompatible-use]
+        Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
           return Object.values(members)
-        }).reduce((upgradeRequired, member) => {
+        }).reduce((upgradeRequired: boolean, member: Object) => {
           return upgradeRequired || (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null)
         }, false)
       })
@@ -290,7 +292,7 @@ const getters = {
   usernameFromID (state, getters) {
     return (userID) => {
       const profile = getters.ourContactProfilesById[userID]
-      return profile?.username || userID
+      return profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
   userDisplayNameFromID (state, getters) {
@@ -299,7 +301,7 @@ const getters = {
         return getters.ourUserDisplayName
       }
       const profile = getters.ourContactProfilesById[userID]
-      return profile?.displayName || profile?.username || userID
+      return profile?.displayName || profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
