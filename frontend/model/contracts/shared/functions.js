@@ -262,6 +262,75 @@ export function swapMentionIDForDisplayname (
     .join('')
 }
 
+// The `referenceTally` function is meant as an utility function to handle
+// reference counting in contracts that import other contracts.
+// The selector returned is to be called in side-effects that 'retain' or
+// 'release' other contracts, and it works by pushing a single callback into
+// the contract queue that maintains a temporary reference count to be applied
+// at the end of a chain processing events.
+// For example, a chatroom supports the 'join' and 'leave' actions, and those
+// call 'retain' or 'release', respectively, on the identity contracts of
+// members.
+// Now, imagine this sequence of events: `[join, leave, join, leave]` (all
+// involving the same member).
+// Imagine all actions are processed at once (for example, the chatroom is being
+// synced from scratch). By calling the `referenceTally` selector, this would
+// happen in the event queue:
+//   queue slot 0: [sync]:
+//        (join)    event 0: [process]
+//                  event 0: [sideEffect]: this calls `referenceTally`, which
+//                             increases the temp count to 1 and pushes a
+//                             function into the queue.
+//        (leave)   event 1: [process]
+//                  event 1: [sideEffect]: this calls `referenceTally`, which
+//                             decreases the temp count to 0. No function is
+//                             pushed into the queue as one already exists.
+//        (join)    event 2: [process]
+//                  event 2: [sideEffect]: this calls `referenceTally`, which
+//                             increases the temp count to 1. No function is
+//                             pushed into the queue as one already exists.
+//        (leave)   event 3: [process]
+//                  event 3: [sideEffect]: this calls `referenceTally`, which
+//                             decreases the temp count to 0. No function is
+//                             pushed into the queue as one already exists.
+//   queue slot 1: [referenceTally]: Function pushed onto the queue by event 0.
+//                              Since the temp count is 0, no call to retain
+//                              or release happens.
+//
+// Now, imagine a different scenario, where the same events happen but they are
+// processed differently. Let's say that the grouping is:
+//    1. [join, leave]
+//    2. [join]
+//    3. [leave]
+// This situation could happen when syncing the chatroom from scratch (with
+// only the first two events having happened at this point in time) with the
+// other events being received over the web socket later.
+//   queue slot 0: [sync]:
+//        (join)    event 0: [process]
+//                  event 0: [sideEffect]: this calls `referenceTally`, which
+//                             increases the temp count to 1 and pushes a
+//                             function into the queue.
+//        (leave)   event 1: [process]
+//                  event 1: [sideEffect]: this calls `referenceTally`, which
+//                             decreases the temp count to 0. No function is
+//                             pushed into the queue as one already exists.
+//   queue slot 1: [referenceTally]: Function pushed onto the queue by event 0.
+//                              Since the temp count is 0, no call to retain
+//                              or release happens.
+//   queue slot 2: [sync]:
+//        (join)    event 2: [process]
+//                  event 2: [sideEffect]: this calls `referenceTally`, which
+//                             increases the temp count to and pushes a
+//                             function into the queue.
+//   queue slot 3: [referenceTally]: Function pushed onto the queue by event 2.
+//                              Since the temp count is 1, retain is called.
+//   queue slot 4: [sync]:
+//        (leave)   event 3: [process]
+//                  event 3: [sideEffect]: this calls `referenceTally`, which
+//                             decreases the temp count to -1 and pushes a
+//                             function into the queue.
+//   queue slot 5: [referenceTally]: Function pushed onto the queue by event 3.
+//                              Since the temp count is -1, release is called.
 export const referenceTally = (selector: string): Object => {
   const delta = {
     'retain': 1,
