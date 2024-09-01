@@ -342,9 +342,10 @@ export const referenceTally = (selector: string): Object => {
       if (op !== 'retain' && op !== 'release') throw new Error('Invalid operation')
       for (const childContractID of childContractIDs) {
         const key = `${selector}-${parentContractID}-${childContractID}`
-        const count = (sbp('okTurtles.data/get', key) || 0) + delta[op]
-        sbp('okTurtles.data/set', key, count)
-        sbp('chelonia/queueInvocation', childContractID, () => {
+        const count = sbp('okTurtles.data/get', key)
+        sbp('okTurtles.data/set', key, (count || 0) + delta[op])
+        if (count != null) return
+        sbp('chelonia/queueInvocation', parentContractID, () => {
           const count = sbp('okTurtles.data/get', key)
           sbp('okTurtles.data/delete', key)
           if (count && count !== Math.sign(count)) {
