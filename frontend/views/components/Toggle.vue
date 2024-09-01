@@ -30,7 +30,7 @@ export default ({
     showBadge: {
       type: Boolean,
       default: false
-    },
+    } // Remove trailing comma from line 33
   },
   computed: {
     ...mapState(['currentGroupId']),
@@ -39,7 +39,7 @@ export default ({
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
-    },
+    } // Remove trailing comma from line 42
   }
 }: Object)
 </script>
