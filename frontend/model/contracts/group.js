@@ -858,6 +858,13 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
         const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+        if (memberID === identityContractID) {
+          const ourChatrooms = Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Object]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+          if (ourChatrooms.length) {
+            sbp('gi.contracts/group/pushSideEffect', contractID,
+              ['gi.contracts/group/referenceTally', contractID, ourChatrooms, 'release'])
+          }
+        }
         memberLeaves(
           { memberID, dateLeft: meta.createdDate, heightLeft: height, ourselvesLeaving: memberID === identityContractID },
           { contractID, meta, state, getters }
