@@ -19,7 +19,10 @@ import './output-logs.js'
 
 before(function () {
   console.log('[cypress] `before`: cleaning up')
-  if (typeof navigator === 'object' && navigator.serviceWorker) {
+
+  if (!process.env.IN_GITHUB_ACTIONS &&
+    typeof navigator === 'object' &&
+    navigator.serviceWorker) {
     cy.wrap(navigator.serviceWorker.getRegistrations()
       .then((registrations) => {
         console.log('[cypress] Service worker registrations', registrations)
@@ -34,6 +37,7 @@ before(function () {
       )
     )
   }
+
   cy.clearCookies()
   cy.clearLocalStorage()
   if (typeof indexedDB === 'object') {
