@@ -20,7 +20,7 @@ import './output-logs.js'
 before(function () {
   console.log('[cypress] `before`: cleaning up')
 
-  if (!process.env.IN_GITHUB_ACTIONS &&
+  if (!process.env.CI &&
     typeof navigator === 'object' &&
     navigator.serviceWorker) {
     cy.wrap(navigator.serviceWorker.getRegistrations()

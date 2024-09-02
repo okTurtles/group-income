@@ -2,7 +2,6 @@ name: NodeJS with Grunt
 
 env:
   CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-  IN_GITHUB_ACTIONS: true
 
 on:
   push:
