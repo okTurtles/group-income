@@ -39,8 +39,7 @@ export default ({
 }
 
 .c-member-name {
-  // NOTE: In certain situation where it is complicated for  'text-overflow: ellipsis;' to properly work,
-  //       we can achieve it by turning the direct parent into a flex-box.
+  // Turn the parent element into flex-box to render ellipsis style properly.
   position: relative;
   display: flex;
   flex-direction: column;
