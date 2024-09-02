@@ -66,7 +66,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.giSignup(user1, { bypassUI: true })
     me = user1
 
-    cy.giCreateGroup(groupName)
+    cy.giCreateGroup(groupName, { bypassUI: true })
     cy.giGetInvitationAnyone().then(url => {
       invitationLinkAnyone = url
     })
