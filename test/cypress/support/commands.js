@@ -206,6 +206,7 @@ Cypress.Commands.add('giLogin', (username, {
   if (bypassUI) {
     // Wait for the app to be ready
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
+    cy.wrap(JOINED_GROUP).should('include.text', JOINED_GROUP)
 
     cy.window().its('sbp').then(sbp => {
       const joinedGroupPromise = new Promise((resolve) => {
@@ -306,6 +307,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
+    cy.wrap(JOINED_GROUP).should('include.text', JOINED_GROUP)
+
     cy.window().its('sbp').then(sbp => {
       return new Promise(resolve => {
         (async () => {
