@@ -310,7 +310,8 @@ export default ({
       'isJoinedChatRoom',
       'isGroupDirectMessage',
       'currentChatRoomScrollPosition',
-      'currentChatRoomReadUntil'
+      'currentChatRoomReadUntil',
+      'isReducedMotionMode'
     ]),
     currentUserAttr () {
       return {
@@ -533,7 +534,7 @@ export default ({
         if (!eleTarget) { return }
 
         if (effect) {
-          eleTarget.scrollIntoView({ behavior: 'smooth' })
+          eleTarget.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
@@ -594,7 +595,9 @@ export default ({
         this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
-          behavior
+          behavior: this.isReducedMotionMode
+            ? 'instant' // force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+            : behavior
         })
       }
     },

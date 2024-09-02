@@ -47,6 +47,9 @@ const getters = {
   isDarkTheme (state) {
     return state.themeColor === THEME_DARK
   },
+  isReducedMotionMode (state) {
+    return state.reducedMotion === true
+  },
   theme (state) {
     return state.theme
   }
