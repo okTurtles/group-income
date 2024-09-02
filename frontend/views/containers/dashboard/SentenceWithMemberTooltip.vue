@@ -12,10 +12,11 @@ component(
   slot
 
   template(v-if='members && members.length' slot='tooltip')
-    div(
+    .c-member-name(
       v-for='(name, index) in members'
       :key='`member-${index}`'
-    ) {{ name }}
+    )
+      .has-ellipsis {{ name }}
 </template>
 
 <script>
@@ -35,5 +36,14 @@ export default ({
 <style lang="scss" scoped>
 .has-zero-members ::v-deep .c-tooltip {
   display: none !important;
+}
+
+.c-member-name {
+  // NOTE: In certain situation where it is complicated for  'text-overflow: ellipsis;' to properly work,
+  //       we can achieve it by turning the direct parent into a flex-box.
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 </style>
