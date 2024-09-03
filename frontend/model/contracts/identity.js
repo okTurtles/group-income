@@ -25,6 +25,7 @@ import {
 
 const attributesType = objectMaybeOf({
   username: stringMax(IDENTITY_USERNAME_MAX_CHARS, 'username'),
+  displayName: optional(stringMax(IDENTITY_USERNAME_MAX_CHARS, 'displayName')),
   email: optional(stringMax(IDENTITY_EMAIL_MAX_CHARS, 'email')), // https://github.com/okTurtles/group-income/issues/2192
   bio: optional(stringMax(IDENTITY_BIO_MAX_CHARS, 'bio')),
   picture: unionOf(stringMax(MAX_URL_LEN), objectOf({
