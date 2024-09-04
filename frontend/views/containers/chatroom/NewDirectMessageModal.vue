@@ -213,6 +213,14 @@ export default ({
       this.selections = this.selections.filter(cID => cID !== contractID)
     },
     async onSubmit () {
+      /**
+       * TODO for DM to yourself
+       *
+       * 1. Make sure there is no duplicate creation.
+       * 2. Make sure the picture looks properly everywhere.
+       * 3. Make sure the localized name is used everywhere.
+       * 4. Hide 'Add member' cta everywhere.
+       */
       if (!this.selections.length) { return }
 
       const isDMToMyself = this.selections.length === 1 &&
