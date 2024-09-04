@@ -117,6 +117,7 @@ export default ({
     ...mapGetters([
       'userDisplayNameFromID',
       'usernameFromID',
+      'ourUsername',
       'ourContactProfilesById',
       'ourIdentityContractId',
       'currentGroupContactProfilesById'
@@ -126,9 +127,6 @@ export default ({
 
       return currentGroupUserIds
         .filter(userID => {
-          if (userID === this.ourIdentityContractId) {
-            return false
-          }
           const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
           return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
@@ -215,18 +213,21 @@ export default ({
       this.selections = this.selections.filter(cID => cID !== contractID)
     },
     async onSubmit () {
-      if (this.selections.length) {
-        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.selections)
+      if (!this.selections.length) { return }
+
+      const isDMToMyself = this.selections.length === 1 &&
+        this.selections[0] === this.ourIdentityContractId
+
+      if (isDMToMyself) {
+        alert('TODO: implement creating a DM to yourself!')
+      } else {
+        const memberIds = this.selections.filter(id => id !== this.ourIdentityContractId)
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
+
         if (chatRoomID) {
           this.redirect(chatRoomID)
         } else {
-          await this.createDirectMessage(this.selections)
-        }
-      } else if (this.searchText) {
-        if (this.filteredRecents.length) {
-          this.redirect(this.filteredRecents[0].chatRoomID)
-        } else if (this.filteredOthers.length) {
-          await this.createDirectMessage(this.filteredOthers[0].contractID)
+          await this.createDirectMessage(memberIds)
         }
       }
 
