@@ -12,23 +12,31 @@
 
   ul.c-group-list
     list-item(
-      v-for='({ partners, title, picture }, chatRoomID) in ourGroupDirectMessages'
+      v-for='({ partners, title, picture, isDMToMyself }, chatRoomID) in ourGroupDirectMessages'
       tag='router-link'
       :to='buildUrl(chatRoomID)'
       :data-test='chatRoomID'
       :key='chatRoomID'
       @click='$emit("redirect")'
     )
-      .profile-wrapper(v-if='partners.length === 1')
-        profile-card(:contractID='partners[0].contractID' deactivated)
-          avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0].username') {{ title }}
+      .profile-wrapper(v-if='isDMToMyself')
+        profile-card(:contractID='ourIdentityContractId' deactivated)
+          avatar-user(:contractID='ourIdentityContractId' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(:data-test='title')
+            span {{ title }}
+            i18n (you)
 
-      .group-wrapper(v-else)
-        .picture-wrapper
-          avatar(:src='picture' :alt='title' size='xs')
-          .c-badge {{ partners.length }}
-        span.is-unstyled.c-name.has-ellipsis(:data-test='title') {{ title }}
+      template(v-else)
+        .profile-wrapper(v-if='partners.length === 1')
+          profile-card(:contractID='partners[0].contractID' deactivated)
+            avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
+            span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0].username') {{ title }}
+
+        .group-wrapper(v-else)
+          .picture-wrapper
+            avatar(:src='picture' :alt='title' size='xs')
+            .c-badge {{ partners.length }}
+          span.is-unstyled.c-name.has-ellipsis(:data-test='title') {{ title }}
 
       .c-unreadcount-wrapper
         .pill.is-danger(
@@ -71,6 +79,7 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
+      'ourIdentityContractId',
       'chatRoomUnreadMessages'
     ])
   },

@@ -50,6 +50,7 @@ const getters = {
         }
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
         const members = Object.keys(chatRoomState.members)
+        const isDMToMyself = members.length === 1 && members[0] === getters.ourIdentityContractId
         const partners = members
           .filter(memberID => memberID !== getters.ourIdentityContractId)
           .sort((p1, p2) => {
@@ -58,7 +59,7 @@ const getters = {
             return p1JoinedDate - p2JoinedDate
           })
         const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
-        if (directMessageSettings.visible && hasActiveMember) {
+        if (directMessageSettings.visible && (isDMToMyself || hasActiveMember)) {
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
           //       possibly with the badge of the number of partners.
@@ -80,9 +81,14 @@ const getters = {
             // identity contract IDs differently in some way (e.g., font, font size,
             // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
             // users (e.g., 'user1' changing their display name to 'user2')
-            title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+            title: isDMToMyself
+              ? getters.userDisplayNameFromID(getters.ourIdentityContractId)
+              : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
             lastMsgTimeStamp,
-            picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture
+            picture: isDMToMyself
+              ? getters.ourContactProfilesById[getters.ourIdentityContractId]?.picture
+              : getters.ourContactProfilesById[lastJoinedPartner]?.picture,
+            isDMToMyself
           }
         }
       }

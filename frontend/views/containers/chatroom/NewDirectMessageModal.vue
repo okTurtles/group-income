@@ -217,18 +217,15 @@ export default ({
 
       const isDMToMyself = this.selections.length === 1 &&
         this.selections[0] === this.ourIdentityContractId
+      const memberIds = isDMToMyself
+        ? this.selections
+        : this.selections.filter(id => id !== this.ourIdentityContractId)
 
-      if (isDMToMyself) {
-        alert('TODO: implement creating a DM to yourself!')
+      const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
+      if (chatRoomID) {
+        this.redirect(chatRoomID)
       } else {
-        const memberIds = this.selections.filter(id => id !== this.ourIdentityContractId)
-        const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
-
-        if (chatRoomID) {
-          this.redirect(chatRoomID)
-        } else {
-          await this.createDirectMessage(memberIds)
-        }
+        await this.createDirectMessage(memberIds)
       }
 
       this.closeModal()
