@@ -136,8 +136,8 @@ export default ({
       return Object.keys(this.ourGroupDirectMessages)
         .filter(chatRoomID => this.ourGroupDirectMessages[chatRoomID].visible)
         .map(chatRoomID => {
-          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp } = this.ourGroupDirectMessages[chatRoomID]
-          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp }
+          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp, isDMToMyself } = this.ourGroupDirectMessages[chatRoomID]
+          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp, isDMToMyself }
         })
         .sort((former, latter) => {
           const diff = former.lastMsgTimeStamp - latter.lastMsgTimeStamp
@@ -178,6 +178,9 @@ export default ({
           }, true)
         }
       }).sort((a, b) => a.partners.length > b.partners.length ? 1 : -1)
+    },
+    hasDMToMyself () {
+      return !!this.filteredRecents.length && this.filteredRecents.some(convo => convo.isDMToMyself)
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
@@ -229,9 +232,9 @@ export default ({
         ? this.selections
         : this.selections.filter(id => id !== this.ourIdentityContractId)
 
-      const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
-      if (chatRoomID) {
-        this.redirect(chatRoomID)
+      const existingChatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
+      if (existingChatRoomID) {
+        this.redirect(existingChatRoomID)
       } else {
         await this.createDirectMessage(memberIds)
       }

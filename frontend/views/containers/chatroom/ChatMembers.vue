@@ -24,7 +24,7 @@
           avatar-user(:contractID='ourIdentityContractId' :picture='picture' size='sm' data-test='openMemberProfileCard')
           span.is-unstyled.c-name.has-ellipsis(:data-test='title')
             span {{ title }}
-            i18n (you)
+            i18n.c-you (you)
 
       template(v-else)
         .profile-wrapper(v-if='partners.length === 1')
@@ -150,6 +150,11 @@ export default ({
   margin-left: 0.5rem;
   font-family: inherit;
   border-bottom: 1px solid transparent;
+}
+
+.c-you {
+  display: inline-block;
+  margin-left: 0.25rem;
 }
 
 .c-menu {
