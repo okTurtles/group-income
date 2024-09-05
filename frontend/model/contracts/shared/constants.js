@@ -17,8 +17,7 @@ export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
 export const PROFILE_STATUS = {
   ACTIVE: 'active', // confirmed group join
   PENDING: 'pending', // shortly after being approved to join the group
-  REMOVED: 'removed',
-  LEFT_GROUP: 'left-group'
+  REMOVED: 'removed'
 }
 export const GROUP_NAME_MAX_CHAR = 50 // https://github.com/okTurtles/group-income/issues/2196
 export const GROUP_DESCRIPTION_MAX_CHAR = 500

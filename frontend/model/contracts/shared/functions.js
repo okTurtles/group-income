@@ -350,8 +350,19 @@ export const referenceTally = (selector: string): Object => {
           sbp('okTurtles.data/delete', key)
           if (count && count !== Math.sign(count)) {
             console.warn(`[${selector}] Unexpected value`, parentContractID, childContractID, count)
+            // If we're running tests, we enforce checking that the temporary
+            // count _must_ be either of 0, 1 or -1. This is a correct
+            // assumption, based on the fact that a single contract should only
+            // call retain or release at most once after all operations are
+            // processed, per chunk of operations (e.g., there is no valid
+            // reason for a group contract to call `retain` twice on the same
+            // contract ID, without having called `release` first).
+            // This rule (or assumption) also applies to non-CI environments,
+            // but we are more lax in this case to allow for more leniency when
+            // running contracts with real users. However, this type of error
+            // indicates faulty reference bookkeeping that must be corrected.
             if (process.env.CI) {
-              Promise.reject(new Error(`Unexpected value ${parentContractID} ${childContractID}: ${count}`))
+              Promise.reject(new Error(`[${selector}] Unexpected value ${parentContractID} ${childContractID}: ${count}`))
             }
           }
           switch (Math.sign(count)) {

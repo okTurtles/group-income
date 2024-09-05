@@ -1030,7 +1030,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
-  ...encryptedAction('gi.actions/group/upgradeFrom1.0.6', L('Failed to upgrade from version 1.0.6')),
+  ...encryptedAction('gi.actions/group/upgradeFrom1.0.7', L('Failed to upgrade from version 1.0.6')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })

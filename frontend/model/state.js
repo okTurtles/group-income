@@ -85,8 +85,12 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
+    if (!state.reverseNamespaceLookups) {
+      // $FlowFixMe[incompatible-call]
+      Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
+    }
     (() => {
-      // Upgrade from version 1.0.6 to a newer version
+      // Upgrade from version 1.0.7 to a newer version
       // The new group chatroomo contract introduces a breaking change: the
       // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
       // attribute.
@@ -104,8 +108,8 @@ sbp('sbp/selectors/register', {
         }, false)
       })
       if (!upgradeRequired) return
-      sbp('gi.actions/group/upgradeFrom1.0.6').catch(e => {
-        console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.6', e)
+      sbp('gi.actions/group/upgradeFrom1.0.7').catch(e => {
+        console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', e)
       })
     })()
   },

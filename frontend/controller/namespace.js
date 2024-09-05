@@ -7,11 +7,11 @@ import Vue from 'vue'
 sbp('sbp/selectors/register', {
   'namespace/lookupCached': (name: string) => {
     const cache = sbp('state/vuex/state').namespaceLookups
-    return cache?.[name] ?? null
+    return cache[name] ?? null
   },
   'namespace/lookupReverseCached': (id: string) => {
     const cache = sbp('state/vuex/state').reverseNamespaceLookups
-    return cache?.[id] ?? null
+    return cache[id] ?? null
   },
   'namespace/lookup': (name: string, { skipCache }: { skipCache: boolean } = { skipCache: false }) => {
     if (!skipCache) {

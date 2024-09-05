@@ -301,17 +301,10 @@ function updateGroupStreaks ({ state, getters }) {
   }
 }
 
-const removeGroupChatroomProfile = (state, chatRoomID, member, ourselvesLeaving) => {
-  state.chatRooms[chatRoomID].members =
-    Object.fromEntries(
-      Object.entries(state.chatRooms[chatRoomID].members)
-        .map(([memberKey, profile]) => {
-          if (memberKey === member && (profile: any)?.status === PROFILE_STATUS.ACTIVE) {
-            return [memberKey, { ...profile, status: ourselvesLeaving ? PROFILE_STATUS.LEFT_GROUP : PROFILE_STATUS.REMOVED }]
-          }
-          return [memberKey, profile]
-        })
-    )
+const removeGroupChatroomProfile = (state, chatRoomID, memberID, ourselvesLeaving) => {
+  if (!state.chatRooms[chatRoomID].members[memberID]) return
+
+  state.chatRooms[chatRoomID].members[memberID].status = PROFILE_STATUS.REMOVED
 }
 
 const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID, leavingGroup) => {
@@ -1358,7 +1351,7 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/group/upgradeFrom1.0.6': {
+    'gi.contracts/group/upgradeFrom1.0.7': {
       validate: actionRequireActiveMember(optional),
       process ({ height }, { state }) {
         let changed = false
@@ -1371,7 +1364,7 @@ sbp('chelonia/defineContract', {
           })
         })
         if (!changed) {
-          throw new Error('[gi.contracts/group/upgradeFrom1.0.6/process] Invalid or duplicate upgrade action')
+          throw new Error('[gi.contracts/group/upgradeFrom1.0.7/process] Invalid or duplicate upgrade action')
         }
       }
     },
