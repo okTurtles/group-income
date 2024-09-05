@@ -25,6 +25,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
               data-test='renameChannel'
             )
               i18n Rename
+
             menu-item(
               v-if='ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
               @click='editDescription'
@@ -32,24 +33,30 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
             )
               i18n(v-if='!summary.attributes.description') Add description
               i18n(v-else) Update description
-            menu-item(v-if='!isGroupDirectMessage()' @click='openModal("ChatMembersAllModal")')
-              i18n Members
-            menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
-              i18n Add People
+
+            template(v-if='!isGroupDirectMessageToMyself()')
+              menu-item(v-if='!isGroupDirectMessage()' @click='openModal("ChatMembersAllModal")')
+                i18n Members
+              menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
+                i18n Add People
+
             menu-item.hide-desktop(v-if='pinnedMessages.length')
               i18n(@click='showPinnedMessages($event)') Pinned Messages
+
             menu-item(
               :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
               i18n Notification settings
+
             menu-item(
               v-if='!summary.isGeneral && !isGroupDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
+
             menu-item.has-text-danger(
               v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
               @click='openModal("DeleteChannelModal")'

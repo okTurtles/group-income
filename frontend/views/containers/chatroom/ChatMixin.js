@@ -46,7 +46,8 @@ const ChatMixin: Object = {
       'isJoinedChatRoom',
       'ourContactProfilesById',
       'isDirectMessage',
-      'isGroupDirectMessage'
+      'isGroupDirectMessage',
+      'isGroupDirectMessageToMyself'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {

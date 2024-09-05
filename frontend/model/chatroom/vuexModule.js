@@ -121,6 +121,12 @@ const getters = {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomID => !!getters.ourDirectMessages[chatRoomID || getters.currentChatRoomId]
   },
+  isGroupDirectMessageToMyself (state, getters) {
+    return chatRoomID => {
+      const chatRoomSettings = getters.ourGroupDirectMessages[chatRoomID || getters.currentChatRoomId]
+      return !!chatRoomSettings && chatRoomSettings?.isDMToMyself
+    }
+  },
   isJoinedChatRoom (state, getters, rootState) {
     return (chatRoomID: string, memberID?: string) => !!rootState[chatRoomID]?.members?.[memberID || getters.ourIdentityContractId]
   },
