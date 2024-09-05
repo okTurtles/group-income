@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message(
+.c-message.force-motion(
   :class='[variant, isSameSender && "same-sender", "is-type-" + type, isAlreadyPinned && "pinned"]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='longPressHandler'

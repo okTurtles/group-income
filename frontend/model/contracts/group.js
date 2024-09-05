@@ -1046,6 +1046,7 @@ sbp('chelonia/defineContract', {
           with: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'with')
         }),
         nonMonetaryRemove: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryRemove'),
+        nonMonetaryReplace: arrayOf(stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR)),
         paymentMethods: arrayOf(
           objectOf({
             name: stringMax(GROUP_NAME_MAX_CHAR),
@@ -1067,6 +1068,9 @@ sbp('chelonia/defineContract', {
               break
             case 'nonMonetaryEdit':
               nonMonetary.splice(nonMonetary.indexOf(value.replace), 1, value.with)
+              break
+            case 'nonMonetaryReplace':
+              groupProfile.nonMonetaryContributions = cloneDeep(value)
               break
             default:
               groupProfile[key] = value

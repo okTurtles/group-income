@@ -598,6 +598,7 @@ Cypress.Commands.add('giAddRandomIncome', () => {
   if (action === 'needsIncomeRadio') {
     // it's mandatory to fill out the payment details when 'needsIncome' is selected.
     cy.randomPaymentMethodInIncomeDetails()
+    cy.randomNonMonetaryInIncomeDetails()
   }
 
   cy.getByDT('submitIncome').click()
@@ -619,6 +620,20 @@ Cypress.Commands.add('randomPaymentMethodInIncomeDetails', () => {
       cy.get('input').type(detailMap[paymentMethod])
     })
   })
+})
+
+Cypress.Commands.add('randomNonMonetaryInIncomeDetails', () => {
+  const randomClass = () => {
+    const classes = [
+      'English', 'Korean', 'German', 'French', 'Japanese', 'Mandarin', 'Cantonese', 'Portuguese', 'Spanish',
+      'Javascript', 'Typescript', 'Python', 'React', 'Vue', 'Angular', 'Node.js', 'Express', 'PHP'
+    ]
+    const randomIndex = Math.floor(Math.random() * classes.length)
+
+    return `${classes[randomIndex]} class`
+  }
+
+  cy.getByDT('inputNonMonetaryPledge').type(randomClass())
 })
 
 Cypress.Commands.add('giAddNewChatroom', ({

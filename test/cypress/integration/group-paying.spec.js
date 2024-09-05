@@ -25,6 +25,7 @@ function setIncomeDetails (doesPledge, incomeAmount) {
 
   if (!doesPledge) {
     cy.randomPaymentMethodInIncomeDetails()
+    cy.randomNonMonetaryInIncomeDetails()
   }
 
   cy.getByDT('submitIncome').click()

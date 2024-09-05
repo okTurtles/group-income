@@ -26,7 +26,7 @@
         i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
         i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-        group-members-tooltip-pending.c-menu(v-if='invitedBy' :contractID='contractID')
+        group-members-tooltip-pending.c-menu(v-if='invitedBy' :contractID='contractID' :data='invitedBy')
 
   i18n.link(
     tag='button'
