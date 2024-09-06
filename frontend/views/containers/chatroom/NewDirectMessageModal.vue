@@ -41,8 +41,8 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
-          @click='onAddSelection(partners.map(p => p.contractID))'
+          v-for='({chatRoomID, partners, members, lastJoinedPartner, title, picture, isDMToMyself}, index) in filteredRecents'
+          @click='onRecentConvoSelection(filteredRecents[index])'
           :key='chatRoomID'
         )
           profile-card(
@@ -57,7 +57,8 @@ modal-base-template.has-background(
               .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
+                  i18n.c-display-name(v-if='isDMToMyself' data-test='profileName') (you)
+                  .c-display-name(v-else-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
 
       .is-subtitle
         i18n(
@@ -128,6 +129,7 @@ export default ({
       return currentGroupUserIds
         .filter(userID => {
           const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
+          console.log('!@# userID, chatRoomID: ', userID, chatRoomID)
           return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
         .map(userID => this.currentGroupContactProfilesById[userID])
@@ -212,6 +214,16 @@ export default ({
         }
       }
     },
+    onRecentConvoSelection (convo) {
+      const { isDMToMyself, partners } = convo
+
+      if (isDMToMyself) {
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.ourIdentityContractId)
+        this.redirect(chatRoomID)
+      } else {
+        this.onAddSelection(partners.map(p => p.contractID))
+      }
+    },
     onRemoveSelection (contractID) {
       this.selections = this.selections.filter(cID => cID !== contractID)
     },
@@ -220,9 +232,9 @@ export default ({
        * TODO for DM to yourself
        *
        * 1. Make sure there is no duplicate creation.
-       * 2. Make sure the picture looks properly everywhere.
+       * 2. Make sure the picture looks properly everywhere. (o)
        * 3. Make sure the localized name is used everywhere.
-       * 4. Hide 'Add member' cta everywhere. (O)
+       * 4. Hide 'Add member' cta everywhere. (o)
        */
       if (!this.selections.length) { return }
 
@@ -306,6 +318,7 @@ export default ({
 }
 
 .c-display-name {
+  display: block;
   color: var(--text_1);
 }
 

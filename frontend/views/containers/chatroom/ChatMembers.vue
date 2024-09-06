@@ -155,6 +155,8 @@ export default ({
 .c-you {
   display: inline-block;
   margin-left: 0.25rem;
+  font-size: 0.875em;
+  font-weight: normal;
 }
 
 .c-menu {
