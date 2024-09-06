@@ -9,6 +9,7 @@ const initSummary = {
   picture: undefined,
   attributes: {},
   isPrivate: false,
+  isDMToMySelf: false,
   isGeneral: false,
   isJoined: false,
   members: {},
@@ -45,6 +46,7 @@ const ChatMixin: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfilesById',
+      'ourIdentityContractId',
       'isDirectMessage',
       'isGroupDirectMessage',
       'isGroupDirectMessageToMyself'
@@ -61,16 +63,22 @@ const ChatMixin: Object = {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
         picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
+      const chatroomMemberKeys = Object.keys(this.currentChatRoomState.members)
+      const isPrivate = this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      const isDMToMySelf = isPrivate &&
+        chatroomMemberKeys.length === 1 &&
+        chatroomMemberKeys[0] === this.ourIdentityContractId
 
       return {
         chatRoomID: this.currentChatRoomId,
         title,
         picture,
         attributes: Object.assign({}, this.currentChatRoomState.attributes),
-        isPrivate: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        isPrivate,
+        isDMToMySelf,
         isGeneral: this.groupGeneralChatRoomId === this.currentChatRoomId,
         isJoined: true,
-        members: Object.fromEntries(Object.keys(this.currentChatRoomState.members).map(memberID => {
+        members: Object.fromEntries(chatroomMemberKeys.map(memberID => {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
           return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
