@@ -129,7 +129,6 @@ export default ({
       return currentGroupUserIds
         .filter(userID => {
           const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
-          console.log('!@# userID, chatRoomID: ', userID, chatRoomID)
           return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
         .map(userID => this.currentGroupContactProfilesById[userID])
