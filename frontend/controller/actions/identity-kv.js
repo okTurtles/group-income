@@ -241,7 +241,7 @@ export default (sbp('sbp/selectors/register', {
       return null
     }
 
-    return sbp({
+    return sbp('gi.actions/kv/set', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       data: applyStorageRules(data),
