@@ -52,6 +52,7 @@ const vuexState = {
   fontSize: 1,
   increasedContrast: false,
   namespaceLookups: Object.create(null),
+  reverseNamespaceLookups: Object.create(null),
   reducedMotion: false,
   appLogsFilter: ['error', 'info', 'warn'],
   contractSigningKeys: Object.create(null)

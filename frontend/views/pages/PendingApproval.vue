@@ -15,11 +15,12 @@ div
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants'
+import sbp from '@sbp/sbp'
 import SvgInvitation from '@svgs/invitation.svg'
 import { mapGetters, mapState } from 'vuex'
+import { CHELONIA_RESET } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'PendingApproval',
@@ -54,7 +55,12 @@ export default ({
   },
   mounted () {
     this.ephemeral.groupIdWhenMounted = this.currentGroupId
-    this.ephemeral.syncPromise = sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+    let reset = false
+    let destroyed = false
+
+    const syncPromise = sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+      if (destroyed) return
+      reset = false
       await sbp('chelonia/contract/retain', this.ephemeral.groupIdWhenMounted, { ephemeral: true })
       this.ephemeral.contractFinishedSyncing = true
       if (this.haveActiveGroupProfile) {
@@ -63,13 +69,21 @@ export default ({
     }).catch(e => {
       console.error('[PendingApproval.vue]: Error waiting for contract to finish syncing', e)
     })
+    const listener = () => { reset = true }
+    this.ephemeral.ondestroy = () => {
+      destroyed = true
+      sbp('okTurtle.events/off', CHELONIA_RESET, listener)
+      syncPromise.finally(() => {
+        if (reset) return
+        sbp('chelonia/contract/release', this.ephemeral.groupIdWhenMounted, { ephemeral: true }).catch(e => {
+          console.error('[PendingApproval.vue]: Error releasing contract', e)
+        })
+      })
+    }
+    sbp('okTurtle.events/on', CHELONIA_RESET, listener)
   },
   beforeDestroy () {
-    this.ephemeral.syncPromise?.then(() => {
-      sbp('chelonia/contract/release', this.ephemeral.groupIdWhenMounted, { ephemeral: true }).catch(e => {
-        console.error('[PendingApproval.vue]: Error releasing group contract', e)
-      })
-    })
+    this.ephemeral.ondestroy?.()
   },
   watch: {
     groupState (to) {

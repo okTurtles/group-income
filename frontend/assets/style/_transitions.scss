@@ -1,5 +1,14 @@
 @import "_variables";
 
+@mixin reduce-motion {
+  *:not(.force-motion),
+  *:not(.force-motion)::after,
+  *:not(.force-motion)::before {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -161,17 +170,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
+  @include reduce-motion;
 }
 
 .js-reducedMotion {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
+  @include reduce-motion;
 }
 
 @keyframes focused {

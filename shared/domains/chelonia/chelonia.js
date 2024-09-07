@@ -10,7 +10,7 @@ import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel
 import type { Key } from './crypto.js'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
@@ -222,8 +222,7 @@ export default (sbp('sbp/selectors/register', {
       strictOrdering: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
-        reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets
-        timeout: 5000
+        reconnectOnTimeout: true // can be enabled since we are not doing auth via web sockets
       },
       hooks: {
         preHandleEvent: null, // async (message: GIMessage) => {}
@@ -370,6 +369,7 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.sideEffectStacks)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
+    sbp('okTurtles.events/emit', CHELONIA_RESET)
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     sbp('chelonia/private/startClockSync')
     if (newState) {
@@ -921,6 +921,10 @@ export default (sbp('sbp/selectors/register', {
             const current = rootState.contracts[id].references
             if (current === 0) {
               console.error('[chelonia/contract/release] Invalid negative reference count for', id)
+              if (process.env.CI) {
+                // If running in CI, force tests to fail
+                Promise.reject(new Error('Invalid negative reference count: ' + id))
+              }
               throw new Error('Invalid negative reference count')
             }
             if (current <= 1) {
@@ -930,6 +934,10 @@ export default (sbp('sbp/selectors/register', {
             }
           } else {
             console.error('[chelonia/contract/release] Invalid negative reference count for', id)
+            if (process.env.CI) {
+              // If running in CI, force tests to fail
+              Promise.reject(new Error('Invalid negative reference count: ' + id))
+            }
             throw new Error('Invalid negative reference count')
           }
         })
@@ -944,6 +952,10 @@ export default (sbp('sbp/selectors/register', {
             }
           } else {
             console.error('[chelonia/contract/release] Invalid negative ephemeral reference count for', id)
+            if (process.env.CI) {
+              // If running in CI, force tests to fail
+              Promise.reject(new Error('Invalid negative ephemeral reference count: ' + id))
+            }
             throw new Error('Invalid negative ephemeral reference count')
           }
         })
