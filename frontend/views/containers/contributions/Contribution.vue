@@ -20,9 +20,14 @@ transition(name='replace-list')
         @keydown.esc='cancel'
         @keydown.enter.prevent='handleEnter'
       )
+
+      .c-helper(v-if='receiverHasOnlyOneItem')
+        i.icon-info-circle
+        i18n At least one non-monetary contribution is required.
+
       .buttons
         button-submit.is-small.is-danger.is-outlined(
-          v-if='isEditing && !isAdding'
+          v-if='showRemoveBtn'
           @click='handleDelete'
           data-test='buttonRemoveNonMonetaryContribution'
         ) {{ L('Remove') }}
@@ -94,6 +99,7 @@ export default ({
     initialValue: {
       type: String
     },
+    needsIncome: Boolean,
     contributionsList: Array
   },
   data () {
@@ -120,6 +126,12 @@ export default ({
     },
     isUnfilled () {
       return this.variant === 'unfilled'
+    },
+    receiverHasOnlyOneItem () {
+      return this.needsIncome && this.contributionsList?.length === 1
+    },
+    showRemoveBtn () {
+      return this.isEditing && !this.isAdding && !this.receiverHasOnlyOneItem
     },
     editAriaLabel () {
       return L('Edit contribution settings')
@@ -235,6 +247,15 @@ export default ({
     font-size: $size_5;
     color: $text_1;
   }
+}
+
+.c-helper {
+  display: flex;
+  align-items: flex-start;
+  column-gap: 0.25rem;
+  color: $text_1;
+  margin-top: 0.5rem;
+  font-size: $size_4;
 }
 
 .buttons {
