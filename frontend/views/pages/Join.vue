@@ -188,8 +188,8 @@ export default ({
     },
     checkAlreadyJoinedGroup (targetGroupId) {
       if (this.ourIdentityContractId) {
-        const myGroupIds = Object.keys(this.$store.state[this.ourIdentityContractId]?.groups || {})
-        return myGroupIds.includes(targetGroupId)
+        const myGroups = this.$store.state[this.ourIdentityContractId]?.groups || {}
+        return myGroups[targetGroupId] && !myGroups[targetGroupId]?.hasLeft
       } else return false
     },
     goToDashboard (toGroupId) {

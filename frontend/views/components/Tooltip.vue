@@ -15,7 +15,7 @@ span.c-twrapper(
 
   .c-tooltip(
     :style='styles'
-    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme}'
+    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme,  "in-reduced-motion": isReducedMotionMode }'
     v-if='isActive || isVisible'
     v-append-to-body='{ manual }'
   )
@@ -26,6 +26,7 @@ span.c-twrapper(
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { TABLET } from '@view-utils/breakpoints.js'
 import trapFocus from '@utils/trapFocus.js'
 
@@ -79,6 +80,9 @@ export default ({
     lastFocus: null
   }),
   computed: {
+    ...mapGetters([
+      'isReducedMotionMode'
+    ]),
     rootElAttrs () {
       return {
         'tabindex': !this.triggerElementSelector
@@ -275,6 +279,13 @@ export default ({
 
     .card {
       background-color: $general_1;
+    }
+  }
+
+  &.in-reduced-motion {
+    * {
+      animation-duration: 0ms !important;
+      transition: none !important;
     }
   }
 

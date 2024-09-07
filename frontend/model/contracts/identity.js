@@ -7,12 +7,13 @@ import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
-  IDENTITY_USERNAME_MAX_CHARS,
-  IDENTITY_EMAIL_MAX_CHARS,
   IDENTITY_BIO_MAX_CHARS,
+  IDENTITY_EMAIL_MAX_CHARS,
+  IDENTITY_USERNAME_MAX_CHARS,
   MAX_HASH_LEN,
   MAX_URL_LEN
 } from './shared/constants.js'
+import { referenceTally } from './shared/functions.js'
 import identityGetters from './shared/getters/identity.js'
 import { has, merge } from './shared/giLodash.js'
 import {
@@ -25,6 +26,7 @@ import {
 
 const attributesType = objectMaybeOf({
   username: stringMax(IDENTITY_USERNAME_MAX_CHARS, 'username'),
+  displayName: optional(stringMax(IDENTITY_USERNAME_MAX_CHARS, 'displayName')), // same char-limit as the username.
   email: optional(stringMax(IDENTITY_EMAIL_MAX_CHARS, 'email')), // https://github.com/okTurtles/group-income/issues/2192
   bio: optional(stringMax(IDENTITY_BIO_MAX_CHARS, 'bio')),
   picture: unionOf(stringMax(MAX_URL_LEN), objectOf({
@@ -202,7 +204,7 @@ sbp('chelonia/defineContract', {
       }),
       async process ({ hash, data }, { state }) {
         const { groupContractID, inviteSecret } = data
-        if (has(state.groups, groupContractID)) {
+        if (has(state.groups, groupContractID) && !state.groups[groupContractID].hasLeft) {
           throw new Error(`Cannot join already joined group ${groupContractID}`)
         }
 
@@ -217,6 +219,7 @@ sbp('chelonia/defineContract', {
           key: inviteSecret, transient: true
         }]))
 
+        sbp('gi.contracts/identity/referenceTally', contractID, groupContractID, 'retain')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
@@ -226,16 +229,13 @@ sbp('chelonia/defineContract', {
           }
 
           // If we've left the group, return
-          if (!has(state.groups, groupContractID)) {
+          // If the hash doesn't match (could happen after re-joining), return
+          if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft || state.groups[groupContractID].hash !== hash) {
+            sbp('okTurtles.data/set', `gi.contracts/identity/group-skipped-${groupContractID}-${hash}`, true)
             return
           }
 
           const inviteSecretId = sbp('chelonia/crypto/keyId', new Secret(inviteSecret))
-
-          // If the hash doesn't match (could happen after re-joining), return
-          if (state.groups[groupContractID].hash !== hash) {
-            return
-          }
 
           return inviteSecretId
         }).then(async (inviteSecretId) => {
@@ -249,10 +249,6 @@ sbp('chelonia/defineContract', {
           // is already blocked by queueInvocation. This would result in
           // a deadlock.
           if (!inviteSecretId) return
-
-          sbp('chelonia/contract/retain', data.groupContractID).catch((e) => {
-            console.error('[gi.contracts/identity/joinGroup/sideEffect] Error calling retain', e)
-          })
 
           sbp('gi.actions/group/join', {
             originatingContractID: contractID,
@@ -277,19 +273,21 @@ sbp('chelonia/defineContract', {
         reference: string
       }),
       process ({ data }, { state }) {
-        const { groupContractID } = data
+        const { groupContractID, reference } = data
 
-        if (!has(state.groups, groupContractID)) {
+        if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft) {
           throw new Error(`Cannot leave group which hasn't been joined ${groupContractID}`)
         }
 
-        if (state.groups[groupContractID].hash !== data.reference) {
+        if (state.groups[groupContractID].hash !== reference) {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        delete state.groups[groupContractID]
+        state.groups[groupContractID].hasLeft = true
+        delete state.groups[groupContractID].inviteSecret
       },
       sideEffect ({ data, contractID }) {
+        sbp('gi.contracts/identity/referenceTally', contractID, data.groupContractID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
@@ -298,10 +296,11 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const { groupContractID } = data
+          const { groupContractID, reference } = data
 
           // If we've re-joined since, return
-          if (has(state.groups, groupContractID)) {
+          // If the hash doesn't match (could happen after re-joining), return
+          if (!has(state.groups, groupContractID) || !state.groups[groupContractID].hasLeft || state.groups[groupContractID].hash !== reference) {
             return
           }
 
@@ -310,10 +309,6 @@ sbp('chelonia/defineContract', {
           }).catch(e => {
             if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupNotJoinedError') return
             console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
-          })
-
-          sbp('chelonia/contract/release', data.groupContractID).catch((e) => {
-            console.error('[gi.contracts/identity/leaveGroup/sideEffect] Error calling release', e)
           })
 
           // Remove last logged in information
@@ -402,6 +397,7 @@ sbp('chelonia/defineContract', {
       sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
-    }
+    },
+    ...referenceTally('gi.contracts/identity/referenceTally')
   }
 })

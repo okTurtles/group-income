@@ -11,14 +11,24 @@
     section.card
       form(@submit.prevent='')
         label.field
-          i18n.label Display Name
+          .c-display-name-label-container
+            i18n.label Display Name
+            char-length-indicator(
+              v-if='form.displayName'
+              :current-length='form.displayName.length || 0'
+              :max='config.displayNameMaxChar'
+              :error='$v.form.displayName.$error'
+            )
+
           input.input(
             name='displayName'
             type='text'
             v-model='form.displayName'
+            :maxlength='config.displayNameMaxChar'
             placeholder='Name'
             data-test='displayName'
           )
+
           i18n.helper This is how others will see your name accross the platform.
 
         label.field
@@ -86,7 +96,7 @@ import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L, LTags } from '@common/common.js'
-import { IDENTITY_BIO_MAX_CHARS } from '@model/contracts/shared/constants.js'
+import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
@@ -106,12 +116,18 @@ export default ({
         bio: attrsCopy.bio
       },
       config: {
-        bioMaxChar: IDENTITY_BIO_MAX_CHARS
+        bioMaxChar: IDENTITY_BIO_MAX_CHARS,
+        displayNameMaxChar: IDENTITY_USERNAME_MAX_CHARS
       }
     }
   },
   validations: {
     form: {
+      displayName: {
+        [L('Reached character limit.')]: (value) => {
+          return !value || Number(value.length) <= IDENTITY_USERNAME_MAX_CHARS
+        }
+      },
       bio: {
         [L('Reached character limit.')]: (value) => {
           return !value || Number(value.length) <= IDENTITY_BIO_MAX_CHARS
@@ -186,6 +202,7 @@ export default ({
   }
 }
 
+.c-display-name-label-container,
 .c-bio-label-container {
   display: flex;
   align-items: flex-end;
