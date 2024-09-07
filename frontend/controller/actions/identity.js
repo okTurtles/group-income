@@ -313,8 +313,13 @@ export default (sbp('sbp/selectors/register', {
           )
 
           // update the 'lastLoggedIn' field in user's group profiles
-          Object.keys(cheloniaState[identityContractID].groups)
-            .forEach(cId => {
+          // For this, we select only those groups for which membership is
+          // active (meaning current groups), instead of historical groups (groups
+          // that have been joined in the past)
+          Object.entries(cheloniaState[identityContractID].groups)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, { hasLeft }]) => !hasLeft)
+            .forEach(([cId]) => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
               if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
@@ -435,7 +440,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
-    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(async groupID => {
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
       const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
 

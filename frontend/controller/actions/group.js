@@ -896,7 +896,23 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
-  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
+    const state = await sbp('chelonia/contract/state', params.contractID)
+    const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
+    const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
+
+    // For more efficient and correct processing, augment the leaveChatRoom
+    // action with the height of the join action. This helps prevent reduce
+    // the logic running as side-effects when syncing contracts from scratch
+    // by only considering the most recent join/leave events.
+    await sendMessage({
+      ...params,
+      data: {
+        ...params.data,
+        joinedHeight
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.'), async function (sendMessage, params) {
@@ -1014,6 +1030,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
+  ...encryptedAction('gi.actions/group/upgradeFrom1.0.7', L('Failed to upgrade from version 1.0.7')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })

@@ -17,7 +17,7 @@ const defaultOptions = {
   // respond because of a failed authentication.
   reconnectOnTimeout: false,
   reconnectionDelayGrowFactor: 2,
-  timeout: 5000
+  timeout: 60000
 }
 
 // ====== Event name constants ====== //
@@ -48,6 +48,7 @@ export type Message = {
 
 export type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
+  connectionTimeUsed?: number,
   +customEventHandlers: Object,
   failedConnectionAttempts: number,
   +isLocal: boolean,
@@ -350,6 +351,7 @@ const defaultClientEventHandlers = {
     const client = this
     const { options } = this
 
+    client.connectionTimeUsed = undefined
     client.clearAllTimers()
     sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, client)
 
@@ -536,8 +538,12 @@ const publicMethods = {
     client.socket = new WebSocket(client.url)
 
     if (client.options.timeout) {
+      const start = performance.now()
       client.connectionTimeoutID = setTimeout(() => {
         client.connectionTimeoutID = undefined
+        if (client.options.reconnectOnTimeout) {
+          client.connectionTimeUsed = performance.now() - start
+        }
         client.socket?.close(4000, 'timeout')
       }, client.options.timeout)
     }
@@ -593,8 +599,18 @@ const publicMethods = {
 
     const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** client.failedConnectionAttempts
     const maxDelay = minDelay * reconnectionDelayGrowFactor
+    const connectionTimeUsed = client.connectionTimeUsed
+    client.connectionTimeUsed = undefined
 
-    return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
+    return Math.min(
+      // See issue #1943: Have the connection time used 'eat into' the
+      // reconnection time used
+      Math.max(
+        minReconnectionDelay,
+        connectionTimeUsed ? maxReconnectionDelay - connectionTimeUsed : maxReconnectionDelay
+      ),
+      Math.round(minDelay + (0, Math.random)() * (maxDelay - minDelay))
+    )
   },
 
   // Schedules a connection attempt to happen after a delay computed according to
