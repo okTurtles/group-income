@@ -410,7 +410,7 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
-    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !!rootState.contracts[groupID]).map(async groupID => {
+    await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
       const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
 

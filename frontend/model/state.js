@@ -29,6 +29,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string, height:number } (for contracts we've successfully subscribed to)
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
   periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
@@ -84,6 +85,33 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
+    if (!state.reverseNamespaceLookups) {
+      // $FlowFixMe[incompatible-call]
+      Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
+    }
+    (() => {
+      // Upgrade from version 1.0.7 to a newer version
+      // The new group chatroomo contract introduces a breaking change: the
+      // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
+      // attribute.
+      // This code checks if the attribute is missing, and if so, issues the
+      // corresponing upgrade action.
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
+      const upgradeRequired = Object.entries(state[ourIdentityContractId].groups).forEach(([groupID, { hasLeft }]: [string, Object]) => {
+        if (hasLeft || !state[groupID]?.chatRooms) return
+        // $FlowFixMe[incompatible-use]
+        Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
+          return Object.values(members)
+        }).reduce((upgradeRequired: boolean, member: Object) => {
+          return upgradeRequired || (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null)
+        }, false)
+      })
+      if (!upgradeRequired) return
+      sbp('gi.actions/group/upgradeFrom1.0.7').catch(e => {
+        console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', e)
+      })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
@@ -271,7 +299,7 @@ const getters = {
   usernameFromID (state, getters) {
     return (userID) => {
       const profile = getters.ourContactProfilesById[userID]
-      return profile?.username || userID
+      return profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
   userDisplayNameFromID (state, getters) {
@@ -280,7 +308,7 @@ const getters = {
         return getters.ourUserDisplayName
       }
       const profile = getters.ourContactProfilesById[userID]
-      return profile?.displayName || profile?.username || userID
+      return profile?.displayName || profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
   // this getter gets recomputed automatically according to the setInterval on reactiveDate
@@ -437,8 +465,10 @@ const getters = {
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     // we return event pending groups that we haven't finished joining so that we are not stuck
     // on the /pending-approval page if we are part of another working group already
-    return Object.keys(groups)
-      .map(contractID => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
+    return Object.entries(groups)
+      // $FlowFixMe[incompatible-use]
+      .filter(([, { hasLeft }]) => !hasLeft)
+      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
   },
   profilesByGroup (state, getters) {
     return groupID => {

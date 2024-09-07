@@ -1,14 +1,14 @@
 'use strict'
 
+import * as Common from '@common/common.js'
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import * as Common from '@common/common.js'
-import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-import { cloneDeep, has } from '@model/contracts/shared/giLodash.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 
@@ -110,7 +110,8 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       if (cheloniaState.namespaceLookups) {
         Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
       }
-    // End exclude contracts
+      // End exclude contracts
+      sbp('state/vuex/postUpgradeVerification', state)
     }
 
     if (encryptionParams) {
@@ -122,7 +123,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
     const currentState = sbp('state/vuex/state')
     if (!currentState.currentGroupId) {
       const gId = Object.keys(currentState.contracts)
-        .find(cID => has(currentState[identityContractID].groups, cID))
+        .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
 
       if (gId) {
         sbp('gi.app/group/switch', gId)

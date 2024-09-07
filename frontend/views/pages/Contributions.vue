@@ -111,6 +111,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           contribution.has-text-weight-bold(
             v-for='(contribution, index) in ourGroupProfile.nonMonetaryContributions'
             :key='`contribution-${index}`'
+            :needs-income='needsIncome'
             variant='editable'
             :contributions-list='ourGroupProfile.nonMonetaryContributions'
             :initial-value='contribution'
