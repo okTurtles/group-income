@@ -764,7 +764,6 @@ export default (sbp('sbp/selectors/register', {
           // current height, then the contract must be resynced.
           const mustResync = !!(newestEncryptionKeyHeight < cheloniaState.contracts[v.contractID]?.height)
 
-          // TODO: Handle foreign keys too
           if (mustResync) {
             if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
             config.reactiveSet(targetState._volatile, 'dirty', true)
@@ -774,6 +773,45 @@ export default (sbp('sbp/selectors/register', {
               return
             }
 
+            // Mark contracts that have foreign keys that have been received
+            // as dirty
+            // First, we group watched keys by key and contracts
+            const keyDict = Object.create(null)
+            targetState._volatile?.watch?.forEach(([keyName, contractID]) => {
+              if (!keyDict[keyName]) {
+                keyDict[keyName] = [contractID]
+                return
+              }
+              keyDict[keyName].push(contractID)
+            })
+            // Then, see which of those contracts need to be updated
+            // $FlowFixMe[incompatible-call]
+            const contractIdsToUpdate = Array.from(new Set(Object.entries(keyDict).flatMap(([keyName, contractIDs]) => {
+              const keyId = findKeyIdByName(targetState, keyName)
+              if (
+                // Does the key exist? (i.e., is it a current key)
+                keyId &&
+                // Is it an encryption key? (signing keys don't build up a
+                // potentially invalid state because the private key isn't
+                // required for validation; however, missing encryption keys
+                // prevent message processing)
+                targetState._vm.authorizedKeys[keyId].purpose.includes('enc') &&
+                // Is this a newly set key? (avoid re-syncing contracts that
+                // haven't been affected by the `OP_KEY_SHARE`)
+                targetState._vm.authorizedKeys[keyId]._notBeforeHeight >= newestEncryptionKeyHeight
+              ) {
+                return contractIDs
+              }
+              return []
+            })))
+            // Mark these contracts as dirty
+            contractIdsToUpdate.forEach((contractID) => {
+              const targetState = cheloniaState[contractID]
+              if (!targetState) return
+              if (!has(targetState, '_volatile')) config.reactiveSet(targetState, '_volatile', Object.create(null))
+              config.reactiveSet(targetState._volatile, 'dirty', true)
+            })
+
             // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
             // Note: The following may be problematic when several tabs are open
             // sharing the same state. This is more of a general issue in this
@@ -781,7 +819,18 @@ export default (sbp('sbp/selectors/register', {
             if (self.subscriptionSet.has(v.contractID)) {
               const resync = sbp('chelonia/private/queueEvent', v.contractID, [
                 'chelonia/private/in/syncContract', v.contractID
-              ]).catch((e) => {
+              ]).then(() => {
+                // Now, if we're subscribed to any of the contracts that were
+                // marked as dirty, re-sync them
+                sbp('chelonia/contract/sync',
+                  contractIdsToUpdate.filter((contractID) => {
+                    return self.subscriptionSet.has(contractID)
+                  }),
+                  { force: true, resync: true }
+                ).catch(e => {
+                  console.error('[chelonia] Error resyncing contracts with foreign key references after key rotation', e)
+                })
+              }).catch((e) => {
                 console.error(`[chelonia] Error during sync for ${v.contractID}during OP_KEY_SHARE for ${contractID}`)
                 if (v.contractID === contractID) {
                   throw e
