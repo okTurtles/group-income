@@ -176,13 +176,14 @@ export function humanDate (
 ): string {
   const locale = typeof navigator === 'undefined'
     // Fallback for Mocha tests.
-    ? 'en-US'
+    ? 'en-US-POSIX'
     // Flow considers `navigator.languages` to be of type `$ReadOnlyArray<string>`,
     // which is not compatible with the `string[]` expected by `.toLocaleDateString()`.
     // Casting to `string[]` through `any` as a workaround.
     : ((navigator.languages: any): string[]) ?? navigator.language
   // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+  console.log('@@@locale', locale)
   return new Date(date).toLocaleDateString(locale, options)
 }
 
