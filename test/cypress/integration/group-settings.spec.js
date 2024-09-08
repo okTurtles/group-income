@@ -62,10 +62,10 @@ describe('Changing Group Settings', () => {
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
 
     cy.getByDT('groupName').should('have.value', groupName)
-    cy.getByDT('groupName').clear().type(newGroupName)
+    cy.getByDT('groupName').type('{selectall}{del}' + newGroupName)
 
     cy.getByDT('sharedValues').should('have.value', '')
-    cy.getByDT('sharedValues').clear().type(newSharedValues)
+    cy.getByDT('sharedValues').type('{selectall}{del}' + newSharedValues)
 
     cy.getByDT('saveBtn', 'button').click()
     cy.getByDT('formMsg').should('contain', 'Your changes were saved!')

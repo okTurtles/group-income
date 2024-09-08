@@ -175,7 +175,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('description').should('contain', `Remove userbot-${userId} from the group`)
       cy.getByDT('nextBtn').click()
-      cy.getByDT('reason', 'textarea').clear().type('I think it is a bot!')
+      cy.getByDT('reason', 'textarea').type('{selectall}{del}I think it is a bot!')
       cy.getByDT('submitBtn').click()
       cy.getByDT('finishBtn').click()
       cy.getByDT('closeModal').should('not.exist')
@@ -253,8 +253,8 @@ describe('Group - Removing a member', () => {
       cy.getByDT('btnSubmit').should('have.attr', 'disabled', 'disabled')
 
       cy.log('Fix the errors and submit')
-      cy.getByDT('username').clear().type(`user2-${userId}`)
-      cy.getByDT('confirmation').clear().type(`LEAVE ${groupNameA.toUpperCase()}`)
+      cy.getByDT('username').type(`{selectall}{del}user2-${userId}`)
+      cy.getByDT('confirmation').type(`{selectall}{del}LEAVE ${groupNameA.toUpperCase()}`)
 
       cy.getByDT('btnSubmit').click()
     })
