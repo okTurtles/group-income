@@ -209,10 +209,6 @@ async function startApp () {
         }
         this.ephemeral.finishedLogin = 'yes'
 
-        sbp('gi.actions/identity/kv/load').catch(e => {
-          console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
-        })
-
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
@@ -261,7 +257,7 @@ async function startApp () {
         sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
       })
       sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
-        switch (KV_EVENT) {
+        switch (key) {
           case KV_KEYS.LAST_LOGGED_IN: {
             const rootState = sbp('state/vuex/state')
             Vue.set(rootState.lastLoggedIn, contractID, data)
