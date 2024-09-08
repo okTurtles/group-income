@@ -3,8 +3,6 @@
 // Copied directly from: https://github.com/cypress-io/cypress/issues/3199#issuecomment-466593084
 // ***********
 
-const APPLICATION_NAME = require('../../../package.json').name
-
 let logs = ''
 
 Cypress.on('window:before:load', (window) => {
@@ -13,7 +11,7 @@ Cypress.on('window:before:load', (window) => {
     return
   }
   // Get your apps iframe by id.
-  const docIframe = window.parent.document.getElementById(`Your App: '${APPLICATION_NAME}'`)
+  const docIframe = window.parent.document.getElementById('Your project: \'Test Project\'')
 
   if (!docIframe) {
     throw new Error('Cannot find app iframe: `docIframe` is null. Make sure the given app name is correct.')

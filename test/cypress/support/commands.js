@@ -172,7 +172,7 @@ Cypress.Commands.add('giSignup', (username, {
     if (!isInvitation) {
       cy.getByDT('signupBtn').click()
     }
-    cy.getByDT('signName').clear().type(username)
+    cy.getByDT('signName').type('{selectall}{del}' + username)
     cy.getByDT('password').type(password)
     cy.getByDT('passwordConfirm').type(password)
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
@@ -231,14 +231,14 @@ Cypress.Commands.add('giLogin', (username, {
     })
 
     if (toGroupDashboardUponSuccess) {
-      cy.get('nav').within(() => {
+      cy.getByDT('navMenu').within(() => {
         cy.getByDT('dashboard').click()
       })
     }
   } else {
     cy.getByDT('loginBtn').click()
-    cy.getByDT('loginName').clear().type(username)
-    cy.getByDT('password').clear().type(password)
+    cy.getByDT('loginName').type('{selectall}{del}' + username)
+    cy.getByDT('password').type('{selectall}{del}' + password)
 
     cy.getByDT('loginSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
@@ -291,7 +291,7 @@ Cypress.Commands.add('closeModal', () => {
 
 Cypress.Commands.add('giSetDisplayName', (name) => {
   cy.getByDT('settingsBtn').click()
-  cy.getByDT('displayName').clear().type(name)
+  cy.getByDT('displayName').type('{selectall}{del}' + name)
   cy.getByDT('saveAccount').click()
   cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
   cy.closeModal()
@@ -412,7 +412,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
 function inviteUser (invitee, index) {
   cy.getByDT('invitee').eq(index).within(() => {
-    cy.get('input').clear().type(invitee)
+    cy.get('input').type('{selectall}{del}' + invitee)
   })
 }
 
@@ -443,7 +443,7 @@ Cypress.Commands.add('giInviteMember', (
   })
 
   cy.getByDT('nextBtn').click()
-  cy.getByDT('reason', 'textarea').clear().type(reason)
+  cy.getByDT('reason', 'textarea').type('{selectall}{del}' + reason)
   cy.getByDT('submitBtn').click()
   cy.getByDT('finishBtn').click()
   cy.getByDT('closeModal').should('not.exist')
@@ -658,9 +658,9 @@ Cypress.Commands.add('giAddNewChatroom', ({
     cy.getByDT('newChannelButton').click()
     cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
     cy.getByDT('modal').within(() => {
-      cy.getByDT('createChannelName').clear().type(name)
+      cy.getByDT('createChannelName').type('{selectall}{del}' + name)
       if (description) {
-        cy.getByDT('createChannelDescription').clear().type(description)
+        cy.getByDT('createChannelDescription').type('{selectall}{del}' + description)
       } else {
         cy.getByDT('createChannelDescription').clear()
       }
@@ -790,7 +790,7 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 
 Cypress.Commands.add('giSendMessage', (sender, message) => {
   cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').clear().type(`${message}{enter}`)
+    cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     cy.get('textarea').should('be.empty')
   })
   cy.getByDT('conversationWrapper').within(() => {
