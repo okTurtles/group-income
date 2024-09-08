@@ -39,6 +39,8 @@ describe('Large group', () => {
       bypassUI: true
     })
 
+    cy.log('@@@@@DONE giAcceptMultipleGroupInvites')
+
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
     cy.giAddRandomIncome()
     cy.get('.graph-bar')

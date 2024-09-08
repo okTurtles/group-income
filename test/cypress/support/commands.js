@@ -207,6 +207,7 @@ Cypress.Commands.add('giLogin', (username, {
     // Wait for the app to be ready
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
+    cy.log('@@@giLogin', username, password, bypassUI, firstLoginAfterJoinGroup)
     cy.window().its('sbp').then(sbp => {
       const joinedGroupPromise = new Promise((resolve) => {
         if (firstLoginAfterJoinGroup) {
@@ -220,8 +221,12 @@ Cypress.Commands.add('giLogin', (username, {
         }
       })
       return sbp('gi.app/identity/login', { username, password }).then(() => {
+        console.error('@@@@LOGIN DONE')
+        cy.log('@@@giLogin LOGIN DONE', username, password, bypassUI, firstLoginAfterJoinGroup)
         return joinedGroupPromise
       }).then(() => {
+        console.error('@@@@LOGIN LAST PROMISE')
+        cy.log('@@@giLogin LOGIN LAST PROMISE', username, password, bypassUI, firstLoginAfterJoinGroup)
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
           if (router.history.current.path === '/dashboard') return
@@ -558,6 +563,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     cy.giLogout()
   }
 
+  cy.log('@@@giAcceptMultipleGroupInvites lEM', existingMemberUsername)
   cy.giLogin(existingMemberUsername, { bypassUI })
   cy.giNoPendingGroupKeyShares()
   cy.giEmptyInvocationQueue()
@@ -789,10 +795,12 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 })
 
 Cypress.Commands.add('giSendMessage', (sender, message) => {
+  cy.log('@@@@giSendMessage 1', sender, message)
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').clear().type(`${message}{enter}`)
     cy.get('textarea').should('be.empty')
   })
+  cy.log('@@@@giSendMessage 2', sender, message)
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
     cy.get('.c-message.sent:last-child .c-text').should('contain', message)

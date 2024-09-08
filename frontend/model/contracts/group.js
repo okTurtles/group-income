@@ -955,6 +955,7 @@ sbp('chelonia/defineContract', {
             }
 
             sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
+            console.error('@@@@JOINED_GROUP fmc', { identityContractID: userID, groupContractID: contractID })
           } else if (isActionNewerThanUserJoinedDate(height, state?.profiles?.[userID])) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', {
               createdDate: meta.createdDate,
