@@ -61,7 +61,8 @@ afterEach(function () {
 
 // Prevent errors when English is not the current OS locale language.
 Cypress.on('window:before:load', window => {
-  // Object.defineProperty(window.navigator, 'language', { value: 'en-US' })
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US-POSIX' })
+  Object.defineProperty(window.navigator, 'languages', { value: ['en-US-POSIX', 'en-US', 'en'] })
 })
 
 Cypress.on('uncaught:exception', (err, runnable, promise) => {
