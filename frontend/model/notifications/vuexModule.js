@@ -1,11 +1,12 @@
 'use strict'
 
 import { Vue } from '@common/common.js'
-import type { Notification } from './types.flow.js'
-import './selectors.js'
-import { compareOnTimestamp, isNew, isOlder } from './utils.js'
-import * as keys from './mutationKeys.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
+import * as keys from './mutationKeys.js'
+import './selectors.js'
+import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
+import type { Notification } from './types.flow.js'
+import { age, compareOnTimestamp, isNew, isOlder } from './utils.js'
 
 const defaultState = {
   items: [], status: {}
@@ -13,7 +14,18 @@ const defaultState = {
 
 const getters = {
   notifications (state, getters, rootState) {
-    return state.items.map(item => ({ ...item, ...state.status[item.hash] }))
+    return state.items.map(item => {
+      const notification = { ...item, ...state.status[item.hash] }
+      // Notifications older than MAX_AGE_UNREAD are discarded
+      if (age(notification) > MAX_AGE_UNREAD) {
+        return null
+      } else if (!notification.read && age(notification) > MAX_AGE_READ) {
+        // Unread notifications older than MAX_AGE_READ are automatically
+        // marked as read
+        notification.read = true
+      }
+      return notification
+    }).filter(Boolean)
   },
   // Notifications relevant to the current group only.
   currentGroupNotifications (state, getters, rootState) {

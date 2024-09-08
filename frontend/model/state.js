@@ -123,7 +123,7 @@ sbp('sbp/selectors/register', {
       }
 
       const { identityContractID, encryptionParams } = state.loggedIn
-      state.notifications.items = applyStorageRules(state.notifications.items || [])
+      state.notifications.items = applyStorageRules(state.notifications.items || [], state.notifications.status || {})
       if (encrypted) {
         await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
       } else {
