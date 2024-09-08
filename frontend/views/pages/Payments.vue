@@ -453,7 +453,6 @@ export default ({
         //       once 'accepted payment method' is implemented in the contract.
         acceptedMethods = ['manual']
       } = payment
-      console.log('!@# filterPayment: ', payment)
       const methodFilterVal = this.ephemeral.paymentMethodFilter
       const searchQuery = this.form.searchText
 
