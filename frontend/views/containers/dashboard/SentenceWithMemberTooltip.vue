@@ -12,10 +12,11 @@ component(
   slot
 
   template(v-if='members && members.length' slot='tooltip')
-    div(
+    .c-member-name(
       v-for='(name, index) in members'
       :key='`member-${index}`'
-    ) {{ name }}
+    )
+      .has-ellipsis {{ name }}
 </template>
 
 <script>
@@ -35,5 +36,13 @@ export default ({
 <style lang="scss" scoped>
 .has-zero-members ::v-deep .c-tooltip {
   display: none !important;
+}
+
+.c-member-name {
+  // Turn the parent element into flex-box to render ellipsis style properly.
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 </style>

@@ -121,7 +121,7 @@ describe('Proposals - Add members', () => {
         .type(groupNewMincome)
       cy.getByDT('nextBtn', 'button')
         .click()
-      cy.getByDT('reason', 'textarea').clear().type('House renting is increasing.')
+      cy.getByDT('reason', 'textarea').type('{selectall}{del}House renting is increasing.')
       cy.getByDT('submitBtn').click()
       cy.getByDT('finishBtn').click()
       cy.getByDT('closeModal').should('not.exist')
