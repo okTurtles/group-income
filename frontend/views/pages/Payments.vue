@@ -453,12 +453,13 @@ export default ({
         //       once 'accepted payment method' is implemented in the contract.
         acceptedMethods = ['manual']
       } = payment
+      console.log('!@# filterPayment: ', payment)
       const methodFilterVal = this.ephemeral.paymentMethodFilter
       const searchQuery = this.form.searchText
 
       const matchesMethodFilter = methodFilterVal === 'all' || acceptedMethods.includes(methodFilterVal)
       const matchesSearchQuery = searchQuery === '' ||
-        `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
+        `${amount}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
 
       return matchesMethodFilter && matchesSearchQuery
     },
