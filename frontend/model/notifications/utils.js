@@ -20,6 +20,9 @@ export function age (notification: Notification): number {
 /*
  * Creates a copy of the given notification list, possibly sorted and/or truncated to
  * make it suitable for offline storage.
+ * The second argument, `status` contains separarately-stored parameters for that
+ * notification hash to reflect how notifications are used in the app
+ * (specifically, the `read` parameter is stored there).
  *
  * Algorithm steps taken on the copy:
  *
@@ -40,9 +43,9 @@ export function age (notification: Notification): number {
  *   5f. discard unread notifications, older ones first.
  * 6. Return the remaining notifications.
  */
-export function applyStorageRules (notifications: Notification[]): Notification[] {
+export function applyStorageRules (notifications: Notification[], status: { [string]: Notification } = {}): Notification[] {
   // Apply the MAX_AGE constraint by selecting items that have not yet expired.
-  let items = notifications.filter(item => !isExpired(item))
+  let items = notifications.filter(item => !isExpired({ ...item, ...status[item.hash] }))
 
   if (items.length > MAX_COUNT) {
     // Sort the list by descending priority order.
