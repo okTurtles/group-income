@@ -144,7 +144,6 @@ const mutations = {
   // the modal when leaving a group; usually, it's not needed and should be
   // false)
   setCurrentGroupId (state, { contractID: currentGroupId, forceRefresh, isNewlyCreated }) {
-    console.error('@@@@@setCurrentGroupId', { currentGroupId, forceRefresh, isNewlyCreated })
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
     if (!currentGroupId || forceRefresh) {

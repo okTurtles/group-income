@@ -8,7 +8,6 @@ module.exports = defineConfig({
   screenshotsFolder: 'test/cypress/screenshots',
   videosFolder: 'test/cypress/videos',
   video: true,
-  videoUploadOnPasses: false,
   trashAssetsBeforeRuns: true,
   projectId: 'q6whky',
   experimentalMemoryManagement: true,
