@@ -21,7 +21,7 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(doesPledge ? 'doesntNeedIncomeRadio' : 'needsIncomeRadio').click()
-  cy.getByDT('inputIncomeOrPledge').clear().type(incomeAmount)
+  cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}' + incomeAmount)
 
   if (!doesPledge) {
     cy.randomPaymentMethodInIncomeDetails()
@@ -346,8 +346,14 @@ describe('Group Payments', () => {
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
-      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '100')
-      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('50')
+      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').as('firstRowAmountInput')
+
+      cy.get('@firstRowAmountInput').should('have.value', '100')
+      cy.get('@firstRowAmountInput').clear({ force: true })
+      // NOTE: Since this amount input element has a floating element ('$' sign) above it, cypress thinks the <input /> is not visible, which is not true.
+      //       So we need to add { force: true } here.
+      cy.get('@firstRowAmountInput').type('50', { force: true })
+
       cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('be.checked')
 
       cy.get('button[type="submit"]').click()
