@@ -175,7 +175,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('description').should('contain', `Remove userbot-${userId} from the group`)
       cy.getByDT('nextBtn').click()
-      cy.getByDT('reason', 'textarea').clear().type('I think it is a bot!')
+      cy.getByDT('reason', 'textarea').type('{selectall}{del}I think it is a bot!')
       cy.getByDT('submitBtn').click()
       cy.getByDT('finishBtn').click()
       cy.getByDT('closeModal').should('not.exist')

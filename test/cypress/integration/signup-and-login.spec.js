@@ -39,8 +39,8 @@ describe('Signup, Profile and Login', () => {
 
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
 
-    cy.getByDT('displayName').clear().type('John Bot')
-    cy.getByDT('bio').clear().type('Born in a test case')
+    cy.getByDT('displayName').type('{selectall}{del}John Bot')
+    cy.getByDT('bio').type('{selectall}{del}Born in a test case')
 
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
@@ -80,11 +80,11 @@ describe('Signup, Profile and Login', () => {
     cy.log('- Connot login a non existent user')
     cy.getByDT('loginBtn').click()
 
-    cy.getByDT('loginName').clear().type('non existent')
+    cy.getByDT('loginName').type('{selectall}{del}non existent')
     cy.getByDT('badUsername').should('contain', 'A username cannot contain whitespace.')
 
-    cy.getByDT('loginName').clear().type('nonexistent')
-    cy.getByDT('password').clear().type('987654321')
+    cy.getByDT('loginName').type('{selectall}{del}nonexistent')
+    cy.getByDT('password').type('{selectall}{del}987654321')
 
     cy.getByDT('loginSubmit').click()
     cy.getByDT('loginError').should('contain', 'Incorrect username or password')
@@ -94,7 +94,7 @@ describe('Signup, Profile and Login', () => {
     cy.log('- Cannot signup existing user twice')
     cy.getByDT('signupBtn').click()
 
-    cy.getByDT('signName').clear().type('new user')
+    cy.getByDT('signName').type('{selectall}{del}new user')
     cy.getByDT('badUsername').should('contain', 'A username cannot contain whitespace.')
 
     cy.getByDT('signName').clear().type(username)

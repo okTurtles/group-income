@@ -389,7 +389,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('description').should('contain', `Remove ${user3} from the group`)
       cy.getByDT('nextBtn').click()
-      cy.getByDT('reason', 'textarea').clear().type('Leaving group by proposal to test leaving chatroom')
+      cy.getByDT('reason', 'textarea').type('{selectall}{del}Leaving group by proposal to test leaving chatroom')
       cy.getByDT('submitBtn').click()
       cy.getByDT('finishBtn').click()
       cy.getByDT('closeModal').should('not.exist')

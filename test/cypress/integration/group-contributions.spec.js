@@ -126,7 +126,7 @@ describe('Contributions', () => {
     cy.getByDT('badIncome').should('not.be.visible')
 
     // Users should not be allowed to pledge a negative amount.
-    cy.getByDT('inputIncomeOrPledge').clear().type('-50')
+    cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}-50')
     cy.getByDT('badIncome').should('be.visible')
       .and('contain', 'Oops, you entered a negative number')
 
@@ -368,7 +368,7 @@ describe('Contributions', () => {
 
   it('user1 edits the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
+    cy.getByDT('inputNonMonetaryContribution').type('{selectall}{del}French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')
