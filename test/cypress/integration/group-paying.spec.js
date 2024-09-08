@@ -21,7 +21,7 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(doesPledge ? 'doesntNeedIncomeRadio' : 'needsIncomeRadio').click()
-  cy.getByDT('inputIncomeOrPledge').clear().type(incomeAmount)
+  cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}' + incomeAmount)
 
   if (!doesPledge) {
     cy.randomPaymentMethodInIncomeDetails()

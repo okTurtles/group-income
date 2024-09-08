@@ -38,7 +38,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
         cy.get('.c-actions button[aria-label="Edit"]').click()
       })
       cy.getByDT('messageInputWrapper').within(() => {
-        cy.get('textarea').clear().type(`${message}{enter}`)
+        cy.get('textarea').type(`{selectall}{del}${message}{enter}`)
       })
       cy.get('.c-text').should('contain', message)
       cy.get('.c-edited').should('contain', '(edited)')

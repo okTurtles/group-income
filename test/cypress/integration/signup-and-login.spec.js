@@ -66,7 +66,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
-    cy.getByDT('passwordConfirm').clear().type(password)
+    cy.getByDT('passwordConfirm').type('{selectall}{del}' + password)
     cy.getByDT('signTerms').uncheck({ force: true }).should('not.be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
@@ -97,7 +97,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('signName').type('{selectall}{del}new user')
     cy.getByDT('badUsername').should('contain', 'A username cannot contain whitespace.')
 
-    cy.getByDT('signName').clear().type(username)
+    cy.getByDT('signName').type('{selectall}{del}' + username)
     cy.getByDT('badUsername').should('contain', 'This username is already being used.')
 
     cy.closeModal()

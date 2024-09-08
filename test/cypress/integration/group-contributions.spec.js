@@ -56,7 +56,7 @@ function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(needsIncome ? 'needsIncomeRadio' : 'doesntNeedIncomeRadio').click()
-  cy.getByDT('inputIncomeOrPledge').clear().type(newIncome)
+  cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}' + newIncome)
 
   assertGraphicSummary(graphicLegend)
 
@@ -135,7 +135,7 @@ describe('Contributions', () => {
       'Needed Pledges$0'
     ])
 
-    cy.getByDT('inputIncomeOrPledge').clear().type(500)
+    cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}' + 500)
 
     assertGraphicSummary([
       'Total Pledged$500',
@@ -164,7 +164,7 @@ describe('Contributions', () => {
     cy.getByDT('inputIncomeOrPledge').type(500)
     // It should not let user ask for money if he has more than the basic income
     cy.getByDT('badIncome').should('contain', 'Your income must be lower than the group mincome')
-    cy.getByDT('inputIncomeOrPledge').clear().type(100)
+    cy.getByDT('inputIncomeOrPledge').type('{selectall}{del}' + 100)
     // After updating the income under the limit it should hide the error message
     cy.getByDT('badIncome').should('not.be.visible')
 

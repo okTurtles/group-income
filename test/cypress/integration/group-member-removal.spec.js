@@ -253,8 +253,8 @@ describe('Group - Removing a member', () => {
       cy.getByDT('btnSubmit').should('have.attr', 'disabled', 'disabled')
 
       cy.log('Fix the errors and submit')
-      cy.getByDT('username').clear().type(`user2-${userId}`)
-      cy.getByDT('confirmation').clear().type(`LEAVE ${groupNameA.toUpperCase()}`)
+      cy.getByDT('username').type(`{selectall}{del}user2-${userId}`)
+      cy.getByDT('confirmation').type(`{selectall}{del}LEAVE ${groupNameA.toUpperCase()}`)
 
       cy.getByDT('btnSubmit').click()
     })
