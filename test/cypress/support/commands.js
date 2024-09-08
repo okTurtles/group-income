@@ -797,7 +797,7 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 Cypress.Commands.add('giSendMessage', (sender, message) => {
   cy.log('@@@@giSendMessage 1', sender, message)
   cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').type(`{selectall}{del}${message}{enter}`)
+    cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     cy.get('textarea').should('be.empty')
   })
   cy.log('@@@@giSendMessage 2', sender, message)
