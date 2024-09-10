@@ -104,7 +104,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('modal').within(() => {
       cy.getByDT('users-selector').should('be.focused')
       cy.getByDT('recentConversations').children().should('have.length', 0)
-      cy.getByDT('others').children().should('have.length', 1)
+      cy.getByDT('others').children().should('have.length', 2)
     })
     cy.closeModal()
 

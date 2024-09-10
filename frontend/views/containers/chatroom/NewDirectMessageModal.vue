@@ -149,10 +149,11 @@ export default ({
       if (!this.searchText && !this.selections.length) {
         return this.ourRecentConversations
       }
-      return this.ourRecentConversations.filter(({ title, partners }) => {
+      return this.ourRecentConversations.filter(({ title, partners, isDMToMyself }) => {
         const partnerIDs = partners.map(p => p.contractID)
         const upperCasedSearchText = String(this.searchText).toUpperCase().normalize()
-        if (!difference(partnerIDs, this.selections).length) {
+
+        if (!isDMToMyself && !difference(partnerIDs, this.selections).length) {
           // match with contractIDs
           return false
         } else if (String(title).toUpperCase().normalize().includes(upperCasedSearchText)) {
@@ -227,19 +228,25 @@ export default ({
       this.selections = this.selections.filter(cID => cID !== contractID)
     },
     async onSubmit () {
-      if (!this.selections.length) { return }
+      if (this.selections.length) {
+        const isDMToMyself = this.selections.length === 1 &&
+          this.selections[0] === this.ourIdentityContractId
+        const memberIds = isDMToMyself
+          ? this.selections
+          : this.selections.filter(id => id !== this.ourIdentityContractId)
 
-      const isDMToMyself = this.selections.length === 1 &&
-        this.selections[0] === this.ourIdentityContractId
-      const memberIds = isDMToMyself
-        ? this.selections
-        : this.selections.filter(id => id !== this.ourIdentityContractId)
-
-      const existingChatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
-      if (existingChatRoomID) {
-        this.redirect(existingChatRoomID)
-      } else {
-        await this.createDirectMessage(memberIds)
+        const existingChatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
+        if (existingChatRoomID) {
+          this.redirect(existingChatRoomID)
+        } else {
+          await this.createDirectMessage(memberIds)
+        }
+      } else if (this.searchText) {
+        if (this.filteredRecents.length) {
+          this.redirect(this.filteredRecents[0].chatRoomID)
+        } else if (this.filteredOthers.length) {
+          await this.createDirectMessage(this.filteredOthers[0].contractID)
+        }
       }
 
       this.closeModal()
