@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
@@ -65,7 +65,10 @@ const ChatMixin: Object = {
       }
       const chatroomMemberKeys = Object.keys(this.currentChatRoomState.members)
       const isPrivate = this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-      const isDMToMySelf = isPrivate && chatroomMemberKeys.length === 1 && chatroomMemberKeys[0] === this.ourIdentityContractId
+      const isDMToMySelf = isPrivate &&
+        this.currentChatRoomState.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE &&
+        chatroomMemberKeys.length === 1 &&
+        chatroomMemberKeys[0] === this.ourIdentityContractId
 
       return {
         chatRoomID: this.currentChatRoomId,
