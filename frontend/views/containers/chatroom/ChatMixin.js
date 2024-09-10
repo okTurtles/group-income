@@ -65,9 +65,7 @@ const ChatMixin: Object = {
       }
       const chatroomMemberKeys = Object.keys(this.currentChatRoomState.members)
       const isPrivate = this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-      const isDMToMySelf = isPrivate &&
-        chatroomMemberKeys.length === 1 &&
-        chatroomMemberKeys[0] === this.ourIdentityContractId
+      const isDMToMySelf = isPrivate && chatroomMemberKeys.length === 1 && chatroomMemberKeys[0] === this.ourIdentityContractId
 
       return {
         chatRoomID: this.currentChatRoomId,
@@ -113,8 +111,7 @@ const ChatMixin: Object = {
       const summarizedAttr = this.groupChatRooms[chatRoomID]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, members } = summarizedAttr
-        const activeMembers = Object
-          .entries(members)
+        const activeMembers = Object.entries(members)
           .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
           .map(([username]) => {
             const { displayName, picture, email } = this.globalProfile(username) || {}
