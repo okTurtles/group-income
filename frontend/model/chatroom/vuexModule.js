@@ -86,7 +86,7 @@ const getters = {
               ? getters.userDisplayNameFromID(myIdendityId)
               : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
             lastMsgTimeStamp,
-            picture: getters.ourContactProfilesById[isDMToMyself]?.picture,
+            picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
             isDMToMyself // Can be useful when certain things in UI are meant only for 'DM to myself'
           }
         }
