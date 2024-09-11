@@ -19,7 +19,10 @@ import './output-logs.js'
 
 before(function () {
   console.log('[cypress] `before`: cleaning up')
-  if (typeof navigator === 'object' && navigator.serviceWorker) {
+
+  if (!process.env.CI &&
+    typeof navigator === 'object' &&
+    navigator.serviceWorker) {
     cy.wrap(navigator.serviceWorker.getRegistrations()
       .then((registrations) => {
         console.log('[cypress] Service worker registrations', registrations)
@@ -34,6 +37,7 @@ before(function () {
       )
     )
   }
+
   cy.clearCookies()
   cy.clearLocalStorage()
   if (typeof indexedDB === 'object') {
@@ -57,7 +61,8 @@ afterEach(function () {
 
 // Prevent errors when English is not the current OS locale language.
 Cypress.on('window:before:load', window => {
-  Object.defineProperty(window.navigator, 'language', { value: 'en-US' })
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US-POSIX' })
+  Object.defineProperty(window.navigator, 'languages', { value: ['en-US-POSIX', 'en-US', 'en'] })
 })
 
 Cypress.on('uncaught:exception', (err, runnable, promise) => {

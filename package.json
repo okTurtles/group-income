@@ -1,7 +1,7 @@
 {
   "name": "group-income",
-  "version": "1.0.7",
-  "contractsVersion": "1.0.7",
+  "version": "1.0.8",
+  "contractsVersion": "1.0.8",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
@@ -161,7 +161,7 @@
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",
     "browser-sync": "2.27.10",
-    "cypress": "7.7.0",
+    "cypress": "13.14.2",
     "cypress-file-upload": "5.0.8",
     "cypress-pipe": "2.0.0",
     "esbuild": "0.14.47",
