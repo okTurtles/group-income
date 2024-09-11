@@ -3,7 +3,6 @@
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
-  INVITE_EXPIRES_IN_DAYS,
   INVITE_INITIAL_CREATOR,
   MESSAGE_TYPES,
   PROFILE_STATUS,
@@ -173,7 +172,7 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               quantity: 60,
-              expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              expires: Date.now() + 1000 * 60 * 3, // Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               private: {
                 content: inviteKeyS
               }

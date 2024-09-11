@@ -60,7 +60,7 @@
         button(
           type='button'
           key='next'
-          v-if='shouldPropose && isNextStep'
+          v-if='shouldPropose && hasNextStep'
           @click.prevent='next'
           :disabled='disabled'
           data-test='nextBtn'
@@ -160,7 +160,7 @@ export default ({
     isGroupCreator () {
       return this.ourIdentityContractId === this.currentGroupOwnerID
     },
-    isNextStep () {
+    hasNextStep () {
       return this.currentStep <= this.maxSteps - 1
     },
     isReasonStep () {
@@ -247,7 +247,7 @@ export default ({
       await this.$listeners.submit(form)
     },
     onEnterPressed () {
-      if (this.isNextStep && !this.disabled) {
+      if (this.hasNextStep && !this.disabled) {
         this.next()
       }
     }

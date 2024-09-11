@@ -8,8 +8,7 @@
       @click='headerButtonAction'
     )
       i.icon-plus.is-prefix
-      i18n(v-if='action === "addMember"') Add
-      i18n(v-else) New
+      i18n Add
 
   ul.c-group-list
     li.c-group-member(
@@ -59,11 +58,6 @@ export default ({
     title: {
       type: String,
       default: L('Members')
-    },
-    action: {
-      type: String,
-      default: 'addMember',
-      validator: (value) => ['addMember'].includes(value)
     }
   },
   computed: {
@@ -90,16 +84,14 @@ export default ({
       return contractID === this.ourIdentityContractId ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
-      if (this.action === 'addMember') {
-        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
-        if (!this.groupShouldPropose && !isWelcomeInviteExpired) {
-          this.openModal('InvitationLinkModal')
-        } else {
-          const contractID = this.$store.state.currentGroupId
-          sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
-            console.error(`Error on action checkGroupSizeAndProposeMember (headerButtonAction) for ${contractID}`, e)
-          })
-        }
+      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+      if (!this.groupShouldPropose && !isWelcomeInviteExpired) {
+        this.openModal('InvitationLinkModal')
+      } else {
+        const contractID = this.$store.state.currentGroupId
+        sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
+          console.error(`Error on action checkGroupSizeAndProposeMember (headerButtonAction) for ${contractID}`, e)
+        })
       }
     }
   }

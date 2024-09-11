@@ -92,7 +92,7 @@ export const MESSAGE_TYPES = {
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
-  ON_BOARDING: 365 * 20, // we shouldn't let the anyone-can-join invite expire. (reference: https://github.com/okTurtles/group-income/issues/2341)
+  ON_BOARDING: 365 * 20, // 20years - we shouldn't let the anyone-can-join invite expire. (reference: https://github.com/okTurtles/group-income/issues/2341)
   PROPOSAL: 7
 }
 
