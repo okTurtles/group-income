@@ -128,6 +128,12 @@ import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
+import {
+  MINS_MILLIS,
+  HOURS_MILLIS,
+  DAYS_MILLIS,
+  MONTHS_MILLIS
+} from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'InvitationsTable',
@@ -238,21 +244,27 @@ export default ({
     },
     readableExpiryInfo (expiryTime) {
       const timeLeft = expiryTime - Date.now()
-      const MIL = 1000
-      const MIL_MIN = 60 * MIL
-      const MIL_HR = MIL_MIN * 60
-      const MIL_DAY = 24 * MIL_HR
-      let remainder
+      const timeLeftInDays = timeLeft / DAYS_MILLIS
 
-      const days = Math.floor(timeLeft / MIL_DAY)
-      remainder = timeLeft % MIL_DAY
-      const hours = Math.floor(remainder / MIL_HR)
-      remainder = remainder % MIL_HR
-      const minutes = Math.ceil(remainder / MIL_MIN)
+      const years = Math.floor(timeLeftInDays / 365)
+      const remainderDays = timeLeftInDays % 365
+      const months = Math.floor(remainderDays / 365 * 12)
+
+      let remainder = timeLeft % MONTHS_MILLIS
+      const days = Math.floor(remainder / DAYS_MILLIS)
+      const daysCeil = Math.ceil(remainder / DAYS_MILLIS) // to be used for when expiryTime > '1 month'
+      remainder = remainder % DAYS_MILLIS
+      const hours = Math.floor(remainder / HOURS_MILLIS)
+      remainder = remainder % HOURS_MILLIS
+      const minutes = Math.ceil(remainder / MINS_MILLIS)
+
+      if (years) return L('{years}y {months}m {days}d left', { years, months, days: daysCeil })
+      if (months) return L('{months}m {days}d left', { months, days: daysCeil })
 
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
       if (minutes) return L('{minutes}m left', { minutes })
+
       return L('Expired')
     },
     mapInvite ([id, {
