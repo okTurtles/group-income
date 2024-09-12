@@ -51,7 +51,7 @@ import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-
+import { createInvite } from '@controller/actions/utils.js'
 export default ({
   name: 'AddMembers',
   mixins: [validationMixin],
@@ -81,7 +81,10 @@ export default ({
       'loggedIn'
     ]),
     ...mapGetters([
+      'ourIdentityContractId',
       'currentGroupState',
+      'currentWelcomeInvite',
+      'groupShouldPropose',
       'groupSettings'
     ])
   },
@@ -106,36 +109,65 @@ export default ({
         newInviteeSlot && newInviteeSlot.focus()
       })
     },
-    async submit (form) {
-      let hasFailed = false
-      // NOTE: All invitees proposals will expire at the exact same time.
-      // That plus the proposal creator is what we'll use to know
-      // which proposals should be displayed visually together.
-      const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
-
+    async generateInviteImmediately () {
+      const groupId = this.currentGroupId
       for (const invitee of this.form.invitees) {
-        const groupId = this.currentGroupId
         try {
-          await sbp('gi.actions/group/proposal', {
+          const inviteCreated = await createInvite({
             contractID: groupId,
-            data: {
-              proposalType: PROPOSAL_INVITE_MEMBER,
-              proposalData: {
-                memberName: invitee,
-                reason: form.reason
-              },
-              votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-              expires_date_ms: expiresDateMs
-            }
+            invitee,
+            creatorID: this.ourIdentityContractId,
+            expires: this.groupSettings.inviteExpiryProposal
           })
-        } catch (e) {
-          hasFailed = true
-          console.error(`Invite to ${invitee} failed to be sent!`, e.message)
+
+          await sbp('gi.actions/group/invite', {
+            contractID: groupId,
+            data: inviteCreated
+          })
+        } catch (err) {
+          // TODO: add a logic to present the error in the UI
+          console.error(`Invite to ${invitee} failed to be sent!`, err?.message)
           break
         }
       }
-      if (!hasFailed) {
-        this.ephemeral.currentStep += 1 // Show Success step!
+    },
+    async submit (form) {
+      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
+      const shouldGenerateInvitesImmediately = isWelcomeInviteExpired && !this.groupShouldPropose
+
+      if (shouldGenerateInvitesImmediately) {
+        await this.generateInviteImmediately()
+      } else {
+        let hasFailed = false
+        // NOTE: All invitees proposals will expire at the exact same time.
+        // That plus the proposal creator is what we'll use to know
+        // which proposals should be displayed visually together.
+        const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+
+        for (const invitee of this.form.invitees) {
+          const groupId = this.currentGroupId
+          try {
+            await sbp('gi.actions/group/proposal', {
+              contractID: groupId,
+              data: {
+                proposalType: PROPOSAL_INVITE_MEMBER,
+                proposalData: {
+                  memberName: invitee,
+                  reason: form.reason
+                },
+                votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
+                expires_date_ms: expiresDateMs
+              }
+            })
+          } catch (e) {
+            hasFailed = true
+            console.error(`Invite to ${invitee} failed to be sent!`, e.message)
+            break
+          }
+        }
+        if (!hasFailed) {
+          this.ephemeral.currentStep += 1 // Show Success step!
+        }
       }
     }
   }
