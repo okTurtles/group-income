@@ -170,7 +170,7 @@ const setupChelonia = async (): Promise<*> => {
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
     const state = sbp('chelonia/rootState')
     if (!state.loggedIn) {
-      console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
+      console.warn('Received LOGIN_COMPLETE event but state.loggedIn is not an object')
       return
     }
 

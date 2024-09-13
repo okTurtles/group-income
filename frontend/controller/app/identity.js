@@ -276,6 +276,9 @@ export default (sbp('sbp/selectors/register', {
 
       const password = wpassword?.valueOf()
       const transientSecretKeys = []
+
+      // If we're creating a new session, here we derive the IEK. This key (not
+      // the password) will be passed to the service worker.
       if (password) {
         try {
           const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
@@ -293,6 +296,9 @@ export default (sbp('sbp/selectors/register', {
         let loginCompleteHandler, loginErrorHandler
 
         try {
+          // Since some steps now will happen asynchronously through events,
+          // we set up a promise that will resolve once the login process is
+          // complete
           const loginCompletePromise = new Promise((resolve, reject) => {
             const loginCompleteHandler = ({ identityContractID: id }) => {
               sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
@@ -318,17 +324,23 @@ export default (sbp('sbp/selectors/register', {
             sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
           })
 
+          // Are we logging in and setting up a fresh session or loading an
+          // existing session?
           if (password) {
-          // Send `cheloniaState` and the Vuex `state` to the action.
-          // `cheloniaState` will be used to restore the Chelonia state
-          // and `state` will be sent back to replace the current Vuex state
-          // after login. When using a service worker, all tabs will receive
-          // a new Vuex state to replace their state with.
+            // Setting up a fresh session:
+            // Send `cheloniaState` and the Vuex `state` to the action.
+            // `cheloniaState` will be used to restore the Chelonia state
+            // and `state` will be sent back to replace the current Vuex state
+            // after login. When using a service worker, all tabs will receive
+            // a new Vuex state to replace their state with.
             await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
           } else {
+            // If an existing session exists, we just emit the LOGIN event
+            // to set the local Vuex state and signal we're ready.
             sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
           }
 
+          // Wait until all events have been processed before returning
           await loginCompletePromise
         } catch (e) {
           sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)

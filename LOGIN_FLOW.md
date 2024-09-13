@@ -244,26 +244,112 @@ the handlers here handle logging in or signing up as part of joining a group.
 
 ###### `app/identity.js`
 
+The `LOGIN_COMPLETE` (or `LOGIN_ERROR`) event is emitted in the handler of the
+`LOGIN` event. The event is emitted after successfully (or, in the case of
+`LOGIN_ERROR`, unsuccessfully) restoring the state after a login attempt.
+
 ##### Handlers
 
 ###### `app/identity.js`
+
+The `gi.app/identity/login` selector sets up event listeners for
+`LOGIN_COMPLETE` and `LOGIN_ERROR` and returns after either of these are
+received.
+
 ###### `setupChelonia.js`
+
+An event listener for `LOGIN_COMPLETE` loads KV values after a successful login
+session and saves Chelonia state into IndexedDB. This enables session
+persistence.
+
 ###### `main.js`
+
+The `LOGIN_ERROR` event handler removes the loading animation.
+
+The `LOGIN_COMPLETE` event handler finishes setting up the global app state.
 
 #### `LOGOUT`
 ##### Triggers
 
 ###### `actions/identity.js`
+
+The `LOGOUT` event is emitted right at the end of the
+`gi.actions/identity/logout` selector to signal that the current session has
+ended.
+
 ##### Handlers
 
 ###### `app/identity.js`
+
+This event listener unloads persistent actions (currently commented out).
+
 ###### `setupChelonia.js`
+
+This event listener resets Chelonia and removes Chelonia state from IndexedDB.
+
 ###### `main.js`
+
+This event listener sets up global app state related to there being no active
+session.
+
 ###### `state.js`
+
+This event listener (working in conjunction with a filter on the
+`gi.app/identity/logout` selector) is used to determine whether a logout process
+is currently in progress. If there's an ongoing logout process, session state
+is not regularly persisted to IndexedDB like it normally would be.
+
 ###### `actions/group.js`
+
+This event listener is set up during the course of an ongoing group joining
+process (i.e., a call to `gi.actions/group/join`) for the purpose of cleaning
+up other event listeners set up connected to joining a group.
+
 ###### `settings/vuexModule.js`
+
+This event listener restores the Vuex module state to its initial value after
+logging out.
 
 ### Example login and log out flows
 
 #### Example 1: New session
+
+1. `[browsing context]` `gi.app/identity/login` is called with a password. This
+   places a call in the `APP-LOGIN` queue (so that login and logout actions
+   happen sequentially and don't interfere with one another).
+2. `[browsing context]` The queued call (in `APP-LOGIN`) is executed. This will:
+   1. Derive the CEK from the password
+   2. Set up event listeners for `LOGIN_COMPLETE` and `LOGIN_ERROR`
+   3. Call and wait for 'gi.actions/identity/login'
+   4. Wait for either of `LOGIN_COMPLETE` or `LOGIN_ERROR`.
+3. `[sw]` `gi.actions/identity/login` will place a call in the
+   `ACTIONS-LOGIN` queue.
+4. `[sw]` The queued call (in `ACTIONS-LOGIN`) is executed. This will:
+   1. Reset Chelonia state
+   2. Retain or sync the identity contract (depending on whether it's a fresh
+      session or an older savedsession being restored).
+   3. Emit the `LOGIN` event.
+   4. Sync existing groups and contracts as well as call `gi.actions/group/join`
+      for groups that may be in pending status.
+5. `[browsing context]` The `LOGIN` event is handled. This sets the state for
+   that user and the `LOGIN_COMPLETE` is emitted.
+6. `[browsing context]` The `LOGIN_COMPLETE` is processed and all remaining
+   global state associated with an active sesison is set up. Now, the call made
+   to `gi.app/identity/login` will also return.
+7. `[service worker]` The `LOGIN_COMPLETE` event is propagatd to the service
+   worker, which now saves Chelonia state into IndexedDB.
+
 #### Example 2: New tab with an active session
+
+1. `[browsing context]` `gi.app/identity/login` is called without a password.
+   This places a call in the `APP-LOGIN` queue (so that login and logout actions
+   happen sequentially and don't interfere with one another).
+2. `[browsing context]` The queued call (in `APP-LOGIN`) is executed. This will:
+   1. Set up event listeners for `LOGIN_COMPLETE` and `LOGIN_ERROR`
+   2. Emit the `LOGIN` event.
+   3. Wait for either of `LOGIN_COMPLETE` or `LOGIN_ERROR`.
+3. `[browsing context]` The `LOGIN` event is handled. This sets the state for
+   that user and the `LOGIN_COMPLETE` is emitted.
+4. `[browsing context]` The `LOGIN_COMPLETE` is processed and all remaining
+   global state associated with an active sesison is set up. Now, the call made
+   to `gi.app/identity/login` will also return.
