@@ -459,7 +459,8 @@ const getters = {
   },
   // list of group names and contractIDs
   groupsByName (state, getters) {
-    const groups = state[getters.ourIdentityContractId]?.groups
+    const identityContractID = getters.ourIdentityContractId
+    const groups = state[identityContractID]?.groups
     if (!groups) return []
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
@@ -468,7 +469,7 @@ const getters = {
     return Object.entries(groups)
       // $FlowFixMe[incompatible-use]
       .filter(([, { hasLeft }]) => !hasLeft)
-      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
+      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID, active: state[contractID]?.profiles[identityContractID]?.status === PROFILE_STATUS.ACTIVE }))
   },
   profilesByGroup (state, getters) {
     return groupID => {

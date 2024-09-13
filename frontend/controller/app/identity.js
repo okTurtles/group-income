@@ -2,7 +2,6 @@
 
 import * as Common from '@common/common.js'
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
-import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
@@ -322,15 +321,7 @@ export default (sbp('sbp/selectors/register', {
 
         await loginCompletePromise
 
-        // update the 'lastLoggedIn' field in user's group profiles
-        Object.keys(state?.[identityContractID]?.groups || {})
-          .forEach(cId => {
-            // We send this action only for groups we have fully joined (i.e.,
-            // accepted an invite and added our profile)
-            if (state[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-              sbp('chelonia/queueInvocation', cId, ['gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }]).catch((e) => console.error('Error sending updateLastLoggedIn', e))
-            }
-          })
+        // updating the 'lastLoggedIn' field is done as a periodic notification
       } catch (e) {
         sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
         sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)

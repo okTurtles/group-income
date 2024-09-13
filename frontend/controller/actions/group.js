@@ -471,6 +471,8 @@ export default (sbp('sbp/selectors/register', {
 
             // lastLoggedIn defaults to join date, hence there's no need to set
             // it here
+            // TODO: Remove the following setTimeout. Without it the tests
+            // can fail, but that needs to be fixed instead
             await new Promise(resolve => setTimeout(resolve, 100))
           } catch (e) {
             console.error(`[gi.actions/group/join] Error while accepting invite ${params.contractID}:`, e)

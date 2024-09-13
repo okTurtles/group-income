@@ -36,3 +36,5 @@ export const KV_KEYS = {
 }
 
 export const MAX_LOG_ENTRIES = 2000
+// The throttle window for updating lastLoggedIn
+export const LAST_LOGGED_IN_THROTTLE_WINDOW = 30 * 60E3 // 30 minutes

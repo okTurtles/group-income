@@ -200,6 +200,28 @@ const periodicNotificationEntries = [
       },
       shouldClearStateKey: () => true
     }
+  },
+  {
+    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    notificationData: {
+      stateKey: '',
+      emitCondition ({ rootGetters }) {
+        return !!rootGetters.ourIdentityContractId
+      },
+      emit ({ rootState, rootGetters }) {
+        Promise.all(
+          rootGetters.groupsByName.filter(({ active }) => active).map(({ contractID }) => {
+            return sbp('gi.actions/group/kv/updateLastLoggedIn', {
+              contractID,
+              throttle: true
+            })
+          })
+        ).catch((e) => {
+          console.error('Error updating lastLoggedIn', e)
+        })
+      },
+      shouldClearStateKey: () => true
+    }
   }
 ]
 
