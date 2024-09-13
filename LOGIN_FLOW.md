@@ -83,7 +83,7 @@ setTimeout(() => {
 #### The structured clone algorithm
 
 Explaining how the structured clone algorithm works in detail is complex.
-However, the short overview is that a _very close approximatiion_ is the
+However, the short overview is that a _very close approximation_ is the
 equivalent of JSON. I.e., it's something like this:
 
 ```js
@@ -100,8 +100,8 @@ capabilities of the structured clone algorithm.
 
 #### Specifics about Service Workers
 
-Unlike other types of web workers, there can be a instance of single service
-worker for any given page. A single service worker can be shared across multiple
+Unlike other types of web workers, there can only be, at most, a single active
+service worker per page. A single service worker can be shared across multiple
 browsing contexts (e.g., if the user opens many tabs with Group Income, they
 will all share the same service worker) or even no browsing contexts (e.g., if
 the user closes all of the Group Income tabs, the service worker can continue
@@ -186,8 +186,9 @@ are not prompted to log in again when they have already done so in the past.
 
   * `LOGIN`: The `LOGIN` event represents an active login intent, which is to
    say, it represents that there is an active login process, which may either
-   fail or succeed. This event can originate in the service worker or in a local
-   browsing context.
+   fail or succeed. This event can originate in the service worker (when
+   establishing a new session) or in a local browsing context (when there is
+   an active sesion).
   * `LOGIN_COMPLETE`: The `LOGIN_COMPLETE` is emitted following a `LOGIN` event
   and signifies that the login process completed successfully. This event is
   only local, which means that it doesn't originate on the service worker. Its
@@ -219,16 +220,17 @@ login form)
 
 Exceptionally, the `LOGIN` event can also be emitted locally in `app/identity.js`.
 This happens when _there already is an active session_ and
-`'gi.actions/identity/login'`` is not called (i.e., when opening a new tab of
+`'gi.actions/identity/login'` is not called (i.e., when opening a new tab of
 Group Income on a device where the user has already logged in). The purpose of
 emitting this event is to trigger the various handlers that set up the app state
-based on an existing session.
+based on an existing session, thus reusing the same logic as for then this event
+originates in `actions/identity.js`.
 
 ##### Handlers
 
 ###### `app/identity.js`
 
-The handler in `app/identity.js` will react to a login event and load a copy of
+The handler in `app/identity.js` will react to a `LOGIN` event and load a copy of
 the app local state from IndexedDB. Once this is done, this handler will emit
 either of `LOGIN_COMPLETE` or `LOGIN_ERROR`, depending on whether an error
 occurred or not.
@@ -253,7 +255,7 @@ The `LOGIN_COMPLETE` (or `LOGIN_ERROR`) event is emitted in the handler of the
 ###### `app/identity.js`
 
 The `gi.app/identity/login` selector sets up event listeners for
-`LOGIN_COMPLETE` and `LOGIN_ERROR` and returns after either of these are
+`LOGIN_COMPLETE` and `LOGIN_ERROR` and returns after either of these is
 received.
 
 ###### `setupChelonia.js`
