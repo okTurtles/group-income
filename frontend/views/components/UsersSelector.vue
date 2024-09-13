@@ -104,8 +104,6 @@ export default ({
       if (keyCode === 13 || keyCode === 39) { // Enter
         this.$emit('submit')
         return
-      } else if (keyCode === 8 && !this.value && this.usernames.length) { // Backspace
-        this.remove(this.usernames[this.usernames.length - 1])
       }
 
       this.value = this.$refs.input.textContent
@@ -117,9 +115,6 @@ export default ({
   watch: {
     value () {
       this.$emit('change', this.value)
-    },
-    usernames () {
-      this.clear()
     }
   }
 }: Object)
