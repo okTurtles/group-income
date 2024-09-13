@@ -41,7 +41,7 @@ export default (sbp('sbp/selectors/register', {
     //       because it uses fields of the identity contract state including height, cek, csk
     //       this conflict error can cause the heisenbug mostly in Cypress
     //       https://okturtles.slack.com/archives/C0EH7P20Y/p1720053305870019?thread_ts=1720025185.746849&cid=C0EH7P20Y
-    return sbp('gi.actions/kv/set', {
+    return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       data,
@@ -182,7 +182,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to update preferences without an active session')
     }
 
-    return sbp('gi.actions/kv/set', {
+    return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.PREFERENCES,
       data,
@@ -241,7 +241,7 @@ export default (sbp('sbp/selectors/register', {
       return null
     }
 
-    return sbp('gi.actions/kv/set', {
+    return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       data: applyStorageRules(data),
