@@ -323,6 +323,10 @@ Cypress.Commands.add('giCreateGroup', (name, {
           }
           sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
 
+          const timeoutId = setTimeout(() => {
+            reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
+          }, 5000)
+
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
@@ -333,10 +337,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
               ruleThreshold
             }
           })
-
-          const timeoutId = setTimeout(() => {
-            reject(new Error('Timed out waiting for JOINED_GROUP event and active profile status'))
-          }, 5000)
         })()
       }).then(() => {
         const router = sbp('controller/router')

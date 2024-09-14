@@ -202,7 +202,7 @@ const periodicNotificationEntries = [
     }
   },
   {
-    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    type: PERIODIC_NOTIFICATION_TYPE.MIN5,
     notificationData: {
       stateKey: '',
       emitCondition ({ rootGetters }) {
