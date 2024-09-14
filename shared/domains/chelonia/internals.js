@@ -510,12 +510,42 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          // Process message to ensure that it is valid. Should this thow,
-          // we propagate the error.
+          // Process message to ensure that it is valid. Should this throw,
+          // we propagate the error. Calling `processMessage` will perform
+          // validation by checking signatures, well-formedness and, in the case
+          // of actions, by also calling both the `validate` method (which
+          // doesn't mutate the state) and the `process` method (which could
+          // mutate the state).
+          // `GIMessage` objects have an implicit `direction` field that's set
+          // based on how the object was constructed. For messages that will be
+          // sent to the server (this case), `direction` is set to `outgoing`.
+          // This `direction` affects how certain errors are reported during
+          // processing, and is also exposed to contracts (which could then
+          // alter their behavior based on this) to support some features (such
+          // as showing users that a certain message is 'pending').
+          // Validation ensures that we don't write messages known to be invalid.
+          // Although those invalid messages will be ignored if sent anyhow,
+          // sending them is wasteful.
+          // The only way to know for sure if a message is valid or not is using
+          // the same logic that would be used if the message was received,
+          // hence the call to `processMessage`. Validation requires having the
+          // state and all mutations that would be applied. For example, when
+          // joining a chatroom, this is usually done by sending an OP_ATOMIC
+          // that contains OP_KEY_ADD and OP_ACTION_ENCRYPTED. Correctly
+          // validating this operation requires applying the OP_KEY_ADD to the
+          // state in order to know whether OP_ACTION_ENCRYPTED has a valid
+          // signature or not.
+          // We also rely on this logic to keep different contracts in sync
+          // when there are side-effects. For example, the side-effect in a
+          // group for someone joining a chatroom can call the `join` action
+          // on the chatroom unconditionally, since validation will prevent
+          // the message from being sent.
           // Because of this, 'chelonia/private/in/processMessage' SHOULD NOT
           // change the global Chelonia state and it MUST NOT call any
           // side-effects or change the global state in a way that affects
           // the meaning of any future messages or successive invocations.
+          // Note: mutations to the contract state, if any, are immediately
+          // discarded (see the temporary object created using `cloneDeep`).
           await sbp('chelonia/private/in/processMessage', entry, cloneDeep(state || {}))
 
           // if this isn't the first event (i.e., OP_CONTRACT), recreate and
