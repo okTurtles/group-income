@@ -469,7 +469,7 @@ const getters = {
     return Object.entries(groups)
       // $FlowFixMe[incompatible-use]
       .filter(([, { hasLeft }]) => !hasLeft)
-      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID, active: state[contractID]?.profiles[identityContractID]?.status === PROFILE_STATUS.ACTIVE }))
+      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID, active: state[contractID]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE }))
   },
   profilesByGroup (state, getters) {
     return groupID => {
