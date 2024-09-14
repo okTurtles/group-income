@@ -171,7 +171,7 @@ and that presentation depends on correctly sending and processing events.
 
 Since logging in and out occurs in the browsing context as a result of user
 interaction, it's special in the sense that it's a 'shared state' event that
-originates in the browsing context. This makes the process be harder to picture
+originates in the browsing context. This makes the process harder to picture
 than most other things, where there is a clearer hierarchy.
 
 In addition, there are two entry points to the log in process: one that happens
