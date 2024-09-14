@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
@@ -9,6 +9,7 @@ const initSummary = {
   picture: undefined,
   attributes: {},
   isPrivate: false,
+  isDMToMySelf: false,
   isGeneral: false,
   isJoined: false,
   members: {},
@@ -45,8 +46,10 @@ const ChatMixin: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfilesById',
+      'ourIdentityContractId',
       'isDirectMessage',
-      'isGroupDirectMessage'
+      'isGroupDirectMessage',
+      'isGroupDirectMessageToMyself'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -60,16 +63,23 @@ const ChatMixin: Object = {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
         picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
+      const chatroomMemberKeys = Object.keys(this.currentChatRoomState.members)
+      const isPrivate = this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      const isDMToMySelf = isPrivate &&
+        this.currentChatRoomState.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE &&
+        chatroomMemberKeys.length === 1 &&
+        chatroomMemberKeys[0] === this.ourIdentityContractId
 
       return {
         chatRoomID: this.currentChatRoomId,
         title,
         picture,
         attributes: Object.assign({}, this.currentChatRoomState.attributes),
-        isPrivate: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        isPrivate,
+        isDMToMySelf,
         isGeneral: this.groupGeneralChatRoomId === this.currentChatRoomId,
         isJoined: true,
-        members: Object.fromEntries(Object.keys(this.currentChatRoomState.members).map(memberID => {
+        members: Object.fromEntries(chatroomMemberKeys.map(memberID => {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
           return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
@@ -104,8 +114,7 @@ const ChatMixin: Object = {
       const summarizedAttr = this.groupChatRooms[chatRoomID]
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, members } = summarizedAttr
-        const activeMembers = Object
-          .entries(members)
+        const activeMembers = Object.entries(members)
           .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
           .map(([username]) => {
             const { displayName, picture, email } = this.globalProfile(username) || {}
