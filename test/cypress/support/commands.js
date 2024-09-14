@@ -225,7 +225,10 @@ Cypress.Commands.add('giLogin', (username, {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
           if (router.history.current.path === '/dashboard') return
-          return router.push({ path: '/dashboard' }) // .catch(() => {})
+          return router.push({ path: '/dashboard' }).catch((e) => {
+            console.error('@@@@@---@@@@2 [cypress]', e.message, e.stack)
+            throw e
+          }) // .catch(() => {})
         }
       })
     })
