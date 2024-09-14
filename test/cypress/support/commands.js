@@ -341,7 +341,10 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        return router.push({ path: '/dashboard' })
+        return router.push({ path: '/dashboard' }).catch((e) => {
+          console.error('@@@@@---@@@@ [cypress]', e.message, e.stack)
+          throw e
+        })
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
