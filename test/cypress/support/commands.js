@@ -307,7 +307,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 } = {}) => {
   if (bypassUI) {
     cy.window().its('sbp').then(sbp => {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         (async () => {
           const eventHandler = ({ groupContractID }) => {
             if (groupContractID === cID) {
@@ -315,7 +315,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
               const invervalId = setInterval(() => {
                 if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
                   clearTimeout(invervalId)
-                  resolve()
+                  clearTimeout(timeoutId)
+                  resolve(sbp('chelonia/contract/wait', groupContractID))
                 }
               }, 5)
             }
@@ -332,6 +333,10 @@ Cypress.Commands.add('giCreateGroup', (name, {
               ruleThreshold
             }
           })
+
+          const timeoutId = setTimeout(() => {
+            reject(new Error('Timed out waiting for JOINED_GROUP event and active profile status'))
+          }, 5000)
         })()
       }).then(() => {
         const router = sbp('controller/router')
