@@ -794,6 +794,9 @@ export const reactiveClearObject = (o: Object, fn: (o: Object, k: string | numbe
 
 export const checkCanBeGarbageCollected = function (id: string): boolean {
   const rootState = sbp(this.config.stateSelector)
+  if (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) {
+    console.error('@@@@@@@%% checkCanBeGarbageCollected', id, rootState.contracts?.[id]?.references)
+  }
   return (
     // Check persistent references
     (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&

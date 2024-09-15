@@ -528,7 +528,7 @@ async function startApp () {
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         // This loads CHELONIA_STATE when _not_ running as a service worker
-        const cheloniaState = await sbp('gi.db/settings/load', 'CHELONIA_STATE')
+        const cheloniaState = await sbp('chelonia/rootState')
         if (!cheloniaState || !identityContractID) return
         if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
         if (this.ephemeral.finishedLogin === 'yes') return
@@ -537,7 +537,12 @@ async function startApp () {
         await sbp('gi.app/identity/login', { identityContractID })
         await sbp('chelonia/contract/sync', identityContractID)
         const contractIDs = groupContractsByType(cheloniaState.contracts)
-        await syncContractsInOrder(contractIDs)
+        console.error('@@@@@@main', contractIDs)
+        await syncContractsInOrder(contractIDs).then((x) => {
+          console.error('@@@@@@main[ok]', contractIDs)
+        }).catch((e) => {
+          console.error('@@@@@@main[fail]', contractIDs, e.message)
+        })
       }).catch(async e => {
         this.removeLoadingAnimation()
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
