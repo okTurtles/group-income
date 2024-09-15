@@ -447,7 +447,7 @@ export default ({
     },
     filterPayment (payment) {
       const {
-        amount, username, displayName,
+        amount, displayName,
         // NOTE: 'accepted payment method' is not implemented yet, so 'acceptedMethods' just a dummy field for now.
         // TODO: update the field name & the related logic (e.g. 'matchesMethodFilter' below) accordingly
         //       once 'accepted payment method' is implemented in the contract.
@@ -458,7 +458,7 @@ export default ({
 
       const matchesMethodFilter = methodFilterVal === 'all' || acceptedMethods.includes(methodFilterVal)
       const matchesSearchQuery = searchQuery === '' ||
-        `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
+        `${amount}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
 
       return matchesMethodFilter && matchesSearchQuery
     },

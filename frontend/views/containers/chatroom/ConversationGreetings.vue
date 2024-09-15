@@ -44,6 +44,9 @@ export default ({
     creatorID: {
       type: String
     },
+    dmToMyself: {
+      type: Boolean
+    },
     type: {
       type: String
     },
@@ -57,6 +60,10 @@ export default ({
   computed: {
     ...mapGetters(['ourIdentityContractId', 'isGroupDirectMessage']),
     text () {
+      if (this.dmToMyself) {
+        return L('You can post private notes to yourself here.')
+      }
+
       return {
         GIBot: L('I’m here to keep you update while you are away.'),
         // TODO: need to change text
