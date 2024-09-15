@@ -1,10 +1,11 @@
 <template lang='pug'>
 proposal-template(
+  ref='modalTemplate'
   :title='L("Add new members")'
   :disabled='!ephemeral.isValid'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
-  variant='addMember'
+  :variant='shouldGenerateInvitesImmediately ? "addMemberImmediate" : "addMember"'
   @submit='submit'
 )
   fieldset.c-fieldset(
@@ -86,7 +87,11 @@ export default ({
       'currentWelcomeInvite',
       'groupShouldPropose',
       'groupSettings'
-    ])
+    ]),
+    shouldGenerateInvitesImmediately () {
+      return this.currentWelcomeInvite.expires < Date.now() && // 1. anyone-can-join invite has expired
+        !this.groupShouldPropose // 2. The group is not big enough to create a proposal
+    }
   },
   methods: {
     inviteeUpdate (e, index) {
@@ -132,11 +137,10 @@ export default ({
       }
     },
     async submit (form) {
-      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
-      const shouldGenerateInvitesImmediately = isWelcomeInviteExpired && !this.groupShouldPropose
-
-      if (shouldGenerateInvitesImmediately) {
+      if (this.shouldGenerateInvitesImmediately) {
         await this.generateInviteImmediately()
+
+        this.$refs.modalTemplate.close()
       } else {
         let hasFailed = false
         // NOTE: All invitees proposals will expire at the exact same time.

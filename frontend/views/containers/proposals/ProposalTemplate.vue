@@ -128,7 +128,7 @@ export default ({
     },
     variant: {
       validator (value) {
-        return ['addMember', 'removeMember'].indexOf(value) > -1
+        return ['addMember', 'addMemberImmediate', 'removeMember'].indexOf(value) > -1
       }
     },
     shouldImmediateChange: Boolean
@@ -213,6 +213,7 @@ export default ({
     submitTextNonProposal () {
       const text = {
         addMember: L('Send invitation'),
+        addMemberImmediate: L('Create invitation'),
         removeMember: L('Remove Member'),
         default: L('Change')
       }
@@ -247,7 +248,7 @@ export default ({
       await this.$listeners.submit(form)
     },
     onEnterPressed () {
-      if (this.hasNextStep && !this.disabled) {
+      if (this.hasNextStep && this.shouldPropose && !this.disabled) {
         this.next()
       }
     }
