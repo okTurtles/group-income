@@ -210,15 +210,22 @@ Cypress.Commands.add('giLogin', (username, {
     cy.window().its('sbp').then(sbp => {
       const joinedGroupPromise = new Promise((resolve) => {
         if (firstLoginAfterJoinGroup) {
-          sbp('okTurtles.events/once', JOINED_GROUP, ({ groupContractID }) => {
-            resolve(
-              sbp('chelonia/contract/wait', groupContractID)
-            )
-          })
+          const eventHandler = ({ groupContractID }) => {
+            sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
+            const invervalId = setInterval(() => {
+              if (sbp('state/vuex/getters').ourProfileActive) {
+                clearInterval(invervalId)
+                resolve(sbp('chelonia/contract/wait', groupContractID))
+              }
+            }, 5)
+          }
+
+          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
         } else {
           resolve()
         }
       })
+      console.error('@@@@@---@@@@2 [cypress] --')
       return sbp('gi.app/identity/login', { username, password }).then(() => {
         return joinedGroupPromise
       }).then(() => {
@@ -227,7 +234,7 @@ Cypress.Commands.add('giLogin', (username, {
           if (router.history.current.path === '/dashboard') return
           return router.push({ path: '/dashboard' }).catch((e) => {
             console.error('@@@@@---@@@@2 [cypress]', e.message, e.stack)
-            throw e
+            throw new Error(e.message + '@@@@@---@@@@2,' + firstLoginAfterJoinGroup)
           }) // .catch(() => {})
         }
       })
@@ -317,7 +324,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
               const invervalId = setInterval(() => {
                 if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
-                  clearTimeout(invervalId)
+                  clearInterval(invervalId)
                   clearTimeout(timeoutId)
                   resolve(sbp('chelonia/contract/wait', groupContractID))
                 }
@@ -330,6 +337,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
             reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
           }, 5000)
 
+          // console.error('@@@@@---@@@@ [cypress] --')
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
@@ -346,7 +354,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
         if (router.history.current.path === '/dashboard') return
         return router.push({ path: '/dashboard' }).catch((e) => {
           console.error('@@@@@---@@@@ [cypress]', e.message, e.stack)
-          throw e
+          throw new Error(e.message + '@@@@@---@@@@')
         })
       })
     })
