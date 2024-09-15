@@ -235,18 +235,12 @@ export class GIMessage {
   static createV1_0 (
     {
       contractID,
-      // originatingContractID is used when one contract writes to another. in this case
-      // originatingContractID is the one sending the message to contractID.
-      originatingContractID,
-      originatingContractHeight,
       previousHEAD = null,
       height = 0,
       op,
       manifest
     }: {
       contractID: string | null,
-      originatingContractID?: string,
-      originatingContractHeight?: number,
       previousHEAD?: ?string,
       height?: ?number,
       op: GIOpRaw,
@@ -258,8 +252,6 @@ export class GIMessage {
       previousHEAD,
       height,
       contractID,
-      originatingContractID,
-      originatingContractHeight,
       op: op[0],
       manifest
     }
@@ -450,8 +442,6 @@ export class GIMessage {
   isFirstMessage (): boolean { return !this.head().contractID }
 
   contractID (): string { return this.head().contractID || this.hash() }
-
-  originatingContractID (): string { return this.head().originatingContractID || this.contractID() }
 
   serialize (): string { return this._mapping.value }
 
