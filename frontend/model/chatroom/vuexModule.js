@@ -43,26 +43,28 @@ const getters = {
       for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
         const chatRoomState = rootState[chatRoomID]
         const directMessageSettings = getters.ourDirectMessages[chatRoomID]
+        const myIdendityId = getters.ourIdentityContractId
 
         // NOTE: skip DMs whose chatroom contracts are not synced yet
-        if (!chatRoomState || !chatRoomState.members?.[getters.ourIdentityContractId]) {
+        if (!chatRoomState || !chatRoomState.members?.[myIdendityId]) {
           continue
         }
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
         const members = Object.keys(chatRoomState.members)
+        const isDMToMyself = members.length === 1 && members[0] === myIdendityId
         const partners = members
-          .filter(memberID => memberID !== getters.ourIdentityContractId)
+          .filter(memberID => memberID !== myIdendityId)
           .sort((p1, p2) => {
             const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
             const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
         const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
-        if (directMessageSettings.visible && hasActiveMember) {
+        if (directMessageSettings.visible && (isDMToMyself || hasActiveMember)) {
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
           //       possibly with the badge of the number of partners.
-          const lastJoinedPartner = partners[partners.length - 1]
+          const lastJoinedPartner = isDMToMyself ? myIdendityId : partners[partners.length - 1]
           const lastMsgTimeStamp = chatRoomState.messages?.length > 0
             ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
             : 0
@@ -80,9 +82,12 @@ const getters = {
             // identity contract IDs differently in some way (e.g., font, font size,
             // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
             // users (e.g., 'user1' changing their display name to 'user2')
-            title: partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+            title: isDMToMyself
+              ? getters.userDisplayNameFromID(myIdendityId)
+              : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
             lastMsgTimeStamp,
-            picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture
+            picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
+            isDMToMyself // Can be useful when certain things in UI are meant only for 'DM to myself'
           }
         }
       }
@@ -95,15 +100,22 @@ const getters = {
   // NOTE: this getter is used to find the ID of the direct message in the current group
   //       with the name[s] of partner[s]. Normally it's more useful to find direct message
   //       by the partners instead of contractID
-  ourGroupDirectMessageFromUserIds (state, getters) {
+  ourGroupDirectMessageFromUserIds (state, getters, rootState) {
     return (partners) => { // NOTE: string | string[]
       if (typeof partners === 'string') {
         partners = [partners]
       }
+
+      const shouldFindDMToMyself = partners.length === 1 && partners[0] === rootState.loggedIn.identityContractID
       const currentGroupDirectMessages = getters.ourGroupDirectMessages
       return Object.keys(currentGroupDirectMessages).find(chatRoomID => {
-        const cPartners = currentGroupDirectMessages[chatRoomID].partners.map(partner => partner.contractID)
-        return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
+        const chatRoomSettings = currentGroupDirectMessages[chatRoomID]
+
+        if (shouldFindDMToMyself) return chatRoomSettings.isDMToMyself
+        else {
+          const cPartners = chatRoomSettings.partners.map(partner => partner.contractID)
+          return cPartners.length === partners.length && union(cPartners, partners).length === partners.length
+        }
       })
     }
   },
@@ -114,6 +126,12 @@ const getters = {
   isDirectMessage (state, getters) {
     // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomID => !!getters.ourDirectMessages[chatRoomID || getters.currentChatRoomId]
+  },
+  isGroupDirectMessageToMyself (state, getters) {
+    return chatRoomID => {
+      const chatRoomSettings = getters.ourGroupDirectMessages[chatRoomID || getters.currentChatRoomId]
+      return !!chatRoomSettings && chatRoomSettings?.isDMToMyself
+    }
   },
   isJoinedChatRoom (state, getters, rootState) {
     return (chatRoomID: string, memberID?: string) => !!rootState[chatRoomID]?.members?.[memberID || getters.ourIdentityContractId]

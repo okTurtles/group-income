@@ -6,17 +6,18 @@ import {
   CHATROOM_TYPES,
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
-import { has, omit, cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
+import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { LOGIN, LOGOUT, KV_QUEUE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, serializeKey, keyId, keygen, deserializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
@@ -226,55 +227,65 @@ export default (sbp('sbp/selectors/register', {
     }
     return userID
   },
-  'gi.actions/identity/_private/login': async function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
-    transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
+  'gi.actions/identity/login': function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
+    // This wrapper ensures that there is at most one login flow action executed
+    // at any given time. Because of the async work done when logging in and out,
+    // it could happen that, e.g., `gi.actions/identity/login` is called before
+    // a previous call to `gi.actions/identity/logout` completed (this should
+    // not be allowed by the UI, and it'd require that users do things very
+    // quickly, but using automation can cause this).
+    // To prevent issues, the login and logout actions are wrapped an placed in
+    // a queue.
+    return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', async () => {
+      console.debug('[gi.actions/identity/login] Scheduled call starting', identityContractID)
+      transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
-    await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
-    await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
+      await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
+      await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
-    try {
-      if (!state) {
+      try {
+        if (!state) {
         // Make sure we don't unsubscribe from our own identity contract
         // Note that this should be done _after_ calling
         // `chelonia/storeSecretKeys`: If the following line results in
         // syncing the identity contract and fetching events, the secret keys
         // for processing them will not be available otherwise.
-        await sbp('chelonia/contract/retain', identityContractID)
-      } else {
+          await sbp('chelonia/contract/retain', identityContractID)
+        } else {
         // If there is a state, we've already retained the identity contract
         // but might need to fetch the latest events
-        await sbp('chelonia/contract/sync', identityContractID, { force: true })
+          await sbp('chelonia/contract/sync', identityContractID, { force: true })
+        }
+      } catch (e) {
+        console.error('Error during login contract sync', e)
+        throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
       }
-    } catch (e) {
-      console.error('Error during login contract sync', e)
-      throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
-    }
-
-    try {
-      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
-      sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
-
-      const contractIDs = groupContractsByType(cheloniaState?.contracts)
-      await syncContractsInOrder(contractIDs)
 
       try {
+        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
+
+        const contractIDs = groupContractsByType(cheloniaState?.contracts)
+        await syncContractsInOrder(contractIDs)
+
+        try {
         // The state above might be null, so we re-grab it
-        const cheloniaState = sbp('chelonia/rootState')
+          const cheloniaState = sbp('chelonia/rootState')
 
-        // The updated list of groups
-        const groupIds = Object.keys(cheloniaState[identityContractID].groups)
+          // The updated list of groups
+          const groupIds = Object.keys(cheloniaState[identityContractID].groups)
 
-        // contract sync might've triggered an async call to /remove, so
-        // wait before proceeding
-        // $FlowFixMe[incompatible-call]
-        await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
+          // contract sync might've triggered an async call to /remove, so
+          // wait before proceeding
+          // $FlowFixMe[incompatible-call]
+          await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
 
-        // Call 'gi.actions/group/join' on all groups which may need re-joining
-        await Promise.allSettled(
-          groupIds.map(async groupId => (
+          // Call 'gi.actions/group/join' on all groups which may need re-joining
+          await Promise.allSettled(
+            groupIds.map(async groupId => (
             // (1) Check whether the contract exists (may have been removed
             //     after sync)
-            has(cheloniaState.contracts, groupId) &&
+              has(cheloniaState.contracts, groupId) &&
               has(cheloniaState[identityContractID].groups, groupId) &&
               // (2) Check whether the join process is still incomplete
               //     This needs to be re-checked because it may have changed after
@@ -298,45 +309,47 @@ export default (sbp('sbp/selectors/register', {
                 const humanErr = L('Join group error during login: {msg}', { msg: e?.message || 'unknown error' })
                 throw new GIErrorUIRuntimeError(humanErr)
               })
-          ))
-        )
+            ))
+          )
 
-        // update the 'lastLoggedIn' field in user's group profiles
-        // For this, we select only those groups for which membership is
-        // active (meaning current groups), instead of historical groups (groups
-        // that have been joined in the past)
-        Object.entries(cheloniaState[identityContractID].groups)
-          // $FlowFixMe[incompatible-use]
-          .filter(([, { hasLeft }]) => !hasLeft)
-          .forEach(([cId]) => {
+          // update the 'lastLoggedIn' field in user's group profiles
+          // note: this is immediate and only done when logging in with a password
+          Object.entries(cheloniaState[identityContractID].groups)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, { hasLeft }]) => !hasLeft)
+            .forEach(([cId]) => {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
-            if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-              sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
-            }
-          })
-      } catch (e) {
-        console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
-        throw e
-      }
+              if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
+                sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId, throttle: false }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
+              }
+            })
+        } catch (e) {
+          console.error('[gi.actions/identity/login] Error re-joining groups after login', e)
+          throw e
+        }
 
-      return identityContractID
-    } catch (e) {
-      sbp('chelonia/clearTransientSecretKeys', transientSecretKeys.map(({ key }) => keyId(key)))
-      console.error('gi.actions/identity/login failed!', e)
-      const humanErr = L('Failed to login: {reportError}', LError(e))
-      await sbp('gi.actions/identity/_private/logout')
-        .catch((e) => {
-          console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
-        })
-      throw new GIErrorUIRuntimeError(humanErr, { cause: e })
-    }
+        return identityContractID
+      } catch (e) {
+        sbp('chelonia/clearTransientSecretKeys', transientSecretKeys.map(({ key }) => keyId(key)))
+        console.error('gi.actions/identity/login failed!', e)
+        const humanErr = L('Failed to login: {reportError}', LError(e))
+        await sbp('gi.actions/identity/_private/logout')
+          .catch((e) => {
+            console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
+          })
+        throw new GIErrorUIRuntimeError(humanErr, { cause: e })
+      }
+    })
   },
   'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {
     const contractIDs = await sbp('gi.actions/identity/signup', { username, email, passwordFn })
     await sbp('gi.actions/identity/login', { username, passwordFn })
     return contractIDs
   },
+  // Unlike the login function, the wrapper for logging out is used using a
+  // dedicated selector to allow it to be called from the login selector (if
+  // error occurs)
   'gi.actions/identity/_private/logout': async function () {
     let cheloniaState
     try {
@@ -369,9 +382,9 @@ export default (sbp('sbp/selectors/register', {
         await sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, () => {})
 
         // See comment below for 'gi.db/settings/delete'
-        const cheloniaState = await sbp('okTurtles.eventQueue/queueEvent', 'CHELONIA_STATE', async () => {
+        const cheloniaState = await sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, async () => {
           const cheloniaState = cloneDeep(sbp('chelonia/rootState'))
-          await sbp('gi.db/settings/delete', 'CHELONIA_STATE')
+          await sbp('gi.db/settings/delete', SETTING_CHELONIA_STATE)
           return cheloniaState
         })
         await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
@@ -478,7 +491,9 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp('state/vuex/state')
     // TODO: Can't use rootGetters
     const rootGetters = sbp('state/vuex/getters')
-    const partnerIDs = params.data.memberIDs.map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
+    const partnerIDs = params.data.memberIDs
+      .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
+      .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
     //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
     const currentGroupId = rootState.currentGroupId
@@ -645,9 +660,6 @@ export default (sbp('sbp/selectors/register', {
         deleteResult?.map((r, i) => r.status === 'rejected' && toDelete[i]).filter(Boolean))
       throw new Error('Some CIDs could not be deleted')
     }
-  },
-  'gi.actions/identity/login': (...params) => {
-    return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/login', ...params])
   },
   'gi.actions/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
