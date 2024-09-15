@@ -475,9 +475,8 @@ export default (sbp('sbp/selectors/register', {
                 }
               })
 
-              await sbp('gi.actions/group/kv/updateLastLoggedIn', {
-                contractID: params.contractID
-              }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
+              // lastLoggedIn defaults to join date, hence there's no need to set
+              // it here
             } catch (e) {
               console.error(`[gi.actions/group/join] Error while accepting invite ${params.contractID}:`, e)
               throw e

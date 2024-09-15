@@ -259,8 +259,7 @@ async function startApp () {
       sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
         switch (key) {
           case KV_KEYS.LAST_LOGGED_IN: {
-            const rootState = sbp('state/vuex/state')
-            Vue.set(rootState.lastLoggedIn, contractID, data)
+            sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
             break
           }
           case KV_KEYS.UNREAD_MESSAGES:
