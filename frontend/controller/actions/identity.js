@@ -317,9 +317,7 @@ export default (sbp('sbp/selectors/register', {
           )
 
           // update the 'lastLoggedIn' field in user's group profiles
-          // For this, we select only those groups for which membership is
-          // active (meaning current groups), instead of historical groups (groups
-          // that have been joined in the past)
+          // note: this is immediate and only done when logging in with a password
           Object.entries(cheloniaState[identityContractID].groups)
             // $FlowFixMe[incompatible-use]
             .filter(([, { hasLeft }]) => !hasLeft)
@@ -327,7 +325,7 @@ export default (sbp('sbp/selectors/register', {
             // We send this action only for groups we have fully joined (i.e.,
             // accepted an invite and added our profile)
               if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
-                sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
+                sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId, throttle: false }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
               }
             })
         } catch (e) {
