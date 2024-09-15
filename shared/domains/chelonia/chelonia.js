@@ -559,6 +559,7 @@ export default (sbp('sbp/selectors/register', {
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       handlers: {
+        ...options.handlers,
         'subscription-succeeded': (event) => {
           const { channelID } = event.detail
           if (this.subscriptionSet.has(channelID)) {
