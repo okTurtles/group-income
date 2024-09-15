@@ -9,7 +9,13 @@ export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGIN_COMPLETE = 'login-complete'
 export const LOGOUT = 'logout'
+
 export const ONLINE = 'online'
+export const OFFLINE = 'offline'
+export const RECONNECTING = 'reconnecting'
+export const RECONNECTION_FAILED = 'reconnection-failed'
+
+export const KV_EVENT = 'kv-event'
 
 export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'

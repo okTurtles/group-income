@@ -167,6 +167,7 @@ const appSettings = localforage.createInstance({
 class EmptyValue extends Error {}
 
 export const SETTING_CURRENT_USER = '@settings/currentUser'
+export const SETTING_CHELONIA_STATE = 'CHELONIA_STATE'
 
 sbp('sbp/selectors/register', {
   'gi.db/ready': function () {
