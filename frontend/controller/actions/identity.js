@@ -259,12 +259,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
       const contractIDs = groupContractsByType(cheloniaState?.contracts)
-      console.error('@@@@@@identity', contractIDs)
-      await syncContractsInOrder(contractIDs).then((x) => {
-        console.error('@@@@@@main[ok]', contractIDs)
-      }).catch((e) => {
-        console.error('@@@@@@main[fail]', contractIDs, e.message)
-      })
+      await syncContractsInOrder(contractIDs)
 
       try {
         // The state above might be null, so we re-grab it

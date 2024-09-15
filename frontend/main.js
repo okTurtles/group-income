@@ -537,12 +537,7 @@ async function startApp () {
         await sbp('gi.app/identity/login', { identityContractID })
         await sbp('chelonia/contract/sync', identityContractID)
         const contractIDs = groupContractsByType(cheloniaState.contracts)
-        console.error('@@@@@@main', contractIDs)
-        await syncContractsInOrder(contractIDs).then((x) => {
-          console.error('@@@@@@main[ok]', contractIDs)
-        }).catch((e) => {
-          console.error('@@@@@@main[fail]', contractIDs, e.message)
-        })
+        await syncContractsInOrder(contractIDs)
       }).catch(async e => {
         this.removeLoadingAnimation()
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
