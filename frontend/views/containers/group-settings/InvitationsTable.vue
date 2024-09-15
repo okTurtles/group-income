@@ -132,7 +132,8 @@ import {
   MINS_MILLIS,
   HOURS_MILLIS,
   DAYS_MILLIS,
-  MONTHS_MILLIS
+  MONTHS_MILLIS,
+  YEARS_MILLIS
 } from '@model/contracts/shared/time.js'
 
 export default ({
@@ -244,13 +245,16 @@ export default ({
     },
     readableExpiryInfo (expiryTime) {
       const timeLeft = expiryTime - Date.now()
-      const timeLeftInDays = timeLeft / DAYS_MILLIS
+      let remainder
 
-      const years = Math.floor(timeLeftInDays / 365)
-      const remainderDays = timeLeftInDays % 365
-      const months = Math.floor(remainderDays / 365 * 12)
-
-      let remainder = timeLeft % MONTHS_MILLIS
+      const years = Math.floor(timeLeft / YEARS_MILLIS)
+      remainder = years // ratio of months left where 12 as the 100% eg) 10 months and half => 10.5
+        ? (timeLeft % YEARS_MILLIS) / YEARS_MILLIS
+        : timeLeft / YEARS_MILLIS
+      const months = Math.floor(remainder * 12)
+      remainder = months
+        ? (remainder % 1) * MONTHS_MILLIS // eg) when given 10.5 months, take 0.5 from it and turn it into 15days
+        : timeLeft
       const days = Math.floor(remainder / DAYS_MILLIS)
       const daysCeil = Math.ceil(remainder / DAYS_MILLIS) // to be used for when expiryTime > '1 month'
       remainder = remainder % DAYS_MILLIS
@@ -258,6 +262,7 @@ export default ({
       remainder = remainder % HOURS_MILLIS
       const minutes = Math.ceil(remainder / MINS_MILLIS)
 
+      // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days
       if (years) return L('{years}y {months}m {days}d left', { years, months, days: daysCeil })
       if (months) return L('{months}m {days}d left', { months, days: daysCeil })
 
