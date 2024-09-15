@@ -159,6 +159,9 @@ const mutations = {
   setPreferences (state, value) {
     Vue.set(state, 'preferences', value)
   },
+  setLastLoggedIn (state, [groupID, value]) {
+    Vue.set(state.lastLoggedIn, groupID, value)
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
@@ -456,7 +459,8 @@ const getters = {
   },
   // list of group names and contractIDs
   groupsByName (state, getters) {
-    const groups = state[getters.ourIdentityContractId]?.groups
+    const identityContractID = getters.ourIdentityContractId
+    const groups = state[identityContractID]?.groups
     if (!groups) return []
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
@@ -465,7 +469,7 @@ const getters = {
     return Object.entries(groups)
       // $FlowFixMe[incompatible-use]
       .filter(([, { hasLeft }]) => !hasLeft)
-      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID }))
+      .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID, active: state[contractID]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE }))
   },
   profilesByGroup (state, getters) {
     return groupID => {

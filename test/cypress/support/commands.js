@@ -210,11 +210,17 @@ Cypress.Commands.add('giLogin', (username, {
     cy.window().its('sbp').then(sbp => {
       const joinedGroupPromise = new Promise((resolve) => {
         if (firstLoginAfterJoinGroup) {
-          sbp('okTurtles.events/once', JOINED_GROUP, ({ groupContractID }) => {
-            resolve(
-              sbp('chelonia/contract/wait', groupContractID)
-            )
-          })
+          const eventHandler = ({ groupContractID }) => {
+            sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
+            const invervalId = setInterval(() => {
+              if (sbp('state/vuex/getters').ourProfileActive) {
+                clearInterval(invervalId)
+                resolve(sbp('chelonia/contract/wait', groupContractID))
+              }
+            }, 5)
+          }
+
+          sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
         } else {
           resolve()
         }
@@ -307,20 +313,25 @@ Cypress.Commands.add('giCreateGroup', (name, {
 } = {}) => {
   if (bypassUI) {
     cy.window().its('sbp').then(sbp => {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         (async () => {
           const eventHandler = ({ groupContractID }) => {
             if (groupContractID === cID) {
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
               const invervalId = setInterval(() => {
                 if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
-                  clearTimeout(invervalId)
-                  resolve()
+                  clearInterval(invervalId)
+                  clearTimeout(timeoutId)
+                  resolve(sbp('chelonia/contract/wait', groupContractID))
                 }
               }, 5)
             }
           }
           sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
+
+          const timeoutId = setTimeout(() => {
+            reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
+          }, 5000)
 
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
