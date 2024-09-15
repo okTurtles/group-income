@@ -34,6 +34,7 @@
             :creatorID='summary.attributes.creatorID'
             :type='summary.attributes.type'
             :joined='summary.isJoined'
+            :dm-to-myself='summary.isDMToMySelf'
             :name='summary.title'
             :description='summary.attributes.description'
           )
@@ -43,6 +44,7 @@
             :creatorID='summary.attributes.creatorID'
             :type='summary.attributes.type'
             :joined='summary.isJoined'
+            :dm-to-myself='summary.isDMToMySelf'
             :name='summary.title'
             :description='summary.attributes.description'
           )

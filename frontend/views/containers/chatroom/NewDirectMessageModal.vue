@@ -41,8 +41,8 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{chatRoomID, partners, lastJoinedPartner, title, picture} in filteredRecents'
-          @click='onAddSelection(partners.map(p => p.contractID))'
+          v-for='({chatRoomID, partners, members, lastJoinedPartner, title, picture, isDMToMyself}, index) in filteredRecents'
+          @click='onRecentConvoSelection(filteredRecents[index])'
           :key='chatRoomID'
         )
           profile-card(
@@ -57,7 +57,8 @@ modal-base-template.has-background(
               .c-name(data-test='lastJoinedPartner')
                 span
                   strong {{ title }}
-                  .c-display-name(v-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
+                  i18n.c-display-name(v-if='isDMToMyself' data-test='profileName') (you)
+                  .c-display-name(v-else-if='title !== lastJoinedPartner' data-test='profileName') @{{ partners.map(p => p.username).join(', @') }}
 
       .is-subtitle
         i18n(
@@ -117,6 +118,7 @@ export default ({
     ...mapGetters([
       'userDisplayNameFromID',
       'usernameFromID',
+      'ourUsername',
       'ourContactProfilesById',
       'ourIdentityContractId',
       'currentGroupContactProfilesById'
@@ -126,9 +128,6 @@ export default ({
 
       return currentGroupUserIds
         .filter(userID => {
-          if (userID === this.ourIdentityContractId) {
-            return false
-          }
           const chatRoomID = this.ourGroupDirectMessageFromUserIds(userID)
           return !chatRoomID || !this.ourGroupDirectMessages[chatRoomID].visible
         })
@@ -138,8 +137,8 @@ export default ({
       return Object.keys(this.ourGroupDirectMessages)
         .filter(chatRoomID => this.ourGroupDirectMessages[chatRoomID].visible)
         .map(chatRoomID => {
-          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp } = this.ourGroupDirectMessages[chatRoomID]
-          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp }
+          const { title, partners, lastJoinedPartner, picture, lastMsgTimeStamp, isDMToMyself } = this.ourGroupDirectMessages[chatRoomID]
+          return { chatRoomID, title, partners, lastJoinedPartner, picture, lastMsgTimeStamp, isDMToMyself }
         })
         .sort((former, latter) => {
           const diff = former.lastMsgTimeStamp - latter.lastMsgTimeStamp
@@ -150,10 +149,11 @@ export default ({
       if (!this.searchText && !this.selections.length) {
         return this.ourRecentConversations
       }
-      return this.ourRecentConversations.filter(({ title, partners }) => {
+      return this.ourRecentConversations.filter(({ title, partners, isDMToMyself }) => {
         const partnerIDs = partners.map(p => p.contractID)
         const upperCasedSearchText = String(this.searchText).toUpperCase().normalize()
-        if (!difference(partnerIDs, this.selections).length) {
+
+        if (!isDMToMyself && !difference(partnerIDs, this.selections).length) {
           // match with contractIDs
           return false
         } else if (String(title).toUpperCase().normalize().includes(upperCasedSearchText)) {
@@ -180,6 +180,9 @@ export default ({
           }, true)
         }
       }).sort((a, b) => a.partners.length > b.partners.length ? 1 : -1)
+    },
+    hasDMToMyself () {
+      return !!this.filteredRecents.length && this.filteredRecents.some(convo => convo.isDMToMyself)
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
@@ -211,16 +214,32 @@ export default ({
         }
       }
     },
+    onRecentConvoSelection (convo) {
+      const { isDMToMyself, partners } = convo
+
+      if (isDMToMyself) {
+        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.ourIdentityContractId)
+        this.redirect(chatRoomID)
+      } else {
+        this.onAddSelection(partners.map(p => p.contractID))
+      }
+    },
     onRemoveSelection (contractID) {
       this.selections = this.selections.filter(cID => cID !== contractID)
     },
     async onSubmit () {
       if (this.selections.length) {
-        const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.selections)
-        if (chatRoomID) {
-          this.redirect(chatRoomID)
+        const isDMToMyself = this.selections.length === 1 &&
+          this.selections[0] === this.ourIdentityContractId
+        const memberIds = isDMToMyself
+          ? this.selections
+          : this.selections.filter(id => id !== this.ourIdentityContractId)
+
+        const existingChatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
+        if (existingChatRoomID) {
+          this.redirect(existingChatRoomID)
         } else {
-          await this.createDirectMessage(this.selections)
+          await this.createDirectMessage(memberIds)
         }
       } else if (this.searchText) {
         if (this.filteredRecents.length) {
@@ -297,6 +316,7 @@ export default ({
 }
 
 .c-display-name {
+  display: block;
   color: var(--text_1);
 }
 
