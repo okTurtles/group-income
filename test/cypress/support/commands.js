@@ -225,17 +225,13 @@ Cypress.Commands.add('giLogin', (username, {
           resolve()
         }
       })
-      console.error('@@@@@---@@@@2 [cypress] --')
       return sbp('gi.app/identity/login', { username, password }).then(() => {
         return joinedGroupPromise
       }).then(() => {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
           if (router.history.current.path === '/dashboard') return
-          return router.push({ path: '/dashboard' }).catch((e) => {
-            console.error('@@@@@---@@@@2 [cypress]', e.message, e.stack)
-            throw new Error(e.message + '@@@@@---@@@@2,' + firstLoginAfterJoinGroup)
-          }) // .catch(() => {})
+          return router.push({ path: '/dashboard' }) // .catch(() => {})
         }
       })
     })
@@ -337,7 +333,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
             reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
           }, 5000)
 
-          // console.error('@@@@@---@@@@ [cypress] --')
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
               name,
@@ -352,10 +347,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        return router.push({ path: '/dashboard' }).catch((e) => {
-          console.error('@@@@@---@@@@ [cypress]', e.message, e.stack)
-          throw new Error(e.message + '@@@@@---@@@@')
-        })
+        return router.push({ path: '/dashboard' })
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
