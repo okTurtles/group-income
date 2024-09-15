@@ -253,113 +253,139 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
-  'gi.app/identity/_private/login': async function ({ username, password: wpassword, identityContractID }: {
+  'gi.app/identity/login': function ({ username, password: wpassword, identityContractID }: {
     username: ?string, password: ?Secret<string>, identityContractID: string
   }) {
-    if (username) {
-      identityContractID = await sbp('namespace/lookup', username)
-    }
+    // This wrapper ensures that there is at most one login flow action executed
+    // at any given time. Because of the async work done when logging in and out,
+    // it could happen that, e.g., `gi.actions/identity/login` is called before
+    // a previous call to `gi.actions/identity/logout` completed (this should
+    // not be allowed by the UI, and it'd require that users do things very
+    // quickly, but using automation can cause this).
+    // To prevent issues, the login and logout actions are wrapped an placed in
+    // a queue.
+    return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', async () => {
+      console.debug('[gi.app/identity/login] Scheduled call starting', identityContractID, username)
+      if (username) {
+        identityContractID = await sbp('namespace/lookup', username)
+      }
 
-    if (!identityContractID) {
-      throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
-    }
-
-    const password = wpassword?.valueOf()
-    const transientSecretKeys = []
-    if (password) {
-      try {
-        const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
-        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
-        transientSecretKeys.push(IEK)
-      } catch (e) {
-        console.error('caught error calling retrieveSalt:', e)
+      if (!identityContractID) {
         throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
       }
-    }
 
-    try {
-      sbp('appLogs/startCapture', identityContractID)
-      const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
-      let loginCompleteHandler, loginErrorHandler
+      const password = wpassword?.valueOf()
+      const transientSecretKeys = []
+
+      // If we're creating a new session, here we derive the IEK. This key (not
+      // the password) will be passed to the service worker.
+      if (password) {
+        try {
+          const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
+          const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+          transientSecretKeys.push(IEK)
+        } catch (e) {
+          console.error('caught error calling retrieveSalt:', e)
+          throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+        }
+      }
 
       try {
-        const loginCompletePromise = new Promise((resolve, reject) => {
-          const loginCompleteHandler = ({ identityContractID: id }) => {
-            sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
-            if (id === identityContractID) {
+        sbp('appLogs/startCapture', identityContractID)
+        const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
+        let loginCompleteHandler, loginErrorHandler
+
+        try {
+          // Since some steps now will happen asynchronously through events,
+          // we set up a promise that will resolve once the login process is
+          // complete
+          const loginCompletePromise = new Promise((resolve, reject) => {
+            const loginCompleteHandler = ({ identityContractID: id }) => {
+              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+              if (id === identityContractID) {
               // Before the promise resolves, we need to save the state
               // by calling 'state/vuex/save' to ensure that refreshing the page
               // results in a page with the same state.
-              resolve(sbp('state/vuex/save'))
-            } else {
-              reject(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${id}`))
+                resolve(sbp('state/vuex/save'))
+              } else {
+                reject(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${id}`))
+              }
             }
-          }
-          const loginErrorHandler = ({ identityContractID: id, error }) => {
-            sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
-            if (id === identityContractID) {
-              reject(error)
-            } else {
-              reject(new Error(`Identity contract ID mismatch during login (on error): ${identityContractID} != ${id}`))
+            const loginErrorHandler = ({ identityContractID: id, error }) => {
+              sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
+              if (id === identityContractID) {
+                reject(error)
+              } else {
+                reject(new Error(`Identity contract ID mismatch during login (on error): ${identityContractID} != ${id}`))
+              }
             }
+
+            sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
+            sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
+          })
+
+          // Are we logging in and setting up a fresh session or loading an
+          // existing session?
+          if (password) {
+            // Setting up a fresh session:
+            // Send `cheloniaState` and the Vuex `state` to the action.
+            // `cheloniaState` will be used to restore the Chelonia state
+            // and `state` will be sent back to replace the current Vuex state
+            // after login. When using a service worker, all tabs will receive
+            // a new Vuex state to replace their state with.
+            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
+          } else {
+            // If an existing session exists, we just emit the LOGIN event
+            // to set the local Vuex state and signal we're ready.
+            sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
           }
 
-          sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
-          sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
-        })
+          // Wait until all events have been processed before returning
+          await loginCompletePromise
+        } catch (e) {
+          sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
+          sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
 
-        if (password) {
-          // Send `cheloniaState` and the Vuex `state` to the action.
-          // `cheloniaState` will be used to restore the Chelonia state
-          // and `state` will be sent back to replace the current Vuex state
-          // after login. When using a service worker, all tabs will receive
-          // a new Vuex state to replace their state with.
-          await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
-        } else {
-          sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
+          const errMessage = e?.message || String(e)
+          console.error('Error during login contract sync', e)
+
+          const promptOptions = {
+            heading: L('Login error'),
+            question: L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
+            primaryButton: L('No'),
+            secondaryButton: L('Yes')
+          }
+
+          const result = await sbp('gi.ui/prompt', promptOptions)
+          if (!result) {
+            return sbp('gi.app/identity/logout')
+          } else {
+            sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
+            throw e
+          }
         }
 
-        await loginCompletePromise
+        return identityContractID
       } catch (e) {
-        sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
-        sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
-
-        const errMessage = e?.message || String(e)
-        console.error('Error during login contract sync', e)
-
-        const promptOptions = {
-          heading: L('Login error'),
-          question: L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-          primaryButton: L('No'),
-          secondaryButton: L('Yes')
-        }
-
-        const result = await sbp('gi.ui/prompt', promptOptions)
-        if (!result) {
-          return sbp('gi.app/identity/logout')
-        } else {
-          sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
-          throw e
-        }
+        console.error('gi.app/identity/login failed!', e)
+        const humanErr = L('Failed to login: {reportError}', LError(e))
+        alert(humanErr)
+        await sbp('gi.app/identity/_private/logout')
+          .catch((e) => {
+            console.error('[gi.app/identity/login] Error calling logout (after failure to login)', e)
+          })
+        throw new GIErrorUIRuntimeError(humanErr)
       }
-
-      return identityContractID
-    } catch (e) {
-      console.error('gi.app/identity/login failed!', e)
-      const humanErr = L('Failed to login: {reportError}', LError(e))
-      alert(humanErr)
-      await sbp('gi.app/identity/_private/logout')
-        .catch((e) => {
-          console.error('[gi.app/identity/login] Error calling logout (after failure to login)', e)
-        })
-      throw new GIErrorUIRuntimeError(humanErr)
-    }
+    })
   },
   'gi.app/identity/signupAndLogin': async function ({ username, email, password }) {
     const contractIDs = await sbp('gi.app/identity/signup', { username, email, password })
     await sbp('gi.app/identity/login', { username, password })
     return contractIDs
   },
+  // Unlike the login function, the wrapper for logging out is used using a
+  // dedicated selector to allow it to be called from the login selector (if
+  // error occurs)
   'gi.app/identity/_private/logout': async function () {
     try {
       const state = cloneDeep(sbp('state/vuex/state'))
@@ -381,9 +407,6 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }
-  },
-  'gi.app/identity/login': (...params) => {
-    return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/login', ...params])
   },
   'gi.app/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/logout', ...params])

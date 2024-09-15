@@ -279,95 +279,101 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/_private/join': async function (params: $Exact<ChelKeyRequestParams>) {
-    // We want to process any current events first, so that we process leave
-    // actions and don't interfere with the leaving process (otherwise, the
-    // side-effects could prevent us from fully leaving).
-    await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
-    try {
-      const { loggedIn } = sbp('chelonia/rootState')
-      if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
+  'gi.actions/group/join': function (params: $Exact<ChelKeyRequestParams>) {
+    // This wrapper ensures that all join actions for the same contract happen in
+    // order. Because join is complex and there are many async steps involved,
+    // multiple calls to join for the same contract can result in conflicting with
+    // each other
+    return sbp('okTurtles.eventQueue/queueEvent', `JOIN_GROUP-${params.contractID}`, async () => {
+      console.debug('[gi.actions/group/join] Scheduled call starting', params.contractID, params)
+      // We want to process any current events first, so that we process leave
+      // actions and don't interfere with the leaving process (otherwise, the
+      // side-effects could prevent us from fully leaving).
+      await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
+      try {
+        const { loggedIn } = sbp('chelonia/rootState')
+        if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
 
-      const { identityContractID: userID } = loggedIn
+        const { identityContractID: userID } = loggedIn
 
-      // When syncing the group contract, the contract might call /remove on
-      // itself if we had previously joined and left the group. By using
-      // ephemeral we ensure that it's not deleted until we've finished
-      // trying to join.
-      await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
-      const rootState = sbp('chelonia/rootState')
-      if (!rootState.contracts[params.contractID]) {
-        console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
-        return
-      }
+        // When syncing the group contract, the contract might call /remove on
+        // itself if we had previously joined and left the group. By using
+        // ephemeral we ensure that it's not deleted until we've finished
+        // trying to join.
+        await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
+        const rootState = sbp('chelonia/rootState')
+        if (!rootState.contracts[params.contractID]) {
+          console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
+          return
+        }
 
-      if (rootState.contracts[params.contractID].type !== 'gi.contracts/group') {
-        throw Error(`Contract ${params.contractID} is not a group`)
-      }
+        if (rootState.contracts[params.contractID].type !== 'gi.contracts/group') {
+          throw Error(`Contract ${params.contractID} is not a group`)
+        }
 
-      // At this point, we do not know whether we should continue with the
-      // join process, because we don't know where we stand in the process.
-      // One edge case we need to handle is that according to our records
-      // (in the identity contract) we're members, and we have completed
-      // all of the steps for joining in the past, but we've then been removed
-      // while we were offline. In this case, we should *not* re-join
-      // automatically, even if we have a valid invitation secret and are
-      // technically able to. However, in the previous situation we *should*
-      // attempt to rejoin if the action was user-initiated.
-      const hasKeyShareBeenRespondedBy = await sbp('chelonia/contract/hasKeyShareBeenRespondedBy', userID, params.contractID, params.reference)
+        // At this point, we do not know whether we should continue with the
+        // join process, because we don't know where we stand in the process.
+        // One edge case we need to handle is that according to our records
+        // (in the identity contract) we're members, and we have completed
+        // all of the steps for joining in the past, but we've then been removed
+        // while we were offline. In this case, we should *not* re-join
+        // automatically, even if we have a valid invitation secret and are
+        // technically able to. However, in the previous situation we *should*
+        // attempt to rejoin if the action was user-initiated.
+        const hasKeyShareBeenRespondedBy = await sbp('chelonia/contract/hasKeyShareBeenRespondedBy', userID, params.contractID, params.reference)
 
-      const state = rootState[params.contractID]
+        const state = rootState[params.contractID]
 
-      // Do we have the secret keys with the right permissions to be able to
-      // perform all operations in the group? If we haven't, we are not
-      // able to participate in the group yet and may need to send a key
-      // request.
-      const hasSecretKeys = await sbp('chelonia/contract/receivedKeysToPerformOperation', userID, state, '*')
+        // Do we have the secret keys with the right permissions to be able to
+        // perform all operations in the group? If we haven't, we are not
+        // able to participate in the group yet and may need to send a key
+        // request.
+        const hasSecretKeys = await sbp('chelonia/contract/receivedKeysToPerformOperation', userID, state, '*')
 
-      // Do we need to send a key request?
-      // If we don't have the group contract in our state and
-      // params.originatingContractID is set, it means that we're joining
-      // through an invite link, and we must send a key request to complete
-      // the joining process.
-      const sendKeyRequest = (!hasKeyShareBeenRespondedBy && !hasSecretKeys && !!params.originatingContractID)
-      const pendingKeyShares = await sbp('chelonia/contract/waitingForKeyShareTo', state, userID, params.reference)
+        // Do we need to send a key request?
+        // If we don't have the group contract in our state and
+        // params.originatingContractID is set, it means that we're joining
+        // through an invite link, and we must send a key request to complete
+        // the joining process.
+        const sendKeyRequest = (!hasKeyShareBeenRespondedBy && !hasSecretKeys && !!params.originatingContractID)
+        const pendingKeyShares = await sbp('chelonia/contract/waitingForKeyShareTo', state, userID, params.reference)
 
-      // If we are expecting to receive keys, set up an event listener
-      // We are expecting to receive keys if:
-      //   (a) we are about to send a key request; or
-      //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
-      if (sendKeyRequest || pendingKeyShares) {
+        // If we are expecting to receive keys, set up an event listener
+        // We are expecting to receive keys if:
+        //   (a) we are about to send a key request; or
+        //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
+        if (sendKeyRequest || pendingKeyShares) {
         // Event handler for continuing the join process if the keys are
         // shared with us during the current session
-        const eventHandler = ({ contractID, sharedWithContractID, signingKeyName }) => {
-          if (contractID !== params.contractID || sharedWithContractID !== userID || (pendingKeyShares && !pendingKeyShares.includes(signingKeyName))) {
-            return
+          const eventHandler = ({ contractID, sharedWithContractID, signingKeyName }) => {
+            if (contractID !== params.contractID || sharedWithContractID !== userID || (pendingKeyShares && !pendingKeyShares.includes(signingKeyName))) {
+              return
+            }
+
+            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+            sbp('okTurtles.events/off', LOGOUT, logoutHandler)
+            // The event handler recursively calls this same selector
+            // A different path should be taken, since te event handler
+            // should be called after the key request has been answered
+            // and processed
+            sbp('gi.actions/group/join', params).catch((e) => {
+              console.error('[gi.actions/group/join] Error during join (inside CONTRACT_HAS_RECEIVED_KEYS event handler)', e)
+            })
+          }
+          const logoutHandler = () => {
+            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
           }
 
-          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-          sbp('okTurtles.events/off', LOGOUT, logoutHandler)
-          // The event handler recursively calls this same selector
-          // A different path should be taken, since te event handler
-          // should be called after the key request has been answered
-          // and processed
-          sbp('gi.actions/group/join', params).catch((e) => {
-            console.error('[gi.actions/group/join] Error during join (inside CONTRACT_HAS_RECEIVED_KEYS event handler)', e)
-          })
-        }
-        const logoutHandler = () => {
-          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          // The event handler is configured before sending the request
+          // to avoid race conditions
+          sbp('okTurtles.events/once', LOGOUT, logoutHandler)
+          sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
         }
 
-        // The event handler is configured before sending the request
-        // to avoid race conditions
-        sbp('okTurtles.events/once', LOGOUT, logoutHandler)
-        sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-      }
+        // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
 
-      // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
-
-      // After syncing the group contract, we send a key request
-      if (sendKeyRequest) {
+        // After syncing the group contract, we send a key request
+        if (sendKeyRequest) {
         // Send the key request
         // **IMPORTANT**: DO NOT AWAIT ON /join from a function that is
         // already waiting on the identity contract. Details:
@@ -383,135 +389,129 @@ export default (sbp('sbp/selectors/register', {
         // (identity) contract. Calls to keyRequest require
         // simultaneously waiting on the group and the identity
         // (originating) contract.
-        await sbp('chelonia/out/keyRequest', {
-          ...omit(params, ['options']),
-          innerEncryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
-          permissions: [GIMessage.OP_ACTION_ENCRYPTED],
-          allowedActions: ['gi.contracts/identity/joinDirectMessage'],
-          reference: params.reference,
-          encryptKeyRequestMetadata: true,
-          hooks: {
-            prepublish: params.hooks?.prepublish,
-            postpublish: null
-          }
-        }).catch((e) => {
-          console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
-          throw e
-        })
+          await sbp('chelonia/out/keyRequest', {
+            ...omit(params, ['options']),
+            innerEncryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+            reference: params.reference,
+            encryptKeyRequestMetadata: true,
+            hooks: {
+              prepublish: params.hooks?.prepublish,
+              postpublish: null
+            }
+          }).catch((e) => {
+            console.error(`[gi.actions/group/join] Error while sending key request for ${params.contractID}:`, e?.message || e, e)
+            throw e
+          })
 
-        // Nothing left to do until the keys are received
+          // Nothing left to do until the keys are received
 
-      // Called after logging in or during an existing session from the event
-      // handler above. It handles the tasks related to joining the group for
-      // the first time (if that's the case) or just sets this group as the
-      // current group.
-      // This block must be run after having received the group's secret keys
-      // (i.e., the CSK and the CEK) that were requested earlier.
-      } else if (hasSecretKeys && !pendingKeyShares) {
+          // Called after logging in or during an existing session from the event
+          // handler above. It handles the tasks related to joining the group for
+          // the first time (if that's the case) or just sets this group as the
+          // current group.
+          // This block must be run after having received the group's secret keys
+          // (i.e., the CSK and the CEK) that were requested earlier.
+        } else if (hasSecretKeys && !pendingKeyShares) {
         // We're joining for the first time
         // In this case, we share our profile key with the group, call the
         // inviteAccept action and join the General chatroom
-        if (state.profiles?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
+          if (state.profiles?.[userID]?.status !== PROFILE_STATUS.ACTIVE) {
           // All reads are done here at the top to ensure that they happen
           // synchronously, before any await calls.
           // If reading after an asynchronous operation, we might get inconsistent
           // values, as new operations could have been received on the contract
-          const CEKid = await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-          const PEKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
-          const CSKid = await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
-          const userCSKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-          const userCSKdata = rootState[userID]._vm.authorizedKeys[userCSKid].data
+            const CEKid = await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+            const PEKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'pek')
+            const CSKid = await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'csk')
+            const userCSKid = await sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
+            const userCSKdata = rootState[userID]._vm.authorizedKeys[userCSKid].data
 
-          try {
+            try {
             // Share our PEK with the group so that group members can see
             // our name and profile information
-            PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-              contractID: params.contractID,
-              contractName: 'gi.contracts/group',
-              subjectContractID: userID,
-              keyIds: [PEKid]
-            })
-
-            const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
-            // Check to avoid adding existing keys to the contract
-            if (!existingForeignKeys?.includes(userCSKid)) {
-              await sbp('chelonia/out/keyAdd', {
+              PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
                 contractID: params.contractID,
                 contractName: 'gi.contracts/group',
-                data: [encryptedOutgoingData(params.contractID, CEKid, {
-                  foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-                  id: userCSKid,
-                  data: userCSKdata,
-                  permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-                  allowedActions: '*',
-                  purpose: ['sig'],
-                  ringLevel: Number.MAX_SAFE_INTEGER,
-                  name: `${userID}/${userCSKid}`
-                })],
-                signingKeyId: CSKid
+                subjectContractID: userID,
+                keyIds: [PEKid]
               })
-            }
 
-            // Send inviteAccept action to the group to add ourselves to the members list
-            await sbp('chelonia/contract/wait', params.contractID)
-            await sbp('gi.actions/group/inviteAccept', {
-              ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
-              data: {
+              const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+              // Check to avoid adding existing keys to the contract
+              if (!existingForeignKeys?.includes(userCSKid)) {
+                await sbp('chelonia/out/keyAdd', {
+                  contractID: params.contractID,
+                  contractName: 'gi.contracts/group',
+                  data: [encryptedOutgoingData(params.contractID, CEKid, {
+                    foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                    id: userCSKid,
+                    data: userCSKdata,
+                    permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                    allowedActions: '*',
+                    purpose: ['sig'],
+                    ringLevel: Number.MAX_SAFE_INTEGER,
+                    name: `${userID}/${userCSKid}`
+                  })],
+                  signingKeyId: CSKid
+                })
+              }
+
+              // Send inviteAccept action to the group to add ourselves to the members list
+              await sbp('chelonia/contract/wait', params.contractID)
+              await sbp('gi.actions/group/inviteAccept', {
+                ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+                data: {
                 // The 'reference' value is used to help keep group joins
                 // updated. A matching value is required when leaving a group,
                 // which prevents us from accidentally leaving a group due to
                 // a previous leave action when re-joining
-                reference: rootState[userID].groups[params.contractID].hash
-              },
-              hooks: {
-                prepublish: params.hooks?.prepublish,
-                postpublish: null
-              }
-            })
+                  reference: rootState[userID].groups[params.contractID].hash
+                },
+                hooks: {
+                  prepublish: params.hooks?.prepublish,
+                  postpublish: null
+                }
+              })
 
-            await sbp('gi.actions/group/kv/updateLastLoggedIn', {
-              contractID: params.contractID
-            }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
-          } catch (e) {
-            console.error(`[gi.actions/group/join] Error while accepting invite ${params.contractID}:`, e)
-            throw e
+              await sbp('gi.actions/group/kv/updateLastLoggedIn', {
+                contractID: params.contractID
+              }).catch((e) => console.error('[gi.actions/group/join] Error sending updateLastLoggedIn', e))
+            } catch (e) {
+              console.error(`[gi.actions/group/join] Error while accepting invite ${params.contractID}:`, e)
+              throw e
+            }
           }
-        }
 
-        sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, contractID: params.contractID })
-      // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
-      // This means that we've been removed from the group
-      } else if (!hasSecretKeys && !pendingKeyShares) {
+          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, contractID: params.contractID })
+          // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
+          // This means that we've been removed from the group
+        } else if (!hasSecretKeys && !pendingKeyShares) {
         // We have already sent a key request that hasn't been answered. We cannot
         // do much at this point, so we do nothing.
         // This could happen, for example, after logging in if we still haven't
         // received a response to the key request.
-      } else if (pendingKeyShares) {
-        console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
-      } else {
-        console.error('Requested to join group but the state appears invalid. This should be unreachable. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
-      }
-    } catch (e) {
-      console.error('gi.actions/group/join failed!', e)
-      sbp('gi.ui/prompt', {
-        heading: L('Failed to join the group'),
-        question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
-        primaryButton: L('Close')
-      })
-    } finally {
+        } else if (pendingKeyShares) {
+          console.info('Requested to join group but already waiting for OP_KEY_SHARE. contractID=' + params.contractID)
+        } else {
+          console.error('Requested to join group but the state appears invalid. This should be unreachable. contractID=' + params.contractID, { sendKeyRequest, hasSecretKeys, pendingKeyShares })
+        }
+      } catch (e) {
+        console.error('gi.actions/group/join failed!', e)
+        sbp('gi.ui/prompt', {
+          heading: L('Failed to join the group'),
+          question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
+          primaryButton: L('Close')
+        })
+      } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove
       // actions on the contract. This will have no side-effects if /remove on
       // the group contract hasn't been called.
-      await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
-    }
-  },
-  // This wrapper ensures that all join actions for the same contract happen in
-  // order. Because join is complex and there are many async steps involved,
-  // multiple calls to join for the same contract can result in conflicting with
-  // each other
-  'gi.actions/group/join': function (params: $Exact<ChelKeyRequestParams>) {
-    return sbp('okTurtles.eventQueue/queueEvent', `JOIN_GROUP-${params.contractID}`, ['gi.actions/group/_private/join', params])
+        await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
+      }
+    })
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
     const identityContractID = sbp('chelonia/rootState').loggedIn.identityContractID
