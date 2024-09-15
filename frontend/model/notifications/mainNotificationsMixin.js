@@ -222,6 +222,26 @@ const periodicNotificationEntries = [
       },
       shouldClearStateKey: () => true
     }
+  },
+  {
+    type: PERIODIC_NOTIFICATION_TYPE.MIN30,
+    notificationData: {
+      stateKey: '',
+      emitCondition: () => true,
+      emit ({ rootState, rootGetters }) {
+        Object.values(rootGetters.ourContactProfilesById).filter(({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username).forEach(({ contractID }) => {
+          const username = rootState[contractID].attributes.username
+          sbp('namespace/lookup', username, { skipCache: true }).then((cID) => {
+            if (cID !== contractID) {
+              console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
+            }
+          }).catch((e) => {
+            console.error('[periodic notification] Error looking up username', username, 'for', contractID, e)
+          })
+        })
+      },
+      shouldClearStateKey: () => true
+    }
   }
 ]
 
