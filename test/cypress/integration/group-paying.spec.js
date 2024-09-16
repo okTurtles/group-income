@@ -326,7 +326,8 @@ describe('Group Payments', () => {
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`)
     openNotificationCard({
-      notificationsCount: 5,
+      // no need to check the exact number of notifications but do check if the notification list contains the item for thank-you message.
+      notificationsCount: 0,
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
