@@ -45,6 +45,15 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
       .sort((a, b) => b.ringLevel - a.ringLevel)[0]?.id
 }
 
+export const findContractIDByForeignKeyId = (state: Object, keyId: string): ?string => {
+  if (!keyId || !state?._vm?.authorizedKeys?.[keyId]?.foreignKey) return
+
+  try {
+    const fkUrl = new URL(state._vm?.authorizedKeys?.[keyId]?.foreignKey)
+    return fkUrl.pathname
+  } catch {}
+}
+
 // TODO: Resolve inviteKey being added (doesn't have krs permission)
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys &&

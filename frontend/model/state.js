@@ -548,7 +548,8 @@ const getters = {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
           const username = checkedUsername(state, attributes.username, contractID)
-          profiles[attributes.username] = {
+          if (!username) return
+          profiles[username] = {
             ...attributes,
             username,
             contractID

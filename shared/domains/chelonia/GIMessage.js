@@ -214,6 +214,7 @@ export class GIMessage {
   _signedMessageData: SignedData<GIOpValue>
   _direction: GIMsgDirection
   _decryptedValue: Object
+  _innerSigningKeyId: ?string
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -405,6 +406,7 @@ export class GIMessage {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
         if (isSignedData(data.data)) {
+          this._innerSigningKeyId = data.data.signingKeyId
           this._decryptedValue = data.data.valueOf()
         } else {
           this._decryptedValue = data.data
@@ -417,6 +419,13 @@ export class GIMessage {
       // retrieved
       return undefined
     }
+  }
+
+  innerSigningKeyId (): any {
+    if (!this._decryptedValue) {
+      this.decryptedValue()
+    }
+    return this._innerSigningKeyId
   }
 
   head (): Object { return this._head }
@@ -475,14 +484,15 @@ export class GIMessage {
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesSerializeSymbol] (m: GIMessage) {
-    return [m.serialize(), m.direction(), m.decryptedValue()]
+    return [m.serialize(), m.direction(), m.decryptedValue(), m.innerSigningKey()]
   }
 
   // $FlowFixMe[unsupported-syntax]
-  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue]) {
+  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue, innerSigningKeyId]) {
     const m = GIMessage.deserialize(serialized)
     m._direction = direction
     m._decryptedValue = decryptedValue
+    m._innerSigningKeyId = innerSigningKeyId
     return m
   }
 }
