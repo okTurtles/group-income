@@ -260,11 +260,11 @@ export default ({
       remainder = remainder % DAYS_MILLIS
       const hours = Math.floor(remainder / HOURS_MILLIS)
       remainder = remainder % HOURS_MILLIS
-      const minutes = Math.ceil(remainder / MINS_MILLIS)
+      const minutes = Math.floor(remainder / MINS_MILLIS)
 
       // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days
-      if (years) return L('{years}y {months}m {days}d left', { years, months, days: daysCeil })
-      if (months) return L('{months}m {days}d left', { months, days: daysCeil })
+      if (years) return L('{years}yr {months}mth {days}d left', { years, months, days: daysCeil })
+      if (months) return L('{months}mth {days}d left', { months, days: daysCeil })
 
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
