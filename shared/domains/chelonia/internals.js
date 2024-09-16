@@ -643,7 +643,7 @@ export default (sbp('sbp/selectors/register', {
     const config = this.config
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
-    console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
+    console.debug('PROCESSING OPCODE:', opName, 'to', contractID)
     if (state?._volatile?.dirty) {
       console.debug('IGNORING OPCODE BECAUSE CONTRACT STATE IS MARKED AS DIRTY.', 'OPCODE:', opName, 'CONTRACT:', contractID)
       return
