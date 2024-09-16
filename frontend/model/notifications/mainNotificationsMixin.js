@@ -204,7 +204,7 @@ const periodicNotificationEntries = [
   {
     type: PERIODIC_NOTIFICATION_TYPE.MIN5,
     notificationData: {
-      stateKey: '',
+      stateKey: 'lastLoggedIn',
       emitCondition ({ rootGetters }) {
         return !!rootGetters.ourIdentityContractId
       },
@@ -223,22 +223,35 @@ const periodicNotificationEntries = [
       shouldClearStateKey: () => true
     }
   },
+  // The following fixes a rare issue that we're not sure exactly why it happens.
+  // Sometimes, the `namespace/lookup` call made as a side-effect in the identity
+  // contract seems to fail. The result of this is that the corresponding cached
+  // namespace lookup entry isn't populated and the username is missing from the
+  // UI. To fix this, we check for users that are missing a username and
+  // do this lookup manually.
+  // See: <https://github.com/okTurtles/group-income/pull/2306#pullrequestreview-2305605028>
   {
     type: PERIODIC_NOTIFICATION_TYPE.MIN30,
     notificationData: {
-      stateKey: '',
+      stateKey: 'username-fetch',
       emitCondition: () => true,
       emit ({ rootState, rootGetters }) {
-        Object.values(rootGetters.ourContactProfilesById).filter(({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username).forEach(({ contractID }) => {
-          const username = rootState[contractID].attributes.username
-          sbp('namespace/lookup', username, { skipCache: true }).then((cID) => {
-            if (cID !== contractID) {
-              console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
-            }
-          }).catch((e) => {
-            console.error('[periodic notification] Error looking up username', username, 'for', contractID, e)
+        Object.values(rootGetters.ourContactProfilesById)
+          // Only get users that are missing the cached lookup entry (!username)
+          // and that have a username defined (!!rootState[contractID]?.attributes?.username)
+          .filter(
+            ({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username)
+          .forEach(({ contractID }) => {
+            const username = rootState[contractID].attributes.username
+            // Do a manual lookup. This will populate the cache if successful.
+            sbp('namespace/lookup', username, { skipCache: true }).then((cID) => {
+              if (cID !== contractID) {
+                console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
+              }
+            }).catch((e) => {
+              console.error('[periodic notification] Error looking up username', username, 'for', contractID, e)
+            })
           })
-        })
       },
       shouldClearStateKey: () => true
     }

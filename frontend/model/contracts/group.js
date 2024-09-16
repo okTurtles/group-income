@@ -1339,10 +1339,7 @@ sbp('chelonia/defineContract', {
         chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
         description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, 'description')
       })),
-      process ({ data, direction }, { state }) {
-        if (direction === 'incoming') {
-          throw new Error('chatroom description error')
-        }
+      process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['description'] = data.description
       }
     },
