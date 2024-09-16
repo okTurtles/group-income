@@ -13,6 +13,7 @@ import {
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
+import { findContractIDByForeignKeyId } from '~/shared/domains/chelonia/utils.js'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
@@ -24,16 +25,28 @@ export default ({
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
       action = value.action
     }
+    const state = sbp('state/vuex/state')
+    let who
+
+    if (message.innerSigningKeyId()) {
+      const innerSigningContractID = findContractIDByForeignKeyId(state[message.contractID()], message.innerSigningKeyId())
+      who = innerSigningContractID && `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${innerSigningContractID}`
+    }
+
+    const Lparams = {
+      ...LTags('b'),
+      errName: error.name,
+      activity,
+      action: action ?? opType,
+      contract: state.contracts[contractID]?.type ?? contractID,
+      who,
+      errMsg: error.message ?? '?'
+    }
 
     return {
-      body: L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", {
-        ...LTags('b'),
-        errName: error.name,
-        activity,
-        action: action ?? opType,
-        contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
-        errMsg: error.message ?? '?'
-      }),
+      body: who
+        ? L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", Lparams)
+        : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`,

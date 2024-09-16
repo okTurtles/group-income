@@ -14,14 +14,14 @@ import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
-import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
-import type { EncryptedData } from './encryptedData.js'
-import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './chelonia-utils.js'
-import './internals.js'
+import type { EncryptedData } from './encryptedData.js'
+import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import './files.js'
+import './internals.js'
+import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, clearObject, checkCanBeGarbageCollected, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
+import { buildShelterAuthorizationHeader, checkCanBeGarbageCollected, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 

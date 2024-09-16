@@ -26,7 +26,13 @@ const typeToObjectMap = {
 }
 
 const validateNotificationData = objectOf({
-  stateKey: string,
+  stateKey: (value) => {
+    value = string(value)
+    if (value.length === 0) {
+      throw new TypeError('Empty notification data state key')
+    }
+    return value
+  },
   emitCondition: isFunction,
   emit: isFunction,
   shouldClearStateKey: isFunction
@@ -74,9 +80,14 @@ sbp('sbp/selectors/register', {
     clearTimeoutObject(every30MinTimeout)
   },
   'gi.periodicNotifications/importNotifications': function (entries) {
+    const keySet = new Set()
     for (const { type, notificationData } of entries) {
       if (!type || !notificationData) throw new Error('A required field in a periodic notification entry is missing.')
       validateNotificationData(notificationData)
+      if (keySet.has(notificationData.stateKey)) {
+        throw new Error('Duplicate periodic notification state key: ' + notificationData.stateKey)
+      }
+      keySet.add(notificationData.stateKey)
 
       const notificationList = typeToObjectMap[type].notifications
       notificationList.push(notificationData)

@@ -10,4 +10,4 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   }
-}))
+}): string[])

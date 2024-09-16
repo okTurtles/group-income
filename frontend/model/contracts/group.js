@@ -5,7 +5,7 @@
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -441,7 +441,7 @@ sbp('chelonia/defineContract', {
           sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
           mincomeAmount: numberRange(1, GROUP_MINCOME_MAX),
           mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
-          distributionDate: isPeriodStamp,
+          distributionDate: validatorFrom(isPeriodStamp),
           distributionPeriodLength: numberRange(1 * DAYS_MILLIS, GROUP_DISTRIBUTION_PERIOD_MAX_DAYS * DAYS_MILLIS),
           minimizeDistribution: boolean,
           proposals: objectOf({
@@ -987,12 +987,15 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
         objectMaybeOf({
           groupName: stringMax(GROUP_NAME_MAX_CHAR, 'groupName'),
-          groupPicture: x => typeof x === 'string',
+          groupPicture: unionOf(string, objectOf({
+            manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
+            downloadParams: optional(object)
+          })),
           sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
-          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeAmount: numberRange(Number.EPSILON, Number.MAX_VALUE),
           mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
-          distributionDate: x => typeof x === 'string',
-          allowPublicChannels: x => typeof x === 'boolean'
+          distributionDate: string,
+          allowPublicChannels: boolean
         })(data)
 
         const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
@@ -1037,8 +1040,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/groupProfileUpdate': {
       validate: actionRequireActiveMember(objectMaybeOf({
-        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
-        incomeAmount: x => typeof x === 'number' && x >= 0,
+        incomeDetailsType: validatorFrom(x => ['incomeAmount', 'pledgeAmount'].includes(x)),
+        incomeAmount: numberRange(0, Number.MAX_VALUE),
         pledgeAmount: numberRange(0, GROUP_MAX_PLEDGE_AMOUNT, 'pledgeAmount'),
         nonMonetaryAdd: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryAdd'),
         nonMonetaryEdit: objectOf({
