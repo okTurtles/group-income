@@ -240,7 +240,9 @@ const periodicNotificationEntries = [
           // Only get users that are missing the cached lookup entry (!username)
           // and that have a username defined (!!rootState[contractID]?.attributes?.username)
           .filter(
+            // $FlowFixMe[incompatible-use]
             ({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username)
+          // $FlowFixMe[incompatible-use]
           .forEach(({ contractID }) => {
             const username = rootState[contractID].attributes.username
             // Do a manual lookup. This will populate the cache if successful.
