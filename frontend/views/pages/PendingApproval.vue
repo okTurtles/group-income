@@ -61,6 +61,12 @@ export default ({
     const syncPromise = sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
       if (destroyed) return
       reset = false
+      // We don't want to accidentally unsubscribe from the group while this
+      // page is rendered, so we increase the ephemeral reference count.
+      // When this page is destroyed, the reference count is decreased as well.
+      // Proper (non-ephemeral) references are handled by the `identity/joinGroup`
+      // side-effects. In general, UI elements should not be changing
+      // non-ephemeral references.
       await sbp('chelonia/contract/retain', this.ephemeral.groupIdWhenMounted, { ephemeral: true })
       this.ephemeral.contractFinishedSyncing = true
       if (this.haveActiveGroupProfile) {
@@ -72,7 +78,7 @@ export default ({
     const listener = () => { reset = true }
     this.ephemeral.ondestroy = () => {
       destroyed = true
-      sbp('okTurtle.events/off', CHELONIA_RESET, listener)
+      sbp('okTurtles.events/off', CHELONIA_RESET, listener)
       syncPromise.finally(() => {
         if (reset) return
         sbp('chelonia/contract/release', this.ephemeral.groupIdWhenMounted, { ephemeral: true }).catch(e => {
@@ -80,7 +86,9 @@ export default ({
         })
       })
     }
-    sbp('okTurtle.events/on', CHELONIA_RESET, listener)
+    // If Chelonia was reset, it means that ephemeral references have been
+    // lost, and we should not release the contract.
+    sbp('okTurtles.events/on', CHELONIA_RESET, listener)
   },
   beforeDestroy () {
     this.ephemeral.ondestroy?.()
