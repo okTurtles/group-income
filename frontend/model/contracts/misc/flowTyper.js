@@ -449,3 +449,12 @@ export const actionRequireInnerSignature = (next: Function): Function => (data, 
   }
   return next(data, props)
 }
+export const validatorFrom = (fn) => {
+  function customType (value: mixed, _scope = '') {
+    if (!fn(value)) {
+      throw validatorError(customType, value, _scope)
+    }
+    return value
+  }
+  return customType
+}
