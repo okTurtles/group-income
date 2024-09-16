@@ -102,7 +102,7 @@ describe('Full walkthrough', function () {
           modules: { '@common/common.js': Common },
           allowedSelectors: [
             'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
-            'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+            'controller/router',
             'chelonia/queueInvocation',
             'gi.actions/chatroom/leave', 'gi.notifications/emit'
           ],
@@ -307,7 +307,7 @@ describe('Full walkthrough', function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
       groups.group1 = await createGroup('group1', users.alice)
-      await sbp('chelonia/contract/sync', groups.group1.contractID())
+      await sbp('chelonia/contract/retain', groups.group1.contractID())
     })
 
     it('Should post an event', function () {
@@ -315,7 +315,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should sync group and verify payments in state', async function () {
-      await sbp('chelonia/contract/sync', groups.group1.contractID())
+      await sbp('chelonia/contract/retain', groups.group1.contractID())
       should(Object.keys(vuexState[groups.group1.contractID()].payments).length).equal(1)
     })
 

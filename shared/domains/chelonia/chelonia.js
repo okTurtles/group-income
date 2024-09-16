@@ -10,7 +10,7 @@ import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel
 import type { Key } from './crypto.js'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
@@ -369,6 +369,7 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.sideEffectStacks)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
+    sbp('okTurtles.events/emit', CHELONIA_RESET)
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
     sbp('chelonia/private/startClockSync')
     if (newState) {
@@ -557,6 +558,21 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
+      handlers: {
+        ...options.handlers,
+        'subscription-succeeded': (event) => {
+          const { channelID } = event.detail
+          if (this.subscriptionSet.has(channelID)) {
+            // For new subscriptions, some messages could have been lost
+            // between the time the subscription was requested and it was
+            // actually set up. In these cases, force sync contracts to get them
+            // updated.
+            sbp('chelonia/private/out/sync', channelID, { force: true }).catch(err => {
+              console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
+            })
+          }
+        }
+      },
       // Map message handlers to transparently handle encryption and signatures
       messageHandlers: {
         ...(Object.fromEntries(
@@ -608,14 +624,13 @@ export default (sbp('sbp/selectors/register', {
         )),
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
-          // is called AFTER any currently-running calls to 'chelonia/contract/sync'
+          // is called AFTER any currently-running calls to 'chelonia/private/out/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           const { contractID } = GIMessage.deserializeHEAD(msg.data)
           sbp('chelonia/private/in/enqueueHandleEvent', contractID, msg.data)
         }
-      },
-      handlers: options.handlers
+      }
     })
     if (!this.contractsModifiedListener) {
       // Keep pubsub in sync (logged into the right "rooms") with 'state.contracts'
@@ -796,28 +811,26 @@ export default (sbp('sbp/selectors/register', {
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
-  'chelonia/contract/sync': function (contractIDs: string | string[], params?: { force?: boolean, resync?: boolean }): Promise<*> {
+  // eslint-disable-next-line require-await
+  'chelonia/contract/sync': async function (contractIDs: string | string[], params?: { resync?: boolean }): Promise<*> {
+    // The exposed `chelonia/contract/sync` selector is meant for users of
+    // Chelonia and not for internal use within Chelonia.
+    // It should only be called after `/retain` where needed (for example, when
+    // starting up Chelonia with a saved state)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    const forcedSync = !!params?.force
-    return Promise.all(listOfIds.map(contractID => {
-      if (!forcedSync && this.subscriptionSet.has(contractID)) {
-        const rootState = sbp(this.config.stateSelector)
-        if (!rootState[contractID]?._volatile?.dirty) {
-          return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop'])
+    // Verify that there's a valid reference count
+    listOfIds.forEach((id) => {
+      if (checkCanBeGarbageCollected.call(this, id)) {
+        if (process.env.CI) {
+          Promise.reject(new Error('[chelonia] Missing reference count for contract ' + id))
         }
+        console.error('[chelonia] Missing reference count for contract ' + id)
+        throw new Error('Missing reference count for contract')
       }
-      // enqueue this invocation in a serial queue to ensure
-      // handleEvent does not get called on contractID while it's syncing,
-      // but after it's finished. This is used in tandem with
-      // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
-      // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('chelonia/private/queueEvent', contractID, [
-        'chelonia/private/in/syncContract', contractID, params
-      ]).catch((err) => {
-        console.error(`[chelonia] failed to sync ${contractID}:`, err)
-        throw err // re-throw the error
-      })
-    }))
+    })
+    // Call the internal sync selector. `force` is always true as using `/sync`
+    // besides internally is only needed to force sync a contract
+    return sbp('chelonia/private/out/sync', listOfIds, { ...params, force: true })
   },
   'chelonia/contract/isSyncing': function (contractID: string, { firstSync = false } = {}): boolean {
     const isSyncing = !!this.currentSyncs[contractID]
@@ -891,7 +904,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }
-    return await sbp('chelonia/contract/sync', listOfIds)
+    return await sbp('chelonia/private/out/sync', listOfIds)
   },
   // the `try` parameter does not affect (ephemeral or persistent) reference
   // counts, but rather removes a contract if the reference count is zero
@@ -1119,7 +1132,7 @@ export default (sbp('sbp/selectors/register', {
       prepublish: hooks.prepublishContract,
       postpublish: hooks.postpublishContract
     })
-    await sbp('chelonia/contract/sync', contractID)
+    await sbp('chelonia/private/out/sync', contractID)
     const msg = await sbp(actionEncryptionKeyId
       ? 'chelonia/out/actionEncrypted'
       : 'chelonia/out/actionUnencrypted', {

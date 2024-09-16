@@ -208,10 +208,5 @@ sbp('sbp/selectors/register', {
         }
       })
     }
-
-    // TODO: Temporary sync until the server does signature validation
-    // This prevents us from sending messages signed with just-revoked keys
-    // Once the server enforces signatures, this can be removed
-    await sbp('chelonia/contract/sync', contractID, { force: true })
   }
 })
