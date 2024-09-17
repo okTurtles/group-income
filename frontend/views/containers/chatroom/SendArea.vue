@@ -992,7 +992,6 @@ export default ({
   &.is-editing {
     margin: 0;
     padding: 0;
-    overflow: hidden;
 
     .c-send-actions {
       position: relative;
