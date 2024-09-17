@@ -347,7 +347,7 @@ export default (sbp('sbp/selectors/register', {
           sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
 
           const errMessage = e?.message || String(e)
-          console.error('Error during login contract sync', e)
+          console.error('[gi.app/identity] Error during login contract sync', e)
 
           const promptOptions = {
             heading: L('Login error'),

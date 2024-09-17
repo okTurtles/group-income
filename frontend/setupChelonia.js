@@ -270,7 +270,7 @@ const setupChelonia = async (): Promise<*> => {
       'subscription-succeeded' (event) {
         const { channelID } = event.detail
         if (channelID in sbp('chelonia/rootState').contracts) {
-          sbp('chelonia/contract/sync', channelID, { force: true }).catch(err => {
+          sbp('chelonia/contract/sync', channelID).catch(err => {
             console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
           })
         }
@@ -280,12 +280,12 @@ const setupChelonia = async (): Promise<*> => {
 
   await sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
     // This loads CHELONIA_STATE when _not_ running as a service worker
-    const cheloniaState = await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE)
+    const cheloniaState = await sbp('chelonia/rootState')
     if (!cheloniaState || !identityContractID) return
     if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
     // it is important we first login before syncing any contracts here since that will load the
     // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
-    await sbp('chelonia/contract/sync', identityContractID, { force: true })
+    await sbp('chelonia/contract/sync', identityContractID)
     const contractIDs = groupContractsByType(cheloniaState.contracts)
     await syncContractsInOrder(contractIDs)
   })

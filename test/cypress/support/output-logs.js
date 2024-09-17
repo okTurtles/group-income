@@ -3,7 +3,7 @@
 // Copied directly from: https://github.com/cypress-io/cypress/issues/3199#issuecomment-466593084
 // ***********
 
-let logs = ''
+let logs = []
 
 Cypress.on('window:before:load', (window) => {
   // Only output app logs when running headless.
@@ -34,7 +34,7 @@ Cypress.on('window:before:load', (window) => {
       // Use JSON.stringify to avoid [object, object] in the output
       // logs += JSON.stringify(args.join(' ')) + '\n'
       try {
-        logs += JSON.stringify([consoleProperty, ...args]) + ',\n'
+        logs.push(JSON.stringify([consoleProperty, ...args]))
       } catch (e) {
         // sometimes stringify will fail because of a circular reference
         const argsCopy = []
@@ -45,12 +45,12 @@ Cypress.on('window:before:load', (window) => {
             argsCopy.push('[circular reference]')
           }
         }
-        logs += JSON.stringify([
+        logs.push(JSON.stringify([
           'ERROR(CYPRESS)',
           `couldn't stringify ${consoleProperty} message in app test due to ${e.name}: '${e.message}'`,
           'original message (with cycle removed):',
           ...argsCopy
-        ]) + ',\n'
+        ]))
       }
     }
   })
@@ -61,16 +61,16 @@ Cypress.on('window:before:load', (window) => {
 Cypress.mocha.getRunner().on('test', () => {
   // Every test reset your logs to be empty
   // This will make sure only logs from that test suite will be logged if a error happens
-  logs = ''
+  logs = []
 })
 
 // On a cypress fail. I add the console logs, from the start of test or after the last test fail to the
 // current fail, to the end of the error.stack property.
 Cypress.on('fail', (error) => {
   error.stack += '\nConsole Logs:\n========================\n'
-  error.stack += '[' + logs + ' null]'
+  error.stack += '[' + logs.slice(-500).join('\n') + ']'
   // clear logs after fail so we dont see duplicate logs
-  logs = ''
+  logs = []
   // still need to throw the error so tests wont be marked as a pass
   throw error
 })

@@ -1057,9 +1057,14 @@ sbp('chelonia/defineContract', {
           })
         )
       })),
-      process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
+      process ({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
+        const isUpdatingNonMonetary = Object.keys(data).some(
+          key => ['nonMonetaryAdd', 'nonMonetaryRemove', 'nonMonetaryEdit', 'nonMonetaryReplace'].includes(key)
+        )
+        const prevNonMonetary = nonMonetary.slice() // Capturing the previous non-monetary list. (To be used for in-app notification for non-monetary updates)
+
         for (const key in data) {
           const value = data[key]
           switch (key) {
@@ -1078,6 +1083,22 @@ sbp('chelonia/defineContract', {
             default:
               groupProfile[key] = value
           }
+        }
+
+        if (isUpdatingNonMonetary && (prevNonMonetary.length || groupProfile.nonMonetaryContributions.length)) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/sendNonMonetaryUpdateNotification', {
+              contractID, // group contractID
+              innerSigningContractID, // identity contract ID of the group-member being updated
+              meta,
+              height,
+              getters,
+              updateData: {
+                prev: prevNonMonetary,
+                after: groupProfile.nonMonetaryContributions.slice()
+              }
+            }]
+          )
         }
 
         if (data.incomeDetailsType) {
@@ -1788,6 +1809,30 @@ sbp('chelonia/defineContract', {
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
+    },
+    'gi.contracts/group/sendNonMonetaryUpdateNotification': ({
+      contractID, // group contractID
+      innerSigningContractID, // identity contractID of the group-member being updated
+      meta,
+      height,
+      updateData,
+      getters
+    }) => {
+      const { loggedIn } = sbp('state/vuex/state')
+      const isUpdatingMyself = loggedIn.identityContractID === innerSigningContractID
+
+      if (!isUpdatingMyself) {
+        const myProfile = getters.groupProfile(loggedIn.identityContractID)
+
+        if (isActionNewerThanUserJoinedDate(height, myProfile)) {
+          sbp('gi.notifications/emit', 'NONMONETARY_CONTRIBUTION_UPDATE', {
+            createdDate: meta.createdDate,
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            updateData
+          })
+        }
+      }
     },
     ...referenceTally('gi.contracts/group/referenceTally')
   }
