@@ -973,6 +973,11 @@ export default ({
     height: auto;
     white-space: pre-line;
     min-height: 0;
+    max-height: 9rem;
+
+    @include tablet {
+      max-height: 12.25rem;
+    }
   }
 
   &-btn {
