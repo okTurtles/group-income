@@ -938,6 +938,11 @@ export default ({
     width: 100%;
     font-size: 1rem;
     word-wrap: break-word;
+    max-height: 9rem;
+
+    @include tablet {
+      max-height: 12.25rem;
+    }
   }
 
   &-textarea {
@@ -948,12 +953,7 @@ export default ({
     background-color: transparent;
     border: none;
     padding: 0.5rem;
-    max-height: 9rem;
     overflow-y: auto;
-
-    @include tablet {
-      max-height: 12.25rem;
-    }
 
     &::-webkit-scrollbar {
       display: none;
@@ -973,11 +973,6 @@ export default ({
     height: auto;
     white-space: pre-line;
     min-height: 0;
-    max-height: 9rem;
-
-    @include tablet {
-      max-height: 12.25rem;
-    }
   }
 
   &-btn {
