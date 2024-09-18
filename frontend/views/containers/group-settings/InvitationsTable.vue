@@ -253,7 +253,7 @@ export default ({
         : timeLeft / YEARS_MILLIS
       const months = Math.floor(remainder * 12)
       remainder = months
-        ? (remainder % 1) * MONTHS_MILLIS // eg) when given 10.5 months, take 0.5 from it and turn it into 15days
+        ? (remainder % 1) * MONTHS_MILLIS // eg) when given 10.5 months, take 0.5 from it and turn it into 15days.
         : timeLeft
       const days = Math.floor(remainder / DAYS_MILLIS)
       const daysCeil = Math.ceil(remainder / DAYS_MILLIS) // to be used for when expiryTime > '1 month'
@@ -262,7 +262,7 @@ export default ({
       remainder = remainder % HOURS_MILLIS
       const minutes = Math.floor(remainder / MINS_MILLIS)
 
-      // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days
+      // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
       if (years) return L('{years}yr {months}mth {days}d left', { years, months, days: daysCeil })
       if (months) return L('{months}mth {days}d left', { months, days: daysCeil })
 
