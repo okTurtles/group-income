@@ -14,6 +14,7 @@ import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './event
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
+import './chelonia-utils.js'
 import type { EncryptedData } from './encryptedData.js'
 import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import './files.js'
@@ -1466,6 +1467,14 @@ export default (sbp('sbp/selectors/register', {
     })
     this.pubsub.pub(contractID, serializedData)
   },
+  // Note: This is a bare-bones function designed for precise control. In many
+  // situations, the `chelonia/kv/queuedSet` selector (in chelonia-utils.js)
+  // will be simpler and more appropriate to use.
+  // In most situations, you want to use some queuing strategy (which this
+  // selector doesn't provide) alongside writing to the KV store. Therefore, as
+  // a general rule, you shouldn't be calling this selector directly unless
+  // you're building a utility library or if you have very specific needs. In
+  // this case, see if `chelonia/kv/queuedSet` covers your needs.
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
     innerSigningKeyId,
     encryptionKeyId,
