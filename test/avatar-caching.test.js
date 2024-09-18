@@ -72,7 +72,6 @@ describe('avatar file serving', function () {
         ...manifests,
         defaults: {
           allowedSelectors: [
-            'chelonia/contract/sync', 'chelonia/contract/remove',
             'chelonia/queueInvocation'
           ],
           modules: { '@common/common.js': Common },

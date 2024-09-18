@@ -214,6 +214,7 @@ export class GIMessage {
   _signedMessageData: SignedData<GIOpValue>
   _direction: GIMsgDirection
   _decryptedValue: Object
+  _innerSigningKeyId: ?string
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -235,18 +236,12 @@ export class GIMessage {
   static createV1_0 (
     {
       contractID,
-      // originatingContractID is used when one contract writes to another. in this case
-      // originatingContractID is the one sending the message to contractID.
-      originatingContractID,
-      originatingContractHeight,
       previousHEAD = null,
       height = 0,
       op,
       manifest
     }: {
       contractID: string | null,
-      originatingContractID?: string,
-      originatingContractHeight?: number,
       previousHEAD?: ?string,
       height?: ?number,
       op: GIOpRaw,
@@ -258,8 +253,6 @@ export class GIMessage {
       previousHEAD,
       height,
       contractID,
-      originatingContractID,
-      originatingContractHeight,
       op: op[0],
       manifest
     }
@@ -405,6 +398,7 @@ export class GIMessage {
       // The data inside could be signed. In this case, we unwrap that to get
       // to the inner contents
         if (isSignedData(data.data)) {
+          this._innerSigningKeyId = data.data.signingKeyId
           this._decryptedValue = data.data.valueOf()
         } else {
           this._decryptedValue = data.data
@@ -417,6 +411,13 @@ export class GIMessage {
       // retrieved
       return undefined
     }
+  }
+
+  innerSigningKeyId (): any {
+    if (!this._decryptedValue) {
+      this.decryptedValue()
+    }
+    return this._innerSigningKeyId
   }
 
   head (): Object { return this._head }
@@ -451,8 +452,6 @@ export class GIMessage {
 
   contractID (): string { return this.head().contractID || this.hash() }
 
-  originatingContractID (): string { return this.head().originatingContractID || this.contractID() }
-
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }
@@ -475,14 +474,15 @@ export class GIMessage {
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesSerializeSymbol] (m: GIMessage) {
-    return [m.serialize(), m.direction(), m.decryptedValue()]
+    return [m.serialize(), m.direction(), m.decryptedValue(), m.innerSigningKey()]
   }
 
   // $FlowFixMe[unsupported-syntax]
-  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue]) {
+  static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue, innerSigningKeyId]) {
     const m = GIMessage.deserialize(serialized)
     m._direction = direction
     m._decryptedValue = decryptedValue
+    m._innerSigningKeyId = innerSigningKeyId
     return m
   }
 }

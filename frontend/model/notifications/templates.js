@@ -13,6 +13,7 @@ import {
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
+import { findContractIDByForeignKeyId } from '~/shared/domains/chelonia/utils.js'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
@@ -24,16 +25,28 @@ export default ({
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
       action = value.action
     }
+    const state = sbp('state/vuex/state')
+    let who
+
+    if (message.innerSigningKeyId()) {
+      const innerSigningContractID = findContractIDByForeignKeyId(state[message.contractID()], message.innerSigningKeyId())
+      who = innerSigningContractID && `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${innerSigningContractID}`
+    }
+
+    const Lparams = {
+      ...LTags('b'),
+      errName: error.name,
+      activity,
+      action: action ?? opType,
+      contract: state.contracts[contractID]?.type ?? contractID,
+      who,
+      errMsg: error.message ?? '?'
+    }
 
     return {
-      body: L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", {
-        ...LTags('b'),
-        errName: error.name,
-        activity,
-        action: action ?? opType,
-        contract: sbp('state/vuex/state').contracts[contractID]?.type ?? contractID,
-        errMsg: error.message ?? '?'
-      }),
+      body: who
+        ? L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", Lparams)
+        : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`,
@@ -310,6 +323,54 @@ export default ({
       linkTo: '/payments',
       scope: 'group',
       data
+    }
+  },
+  NONMONETARY_CONTRIBUTION_UPDATE (
+    data: {
+      creatorID: string,
+      updateData: { prev: any[], after: any[] }
+    }
+  ) {
+    const { prev, after } = data.updateData
+    const added = after.filter(v => !prev.includes(v))
+    const removed = prev.filter(v => !after.includes(v))
+    const updateType = added.length
+      ? removed.length
+        ? 'updated'
+        : 'added'
+      : removed.length
+        ? 'removed'
+        : null
+
+    if (!updateType) {
+      throw new Error('Cannot emit a NONMONETARY_CONTRIBUTION_UPDATE notification for no updates.')
+    }
+
+    const name = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`
+    const contributionsFormatted = (entries) => {
+      const first = entries[0]
+      const len = entries.length
+      return entries.length > 1
+        ? L('{first} and {rest} more', { first, rest: len - 1 })
+        : first
+    }
+    const bodyContentMap = {
+      added: () => L('{name} added non-monetary contribution: {strong_}{added}{_strong}', { name, added: contributionsFormatted(added), ...LTags('strong') }),
+      removed: () => L('{name} removed non-monetary contribution: {strong_}{removed}{_strong}', { name, removed: contributionsFormatted(removed), ...LTags('strong') }),
+      updated: () => L('{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}', {
+        name,
+        added: contributionsFormatted(added),
+        removed: contributionsFormatted(removed),
+        ...LTags('strong')
+      })
+    }
+    return {
+      body: bodyContentMap[updateType](),
+      scope: 'group',
+      avatarUserID: data.creatorID,
+      level: 'info',
+      icon: 'chart-pie',
+      linkTo: '/contributions'
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

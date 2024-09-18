@@ -5,7 +5,7 @@
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -441,7 +441,7 @@ sbp('chelonia/defineContract', {
           sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
           mincomeAmount: numberRange(1, GROUP_MINCOME_MAX),
           mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
-          distributionDate: isPeriodStamp,
+          distributionDate: validatorFrom(isPeriodStamp),
           distributionPeriodLength: numberRange(1 * DAYS_MILLIS, GROUP_DISTRIBUTION_PERIOD_MAX_DAYS * DAYS_MILLIS),
           minimizeDistribution: boolean,
           proposals: objectOf({
@@ -987,12 +987,15 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, meta, message: { innerSigningContractID } }) => {
         objectMaybeOf({
           groupName: stringMax(GROUP_NAME_MAX_CHAR, 'groupName'),
-          groupPicture: x => typeof x === 'string',
+          groupPicture: unionOf(string, objectOf({
+            manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
+            downloadParams: optional(object)
+          })),
           sharedValues: stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'sharedValues'),
-          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeAmount: numberRange(Number.EPSILON, Number.MAX_VALUE),
           mincomeCurrency: stringMax(GROUP_CURRENCY_MAX_CHAR, 'mincomeCurrency'),
-          distributionDate: x => typeof x === 'string',
-          allowPublicChannels: x => typeof x === 'boolean'
+          distributionDate: string,
+          allowPublicChannels: boolean
         })(data)
 
         const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
@@ -1037,8 +1040,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/groupProfileUpdate': {
       validate: actionRequireActiveMember(objectMaybeOf({
-        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
-        incomeAmount: x => typeof x === 'number' && x >= 0,
+        incomeDetailsType: validatorFrom(x => ['incomeAmount', 'pledgeAmount'].includes(x)),
+        incomeAmount: numberRange(0, Number.MAX_VALUE),
         pledgeAmount: numberRange(0, GROUP_MAX_PLEDGE_AMOUNT, 'pledgeAmount'),
         nonMonetaryAdd: stringMax(GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR, 'nonMonetaryAdd'),
         nonMonetaryEdit: objectOf({
@@ -1054,9 +1057,14 @@ sbp('chelonia/defineContract', {
           })
         )
       })),
-      process ({ data, meta, contractID, innerSigningContractID }, { state, getters }) {
+      process ({ data, meta, contractID, height, innerSigningContractID }, { state, getters }) {
         const groupProfile = state.profiles[innerSigningContractID]
         const nonMonetary = groupProfile.nonMonetaryContributions
+        const isUpdatingNonMonetary = Object.keys(data).some(
+          key => ['nonMonetaryAdd', 'nonMonetaryRemove', 'nonMonetaryEdit', 'nonMonetaryReplace'].includes(key)
+        )
+        const prevNonMonetary = nonMonetary.slice() // Capturing the previous non-monetary list. (To be used for in-app notification for non-monetary updates)
+
         for (const key in data) {
           const value = data[key]
           switch (key) {
@@ -1075,6 +1083,22 @@ sbp('chelonia/defineContract', {
             default:
               groupProfile[key] = value
           }
+        }
+
+        if (isUpdatingNonMonetary && (prevNonMonetary.length || groupProfile.nonMonetaryContributions.length)) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/sendNonMonetaryUpdateNotification', {
+              contractID, // group contractID
+              innerSigningContractID, // identity contract ID of the group-member being updated
+              meta,
+              height,
+              getters,
+              updateData: {
+                prev: prevNonMonetary,
+                after: groupProfile.nonMonetaryContributions.slice()
+              }
+            }]
+          )
         }
 
         if (data.incomeDetailsType) {
@@ -1785,6 +1809,30 @@ sbp('chelonia/defineContract', {
       }).catch(e => {
         console.warn(`removeForeignKeys: ${e.name} error thrown:`, e)
       })
+    },
+    'gi.contracts/group/sendNonMonetaryUpdateNotification': ({
+      contractID, // group contractID
+      innerSigningContractID, // identity contractID of the group-member being updated
+      meta,
+      height,
+      updateData,
+      getters
+    }) => {
+      const { loggedIn } = sbp('state/vuex/state')
+      const isUpdatingMyself = loggedIn.identityContractID === innerSigningContractID
+
+      if (!isUpdatingMyself) {
+        const myProfile = getters.groupProfile(loggedIn.identityContractID)
+
+        if (isActionNewerThanUserJoinedDate(height, myProfile)) {
+          sbp('gi.notifications/emit', 'NONMONETARY_CONTRIBUTION_UPDATE', {
+            createdDate: meta.createdDate,
+            groupID: contractID,
+            creatorID: innerSigningContractID,
+            updateData
+          })
+        }
+      }
     },
     ...referenceTally('gi.contracts/group/referenceTally')
   }

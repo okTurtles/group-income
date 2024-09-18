@@ -1,5 +1,6 @@
 'use strict'
 
+export const CHELONIA_RESET = 'chelonia-reset'
 export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
 export const CONTRACTS_MODIFIED = 'contracts-modified'
 export const CONTRACTS_MODIFIED_READY = 'contracts-modified-ready'
