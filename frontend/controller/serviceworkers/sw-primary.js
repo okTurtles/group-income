@@ -1,11 +1,67 @@
 'use strict'
 
+import { PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.eventqueue'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
+import '~/frontend/controller/actions/index.js'
+import setupChelonia from '~/frontend/setupChelonia.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { ACCEPTED_GROUP, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
+import '~/frontend/controller/sw-namespace.js'
+
+deserializer.register(GIMessage)
+deserializer.register(Secret)
+
 // https://serviceworke.rs/message-relay_service-worker_doc.html
 // https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
 // https://jakearchibald.com/2014/using-serviceworker-today/
 // https://github.com/w3c/ServiceWorker/blob/master/explainer.md
 // https://frontendian.co/service-workers
 // https://stackoverflow.com/a/49748437 => https://medium.com/@nekrtemplar/self-destroying-serviceworker-73d62921d717 => https://love2dev.com/blog/how-to-uninstall-a-service-worker/
+
+sbp('sbp/filters/global/add', (domain, selector, data) => {
+  // if (domainBlacklist[domain] || selectorBlacklist[selector]) return
+  console.debug(`[sw] [sbp] ${selector}`, data)
+});
+
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
+  sbp('okTurtles.events/on', et, (...args) => {
+    const { data } = serializer(args)
+    const message = {
+      type: 'event',
+      subtype: et,
+      data
+    }
+    self.clients.matchAll()
+      .then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage(message)
+        })
+      })
+  })
+})
+
+sbp('sbp/selectors/register', {
+  'state/vuex/state': () => {
+    // TODO: Remove this selector once it's removed from contracts
+    return sbp('chelonia/rootState')
+  },
+  'state/vuex/reset': () => {
+    console.error('[sw] CALLED state/vuex/reset WHICH IS UNDEFINED')
+  },
+  'state/vuex/save': () => {
+    console.error('[sw] CALLED state/vuex/save WHICH IS UNDEFINED')
+  },
+  'state/vuex/commit': () => {
+    console.error('[sw] CALLED state/vuex/commit WHICH IS UNDEFINED')
+  }
+})
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
@@ -16,7 +72,7 @@ self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(setupChelonia().then(() => self.clients.claim()))
 })
 
 self.addEventListener('fetch', function (event) {
@@ -57,6 +113,17 @@ self.addEventListener('message', function (event) {
       case 'store-client-id':
         store.clientId = event.source.id
         break
+      case 'sbp': {
+        const port = event.data.port;
+        (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
+          const { data, transferables } = serializer(r)
+          port.postMessage([true, data], transferables)
+        }).catch((e) => {
+          const { data, transferables } = serializer(e)
+          port.postMessage([false, data], transferables)
+        })
+        break
+      }
       case 'ping':
         event.source.postMessage({ type: 'pong' })
         break

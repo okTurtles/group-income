@@ -474,7 +474,7 @@ export class GIMessage {
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesSerializeSymbol] (m: GIMessage) {
-    return [m.serialize(), m.direction(), m.decryptedValue(), m.innerSigningKey()]
+    return [m.serialize(), m.direction(), m.decryptedValue(), m.innerSigningKeyId()]
   }
 
   // $FlowFixMe[unsupported-syntax]

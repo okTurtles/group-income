@@ -122,7 +122,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Vue, L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -143,7 +143,8 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
-const collectEventStream = async (s: ReadableStream) => {
+const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
+  s = await s
   const reader = s.getReader()
   const r = []
   for (;;) {

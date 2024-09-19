@@ -11,12 +11,10 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import '~/shared/domains/chelonia/localSelectors.js'
 import { KV_KEYS } from './utils/constants.js'
 // import '~/shared/domains/chelonia/persistent-actions.js' // Commented out as persistentActions are not being used
-import './controller/actions/index.js'
 import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/namespace.js'
@@ -24,7 +22,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -35,13 +33,18 @@ import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
-import setupChelonia from './setupChelonia.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
+
+deserializer.register(GIMessage)
+deserializer.register(Secret)
 
 const { Vue, L, LError } = Common
 
@@ -99,10 +102,12 @@ async function startApp () {
   // TODO: [SW] The following will be needed to keep namespace registrations
   // in sync between the SW and each tab. It is not needed now because everything
   // is running in the same context
-  /* sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
     const cache = sbp('state/vuex/state').namespaceLookups
+    const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
     Vue.set(cache, name, value)
-  }) */
+    Vue.set(reverseCache, value, name)
+  })
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
@@ -152,6 +157,55 @@ async function startApp () {
     alert(L('Error while setting up service worker'))
     window.location.reload() // try again, sometimes it fixes it
     throw e
+  })
+
+  /* TODO: MOVE TO ANOTHER FILE */
+  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
+  const swRpc = (() => {
+    let controller = navigator.serviceWorker.controller
+    navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
+      controller = navigator.serviceWorker.controller
+    }, false)
+
+    return (...args) => {
+      return new Promise((resolve, reject) => {
+        const messageChannel = new MessageChannel()
+        messageChannel.port1.addEventListener('message', (event) => {
+          if (event.data && Array.isArray(event.data)) {
+            const r = deserializer(event.data[1])
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+            messageChannel.port1.close()
+          }
+        }, false)
+        messageChannel.port1.addEventListener('messageerror', (event) => {
+          reject(event.data)
+          messageChannel.port1.close()
+        }, false)
+        messageChannel.port1.start()
+        const { data, transferables } = serializer(args)
+        controller.postMessage({
+          type: 'sbp',
+          port: messageChannel.port2,
+          data
+        }, [messageChannel.port2, ...transferables])
+      })
+    }
+  })()
+
+  sbp('sbp/selectors/register', {
+    'gi.actions/*': swRpc
+  })
+  sbp('sbp/selectors/register', {
+    'chelonia/*': swRpc
+  })
+  sbp('sbp/selectors/register', {
+    'sw-namespace/*': (...args) => {
+      return swRpc(args[0].slice(3), ...args.slice(1))
+    }
   })
 
   /* eslint-disable no-new */
@@ -298,7 +352,7 @@ async function startApp () {
       // happened (an example where things can happen this quickly is in the
       // tests).
       let oldIdentityContractID = null
-      setupChelonia().then(() => sbp('gi.db/settings/load', SETTING_CURRENT_USER)).then(async (identityContractID) => {
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
         await sbp('gi.app/identity/login', { identityContractID })
@@ -314,8 +368,22 @@ async function startApp () {
           primaryButton: L('Close')
         })
       }).finally(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
+        // Wait for SW to be ready
+        navigator.serviceWorker.ready.then(() => {
+          const onready = () => {
+            this.ephemeral.ready = true
+            this.removeLoadingAnimation()
+          }
+          if (!navigator.serviceWorker.controller) {
+            const listener = (ev) => {
+              navigator.serviceWorker.removeEventListener('controllerchange', listener, false)
+              onready()
+            }
+            navigator.serviceWorker.addEventListener('controllerchange', listener, false)
+          } else {
+            onready()
+          }
+        })
       })
     },
     computed: {

@@ -58,17 +58,23 @@ export const serializer = (data: any): any => {
       return rawResult(['_', 'Set', Array.from(value.entries())])
     }
     // Error, Blob, File, etc. are supported by structuredClone but not by JSON
-    // We mark these as 'refs', so that the reviver can undo tris transformation
+    // We mark these as 'refs', so that the reviver can undo this transformation
     if (value instanceof Error || value instanceof Blob || value instanceof File) {
       const pos = verbatim.length
       verbatim[verbatim.length] = value
       return rawResult(['_', '_ref', pos])
     }
     // Same for other types supported by structuredClone but not JSON
-    if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || ArrayBuffer.isView(value) || value instanceof ArrayBuffer) {
+    if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || value instanceof ArrayBuffer) {
       const pos = verbatim.length
       verbatim[verbatim.length] = value
       transferables.add(value)
+      return rawResult(['_', '_ref', pos])
+    }
+    if (ArrayBuffer.isView(value)) {
+      const pos = verbatim.length
+      verbatim[verbatim.length] = value
+      transferables.add(value.buffer)
       return rawResult(['_', '_ref', pos])
     }
     // Functions aren't supported neither by structuredClone nor JSON. However,

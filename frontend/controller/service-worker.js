@@ -1,10 +1,11 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
-import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import sbp from '@sbp/sbp'
 import { PWA_INSTALLABLE } from '@utils/events.js'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
+import { deserializer } from '~/shared/serdes/index.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -64,6 +65,11 @@ sbp('sbp/selectors/register', {
             case 'pushsubscriptionchange': {
               console.debug('[sw] Received pushsubscriptionchange:', data)
               sbp('service-worker/resubscribe-push', data.subscription)
+              break
+            }
+            case 'event': {
+              console.error('@@@EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }
             default:
