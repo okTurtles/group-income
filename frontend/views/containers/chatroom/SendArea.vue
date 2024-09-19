@@ -938,11 +938,7 @@ export default ({
     width: 100%;
     font-size: 1rem;
     word-wrap: break-word;
-    max-height: 9rem;
-
-    @include tablet {
-      max-height: 12.25rem;
-    }
+    max-height: 12.75rem;
   }
 
   &-textarea {
