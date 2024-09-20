@@ -2,29 +2,11 @@
 
 // since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
-import dompurify from 'dompurify'
-import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import template from './stringTemplate.js'
-
-Vue.prototype.L = L
-Vue.prototype.LTags = LTags
 
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
 const defaultTranslationTable: { [string]: string } = {}
-
-/**
- * Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
- * but keep sanitizing their values.
- * See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
- */
-const dompurifyConfig = {
-  ...defaultDompurifyConfig,
-  ALLOWED_ATTR: ['class', 'href', 'rel', 'target'],
-  ALLOWED_TAGS: ['a', 'b', 'br', 'button', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u'],
-  RETURN_DOM_FRAGMENT: false
-}
 
 let currentLanguage = defaultLanguage
 let currentLanguageCode = defaultLanguage.split('-')[0]
@@ -40,7 +22,7 @@ let currentTranslationTable = defaultTranslationTable
  *
  * @see https://tools.ietf.org/rfc/bcp/bcp47.txt
  */
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'translations/init': async function init (language: string): Promise<void> {
     // A language code is usually the first part of a language tag.
     const [languageCode] = language.toLowerCase().split('-')
@@ -69,7 +51,7 @@ sbp('sbp/selectors/register', {
       console.error(error)
     }
   }
-})
+}): string[])
 
 /*
 Examples:
@@ -122,19 +104,22 @@ export function LTags (...tags: string[]): {|br_: string|} {
   return o
 }
 
-export default function L (
+export function L (
   key: string,
   args: Array<*> | Object | void
 ): string {
   return template(currentTranslationTable[key] || key, args)
     // Avoid inopportune linebreaks before certain punctuations.
-    .replace(/\s(?=[;:?!])/g, '&nbsp;')
+    // '\u00a0' is a non-breaking space
+    // The character is used instead of `&nbsp;` or `&#160;` for conciseness
+    // and compatibility.
+    .replace(/\s(?=[;:?!])/g, '\u00a0')
 }
 
 export function LError (error: Error, toGithub?: boolean): {|reportError: any|} {
   let url = 'https://github.com/okTurtles/group-income/issues'
   if (!toGithub && sbp('state/vuex/state').loggedIn) {
-    const baseRoute = document.location.origin + sbp('controller/router').options.base
+    const baseRoute = sbp('controller/router').options.base
     url = `${baseRoute}?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`
   }
   return {
@@ -145,49 +130,3 @@ export function LError (error: Error, toGithub?: boolean): {|reportError: any|} 
     })
   }
 }
-
-function sanitize (inputString) {
-  return dompurify.sanitize(inputString, dompurifyConfig)
-}
-
-Vue.component('i18n', {
-  functional: true,
-  props: {
-    args: [Object, Array],
-    tag: {
-      type: String,
-      default: 'span'
-    },
-    compile: Boolean
-  },
-  render: function (h, context) {
-    const text = context.children[0].text
-    const translation = L(text, context.props.args || {})
-    if (!translation) {
-      console.warn('The following i18n text was not translated correctly:', text)
-      return h(context.props.tag, context.data, text)
-    }
-    // Prevent reverse tabnabbing by including `rel="noopener noreferrer"` when rendering as an outbound hyperlink.
-    if (context.props.tag === 'a' && context.data.attrs.target === '_blank') {
-      context.data.attrs.rel = 'noopener noreferrer'
-    }
-    if (context.props.compile) {
-      const result = Vue.compile('<wrap>' + sanitize(translation) + '</wrap>')
-      // console.log('TRANSLATED RENDERED TEXT:', context, result.render.toString())
-      return result.render.call({
-        _c: (tag, ...args) => {
-          if (tag === 'wrap') {
-            return h(context.props.tag, context.data, ...args)
-          } else {
-            return h(tag, ...args)
-          }
-        },
-        _v: x => x
-      })
-    } else {
-      if (!context.data.domProps) context.data.domProps = {}
-      context.data.domProps.innerHTML = sanitize(translation)
-      return h(context.props.tag, context.data)
-    }
-  }
-})

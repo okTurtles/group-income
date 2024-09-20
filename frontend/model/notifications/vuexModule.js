@@ -1,6 +1,6 @@
 'use strict'
 
-import { Vue } from '@common/common.js'
+import Vue from 'vue'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 import * as keys from './mutationKeys.js'
 import './selectors.js'

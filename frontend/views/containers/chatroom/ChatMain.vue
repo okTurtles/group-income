@@ -122,8 +122,9 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { Vue, L } from '@common/common.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { L } from '@common/common.js'
+import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'

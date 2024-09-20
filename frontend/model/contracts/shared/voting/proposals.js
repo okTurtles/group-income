@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { Vue } from '@common/common.js'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { DAYS_MILLIS } from '../time.js'
 import rules, { ruleType, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
@@ -27,7 +26,7 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   meta: Object,
   height: number
 }) {
-  Vue.delete(state.proposals, proposalHash)
+  delete state.proposals[proposalHash]
 
   // NOTE: we can not make notification for the proposal closal
   //       in the /proposalVote/sideEffect

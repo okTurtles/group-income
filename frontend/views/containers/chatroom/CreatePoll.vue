@@ -104,12 +104,13 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { Vue, L } from '@common/common.js'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import Vue from 'vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
 
