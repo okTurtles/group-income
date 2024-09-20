@@ -1,9 +1,10 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { Vue } from '@common/common.js'
 import { merge, cloneDeep, union } from '@model/contracts/shared/giLodash.js'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import Vue from 'vue'
+
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }

@@ -1,7 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import * as Common from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import '@model/captureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -31,10 +31,12 @@ import Modal from './views/components/modal/Modal.vue'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import './views/utils/avatar.js'
+import './views/utils/i18n.js'
 import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
+import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
 import setupChelonia from './setupChelonia.js'
@@ -42,8 +44,6 @@ import FaviconBadge from './utils/faviconBadge.js'
 import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
-
-const { Vue, L, LError } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
