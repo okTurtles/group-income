@@ -37,7 +37,7 @@
             @click='$emit("reply-message-clicked")'
           )
 
-        send-area(
+        send-area.c-edit-send-area(
           v-if='isEditing'
           :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
@@ -378,5 +378,9 @@ export default ({
 
 .c-disappeared {
   animation: disappeared 0.5s linear;
+}
+
+.c-edit-send-area {
+  padding: 0 0 1rem;
 }
 </style>
