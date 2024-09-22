@@ -1,4 +1,4 @@
-import { Vue } from '@common/common.js'
+import Vue from 'vue'
 
 if ('ontouchstart' in window || 'msMaxTouchPoints' in navigator) {
   import('vue2-touch-events').then(Vue2TouchEvents => Vue.use(Vue2TouchEvents.default))

@@ -1,7 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import * as Common from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import '@model/captureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -29,6 +29,7 @@ import Modal from './views/components/modal/Modal.vue'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import './views/utils/avatar.js'
+import './views/utils/i18n.js'
 import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
@@ -36,6 +37,7 @@ import './views/utils/vFocus.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
+import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
 import FaviconBadge from './utils/faviconBadge.js'
@@ -45,8 +47,6 @@ import './views/utils/vStyle.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
-
-const { Vue, L, LError } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
@@ -150,7 +150,7 @@ async function startApp () {
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
-        }, 8e3)
+        }, 16e3)
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
@@ -369,6 +369,7 @@ async function startApp () {
         })
       }).finally(() => {
         // Wait for SW to be ready
+        console.debug('[app] Waiting for SW to be ready')
         navigator.serviceWorker.ready.then(() => {
           const onready = () => {
             this.ephemeral.ready = true

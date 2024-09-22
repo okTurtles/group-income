@@ -52,7 +52,7 @@ function createNotificationData (
 }
 
 async function messageReceivePostEffect ({
-  contractID, messageHash, height, text,
+  contractID, messageHash, height, datetime, text,
   isDMOrMention, messageType, memberID, chatRoomName
 }: {
   contractID: string,
@@ -64,6 +64,10 @@ async function messageReceivePostEffect ({
   memberID: string,
   chatRoomName: string
 }): Promise<void> {
+  if (await sbp('chelonia/contract/isSyncing', contractID)) {
+    return
+  }
+
   // TODO: This can't be a root getter when running in a SW
   const rootGetters = await sbp('state/vuex/getters')
   const isGroupDM = rootGetters.isGroupDirectMessage(contractID)
@@ -71,10 +75,6 @@ async function messageReceivePostEffect ({
 
   if (shouldAddToUnreadMessages) {
     sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
-  }
-
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    return
   }
 
   let title = `# ${chatRoomName}`
@@ -502,7 +502,7 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
-        if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
+        if (rootState.chatroom?.chatRoomScrollPosition[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomID: contractID, messageHash: null
           })

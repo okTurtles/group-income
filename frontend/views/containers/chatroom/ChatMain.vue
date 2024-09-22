@@ -123,7 +123,8 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { Vue, L } from '@common/common.js'
+import { L } from '@common/common.js'
+import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
@@ -1137,11 +1138,16 @@ export default ({
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-        } else {
-          this.refreshContent()
-        }
+        // Force 'chelonia/contract/isSyncing' to be a Promise
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+          // If the chatroom has changed since, return
+          if (this.summary.chatRoomID !== toChatRoomId) return
+          if (isSyncing) {
+            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+          } else {
+            this.refreshContent()
+          }
+        })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }

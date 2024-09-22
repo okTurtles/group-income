@@ -22,8 +22,6 @@
 // Doing otherwise defeats the purpose of this file and could lead to bugs and conflicts!
 // You may *add* behavior, but never modify or remove it.
 
-export { default as Vue } from 'vue'
-export { default as L } from './translations.js'
 export * from './translations.js'
 export * from './errors.js'
 export * as Errors from './errors.js'

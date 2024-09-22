@@ -1,12 +1,13 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { Vue, L } from '@common/common.js'
+import { L } from '@common/common.js'
 import Router from 'vue-router'
 import store from '~/frontend/model/state.js'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import { lazyPage } from '@utils/lazyLoadedView.js'
+import Vue from 'vue'
 
 /*
  * Lazy load all the pages that are not necessary at initial loading of the app.

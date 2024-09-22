@@ -60,6 +60,51 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/commit': () => {
     console.error('[sw] CALLED state/vuex/commit WHICH IS UNDEFINED')
+  },
+  'state/vuex/getters': () => {
+    return {
+      chatRoomUnreadMessages () {
+        return []
+      },
+      getChatroomNameById () {
+        return ''
+      },
+      groupIdFromChatRoomId () {
+        return ''
+      },
+      isGroupDirectMessage () {
+        return false
+      },
+      notificationsByGroup () {
+        return []
+      },
+      ourContactProfilesByUsername: {},
+      ourIdentityContractId: '',
+      userDisplayNameFromID () {
+        return ''
+      },
+      usernameFromID () {
+        return ''
+      }
+    }
+  }
+})
+
+sbp('sbp/selectors/register', {
+  'controller/router': () => {
+    return { options: { base: '/app/' } }
+  }
+})
+
+sbp('sbp/selectors/register', {
+  'gi.ui/seriousErrorBanner': (...args) => {
+    console.error('### SERIOUS ERROR ###', ...args)
+  }
+})
+
+sbp('sbp/selectors/register', {
+  'gi.notifications/emit': (...args) => {
+    console.error('### notification ###', ...args)
   }
 })
 
