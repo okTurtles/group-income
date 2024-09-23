@@ -24,6 +24,23 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
+const securityHeaders = {
+  // This is the most likely to break things now; it may need changing when sandboxing or federation is implemented.
+  'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-eval'; script-src-elem 'self'; script-src-attr 'none'; style-src 'self'; style-src-elem 'self'; style-src-attr 'none'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; media-src 'self'; prefetch-src 'self'; worker-src 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self'",
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  // List generated using https://www.permissionspolicy.com.
+  'Permissions-Policy': 'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(self), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(self), execution-while-out-of-viewport=(self), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(self), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(self), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), gamepad=(), speaker-selection=()',
+  // Don't share context with potentially untrusted sites.
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  // Block loading the page in a frame.
+  'X-Frame-Options': 'deny',
+  // Blocks embedding cross-origin resources that don't explicitly allow it.
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  // Block hotlinking.
+  'Cross-Origin-Resource-Policy': 'same-origin'
+}
+
 const hapi = new Hapi.Server({
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
@@ -52,9 +69,13 @@ hapi.ext({
       // but custom headers can be manually added using `.output.headers`.
       // See https://hapi.dev/module/boom/api/.
       if (typeof request.response.header === 'function') {
-        request.response.header('X-Frame-Options', 'deny')
+        for (const [name, value] of Object.entries(securityHeaders)) {
+          request.response.header(name, value)
+        }
       } else {
-        request.response.output.headers['X-Frame-Options'] = 'deny'
+        for (const [name, value] of Object.entries(securityHeaders)) {
+          request.response.output.headers[name] = value
+        }
       }
     } catch (err) {
       console.warn(chalk.yellow('[backend] Could not set X-Frame-Options header:', err.message))
