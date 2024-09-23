@@ -1,9 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { Vue } from '@common/common.js'
+import Vue from 'vue'
 // $FlowFixMe
-import { objectOf, string, isFunction } from '@model/contracts/misc/flowTyper.js'
+import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.js'
 import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 
 export const PERIODIC_NOTIFICATION_TYPE = {
