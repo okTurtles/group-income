@@ -41,7 +41,7 @@ export default ({
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
     },
     hasChatNotification () {
-      return ['GroupChat','GroupChatConversation'].includes(this.$route.name) && this.showBadge && this.currentGroupUnreadMessagesCount
+      return ['GroupChat', 'GroupChatConversation'].includes(this.$route.name) && this.showBadge && this.currentGroupUnreadMessagesCount
     }
   }
 }: Object)
