@@ -5,6 +5,7 @@ nav.c-navigation(
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive' data-test='NavigationToggleBtn')
     badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
+    badge.c-toggle-badge(v-else-if='currentGroupUnreadMessagesCount' data-test='dashboardBadge') {{ currentGroupUnreadMessagesCount }}
   groups-list(v-if='groupsByName.length >= 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')

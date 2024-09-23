@@ -6,9 +6,9 @@ button.c-toggle.is-unstyled(
 )
   i.icon-bars(v-if='element === "navigation"')
     slot
-  i.icon-info(v-else-if='element === "sidebar"')
+  i.icon-info(v-else-if='element === "sidebar"' :class='{"c-toggle-bg": hasChatNotification}')
     slot
-    badge(v-if='showBadge && currentGroupUnreadMessagesCount') {{ currentGroupUnreadMessagesCount }}
+    badge(v-if='hasChatNotification') {{ currentGroupUnreadMessagesCount }}
 
 </template>
 
@@ -30,7 +30,7 @@ export default ({
     showBadge: {
       type: Boolean,
       default: false
-    } // Remove trailing comma from line 33
+    }
   },
   computed: {
     ...mapState(['currentGroupId']),
@@ -39,9 +39,13 @@ export default ({
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
-    } // Remove trailing comma from line 42
+    },
+    hasChatNotification () {
+      return ['GroupChat','GroupChatConversation'].includes(this.$route.name) && this.showBadge && this.currentGroupUnreadMessagesCount
+    }
   }
 }: Object)
+
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
@@ -95,6 +99,10 @@ $iconSize: 2.75rem;
     text-align: center;
     line-height: $iconSize;
     transition: opacity $speed * 0.5 $speed;
+
+    &.c-toggle-bg {
+      background-color: var(--general_1);
+    }
   }
 
   .is-active & {
