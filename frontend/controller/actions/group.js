@@ -173,7 +173,10 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               quantity: 60,
-              expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              expires: Math.min(
+                Date.now() + 1 * 60 * 1000,
+                Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+              ), // TODO: revert this after development
               private: {
                 content: inviteKeyS
               }
@@ -1029,6 +1032,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
+  ...encryptedAction('gi.actions/group/updateGroupInviteExpiry', L('Failed to update group invite expiry.')),
   ...encryptedAction('gi.actions/group/upgradeFrom1.0.7', L('Failed to upgrade from version 1.0.7')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))

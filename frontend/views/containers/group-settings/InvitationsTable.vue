@@ -260,7 +260,7 @@ export default ({
       remainder = remainder % DAYS_MILLIS
       const hours = Math.floor(remainder / HOURS_MILLIS)
       remainder = remainder % HOURS_MILLIS
-      const minutes = Math.floor(remainder / MINS_MILLIS)
+      const minutes = Math.ceil(remainder / MINS_MILLIS)
 
       // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
       if (years) return L('{years}yr {months}mth {days}d left', { years, months, days: daysCeil })
@@ -314,15 +314,21 @@ export default ({
       }
       return false
     },
-    handleInviteClick (e) {
+    checkWelcomeInviteExpired () {
+      return this.currentWelcomeInvite.expires < Date.now()
+    },
+    async handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
-        if (this.groupShouldPropose || isWelcomeInviteExpired) {
+        if (this.groupShouldPropose) {
           const contractID = this.currentGroupId
           sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
             console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)
           })
         } else {
+          if (this.checkWelcomeInviteExpired()) {
+            await this.fixWelcomeInvite()
+          }
+
           sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
         }
       }
@@ -374,6 +380,18 @@ export default ({
         console.error('InvitationsTable.vue handleRevokeClick() error:', e)
         this.$refs.inviteError.danger(e.message)
       }
+    },
+    async fixWelcomeInvite () {
+      try {
+        await sbp('gi.app/group/fixAnyoneCanJoinLink')
+      } catch (err) {
+        console.error('InvitationTable.vue failed to fix anyone-to-join invite and caught: ', err)
+      }
+    }
+  },
+  mounted () {
+    if (this.checkWelcomeInviteExpired()) {
+      this.fixWelcomeInvite()
     }
   }
 }: Object)

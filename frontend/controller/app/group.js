@@ -3,8 +3,10 @@
 import { L } from '@common/common.js'
 import {
   INVITE_INITIAL_CREATOR,
-  MAX_GROUP_MEMBER_COUNT
+  MAX_GROUP_MEMBER_COUNT,
+  INVITE_EXPIRES_IN_DAYS
 } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
@@ -105,5 +107,14 @@ export default (sbp('sbp/selectors/register', {
     } else {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
+  },
+  'gi.app/group/fixAnyoneCanJoinLink': async function () {
+    await sbp('gi.actions/group/updateGroupInviteExpiry', {
+      contractID: sbp('state/vuex/state').currentGroupId,
+      data: {
+        inviteKeyId: sbp('state/vuex/getters').currentWelcomeInvite.inviteId,
+        expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+      }
+    })
   }
 }): string[])

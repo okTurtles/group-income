@@ -455,7 +455,7 @@ const getters = {
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
     const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR)
-    const expires = getters.currentGroupState._vm.authorizedKeys[inviteId].meta.expires
+    const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },
   // list of group names and contractIDs
