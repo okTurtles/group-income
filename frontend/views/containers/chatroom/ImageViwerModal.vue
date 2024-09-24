@@ -55,9 +55,11 @@ export default {
   },
   mounted () {
     document.addEventListener('keydown', this.trapFocus)
+    window.addEventListener('resize', this.resizeHandler)
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.trapFocus)
+    window.removeEventListener('resize', this.resizeHandler)
   },
   methods: {
     onImgLoad () {
@@ -75,27 +77,33 @@ export default {
       this.updatePreviewImage()
     },
     initViewerSettings () {
-      const { naturalWidth, naturalHeight, isWiderThanTall } = this.config.imgData
+      const { naturalWidth, naturalHeight, aspectRatio } = this.config.imgData
       const {
         width: viewAreaWidth,
         height: viewAreaHeight
       } = this.$refs.viewerArea.getBoundingClientRect()
-      const viewAreaIsWiderThanTall = viewAreaWidth / viewAreaHeight >= 1
-      const getMinZoomFromWidth = () => viewAreaWidth > naturalWidth ? 100 : Math.ceil(viewAreaWidth / naturalWidth * 100)
-      const getMinZoomFromHeight = () => viewAreaHeight > naturalHeight ? 100 : Math.ceil(viewAreaHeight / naturalHeight * 100)
-      let zoomMin
+
+      let zoomMin = 100
+      let minWidth = naturalWidth
+      let minHeight = naturalHeight
+
       // Calculate 'minimum' zoom value. the idea is that,
       // - If the intrinsic size of the image is larger than current view-area: the percentage value that makes the image just fit the available space.
       // - If the intrinsic size of the image is smaller than current view-area: 100%
-      if (viewAreaIsWiderThanTall) {
-        zoomMin = isWiderThanTall
-          ? getMinZoomFromHeight()
-          : getMinZoomFromWidth()
-      } else {
-        zoomMin = isWiderThanTall
-          ? getMinZoomFromWidth()
-          : getMinZoomFromHeight()
+
+      if (viewAreaWidth < naturalWidth) {
+        const wFraction = viewAreaWidth / naturalWidth
+        minWidth = wFraction * naturalWidth
+        minHeight = minWidth / aspectRatio
       }
+
+      if (viewAreaHeight < minHeight) {
+        const hFraction = minHeight / viewAreaHeight
+        minHeight = minHeight * hFraction
+        minWidth = minHeight * aspectRatio
+      }
+
+      zoomMin = minWidth / naturalWidth * 100
 
       this.config.zoomMin = zoomMin
       this.ephemeral.currentZoom = zoomMin
@@ -122,12 +130,6 @@ export default {
       this.initViewerSettings()
       this.updatePreviewImage()
     }
-  },
-  mounted () {
-    window.addEventListener('resize', this.resizeHandler)
-  },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.resizeHandler)
   }
 }
 </script>
