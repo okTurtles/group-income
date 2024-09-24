@@ -8,7 +8,7 @@
       i.icon-times
 
     .c-image-blurry-background(:style='blurryBgStyles')
-    .c-image-view-area
+    .c-image-view-area(ref='viewerArea')
       img.c-preview-image(ref='previewImg'
         :src='testImgSrc'
         v-bind='ephemeral.previewImgAttrs'
@@ -32,6 +32,16 @@ export default {
         previewImgAttrs: {
           width: undefined,
           height: undefined
+        },
+        currentZoom: 0
+      },
+      config: {
+        imgData: {
+          naturalWidth: null,
+          naturalHeight: null,
+          aspectRatio: 1, // intrinsic ratio value of width / height
+          zoomMin: 0,
+          zoomMax: 400 // for now.
         }
       }
     }
@@ -52,12 +62,72 @@ export default {
   methods: {
     onImgLoad () {
       const imgEl = this.$refs.previewImg
-      this.ephemeral.previewImgAttrs.width = imgEl.naturalWidth
-      this.ephemeral.previewImgAttrs.height = imgEl.naturalHeight
+      const naturalWidth = imgEl.naturalWidth
+      const naturalHeight = imgEl.naturalHeight
+      const aspectRatio = naturalWidth / naturalHeight
+
+      this.config.imgData.naturalWidth = naturalWidth
+      this.config.imgData.naturalHeight = naturalHeight
+      this.config.imgData.aspectRatio = aspectRatio
+      this.config.imgData.isWiderThanTall = aspectRatio >= 1
+
+      this.initViewerSettings()
+      this.updatePreviewImage()
+    },
+    initViewerSettings () {
+      const { naturalWidth, naturalHeight, isWiderThanTall } = this.config.imgData
+      const {
+        width: viewAreaWidth,
+        height: viewAreaHeight
+      } = this.$refs.viewerArea.getBoundingClientRect()
+      const viewAreaIsWiderThanTall = viewAreaWidth / viewAreaHeight >= 1
+      const getMinZoomFromWidth = () => viewAreaWidth > naturalWidth ? 100 : Math.ceil(viewAreaWidth / naturalWidth * 100)
+      const getMinZoomFromHeight = () => viewAreaHeight > naturalHeight ? 100 : Math.ceil(viewAreaHeight / naturalHeight * 100)
+      let zoomMin
+      // Calculate 'minimum' zoom value. the idea is that,
+      // - If the intrinsic size of the image is larger than current view-area: the percentage value that makes the image just fit the available space.
+      // - If the intrinsic size of the image is smaller than current view-area: 100%
+      if (viewAreaIsWiderThanTall) {
+        zoomMin = isWiderThanTall
+          ? getMinZoomFromHeight()
+          : getMinZoomFromWidth()
+      } else {
+        zoomMin = isWiderThanTall
+          ? getMinZoomFromWidth()
+          : getMinZoomFromHeight()
+      }
+
+      this.config.zoomMin = zoomMin
+      this.ephemeral.currentZoom = zoomMin
+    },
+    updatePreviewImage () {
+      // update the preview image width/height values based on the current zoom value
+      const { naturalWidth, naturalHeight, aspectRatio, isWiderThanTall } = this.config.imgData
+      const fraction = this.ephemeral.currentZoom / 100
+
+      if (isWiderThanTall) {
+        const widthCalc = fraction * naturalWidth
+        this.ephemeral.previewImgAttrs.width = widthCalc
+        this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
+      } else {
+        const heightCalc = fraction * naturalHeight
+        this.ephemeral.previewImgAttrs.width = heightCalc
+        this.ephemeral.previewImgAttrs.height = heightCalc * aspectRatio
+      }
     },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
+    },
+    resizeHandler () {
+      this.initViewerSettings()
+      this.updatePreviewImage()
     }
+  },
+  mounted () {
+    window.addEventListener('resize', this.resizeHandler)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.resizeHandler)
   }
 }
 </script>
