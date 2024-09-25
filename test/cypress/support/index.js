@@ -58,6 +58,12 @@ afterEach(function () {
 
 // Prevent errors when English is not the current OS locale language.
 Cypress.on('window:before:load', window => {
+  // We use defineProperty because the property may be read-only, and thus
+  // setting it directly may not work
+  // Also, `configurable` is set to true so that running this code multiple
+  // times doesn't raise an error. Otherwise, the property is marked as
+  // non-configurable and if this code runs more than once, an error with be
+  // thrown.
   Object.defineProperty(window.navigator, 'language', { value: 'en-US-POSIX', configurable: true })
   Object.defineProperty(window.navigator, 'languages', { value: ['en-US-POSIX', 'en-US', 'en'], configurable: true })
 })
