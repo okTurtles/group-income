@@ -13,18 +13,30 @@
         :src='testImgSrc'
         v-bind='ephemeral.previewImgAttrs'
         @load='onImgLoad')
-    p Content placeholder
+
+      slider-continuous.c-zoom-slider(
+        uid='zoomslider'
+        :value='ephemeral.currentZoom'
+        :min='config.zoomMin'
+        :max='config.zoomMax'
+        :unit='config.sliderUnit'
+        @input='handleZoomUpdate'
+      )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
 import { CLOSE_MODAL } from '@utils/events.js'
+import SliderContinuous from '@components/SliderContinuous.vue'
 
 export default {
   // NOTE: gave this component a generic name in case this is used outside the chatroom area. (eg. instead of 'ChatImageViewer' etc.)
   name: 'ImageViewerModal',
   mixins: [trapFocus],
+  components: {
+    SliderContinuous
+  },
   data () {
     return {
       testImgSrc: '/assets/images/home-bg.jpeg',
@@ -39,10 +51,11 @@ export default {
         imgData: {
           naturalWidth: null,
           naturalHeight: null,
-          aspectRatio: 1, // intrinsic ratio value of width / height
-          zoomMin: 0,
-          zoomMax: 400 // for now.
-        }
+          aspectRatio: 1 // intrinsic ratio value of width / height
+        },
+        zoomMin: 0,
+        zoomMax: 400, // for now.
+        sliderUnit: '%'
       }
     }
   },
@@ -85,7 +98,7 @@ export default {
 
       viewAreaHeight *= 0.8 // for initial render, use up to 80% of the available height. (close button should be visible)
 
-      let zoomMin = 100
+      let zoomMin = 100 // defaults to 100%
       let minWidth = naturalWidth
       let minHeight = naturalHeight
 
@@ -104,7 +117,7 @@ export default {
         minWidth = minHeight * aspectRatio
       }
 
-      zoomMin = minWidth / naturalWidth * 100
+      zoomMin = Math.ceil(minWidth / naturalWidth * 100)
 
       this.config.zoomMin = zoomMin
       this.ephemeral.currentZoom = zoomMin
@@ -117,11 +130,16 @@ export default {
       this.ephemeral.previewImgAttrs.width = widthCalc
       this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
     },
+    handleZoomUpdate (e) {
+      const val = e.target.value
+      this.ephemeral.currentZoom = val
+      console.log('!@# update value: ', val)
+    },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
     },
     resizeHandler () {
-      console.log('@!# here !!!')
+      // TODO: debounce this handler
       this.initViewerSettings()
       this.updatePreviewImage()
     }
@@ -189,5 +207,13 @@ img.c-preview-image {
   background-position: 50%;
   background-size: cover;
   inset: -100px;
+}
+
+.c-zoom-slider {
+  position: absolute !important;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 5;
+  width: 10.25rem;
 }
 </style>
