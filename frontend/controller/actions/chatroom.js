@@ -3,6 +3,7 @@ import sbp from '@sbp/sbp'
 
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { has, omit } from '@model/contracts/shared/giLodash.js'
+import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -10,6 +11,44 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
+import { makeMentionFromUserID } from '@model/chatroom/utils.js'
+import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
+
+sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
+  contractID,
+  data,
+  innerSigningContractID,
+  newMessage
+}) => {
+  const getters = sbp('state/vuex/getters')
+  const mentions = makeMentionFromUserID(getters.ourIdentityContractId)
+  const msgData = newMessage || data
+  const isMentionedMe = (!!newMessage || data.type === MESSAGE_TYPES.TEXT) && msgData.text &&
+  (msgData.text.includes(mentions.me) || msgData.text.includes(mentions.all))
+
+  if (!newMessage) {
+    const isAlreadyAdded = !!getters
+      .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
+
+    if (!isMentionedMe) {
+      sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+    }
+    if (isAlreadyAdded) return
+  }
+
+  messageReceivePostEffect({
+    contractID,
+    messageHash: msgData.hash,
+    height: msgData.height,
+    text: msgData.text,
+    isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+    messageType: !newMessage ? MESSAGE_TYPES.TEXT : data.type,
+    memberID: innerSigningContractID,
+    chatRoomName: getters.chatRoomAttributes.name
+  }).catch(e => {
+    console.error('[action/chatroom.js] Error on messageReceivePostEffect', e)
+  })
+})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams, billableContractID: string) {

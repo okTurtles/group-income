@@ -52,7 +52,7 @@ import {
   IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
   IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
 } from '@model/contracts/shared/constants.js'
-import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+import { requestNotificationPermission } from '@model/notifications/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import {
   allowedUsernameCharacters,

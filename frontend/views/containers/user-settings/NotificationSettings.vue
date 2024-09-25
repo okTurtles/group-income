@@ -22,7 +22,7 @@ import { L } from '@common/common.js'
 import {
   requestNotificationPermission,
   makeNotification
-} from '@model/contracts/shared/nativeNotification.js'
+} from '@model/notifications/nativeNotification.js'
 
 export default ({
   name: 'NotificationSettings',

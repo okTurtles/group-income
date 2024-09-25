@@ -70,6 +70,7 @@ export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 
 // chatroom events
+export const MESSAGE_RECEIVE_RAW = 'message-receive-raw'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 

@@ -28,10 +28,10 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import SvgBrokenLink from '@svgs/broken-link.svg'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl'
 
 export default ({
   name: 'InvitationLinkModal',

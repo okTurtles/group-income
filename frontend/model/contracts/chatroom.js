@@ -17,8 +17,7 @@ import {
   CHATROOM_TYPES,
   MAX_HASH_LEN,
   MESSAGE_NOTIFICATIONS,
-  MESSAGE_NOTIFY_SETTINGS,
-  MESSAGE_RECEIVE,
+  MESSAGE_RECEIVE_RAW,
   MESSAGE_TYPES,
   POLL_STATUS
 } from './shared/constants.js'
@@ -27,12 +26,10 @@ import {
   findMessageIdx,
   leaveChatRoom,
   makeMentionFromUserID,
-  referenceTally,
-  swapMentionIDForDisplayname
+  referenceTally
 } from './shared/functions.js'
 import chatroomGetters from './shared/getters/chatroom.js'
 import { cloneDeep, merge } from './shared/giLodash.js'
-import { makeNotification } from './shared/nativeNotification.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 
 export const GIChatroomAlreadyMemberError: typeof Error = ChelErrorGenerator('GIChatroomAlreadyMemberError')
@@ -49,57 +46,6 @@ function createNotificationData (
       ...moreParams
     }
   }
-}
-
-async function messageReceivePostEffect ({
-  contractID, messageHash, height, text,
-  isDMOrMention, messageType, memberID, chatRoomName
-}: {
-  contractID: string,
-  messageHash: string,
-  height: number,
-  text: string,
-  messageType: string,
-  isDMOrMention: boolean,
-  memberID: string,
-  chatRoomName: string
-}): Promise<void> {
-  // TODO: This can't be a root getter when running in a SW
-  const rootGetters = await sbp('state/vuex/getters')
-  const isGroupDM = rootGetters.isGroupDirectMessage(contractID)
-  const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
-
-  if (shouldAddToUnreadMessages) {
-    sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
-  }
-
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    return
-  }
-
-  let title = `# ${chatRoomName}`
-  let icon
-  if (isGroupDM) {
-    // NOTE: partner identity contract could not be synced yet
-    title = rootGetters.ourGroupDirectMessages[contractID].title
-    icon = rootGetters.ourGroupDirectMessages[contractID].picture
-  }
-  const path = `/group-chat/${contractID}`
-
-  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
-  const { messageNotification, messageSound } = chatNotificationSettings
-  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
-  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
-
-  shouldNotifyMessage && makeNotification({
-    title,
-    body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
-    icon,
-    path
-  })
-  shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
 async function deleteEncryptedFiles (manifestCids: string | string[], option: Object) {
@@ -373,26 +319,20 @@ sbp('chelonia/defineContract', {
           delete existingMsg['pending']
         }
       },
-      async sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
+      sideEffect ({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
 
         if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
           return
         }
-        const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
-        const mentions = makeMentionFromUserID(me)
-        const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
-          (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
-        await messageReceivePostEffect({
+        const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
+
+        sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
           contractID,
-          messageHash: newMessage.hash,
-          height: newMessage.height,
-          text: newMessage.text,
-          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
-          messageType: data.type,
-          memberID: innerSigningContractID,
-          chatRoomName: getters.chatRoomAttributes.name
+          data,
+          innerSigningContractID,
+          newMessage
         })
       }
     },
@@ -423,38 +363,17 @@ sbp('chelonia/defineContract', {
           }
         })
       },
-      async sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
+      sideEffect ({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
           return
         }
 
-        // TODO: This can't be a root getter when running in a SW
-        const isAlreadyAdded = !!sbp('state/vuex/getters')
-          .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
-        const mentions = makeMentionFromUserID(me)
-        const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
-
-        if (!isAlreadyAdded) {
-          await messageReceivePostEffect({
-            contractID,
-            messageHash: data.hash,
-            /*
-            * the following datetime is the time when the message(which made mention) is created
-            * the reason why it is it instead of datetime when the mention created is because
-            * it is compared to the datetime of other messages when user scrolls
-            * to decide if it should be removed from the list of mentions or not
-            */
-            height: data.createdHeight,
-            text: data.text,
-            isDMOrMention: isMentionedMe,
-            messageType: MESSAGE_TYPES.TEXT,
-            memberID: innerSigningContractID,
-            chatRoomName: getters.chatRoomAttributes.name
-          })
-        } else if (!isMentionedMe) {
-          sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
-        }
+        sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
+          contractID,
+          data,
+          innerSigningContractID
+        })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {

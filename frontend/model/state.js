@@ -578,6 +578,16 @@ const getters = {
           }
         }
       })
+    // For consistency, add users that were known in the past (since those
+    // contracts will be removed). This keeps mentions working in existing
+    // devices
+    Object.keys(state.reverseNamespaceLookups).forEach((contractID) => {
+      if (profiles[contractID]) return
+      profiles[contractID] = {
+        username: state.reverseNamespaceLookups[contractID],
+        contractID
+      }
+    })
     return profiles
   },
   currentGroupContactProfilesById (state, getters) {
