@@ -12,16 +12,20 @@
       img.c-preview-image(ref='previewImg'
         :src='testImgSrc'
         v-bind='ephemeral.previewImgAttrs'
+        :style='previewImgStyles'
+        draggable='false'
         @load='onImgLoad')
 
-      slider-continuous.c-zoom-slider(
-        uid='zoomslider'
-        :value='ephemeral.currentZoom'
-        :min='config.zoomMin'
-        :max='config.zoomMax'
-        :unit='config.sliderUnit'
-        @input='handleZoomUpdate'
-      )
+      .c-zoom-slider-container
+        slider-continuous.c-zoom-slider(
+          :class='{ "show-slider-output": ephemeral.showSliderOutput }'
+          uid='zoomslider'
+          :value='ephemeral.currentZoom'
+          :min='config.zoomMin'
+          :max='config.zoomMax'
+          :unit='config.sliderUnit'
+          @input='handleZoomUpdate'
+        )
 </template>
 
 <script>
@@ -45,7 +49,8 @@ export default {
           width: undefined,
           height: undefined
         },
-        currentZoom: 0
+        currentZoom: 0,
+        showSliderOutput: false
       },
       config: {
         imgData: {
@@ -63,6 +68,12 @@ export default {
     blurryBgStyles () {
       return {
         backgroundImage: `url(${this.testImgSrc})`
+      }
+    },
+    previewImgStyles () {
+      const attrs = this.ephemeral.previewImgAttrs
+      return {
+        height: attrs.height ? `${attrs.height}px` : undefined
       }
     }
   },
@@ -124,16 +135,27 @@ export default {
     },
     updatePreviewImage () {
       // update the preview image width/height values based on the current zoom value
+
       const { naturalWidth, aspectRatio } = this.config.imgData
       const fraction = this.ephemeral.currentZoom / 100
       const widthCalc = fraction * naturalWidth
+
       this.ephemeral.previewImgAttrs.width = widthCalc
       this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
     },
     handleZoomUpdate (e) {
       const val = e.target.value
       this.ephemeral.currentZoom = val
-      console.log('!@# update value: ', val)
+      this.updatePreviewImage()
+
+      if (!this.ephemeral.showSliderOutput) {
+        this.ephemeral.showSliderOutput = true
+      }
+
+      clearTimeout(this.sliderOutputTimeoutId)
+      this.sliderOutputTimeoutId = setTimeout(() => {
+        this.ephemeral.showSliderOutput = false
+      }, 1500)
     },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
@@ -198,6 +220,8 @@ export default {
 
 img.c-preview-image {
   max-width: unset;
+  cursor: move;
+  user-select: none;
 }
 
 .c-image-blurry-background {
@@ -209,11 +233,30 @@ img.c-preview-image {
   inset: -100px;
 }
 
-.c-zoom-slider {
-  position: absolute !important;
+.c-zoom-slider-container {
+  position: absolute;
   left: 1.5rem;
   bottom: 1.5rem;
   z-index: 5;
-  width: 10.25rem;
+  padding: 0.25rem 0.75rem 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid $general_0;
+}
+
+.c-zoom-slider {
+  width: 9.25rem;
+
+  ::v-deep .edge,
+  ::v-deep .sOutput {
+    display: none;
+  }
+
+  ::v-deep .marks {
+    margin-top: 0;
+  }
+
+  &.show-slider-output ::v-deep .sOutput {
+    display: inline-block;
+  }
 }
 </style>
