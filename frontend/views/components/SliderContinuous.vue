@@ -24,7 +24,7 @@
       ) {{ value + unit }}
 
     span.edge(
-      v-if='!ephemeral.currentZoom'
+      v-if='!hideText'
       aria-hidden='true'
     ) {{ max }}
 </template>
