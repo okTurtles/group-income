@@ -78,10 +78,12 @@ export default {
     },
     initViewerSettings () {
       const { naturalWidth, naturalHeight, aspectRatio } = this.config.imgData
-      const {
+      let {
         width: viewAreaWidth,
         height: viewAreaHeight
       } = this.$refs.viewerArea.getBoundingClientRect()
+
+      viewAreaHeight *= 0.8 // for initial render, use up to 80% of the available height. (close button should be visible)
 
       let zoomMin = 100
       let minWidth = naturalWidth
@@ -98,8 +100,7 @@ export default {
       }
 
       if (viewAreaHeight < minHeight) {
-        const hFraction = minHeight / viewAreaHeight
-        minHeight = minHeight * hFraction
+        minHeight = viewAreaHeight
         minWidth = minHeight * aspectRatio
       }
 
@@ -110,23 +111,17 @@ export default {
     },
     updatePreviewImage () {
       // update the preview image width/height values based on the current zoom value
-      const { naturalWidth, naturalHeight, aspectRatio, isWiderThanTall } = this.config.imgData
+      const { naturalWidth, aspectRatio } = this.config.imgData
       const fraction = this.ephemeral.currentZoom / 100
-
-      if (isWiderThanTall) {
-        const widthCalc = fraction * naturalWidth
-        this.ephemeral.previewImgAttrs.width = widthCalc
-        this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
-      } else {
-        const heightCalc = fraction * naturalHeight
-        this.ephemeral.previewImgAttrs.width = heightCalc
-        this.ephemeral.previewImgAttrs.height = heightCalc * aspectRatio
-      }
+      const widthCalc = fraction * naturalWidth
+      this.ephemeral.previewImgAttrs.width = widthCalc
+      this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
     },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
     },
     resizeHandler () {
+      console.log('@!# here !!!')
       this.initViewerSettings()
       this.updatePreviewImage()
     }
