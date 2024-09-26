@@ -25,7 +25,7 @@
 import { mapGetters } from 'vuex'
 import { imageDataURItoBlob } from '@utils/image.js'
 import { EDITED_AVATAR_DIAMETER } from './avatar-editor-constants.js'
-import pointerEventsMixin from './avatar-editor-pointer-events-setup.js'
+import pointerEventsMixin from '@view-utils/pointerEventsMixins.js'
 
 export default {
   name: 'AvatarEditorCanvas',

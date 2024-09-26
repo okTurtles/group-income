@@ -1,5 +1,5 @@
 import { throttle } from '@model/contracts/shared/giLodash.js'
-import { PINCH_ZOOM_THRESHOLD } from './avatar-editor-constants.js'
+export const PINCH_ZOOM_THRESHOLD = 2.5
 
 const pointerEventsMixin = {
   data (): { pointer: Object, throttledHandlers: Object } {
@@ -8,7 +8,7 @@ const pointerEventsMixin = {
         evts: []
       },
       throttledHandlers: {
-        pointerMoveOnWindow: throttle(this.onPointerMove, 20)
+        pointerMoveOnWindow: throttle(this.onPointerMove, 10)
       }
     }
   },
