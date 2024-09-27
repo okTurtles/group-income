@@ -26,19 +26,21 @@ const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
 const securityHeaders = {
   // This is the most likely to break things now; it may need changing when sandboxing or federation is implemented.
-  'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-eval'; script-src-elem 'self'; script-src-attr 'none'; style-src 'self'; style-src-elem 'self'; style-src-attr 'none'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; media-src 'self'; prefetch-src 'self'; worker-src 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self'",
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  // List generated using https://www.permissionspolicy.com.
-  'Permissions-Policy': 'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(self), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(self), execution-while-out-of-viewport=(self), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(self), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(self), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), gamepad=(), speaker-selection=()',
+  'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-eval'; script-src-elem 'self'; script-src-attr 'none'; style-src 'self'; style-src-elem 'self'; style-src-attr 'none'; img-src 'self' blob: https://unpkg.com; font-src 'self'; connect-src 'self'; media-src 'self'; prefetch-src 'self'; worker-src 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self'",
+  // Block embedding cross-origin resources that don't explicitly allow it.
+  'Cross-Origin-Embedder-Policy': 'require-corp',
   // Don't share context with potentially untrusted sites.
   'Cross-Origin-Opener-Policy': 'same-origin',
-  // Block loading the page in a frame.
-  'X-Frame-Options': 'deny',
-  // Blocks embedding cross-origin resources that don't explicitly allow it.
-  'Cross-Origin-Embedder-Policy': 'require-corp',
   // Block hotlinking.
-  'Cross-Origin-Resource-Policy': 'same-origin'
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  // List generated using https://www.permissionspolicy.com.
+  'Permissions-Policy': 'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(self), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(self), execution-while-out-of-viewport=(self), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(self), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(self), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), gamepad=(), speaker-selection=()',
+  // This tells the user agent under which circumstances to send a referrer header and what information it should contain.
+  // Setting it can be useful to prevent destination servers of links in GI from learning the exact URL (which can contain, e.g., a group) the user came from.
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Content-Type-Options': 'nosniff',
+  // Block loading the page in a frame.
+  'X-Frame-Options': 'DENY'
 }
 
 const hapi = new Hapi.Server({

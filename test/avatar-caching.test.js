@@ -117,7 +117,7 @@ describe('avatar file serving', function () {
     assert.equal(headers.get('content-type'), 'application/octet-stream')
     assert.equal(headers.get('etag'), `"${manifestCid}"`)
     // Not checking for a `last-modified` header.
-    assert.equal(headers.get('x-frame-options'), 'deny')
+    assert.equal(headers.get('x-frame-options'), 'DENY')
 
     const { headers: cHeaders } = await fetch(`${apiURL}/file/${chunkCid}`)
     assert.match(cHeaders.get('cache-control'), /immutable/)
@@ -126,6 +126,6 @@ describe('avatar file serving', function () {
     assert.equal(cHeaders.get('content-type'), 'application/octet-stream')
     assert.equal(cHeaders.get('etag'), `"${chunkCid}"`)
     // Not checking for a `last-modified` header.
-    assert.equal(cHeaders.get('x-frame-options'), 'deny')
+    assert.equal(cHeaders.get('x-frame-options'), 'DENY')
   })
 })
