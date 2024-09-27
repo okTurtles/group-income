@@ -158,14 +158,18 @@ export default {
       this.updatePreviewImage()
 
       if (isZoomingOut) {
+        // NOTE: when the image is being zoomed-out and also it has been translated,
+        // it needs a speical auto-translation logic so that the preview iamge doesn't stay off-screen.
+        // (No need to apply this when the preview iamge is larger than the view-port area)
+
         const { width: viewAreaWidth, height: viewAreaHeight } = this.$el.getBoundingClientRect()
         const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
         const isPreviewTallerThanViewArea = viewAreaHeight < this.ephemeral.previewImgAttrs.height
         const isPreviewWiderThanViewArea = viewAreaWidth < this.ephemeral.previewImgAttrs.width
 
         const { naturalWidth, naturalHeight } = this.config.imgData
-        let moveX = 0
-        let moveY = 0
+        let moveX = 0 // x-value to auto-translate
+        let moveY = 0 // y-value to auto-translate
 
         if (!isPreviewWiderThanViewArea && Math.abs(this.ephemeral.imgTranslation.x)) {
           const zoomedOutX = Math.abs(zoomDiff * naturalWidth)
