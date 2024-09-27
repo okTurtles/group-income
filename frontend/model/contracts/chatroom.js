@@ -100,6 +100,7 @@ sbp('chelonia/defineContract', {
             maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
           attributes: {
+            adminIDs: [],
             deletedDate: null
           },
           members: {},
@@ -389,12 +390,8 @@ sbp('chelonia/defineContract', {
         if (innerSigningContractID !== data.messageSender) {
           if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             throw new TypeError(L('Only the person who sent the message can delete it.'))
-          } else {
-            // TODO: This can't be a root getter when running in a SW
-            const groupID = sbp('state/vuex/getters').groupIdFromChatRoomId(contractID)
-            if (sbp('state/vuex/state')[groupID]?.groupOwnerID !== innerSigningContractID) {
-              throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))
-            }
+          } else if (!state.attributes.adminIDs.includes(innerSigningContractID)) {
+            throw new TypeError(L('Only the group creator and the person who sent the message can delete it.'))
           }
         }
       }),

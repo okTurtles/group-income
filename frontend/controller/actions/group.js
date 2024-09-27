@@ -26,6 +26,7 @@ import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
 import {
   ACCEPTED_GROUP,
+  LEFT_GROUP,
   JOINED_GROUP,
   JOINED_CHATROOM,
   LOGOUT,
@@ -41,8 +42,19 @@ import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chel
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
+import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { createInvite, encryptedAction } from './utils.js'
 import { extractProposalData } from '@model/notifications/utils.js'
+
+sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
+  const rootState = sbp('state/vuex/state')
+  if (rootState.loggedIn?.identityContractID !== identityContractID) return
+  // NOTE: remove all notifications whose scope is in this group
+  // TODO: FIND ANOTHER WAY OF DOING THIS WITHOUT ROOTGETTERS
+  for (const notification of sbp('state/vuex/getters').notificationsByGroup(groupContractID)) {
+    sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification.hash)
+  }
+})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
@@ -606,6 +618,10 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
+        attributes: {
+          ...params.data?.attributes,
+          adminIDs: [contractState.groupOwnerID]
+        },
         ...params.data
       },
       options: {

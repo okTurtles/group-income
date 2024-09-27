@@ -6,7 +6,6 @@ import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -1173,13 +1172,8 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, data }, { state }) {
-        if (Object.keys(state.chatRooms).length === 1) {
-          // NOTE: only general chatroom exists, meaning group has just been created
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupID: contractID,
-            chatRoomID: state.generalChatRoomId
-          })
-        }
+        // The app is responsible for calling setCurrentChatRoomId
+        // (this happens on the JOINED_CHATROOM event)
         // If it's the #General chatroom being added, add ourselves to it
         if (data.chatRoomID === state.generalChatRoomId) {
           sbp('chelonia/queueInvocation', contractID, () => {
@@ -1686,12 +1680,6 @@ sbp('chelonia/defineContract', {
       }
 
       if (memberID === identityContractID) {
-        // NOTE: remove all notifications whose scope is in this group
-        // TODO: FIND ANOTHER WAY OF DOING THIS WITHOUT ROOTGETTERS
-        for (const notification of sbp('state/vuex/getters').notificationsByGroup(contractID)) {
-          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification.hash)
-        }
-
         // The following detects whether we're in the process of joining, and if
         // we are, it doesn't remove the contract and calls /join to complete
         // the joining process.
