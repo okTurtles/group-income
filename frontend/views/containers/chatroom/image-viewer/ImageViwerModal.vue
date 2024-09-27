@@ -106,5 +106,11 @@ export default {
   z-index: 2;
   right: 0.75rem;
   top: 0.75rem;
+  background-color: $general_1;
+
+  &:hover,
+  &:focus {
+    background-color: $general_2;
+  }
 }
 </style>

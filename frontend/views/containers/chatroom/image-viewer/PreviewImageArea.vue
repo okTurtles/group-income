@@ -1,6 +1,7 @@
 <template lang="pug">
 .c-image-view-area
   img.c-preview-image(ref='previewImg'
+    :class='{ "is-movable": isImageMovable }'
     :src='testImgSrc'
     v-bind='ephemeral.previewImgAttrs'
     :style='previewImgStyles'
@@ -14,6 +15,7 @@
     @pointerup.stop=''
   )
     slider-continuous.c-zoom-slider(
+      v-if='ephemeral.currentZoom !== null'
       :class='{ "show-slider-output": ephemeral.showSliderOutput }'
       uid='zoomslider'
       :value='ephemeral.currentZoom'
@@ -27,6 +29,8 @@
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
 import pointerEventsMixin from '@view-utils/pointerEventsMixins.js'
+
+const getSign = v => v < 0 ? -1 : 1
 
 export default {
   name: 'PreviewImageArea',
@@ -42,13 +46,13 @@ export default {
           width: undefined,
           height: undefined
         },
-        currentZoom: 0,
+        imgTranslation: { x: 0, y: 0 },
+        currentZoom: null,
+        previousZoom: null,
         showSliderOutput: false
       },
       config: {
         imgData: {
-          minWidth: null,
-          minHeight: null,
           naturalWidth: null,
           naturalHeight: null,
           aspectRatio: 1 // intrinsic ratio value of width / height
@@ -62,8 +66,28 @@ export default {
   computed: {
     previewImgStyles () {
       const attrs = this.ephemeral.previewImgAttrs
+      const tx = this.ephemeral.imgTranslation.x || 0
+      const ty = this.ephemeral.imgTranslation.y || 0
+
       return {
-        height: attrs.height ? `${attrs.height}px` : undefined
+        height: attrs.height ? `${attrs.height}px` : undefined,
+        transform: `translate(${tx}px, ${ty}px)`
+      }
+    },
+    isImageMovable () {
+      return this.config.zoomMin < this.ephemeral.currentZoom // currentZoom is higher than the minimum value.
+    },
+    movableDistances () {
+      // calculates how much vertical/horizontal spaces are available to move image around in.
+
+      if (!this.isImageMovable) {
+        return { x: 0, y: 0 }
+      } else {
+        const percentDiff = (this.ephemeral.currentZoom - this.config.zoomMin) / 100
+        return {
+          x: this.config.imgData.naturalWidth * percentDiff / 2,
+          y: this.config.imgData.naturalHeight * percentDiff / 2
+        }
       }
     }
   },
@@ -114,10 +138,10 @@ export default {
 
       this.config.zoomMin = zoomMin
       this.ephemeral.currentZoom = zoomMin
+      this.ephemeral.imgTranslation = { x: 0, y: 0 }
     },
     updatePreviewImage () {
       // update the preview image width/height values based on the current zoom value
-
       const { naturalWidth, aspectRatio } = this.config.imgData
       const fraction = this.ephemeral.currentZoom / 100
       const widthCalc = fraction * naturalWidth
@@ -127,8 +151,40 @@ export default {
     },
     handleZoomUpdate (e) {
       const val = e.target.value
+      this.ephemeral.previousZoom = this.ephemeral.currentZoom
       this.ephemeral.currentZoom = val
+      const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
+
       this.updatePreviewImage()
+
+      if (isZoomingOut) {
+        const { width: viewAreaWidth, height: viewAreaHeight } = this.$el.getBoundingClientRect()
+        const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
+        const isPreviewTallerThanViewArea = viewAreaHeight < this.ephemeral.previewImgAttrs.height
+        const isPreviewWiderThanViewArea = viewAreaWidth < this.ephemeral.previewImgAttrs.width
+
+        const { naturalWidth, naturalHeight } = this.config.imgData
+        let moveX = 0
+        let moveY = 0
+
+        if (!isPreviewWiderThanViewArea && Math.abs(this.ephemeral.imgTranslation.x)) {
+          const zoomedOutX = Math.abs(zoomDiff * naturalWidth)
+          const absCurrTransX = Math.abs(this.ephemeral.imgTranslation.x)
+          const currTransXSign = getSign(this.ephemeral.imgTranslation.x)
+
+          moveX = Math.min(zoomedOutX, absCurrTransX) * currTransXSign * -1
+        }
+
+        if (!isPreviewTallerThanViewArea && Math.abs(this.ephemeral.imgTranslation.y)) {
+          const zoomedOutY = Math.abs(zoomDiff * naturalHeight)
+          const absCurrTransY = Math.abs(this.ephemeral.imgTranslation.y)
+          const currTransYSign = getSign(this.ephemeral.imgTranslation.y)
+
+          moveY = Math.min(zoomedOutY, absCurrTransY) * currTransYSign * -1
+        }
+
+        this.translate({ x: moveX, y: moveY })
+      }
 
       if (!this.ephemeral.showSliderOutput) {
         this.ephemeral.showSliderOutput = true
@@ -140,7 +196,25 @@ export default {
       }, 1500)
     },
     translate ({ x = 0, y = 0 }) {
-      console.log('TODO: implement image translation: ', { x, y })
+      if (!this.isImageMovable) {
+        this.ephemeral.imgTranslation = { x: 0, y: 0 }
+      } else {
+        const { x: movableX, y: movableY } = this.movableDistances
+        let newX = this.ephemeral.imgTranslation.x + x
+        let newY = this.ephemeral.imgTranslation.y + y
+        const signX = getSign(newX)
+        const signY = getSign(newY)
+
+        if (Math.abs(newX) > movableX) {
+          newX = signX * movableX
+        }
+        if (Math.abs(newY) > movableY) {
+          newY = signY * movableY
+        }
+
+        this.ephemeral.imgTranslation.x = newX
+        this.ephemeral.imgTranslation.y = newY
+      }
     },
     resizeHandler () {
       // TODO: debounce this handler
@@ -173,8 +247,11 @@ export default {
 
 img.c-preview-image {
   max-width: unset;
-  cursor: move;
   user-select: none;
+
+  &.is-movable {
+    cursor: move;
+  }
 }
 
 .c-zoom-slider-container {
