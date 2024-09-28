@@ -36,6 +36,14 @@ sbp('sbp/selectors/register', {
     try {
       const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
 
+      // This ensures that the 'store-client-id' message is always sent to the
+      // service worker, even if it's not immediately available. Calling `removeEventListener` is fine because presumably the page performing an
+      // update is sending this message. However, the real question is whether
+      // we _need_ to store a client ID (broadcasting should be preferred) and
+      // for instances where a single client ID is needed, this should be
+      // done periodically (e.g., to identify an active window).
+      // TODO: Clarify the use and need for 'store-client-id'. This will become
+      // clearer once implementing notifications.
       if (swRegistration.active) {
         swRegistration.active?.postMessage({ type: 'store-client-id' })
       } else {
