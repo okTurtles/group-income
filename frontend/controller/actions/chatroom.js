@@ -316,5 +316,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/delete', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
   ...encryptedAction('gi.actions/chatroom/changeVoteOnPoll', L('Failed to change vote on a poll.')),
-  ...encryptedAction('gi.actions/chatroom/closePoll', L('Failed to close a poll.'))
+  ...encryptedAction('gi.actions/chatroom/closePoll', L('Failed to close a poll.')),
+  ...encryptedAction('gi.actions/chatroom/upgradeFrom1.0.8', L('Failed to upgrade from version 1.0.8'))
 }): string[])
