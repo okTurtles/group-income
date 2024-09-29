@@ -64,9 +64,9 @@ sbp('sbp/selectors/register', {
   'gi.notifications/remove' (hashes: string | string[]) {
     if (!Array.isArray(hashes)) hashes = [hashes]
     const rootState = sbp('chelonia/rootState')
-    if (rootState.notifications) return
+    if (!rootState.notifications) return
     const hashesSet = new Set(hashes)
-    const indices = rootState.notifications.map((item, index) => {
+    const indices = rootState.notifications.items.map((item, index) => {
       if (hashesSet.has(item.hash)) {
         hashesSet.delete(item.hash)
         return index
