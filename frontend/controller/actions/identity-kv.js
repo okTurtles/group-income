@@ -251,8 +251,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadNotificationStatus': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
-      // TODO: Do this without Vuex
-      sbp('state/vuex/commit', 'setNotificationStatus', status)
+      sbp('gi.notifications/setNotificationStatus', status)
     })
   },
   'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
