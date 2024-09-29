@@ -251,6 +251,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadNotificationStatus': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
+      // TODO: Do this without Vuex
       sbp('state/vuex/commit', 'setNotificationStatus', status)
     })
   },
@@ -279,7 +280,7 @@ export default (sbp('sbp/selectors/register', {
       hashes = [hashes]
     }
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const { notifications } = sbp('state/vuex/getters')
+      const notifications = sbp('chelonia/rootState').notifications.items
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false

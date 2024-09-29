@@ -60,3 +60,6 @@ export const NAMESPACE_REGISTRATION = 'namespace-registration'
 export const KV_QUEUE = 'kv-queue'
 
 export const PWA_INSTALLABLE = 'pwa-installable'
+
+export const NOTIFICATION_EMITTED = 'notification-emitted'
+export const NOTIFICATION_REMOVED = 'notification-removed'

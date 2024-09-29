@@ -6,7 +6,6 @@ import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { REMOVE_NOTIFICATION } from '~/frontend/model/notifications/mutationKeys.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -1686,12 +1685,6 @@ sbp('chelonia/defineContract', {
       }
 
       if (memberID === identityContractID) {
-        // NOTE: remove all notifications whose scope is in this group
-        // TODO: FIND ANOTHER WAY OF DOING THIS WITHOUT ROOTGETTERS
-        for (const notification of sbp('state/vuex/getters').notificationsByGroup(contractID)) {
-          sbp('state/vuex/commit', REMOVE_NOTIFICATION, notification.hash)
-        }
-
         // The following detects whether we're in the process of joining, and if
         // we are, it doesn't remove the contract and calls /join to complete
         // the joining process.
