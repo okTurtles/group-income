@@ -8,7 +8,7 @@ import './selectors.js'
 import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
 import type { Notification } from './types.flow.js'
 import { age, compareOnTimestamp, isNew, isOlder } from './utils.js'
-import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
+import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
 
 sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
@@ -16,6 +16,10 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
 
 sbp('okTurtles.events/on', NOTIFICATION_REMOVED, (hashes) => {
   hashes.forEach(hash => sbp('state/vuex/commit', keys.REMOVE_NOTIFICATION, hash))
+})
+
+sbp('okTurtles.events/on', NOTIFICATION_STATUS_LOADED, (status) => {
+  sbp('state/vuex/commit', 'setNotificationStatus', status)
 })
 
 const defaultState = {

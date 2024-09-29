@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
 import templates from './templates.js'
 import { makeNotificationHash } from './utils.js'
-import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
+import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
 
 /*
  * NOTE: do not refactor occurences of `sbp('state/vuex/state')` by defining a shared constant in the
@@ -40,13 +40,16 @@ sbp('sbp/selectors/register', {
       type
     }
     const rootState = sbp('chelonia/rootState')
-    if (!rootState.notifications) rootState.notifications = { items: [], status: {} }
+    if (!rootState.notifications) {
+      rootState.notifications = { items: [], status: {} }
+    }
     if (rootState.notifications.items.some(item => item.hash === notification.hash)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
       return console.error('This notification is already in the store.')
     }
     const index = rootState.notifications.items.findLastIndex(item => item < notification.timestamp)
     rootState.notifications.items.splice(Math.max(0, index), 0, notification)
+    sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
     sbp('gi.actions/identity/kv/addNotificationStatus', notification)
     sbp('okTurtles.events/emit', NOTIFICATION_EMITTED, notification)
   },
@@ -75,5 +78,14 @@ sbp('sbp/selectors/register', {
     }).filter(Boolean).sort().map((v, i) => v - i)
     indices.forEach((index) => rootState.notifications.items.splice(index, 1))
     sbp('okTurtles.events/emit', NOTIFICATION_REMOVED, hashes)
+  },
+  'gi.notifications/setNotificationStatus' (status) {
+    const rootState = sbp('chelonia/rootState')
+    if (!rootState.notifications) {
+      rootState.notifications = { items: [], status: {} }
+    }
+    rootState.notifications.status = status
+    sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+    sbp('okTurtles.events/emit', NOTIFICATION_STATUS_LOADED, status)
   }
 })
