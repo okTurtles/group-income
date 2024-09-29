@@ -14,7 +14,27 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return
   if (!rootState.chatroom.currentChatRoomIDs[groupContractID] || rootState.chatroom.pendingChatRoomIDs[groupContractID] === chatRoomID) {
-    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
+    let attemptCount = 0
+    // Sometimes, the state may not be ready (it needs to be copied from the SW
+    // to Vuex). In this case, we try again after a short delay.
+    // The specific issue is that the browsing-side state is updated in response
+    // to the EVENT_HANDLED event. Although that event is correctly emitted
+    // prior to JOINED_CHATROOM, processing might take slightly longer, causing
+    // rootState[chatRoomID]?.members?.[identityContractID] to be briefly
+    // undefined.
+    // TODO: Figure out a better way of doing this that doesn't require a timeout
+    const setCurrentChatRoomId = () => {
+      if (!rootState[chatRoomID]?.members?.[identityContractID]) {
+        if (++attemptCount > 5) {
+          console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 attempts', { identityContractID, groupContractID, chatRoomID })
+          return
+        }
+        setTimeout(setCurrentChatRoomId, 5 + 5 * attemptCount)
+      } else {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
+      }
+    }
+    setCurrentChatRoomId()
   }
 })
 sbp('okTurtles.events/on', LEFT_CHATROOM, switchCurrentChatRoomHandler)
