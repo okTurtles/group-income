@@ -4,9 +4,10 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { Vue, L } from '@common/common.js'
+import { L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
+import Vue from 'vue'
 import Vuex from 'vuex'
 import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'

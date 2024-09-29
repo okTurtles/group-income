@@ -83,7 +83,7 @@ modal-base-template(
 </template>
 
 <script>
-import { Vue } from '@common/common.js'
+import Vue from 'vue'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import QrCode from '@components/QrCode.vue'
