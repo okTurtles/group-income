@@ -104,8 +104,12 @@ sbp('sbp/selectors/register', {
         // $FlowFixMe[incompatible-use]
         return Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
           return Object.values(members)
-        }).reduce((upgradeRequired: string | boolean, member: Object) => {
-          return upgradeRequired || (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null && groupID)
+        }).reduce((contractID: string | boolean, member: Object) => {
+          if (contractID) return contractID
+          if (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null) {
+            return groupID
+          }
+          return false
         }, false)
       }).forEach((contractID) => {
         if (!contractID) return

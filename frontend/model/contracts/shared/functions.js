@@ -83,7 +83,9 @@ export function getProposalDetails (proposal: Object): Object {
     options['member'] = proposalData.memberName
   } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
     options['memberID'] = proposalData.memberID
-    // options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
+    // options['member'] is not set as it's part of external state. The code
+    // responsible for notifications (`frontend/model/notifications/templates.js`)
+    // will set it
   }
 
   const { proposedValue } = proposalData
