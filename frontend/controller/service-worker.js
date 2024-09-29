@@ -29,30 +29,46 @@ sbp('sbp/selectors/register', {
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
     // NOTE: user should still be able to use app even if all the SW stuff fails
-    if (!('serviceWorker' in navigator)) { return }
+    if (!('serviceWorker' in navigator)) {
+      throw new Error('Service worker APIs missing')
+    }
 
     try {
       const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
 
-      if (swRegistration) {
+      // This ensures that the 'store-client-id' message is always sent to the
+      // service worker, even if it's not immediately available. Calling `removeEventListener` is fine because presumably the page performing an
+      // update is sending this message. However, the real question is whether
+      // we _need_ to store a client ID (broadcasting should be preferred) and
+      // for instances where a single client ID is needed, this should be
+      // done periodically (e.g., to identify an active window).
+      // TODO: Clarify the use and need for 'store-client-id'. This will become
+      // clearer once implementing notifications.
+      if (swRegistration.active) {
         swRegistration.active?.postMessage({ type: 'store-client-id' })
-
-        // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
-        await swRegistration.update()
-        setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
-
-        // Keep the service worker alive while the window is open
-        // The default idle timeout on Chrome and Firefox is 30 seconds. We send
-        // a ping message every 5 seconds to ensure that the worker remains
-        // active.
-        // The downside of this is that there are messges going back and forth
-        // between the service worker and each tab, the number of which is
-        // proportional to the number of tabs open.
-        // The upside of this is that the service worker remains active while
-        // there are open tabs, which makes it faster and smoother to interact
-        // with contracts than if the service worker had to be restarted.
-        setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
+      } else {
+        const handler = () => {
+          navigator.serviceWorker.removeEventListener('controllerchange', handler, false)
+          navigator.serviceWorker.controller.postMessage({ type: 'store-client-id' })
+        }
+        navigator.serviceWorker.addEventListener('controllerchange', handler, false)
       }
+
+      // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
+      await swRegistration.update()
+      setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
+
+      // Keep the service worker alive while the window is open
+      // The default idle timeout on Chrome and Firefox is 30 seconds. We send
+      // a ping message every 5 seconds to ensure that the worker remains
+      // active.
+      // The downside of this is that there are messges going back and forth
+      // between the service worker and each tab, the number of which is
+      // proportional to the number of tabs open.
+      // The upside of this is that the service worker remains active while
+      // there are open tabs, which makes it faster and smoother to interact
+      // with contracts than if the service worker had to be restarted.
+      setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
 
       navigator.serviceWorker.addEventListener('message', event => {
         const data = event.data
