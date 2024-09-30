@@ -55,9 +55,17 @@ const pointerEventsMixin = {
         if ((currentXDist - prevXDist > PINCH_ZOOM_THRESHOLD) ||
           (currentYDist - prevYDist > PINCH_ZOOM_THRESHOLD)) {
           this.$emit('pinch-out')
+
+          // The component that registers this mixin needs to be able to listen to this custom event too.
+          this.pinchOutHandler &&
+            this.pinchOutHandler(e)
         } else if ((currentXDist - prevXDist < PINCH_ZOOM_THRESHOLD * -1) ||
           (currentYDist - prevYDist < PINCH_ZOOM_THRESHOLD * -1)) {
           this.$emit('pinch-in')
+
+          // The component that registers this mixin needs to be able to listen to this custom event too.
+          this.pinchInHandler &&
+            this.pinchInHandler(e)
         }
       }
     }

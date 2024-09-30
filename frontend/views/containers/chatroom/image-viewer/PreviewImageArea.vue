@@ -1,5 +1,7 @@
 <template lang="pug">
-.c-image-view-area
+.c-image-view-area(
+  @wheel.prevent.stop='wheelEventHandler'
+)
   img.c-preview-image(ref='previewImg'
     :class='{ "is-movable": isImageMovable }'
     :src='imgSrc'
@@ -22,13 +24,14 @@
       :min='config.zoomMin'
       :max='config.zoomMax'
       :unit='config.sliderUnit'
-      @input='handleZoomUpdate'
+      @input='onSliderUpdate'
     )
 </template>
 
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
 import pointerEventsMixin from '@view-utils/pointerEventsMixins.js'
+import { linearScale } from '@model/contracts/shared/giLodash.js'
 
 const getSign = v => v < 0 ? -1 : 1
 
@@ -154,8 +157,10 @@ export default {
       this.ephemeral.previewImgAttrs.width = widthCalc
       this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
     },
-    handleZoomUpdate (e) {
-      const val = e.target.value
+    onSliderUpdate (e) {
+      this.handleZoomUpdate(e.target.value)
+    },
+    handleZoomUpdate (val) {
       this.ephemeral.previousZoom = this.ephemeral.currentZoom
       this.ephemeral.currentZoom = val
       const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
@@ -229,6 +234,40 @@ export default {
       // TODO: debounce this handler
       this.initViewerSettings()
       this.updatePreviewImage()
+    },
+    pinchInHandler () {
+      console.log('!@# is pinching in')
+    },
+    pinchOutHandler () {
+      console.log('!@# is pinching out')
+    },
+    wheelEventHandler (e) {
+      // reference: https://kenneth.io/post/detecting-multi-touch-trackpad-gestures-in-javascript
+
+      if (!e.ctrlKey) { return }
+
+      const currZoom = this.ephemeral.currentZoom
+      const deltaToZoomUpdate = linearScale([0, 5], [0, 10])
+      const updateVal = Math.ceil(deltaToZoomUpdate(Math.abs(e.deltaY)))
+      let newVal
+
+      if (e.deltaY < 0) {
+        // 'zoom-in' action using track-pad
+        newVal = currZoom + updateVal
+        if (newVal > this.config.zoomMax) {
+          newVal = this.config.zoomMax
+        }
+      } else {
+        // 'zoom-out' action using track-pad
+        newVal = currZoom - updateVal
+        if (newVal < this.config.zoomMin) {
+          newVal = this.config.zoomMin
+        }
+      }
+
+      if (newVal !== undefined) {
+        this.handleZoomUpdate(newVal)
+      }
     }
   },
   mounted () {

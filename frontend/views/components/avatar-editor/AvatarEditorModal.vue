@@ -138,8 +138,8 @@ export default ({
       this.$refs.slider.updateSlider(this.form.slider)
     },
     HandleWheelOnCanvas ({ deltaY }) {
-      if (deltaY < 0) this.incrementSlider(4)
-      else this.decrementSlider(4)
+      if (deltaY < 0) this.incrementSlider(3)
+      else this.decrementSlider(3)
     },
     loadPhotoChange (fileList) {
       if (!fileList.length) return
