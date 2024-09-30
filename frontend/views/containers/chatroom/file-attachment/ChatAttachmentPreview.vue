@@ -22,7 +22,7 @@
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
-          @click='openImageViewer(objectURLList[entryIndex])'
+          @click='openImageViewer(objectURLList[entryIndex], entry)'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -60,7 +60,7 @@
       v-for='(entry, entryIndex) in attachmentList'
       :key='entryIndex'
       :class='"is-" + fileType(entry)'
-      @click='openImageViewer(entry.url)'
+      @click='openImageViewer(entry.url, entry)'
     )
       img.c-preview-img(
         v-if='fileType(entry) === "image" && entry.url'
@@ -113,7 +113,9 @@ export default {
     },
     isGroupCreator: Boolean,
     isForDownload: Boolean,
-    isMsgSender: Boolean
+    isMsgSender: Boolean,
+    ownerId: String,
+    createdAt: [Date, String]
   },
   data () {
     return {
@@ -210,9 +212,19 @@ export default {
         height: `${heightInPixel}px`
       }
     },
-    openImageViewer (objectURL) {
+    openImageViewer (objectURL, data) {
       if (objectURL) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal', { imageUrl: objectURL })
+        sbp(
+          'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+          { imageUrl: objectURL },
+          {
+            metaData: {
+              name: data.name,
+              ownerId: this.ownerId,
+              createdAt: this.createdAt || new Date()
+            }
+          }
+        )
       }
     }
   },

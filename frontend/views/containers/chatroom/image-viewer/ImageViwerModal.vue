@@ -24,6 +24,9 @@ export default {
   components: {
     PreviewImageArea
   },
+  props: {
+    metaData: Object
+  },
   data () {
     return {
       testImgSrc: '/assets/images/home-bg.jpeg',
@@ -58,6 +61,7 @@ export default {
     }
   },
   created () {
+    console.log('!@# metaData: ', this.metaData)
     const imgUrl = this.$route.query.imageUrl
     if (imgUrl) {
       this.ephemeral.imgUrl = imgUrl
