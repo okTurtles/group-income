@@ -507,7 +507,7 @@ const getters = {
     // $FlowFixMe[method-unbinding]
     return [groupMembersPending, getters.groupProfiles].flatMap(Object.keys)
       .filter(memberID => getters.groupProfiles[memberID] ||
-         getters.groupMembersPending[memberID].expires >= Date.now())
+         !(getters.groupMembersPending[memberID].expires < Date.now()))
       .map(memberID => {
         const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || (getters.groupProfiles[memberID] ? { contractID: memberID } : {})
         return {

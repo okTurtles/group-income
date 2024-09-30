@@ -185,7 +185,8 @@ export function humanDate (
     : ((navigator.languages: any): string[]) ?? navigator.language ?? fallback
   // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
-  return new Date(date).toLocaleDateString(locale, options)
+  const dateObj = new Date(date)
+  if (!isNaN(dateObj.valueOf())) return dateObj.toLocaleDateString(locale, options)
 }
 
 export function isPeriodStamp (arg: string): boolean {
@@ -257,4 +258,40 @@ export function cycleAtDate (atDate: string | Date): number {
   const now = new Date(atDate) // Just in case the parameter is a string type.
   const partialCycles = now.getDate() / lastDayOfMonth(now).getDate()
   return partialCycles
+}
+
+export function timeLeft (expiryTime: number) {
+  const now = new Date()
+  const expiry = new Date(expiryTime)
+
+  if (expiry < now) {
+    return {}
+  }
+
+  let years = expiry.getFullYear() - now.getFullYear()
+  let months = expiry.getMonth() - now.getMonth()
+  let days = expiry.getDate() - now.getDate()
+  let hours = expiry.getHours() - now.getHours()
+  let minutes = expiry.getMinutes() - now.getMinutes()
+
+  // Adjust for negative values
+  if (minutes < 0) {
+    minutes += 60
+    hours--
+  }
+  if (hours < 0) {
+    hours += 24
+    days--
+  }
+  if (days < 0) {
+    const lastMonth = new Date(expiry.getFullYear(), expiry.getMonth(), 0)
+    days += lastMonth.getDate()
+    months--
+  }
+  if (months < 0) {
+    months += 12
+    years--
+  }
+
+  return { years, months, days, hours, minutes }
 }

@@ -1379,18 +1379,6 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/group/updateGroupInviteExpiry': {
-      validate: actionRequireActiveMember(objectOf({
-        inviteKeyId: stringMax(MAX_HASH_LEN),
-        expires: numberRange(0, Number.MAX_SAFE_INTEGER)
-      })),
-      process ({ data }, { state }) {
-        const invite = state._vm.invites[data.inviteKeyId]
-        if (invite) {
-          invite.expires = data.expires
-        }
-      }
-    },
     'gi.contracts/group/upgradeFrom1.0.7': {
       validate: actionRequireActiveMember(optional),
       process ({ height }, { state }) {

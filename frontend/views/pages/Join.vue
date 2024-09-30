@@ -125,8 +125,6 @@ export default ({
         const state = await sbp('chelonia/latestContractState', groupId)
         const publicKeyId = keyId(secret)
         const invite = state._vm.invites[publicKeyId]
-        console.log('!@# invites: ', state._vm.invites)
-        console.log('!@# found invite: ', invite)
         if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')
           this.ephemeral.errorMsg = messageToAskAnother

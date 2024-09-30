@@ -173,10 +173,10 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               quantity: 60,
-              expires: Math.min(
-                Date.now() + 1 * 60 * 1000,
-                Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-              ), // TODO: revert this after development
+              ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
+                expires:
+                await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+              }),
               private: {
                 content: inviteKeyS
               }
