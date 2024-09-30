@@ -101,6 +101,15 @@ export default {
   }
 }
 
+.c-image-blurry-background {
+  position: absolute;
+  pointer-events: none;
+  filter: blur(40px) brightness(0.4);
+  background-position: 50%;
+  background-size: cover;
+  inset: -100px;
+}
+
 .c-close-btn {
   position: absolute;
   z-index: 2;

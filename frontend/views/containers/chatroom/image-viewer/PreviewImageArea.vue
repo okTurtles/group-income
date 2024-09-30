@@ -264,16 +264,36 @@ img.c-preview-image {
   bottom: 1.5rem;
   z-index: 5;
   padding: 0.25rem 0.75rem 0.75rem;
-  border-radius: 0.25rem;
-  border: 1px solid $general_0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: block;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    background-color: $general_1;
+    border-radius: 0.5rem;
+    opacity: 0.675;
+  }
 }
 
 .c-zoom-slider {
   width: 9.25rem;
+  z-index: 1;
 
-  ::v-deep .edge,
+  ::v-deep .edge {
+    display: none;
+  }
+
   ::v-deep .sOutput {
     display: none;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+    top: -2rem;
   }
 
   ::v-deep .marks {
