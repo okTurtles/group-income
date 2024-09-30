@@ -217,7 +217,7 @@
               button.is-icon(
                 data-test='createPoll'
                 :aria-label='L("Create poll")'
-                @click='openImageViewer'
+                @click='openCreatePollModal'
               )
                 i.icon-poll
             tooltip(
@@ -689,10 +689,6 @@ export default ({
         right: `${window.innerWidth - bbox.right + 24}px`, // 24 -> 1.5rem padding-left
         bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
       })
-    },
-    openImageViewer () {
-      // !TODO: this is here for a development purpose and must be removed once done
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal')
     },
     openFileAttach (e) {
       if (e.target.matches('input')) { return }

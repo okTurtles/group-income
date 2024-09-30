@@ -8,7 +8,7 @@
       i.icon-times
 
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area
+    preview-image-area(:img-src='ephemeral.imgUrl')
 </template>
 
 <script>
@@ -28,6 +28,7 @@ export default {
     return {
       testImgSrc: '/assets/images/home-bg.jpeg',
       ephemeral: {
+        imgUrl: '',
         previewImgAttrs: {
           width: undefined,
           height: undefined
@@ -52,8 +53,16 @@ export default {
   computed: {
     blurryBgStyles () {
       return {
-        backgroundImage: `url(${this.testImgSrc})`
+        backgroundImage: `url(${this.ephemeral.imgUrl})`
       }
+    }
+  },
+  created () {
+    const imgUrl = this.$route.query.imageUrl
+    if (imgUrl) {
+      this.ephemeral.imgUrl = imgUrl
+    } else {
+      this.close()
     }
   },
   mounted () {

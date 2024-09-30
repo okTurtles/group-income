@@ -2,7 +2,7 @@
 .c-image-view-area
   img.c-preview-image(ref='previewImg'
     :class='{ "is-movable": isImageMovable }'
-    :src='testImgSrc'
+    :src='imgSrc'
     v-bind='ephemeral.previewImgAttrs'
     :style='previewImgStyles'
     draggable='false'
@@ -38,9 +38,14 @@ export default {
   components: {
     SliderContinuous
   },
+  props: {
+    imgSrc: {
+      type: String,
+      required: true
+    }
+  },
   data () {
     return {
-      testImgSrc: '/assets/images/home-bg.jpeg',
       ephemeral: {
         previewImgAttrs: {
           width: undefined,
@@ -266,7 +271,7 @@ img.c-preview-image {
   padding: 0.25rem 0.75rem 0.75rem;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     width: 100%;
     height: 100%;

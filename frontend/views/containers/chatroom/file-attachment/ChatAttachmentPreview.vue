@@ -22,6 +22,7 @@
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
+          @click='openImageViewer(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -211,7 +212,7 @@ export default {
     },
     openImageViewer (objectURL) {
       if (objectURL) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal')
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal', { imageUrl: objectURL })
       }
     }
   },
@@ -300,7 +301,8 @@ export default {
         padding: 0.5rem;
 
         img {
-          pointer-events: none;
+          user-select: none;
+          cursor: pointer;
           max-width: 100%;
           max-height: 20rem;
 
