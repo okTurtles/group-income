@@ -33,6 +33,11 @@ import SliderContinuous from '@components/SliderContinuous.vue'
 import pointerEventsMixin from '@view-utils/pointerEventsMixins.js'
 import { linearScale } from '@model/contracts/shared/giLodash.js'
 
+const linearScaler = {
+  deltaToZoom: linearScale([0, 5], [0, 12]), // maps deltaY value of 'scroll' event to zoom value
+  pinchToZoom: linearScale([0, 30], [0, 10]) // maps pinch gesture factor value to zoom value
+}
+
 const getSign = v => v < 0 ? -1 : 1
 
 export default {
@@ -235,11 +240,33 @@ export default {
       this.initViewerSettings()
       this.updatePreviewImage()
     },
-    pinchInHandler () {
-      console.log('!@# is pinching in')
+    clipZoomValue (newVal) {
+      return newVal > this.config.zoomMax
+        ? this.config.zoomMax
+        : newVal < this.config.zoomMin
+          ? this.config.zoomMin
+          : newVal
     },
-    pinchOutHandler () {
-      console.log('!@# is pinching out')
+    pinchInHandler (factor) {
+      // should zoom-out (shrink)
+      const currZoom = this.ephemeral.currentZoom
+      const updateVal = Math.ceil(
+        linearScaler.pinchToZoom(factor)
+      )
+      const newVal = Math.ceil(currZoom - updateVal)
+
+      this.handleZoomUpdate(this.clipZoomValue(newVal))
+      console.log('[aaa pinch-in] !@#: ', factor)
+    },
+    pinchOutHandler (factor) {
+      // should zoom-in (magnify)
+      const currZoom = this.ephemeral.currentZoom
+      const updateVal = Math.ceil(
+        linearScaler.pinchToZoom(factor)
+      )
+      const newVal = Math.ceil(currZoom + updateVal)
+      this.handleZoomUpdate(this.clipZoomValue(newVal))
+      console.log('[bbb pinch-out] !@#: ', factor)
     },
     wheelEventHandler (e) {
       // reference: https://kenneth.io/post/detecting-multi-touch-trackpad-gestures-in-javascript
@@ -247,26 +274,21 @@ export default {
       if (!e.ctrlKey) { return }
 
       const currZoom = this.ephemeral.currentZoom
-      const deltaToZoomUpdate = linearScale([0, 5], [0, 15])
-      const updateVal = Math.ceil(deltaToZoomUpdate(Math.abs(e.deltaY)))
+      const updateVal = Math.ceil(
+        linearScaler.deltaToZoom(Math.abs(e.deltaY))
+      )
       let newVal
 
       if (e.deltaY < 0) {
         // 'zoom-in' action using track-pad
         newVal = currZoom + updateVal
-        if (newVal > this.config.zoomMax) {
-          newVal = this.config.zoomMax
-        }
       } else {
         // 'zoom-out' action using track-pad
         newVal = currZoom - updateVal
-        if (newVal < this.config.zoomMin) {
-          newVal = this.config.zoomMin
-        }
       }
 
       if (newVal !== undefined) {
-        this.handleZoomUpdate(newVal)
+        this.handleZoomUpdate(this.clipZoomValue(newVal))
       }
     }
   },
@@ -291,6 +313,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
 }
 
 img.c-preview-image {

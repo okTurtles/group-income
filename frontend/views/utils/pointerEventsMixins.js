@@ -1,5 +1,5 @@
 import { throttle } from '@model/contracts/shared/giLodash.js'
-export const PINCH_ZOOM_THRESHOLD = 2.5
+export const PINCH_ZOOM_THRESHOLD = 2
 
 const pointerEventsMixin = {
   data (): { pointer: Object, throttledHandlers: Object } {
@@ -8,7 +8,7 @@ const pointerEventsMixin = {
         evts: []
       },
       throttledHandlers: {
-        pointerMoveOnWindow: throttle(this.onPointerMove, 10)
+        pointerMoveOnWindow: throttle(this.onPointerMove, 5)
       }
     }
   },
@@ -40,8 +40,8 @@ const pointerEventsMixin = {
       if (evts.length === 1) {
         // translation
         this.translate({
-          x: evItem.current.x - evItem.prev.x,
-          y: evItem.current.y - evItem.prev.y
+          x: (evItem.current.x - evItem.prev.x) * 1.5,
+          y: (evItem.current.y - evItem.prev.y) * 1.5
         })
       } else if (pointerType === 'touch' && evts.length === 2) {
         // pinch in/out
@@ -52,20 +52,24 @@ const pointerEventsMixin = {
         const currentXDist = Math.abs(evt2.current.x - evt1.current.x)
         const currentYDist = Math.abs(evt2.current.y - evt1.current.y)
 
-        if ((currentXDist - prevXDist > PINCH_ZOOM_THRESHOLD) ||
-          (currentYDist - prevYDist > PINCH_ZOOM_THRESHOLD)) {
-          this.$emit('pinch-out')
+        // Calculate distance update factor
+        const prevLinearDist = Math.sqrt(prevXDist * prevXDist + prevYDist * prevYDist)
+        const currentLinearDist = Math.sqrt(currentXDist * currentXDist + currentYDist * currentYDist)
+        const distChangeFactor = Math.abs(currentLinearDist - prevLinearDist)
+        console.log('!@# distChangeFactor: ', distChangeFactor)
+
+        if ((currentLinearDist - prevLinearDist) > PINCH_ZOOM_THRESHOLD) {
+          this.$emit('pinch-out', distChangeFactor)
 
           // The component that registers this mixin needs to be able to listen to this custom event too.
           this.pinchOutHandler &&
-            this.pinchOutHandler(e)
-        } else if ((currentXDist - prevXDist < PINCH_ZOOM_THRESHOLD * -1) ||
-          (currentYDist - prevYDist < PINCH_ZOOM_THRESHOLD * -1)) {
-          this.$emit('pinch-in')
+            this.pinchOutHandler(distChangeFactor)
+        } else if ((currentLinearDist - prevLinearDist) < PINCH_ZOOM_THRESHOLD * -1) {
+          this.$emit('pinch-in', distChangeFactor)
 
           // The component that registers this mixin needs to be able to listen to this custom event too.
           this.pinchInHandler &&
-            this.pinchInHandler(e)
+            this.pinchInHandler(distChangeFactor)
         }
       }
     }
