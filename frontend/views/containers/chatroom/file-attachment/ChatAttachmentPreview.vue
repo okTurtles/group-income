@@ -114,7 +114,7 @@ export default {
     isGroupCreator: Boolean,
     isForDownload: Boolean,
     isMsgSender: Boolean,
-    ownerId: String,
+    ownerID: String,
     createdAt: [Date, String]
   },
   data () {
@@ -216,11 +216,12 @@ export default {
       if (objectURL) {
         sbp(
           'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
-          { imageUrl: objectURL },
+          null,
           {
             metaData: {
               name: data.name,
-              ownerId: this.ownerId,
+              ownerID: this.ownerID,
+              imgUrl: objectURL,
               createdAt: this.createdAt || new Date()
             }
           }
@@ -275,7 +276,6 @@ export default {
       position: absolute;
       right: 0.5rem;
       top: 0;
-      bottom: 0;
 
       .c-attachment-actions {
         display: flex;

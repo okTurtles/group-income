@@ -1,20 +1,33 @@
 <template lang="pug">
 .c-image-viewer-modal
   .c-image-viewer-content
-    button.is-icon-small.c-close-btn(
-      type='button'
-      @click.stop='close'
-    )
-      i.icon-times
-
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area(:img-src='ephemeral.imgUrl')
+    preview-image-area(:img-src='metaData.imgUrl')
+
+    header.c-modal-header
+      avatar-user.c-avatar(
+        v-if='metaData.ownerID'
+        :contractID='metaData.ownerID'
+        size='sm'
+      )
+
+      .c-img-data
+        .c-name.has-ellipsis {{ displayName }}
+        .c-filename.has-ellipsis {{ metaData.name }}
+
+      button.is-icon-small.c-close-btn(
+        type='button'
+        @click.stop='close'
+      )
+        i.icon-times
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
 import { CLOSE_MODAL } from '@utils/events.js'
+import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
 
 export default {
@@ -22,6 +35,7 @@ export default {
   name: 'ImageViewerModal',
   mixins: [trapFocus],
   components: {
+    AvatarUser,
     PreviewImageArea
   },
   props: {
@@ -31,7 +45,6 @@ export default {
     return {
       testImgSrc: '/assets/images/home-bg.jpeg',
       ephemeral: {
-        imgUrl: '',
         previewImgAttrs: {
           width: undefined,
           height: undefined
@@ -54,19 +67,24 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'globalProfile',
+      'usernameFromID'
+    ]),
     blurryBgStyles () {
       return {
-        backgroundImage: `url(${this.ephemeral.imgUrl})`
+        backgroundImage: `url(${this.metaData.imgUrl})`
       }
+    },
+    displayName () {
+      const contractID = this.metaData.ownerID
+      return this.globalProfile(contractID)?.displayName ||
+        this.usernameFromID(contractID)
     }
   },
   created () {
-    console.log('!@# metaData: ', this.metaData)
-    const imgUrl = this.$route.query.imageUrl
-    if (imgUrl) {
-      this.ephemeral.imgUrl = imgUrl
-    } else {
-      this.close()
+    if (!this.metaData) {
+      this.$nextTick(() => this.close())
     }
   },
   mounted () {
@@ -102,7 +120,7 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: $general_1;
+  background-color: $general_0;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -114,20 +132,73 @@ export default {
   }
 }
 
+.c-modal-header {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  height: auto;
+  z-index: 3;
+  padding: 1rem;
+  padding-right: 3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 0.75rem;
+
+  > * {
+    z-index: 1;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 135%;
+    background: linear-gradient(#1e2021bb, #1e202100);
+    z-index: 0;
+  }
+
+  .c-avatar {
+    flex-shrink: 0;
+  }
+
+  .c-img-data {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    line-height: 1.125;
+  }
+
+  .c-name {
+    font-size: $size_4;
+    font-weight: 700;
+  }
+
+  .c-filename {
+    font-size: $size_5;
+    color: $text_1;
+  }
+}
+
 .c-image-blurry-background {
   position: absolute;
+  display: block;
   pointer-events: none;
-  filter: blur(40px) brightness(0.4);
+  filter: blur(50px) brightness(0.4);
   background-position: 50%;
-  background-size: cover;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: $general_0;
   inset: -100px;
 }
 
 .c-close-btn {
   position: absolute;
-  z-index: 2;
   right: 0.75rem;
-  top: 0.75rem;
+  top: 1rem;
   background-color: $general_1;
 
   &:hover,

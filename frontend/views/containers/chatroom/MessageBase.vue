@@ -62,7 +62,7 @@
           :variant='variant'
           :isForDownload='true'
           :isMsgSender='isMsgSender'
-          :owner-id='from'
+          :ownerID='from'
           :created-at='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'

@@ -247,7 +247,7 @@ export default {
       if (!e.ctrlKey) { return }
 
       const currZoom = this.ephemeral.currentZoom
-      const deltaToZoomUpdate = linearScale([0, 5], [0, 10])
+      const deltaToZoomUpdate = linearScale([0, 5], [0, 15])
       const updateVal = Math.ceil(deltaToZoomUpdate(Math.abs(e.deltaY)))
       let newVal
 
@@ -304,8 +304,8 @@ img.c-preview-image {
 
 .c-zoom-slider-container {
   position: absolute;
-  left: 1.5rem;
-  bottom: 1.5rem;
+  left: 1rem;
+  bottom: 1rem;
   z-index: 5;
   padding: 0.25rem 0.75rem 0.75rem;
 
