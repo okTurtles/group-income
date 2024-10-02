@@ -21,7 +21,6 @@ const pointerEventsMixin = {
         prev: { x: clientX, y: clientY },
         current: { x: clientX, y: clientY }
       })
-
     },
     onPointerCancel (e: Object) {
       this.pointer.evts = []
