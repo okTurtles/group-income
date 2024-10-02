@@ -18,6 +18,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   contractID,
   data,
   innerSigningContractID,
+  // If newMessage is undefined, it means that an existing message is being edited
   newMessage
 }) => {
   const getters = sbp('state/vuex/getters')

@@ -123,6 +123,16 @@ sbp('sbp/selectors/register', {
       // The new chatroom contracts have an admin IDs list
       // This code checks if the attribute is missing, and if so, issues the
       // corresponing upgrade action.
+      const needsUpgrade = (chatroomID) => !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
+
+      const upgradeAction = async (contractID: string, data?: Object) => {
+        try {
+          await sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID, data })
+        } catch (e) {
+          console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
+        }
+      }
+
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]) return
       if (state[ourIdentityContractId].groups) {
@@ -131,24 +141,20 @@ sbp('sbp/selectors/register', {
           if (hasLeft || !state[groupID]?.chatRooms || !state[groupID].groupOwnerID) return []
           // $FlowFixMe[incompatible-use]
           return Object.entries((state[groupID].chatRooms: { [string]: Object })).flatMap(([chatroomID, { members }]) => {
-            return members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && !Array.isArray(state[chatroomID]?.attributes?.adminIDs) && [chatroomID, state[groupID].groupOwnerID]
+            return members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && needsUpgrade(chatroomID) && [chatroomID, state[groupID].groupOwnerID]
           })
         }).forEach(([contractID, groupOwnerID]) => {
           if (!contractID) return
-          sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID, data: groupOwnerID }).catch(e => {
-            console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8', contractID, e)
-          })
+          upgradeAction(contractID, groupOwnerID)
         })
       }
       if (state[ourIdentityContractId].chatRooms) {
         // DM chatrooms
         return Object.keys((state[ourIdentityContractId].chatRooms: { [string]: Object })).map((chatroomID) => {
-          return state[chatroomID]?.members[ourIdentityContractId] && !Array.isArray(state[chatroomID].attributes?.adminIDs) && chatroomID
+          return state[chatroomID]?.members[ourIdentityContractId] && needsUpgrade(chatroomID) && chatroomID
         }).forEach((contractID) => {
           if (!contractID) return
-          sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID }).catch(e => {
-            console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8', contractID, e)
-          })
+          upgradeAction(contractID)
         })
       }
     })()

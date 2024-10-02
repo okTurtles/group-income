@@ -31,7 +31,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import SvgBrokenLink from '@svgs/broken-link.svg'
-import { buildInvitationUrl } from '@view-utils/buildInvitationUrl'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 
 export default ({
   name: 'InvitationLinkModal',

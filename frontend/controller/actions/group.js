@@ -619,8 +619,8 @@ export default (sbp('sbp/selectors/register', {
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
         attributes: {
-          ...params.data?.attributes,
-          adminIDs: [contractState.groupOwnerID]
+          adminIDs: [contractState.groupOwnerID],
+          ...params.data?.attributes
         },
         ...params.data
       },
