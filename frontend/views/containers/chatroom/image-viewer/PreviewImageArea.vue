@@ -339,7 +339,7 @@ img.c-preview-image {
     top: 0;
     left: 0;
     z-index: 0;
-    background-color: $general_1;
+    background-color: var(--image-viewer-slider-bg-color);
     border-radius: 0.5rem;
     opacity: 0.675;
   }

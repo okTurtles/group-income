@@ -113,6 +113,22 @@ export default {
   right: 0;
   overflow: auto;
   background-color: rgba(10, 10, 10, 0.86);
+
+  --image-viewer-bg-color: #1e2021;
+  --image-viewer-text-color: #e8e8e8;
+  --image-viewer-btn-color: #2e3032;
+  --image-viewer-slider-bg-color: #2e3032;
+  --image-viewer-btn-color_active: #717879;
+  --image-viewer-btn-text-color_active: #1e2021;
+
+  .is-dark-theme & {
+    --image-viewer-bg-color: #717879;
+    --image-viewer-text-color: #e8e8e8;
+    --image-viewer-btn-color: #1e2021;
+    --image-viewer-slider-bg-color: #1e2021;
+    --image-viewer-btn-color_active: #2e3032;
+    --image-viewer-btn-text-color_active: #e8e8e8;
+  }
 }
 
 .c-image-viewer-content {
@@ -120,7 +136,7 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: $general_0;
+  background-color: var(--image-viewer-bg-color);
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -170,6 +186,7 @@ export default {
     flex-direction: column;
     flex-grow: 1;
     line-height: 1.125;
+    color: var(--image-viewer-text-color);
   }
 
   .c-name {
@@ -179,7 +196,12 @@ export default {
 
   .c-filename {
     font-size: $size_5;
-    color: $text_1;
+  }
+
+  .c-name,
+  .c-filename {
+    user-select: none;
+    text-shadow: 1px 1px 2px #1e2021;
   }
 }
 
@@ -191,7 +213,7 @@ export default {
   background-position: 50%;
   background-size: contain;
   background-repeat: no-repeat;
-  background-color: $general_0;
+  background-color: var(--image-viewer-bg-color);
   inset: -100px;
 }
 
@@ -199,11 +221,13 @@ export default {
   position: absolute;
   right: 0.75rem;
   top: 1rem;
-  background-color: $general_1;
+  background-color: var(--image-viewer-btn-color);
+  color: var(--image-viewer-text-color);
 
   &:hover,
   &:focus {
-    background-color: $general_2;
+    background-color: var(--image-viewer-btn-color_active);
+    color: var(--image-viewer-btn-text-color_active);
   }
 }
 </style>

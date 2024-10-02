@@ -10,6 +10,10 @@ const pointerEventsMixin = {
       },
       throttledHandlers: {
         pointerMoveOnWindow: throttle(this.onPointerMove, 5)
+      },
+      matchMedia: {
+        handler: null,
+        isTouch: false
       }
     }
   },
@@ -41,9 +45,10 @@ const pointerEventsMixin = {
 
       if (evts.length === 1) {
         // translation
+        const adjustmentFactor = this.matchMedia.isTouch ? 1.5 : 1.2
         this.translate({
-          x: (evItem.current.x - evItem.prev.x) * 1.5,
-          y: (evItem.current.y - evItem.prev.y) * 1.5
+          x: (evItem.current.x - evItem.prev.x) * adjustmentFactor,
+          y: (evItem.current.y - evItem.prev.y) * adjustmentFactor
         })
         this.pointer.prevDistance = null
       } else if (pointerType === 'touch' && evts.length === 2) {
@@ -81,6 +86,14 @@ const pointerEventsMixin = {
     this.$el.addEventListener('pointerup', this.onPointerCancel)
     this.$el.addEventListener('pointerout', this.onPointerCancel)
     this.$el.addEventListener('pointercancel', this.onPointerCancel)
+
+    const checkTouch = window.matchMedia('(any-pointer:fine)')
+    this.matchMedia.isTouch = !checkTouch.matches
+    this.matchMedia.handler = checkTouch
+
+    checkTouch.onchange = (e) => {
+      this.matchMedia.isTouch = !e.matches
+    }
   },
   beforeDestroy () {
     this.$el.removeEventListener('pointerdown', this.onPointerDown)
@@ -88,6 +101,8 @@ const pointerEventsMixin = {
     this.$el.removeEventListener('pointerup', this.onPointerCancel)
     this.$el.removeEventListener('pointerout', this.onPointerCancel)
     this.$el.removeEventListener('pointercancel', this.onPointerCancel)
+
+    this.matchMedia.handler.onchange = null
   }
 }
 
