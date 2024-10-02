@@ -100,7 +100,7 @@ export default ({
     },
     async fixWelcomeInvite () {
       try {
-        await sbp('gi.app/group/fixAnyoneCanJoinLink')
+        await sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID: this.$store.state.currentGroupId })
       } catch (err) {
         console.error('GroupMembers.vue failed to fix anyone-to-join invite and caught: ', err)
       }

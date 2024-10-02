@@ -454,7 +454,7 @@ const getters = {
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()))
     const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },

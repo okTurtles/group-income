@@ -241,8 +241,8 @@ export default ({
       if (expiryTime == null) return
       const { years, months, days, hours, minutes } = timeLeft(expiryTime)
       // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
-      if (years) return L('{years}yr {months}mth {days}d left', { years, months, days })
-      if (months) return L('{months}mth {days}d left', { months, days })
+      if (years) return L('{years}y {months}mo {days}d left', { years, months, days })
+      if (months) return L('{months}mo {days}d left', { months, days })
 
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
@@ -361,7 +361,7 @@ export default ({
     },
     async fixWelcomeInvite () {
       try {
-        await sbp('gi.app/group/fixAnyoneCanJoinLink')
+        await sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID: this.currentGroupId })
       } catch (err) {
         console.error('InvitationTable.vue failed to fix anyone-to-join invite and caught: ', err)
       }

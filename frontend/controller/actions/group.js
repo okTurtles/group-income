@@ -37,6 +37,7 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -897,6 +898,48 @@ export default (sbp('sbp/selectors/register', {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
+  },
+  'gi.actions/group/fixAnyoneCanJoinLink': async function ({ contractID }) {
+    const state = await sbp('chelonia/contract/state', contractID)
+    const CEKid = findKeyIdByName(state, 'cek')
+    const CSKid = findKeyIdByName(state, 'csk')
+
+    if (!CEKid || !CSKid) {
+      throw new Error('Contract is missing a CEK or CSK')
+    }
+
+    const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+    const inviteKeyId = keyId(inviteKey)
+    const inviteKeyP = serializeKey(inviteKey, false)
+    const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
+
+    const ik = {
+      id: inviteKeyId,
+      name: '#inviteKey-' + inviteKeyId,
+      purpose: ['sig'],
+      ringLevel: Number.MAX_SAFE_INTEGER,
+      permissions: [GIMessage.OP_KEY_REQUEST],
+      meta: {
+        quantity: 60,
+        ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
+          expires:
+          await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+        }),
+        private: {
+          content: inviteKeyS
+        }
+      },
+      data: inviteKeyP
+    }
+
+    await sbp('chelonia/out/keyAdd', {
+      contractName: 'gi.contracts/group',
+      contractID,
+      data: [ik],
+      signingKeyId: CSKid
+    })
+
+    await sbp('gi.actions/group/invite', { contractID, data: { inviteKeyId, creatorID: 'invite-initial-creator' } })
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
