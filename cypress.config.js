@@ -12,8 +12,8 @@ module.exports = defineConfig({
   projectId: 'q6whky',
   experimentalMemoryManagement: true,
   // NOTE: When running 'cypress open' on a browser, high memory usage often leads to crashing the browser.
-  //       So setting 'numTestsKeptInMemory' to 0 here. (reference: https://docs.cypress.io/guides/references/configuration#Global)
-  numTestsKeptInMemory: 0,
+  //       So setting 'numTestsKeptInMemory' to a relatively low number here. (reference: https://docs.cypress.io/guides/references/configuration#Global)
+  numTestsKeptInMemory: 3,
   e2e: {
     // We've imported your old cypress plugins here.
     // You may want to clean this up later by importing these.

@@ -72,9 +72,15 @@ export default ({
   },
   watch: {
     value (newVal) {
-      if (newVal) {
+      if (newVal !== undefined) {
         this.updateSlider(newVal)
       }
+    },
+    min () {
+      this.updateSlider(this.value)
+    },
+    max () {
+      this.updateSlider(this.value)
     }
   }
 }: Object)

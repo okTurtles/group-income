@@ -119,7 +119,7 @@ export default {
       this.config.imgData.isWiderThanTall = aspectRatio >= 1
 
       this.initViewerSettings()
-      this.updatePreviewImage()
+      this.calcPreviewImageDimension()
     },
     initViewerSettings () {
       const { naturalWidth, naturalHeight, aspectRatio } = this.config.imgData
