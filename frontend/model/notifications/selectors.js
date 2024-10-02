@@ -47,7 +47,7 @@ sbp('sbp/selectors/register', {
       // We cannot throw here, as this code might be called from within a contract side effect.
       return console.error('This notification is already in the store.')
     }
-    const index = rootState.notifications.items.findLastIndex(item => item < notification.timestamp)
+    const index = rootState.notifications.items.findLastIndex(item => item.timestamp < notification.timestamp)
     rootState.notifications.items.splice(Math.max(0, index), 0, notification)
     sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
     sbp('gi.actions/identity/kv/addNotificationStatus', notification)
