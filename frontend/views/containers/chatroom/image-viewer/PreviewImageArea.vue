@@ -35,7 +35,7 @@ import { linearScale } from '@model/contracts/shared/giLodash.js'
 
 const linearScaler = {
   deltaToZoom: linearScale([0, 5], [0, 12]), // maps deltaY value of 'scroll' event to zoom value
-  pinchToZoom: linearScale([0, 30], [0, 10]) // maps pinch gesture factor value to zoom value
+  pinchToZoom: linearScale([0, 20], [0, 15]) // maps pinch gesture factor value to zoom value
 }
 
 const getSign = v => v < 0 ? -1 : 1
@@ -256,7 +256,6 @@ export default {
       const newVal = Math.ceil(currZoom - updateVal)
 
       this.handleZoomUpdate(this.clipZoomValue(newVal))
-      console.log('[aaa pinch-in] !@#: ', factor)
     },
     pinchOutHandler (factor) {
       // should zoom-in (magnify)
@@ -266,7 +265,6 @@ export default {
       )
       const newVal = Math.ceil(currZoom + updateVal)
       this.handleZoomUpdate(this.clipZoomValue(newVal))
-      console.log('[bbb pinch-out] !@#: ', factor)
     },
     wheelEventHandler (e) {
       // reference: https://kenneth.io/post/detecting-multi-touch-trackpad-gestures-in-javascript

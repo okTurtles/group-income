@@ -1,11 +1,12 @@
 import { throttle } from '@model/contracts/shared/giLodash.js'
-export const PINCH_ZOOM_THRESHOLD = 2
+export const PINCH_ZOOM_THRESHOLD = 2.5
 
 const pointerEventsMixin = {
   data (): { pointer: Object, throttledHandlers: Object } {
     return {
       pointer: {
-        evts: []
+        evts: [],
+        prevDistance: null // tracking distance between two pointers when 'pinch' gesture is happening
       },
       throttledHandlers: {
         pointerMoveOnWindow: throttle(this.onPointerMove, 5)
@@ -20,9 +21,11 @@ const pointerEventsMixin = {
         prev: { x: clientX, y: clientY },
         current: { x: clientX, y: clientY }
       })
+
     },
     onPointerCancel (e: Object) {
       this.pointer.evts = []
+      this.pointer.prevDistance = null
     },
     onPointerMove (e: Object) {
       // reponsible for translation of the image on the canvas
@@ -43,20 +46,17 @@ const pointerEventsMixin = {
           x: (evItem.current.x - evItem.prev.x) * 1.5,
           y: (evItem.current.y - evItem.prev.y) * 1.5
         })
+        this.pointer.prevDistance = null
       } else if (pointerType === 'touch' && evts.length === 2) {
         // pinch in/out
         const [evt1, evt2] = evts
-
-        const prevXDist = Math.abs(evt2.prev.x - evt1.prev.x)
-        const prevYDist = Math.abs(evt2.prev.y - evt1.prev.y)
-        const currentXDist = Math.abs(evt2.current.x - evt1.current.x)
-        const currentYDist = Math.abs(evt2.current.y - evt1.current.y)
+        const xDist = Math.abs(evt2.current.x - evt1.current.x)
+        const yDist = Math.abs(evt2.current.y - evt1.current.y)
 
         // Calculate distance update factor
-        const prevLinearDist = Math.sqrt(prevXDist * prevXDist + prevYDist * prevYDist)
-        const currentLinearDist = Math.sqrt(currentXDist * currentXDist + currentYDist * currentYDist)
+        const currentLinearDist = Math.sqrt(xDist * xDist + yDist * yDist)
+        const prevLinearDist = this.pointer.prevDistance || currentLinearDist
         const distChangeFactor = Math.abs(currentLinearDist - prevLinearDist)
-        console.log('!@# distChangeFactor: ', distChangeFactor)
 
         if ((currentLinearDist - prevLinearDist) > PINCH_ZOOM_THRESHOLD) {
           this.$emit('pinch-out', distChangeFactor)
@@ -71,6 +71,8 @@ const pointerEventsMixin = {
           this.pinchInHandler &&
             this.pinchInHandler(distChangeFactor)
         }
+
+        this.pointer.prevDistance = currentLinearDist // track it for the next calculation
       }
     }
   },
