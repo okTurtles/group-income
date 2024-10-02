@@ -5,7 +5,8 @@
   img.c-preview-image(ref='previewImg'
     :class='{ "is-movable": isImageMovable }'
     :src='imgSrc'
-    v-bind='ephemeral.previewImgAttrs'
+    :width='config.imgData.naturalWidth'
+    :height='config.imgData.naturalHeight'
     :style='previewImgStyles'
     draggable='false'
     @load='onImgLoad'
@@ -60,7 +61,7 @@ export default {
           height: undefined
         },
         imgTranslation: { x: 0, y: 0 },
-        currentZoom: null,
+        currentZoom: 100,
         previousZoom: null,
         showSliderOutput: false
       },
@@ -78,13 +79,14 @@ export default {
   },
   computed: {
     previewImgStyles () {
-      const attrs = this.ephemeral.previewImgAttrs
+      const attrs = this.config.imgData
       const tx = this.ephemeral.imgTranslation.x || 0
       const ty = this.ephemeral.imgTranslation.y || 0
+      const scaleVal = this.ephemeral.currentZoom / 100
 
       return {
-        height: attrs.height ? `${attrs.height}px` : undefined,
-        transform: `translate(${tx}px, ${ty}px)`
+        height: attrs.naturalHeight ? `${attrs.naturalHeight}px` : undefined,
+        transform: `translate(${tx}px, ${ty}px) scale(${scaleVal}, ${scaleVal})`
       }
     },
     isImageMovable () {
@@ -153,7 +155,7 @@ export default {
       this.ephemeral.currentZoom = zoomMin
       this.ephemeral.imgTranslation = { x: 0, y: 0 }
     },
-    updatePreviewImage () {
+    calcPreviewImageDimension () {
       // update the preview image width/height values based on the current zoom value
       const { naturalWidth, aspectRatio } = this.config.imgData
       const fraction = this.ephemeral.currentZoom / 100
@@ -170,7 +172,7 @@ export default {
       this.ephemeral.currentZoom = val
       const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
 
-      this.updatePreviewImage()
+      this.calcPreviewImageDimension()
 
       if (isZoomingOut) {
         // NOTE: when the image is being zoomed-out and also it has been translated,
@@ -238,7 +240,7 @@ export default {
     resizeHandler () {
       // TODO: debounce this handler
       this.initViewerSettings()
-      this.updatePreviewImage()
+      this.calcPreviewImageDimension()
     },
     clipZoomValue (newVal) {
       return newVal > this.config.zoomMax
@@ -317,6 +319,7 @@ export default {
 img.c-preview-image {
   max-width: unset;
   user-select: none;
+  will-change: transform;
 
   &.is-movable {
     cursor: move;
