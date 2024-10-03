@@ -28,6 +28,7 @@
               v-if='hasAttachments(msg)'
               :attachmentList='msg.attachments'
               :isForDownload='true'
+              :ownerID='msg.from'
               :variant='messageSentVariant'
             )
             .c-message-reactions-wrapper
