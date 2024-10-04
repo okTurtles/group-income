@@ -127,8 +127,8 @@ import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
-import { timeLeft } from '@model/contracts/shared/time.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
+import { timeLeft } from '@view-utils/time.js'
 
 export default ({
   name: 'InvitationsTable',

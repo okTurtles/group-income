@@ -187,7 +187,7 @@ const PaymentsMixin: Object = {
     // Returns a human-readable description of the time interval identified by a given period stamp.
     getPeriodFromStartToDueDate (period, knownPeriods) {
       const dueDate = this.dueDateForPeriod(period, knownPeriods)
-      return `${humanDate(dateFromPeriodStamp(period))} - ${humanDate(dateFromPeriodStamp(dueDate))}`
+      return `${humanDate(dateFromPeriodStamp(period)) || ''} - ${humanDate(dateFromPeriodStamp(dueDate)) || ''}`
     }
   }
 }

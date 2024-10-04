@@ -174,7 +174,7 @@ export function firstDayOfMonth (date: Date): Date {
 export function humanDate (
   date: number | Date | string,
   options?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-): string {
+): ?string {
   const fallback = 'en-US-POSIX'
   const locale = typeof navigator === 'undefined'
     // Fallback for Mocha tests.
@@ -209,11 +209,11 @@ export function isShortMonthstamp (arg: string): boolean {
   return /^(0[1-9]|1[0-2])$/.test(arg)
 }
 
-export function monthName (monthstamp: string): string {
+export function monthName (monthstamp: string): ?string {
   return humanDate(dateFromMonthstamp(monthstamp), { month: 'long' })
 }
 
-export function proximityDate (date: Date): string {
+export function proximityDate (date: Date): ?string {
   date = new Date(date)
   const today = new Date()
   const yesterday = (d => new Date(d.setDate(d.getDate() - 1)))(new Date())
@@ -258,40 +258,4 @@ export function cycleAtDate (atDate: string | Date): number {
   const now = new Date(atDate) // Just in case the parameter is a string type.
   const partialCycles = now.getDate() / lastDayOfMonth(now).getDate()
   return partialCycles
-}
-
-export function timeLeft (expiryTime: number) {
-  const now = new Date()
-  const expiry = new Date(expiryTime)
-
-  if (expiry < now) {
-    return { expired: true, years: 0, months: 0, days: 0, hours: 0, minutes: 0 }
-  }
-
-  let years = expiry.getFullYear() - now.getFullYear()
-  let months = expiry.getMonth() - now.getMonth()
-  let days = expiry.getDate() - now.getDate()
-  let hours = expiry.getHours() - now.getHours()
-  let minutes = expiry.getMinutes() - now.getMinutes()
-
-  // Adjust for negative values
-  if (minutes < 0) {
-    minutes += 60
-    hours--
-  }
-  if (hours < 0) {
-    hours += 24
-    days--
-  }
-  if (days < 0) {
-    const lastMonth = new Date(expiry.getFullYear(), expiry.getMonth(), 0)
-    days += lastMonth.getDate()
-    months--
-  }
-  if (months < 0) {
-    months += 12
-    years--
-  }
-
-  return { expired: false, years, months, days, hours, minutes }
 }
