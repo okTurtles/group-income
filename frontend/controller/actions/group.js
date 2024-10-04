@@ -47,8 +47,8 @@ import { extractProposalData } from '@model/notifications/utils.js'
 
 sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
   const rootState = sbp('chelonia/rootState')
-  if (!Array.isArray(rootState.notifications) || rootState.loggedIn?.identityContractID !== identityContractID) return
-  const notificationHashes = rootState.notifications.filter(item => item.groupID === groupContractID).map(item => item.hash)
+  if (!rootState.notifications || rootState.loggedIn?.identityContractID !== identityContractID) return
+  const notificationHashes = rootState.notifications.items.filter(item => item.groupID === groupContractID).map(item => item.hash)
   sbp('gi.notifications/remove', notificationHashes)
 })
 

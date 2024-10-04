@@ -75,7 +75,7 @@ sbp('sbp/selectors/register', {
         return index
       }
       return false
-    }).filter(Boolean).sort().map((v, i) => v - i)
+    }).filter((v) => v !== false).sort().map((v, i) => v - i)
     indices.forEach((index) => rootState.notifications.items.splice(index, 1))
     sbp('okTurtles.events/emit', NOTIFICATION_REMOVED, hashes)
   },
