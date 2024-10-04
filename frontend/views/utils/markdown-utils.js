@@ -40,14 +40,15 @@ export function renderMarkdown (str: string): any {
       entryText = entryText.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
       entryText = entryText.replace(/\n(?=\n)/g, '\n<br>')
-        .replace(/<br>\n(\s*)(\d+\.|-)/g, '\n\n$1$2') // custom-handling the case where <br> is directly followed by the start of ordered/unordered lists
-        .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
+        .replace(/<br>\n(\s*)(\d+\.|-)/g, '\n\n$1$2') // [1] custom-handling the case where <br> is directly followed by the start of ordered/unordered lists
+        .replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // [2] this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
 
       entry.text = entryText
     }
   })
 
   str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
+  str = str.replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // Check for [2] above once more to resolve edge-cases (reference: https://github.com/okTurtles/group-income/issues/2356)
 
   // STEP 2. convert the markdown into html DOM string.
   let converted = marked.parse(str, { gfm: true })
