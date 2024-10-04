@@ -48,6 +48,12 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
   })
   const options = Object.assign(proposalDetails, baseOptions)
 
+  if (options.memberID) {
+    // NOTE: replace member with their mention when their contractID is provided
+    //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
+    options['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
+  }
+
   const settingChangeMessages = (options) => ({
     [STATUS_OPEN]: L('{from} wants to change the groups {setting}.', options),
     [STATUS_PASSED]: L('Proposal from {from} to change the {setting} is accepted.', options),

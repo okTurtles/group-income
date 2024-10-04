@@ -10,8 +10,7 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
-  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
-  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from './constants.js'
 import { humanDate } from './time.js'
 
@@ -84,7 +83,9 @@ export function getProposalDetails (proposal: Object): Object {
     options['member'] = proposalData.memberName
   } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
     options['memberID'] = proposalData.memberID
-    options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
+    // options['member'] is not set as it's part of external state. The code
+    // responsible for notifications (`frontend/model/notifications/templates.js`)
+    // will set it
   }
 
   const { proposedValue } = proposalData
@@ -181,23 +182,6 @@ export function findMessageIdx (hash: string, messages: Array<Object> = []): num
   return -1
 }
 
-// This function serves two purposes, depending on the forceUsername parameter
-// If forceUsername is true, mentions will be like @username, @all, for display
-// purposes.
-// If forceUsername is false (default), mentions like @username will be converted
-// to @<userID>, for internal representation purposes.
-// forceUsername is used for display purposes in the UI, so that we can show
-// a mention like @username instead of @userID in SendArea
-export function makeMentionFromUsername (username: string, forceUsername: ?boolean): {
-  me: string, all: string
-} {
-  const rootGetters = sbp('state/vuex/getters')
-  // Even if forceUsername is true, we want to look up the contract ID to ensure
-  // that it exists, so that we know it'll later succeed.
-  const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
-  return makeMentionFromUserID(forceUsername && userID ? username : userID)
-}
-
 export function makeMentionFromUserID (userID: string): {
   me: string, all: string
 } {
@@ -205,61 +189,6 @@ export function makeMentionFromUserID (userID: string): {
     me: userID ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${userID}` : '',
     all: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}all`
   }
-}
-
-export function makeChannelMention (str: string, withId: boolean = false): string {
-  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
-}
-
-export function getIdFromChannelMention (str: string): string {
-  return str.includes(':chatID:')
-    ? str.split(':chatID:')[1]
-    : ''
-}
-
-export function swapMentionIDForDisplayname (
-  text: string,
-  options: Object = {
-    escaped: true, // this indicates that the text contains escaped characters
-    forChat: true // this indicates that the function is being used for messages inside chatroom
-  }
-): string {
-  const {
-    getChatroomNameById,
-    usernameFromID,
-    userDisplayNameFromID
-  } = sbp('state/vuex/getters')
-  const { reverseNamespaceLookups } = sbp('state/vuex/state')
-  const possibleMentions = [
-    ...Object.keys(reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-    makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
-  ]
-
-  const { escaped, forChat } = options
-  const regEx = escaped
-    ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
-    : new RegExp(`(${possibleMentions.join('|')})`)
-
-  const swap = (t) => {
-    if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
-      // swap member mention
-      const userID = t.slice(1)
-      const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : ''
-      const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID)
-      return prefix + body
-    } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
-      // swap channel mention
-      const channelID = getIdFromChannelMention(t)
-      const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
-      return prefix + getChatroomNameById(channelID)
-    }
-    return t
-  }
-
-  return text
-    .split(regEx)
-    .map(t => regEx.test(t) ? swap(t) : t)
-    .join('')
 }
 
 // The `referenceTally` function is meant as an utility function to handle

@@ -40,22 +40,6 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   )
 }
 
-export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creatorID?: string): string {
-  const rootGetters = sbp('state/vuex/getters')
-  const creatorUsername = creatorID && rootGetters.usernameFromID(creatorID)
-  return `${location.origin}/app/join#?${(new URLSearchParams({
-      groupId: groupId,
-      groupName: groupName,
-      secret: inviteSecret,
-      ...(creatorID && {
-        creatorID,
-        ...(creatorUsername && {
-          creatorUsername
-        })
-      })
-    })).toString()}`
-}
-
 export const proposalSettingsType: any = objectOf({
   rule: ruleType,
   expires_ms: number,
