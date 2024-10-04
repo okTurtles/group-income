@@ -38,7 +38,7 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
 import { TextObjectType } from '@utils/constants.js'
 import { L } from '@common/common.js'
 

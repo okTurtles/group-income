@@ -24,6 +24,8 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
     // undefined.
     // TODO: Figure out a better way of doing this that doesn't require a timeout
     const setCurrentChatRoomId = () => {
+      // Re-grab the state as it could be a stale reference
+      const rootState = sbp('state/vuex/state')
       if (!rootState[chatRoomID]?.members?.[identityContractID]) {
         if (++attemptCount > 5) {
           console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 attempts', { identityContractID, groupContractID, chatRoomID })

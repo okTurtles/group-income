@@ -270,7 +270,7 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { makeMentionFromUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUsername, makeChannelMention } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,

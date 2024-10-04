@@ -58,7 +58,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
 
 export default {
   name: 'PinnedMessages',

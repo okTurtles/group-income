@@ -1172,13 +1172,8 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID, data }, { state }) {
-        if (Object.keys(state.chatRooms).length === 1) {
-          // NOTE: only general chatroom exists, meaning group has just been created
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupID: contractID,
-            chatRoomID: state.generalChatRoomId
-          })
-        }
+        // The app is responsible for calling setCurrentChatRoomId
+        // (this happens on the JOINED_CHATROOM event)
         // If it's the #General chatroom being added, add ourselves to it
         if (data.chatRoomID === state.generalChatRoomId) {
           sbp('chelonia/queueInvocation', contractID, () => {
