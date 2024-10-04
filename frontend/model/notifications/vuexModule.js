@@ -115,7 +115,7 @@ const mutations = {
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
     if (state.items.some(item => item.hash === notification.hash)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
-      return console.error('This notification is already in the store.')
+      return console.error('[ADD_NOTIFICATION] This notification is already in the store.', notification.hash)
     }
     state.items.push(notification)
     // Sort items in chronological order, newest items first.

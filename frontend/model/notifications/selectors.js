@@ -45,7 +45,7 @@ sbp('sbp/selectors/register', {
     }
     if (rootState.notifications.items.some(item => item.hash === notification.hash)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
-      return console.error('This notification is already in the store.')
+      return console.error('[gi.notifications/emit] This notification is already in the store.', notification.hash)
     }
     const index = rootState.notifications.items.findLastIndex(item => item.timestamp < notification.timestamp)
     rootState.notifications.items.splice(Math.max(0, index), 0, notification)
