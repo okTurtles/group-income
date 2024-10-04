@@ -544,7 +544,6 @@ export default ({
       }
     },
     handleKeyup (e) {
-      console.log('!@# handle keyup')
       if (e.keyCode === 13) {
         e.preventDefault()
       } else {
