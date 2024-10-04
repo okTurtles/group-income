@@ -122,12 +122,12 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 
 export default ({
   name: 'InvitationsTable',
