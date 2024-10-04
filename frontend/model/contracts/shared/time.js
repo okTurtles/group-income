@@ -265,7 +265,7 @@ export function timeLeft (expiryTime: number) {
   const expiry = new Date(expiryTime)
 
   if (expiry < now) {
-    return {}
+    return { expired: true, years: 0, months: 0, days: 0, hours: 0, minutes: 0 }
   }
 
   let years = expiry.getFullYear() - now.getFullYear()
@@ -293,5 +293,5 @@ export function timeLeft (expiryTime: number) {
     years--
   }
 
-  return { years, months, days, hours, minutes }
+  return { expired: false, years, months, days, hours, minutes }
 }
