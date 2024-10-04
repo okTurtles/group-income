@@ -10,7 +10,7 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from './utils/events.js'
 
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
@@ -180,6 +180,12 @@ const setupChelonia = async (): Promise<*> => {
 
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
+    })
+  })
+
+  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED, () => {
+    saveChelonia().catch(e => {
+      console.error('CHELONIA_STATE_MODIFIED handler: Error saving Chelonia state', e)
     })
   })
 
