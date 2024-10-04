@@ -70,6 +70,7 @@
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
       @keyup='handleKeyup'
+      @paste.prevent.stop='handlePaste'
       v-bind='$attrs'
     )
 
@@ -543,6 +544,7 @@ export default ({
       }
     },
     handleKeyup (e) {
+      console.log('!@# handle keyup')
       if (e.keyCode === 13) {
         e.preventDefault()
       } else {
@@ -552,6 +554,11 @@ export default ({
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
       }
+    },
+    handlePaste (e) {
+      const pastedText = e.clipboardData.getData('text')
+      this.$refs.textarea.value = pastedText
+      this.updateTextArea()
     },
     addSelectedMention (index) {
       const curValue = this.$refs.textarea.value
