@@ -181,7 +181,7 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
-              quantity: 60,
+              quantity: 150,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
                 expires:
                 await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
@@ -913,6 +913,30 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/fixAnyoneCanJoinLink': async function ({ contractID }) {
     const state = await sbp('chelonia/contract/state', contractID)
+    const now = await sbp('chelonia/time')
+
+    // For used invites, we add all 'anyone can join' invites and do the following:
+    //  1. For non-expired invites, we consider all of the invites
+    //       (initialQuantity) as used
+    //  2. For expired invites, we consider the quantity actually used
+    //  3. We add up 1. and 2. above
+    // Then, we take the difference and, if the number is less than 150, we
+    // create a new invite.
+    const usedInvites = Object.keys(state.invites)
+      .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+      .reduce((acc, cv) => acc +
+      (!(state._vm.invites[cv].expires >= now)
+        ? state._vm.invites[cv].initialQuantity
+        : ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity)
+          ) || 0), 0)
+
+    const quantity = 150 - usedInvites
+
+    if (quantity <= 0) {
+      console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used 150 invites for group', contractID)
+      return
+    }
+
     const CEKid = findKeyIdByName(state, 'cek')
     const CSKid = findKeyIdByName(state, 'csk')
 
@@ -932,7 +956,7 @@ export default (sbp('sbp/selectors/register', {
       ringLevel: Number.MAX_SAFE_INTEGER,
       permissions: [GIMessage.OP_KEY_REQUEST],
       meta: {
-        quantity: 60,
+        quantity,
         ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
           expires:
           await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING

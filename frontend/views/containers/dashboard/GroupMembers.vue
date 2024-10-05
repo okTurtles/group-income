@@ -83,12 +83,7 @@ export default ({
       const name = displayName
       return contractID === this.ourIdentityContractId ? L('{name} (you)', { name }) : name
     },
-    async headerButtonAction () {
-      const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
-      if (isWelcomeInviteExpired) {
-        await this.fixWelcomeInvite()
-      }
-
+    headerButtonAction () {
       if (!this.groupShouldPropose) {
         this.openModal('InvitationLinkModal')
       } else {
@@ -96,13 +91,6 @@ export default ({
         sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
           console.error(`Error on action checkGroupSizeAndProposeMember (headerButtonAction) for ${contractID}`, e)
         })
-      }
-    },
-    async fixWelcomeInvite () {
-      try {
-        await sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID: this.$store.state.currentGroupId })
-      } catch (err) {
-        console.error('GroupMembers.vue failed to fix anyone-to-join invite and caught: ', err)
       }
     }
   }

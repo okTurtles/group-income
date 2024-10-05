@@ -157,6 +157,28 @@ sbp('sbp/selectors/register', {
           upgradeAction(contractID)
         })
       }
+    })();
+    (() => {
+      // Update expired invites
+      // If fewer than 150 'anyone can join' have been used, create a new
+      // 'anyone can join' link up to 150 invites
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
+      Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
+        const groupState = state[groupID]
+        if (hasLeft || !groupState?.invites) return undefined
+        const now = Date.now()
+        const usedInvites = Object.keys(groupState.invites)
+          .filter(invite => groupState.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+          .reduce((acc, cv) => acc +
+        (!(groupState._vm.invites[cv].expires >= now)
+          ? groupState._vm.invites[cv].initialQuantity
+          : ((groupState._vm.invites[cv].initialQuantity - groupState._vm.invites[cv].quantity)
+            ) || 0), 0)
+        return (usedInvites < 150) ? groupID : undefined
+      }).filter(Boolean).forEach((contractID) => {
+        sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
+      })
     })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
@@ -499,7 +521,7 @@ const getters = {
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()))
+    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) && !(getters.currentGroupState._vm.invites[invite].quantity <= 0))
     const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },

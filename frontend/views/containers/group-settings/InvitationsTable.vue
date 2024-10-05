@@ -292,10 +292,7 @@ export default ({
       }
       return false
     },
-    checkWelcomeInviteExpired () {
-      return this.currentWelcomeInvite.expires < Date.now()
-    },
-    async handleInviteClick (e) {
+    handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
         if (this.groupShouldPropose) {
           const contractID = this.currentGroupId
@@ -303,10 +300,6 @@ export default ({
             console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)
           })
         } else {
-          if (this.checkWelcomeInviteExpired()) {
-            await this.fixWelcomeInvite()
-          }
-
           sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
         }
       }
@@ -358,18 +351,6 @@ export default ({
         console.error('InvitationsTable.vue handleRevokeClick() error:', e)
         this.$refs.inviteError.danger(e.message)
       }
-    },
-    async fixWelcomeInvite () {
-      try {
-        await sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID: this.currentGroupId })
-      } catch (err) {
-        console.error('InvitationTable.vue failed to fix anyone-to-join invite and caught: ', err)
-      }
-    }
-  },
-  mounted () {
-    if (this.checkWelcomeInviteExpired()) {
-      this.fixWelcomeInvite()
     }
   }
 }: Object)
