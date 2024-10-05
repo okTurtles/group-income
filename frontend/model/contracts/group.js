@@ -1680,6 +1680,10 @@ sbp('chelonia/defineContract', {
       }
 
       if (memberID === identityContractID) {
+        // NOTE: removing all notifications whose scope is in this group
+        // is handled by the LEFT_GROUP event, which is emitted by the
+        // identity contract.
+
         // The following detects whether we're in the process of joining, and if
         // we are, it doesn't remove the contract and calls /join to complete
         // the joining process.
