@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { L } from '@common/common.js'
 
@@ -11,7 +11,8 @@ const DMMixin: Object = {
       'ourGroupDirectMessages',
       'ourIdentityContractId',
       'ourGroupDirectMessageFromUserIds'
-    ])
+    ]),
+    ...mapState(['currentGroupId'])
   },
   methods: {
     async createDirectMessage (memberIDs: string | string[]) {
@@ -19,15 +20,40 @@ const DMMixin: Object = {
         memberIDs = [memberIDs]
       }
       try {
+        const identityContractID = this.ourIdentityContractId
         await sbp('gi.actions/identity/createDirectMessage', {
-          contractID: this.ourIdentityContractId,
+          contractID: identityContractID,
+          currentGroupId: this.currentGroupId,
           data: { memberIDs },
           hooks: {
             onprocessed: (message) => {
               const dmID = message.decryptedValue().data.contractID
               // The logic for updating paths will not work until the DM chatroom
               // has been synced
-              sbp('chelonia/queueInvocation', dmID, () => this.redirect(dmID))
+
+              // Sometimes, the state may not be ready (it needs to be copied from the SW
+              // to Vuex). In this case, we try again after a short delay.
+              // The specific issue is that the browsing-side state is updated in response
+              // to the EVENT_HANDLED event. That may happen after the onprocessed hook
+              // TODO: Figure out a better way of doing this that doesn't require a timeout (for example, doing this directly is the GroupChat.vue file
+              // `if (!this.isJoinedChatRoom(chatRoomID)) {` check)
+
+              let attemptCount = 0
+              const setCurrentChatRoomId = () => {
+                // Re-grab the state as it could be a stale reference
+                const rootState = sbp('state/vuex/state')
+                if (!rootState[dmID]?.members?.[identityContractID]) {
+                  if (++attemptCount > 5) {
+                    console.warn('[createDirectMessage] Given up on redirect after 5 attempts', { identityContractID, dmID })
+                    return
+                  }
+                  setTimeout(setCurrentChatRoomId, 5 + 5 * attemptCount)
+                } else {
+                  this.redirect(dmID)
+                }
+              }
+
+              sbp('chelonia/queueInvocation', dmID, setCurrentChatRoomId)
             }
           }
         })

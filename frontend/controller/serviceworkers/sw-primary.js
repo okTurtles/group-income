@@ -121,7 +121,6 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => {}
 })
 
-
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
   event.waitUntil(self.skipWaiting())
