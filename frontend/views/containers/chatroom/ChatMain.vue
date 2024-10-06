@@ -1055,6 +1055,11 @@ export default ({
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
+            // If there's messages, call $state.loaded. This has the effect that
+            // the no-more message will be shown instead of the no-results message
+            if (this.messages.length) {
+              $state.loaded()
+            }
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
