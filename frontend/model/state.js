@@ -9,7 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { MAX_GROUP_MEMBER_COUNT, PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -160,8 +160,8 @@ sbp('sbp/selectors/register', {
     })();
     (() => {
       // Update expired invites
-      // If fewer than 150 'anyone can join' have been used, create a new
-      // 'anyone can join' link up to 150 invites
+      // If fewer than MAX_GROUP_MEMBER_COUNT 'anyone can join' have been used,
+      // create a new 'anyone can join' link up to MAX_GROUP_MEMBER_COUNT invites
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
       Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
@@ -175,7 +175,7 @@ sbp('sbp/selectors/register', {
           ? groupState._vm.invites[cv].initialQuantity
           : ((groupState._vm.invites[cv].initialQuantity - groupState._vm.invites[cv].quantity)
             ) || 0), 0)
-        return (usedInvites < 150) ? groupID : undefined
+        return (usedInvites < MAX_GROUP_MEMBER_COUNT) ? groupID : undefined
       }).filter(Boolean).forEach((contractID) => {
         sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
       })

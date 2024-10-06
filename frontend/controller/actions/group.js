@@ -5,6 +5,7 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_INITIAL_CREATOR,
   INVITE_EXPIRES_IN_DAYS,
+  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   PROFILE_STATUS,
   PROPOSAL_GENERIC,
@@ -181,7 +182,7 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
-              quantity: 150,
+              quantity: MAX_GROUP_MEMBER_COUNT,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
                 expires:
                 await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
@@ -920,8 +921,8 @@ export default (sbp('sbp/selectors/register', {
     //       (initialQuantity) as used
     //  2. For expired invites, we consider the quantity actually used
     //  3. We add up 1. and 2. above
-    // Then, we take the difference and, if the number is less than 150, we
-    // create a new invite.
+    // Then, we take the difference and, if the number is less than
+    // MAX_GROUP_MEMBER_COUNT, we create a new invite.
     const usedInvites = Object.keys(state.invites)
       .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
       .reduce((acc, cv) => acc +
@@ -930,10 +931,10 @@ export default (sbp('sbp/selectors/register', {
         : ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity)
           ) || 0), 0)
 
-    const quantity = 150 - usedInvites
+    const quantity = MAX_GROUP_MEMBER_COUNT - usedInvites
 
     if (quantity <= 0) {
-      console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used 150 invites for group', contractID)
+      console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
       return
     }
 
