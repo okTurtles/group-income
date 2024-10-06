@@ -600,6 +600,7 @@ export default (sbp('sbp/selectors/register', {
                 }]
               case NOTIFICATION_TYPE.KV:
                 return [k, (msg) => {
+                  console.error('@@@###KV', msg)
                   if (!msg.channelID || !msg.key) {
                     console.info('[chelonia] Discarding kv event without channelID or key')
                     return

@@ -6,14 +6,16 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
+import '~/frontend/controller/sw-namespace.js'
+import getters from '~/frontend/model/getters.js'
+import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
-import { ACCEPTED_GROUP, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP } from '../../utils/events.js'
-import '~/frontend/controller/sw-namespace.js'
+import { ACCEPTED_GROUP, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SWITCH_GROUP } from '../../utils/events.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -30,7 +32,7 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   console.debug(`[sw] [sbp] ${selector}`, data)
 });
 
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, NAMESPACE_REGISTRATION, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -62,7 +64,18 @@ sbp('sbp/selectors/register', {
     console.error('[sw] CALLED state/vuex/commit WHICH IS UNDEFINED')
   },
   'state/vuex/getters': () => {
-    return {
+    const obj = Object.create(null)
+    Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]) => {
+      return [getter, {
+        get: () => {
+          const state = sbp('chelonia/rootState')
+          return fn(state, obj)
+        }
+      }]
+    })))
+
+    return obj
+    /* return {
       chatRoomUnreadMessages () {
         return []
       },
@@ -85,8 +98,10 @@ sbp('sbp/selectors/register', {
       },
       usernameFromID () {
         return ''
-      }
+      },
+      ourContactProfilesById: {}
     }
+    */
   }
 })
 
@@ -103,10 +118,9 @@ sbp('sbp/selectors/register', {
 })
 
 sbp('sbp/selectors/register', {
-  'gi.notifications/emit': (...args) => {
-    console.error('### notification ###', ...args)
-  }
+  'appLogs/save': () => {}
 })
+
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')

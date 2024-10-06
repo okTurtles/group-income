@@ -251,6 +251,7 @@ const setupChelonia = async (): Promise<*> => {
       },
       [NOTIFICATION_TYPE.KV] ([key, value]) {
         const { contractID, data } = value
+        console.error('@@@### KV_EVENT', { contractID, key, data })
         if (!data) return
 
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })

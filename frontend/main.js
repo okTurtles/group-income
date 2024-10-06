@@ -207,6 +207,9 @@ async function startApp () {
       return swRpc(args[0].slice(3), ...args.slice(1))
     }
   })
+  sbp('sbp/selectors/register', {
+    'gi.notifications/*': swRpc
+  })
 
   /* eslint-disable no-new */
   new Vue({
@@ -323,6 +326,7 @@ async function startApp () {
             sbp('state/vuex/commit', 'setPreferences', data)
             break
           case KV_KEYS.NOTIFICATIONS:
+            console.error('@@@@@###', data)
             sbp('state/vuex/commit', 'setNotificationStatus', data)
             break
         }
