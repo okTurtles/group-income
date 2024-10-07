@@ -6,21 +6,46 @@ button.c-toggle.is-unstyled(
 )
   i.icon-bars(v-if='element === "navigation"')
     slot
-  i.icon-info(v-else-if='element === "sidebar"')
+  i.icon-info(v-else-if='element === "sidebar"' :class='{"c-toggle-bg": hasChatNotification}')
     slot
+    badge(v-if='hasChatNotification') {{ currentGroupUnreadMessagesCount }}
+
 </template>
 
 <script>
+import Badge from './Badge.vue'
+import { mapState, mapGetters } from 'vuex'
+
 export default ({
   name: 'Toggle',
+  components: {
+    Badge
+  },
   props: {
     element: {
       type: String,
       validator: (value) => ['navigation', 'sidebar'].includes(value),
       required: true
+    },
+    showBadge: {
+      type: Boolean,
+      default: false
+    }
+  },
+  computed: {
+    ...mapState(['currentGroupId']),
+    ...mapGetters([
+      'groupUnreadMessages'
+    ]),
+    currentGroupUnreadMessagesCount () {
+      return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
+    },
+    hasChatNotification () {
+      return ['GroupChat', 'GroupChatConversation'].includes(this.$route.name) && this.showBadge && this.currentGroupUnreadMessagesCount
     }
   }
 }: Object)
+
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
@@ -74,6 +99,10 @@ $iconSize: 2.75rem;
     text-align: center;
     line-height: $iconSize;
     transition: opacity $speed * 0.5 $speed;
+
+    &.c-toggle-bg {
+      background-color: var(--general_1);
+    }
   }
 
   .is-active & {
