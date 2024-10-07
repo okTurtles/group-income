@@ -21,6 +21,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   // If newMessage is undefined, it means that an existing message is being edited
   newMessage
 }) => {
+  const state = sbp('chelonia/contract/state', contractID)
   const getters = sbp('state/vuex/getters')
   const mentions = makeMentionFromUserID(getters.ourIdentityContractId)
   const msgData = newMessage || data
@@ -42,10 +43,10 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
     messageHash: msgData.hash,
     height: msgData.height,
     text: msgData.text,
-    isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+    isDMOrMention: isMentionedMe || state.attributes?.type === CHATROOM_TYPES.DIRECT_MESSAGE,
     messageType: !newMessage ? MESSAGE_TYPES.TEXT : data.type,
     memberID: innerSigningContractID,
-    chatRoomName: getters.chatRoomAttributes.name
+    chatRoomName: state.attributes?.name
   }).catch(e => {
     console.error('[action/chatroom.js] Error on messageReceivePostEffect', e)
   })
