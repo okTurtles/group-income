@@ -555,7 +555,7 @@ export default ({
       }
     },
     handlePaste (e) {
-      // fix for the edge-case related to 'paste' action when nothing has been typed.
+      // fix for the edge-case related to 'paste' action when nothing has been typed
       // (reference: https://github.com/okTurtles/group-income/issues/2369)
       const currVal = this.$refs.textarea.value
 
