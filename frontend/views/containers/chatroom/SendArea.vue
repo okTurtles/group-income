@@ -70,6 +70,7 @@
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
       @keyup='handleKeyup'
+      @paste='handlePaste'
       v-bind='$attrs'
     )
 
@@ -551,6 +552,18 @@ export default ({
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
+      }
+    },
+    handlePaste (e) {
+      // fix for the edge-case related to 'paste' action when nothing has been typed
+      // (reference: https://github.com/okTurtles/group-income/issues/2369)
+      const currVal = this.$refs.textarea.value
+
+      if (!currVal) {
+        e.preventDefault()
+        const pastedText = e.clipboardData.getData('text')
+        this.$refs.textarea.value = pastedText
+        this.updateTextArea()
       }
     },
     addSelectedMention (index) {
