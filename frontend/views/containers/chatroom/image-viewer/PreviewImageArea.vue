@@ -8,6 +8,7 @@
     :width='config.imgData.naturalWidth'
     :height='config.imgData.naturalHeight'
     :style='previewImgStyles'
+    :alt='name'
     draggable='false'
     @load='onImgLoad'
   )
@@ -31,7 +32,7 @@
 
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
-import pointerEventsMixin from '@view-utils/pointerEventsMixins.js'
+import pointerEventsMixinFactory from '@view-utils/pointerEventsMixins.js'
 import { linearScale } from '@model/contracts/shared/giLodash.js'
 
 const linearScaler = {
@@ -43,7 +44,7 @@ const getSign = v => v < 0 ? -1 : 1
 
 export default {
   name: 'PreviewImageArea',
-  mixins: [pointerEventsMixin],
+  mixins: [pointerEventsMixinFactory({ pointerMoveOnWindow: true })],
   components: {
     SliderContinuous
   },
@@ -51,7 +52,8 @@ export default {
     imgSrc: {
       type: String,
       required: true
-    }
+    },
+    name: String
   },
   data () {
     return {

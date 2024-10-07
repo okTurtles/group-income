@@ -2,7 +2,7 @@
 .c-image-viewer-modal
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area(:img-src='metaData.imgUrl')
+    preview-image-area(:img-src='metaData.imgUrl' :name='metaData.name')
 
     header.c-modal-header
       avatar-user.c-avatar(
