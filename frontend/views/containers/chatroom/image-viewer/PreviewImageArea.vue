@@ -169,24 +169,24 @@ export default {
     onSliderUpdate (e) {
       this.handleZoomUpdate(e.target.value)
     },
-    handleZoomUpdate (val) {
+    handleZoomUpdate (val, zoomPoint = null) {
       this.ephemeral.previousZoom = this.ephemeral.currentZoom
       this.ephemeral.currentZoom = val
-      const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
 
       this.calcPreviewImageDimension()
+
+      const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
+      const { naturalWidth, naturalHeight } = this.config.imgData
+      const { width: viewAreaWidth, height: viewAreaHeight } = this.$el.getBoundingClientRect()
+      const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
 
       if (isZoomingOut) {
         // NOTE: when the image is being zoomed-out and also it has been translated,
         // it needs a speical auto-translation logic so that the preview iamge doesn't stay off-screen.
         // (No need to apply this when the preview iamge is larger than the view-port area)
-
-        const { width: viewAreaWidth, height: viewAreaHeight } = this.$el.getBoundingClientRect()
-        const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
         const isPreviewTallerThanViewArea = viewAreaHeight < this.ephemeral.previewImgAttrs.height
         const isPreviewWiderThanViewArea = viewAreaWidth < this.ephemeral.previewImgAttrs.width
 
-        const { naturalWidth, naturalHeight } = this.config.imgData
         let moveX = 0 // x-value to auto-translate
         let moveY = 0 // y-value to auto-translate
 
@@ -251,24 +251,24 @@ export default {
           ? this.config.zoomMin
           : newVal
     },
-    pinchInHandler (factor) {
+    pinchInHandler ({ changeFactor, center }) {
       // should zoom-out (shrink)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
-        linearScaler.pinchToZoom(factor)
+        linearScaler.pinchToZoom(changeFactor)
       )
       const newVal = Math.ceil(currZoom - updateVal)
 
-      this.handleZoomUpdate(this.clipZoomValue(newVal))
+      this.handleZoomUpdate(this.clipZoomValue(newVal), center)
     },
-    pinchOutHandler (factor) {
+    pinchOutHandler ({ changeFactor, center }) {
       // should zoom-in (magnify)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
-        linearScaler.pinchToZoom(factor)
+        linearScaler.pinchToZoom(changeFactor)
       )
       const newVal = Math.ceil(currZoom + updateVal)
-      this.handleZoomUpdate(this.clipZoomValue(newVal))
+      this.handleZoomUpdate(this.clipZoomValue(newVal), center)
     },
     wheelEventHandler (e) {
       // reference: https://kenneth.io/post/detecting-multi-touch-trackpad-gestures-in-javascript
@@ -290,7 +290,7 @@ export default {
       }
 
       if (newVal !== undefined) {
-        this.handleZoomUpdate(this.clipZoomValue(newVal))
+        this.handleZoomUpdate(this.clipZoomValue(newVal), { x: e.clientX, y: e.clientY })
       }
     }
   },

@@ -61,24 +61,29 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           const [evt1, evt2] = evts
           const xDist = Math.abs(evt2.current.x - evt1.current.x)
           const yDist = Math.abs(evt2.current.y - evt1.current.y)
+          const center = {
+            x: Math.min(evt1.current.x, evt2.current.x) + xDist / 2,
+            y: Math.min(evt1.current.y, evt2.current.y) + yDist / 2
+          }
 
           // Calculate distance update factor
           const currentLinearDist = Math.sqrt(xDist * xDist + yDist * yDist)
           const prevLinearDist = this.pointer.prevDistance || currentLinearDist
           const distChangeFactor = Math.abs(currentLinearDist - prevLinearDist)
+          const args = { changeFactor: distChangeFactor, center }
 
           if ((currentLinearDist - prevLinearDist) > PINCH_ZOOM_THRESHOLD) {
-            this.$emit('pinch-out', distChangeFactor)
+            this.$emit('pinch-out', args)
 
             // The component that registers this mixin needs to be able to listen to this custom event too.
             this.pinchOutHandler &&
-              this.pinchOutHandler(distChangeFactor)
+              this.pinchOutHandler(args)
           } else if ((currentLinearDist - prevLinearDist) < PINCH_ZOOM_THRESHOLD * -1) {
-            this.$emit('pinch-in', distChangeFactor)
+            this.$emit('pinch-in', args)
 
             // The component that registers this mixin needs to be able to listen to this custom event too.
             this.pinchInHandler &&
-              this.pinchInHandler(distChangeFactor)
+              this.pinchInHandler(args)
           }
 
           this.pointer.prevDistance = currentLinearDist // track it for the next calculation
