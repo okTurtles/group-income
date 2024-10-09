@@ -174,7 +174,7 @@ export function firstDayOfMonth (date: Date): Date {
 export function humanDate (
   date: number | Date | string,
   options?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-): ?string {
+): string {
   const fallback = 'en-US-POSIX'
   const locale = typeof navigator === 'undefined'
     // Fallback for Mocha tests.
@@ -186,7 +186,11 @@ export function humanDate (
   // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
   const dateObj = new Date(date)
+
+  // Avoid returning 'Invalid Date'
   if (!isNaN(dateObj.valueOf())) return dateObj.toLocaleDateString(locale, options)
+
+  return ''
 }
 
 export function isPeriodStamp (arg: string): boolean {

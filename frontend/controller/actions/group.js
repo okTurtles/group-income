@@ -185,7 +185,7 @@ export default (sbp('sbp/selectors/register', {
               quantity: MAX_GROUP_MEMBER_COUNT,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
                 expires:
-                await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+                await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
               }),
               private: {
                 content: inviteKeyS
@@ -913,23 +913,17 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/group/fixAnyoneCanJoinLink': async function ({ contractID }) {
+    const now = await sbp('chelonia/time') * 1000
     const state = await sbp('chelonia/contract/state', contractID)
-    const now = await sbp('chelonia/time')
 
-    // For used invites, we add all 'anyone can join' invites and do the following:
-    //  1. For non-expired invites, we consider all of the invites
-    //       (initialQuantity) as used
-    //  2. For expired invites, we consider the quantity actually used
-    //  3. We add up 1. and 2. above
+    // Add up all all used 'anyone can join' invite links
     // Then, we take the difference and, if the number is less than
     // MAX_GROUP_MEMBER_COUNT, we create a new invite.
     const usedInvites = Object.keys(state.invites)
       .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
       .reduce((acc, cv) => acc +
-      (!(state._vm.invites[cv].expires >= now)
-        ? state._vm.invites[cv].initialQuantity
-        : ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity)
-          ) || 0), 0)
+      ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity
+      ) || 0), 0)
 
     const quantity = MAX_GROUP_MEMBER_COUNT - usedInvites
 
@@ -960,7 +954,7 @@ export default (sbp('sbp/selectors/register', {
         quantity,
         ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
           expires:
-          await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+          await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
         }),
         private: {
           content: inviteKeyS
@@ -968,6 +962,12 @@ export default (sbp('sbp/selectors/register', {
       },
       data: inviteKeyP
     }
+
+    // Replace all existing anyone-can-join invite links with the new one
+    const activeInvites = Object.keys(state.invites)
+      .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(state._vm.invites[invite].expires >= now))
+
+    await Promise.all(activeInvites.map(inviteKeyId => sbp('gi.actions/group/inviteRevoke', { contractID, data: { inviteKeyId } })))
 
     await sbp('chelonia/out/keyAdd', {
       contractName: 'gi.contracts/group',

@@ -167,14 +167,15 @@ sbp('sbp/selectors/register', {
       Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
         const groupState = state[groupID]
         if (hasLeft || !groupState?.invites) return undefined
-        const now = Date.now()
+        const hasBeenUpdated = Object.keys(groupState.invites).some(inviteId => {
+          return groupState.invites[inviteId].creatorID === INVITE_INITIAL_CREATOR &&
+          groupState._vm.invites[inviteId].expires == null
+        })
+        if (hasBeenUpdated) return undefined
         const usedInvites = Object.keys(groupState.invites)
           .filter(invite => groupState.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
           .reduce((acc, cv) => acc +
-        (!(groupState._vm.invites[cv].expires >= now)
-          ? groupState._vm.invites[cv].initialQuantity
-          : ((groupState._vm.invites[cv].initialQuantity - groupState._vm.invites[cv].quantity)
-            ) || 0), 0)
+        ((groupState._vm.invites[cv].initialQuantity - groupState._vm.invites[cv].quantity) || 0), 0)
         return (usedInvites < MAX_GROUP_MEMBER_COUNT) ? groupID : undefined
       }).filter(Boolean).forEach((contractID) => {
         sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
