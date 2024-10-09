@@ -60,7 +60,9 @@ export default {
       ephemeral: {
         previewImgAttrs: {
           width: undefined,
-          height: undefined
+          height: undefined,
+          topX: undefined,
+          topY: undefined
         },
         imgTranslation: { x: 0, y: 0 },
         currentZoom: 100,
@@ -88,7 +90,7 @@ export default {
 
       return {
         height: attrs.naturalHeight ? `${attrs.naturalHeight}px` : undefined,
-        transform: `translate(${tx}px, ${ty}px) scale(${scaleVal}, ${scaleVal})`
+        transform: `translate3d(${tx}px, ${ty}px, 0px) scale(${scaleVal}, ${scaleVal})`
       }
     },
     isImageMovable () {
@@ -96,7 +98,6 @@ export default {
     },
     movableDistances () {
       // calculates how much vertical/horizontal spaces are available to move image around in.
-
       if (!this.isImageMovable) {
         return { x: 0, y: 0 }
       } else {
@@ -161,10 +162,46 @@ export default {
       // update the preview image width/height values based on the current zoom value
       const { naturalWidth, aspectRatio } = this.config.imgData
       const fraction = this.ephemeral.currentZoom / 100
+      const center = this.getViewAreaCenter()
+      const { x: transX, y: transY } = this.ephemeral.imgTranslation
       const widthCalc = fraction * naturalWidth
+      const heightCalc = widthCalc / aspectRatio
 
       this.ephemeral.previewImgAttrs.width = widthCalc
-      this.ephemeral.previewImgAttrs.height = widthCalc / aspectRatio
+      this.ephemeral.previewImgAttrs.height = heightCalc
+      this.ephemeral.previewImgAttrs.topX = center.x - widthCalc / 2 + transX
+      this.ephemeral.previewImgAttrs.topY = center.y - heightCalc / 2 + transY
+    },
+    getViewAreaCenter () {
+      const {
+        width: viewAreaWidth,
+        height: viewAreaHeight,
+        top: viewAreaTop,
+        left: viewAreaLeft
+      } = this.$el.getBoundingClientRect()
+
+      return {
+        x: viewAreaLeft + viewAreaWidth / 2,
+        y: viewAreaTop + viewAreaHeight / 2
+      }
+    },
+    isPointInsidePreviewImage ({ x, y }) {
+      // check if the given point is within the currently-scaled preview-image.
+      const center = this.getViewAreaCenter()
+      const { width, height } = this.ephemeral.previewImgAttrs
+      const { x: transX, y: transY } = this.ephemeral.imgTranslation
+      const half = { w: width / 2, h: height / 2 }
+      const boundary = {
+        top: transY + center.y - half.h,
+        left: transX + center.x - half.w,
+        bottom: transY + center.y + half.h,
+        right: transX + center.x + half.w
+      }
+
+      return x > boundary.left &&
+        x < boundary.right &&
+        y > boundary.top &&
+        y < boundary.bottom
     },
     onSliderUpdate (e) {
       this.handleZoomUpdate(e.target.value)
@@ -173,11 +210,22 @@ export default {
       this.ephemeral.previousZoom = this.ephemeral.currentZoom
       this.ephemeral.currentZoom = val
 
-      this.calcPreviewImageDimension()
-
       if (zoomPoint) {
-        console.log('!@# TODO!')
+        const { width: prevWidth, height: prevHeight, topX: prevTopX, topY: prevTopY } = this.ephemeral.previewImgAttrs
+        let percentX = (zoomPoint.x - prevTopX) / prevWidth
+        let percentY = (zoomPoint.y - prevTopY) / prevHeight
+        percentX = parseFloat(percentX.toFixed(1))
+        percentY = parseFloat(percentY.toFixed(1))
+
+        this.calcPreviewImageDimension()
+        const { width: afterWidth, height: afterHeight, topX: afterTopX, topY: afterTopY } = this.ephemeral.previewImgAttrs
+        const toX = Math.ceil(afterTopX + afterWidth * percentX)
+        const toY = Math.ceil(afterTopY + afterHeight * percentY)
+
+        this.translate({ x: (toX - zoomPoint.x) * -1, y: (toY - zoomPoint.y) * -1 })
       } else {
+        this.calcPreviewImageDimension()
+
         const { naturalWidth, naturalHeight } = this.config.imgData
         const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
         let moveX = 0 // x-value to auto-translate
@@ -241,6 +289,7 @@ export default {
           : newVal
     },
     pinchInHandler ({ changeFactor, center }) {
+      if (!this.isPointInsidePreviewImage(center)) { return }
       // should zoom-out (shrink)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
@@ -251,6 +300,8 @@ export default {
       this.handleZoomUpdate(this.clipZoomValue(newVal), center)
     },
     pinchOutHandler ({ changeFactor, center }) {
+      if (!this.isPointInsidePreviewImage(center)) { return }
+
       // should zoom-in (magnify)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
@@ -261,8 +312,9 @@ export default {
     },
     wheelEventHandler (e) {
       // reference: https://kenneth.io/post/detecting-multi-touch-trackpad-gestures-in-javascript
+      const point = { x: e.clientX, y: e.clientY }
 
-      if (!e.ctrlKey) { return }
+      if (!e.ctrlKey || !this.isPointInsidePreviewImage(point)) { return }
 
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
@@ -279,7 +331,7 @@ export default {
       }
 
       if (newVal !== undefined) {
-        this.handleZoomUpdate(this.clipZoomValue(newVal), { x: e.clientX, y: e.clientY })
+        this.handleZoomUpdate(this.clipZoomValue(newVal), point)
       }
     }
   },

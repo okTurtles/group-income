@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-image-viewer-modal
+.c-image-viewer-modal(@wheel.prevent.stop='')
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
     preview-image-area(:img-src='metaData.imgUrl' :name='metaData.name')
