@@ -4,7 +4,7 @@ import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -147,6 +147,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   }
 })
 
+sbp('okTurtles.events/on', NEW_PREFERENCES, (currentChatRoomUnreadMessages) => {
+  sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+})
+
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (preferences) => {
+  sbp('state/vuex/commit', 'setPreferences', preferences)
+})
+
 /* Commented out as persistentActions are not being used
 sbp('okTurtles.events/on', LOGOUT, (a) => {
   // TODO: [SW] It may make more sense to load persistent actions in
@@ -223,6 +231,7 @@ export default (sbp('sbp/selectors/register', {
 
       return userID
     } catch (e) {
+      console.error('@@@gi.app/identity/create failed!', e.message, e.stack)
       console.error('gi.app/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
     }

@@ -497,9 +497,7 @@ export default (sbp('sbp/selectors/register', {
     const partnerIDs = params.data.memberIDs
       .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
-    // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
-    //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
-    const currentGroupId = rootState.currentGroupId
+    const currentGroupId = params.currentGroupId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {

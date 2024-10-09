@@ -1,17 +1,16 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
   'namespace/lookupCached': (name: string) => {
     const cache = sbp('state/vuex/state').namespaceLookups
-    return cache[name] ?? null
+    return cache?.[name] ?? null
   },
   'namespace/lookupReverseCached': (id: string) => {
     const cache = sbp('state/vuex/state').reverseNamespaceLookups
-    return cache[id] ?? null
+    return cache?.[id] ?? null
   },
   'namespace/lookup': (name: string, { skipCache }: { skipCache: boolean } = { skipCache: false }) => {
     if (!skipCache) {
@@ -23,23 +22,6 @@ sbp('sbp/selectors/register', {
         return Promise.resolve(cached)
       }
     }
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${encodeURIComponent(name)}`).then((r: Object) => {
-      if (!r.ok) {
-        console.warn(`namespace/lookup: ${r.status} for ${name}`)
-        if (r.status !== 404) {
-          throw new Error(`${r.status}: ${r.statusText}`)
-        }
-        return null
-      }
-      return r['text']()
-    }).then(value => {
-      if (value !== null) {
-        const cache = sbp('state/vuex/state').namespaceLookups
-        const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
-        Vue.set(cache, name, value)
-        Vue.set(reverseCache, value, name)
-      }
-      return value
-    })
+    return sbp('sw-namespace/lookup', name, { skipCache })
   }
 })

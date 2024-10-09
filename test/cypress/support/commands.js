@@ -689,6 +689,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
 
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('conversationWrapper').within(() => {
+    // This checks for the 'no-more' slot of the infinite loader
     cy.get('.infinite-status-prompt:nth-child(3)')
       .invoke('attr', 'style')
       .should('not.include', 'display: none')
