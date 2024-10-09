@@ -175,35 +175,24 @@ export default {
 
       this.calcPreviewImageDimension()
 
-      const isZoomingOut = this.ephemeral.previousZoom !== null && (this.ephemeral.currentZoom - this.ephemeral.previousZoom) < 0
-      const { naturalWidth, naturalHeight } = this.config.imgData
-      const { width: viewAreaWidth, height: viewAreaHeight } = this.$el.getBoundingClientRect()
-      const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
-
-      if (isZoomingOut) {
-        // NOTE: when the image is being zoomed-out and also it has been translated,
-        // it needs a speical auto-translation logic so that the preview iamge doesn't stay off-screen.
-        // (No need to apply this when the preview iamge is larger than the view-port area)
-        const isPreviewTallerThanViewArea = viewAreaHeight < this.ephemeral.previewImgAttrs.height
-        const isPreviewWiderThanViewArea = viewAreaWidth < this.ephemeral.previewImgAttrs.width
-
+      if (zoomPoint) {
+        console.log('!@# TODO!')
+      } else {
+        const { naturalWidth, naturalHeight } = this.config.imgData
+        const zoomDiff = (this.ephemeral.currentZoom - this.ephemeral.previousZoom) / 100
         let moveX = 0 // x-value to auto-translate
         let moveY = 0 // y-value to auto-translate
 
-        if (!isPreviewWiderThanViewArea && Math.abs(this.ephemeral.imgTranslation.x)) {
-          const zoomedOutX = Math.abs(zoomDiff * naturalWidth)
-          const absCurrTransX = Math.abs(this.ephemeral.imgTranslation.x)
-          const currTransXSign = getSign(this.ephemeral.imgTranslation.x)
+        if (this.ephemeral.imgTranslation.x !== 0) {
+          const wUpdate = zoomDiff * naturalWidth
 
-          moveX = Math.min(zoomedOutX, absCurrTransX) * currTransXSign * -1
+          moveX = wUpdate * -0.5
         }
 
-        if (!isPreviewTallerThanViewArea && Math.abs(this.ephemeral.imgTranslation.y)) {
-          const zoomedOutY = Math.abs(zoomDiff * naturalHeight)
-          const absCurrTransY = Math.abs(this.ephemeral.imgTranslation.y)
-          const currTransYSign = getSign(this.ephemeral.imgTranslation.y)
+        if (this.ephemeral.imgTranslation.y !== 0) {
+          const hUpdate = zoomDiff * naturalHeight
 
-          moveY = Math.min(zoomedOutY, absCurrTransY) * currTransYSign * -1
+          moveY = hUpdate * -0.5
         }
 
         this.translate({ x: moveX, y: moveY })
