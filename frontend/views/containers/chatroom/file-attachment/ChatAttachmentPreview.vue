@@ -1,5 +1,7 @@
 <template lang='pug'>
 .c-attachment-container(ref='container' :class='{ "is-for-download": isForDownload }')
+
+  // Displaying attachments as part of message
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
@@ -20,6 +22,7 @@
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
+          @click='openImageViewer(objectURLList[entryIndex], entry)'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -51,11 +54,13 @@
             )
               i.icon-trash-alt
 
+  // Displaying attachments as part of <send-area />
   template(v-else)
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
       :key='entryIndex'
       :class='"is-" + fileType(entry)'
+      @click='openImageViewer(entry.url, entry)'
     )
       img.c-preview-img(
         v-if='fileType(entry) === "image" && entry.url'
@@ -73,7 +78,7 @@
       button.c-attachment-remove-btn(
         type='button'
         :aria-label='L("Remove attachment")'
-        @click='$emit("remove", entry.url)'
+        @click.stop='$emit("remove", entry.url)'
       )
         i.icon-times
 
@@ -88,6 +93,7 @@ import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -107,7 +113,9 @@ export default {
     },
     isGroupCreator: Boolean,
     isForDownload: Boolean,
-    isMsgSender: Boolean
+    isMsgSender: Boolean,
+    ownerID: String,
+    createdAt: [Date, String]
   },
   data () {
     return {
@@ -203,6 +211,22 @@ export default {
         width: `${widthInPixel}px`,
         height: `${heightInPixel}px`
       }
+    },
+    openImageViewer (objectURL, data) {
+      if (objectURL) {
+        sbp(
+          'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+          null,
+          {
+            metaData: {
+              name: data.name,
+              ownerID: this.ownerID,
+              imgUrl: objectURL,
+              createdAt: this.createdAt || new Date()
+            }
+          }
+        )
+      }
     }
   },
   watch: {
@@ -252,7 +276,6 @@ export default {
       position: absolute;
       right: 0.5rem;
       top: 0;
-      bottom: 0;
 
       .c-attachment-actions {
         display: flex;
@@ -290,7 +313,8 @@ export default {
         padding: 0.5rem;
 
         img {
-          pointer-events: none;
+          user-select: none;
+          cursor: pointer;
           max-width: 100%;
           max-height: 20rem;
 
@@ -320,6 +344,7 @@ export default {
   &.is-image {
     width: 4.5rem;
     height: 4.5rem;
+    cursor: pointer;
 
     .c-preview-img {
       pointer-events: none;

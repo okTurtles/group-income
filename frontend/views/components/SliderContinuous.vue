@@ -69,6 +69,19 @@ export default ({
       const percent = this.getPercent(value)
       this.ephemeral.styleVars = `--percent: ${percent}%; --factor: ${this.getFactor(percent)};`
     }
+  },
+  watch: {
+    value (newVal) {
+      if (newVal !== undefined) {
+        this.updateSlider(newVal)
+      }
+    },
+    min () {
+      this.updateSlider(this.value)
+    },
+    max () {
+      this.updateSlider(this.value)
+    }
   }
 }: Object)
 </script>

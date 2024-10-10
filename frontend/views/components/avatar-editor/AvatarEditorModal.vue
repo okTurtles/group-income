@@ -24,8 +24,8 @@ modal-template(
       :zoom='zoom'
       :imageUrl='ephemeral.replaceImageUrl'
       @pointer-wheel='HandleWheelOnCanvas'
-      @pinch-in='decrementSlider(3)'
-      @pinch-out='incrementSlider(3)'
+      @pinch-in='decrementSlider(4)'
+      @pinch-out='incrementSlider(4)'
     )
 
     .c-slider-container
@@ -138,8 +138,8 @@ export default ({
       this.$refs.slider.updateSlider(this.form.slider)
     },
     HandleWheelOnCanvas ({ deltaY }) {
-      if (deltaY < 0) this.incrementSlider(2)
-      else this.decrementSlider(2)
+      if (deltaY < 0) this.incrementSlider(3)
+      else this.decrementSlider(3)
     },
     loadPhotoChange (fileList) {
       if (!fileList.length) return
