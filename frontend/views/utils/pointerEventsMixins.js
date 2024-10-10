@@ -14,7 +14,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           prevDistance: null // tracking distance between two pointers when 'pinch' gesture is happening
         },
         throttledHandlers: {
-          pointerMove: throttle(this.onPointerMove, 5)
+          pointerMove: throttle(this.onPointerMove, 10)
         },
         matchMedia: {
           handler: null,
@@ -34,6 +34,8 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
       onPointerCancel (e: Object) {
         this.pointer.evts = []
         this.pointer.prevDistance = null
+
+        this.postPointerCancel && this.postPointerCancel()
       },
       onPointerMove (e: Object) {
         // reponsible for translation of the image on the canvas
@@ -50,7 +52,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
 
         if (evts.length === 1) {
           // translation
-          const adjustmentFactor = this.matchMedia.isTouch ? 1.5 : 1.2
+          const adjustmentFactor = this.matchMedia.isTouch ? 1.5 : 1.1
           this.translate({
             x: (evItem.current.x - evItem.prev.x) * adjustmentFactor,
             y: (evItem.current.y - evItem.prev.y) * adjustmentFactor

@@ -67,6 +67,10 @@ export default {
         imgTranslation: { x: 0, y: 0 },
         currentZoom: 100,
         previousZoom: null,
+        pointedZoomAction: {
+          percentX: null,
+          percentY: null
+        },
         showSliderOutput: false
       },
       config: {
@@ -212,10 +216,18 @@ export default {
 
       if (zoomPoint) {
         const { width: prevWidth, height: prevHeight, topX: prevTopX, topY: prevTopY } = this.ephemeral.previewImgAttrs
-        let percentX = (zoomPoint.x - prevTopX) / prevWidth
-        let percentY = (zoomPoint.y - prevTopY) / prevHeight
-        percentX = parseFloat(percentX.toFixed(1))
-        percentY = parseFloat(percentY.toFixed(1))
+        let percentX = this.ephemeral.pointedZoomAction.percentX
+        let percentY = this.ephemeral.pointedZoomAction.percentY
+
+        if (percentX === null) {
+          percentX = (zoomPoint.x - prevTopX) / prevWidth
+          percentX = parseFloat(percentX.toFixed(1))
+        }
+
+        if (percentY === null) {
+          percentY = (zoomPoint.y - prevTopY) / prevHeight
+          percentY = parseFloat(percentY.toFixed(1))
+        }
 
         this.calcPreviewImageDimension()
         const { width: afterWidth, height: afterHeight, topX: afterTopX, topY: afterTopY } = this.ephemeral.previewImgAttrs
@@ -333,6 +345,11 @@ export default {
       if (newVal !== undefined) {
         this.handleZoomUpdate(this.clipZoomValue(newVal), point)
       }
+    },
+    postPointerCancel () {
+      console.log('!@# postPointerCancel')
+      this.ephemeral.pointedZoomAction.percentX = null
+      this.ephemeral.pointedZoomAction.percentY = null
     }
   },
   mounted () {

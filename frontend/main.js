@@ -148,10 +148,10 @@ async function startApp () {
         }, 8e3)
       })]
   ).catch(e => {
-    console.error('[main] Error setting up service worker', e)
-    alert(L('Error while setting up service worker'))
-    window.location.reload() // try again, sometimes it fixes it
-    throw e
+    // console.error('[main] Error setting up service worker', e)
+    // alert(L('Error while setting up service worker'))
+    // window.location.reload() // try again, sometimes it fixes it
+    // throw e
   })
 
   /* eslint-disable no-new */
