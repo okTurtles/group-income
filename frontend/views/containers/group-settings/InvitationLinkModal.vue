@@ -8,7 +8,8 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
       i18n.is-title-4(tag='h3') Share this link to grant access to your group.
       i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
       link-to-copy.c-link(:link='link')
-      i18n.has-text-1(tag='p' :args='{ expireDate }') This invite link expires on {expireDate}.
+      i18n.has-text-1(v-if='expireDate' tag='p' :args='{ expireDate }') This invite link expires on {expireDate}.
+      i18n.has-text-1(v-else tag='p') This invite link doesn't expire
       i18n.is-outlined.c-cta(tag='button' @click.prevent='close') Awesome
     .c-broken(v-else)
       svg-broken-link.c-svg
