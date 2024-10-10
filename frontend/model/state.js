@@ -6,6 +6,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
@@ -578,7 +579,7 @@ const getters = {
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) && !(getters.currentGroupState._vm.invites[invite].quantity <= 0))
+    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) && !(getters.currentGroupState._vm.invites[invite].quantity <= 0) && getters.currentGroupState._vm.invites[invite].status === INVITE_STATUS.VALID)
     const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },
