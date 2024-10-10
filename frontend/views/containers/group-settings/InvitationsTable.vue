@@ -238,11 +238,13 @@ export default ({
       else return isInviteExpired || isInviteRevoked ? L('Not used') : L('Not used yet')
     },
     readableExpiryInfo (expiryTime) {
-      if (expiryTime == null) return
-      const { years, months, days, hours, minutes } = timeLeft(expiryTime)
+      if (expiryTime == null) return L("Doesn't expire")
+      const { expired, years, months, days, hours, minutes } = timeLeft(expiryTime)
+      if (expired) L('Expired')
+
       // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
-      if (years) return L('{years}y {months}mo {days}d left', { years, months, days })
-      if (months) return L('{months}mo {days}d left', { months, days })
+      if (years) return L('{years}y {months}mo {days}d left', { years, months, days: days + ((hours || minutes) ? 1 : 0) })
+      if (months) return L('{months}mo {days}d left', { months, days: days + ((hours || minutes) ? 1 : 0) })
 
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })

@@ -6,7 +6,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
-import { LOGOUT } from '~/frontend/utils/events.js'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { MAX_GROUP_MEMBER_COUNT, PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
@@ -22,6 +22,39 @@ import identityGetters from './contracts/shared/getters/identity.js'
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
+import { CONTRACTS_MODIFIED } from '../../shared/domains/chelonia/events.js'
+
+// Wrapper function for performing contract upgrades and migrations
+const contractUpdate = (updateFn: (contractIDHints: ?string[]) => any) => {
+  const loginErrorHandler = () => {
+    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandled)
+    sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
+    sbp('okTurtles.events/off', LOGOUT, logoutHandler)
+  }
+  const logoutHandler = () => {
+    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandled)
+  }
+  const loginCompleteHandler = () => {
+    sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+  }
+  // This function is called when the set of subscribed contracts is modified
+  const modifiedHandled = (_, { added }) => {
+    // Wait for the added contracts to be ready, then call the update function
+    sbp('chelonia/contract/wait', added).then(() => {
+      updateFn(added)
+    })
+  }
+
+  // Add event listeners for CONTRACTS_MODIFIED, LOGOUT, LOGIN_COMPLETE and
+  // LOGIN_ERROR
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, modifiedHandled)
+  sbp('okTurtles.events/once', LOGOUT, logoutHandler)
+  sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
+  sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
+
+  // Call the update function in the next tick
+  setTimeout(updateFn, 0)
+}
 
 Vue.use(Vuex)
 
@@ -90,7 +123,13 @@ sbp('sbp/selectors/register', {
       // $FlowFixMe[incompatible-call]
       Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
     }
-    (() => {
+    contractUpdate((contractIDHints: ?string[]) => {
+      const state = sbp('state/vuex/state')
+      if (Array.isArray(contractIDHints)) {
+        if (!contractIDHints.reduce((acc, contractID) => {
+          return (acc || state.contracts[contractID]?.type === 'gi.contracts/group')
+        }, false)) return
+      }
       // Upgrade from version 1.0.7 to a newer version
       // The new group contract introduces a breaking change: the
       // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
@@ -101,6 +140,7 @@ sbp('sbp/selectors/register', {
       if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
       Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
         if (hasLeft || !state[groupID]?.chatRooms) return undefined
+        if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
         // $FlowFixMe[incompatible-use]
         return Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
           return Object.values(members)
@@ -117,13 +157,22 @@ sbp('sbp/selectors/register', {
           console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
         })
       })
-    })();
-    (() => {
+    })
+    contractUpdate((contractIDHints: ?string[]) => {
+      const state = sbp('state/vuex/state')
+      if (Array.isArray(contractIDHints)) {
+        if (!contractIDHints.reduce((acc, contractID) => {
+          return (acc || state.contracts[contractID]?.type === 'gi.contracts/chatroom')
+        }, false)) return
+      }
       // Upgrade from version 1.0.8 to a newer version
       // The new chatroom contracts have an admin IDs list
       // This code checks if the attribute is missing, and if so, issues the
       // corresponing upgrade action.
-      const needsUpgrade = (chatroomID) => !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
+      const needsUpgrade = (chatroomID) => {
+        if (Array.isArray(contractIDHints) && !contractIDHints.includes(chatroomID)) return false
+        return !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
+      }
 
       const upgradeAction = async (contractID: string, data?: Object) => {
         try {
@@ -157,8 +206,14 @@ sbp('sbp/selectors/register', {
           upgradeAction(contractID)
         })
       }
-    })();
-    (() => {
+    })
+    contractUpdate((contractIDHints: ?string[]) => {
+      const state = sbp('state/vuex/state')
+      if (Array.isArray(contractIDHints)) {
+        if (!contractIDHints.reduce((acc, contractID) => {
+          return (acc || state.contracts[contractID]?.type === 'gi.contracts/group')
+        }, false)) return
+      }
       // Update expired invites
       // If fewer than MAX_GROUP_MEMBER_COUNT 'anyone can join' have been used,
       // create a new 'anyone can join' link up to MAX_GROUP_MEMBER_COUNT invites
@@ -167,6 +222,7 @@ sbp('sbp/selectors/register', {
       Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
         const groupState = state[groupID]
         if (hasLeft || !groupState?.invites) return undefined
+        if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
         const hasBeenUpdated = Object.keys(groupState.invites).some(inviteId => {
           return groupState.invites[inviteId].creatorID === INVITE_INITIAL_CREATOR &&
           groupState._vm.invites[inviteId].expires == null
@@ -180,7 +236,7 @@ sbp('sbp/selectors/register', {
       }).filter(Boolean).forEach((contractID) => {
         sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
       })
-    })()
+    })
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

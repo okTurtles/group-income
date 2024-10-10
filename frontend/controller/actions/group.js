@@ -912,71 +912,75 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
-  'gi.actions/group/fixAnyoneCanJoinLink': async function ({ contractID }) {
-    const now = await sbp('chelonia/time') * 1000
-    const state = await sbp('chelonia/contract/state', contractID)
+  'gi.actions/group/fixAnyoneCanJoinLink': function ({ contractID }) {
+    // Queue ensures that the update happens as atomically as possible
+    return sbp('chelonia/queueInvocation', `${contractID}-FIX-ANYONE-CAN-JOIN`, async () => {
+      const now = await sbp('chelonia/time') * 1000
+      const state = await sbp('chelonia/contract/wait', contractID).then(() => sbp('chelonia/contract/state', contractID))
 
-    // Add up all all used 'anyone can join' invite links
-    // Then, we take the difference and, if the number is less than
-    // MAX_GROUP_MEMBER_COUNT, we create a new invite.
-    const usedInvites = Object.keys(state.invites)
-      .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
-      .reduce((acc, cv) => acc +
+      // Add up all all used 'anyone can join' invite links
+      // Then, we take the difference and, if the number is less than
+      // MAX_GROUP_MEMBER_COUNT, we create a new invite.
+      const usedInvites = Object.keys(state.invites)
+        .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+        .reduce((acc, cv) => acc +
       ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity
       ) || 0), 0)
 
-    const quantity = MAX_GROUP_MEMBER_COUNT - usedInvites
+      const quantity = MAX_GROUP_MEMBER_COUNT - usedInvites
 
-    if (quantity <= 0) {
-      console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
-      return
-    }
+      if (quantity <= 0) {
+        console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
+        return
+      }
 
-    const CEKid = findKeyIdByName(state, 'cek')
-    const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+      const CSKid = findKeyIdByName(state, 'csk')
 
-    if (!CEKid || !CSKid) {
-      throw new Error('Contract is missing a CEK or CSK')
-    }
+      if (!CEKid || !CSKid) {
+        throw new Error('Contract is missing a CEK or CSK')
+      }
 
-    const inviteKey = keygen(EDWARDS25519SHA512BATCH)
-    const inviteKeyId = keyId(inviteKey)
-    const inviteKeyP = serializeKey(inviteKey, false)
-    const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
+      const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+      const inviteKeyId = keyId(inviteKey)
+      const inviteKeyP = serializeKey(inviteKey, false)
+      const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
 
-    const ik = {
-      id: inviteKeyId,
-      name: '#inviteKey-' + inviteKeyId,
-      purpose: ['sig'],
-      ringLevel: Number.MAX_SAFE_INTEGER,
-      permissions: [GIMessage.OP_KEY_REQUEST],
-      meta: {
-        quantity,
-        ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
-          expires:
-          await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-        }),
-        private: {
-          content: inviteKeyS
-        }
-      },
-      data: inviteKeyP
-    }
+      const ik = {
+        id: inviteKeyId,
+        name: '#inviteKey-' + inviteKeyId,
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        permissions: [GIMessage.OP_KEY_REQUEST],
+        meta: {
+          quantity,
+          ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
+            expires:
+          now + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+          }),
+          private: {
+            content: inviteKeyS
+          }
+        },
+        data: inviteKeyP
+      }
 
-    // Replace all existing anyone-can-join invite links with the new one
-    const activeInvites = Object.keys(state.invites)
-      .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(state._vm.invites[invite].expires >= now))
+      // Replace all existing anyone-can-join invite links with the new one
+      const activeInvites = Object.keys(state.invites)
+        .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(state._vm.invites[invite].expires >= now))
 
-    await Promise.all(activeInvites.map(inviteKeyId => sbp('gi.actions/group/inviteRevoke', { contractID, data: { inviteKeyId } })))
+      await sbp('chelonia/out/keyAdd', {
+        contractName: 'gi.contracts/group',
+        contractID,
+        data: [ik],
+        signingKeyId: CSKid
+      })
 
-    await sbp('chelonia/out/keyAdd', {
-      contractName: 'gi.contracts/group',
-      contractID,
-      data: [ik],
-      signingKeyId: CSKid
+      await sbp('gi.actions/group/invite', { contractID, data: { inviteKeyId, creatorID: INVITE_INITIAL_CREATOR } })
+
+      // Revoke at the end
+      await Promise.all(activeInvites.map(inviteKeyId => sbp('gi.actions/group/inviteRevoke', { contractID, data: { inviteKeyId } })))
     })
-
-    await sbp('gi.actions/group/invite', { contractID, data: { inviteKeyId, creatorID: 'invite-initial-creator' } })
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
