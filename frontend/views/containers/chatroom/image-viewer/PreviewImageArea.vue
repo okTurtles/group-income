@@ -221,12 +221,16 @@ export default {
 
         if (percentX === null) {
           percentX = (zoomPoint.x - prevTopX) / prevWidth
-          percentX = parseFloat(percentX.toFixed(1))
+          percentX = parseFloat(percentX.toFixed(2))
+
+          this.ephemeral.pointedZoomAction.percentX = percentX // need to record it
         }
 
         if (percentY === null) {
           percentY = (zoomPoint.y - prevTopY) / prevHeight
-          percentY = parseFloat(percentY.toFixed(1))
+          percentY = parseFloat(percentY.toFixed(2))
+
+          this.ephemeral.pointedZoomAction.percentY = percentY ; // need to record it
         }
 
         this.calcPreviewImageDimension()
@@ -267,9 +271,11 @@ export default {
         this.ephemeral.showSliderOutput = false
       }, 1500)
     },
-    translate ({ x = 0, y = 0 }) {
+    translate ({ x = 0, y = 0 }, override = false) {
       if (!this.isImageMovable) {
         this.ephemeral.imgTranslation = { x: 0, y: 0 }
+      } else if (override) {
+        this.ephemeral.imgTranslation = { x, y }
       } else {
         const { x: movableX, y: movableY } = this.movableDistances
         let newX = this.ephemeral.imgTranslation.x + x
@@ -347,7 +353,6 @@ export default {
       }
     },
     postPointerCancel () {
-      console.log('!@# postPointerCancel')
       this.ephemeral.pointedZoomAction.percentX = null
       this.ephemeral.pointedZoomAction.percentY = null
     }
