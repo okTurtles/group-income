@@ -213,11 +213,11 @@ export function isShortMonthstamp (arg: string): boolean {
   return /^(0[1-9]|1[0-2])$/.test(arg)
 }
 
-export function monthName (monthstamp: string): ?string {
+export function monthName (monthstamp: string): string {
   return humanDate(dateFromMonthstamp(monthstamp), { month: 'long' })
 }
 
-export function proximityDate (date: Date): ?string {
+export function proximityDate (date: Date): string {
   date = new Date(date)
   const today = new Date()
   const yesterday = (d => new Date(d.setDate(d.getDate() - 1)))(new Date())
