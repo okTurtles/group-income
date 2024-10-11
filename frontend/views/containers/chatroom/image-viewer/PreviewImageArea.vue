@@ -230,7 +230,7 @@ export default {
           percentY = (zoomPoint.y - prevTopY) / prevHeight
           percentY = parseFloat(percentY.toFixed(2))
 
-          this.ephemeral.pointedZoomAction.percentY = percentY ; // need to record it
+          this.ephemeral.pointedZoomAction.percentY = percentY // need to record it
         }
 
         this.calcPreviewImageDimension()
