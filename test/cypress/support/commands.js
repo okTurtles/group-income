@@ -814,6 +814,9 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 })
 
 Cypress.Commands.add('giSendMessage', (sender, message) => {
+  // The following `get` is to ensure the chatroom has finished loading (no
+  // spinner)
+  cy.get('.infinite-status-prompt i.loading-default').should('not.be.visible')
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     cy.get('textarea').should('be.empty')
