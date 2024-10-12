@@ -20,6 +20,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
+import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
 import proposals, { oneVoteToPass, oneVoteToFail } from '@model/contracts/shared/voting/proposals.js'
@@ -918,19 +919,13 @@ export default (sbp('sbp/selectors/register', {
       const now = await sbp('chelonia/time') * 1000
       const state = await sbp('chelonia/contract/wait', contractID).then(() => sbp('chelonia/contract/state', contractID))
 
-      // Add up all all used 'anyone can join' invite links
-      // Then, we take the difference and, if the number is less than
-      // MAX_GROUP_MEMBER_COUNT, we create a new invite.
-      const usedInvites = Object.keys(state.invites)
-        .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
-        .reduce((acc, cv) => acc +
-      ((state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity
-      ) || 0), 0)
-
-      const quantity = MAX_GROUP_MEMBER_COUNT - usedInvites
-
-      if (quantity <= 0) {
-        console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
+      const quantity = doesGroupAnyoneCanJoinNeedUpdating(state)
+      if (!quantity) {
+        if (quantity === false) {
+          console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Group has already been updated', contractID, MAX_GROUP_MEMBER_COUNT)
+        } else {
+          console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
+        }
         return
       }
 

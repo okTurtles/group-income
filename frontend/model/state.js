@@ -6,11 +6,12 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
-import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { MAX_GROUP_MEMBER_COUNT, PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { PROFILE_STATUS, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -23,38 +24,56 @@ import identityGetters from './contracts/shared/getters/identity.js'
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
-import { CONTRACTS_MODIFIED } from '../../shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED } from '../../shared/domains/chelonia/events.js'
 
 // Wrapper function for performing contract upgrades and migrations
-const contractUpdate = (updateFn: (contractIDHints: ?string[]) => any) => {
-  const loginErrorHandler = () => {
-    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandled)
-    sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
-    sbp('okTurtles.events/off', LOGOUT, logoutHandler)
-  }
-  const logoutHandler = () => {
-    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandled)
-  }
-  const loginCompleteHandler = () => {
-    sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+// TODO: Consider moving this function into a different file
+const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
+  // Wrapper for the update function. This performs a common check, namely that
+  // the contract is of a certain type, which helps return early
+  const wrappedUpdateFn = contractType
+  // The following disable is because eslint gets confused with 'Object'
+  // eslint-disable-next-line no-use-before-define
+    ? (state: Object, contractIDHints: ?string[]) => {
+        if (Array.isArray(contractIDHints)) {
+          if (!contractIDHints.reduce((acc, contractID) => {
+            return (acc || state.contracts[contractID]?.type === contractType)
+          }, false)) return
+        }
+        updateFn(state, contractIDHints)
+      }
+    : updateFn
+
+  const resetHandler = () => {
+    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandler)
   }
   // This function is called when the set of subscribed contracts is modified
-  const modifiedHandled = (_, { added }) => {
+  const modifiedHandler = (_, { added }) => {
     // Wait for the added contracts to be ready, then call the update function
     sbp('chelonia/contract/wait', added).then(() => {
-      updateFn(added)
+      const state = sbp('state/vuex/state')
+      wrappedUpdateFn(state, added)
     })
   }
 
-  // Add event listeners for CONTRACTS_MODIFIED, LOGOUT, LOGIN_COMPLETE and
-  // LOGIN_ERROR
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, modifiedHandled)
-  sbp('okTurtles.events/once', LOGOUT, logoutHandler)
-  sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
-  sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
+  // Add event listeners for `CONTRACTS_MODIFIED` and `CHELONIA_RESET` events
+  // `CONTRACTS_MODIFIED` is the important event. This is what allows updating
+  // contracts that are newly synced (for example, when logging in for the
+  // first time or joining an existing group or chatroom)
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, modifiedHandler)
+  // Receiving `CHELONIA_RESET` means that a new session has started. To prevent
+  // memory leaks and duplicate handlers, this event will remove the
+  // `CONTRACTS_MODIFIED` handler.
+  sbp('okTurtles.events/once', CHELONIA_RESET, resetHandler)
 
   // Call the update function in the next tick
-  setTimeout(updateFn, 0)
+  // We want this (in addition to `CONTRACTS_MODIFIED`) because this way we
+  // can update contracts that already exist, e.g., upon login with a saved
+  // state
+  const existingContracts = Object.keys(initialState.contracts)
+  setTimeout(() => {
+    wrappedUpdateFn(initialState, existingContracts)
+  }, 0)
 }
 
 Vue.use(Vuex)
@@ -84,6 +103,21 @@ const checkedUsername = (state: Object, username: string, userID: string) => {
     return username
   }
 }
+
+// Find the 'anyone can join' invite ID. Since there could be multiple, and some
+// of those could have exipred, we need a for loop
+const anyoneCanJoinInviteId = (invites: Object, getters: Object): ?string =>
+  Object.keys(invites).find(invite =>
+    // First, we want 'anyone can join' invites
+    invites[invite].creatorID === INVITE_INITIAL_CREATOR &&
+    // and that haven't been revoked
+    getters.currentGroupState._vm.invites[invite].status === INVITE_STATUS.VALID &&
+    // and that haven't expired (using negative logic because expires could be
+    // undefined for non expiring-invites)
+    !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) &&
+    // and that that haven't been entirely used up
+    !(getters.currentGroupState._vm.invites[invite].quantity <= 0)
+  )
 
 const reactiveDate = Vue.observable({ date: new Date() })
 setInterval(function () {
@@ -124,8 +158,7 @@ sbp('sbp/selectors/register', {
       // $FlowFixMe[incompatible-call]
       Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
     }
-    contractUpdate((contractIDHints: ?string[]) => {
-      const state = sbp('state/vuex/state')
+    contractUpdate(state, (state: Object, contractIDHints: ?string[]) => {
       if (Array.isArray(contractIDHints)) {
         if (!contractIDHints.reduce((acc, contractID) => {
           return (acc || state.contracts[contractID]?.type === 'gi.contracts/group')
@@ -158,14 +191,8 @@ sbp('sbp/selectors/register', {
           console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
         })
       })
-    })
-    contractUpdate((contractIDHints: ?string[]) => {
-      const state = sbp('state/vuex/state')
-      if (Array.isArray(contractIDHints)) {
-        if (!contractIDHints.reduce((acc, contractID) => {
-          return (acc || state.contracts[contractID]?.type === 'gi.contracts/chatroom')
-        }, false)) return
-      }
+    }, 'gi.contracts/group')
+    contractUpdate(state, (contractIDHints: ?string[]) => {
       // Upgrade from version 1.0.8 to a newer version
       // The new chatroom contracts have an admin IDs list
       // This code checks if the attribute is missing, and if so, issues the
@@ -207,14 +234,8 @@ sbp('sbp/selectors/register', {
           upgradeAction(contractID)
         })
       }
-    })
-    contractUpdate((contractIDHints: ?string[]) => {
-      const state = sbp('state/vuex/state')
-      if (Array.isArray(contractIDHints)) {
-        if (!contractIDHints.reduce((acc, contractID) => {
-          return (acc || state.contracts[contractID]?.type === 'gi.contracts/group')
-        }, false)) return
-      }
+    }, 'gi.contracts/chatroom')
+    contractUpdate(state, (contractIDHints: ?string[]) => {
       // Update expired invites
       // If fewer than MAX_GROUP_MEMBER_COUNT 'anyone can join' have been used,
       // create a new 'anyone can join' link up to MAX_GROUP_MEMBER_COUNT invites
@@ -224,20 +245,12 @@ sbp('sbp/selectors/register', {
         const groupState = state[groupID]
         if (hasLeft || !groupState?.invites) return undefined
         if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
-        const hasBeenUpdated = Object.keys(groupState.invites).some(inviteId => {
-          return groupState.invites[inviteId].creatorID === INVITE_INITIAL_CREATOR &&
-          groupState._vm.invites[inviteId].expires == null
-        })
-        if (hasBeenUpdated) return undefined
-        const usedInvites = Object.keys(groupState.invites)
-          .filter(invite => groupState.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
-          .reduce((acc, cv) => acc +
-        ((groupState._vm.invites[cv].initialQuantity - groupState._vm.invites[cv].quantity) || 0), 0)
-        return (usedInvites < MAX_GROUP_MEMBER_COUNT) ? groupID : undefined
+        const needsUpdate = !!doesGroupAnyoneCanJoinNeedUpdating(groupState)
+        return needsUpdate ? groupID : undefined
       }).filter(Boolean).forEach((contractID) => {
         sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
       })
-    })
+    }, 'gi.contracts/group')
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
@@ -579,7 +592,7 @@ const getters = {
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) && !(getters.currentGroupState._vm.invites[invite].quantity <= 0) && getters.currentGroupState._vm.invites[invite].status === INVITE_STATUS.VALID)
+    const inviteId = anyoneCanJoinInviteId(invites, getters)
     const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },
