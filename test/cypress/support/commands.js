@@ -230,8 +230,15 @@ Cypress.Commands.add('giLogin', (username, {
       }).then(() => {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
+          const state = sbp('state/vuex/state')
           if (router.history.current.path === '/dashboard') return
-          return router.push({ path: '/dashboard' }) // .catch(() => {})
+          return sbp('gi.actions/identity/setGroupAttributes', {
+            contractID: state.loggedIn.identityContractID,
+            data: {
+              groupContractID: state.currentGroupId,
+              attributes: { seenWelcomeScreen: true }
+            }
+          }).then(() => router.push({ path: '/dashboard' })) // .catch(() => {})
         }
       })
     })
@@ -331,7 +338,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
           const timeoutId = setTimeout(() => {
             reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
-          }, 5000)
+          }, 15000)
 
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
@@ -347,7 +354,14 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        return router.push({ path: '/dashboard' })
+        const state = sbp('state/vuex/state')
+        return sbp('gi.actions/identity/setGroupAttributes', {
+          contractID: state.loggedIn.identityContractID,
+          data: {
+            groupContractID: state.currentGroupId,
+            attributes: { seenWelcomeScreen: true }
+          }
+        }).then(() => router.push({ path: '/dashboard' }))
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)

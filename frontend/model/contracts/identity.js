@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -357,6 +357,26 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         for (const manifestCid of data.manifestCids) {
           delete state.fileDeleteTokens[manifestCid]
+        }
+      }
+    },
+    'gi.contracts/identity/setGroupAttributes': {
+      validate: objectOf({
+        groupContractID: string,
+        attributes: objectMaybeOf({
+          seenWelcomeScreen: validatorFrom((v) => v === true)
+        })
+      }),
+      process ({ data }, { state }) {
+        const { groupContractID, attributes } = data
+        if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft) {
+          throw new Error('Can\'t set attributes of groups you\'re not a member of')
+        }
+        if (attributes.seenWelcomeScreen) {
+          if (state.groups[groupContractID].seenWelcomeScreen) {
+            throw new Error('seenWelcomeScreen already set')
+          }
+          state.groups[groupContractID].seenWelcomeScreen = attributes.seenWelcomeScreen
         }
       }
     }
