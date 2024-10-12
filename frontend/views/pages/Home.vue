@@ -91,10 +91,12 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourProfileActive'
+      'ourProfileActive',
+      'currentIdentityState'
     ]),
     ...mapState([
-      'currentGroupId'
+      'currentGroupId',
+      ''
     ]),
     isLoggedIn () {
       return !!this.$store.state.loggedIn
@@ -155,7 +157,9 @@ export default ({
   },
   watch: {
     currentGroupId (to) {
-      this.ephemeral.ourProfileActive = this.ourProfileActive
+      // Redirect to `/pending-approval` if our profile isn't active or the
+      // welcome screen hasn't been approved
+      this.ephemeral.ourProfileActive = this.ourProfileActive && this.currentIdentityState?.groups?.[this.currentGroupId]?.seenWelcomeScreen
       if (to && this.isLoggedIn) {
         this.navigateToGroupPage()
       }

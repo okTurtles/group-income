@@ -283,8 +283,7 @@ sbp('chelonia/defineContract', {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        state.groups[groupContractID].hasLeft = true
-        delete state.groups[groupContractID].inviteSecret
+        state.groups[groupContractID] = { hash: reference, hasLeft: true }
       },
       sideEffect ({ data, contractID }) {
         sbp('gi.contracts/identity/referenceTally', contractID, data.groupContractID, 'release')
