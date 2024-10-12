@@ -69,17 +69,20 @@ describe('Proposals - Add members', () => {
   })
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
+    // If the invite link doesn't expire, this test makes little sense
+    if (groupInviteLinkExpiry.anyone != null) {
     // Try to join with expired link
-    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
-    cy.visit(invitationLinks.anyone)
-    cy.getByDT('pageTitle')
-      .invoke('text')
-      .should('contain', 'Oh no! This invite is already expired')
-    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+      cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+      cy.visit(invitationLinks.anyone)
+      cy.getByDT('pageTitle')
+        .invoke('text')
+        .should('contain', 'Oh no! This invite is already expired')
+      cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
 
-    cy.clock().then((clock) => {
-      clock.restore()
-    })
+      cy.clock().then((clock) => {
+        clock.restore()
+      })
+    }
 
     cy.visit('/')
     cy.url().should('eq', `${API_URL}/app/`)
