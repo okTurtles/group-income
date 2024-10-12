@@ -69,7 +69,8 @@ export default {
         previousZoom: null,
         pointedZoomAction: {
           percentX: null,
-          percentY: null
+          percentY: null,
+          zoomCenter: null
         },
         showSliderOutput: false
       },
@@ -208,26 +209,39 @@ export default {
         y < boundary.bottom
     },
     onSliderUpdate (e) {
-      this.handleZoomUpdate(e.target.value)
+      const center = this.getViewAreaCenter()
+      this.handleZoomUpdate(e.target.value, center)
+      this.calcPreviewImageDimension()
     },
     handleZoomUpdate (val, zoomPoint = null) {
+      const twoPointsAreSame = (p1, p2) => {
+        return p1 && p2 && p1?.x === p2.x && p1?.y === p2?.y
+      }
       this.ephemeral.previousZoom = this.ephemeral.currentZoom
       this.ephemeral.currentZoom = val
 
       if (zoomPoint) {
+        let centerUpdated = false
+
+        if (!twoPointsAreSame(zoomPoint, this.ephemeral.pointedZoomAction.zoomCenter)) {
+          this.ephemeral.pointedZoomAction.zoomCenter = zoomPoint
+          centerUpdated = true
+        }
+
         const { width: prevWidth, height: prevHeight, topX: prevTopX, topY: prevTopY } = this.ephemeral.previewImgAttrs
+        const center = this.ephemeral.pointedZoomAction.zoomCenter
         let percentX = this.ephemeral.pointedZoomAction.percentX
         let percentY = this.ephemeral.pointedZoomAction.percentY
 
-        if (percentX === null) {
-          percentX = (zoomPoint.x - prevTopX) / prevWidth
+        if (percentX === null || centerUpdated) {
+          percentX = (center.x - prevTopX) / prevWidth
           percentX = parseFloat(percentX.toFixed(2))
 
           this.ephemeral.pointedZoomAction.percentX = percentX // need to record it
         }
 
-        if (percentY === null) {
-          percentY = (zoomPoint.y - prevTopY) / prevHeight
+        if (percentY === null || centerUpdated) {
+          percentY = (center.y - prevTopY) / prevHeight
           percentY = parseFloat(percentY.toFixed(2))
 
           this.ephemeral.pointedZoomAction.percentY = percentY // need to record it
@@ -237,8 +251,7 @@ export default {
         const { width: afterWidth, height: afterHeight, topX: afterTopX, topY: afterTopY } = this.ephemeral.previewImgAttrs
         const toX = Math.ceil(afterTopX + afterWidth * percentX)
         const toY = Math.ceil(afterTopY + afterHeight * percentY)
-
-        this.translate({ x: (toX - zoomPoint.x) * -1, y: (toY - zoomPoint.y) * -1 })
+        this.translate({ x: (toX - center.x) * -1, y: (toY - center.y) * -1 })
       } else {
         this.calcPreviewImageDimension()
 
@@ -292,6 +305,8 @@ export default {
 
         this.ephemeral.imgTranslation.x = newX
         this.ephemeral.imgTranslation.y = newY
+
+        this.calcPreviewImageDimension()
       }
     },
     resizeHandler () {
@@ -308,6 +323,7 @@ export default {
     },
     pinchInHandler ({ changeFactor, center }) {
       if (!this.isPointInsidePreviewImage(center)) { return }
+
       // should zoom-out (shrink)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
@@ -355,6 +371,7 @@ export default {
     postPointerCancel () {
       this.ephemeral.pointedZoomAction.percentX = null
       this.ephemeral.pointedZoomAction.percentY = null
+      this.ephemeral.pointedZoomAction.zoomCenter = null
     }
   },
   mounted () {
