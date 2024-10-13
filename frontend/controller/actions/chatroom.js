@@ -252,43 +252,59 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootState = sbp('state/vuex/state')
     const userID = params.data.memberID || rootState.loggedIn.identityContractID
+    const userIDs = Array.isArray(userID)
+      ? userID.map(x => x == null ? rootState.loggedIn.identityContractID : x)
+      : [userID]
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
     // operations in those contracts have completed
-    await sbp('chelonia/contract/wait', [params.contractID, userID])
+    await sbp('chelonia/contract/retain', userIDs, { ephemeral: true })
+    try {
+      await sbp('chelonia/contract/wait', params.contractID)
 
-    if (!userID || !has(rootState.contracts, userID)) {
-      throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
-    }
+      userIDs.forEach(cID => {
+        if (!cID || !has(rootState.contracts, cID) || !has(rootState, cID)) {
+          throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${cID} is missing`)
+        }
+      })
 
-    const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+      const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
-    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-    return await sbp('chelonia/out/atomic', {
-      ...params,
-      contractName: 'gi.contracts/chatroom',
-      data: [
+      console.error('@@@@currentKeyIdByName', userIDs)
+      const userCSKids = await Promise.all(userIDs.map(async (cID) =>
+        [cID, await sbp('chelonia/contract/currentKeyIdByName', cID, 'csk')]
+      ))
+      return await sbp('chelonia/out/atomic', {
+        ...params,
+        contractName: 'gi.contracts/chatroom',
+        data: [
         // Add the user's CSK to the contract
-        [
-          'chelonia/out/keyAdd', {
+          [
+            'chelonia/out/keyAdd', {
             // TODO: Find a way to have this wrapping be done by Chelonia directly
-            data: [encryptedOutgoingData(params.contractID, CEKid, {
-              foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-              id: userCSKid,
-              data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-              permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-              allowedActions: '*',
-              purpose: ['sig'],
-              ringLevel: Number.MAX_SAFE_INTEGER,
-              name: `${userID}/${userCSKid}`
-            })]
-          }
+              data: userCSKids.map(([cID, cskID]: [string, string]) => encryptedOutgoingData(params.contractID, CEKid, {
+                foreignKey: `sp:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
+                id: cskID,
+                data: rootState[cID]._vm.authorizedKeys[cskID].data,
+                permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                allowedActions: '*',
+                purpose: ['sig'],
+                ringLevel: Number.MAX_SAFE_INTEGER,
+                name: `${cID}/${cskID}`
+              }))
+            }
+          ],
+          ...(Array.isArray(userID)
+            ? userID.map(cID => sendMessage({ ...params, data: { memberID: cID }, returnInvocation: true }))
+            : [sendMessage({ ...params, returnInvocation: true })]
+          )
         ],
-        sendMessage({ ...params, returnInvocation: true })
-      ],
-      signingKeyId
-    })
+        signingKeyId
+      })
+    } finally {
+      await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
+    }
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),

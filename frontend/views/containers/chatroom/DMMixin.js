@@ -40,23 +40,26 @@ const DMMixin: Object = {
               let attemptCount = 0
               const setCurrentChatRoomId = () => {
                 // Re-grab the state as it could be a stale reference
-                const rootState = sbp('state/vuex/state')
-                if (!rootState[dmID]?.members?.[identityContractID]) {
-                  if (++attemptCount > 5) {
-                    console.warn('[createDirectMessage] Given up on redirect after 5 attempts', { identityContractID, dmID })
-                    return
+                sbp('chelonia/queueInvocation', dmID, () => {
+                  const rootState = sbp('state/vuex/state')
+                  if (!rootState[dmID]?.members?.[identityContractID]) {
+                    if (++attemptCount > 5) {
+                      console.warn('[createDirectMessage] Given up on redirect after 5 attempts', { identityContractID, dmID })
+                      return
+                    }
+                    setTimeout(setCurrentChatRoomId, 5 * Math.pow(1.75, attemptCount))
+                  } else {
+                    this.redirect(dmID)
                   }
-                  setTimeout(setCurrentChatRoomId, 5 + 5 * attemptCount)
-                } else {
-                  this.redirect(dmID)
-                }
+                })
               }
 
-              sbp('chelonia/queueInvocation', dmID, setCurrentChatRoomId)
+              setCurrentChatRoomId()
             }
           }
         })
       } catch (err) {
+        console.error('[DMMixin.js] Failed to create a new chatroom', err)
         await sbp('gi.ui/prompt', {
           heading: L('Failed to create a new chatroom'),
           question: err.message,

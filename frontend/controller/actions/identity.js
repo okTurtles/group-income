@@ -525,16 +525,8 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/chatroom/join', {
       ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
-      data: {}
+      data: { memberID: [undefined, ...partnerIDs] }
     })
-
-    for (const partnerID of partnerIDs) {
-      await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: message.contractID(),
-        data: { memberID: partnerID }
-      })
-    }
 
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
