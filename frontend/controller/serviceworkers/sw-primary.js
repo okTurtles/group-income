@@ -65,7 +65,7 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/getters': () => {
     const obj = Object.create(null)
-    Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]) => {
+    Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
       return [getter, {
         get: () => {
           const state = sbp('chelonia/rootState')

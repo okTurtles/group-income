@@ -497,7 +497,7 @@ export default (sbp('sbp/selectors/register', {
     const partnerIDs = params.data.memberIDs
       .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
-    const currentGroupId = params.currentGroupId
+    const currentGroupId = params.data.currentGroupId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {

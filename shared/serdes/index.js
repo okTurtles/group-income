@@ -195,8 +195,11 @@ export const deserializer = (data: any): any => {
   })
 }
 
-// $FlowFixMe[unsupported-syntax]
-deserializer.register = <T>(y: { new (...x: any): T, [typeof serdesTagSymbol]: string, [typeof serdesDeserializeSymbol]: (...x: any) => T }) => {
+// The proper types are closer to the following commented out code, but it's
+// not supported or difficult to support with Flow
+// // $FlowFixMe[unsupported-syntax]
+// // deserializer.register = <T>(y: { new (...x: any): T, [typeof serdesTagSymbol]: string, [typeof serdesDeserializeSymbol]: (...x: any) => T }) => {
+deserializer.register = (y: any) => {
   if (typeof y === 'function' && typeof y[serdesTagSymbol] === 'string' && typeof y[serdesDeserializeSymbol] === 'function') {
     deserializerTable[y[serdesTagSymbol]] = y[serdesDeserializeSymbol].bind(y)
   }

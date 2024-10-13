@@ -23,8 +23,7 @@ const DMMixin: Object = {
         const identityContractID = this.ourIdentityContractId
         await sbp('gi.actions/identity/createDirectMessage', {
           contractID: identityContractID,
-          currentGroupId: this.currentGroupId,
-          data: { memberIDs },
+          data: { currentGroupId: this.currentGroupId, memberIDs },
           hooks: {
             onprocessed: (message) => {
               const dmID = message.decryptedValue().data.contractID

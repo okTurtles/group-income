@@ -14,7 +14,7 @@ const checkedUsername = (state: Object, username: string, userID: string) => {
 
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
-const getters = {
+const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => any } = {
   // !!  IMPORTANT  !!
   //
   // We register pure Vuex getters here, but later on at the bottom of this file,

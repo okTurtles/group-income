@@ -162,17 +162,25 @@ async function startApp () {
   /* TODO: MOVE TO ANOTHER FILE */
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
   const swRpc = (() => {
-    let controller = navigator.serviceWorker.controller
-    navigator.serviceWorker.addEventListener('controllerchange', (ev) => {
-      controller = navigator.serviceWorker.controller
+    if (!navigator.serviceWorker) {
+      throw new Error('Missing service worker object')
+    }
+    let controller: ?ServiceWorker = navigator.serviceWorker.controller
+    navigator.serviceWorker.addEventListener('controllerchange', (ev: Event) => {
+      controller = (navigator.serviceWorker: any).controller
     }, false)
 
     return (...args) => {
       return new Promise((resolve, reject) => {
+        if (!controller) {
+          reject(new Error('Service worker not ready'))
+          return
+        }
         const messageChannel = new MessageChannel()
-        messageChannel.port1.addEventListener('message', (event) => {
+        messageChannel.port1.addEventListener('message', (event: MessageEvent) => {
           if (event.data && Array.isArray(event.data)) {
             const r = deserializer(event.data[1])
+            // $FlowFixMe[incompatible-use]
             if (event.data[0] === true) {
               resolve(r)
             } else {
@@ -181,7 +189,7 @@ async function startApp () {
             messageChannel.port1.close()
           }
         }, false)
-        messageChannel.port1.addEventListener('messageerror', (event) => {
+        messageChannel.port1.addEventListener('messageerror', (event: MessageEvent) => {
           reject(event.data)
           messageChannel.port1.close()
         }, false)
@@ -374,17 +382,18 @@ async function startApp () {
       }).finally(() => {
         // Wait for SW to be ready
         console.debug('[app] Waiting for SW to be ready')
-        navigator.serviceWorker.ready.then(() => {
+        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
+        sw.ready.then(() => {
           const onready = () => {
             this.ephemeral.ready = true
             this.removeLoadingAnimation()
           }
-          if (!navigator.serviceWorker.controller) {
-            const listener = (ev) => {
-              navigator.serviceWorker.removeEventListener('controllerchange', listener, false)
+          if (!sw.controller) {
+            const listener = (ev: Event) => {
+              sw.removeEventListener('controllerchange', listener, false)
               onready()
             }
-            navigator.serviceWorker.addEventListener('controllerchange', listener, false)
+            sw.addEventListener('controllerchange', listener, false)
           } else {
             onready()
           }
