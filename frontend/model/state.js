@@ -159,11 +159,6 @@ sbp('sbp/selectors/register', {
       Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
     }
     contractUpdate(state, (state: Object, contractIDHints: ?string[]) => {
-      if (Array.isArray(contractIDHints)) {
-        if (!contractIDHints.reduce((acc, contractID) => {
-          return (acc || state.contracts[contractID]?.type === 'gi.contracts/group')
-        }, false)) return
-      }
       // Upgrade from version 1.0.7 to a newer version
       // The new group contract introduces a breaking change: the
       // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
