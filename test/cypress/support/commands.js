@@ -21,7 +21,7 @@ const getParamsFromInvitationLink = invitationLink => {
     inviteSecret: params.get('secret')
   }
 }
-const getRandomPaymentMethod = (): { paymentMethod: string, paymentDetail: string } => {
+const getRandomPaymentMethod = () => {
   const digits = () => Math.floor(Math.random() * 100000)
   const paymentMethod = randomFromArray(['paypal', 'bitcoin', 'venmo', 'other'])
   const detailMap = {
@@ -36,7 +36,7 @@ const getRandomPaymentMethod = (): { paymentMethod: string, paymentDetail: strin
     paymentDetail: detailMap[paymentMethod]
   }
 }
-const getRandomNonMonetary = (): string => {
+const getRandomNonMonetary = () => {
   const randomClasses = [
     'English', 'Korean', 'German', 'French', 'Japanese', 'Mandarin', 'Cantonese', 'Portuguese', 'Spanish',
     'Javascript', 'Typescript', 'Python', 'React', 'Vue', 'Angular', 'Node.js', 'Express', 'PHP'
@@ -617,8 +617,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
   }
 })
 
-Cypress.Commands.add('giAddRandomIncome', ({ bypassUI = false }) => {
-  cy.getByDT('openIncomeDetailsModal').click()
+Cypress.Commands.add('giAddRandomIncome', ({ bypassUI = false } = {}) => {
   let salary = Math.floor(Math.random() * (600 - 20) + 20)
   let action = 'doesntNeedIncomeRadio'
 
@@ -649,15 +648,16 @@ Cypress.Commands.add('giAddRandomIncome', ({ bypassUI = false }) => {
       })
     })
   } else {
+    cy.getByDT('openIncomeDetailsModal').click()
     cy.getByDT(action).click()
     cy.getByDT('inputIncomeOrPledge').type(salary)
-  
+
     if (action === 'needsIncomeRadio') {
       // it's mandatory to fill out the payment details when 'needsIncome' is selected.
       cy.randomPaymentMethodInIncomeDetails()
       cy.randomNonMonetaryInIncomeDetails()
     }
-  
+
     cy.getByDT('submitIncome').click()
   }
 })
