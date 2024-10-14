@@ -291,10 +291,10 @@ Cypress.Commands.add('giLogin', (username, {
   }
 })
 
-Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+Cypress.Commands.add('giLogout', ({ bypassUI = false, hasNoGroup = false } = {}) => {
   cy.giEmptyInvocationQueue()
 
-  if (hasNoGroup) {
+  if (bypassUI || hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
@@ -589,13 +589,13 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     cy.giKeyRequestedGroupIDs(groupId)
     cy.giEmptyInvocationQueue()
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
   }
 
   cy.giLogin(existingMemberUsername, { bypassUI })
   cy.giNoPendingGroupKeyShares()
   cy.giEmptyInvocationQueue()
-  cy.giLogout()
+  cy.giLogout({ bypassUI })
 
   const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
   if (shouldSetDisplayName || actionBeforeLogout) {
@@ -612,7 +612,7 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
         actionBeforeLogout()
       }
 
-      cy.giLogout()
+      cy.giLogout({ bypassUI })
     }
   }
 })
@@ -632,7 +632,7 @@ Cypress.Commands.add('giAddRandomIncome', ({ bypassUI = false } = {}) => {
     const { paymentMethod, paymentDetail } = getRandomPaymentMethod()
 
     cy.window().its('sbp').then(sbp => {
-      sbp('gi.actions/group/forceDistributionDate', {
+      sbp('gi.actions/group/groupProfileUpdate', {
         contractID: sbp('state/vuex/state').currentGroupId,
         data: action === 'needsIncomeRadio'
           ? {

@@ -16,7 +16,7 @@ describe('Large group', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`A group with ${groupLength} members shows correctly the pledging month overview widget`, () => {
@@ -52,6 +52,6 @@ describe('Large group', () => {
     cy.get('.c-search-member')
       .should('have.length', 4)
     cy.closeModal()
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
