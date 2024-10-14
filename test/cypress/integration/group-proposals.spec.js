@@ -65,7 +65,7 @@ describe('Proposals - Add members', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
@@ -288,7 +288,7 @@ describe('Proposals - Add members', () => {
 
     assertMincome(groupNewMincome)
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
@@ -364,7 +364,7 @@ describe('Proposals - Add members', () => {
     })
 
     cy.closeModal()
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user6 registers through a unique invitation link to join a group', () => {
@@ -529,6 +529,6 @@ describe('Proposals - Add members', () => {
     //   cy.closeModal()
     // })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

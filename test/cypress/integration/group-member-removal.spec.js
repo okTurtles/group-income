@@ -61,7 +61,7 @@ describe('Group - Removing a member', () => {
       invitationLinks.anyone_groupA = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user2 joins groupA and cannot remove user1', () => {
@@ -96,7 +96,7 @@ describe('Group - Removing a member', () => {
     cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', `user2-${userId}`)
     cy.get('div.c-message:last-child .c-notification').should('contain', 'Left general')
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user2 rejoins groupA', () => {
@@ -129,7 +129,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('user1 joins groupB - has now 2 groups', () => {
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
@@ -146,13 +146,13 @@ describe('Group - Removing a member', () => {
     assertMembersCount(2)
     openRemoveMemberModal('user1', 1)
     removeMemberNow('user1')
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
 
     // verify user1 (removed) still has group1.
     cy.giLogin(`user1-${userId}`, { bypassUI: true }) // [*note_1*]
     cy.getByDT('groupName').should('contain', groupNameA)
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   // ------- Propose to remove member from group.
@@ -218,7 +218,7 @@ describe('Group - Removing a member', () => {
     // Verify user1 only sees 2 members too
     cy.giSwitchUser(`user1-${userId}`)
     assertMembersCount(2)
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
 
     // Verify userBot has no group now
     cy.giLogin(`userbot-${userId}`, {
@@ -289,6 +289,6 @@ describe('Group - Removing a member', () => {
 
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

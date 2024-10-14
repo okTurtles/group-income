@@ -203,7 +203,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       invitationLinkAnyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`user2 joins ${groupName} group and sends/deletes/edits messages in "${CHATROOM_GENERAL_NAME}"`, () => {
@@ -471,6 +471,6 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

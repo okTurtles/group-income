@@ -309,7 +309,7 @@ Cypress.Commands.add('giSwitchUser', (user, {
   bypassUI = true,
   firstLoginAfterJoinGroup = false
 } = {}) => {
-  cy.giLogout()
+  cy.giLogout({ bypassUI })
   cy.giLogin(user, { bypassUI, firstLoginAfterJoinGroup })
 })
 
@@ -526,13 +526,13 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
     cy.giKeyRequestedGroupIDs(groupId)
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
 
     cy.giLogin(existingMemberUsername, { bypassUI })
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
   } else {
@@ -551,7 +551,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
 
   if (shouldLogoutAfter) {
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
   }
 })
 
