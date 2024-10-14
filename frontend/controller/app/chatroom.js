@@ -31,7 +31,7 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
           console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 attempts', { identityContractID, groupContractID, chatRoomID })
           return
         }
-        setTimeout(setCurrentChatRoomId, 5 + 5 * attemptCount)
+        setTimeout(setCurrentChatRoomId, 5 * Math.pow(1.75, attemptCount))
       } else {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
       }

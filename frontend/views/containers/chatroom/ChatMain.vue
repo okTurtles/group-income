@@ -1135,6 +1135,7 @@ export default ({
       }
 
       if (toChatRoomId !== fromChatRoomId) {
+        this.ephemeral.onChatScroll?.flush()
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0

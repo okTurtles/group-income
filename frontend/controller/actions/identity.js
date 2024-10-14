@@ -11,10 +11,11 @@ import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -498,6 +499,7 @@ export default (sbp('sbp/selectors/register', {
       .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     const currentGroupId = params.data.currentGroupId
+    const identityContractID = rootState.loggedIn.identityContractID
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
@@ -512,11 +514,11 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    }, rootState.loggedIn.identityContractID)
+    }, identityContractID)
 
     // Share the keys to the newly created chatroom with ourselves
     await sbp('gi.actions/out/shareVolatileKeys', {
-      contractID: rootState.loggedIn.identityContractID,
+      contractID: identityContractID,
       contractName: 'gi.contracts/identity',
       subjectContractID: message.contractID(),
       keyIds: '*'
@@ -525,8 +527,19 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/chatroom/join', {
       ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
+      // 'undefined' is for ourselves
       data: { memberID: [undefined, ...partnerIDs] }
     })
+
+    const switchChannelAfterJoined = (contractID: string) => {
+      if (contractID === message.contractID()) {
+        if (rootState[message.contractID()]?.members?.[identityContractID]) {
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
+          sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
+        }
+      }
+    }
+    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
 
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
@@ -566,6 +579,8 @@ export default (sbp('sbp/selectors/register', {
         hooks
       })
     }
+
+    return message.contractID()
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
