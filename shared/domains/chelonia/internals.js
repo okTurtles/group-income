@@ -192,7 +192,7 @@ export default (sbp('sbp/selectors/register', {
     const contractNameLookupKey = `name:${contractName}`
     // If the contract name has been seen before, validate its signature now
     let signatureValidated = false
-    if (!process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS && has(rootState.contractSigningKeys, contractNameLookupKey)) {
+    if (process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS !== 'true' && has(rootState.contractSigningKeys, contractNameLookupKey)) {
       console.info(`[chelonia] verifying signature for ${manifestHash} with an existing key`)
       if (!has(rootState.contractSigningKeys[contractNameLookupKey], manifest.signature.keyId)) {
         console.error(`The manifest with ${manifestHash} (named ${contractName}) claims to be signed with a key with ID ${manifest.signature.keyId}, which is not trusted. The trusted key IDs for this name are:`, Object.keys(rootState.contractSigningKeys[contractNameLookupKey]))

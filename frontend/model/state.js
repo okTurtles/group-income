@@ -36,9 +36,9 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
   // eslint-disable-next-line no-use-before-define
     ? (state: Object, contractIDHints: ?string[]) => {
         if (Array.isArray(contractIDHints)) {
-          if (!contractIDHints.reduce((acc, contractID) => {
-            return (acc || state.contracts[contractID]?.type === contractType)
-          }, false)) return
+          if (!contractIDHints.some(contractID => state.contracts[contractID]?.type === contractType)) {
+            return
+          }
         }
         updateFn(state, contractIDHints)
       }
@@ -114,7 +114,7 @@ const anyoneCanJoinInviteId = (invites: Object, getters: Object): ?string =>
     getters.currentGroupState._vm.invites[invite].status === INVITE_STATUS.VALID &&
     // and that haven't expired (using negative logic because expires could be
     // undefined for non expiring-invites)
-    !(getters.currentGroupState._vm.invites[invite].expires >= Date.now()) &&
+    !(getters.currentGroupState._vm.invites[invite].expires < Date.now()) &&
     // and that that haven't been entirely used up
     !(getters.currentGroupState._vm.invites[invite].quantity <= 0)
   )
@@ -167,25 +167,30 @@ sbp('sbp/selectors/register', {
       // corresponing upgrade action.
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
-      Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
-        if (hasLeft || !state[groupID]?.chatRooms) return undefined
-        if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
-        // $FlowFixMe[incompatible-use]
-        return Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
-          return Object.values(members)
-        }).reduce((contractID: string | boolean, member: Object) => {
-          if (contractID) return contractID
-          if (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null) {
-            return groupID
-          }
-          return false
-        }, false)
-      }).forEach((contractID) => {
-        if (!contractID) return
-        sbp('gi.actions/group/upgradeFrom1.0.7', { contractID }).catch(e => {
-          console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
+      Object.entries(state[ourIdentityContractId].groups)
+        .filter(([groupID, { hasLeft }]: [string, Object]) => {
+          return !hasLeft &&
+           state[groupID]?.chatRooms &&
+           (!Array.isArray(contractIDHints) || contractIDHints.includes(groupID))
         })
-      })
+        .map(([groupID]) => {
+          // $FlowFixMe[incompatible-use]
+          const chatRooms = state[groupID].chatRooms
+          const needsUpgrade = ((Object.values(chatRooms): any): Object[])
+            .flatMap(({ members }): Object => Object.values(members))
+            .some(member =>
+              member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null
+            )
+
+          return needsUpgrade ? groupID : null
+        })
+        .filter(Boolean)
+        .forEach((contractID) => {
+          if (!contractID) return
+          sbp('gi.actions/group/upgradeFrom1.0.7', { contractID }).catch(e => {
+            console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
+          })
+        })
     }, 'gi.contracts/group')
     contractUpdate(state, (contractIDHints: ?string[]) => {
       // Upgrade from version 1.0.8 to a newer version
@@ -193,6 +198,7 @@ sbp('sbp/selectors/register', {
       // This code checks if the attribute is missing, and if so, issues the
       // corresponing upgrade action.
       const needsUpgrade = (chatroomID) => {
+        // Restrict updates to recently added contracts
         if (Array.isArray(contractIDHints) && !contractIDHints.includes(chatroomID)) return false
         return !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
       }
@@ -239,6 +245,7 @@ sbp('sbp/selectors/register', {
       Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
         const groupState = state[groupID]
         if (hasLeft || !groupState?.invites) return undefined
+        // Restrict updates to recently added contracts
         if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
         const needsUpdate = !!doesGroupAnyoneCanJoinNeedUpdating(groupState)
         return needsUpdate ? groupID : undefined

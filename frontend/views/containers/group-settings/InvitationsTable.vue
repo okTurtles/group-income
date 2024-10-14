@@ -240,7 +240,7 @@ export default ({
     readableExpiryInfo (expiryTime) {
       if (expiryTime == null) return L("Doesn't expire")
       const { expired, years, months, days, hours, minutes } = timeLeft(expiryTime)
-      if (expired) L('Expired')
+      if (expired) return L('Expired')
 
       // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
       if (years) return L('{years}y {months}mo {days}d left', { years, months, days: days + ((hours || minutes) ? 1 : 0) })
