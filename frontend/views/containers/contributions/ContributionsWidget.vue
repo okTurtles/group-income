@@ -157,10 +157,10 @@ export default ({
           const isSingularCount = count === 1
           status = givingNonMonetary
             ? isSingularCount
-              ? L('You and {count} other member are contributing.', { count })
+              ? L('You and 1 other member are contributing.')
               : L('You and {count} other members are contributing.', { count })
             : isSingularCount
-              ? L('{count} member is contributing.', { count })
+              ? L('1 member is contributing.')
               : L('{count} members are contributing.', { count })
         } else {
           status = givingNonMonetary

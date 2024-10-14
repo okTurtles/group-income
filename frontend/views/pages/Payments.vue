@@ -418,11 +418,10 @@ export default ({
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
       const memberIds = uniq(this.paymentsTodo.map(item => item.toMemberID))
       const membersLen = memberIds.length
-      const args = { amt: this.withGroupCurrency(amount), count: membersLen }
 
       return membersLen === 1
-        ? L('{amt} in total, to {count} member', args)
-        : L('{amt} in total, to {count} members', args)
+        ? L('{amt} in total, to 1 member', { amt: this.withGroupCurrency(amount) })
+        : L('{amt} in total, to {count} members', { amt: this.withGroupCurrency(amount), count: membersLen })
     },
     showTabSelectionMenu () {
       return this.tabItems.length > 0

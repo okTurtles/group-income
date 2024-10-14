@@ -80,7 +80,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
           @click='openModal("ChatMembersAllModal")'
           data-test='channelMembers'
         )
-          i18n(v-if='summary.numberOfMembers === 1' :args='{ num: summary.numberOfMembers }') {num} member
+          i18n(v-if='summary.numberOfMembers === 1') 1 member
           i18n(v-else :args='{ num: summary.numberOfMembers }') {num} members
 
         template(v-if='summary.attributes.description || isChatRoomCreator')
