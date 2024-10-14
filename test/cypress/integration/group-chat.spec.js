@@ -470,7 +470,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    cy.getByDT('channelMembers').should('contain', '1 members')
+    cy.getByDT('channelMembers').should('contain', '1 member')
   })
 
   it('user1 leaves/deletes chatroom by himself and logs out', () => {
