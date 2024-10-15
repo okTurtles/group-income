@@ -283,6 +283,12 @@ sbp('chelonia/defineContract', {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
+        // We only keep `hash` and `hasLeft` in the list of groups, as this
+        // is the only information we need for groups we're not part of.
+        // This has the advantage that we don't need to explicitly delete
+        // every new attribute that we may add in the future, but has the
+        // downside that, if we were to add a new attribute that's needed after
+        // having left, then it'd need to be added here.
         state.groups[groupContractID] = { hash: reference, hasLeft: true }
       },
       sideEffect ({ data, contractID }) {

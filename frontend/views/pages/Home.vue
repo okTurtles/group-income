@@ -95,8 +95,7 @@ export default ({
       'currentIdentityState'
     ]),
     ...mapState([
-      'currentGroupId',
-      ''
+      'currentGroupId'
     ]),
     isLoggedIn () {
       return !!this.$store.state.loggedIn

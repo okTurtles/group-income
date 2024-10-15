@@ -13,6 +13,17 @@ import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_P
 const API_URL = Cypress.config('baseUrl')
 
 // util funcs
+const setGroupSeenWelcomeScreen = (sbp) => {
+  const state = sbp('state/vuex/state')
+  return sbp('gi.actions/identity/setGroupAttributes', {
+    contractID: state.loggedIn.identityContractID,
+    data: {
+      groupContractID: state.currentGroupId,
+      attributes: { seenWelcomeScreen: true }
+    }
+  })
+}
+
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 const getParamsFromInvitationLink = invitationLink => {
   const params = new URLSearchParams(new URL(invitationLink).hash.slice(1))
@@ -230,15 +241,8 @@ Cypress.Commands.add('giLogin', (username, {
       }).then(() => {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
-          const state = sbp('state/vuex/state')
           if (router.history.current.path === '/dashboard') return
-          return sbp('gi.actions/identity/setGroupAttributes', {
-            contractID: state.loggedIn.identityContractID,
-            data: {
-              groupContractID: state.currentGroupId,
-              attributes: { seenWelcomeScreen: true }
-            }
-          }).then(() => router.push({ path: '/dashboard' })) // .catch(() => {})
+          return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' })) // .catch(() => {})
         }
       })
     })
@@ -354,14 +358,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        const state = sbp('state/vuex/state')
-        return sbp('gi.actions/identity/setGroupAttributes', {
-          contractID: state.loggedIn.identityContractID,
-          data: {
-            groupContractID: state.currentGroupId,
-            attributes: { seenWelcomeScreen: true }
-          }
-        }).then(() => router.push({ path: '/dashboard' }))
+        return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' }))
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
