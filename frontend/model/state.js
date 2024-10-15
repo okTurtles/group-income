@@ -662,6 +662,9 @@ const getters = {
         return nameA.normalize().toUpperCase() > nameB.normalize().toUpperCase() ? 1 : -1
       })
   },
+  seenWelcomeScreen (state, getters) {
+    return getters.ourProfileActive && getters.currentIdentityState?.groups?.[state.currentGroupId]?.seenWelcomeScreen
+  },
   ...chatroomGetters,
   ...groupGetters,
   ...identityGetters

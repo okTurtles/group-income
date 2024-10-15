@@ -13,6 +13,17 @@ import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_P
 const API_URL = Cypress.config('baseUrl')
 
 // util funcs
+const setGroupSeenWelcomeScreen = (sbp) => {
+  const state = sbp('state/vuex/state')
+  return sbp('gi.actions/identity/setGroupAttributes', {
+    contractID: state.loggedIn.identityContractID,
+    data: {
+      groupContractID: state.currentGroupId,
+      attributes: { seenWelcomeScreen: true }
+    }
+  })
+}
+
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 const getParamsFromInvitationLink = invitationLink => {
   const params = new URLSearchParams(new URL(invitationLink).hash.slice(1))
@@ -231,7 +242,7 @@ Cypress.Commands.add('giLogin', (username, {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
           if (router.history.current.path === '/dashboard') return
-          return router.push({ path: '/dashboard' }) // .catch(() => {})
+          return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' })) // .catch(() => {})
         }
       })
     })
@@ -331,7 +342,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
           const timeoutId = setTimeout(() => {
             reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
-          }, 5000)
+          }, 15000)
 
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
@@ -347,7 +358,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        return router.push({ path: '/dashboard' })
+        return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' }))
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
@@ -800,6 +811,8 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 })
 
 Cypress.Commands.add('giSendMessage', (sender, message) => {
+  // The following is to ensure the chatroom has finished loading (no spinner)
+  cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     cy.get('textarea').should('be.empty')

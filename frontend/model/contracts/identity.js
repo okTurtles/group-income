@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -283,8 +283,13 @@ sbp('chelonia/defineContract', {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
 
-        state.groups[groupContractID].hasLeft = true
-        delete state.groups[groupContractID].inviteSecret
+        // We only keep `hash` and `hasLeft` in the list of groups, as this
+        // is the only information we need for groups we're not part of.
+        // This has the advantage that we don't need to explicitly delete
+        // every new attribute that we may add in the future, but has the
+        // downside that, if we were to add a new attribute that's needed after
+        // having left, then it'd need to be added here.
+        state.groups[groupContractID] = { hash: reference, hasLeft: true }
       },
       sideEffect ({ data, contractID }) {
         sbp('gi.contracts/identity/referenceTally', contractID, data.groupContractID, 'release')
@@ -357,6 +362,26 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         for (const manifestCid of data.manifestCids) {
           delete state.fileDeleteTokens[manifestCid]
+        }
+      }
+    },
+    'gi.contracts/identity/setGroupAttributes': {
+      validate: objectOf({
+        groupContractID: string,
+        attributes: objectMaybeOf({
+          seenWelcomeScreen: validatorFrom((v) => v === true)
+        })
+      }),
+      process ({ data }, { state }) {
+        const { groupContractID, attributes } = data
+        if (!has(state.groups, groupContractID) || state.groups[groupContractID].hasLeft) {
+          throw new Error('Can\'t set attributes of groups you\'re not a member of')
+        }
+        if (attributes.seenWelcomeScreen) {
+          if (state.groups[groupContractID].seenWelcomeScreen) {
+            throw new Error('seenWelcomeScreen already set')
+          }
+          state.groups[groupContractID].seenWelcomeScreen = attributes.seenWelcomeScreen
         }
       }
     }
