@@ -27,6 +27,7 @@ fieldset(data-test='paymentMethods')
             type='text'
             v-model='method.value'
             :aria-label='L("Payment value")'
+            :placeholder='getPaymentInfoPlaceholder(method.name)'
             :class='{error: $v.form.methods.$each[index].value.$error}'
           )
           button.is-icon-small.is-btn-shifted(
@@ -68,6 +69,12 @@ export default ({
         paypal: L('Paypal'),
         venmo: L('Venmo'),
         other: L('Other')
+      },
+      placeholders: {
+        bitcoin: L('BTC address'),
+        paypal: L('Email, name or URL'),
+        venmo: L('Username'),
+        lightning: L('Lightning address')
       }
     },
     form: {
@@ -164,6 +171,9 @@ export default ({
           method => this.savedMethods.findIndex(saved => saved.name === method.name && saved.value === method.value) === -1
         )
       }
+    },
+    getPaymentInfoPlaceholder (method) {
+      return this.config.placeholders[method] || ''
     }
   }
 }: Object)
