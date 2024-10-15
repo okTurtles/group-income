@@ -28,6 +28,7 @@ import {
   ACCEPTED_GROUP,
   JOINED_GROUP,
   JOINED_CHATROOM,
+  LEFT_GROUP,
   LOGOUT,
   REPLACE_MODAL
 } from '@utils/events.js'
@@ -43,6 +44,13 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, ser
 import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
 import { extractProposalData } from '@model/notifications/utils.js'
+
+sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
+  const rootState = sbp('chelonia/rootState')
+  if (!rootState.notifications || rootState.loggedIn?.identityContractID !== identityContractID) return
+  const notificationHashes = rootState.notifications.items.filter(item => item.groupID === groupContractID).map(item => item.hash)
+  sbp('gi.notifications/remove', notificationHashes)
+})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
@@ -606,6 +614,10 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
+        attributes: {
+          adminIDs: [contractState.groupOwnerID],
+          ...params.data?.attributes
+        },
         ...params.data
       },
       options: {

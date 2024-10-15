@@ -60,3 +60,9 @@ export const NAMESPACE_REGISTRATION = 'namespace-registration'
 export const KV_QUEUE = 'kv-queue'
 
 export const PWA_INSTALLABLE = 'pwa-installable'
+
+export const CHELONIA_STATE_MODIFIED = 'chelonia-state-modified'
+
+export const NOTIFICATION_EMITTED = 'notification-emitted'
+export const NOTIFICATION_REMOVED = 'notification-removed'
+export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'

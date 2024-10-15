@@ -92,26 +92,71 @@ sbp('sbp/selectors/register', {
     }
     (() => {
       // Upgrade from version 1.0.7 to a newer version
-      // The new group chatroomo contract introduces a breaking change: the
+      // The new group contract introduces a breaking change: the
       // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
       // attribute.
       // This code checks if the attribute is missing, and if so, issues the
       // corresponing upgrade action.
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
-      const upgradeRequired = Object.entries(state[ourIdentityContractId].groups).forEach(([groupID, { hasLeft }]: [string, Object]) => {
-        if (hasLeft || !state[groupID]?.chatRooms) return
+      Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
+        if (hasLeft || !state[groupID]?.chatRooms) return undefined
         // $FlowFixMe[incompatible-use]
-        Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
+        return Object.values((state[groupID].chatRooms: { [string]: Object })).flatMap(({ members }) => {
           return Object.values(members)
-        }).reduce((upgradeRequired: boolean, member: Object) => {
-          return upgradeRequired || (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null)
+        }).reduce((contractID: string | boolean, member: Object) => {
+          if (contractID) return contractID
+          if (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null) {
+            return groupID
+          }
+          return false
         }, false)
+      }).forEach((contractID) => {
+        if (!contractID) return
+        sbp('gi.actions/group/upgradeFrom1.0.7', { contractID }).catch(e => {
+          console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
+        })
       })
-      if (!upgradeRequired) return
-      sbp('gi.actions/group/upgradeFrom1.0.7').catch(e => {
-        console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', e)
-      })
+    })();
+    (() => {
+      // Upgrade from version 1.0.8 to a newer version
+      // The new chatroom contracts have an admin IDs list
+      // This code checks if the attribute is missing, and if so, issues the
+      // corresponing upgrade action.
+      const needsUpgrade = (chatroomID) => !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
+
+      const upgradeAction = async (contractID: string, data?: Object) => {
+        try {
+          await sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID, data })
+        } catch (e) {
+          console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
+        }
+      }
+
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]) return
+      if (state[ourIdentityContractId].groups) {
+        // Group chatrooms
+        Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
+          if (hasLeft || !state[groupID]?.chatRooms || !state[groupID].groupOwnerID) return []
+          // $FlowFixMe[incompatible-use]
+          return Object.entries((state[groupID].chatRooms: { [string]: Object })).flatMap(([chatroomID, { members }]) => {
+            return members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && needsUpgrade(chatroomID) && [chatroomID, state[groupID].groupOwnerID]
+          })
+        }).forEach(([contractID, groupOwnerID]) => {
+          if (!contractID) return
+          upgradeAction(contractID, groupOwnerID)
+        })
+      }
+      if (state[ourIdentityContractId].chatRooms) {
+        // DM chatrooms
+        return Object.keys((state[ourIdentityContractId].chatRooms: { [string]: Object })).map((chatroomID) => {
+          return state[chatroomID]?.members[ourIdentityContractId] && needsUpgrade(chatroomID) && chatroomID
+        }).forEach((contractID) => {
+          if (!contractID) return
+          upgradeAction(contractID)
+        })
+      }
     })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
@@ -578,6 +623,16 @@ const getters = {
           }
         }
       })
+    // For consistency, add users that were known in the past (since those
+    // contracts will be removed). This keeps mentions working in existing
+    // devices
+    Object.keys(state.reverseNamespaceLookups).forEach((contractID) => {
+      if (profiles[contractID]) return
+      profiles[contractID] = {
+        username: state.reverseNamespaceLookups[contractID],
+        contractID
+      }
+    })
     return profiles
   },
   currentGroupContactProfilesById (state, getters) {

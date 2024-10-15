@@ -117,7 +117,7 @@ import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { swapMentionIDForDisplayname } from '@model/contracts/shared/functions.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
