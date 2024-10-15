@@ -37,7 +37,7 @@ const homeGuard = {
     path:
       // If we haven't accepted the invite OR we haven't clicked 'Awesome' on
       // the welcome screen, redirect to the '/pending-approval' page
-      (store.getters.ourProfileActive && store.getters.currentIdentityState?.groups?.[store.state.currentGroupId]?.seenWelcomeScreen)
+      store.getters.seenWelcomeScreen
         ? '/dashboard'
         : '/pending-approval'
   })
