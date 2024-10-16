@@ -72,7 +72,10 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
   // state
   const existingContracts = Object.keys(initialState.contracts)
   setTimeout(() => {
-    wrappedUpdateFn(initialState, existingContracts)
+    sbp('chelonia/contract/wait', existingContracts).then(() => {
+      const state = sbp('state/vuex/state')
+      wrappedUpdateFn(state, existingContracts)
+    })
   }, 0)
 }
 
@@ -200,13 +203,19 @@ sbp('sbp/selectors/register', {
       const needsUpgrade = (chatroomID) => {
         // Restrict updates to recently added contracts
         if (Array.isArray(contractIDHints) && !contractIDHints.includes(chatroomID)) return false
-        return !Array.isArray(state[chatroomID]?.attributes?.adminIDs)
+        return !!state[chatroomID]?.attributes && !Array.isArray(state[chatroomID].attributes.adminIDs)
       }
 
       const upgradeAction = async (contractID: string, data?: Object) => {
         try {
           await sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID, data })
         } catch (e) {
+          // If the action failed because the upgrade has already happened, we
+          // can safely ignore the error
+          if (e.message?.includes('Upgrade can only be done once')) {
+            console.warn(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
+            return
+          }
           console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
         }
       }
@@ -219,7 +228,10 @@ sbp('sbp/selectors/register', {
           if (hasLeft || !state[groupID]?.chatRooms || !state[groupID].groupOwnerID) return []
           // $FlowFixMe[incompatible-use]
           return Object.entries((state[groupID].chatRooms: { [string]: Object })).flatMap(([chatroomID, { members }]) => {
-            return members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && needsUpgrade(chatroomID) && [chatroomID, state[groupID].groupOwnerID]
+            if (members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && needsUpgrade(chatroomID)) {
+              return [chatroomID, state[groupID].groupOwnerID]
+            }
+            return []
           })
         }).forEach(([contractID, groupOwnerID]) => {
           if (!contractID) return
@@ -229,7 +241,10 @@ sbp('sbp/selectors/register', {
       if (state[ourIdentityContractId].chatRooms) {
         // DM chatrooms
         return Object.keys((state[ourIdentityContractId].chatRooms: { [string]: Object })).map((chatroomID) => {
-          return state[chatroomID]?.members[ourIdentityContractId] && needsUpgrade(chatroomID) && chatroomID
+          if (state[chatroomID]?.members[ourIdentityContractId] && needsUpgrade(chatroomID)) {
+            return chatroomID
+          }
+          return false
         }).forEach((contractID) => {
           if (!contractID) return
           upgradeAction(contractID)
