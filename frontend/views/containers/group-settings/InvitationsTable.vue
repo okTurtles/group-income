@@ -128,6 +128,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
+import { timeLeft } from '@view-utils/time.js'
 
 export default ({
   name: 'InvitationsTable',
@@ -237,22 +238,18 @@ export default ({
       else return isInviteExpired || isInviteRevoked ? L('Not used') : L('Not used yet')
     },
     readableExpiryInfo (expiryTime) {
-      const timeLeft = expiryTime - Date.now()
-      const MIL = 1000
-      const MIL_MIN = 60 * MIL
-      const MIL_HR = MIL_MIN * 60
-      const MIL_DAY = 24 * MIL_HR
-      let remainder
+      if (expiryTime == null) return L("Doesn't expire")
+      const { expired, years, months, days, hours, minutes } = timeLeft(expiryTime)
+      if (expired) return L('Expired')
 
-      const days = Math.floor(timeLeft / MIL_DAY)
-      remainder = timeLeft % MIL_DAY
-      const hours = Math.floor(remainder / MIL_HR)
-      remainder = remainder % MIL_HR
-      const minutes = Math.ceil(remainder / MIL_MIN)
+      // In the cases when displaying years/months, count the remainer hours/mins as +1 day eg) 3days 15hrs 25mins -> 4days.
+      if (years) return L('{years}y {months}mo {days}d left', { years, months, days: days + ((hours || minutes) ? 1 : 0) })
+      if (months) return L('{months}mo {days}d left', { months, days: days + ((hours || minutes) ? 1 : 0) })
 
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
       if (minutes) return L('{minutes}m left', { minutes })
+
       return L('Expired')
     },
     mapInvite ([id, {
@@ -299,8 +296,7 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        const isWelcomeInviteExpired = this.currentWelcomeInvite.expires < Date.now()
-        if (this.groupShouldPropose || isWelcomeInviteExpired) {
+        if (this.groupShouldPropose) {
           const contractID = this.currentGroupId
           sbp('gi.app/group/checkGroupSizeAndProposeMember', { contractID }).catch(e => {
             console.error(`Error on action checkGroupSizeAndProposeMember (handleInviteClock) for ${contractID}`, e)

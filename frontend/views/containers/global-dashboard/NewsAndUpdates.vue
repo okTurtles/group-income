@@ -22,6 +22,12 @@ import Avatar from '@components/Avatar.vue'
 
 const dummyPosts = [
   {
+    createdAt: new Date('2024-10-29'),
+    title: '1.1.0: Anyone-can-join Invites Updated! Please read!',
+    content: "Version 1.1.0 introduces many new features and bug fixes, and among them is replacing the old anyone-can-join invite links with new ones that will let your group grow to Dunbar's Number.\n\n" +
+      '**The old links are expired, please use the new ones!**'
+  },
+  {
     createdAt: new Date('2024-07-26'),
     title: 'Group Income 1.0 released! 🥳',
     content: '🎦 See the release party footage:\n\n' +

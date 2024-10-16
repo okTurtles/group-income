@@ -6,6 +6,7 @@ export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
 export const MONTHS_MILLIS = 30 * DAYS_MILLIS
+export const YEARS_MILLIS = 365 * DAYS_MILLIS
 
 export const plusOnePeriodLength = (timestamp: string, periodLength: number): string => (
   dateToPeriodStamp(addTimeToDate(timestamp, periodLength))
@@ -184,7 +185,12 @@ export function humanDate (
     : ((navigator.languages: any): string[]) ?? navigator.language ?? fallback
   // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
-  return new Date(date).toLocaleDateString(locale, options)
+  const dateObj = new Date(date)
+
+  // Avoid returning 'Invalid Date'
+  if (!isNaN(dateObj.valueOf())) return dateObj.toLocaleDateString(locale, options)
+
+  return ''
 }
 
 export function isPeriodStamp (arg: string): boolean {

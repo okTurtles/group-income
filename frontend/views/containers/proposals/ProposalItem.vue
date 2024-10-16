@@ -328,6 +328,8 @@ export default ({
         this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight !== undefined ||
         // If the expiration date is less than the current date, it means that
         // the invite can no longer be used
+        // Note: Using negative logic to allow for undefined expiry, which means
+        // it never expires
         this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()
       ) {
         return true

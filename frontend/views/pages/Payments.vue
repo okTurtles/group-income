@@ -100,12 +100,7 @@ page(
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
               .c-payment-info-wrapper
-                i18n.c-payment-info(
-                  tag='b'
-                  data-test='paymentInfo'
-                  :args='footerTodoStatus'
-                ) {amount} in total, to {count} members
-
+                b.c-payment-info(data-test='paymentInfo') {{ footerTodoStatus }}
                 .c-distribution-locked-warning-wrapper(v-if='distributionLocked')
                   span.pill.is-warning {{ config.paymentLockedWarningOptions.title }}
                   tooltip(
@@ -177,7 +172,7 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString, deepEqualJSONType, omit } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType, omit, uniq } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,
@@ -421,10 +416,12 @@ export default ({
     },
     footerTodoStatus () {
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
-      return {
-        amount: this.withGroupCurrency(amount),
-        count: this.paymentsTodo.length
-      }
+      const memberIds = uniq(this.paymentsTodo.map(item => item.toMemberID))
+      const membersLen = memberIds.length
+
+      return membersLen === 1
+        ? L('{amt} in total, to 1 member', { amt: this.withGroupCurrency(amount) })
+        : L('{amt} in total, to {count} members', { amt: this.withGroupCurrency(amount), count: membersLen })
     },
     showTabSelectionMenu () {
       return this.tabItems.length > 0

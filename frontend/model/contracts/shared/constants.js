@@ -93,7 +93,7 @@ export const MESSAGE_TYPES = {
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
-  ON_BOARDING: 30,
+  ON_BOARDING: null, // No expiration
   PROPOSAL: 7
 }
 

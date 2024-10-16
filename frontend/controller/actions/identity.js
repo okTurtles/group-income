@@ -337,7 +337,7 @@ export default (sbp('sbp/selectors/register', {
       } catch (e) {
         sbp('chelonia/clearTransientSecretKeys', transientSecretKeys.map(({ key }) => keyId(key)))
         console.error('gi.actions/identity/login failed!', e)
-        const humanErr = L('Failed to login: {reportError}', LError(e))
+        const humanErr = L('Failed to log in: {reportError}', LError(e))
         await sbp('gi.actions/identity/_private/logout')
           .catch((e) => {
             console.error('[gi.actions/identity/login] Error calling logout (after failure to login)', e)
@@ -668,5 +668,6 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
-  ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.'))
+  ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
+  ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
 }): string[])

@@ -65,21 +65,24 @@ describe('Proposals - Add members', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
+    // If the invite link doesn't expire, this test makes little sense
+    if (groupInviteLinkExpiry.anyone != null) {
     // Try to join with expired link
-    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
-    cy.visit(invitationLinks.anyone)
-    cy.getByDT('pageTitle')
-      .invoke('text')
-      .should('contain', 'Oh no! This invite is already expired')
-    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+      cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+      cy.visit(invitationLinks.anyone)
+      cy.getByDT('pageTitle')
+        .invoke('text')
+        .should('contain', 'Oh no! This invite is already expired')
+      cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
 
-    cy.clock().then((clock) => {
-      clock.restore()
-    })
+      cy.clock().then((clock) => {
+        clock.restore()
+      })
+    }
 
     cy.visit('/')
     cy.url().should('eq', `${API_URL}/app/`)
@@ -288,7 +291,7 @@ describe('Proposals - Add members', () => {
 
     assertMincome(groupNewMincome)
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
@@ -364,7 +367,7 @@ describe('Proposals - Add members', () => {
     })
 
     cy.closeModal()
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user6 registers through a unique invitation link to join a group', () => {
@@ -529,6 +532,6 @@ describe('Proposals - Add members', () => {
     //   cy.closeModal()
     // })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

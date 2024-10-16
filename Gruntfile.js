@@ -44,7 +44,8 @@ const {
   MAX_EVENTS_AFTER = '',
   NODE_ENV = 'development',
   EXPOSE_SBP = '',
-  ENABLE_UNSAFE_NULL_CRYPTO = 'false'
+  ENABLE_UNSAFE_NULL_CRYPTO = 'false',
+  UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS = 'false'
 } = process.env
 
 if (!['development', 'production'].includes(NODE_ENV)) {
@@ -223,7 +224,8 @@ module.exports = (grunt) => {
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`
+        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',

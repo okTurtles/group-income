@@ -13,6 +13,17 @@ import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_P
 const API_URL = Cypress.config('baseUrl')
 
 // util funcs
+const setGroupSeenWelcomeScreen = (sbp) => {
+  const state = sbp('state/vuex/state')
+  return sbp('gi.actions/identity/setGroupAttributes', {
+    contractID: state.loggedIn.identityContractID,
+    data: {
+      groupContractID: state.currentGroupId,
+      attributes: { seenWelcomeScreen: true }
+    }
+  })
+}
+
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
 const getParamsFromInvitationLink = invitationLink => {
   const params = new URLSearchParams(new URL(invitationLink).hash.slice(1))
@@ -20,6 +31,29 @@ const getParamsFromInvitationLink = invitationLink => {
     groupId: params.get('groupId'),
     inviteSecret: params.get('secret')
   }
+}
+const getRandomPaymentMethod = () => {
+  const digits = () => Math.floor(Math.random() * 100000)
+  const paymentMethod = randomFromArray(['paypal', 'bitcoin', 'venmo', 'other'])
+  const detailMap = {
+    'paypal': `abc-${digits()}@abc.com`,
+    'bitcoin': `h4sh-t0-b3-s4ved-${digits()}`,
+    'venmo': [digits(), digits(), digits()].join('-'),
+    'other': [digits(), digits(), digits()].join('-')
+  }
+
+  return {
+    paymentMethod,
+    paymentDetail: detailMap[paymentMethod]
+  }
+}
+const getRandomNonMonetary = () => {
+  const randomClasses = [
+    'English', 'Korean', 'German', 'French', 'Japanese', 'Mandarin', 'Cantonese', 'Portuguese', 'Spanish',
+    'Javascript', 'Typescript', 'Python', 'React', 'Vue', 'Angular', 'Node.js', 'Express', 'PHP'
+  ]
+
+  return `${randomFromArray(randomClasses)} class`
 }
 
 // Util function to perform checks using SBP
@@ -231,7 +265,7 @@ Cypress.Commands.add('giLogin', (username, {
         if (firstLoginAfterJoinGroup) {
           const router = sbp('controller/router')
           if (router.history.current.path === '/dashboard') return
-          return router.push({ path: '/dashboard' }) // .catch(() => {})
+          return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' })) // .catch(() => {})
         }
       })
     })
@@ -268,10 +302,10 @@ Cypress.Commands.add('giLogin', (username, {
   }
 })
 
-Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+Cypress.Commands.add('giLogout', ({ bypassUI = false, hasNoGroup = false } = {}) => {
   cy.giEmptyInvocationQueue()
 
-  if (hasNoGroup) {
+  if (bypassUI || hasNoGroup) {
     cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
@@ -286,7 +320,7 @@ Cypress.Commands.add('giSwitchUser', (user, {
   bypassUI = true,
   firstLoginAfterJoinGroup = false
 } = {}) => {
-  cy.giLogout()
+  cy.giLogout({ bypassUI })
   cy.giLogin(user, { bypassUI, firstLoginAfterJoinGroup })
 })
 
@@ -331,7 +365,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
           const timeoutId = setTimeout(() => {
             reject(new Error('[cypress] Timed out waiting for JOINED_GROUP event and active profile status'))
-          }, 5000)
+          }, 15000)
 
           const cID = await sbp('gi.app/group/createAndSwitch', {
             data: {
@@ -347,7 +381,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       }).then(() => {
         const router = sbp('controller/router')
         if (router.history.current.path === '/dashboard') return
-        return router.push({ path: '/dashboard' })
+        return setGroupSeenWelcomeScreen(sbp).then(() => router.push({ path: '/dashboard' }))
       })
     })
     cy.url().should('eq', `${API_URL}/app/dashboard`)
@@ -503,13 +537,13 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('pendingApprovalTitle').invoke('attr', 'data-groupId').should('eq', groupId)
     // NOTE: should wait until KEY_REQUEST event is published
     cy.giKeyRequestedGroupIDs(groupId)
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
 
     cy.giLogin(existingMemberUsername, { bypassUI })
 
     // NOTE: should wait until all pendingKeyShares are removed
     cy.giNoPendingGroupKeyShares()
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
 
     cy.giLogin(username, { bypassUI, firstLoginAfterJoinGroup: true })
   } else {
@@ -528,7 +562,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
 
   if (shouldLogoutAfter) {
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
   }
 })
 
@@ -566,13 +600,13 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
     cy.giKeyRequestedGroupIDs(groupId)
     cy.giEmptyInvocationQueue()
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI })
   }
 
   cy.giLogin(existingMemberUsername, { bypassUI })
   cy.giNoPendingGroupKeyShares()
   cy.giEmptyInvocationQueue()
-  cy.giLogout()
+  cy.giLogout({ bypassUI })
 
   const shouldSetDisplayName = Array.isArray(displayNames) && displayNames.length === usernames.length
   if (shouldSetDisplayName || actionBeforeLogout) {
@@ -589,62 +623,70 @@ Cypress.Commands.add('giAcceptMultipleGroupInvites', (invitationLink, {
         actionBeforeLogout()
       }
 
-      cy.giLogout()
+      cy.giLogout({ bypassUI })
     }
   }
 })
 
-Cypress.Commands.add('giAddRandomIncome', () => {
-  cy.getByDT('openIncomeDetailsModal').click()
+Cypress.Commands.add('giAddRandomIncome', ({ bypassUI = false } = {}) => {
   let salary = Math.floor(Math.random() * (600 - 20) + 20)
   let action = 'doesntNeedIncomeRadio'
+
   // Add randomly negative or positive income
   if (Math.random() < 0.5) {
     salary = Math.floor(Math.random() * (200 - 20) + 20)
     action = 'needsIncomeRadio'
   }
-  cy.getByDT(action).click()
-  cy.getByDT('inputIncomeOrPledge').type(salary)
 
-  if (action === 'needsIncomeRadio') {
-    // it's mandatory to fill out the payment details when 'needsIncome' is selected.
-    cy.randomPaymentMethodInIncomeDetails()
-    cy.randomNonMonetaryInIncomeDetails()
+  if (bypassUI) {
+    const incomeDetailsType = action === 'needsIncomeRadio' ? 'incomeAmount' : 'pledgeAmount'
+    const { paymentMethod, paymentDetail } = getRandomPaymentMethod()
+
+    cy.window().its('sbp').then(sbp => {
+      sbp('gi.actions/group/groupProfileUpdate', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: action === 'needsIncomeRadio'
+          ? {
+              incomeDetailsType,
+              [incomeDetailsType]: salary,
+              paymentMethods: [{ name: paymentMethod, value: paymentDetail }],
+              nonMonetaryReplace: [getRandomNonMonetary()]
+            }
+          : {
+              incomeDetailsType,
+              [incomeDetailsType]: salary
+            }
+      })
+    })
+  } else {
+    cy.getByDT('openIncomeDetailsModal').click()
+    cy.getByDT(action).click()
+    cy.getByDT('inputIncomeOrPledge').type(salary)
+
+    if (action === 'needsIncomeRadio') {
+      // it's mandatory to fill out the payment details when 'needsIncome' is selected.
+      cy.randomPaymentMethodInIncomeDetails()
+      cy.randomNonMonetaryInIncomeDetails()
+    }
+
+    cy.getByDT('submitIncome').click()
   }
-
-  cy.getByDT('submitIncome').click()
 })
 
 Cypress.Commands.add('randomPaymentMethodInIncomeDetails', () => {
-  const digits = () => Math.floor(Math.random() * 100000)
-  const paymentMethod = randomFromArray(['paypal', 'bitcoin', 'venmo', 'other'])
-  const detailMap = {
-    'paypal': `abc-${digits()}@abc.com`,
-    'bitcoin': `h4sh-t0-b3-s4ved-${digits()}`,
-    'venmo': [digits(), digits(), digits()].join('-'),
-    'other': [digits(), digits(), digits()].join('-')
-  }
+  const { paymentMethod, paymentDetail } = getRandomPaymentMethod()
 
   cy.getByDT('paymentMethods').within(() => {
     cy.getByDT('method').last().within(() => {
       cy.get('select').select(paymentMethod)
-      cy.get('input').type(detailMap[paymentMethod])
+      cy.get('input').type(paymentDetail)
     })
   })
 })
 
 Cypress.Commands.add('randomNonMonetaryInIncomeDetails', () => {
-  const randomClass = () => {
-    const classes = [
-      'English', 'Korean', 'German', 'French', 'Japanese', 'Mandarin', 'Cantonese', 'Portuguese', 'Spanish',
-      'Javascript', 'Typescript', 'Python', 'React', 'Vue', 'Angular', 'Node.js', 'Express', 'PHP'
-    ]
-    const randomIndex = Math.floor(Math.random() * classes.length)
-
-    return `${classes[randomIndex]} class`
-  }
-
-  cy.getByDT('inputNonMonetaryPledge').type(randomClass())
+  const randomClass = getRandomNonMonetary()
+  cy.getByDT('inputNonMonetaryPledge').type(randomClass)
 })
 
 Cypress.Commands.add('giAddNewChatroom', ({
@@ -800,6 +842,8 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 })
 
 Cypress.Commands.add('giSendMessage', (sender, message) => {
+  // The following is to ensure the chatroom has finished loading (no spinner)
+  cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     cy.get('textarea').should('be.empty')

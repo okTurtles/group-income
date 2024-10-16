@@ -87,7 +87,7 @@ describe('Contributions', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user2, user3 and user4 join the group', () => {
@@ -459,7 +459,7 @@ describe('Contributions', () => {
       paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You are pledging $100',
       monetaryStatus: '$100 will be used.',
-      nonMonetaryStatus: 'You and 1 other members are contributing.'
+      nonMonetaryStatus: 'You and 1 other member are contributing.'
     })
   })
 
@@ -550,7 +550,7 @@ describe('Contributions', () => {
       monetaryStatus: 'You will receive $20.83.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
 
