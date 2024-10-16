@@ -459,7 +459,7 @@ describe('Contributions', () => {
       paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You are pledging $100',
       monetaryStatus: '$100 will be used.',
-      nonMonetaryStatus: 'You and 1 other members are contributing.'
+      nonMonetaryStatus: 'You and 1 other member are contributing.'
     })
   })
 

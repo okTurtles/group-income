@@ -369,7 +369,7 @@ describe('Group Payments', () => {
       ['Amount sent', '$50 out of $100']
     ])
 
-    cy.getByDT('paymentInfo').should('contain', '$50 in total, to 1 members')
+    cy.getByDT('paymentInfo').should('contain', '$50 in total, to 1 member')
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', '$50 out of $100')
     })
