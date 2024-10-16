@@ -33,7 +33,7 @@
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
 import pointerEventsMixinFactory from '@view-utils/pointerEventsMixins.js'
-import { linearScale } from '@model/contracts/shared/giLodash.js'
+import { linearScale, debounce } from '@model/contracts/shared/giLodash.js'
 
 const linearScaler = {
   deltaToZoom: linearScale([0, 5], [0, 12]), // maps deltaY value of 'scroll' event to zoom value
@@ -82,7 +82,8 @@ export default {
         },
         zoomMin: 0,
         zoomMax: 400, // for now.
-        sliderUnit: '%'
+        sliderUnit: '%',
+        resizeHandlerDebounced: debounce(this.resizeHandler, 100)
       }
     }
   },
@@ -310,7 +311,6 @@ export default {
       }
     },
     resizeHandler () {
-      // TODO: debounce this handler
       this.initViewerSettings()
       this.calcPreviewImageDimension()
     },
@@ -375,10 +375,10 @@ export default {
     }
   },
   mounted () {
-    window.addEventListener('resize', this.resizeHandler)
+    window.addEventListener('resize', this.config.resizeHandlerDebounced)
   },
   beforeDestroy () {
-    window.removeEventListener('resize', this.resizeHandler)
+    window.removeEventListener('resize', this.config.resizeHandlerDebounced)
   }
 }
 </script>
