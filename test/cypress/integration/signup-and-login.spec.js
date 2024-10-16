@@ -50,7 +50,7 @@ describe('Signup, Profile and Login', () => {
 
     cy.getByDT('profileDisplayName').should('contain', 'John Bot')
     cy.getByDT('profileName').should('contain', username)
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('sign up button remains disabled if passwords are not the same or terms are not agreed', () => {

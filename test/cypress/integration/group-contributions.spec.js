@@ -87,7 +87,7 @@ describe('Contributions', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user2, user3 and user4 join the group', () => {
@@ -550,7 +550,7 @@ describe('Contributions', () => {
       monetaryStatus: 'You will receive $20.83.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
 

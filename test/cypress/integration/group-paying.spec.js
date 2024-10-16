@@ -129,7 +129,7 @@ describe('Group Payments', () => {
       expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 13).to.be.true
       /* eslint-enable no-unused-expressions */
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('Three users join the group and add their income details', () => {
@@ -564,6 +564,6 @@ describe('Group Payments', () => {
   })
 
   it('log out', () => {
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

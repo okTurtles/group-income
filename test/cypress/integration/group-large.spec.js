@@ -16,7 +16,7 @@ describe('Large group', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`A group with ${groupLength} members shows correctly the pledging month overview widget`, () => {
@@ -24,10 +24,7 @@ describe('Large group', () => {
     const usernames = indexes.map(i => `user${i}-${userId}`)
     const actionsBeforeLogout = indexes.map(i => {
       return () => {
-        if (i > 3) {
-          cy.getByDT('contributionsLink').click()
-        }
-        cy.giAddRandomIncome()
+        cy.giAddRandomIncome({ bypassUI: true })
       }
     })
 
@@ -40,7 +37,7 @@ describe('Large group', () => {
     })
 
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
-    cy.giAddRandomIncome()
+    cy.giAddRandomIncome({ bypassUI: true })
     cy.get('.graph-bar')
       .should('have.length', groupLength)
   })
@@ -55,6 +52,6 @@ describe('Large group', () => {
     cy.get('.c-search-member')
       .should('have.length', 4)
     cy.closeModal()
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

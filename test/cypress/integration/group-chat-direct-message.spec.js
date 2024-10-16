@@ -236,6 +236,6 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     // NOTE: no notification messages in DM
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
