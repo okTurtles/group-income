@@ -8,7 +8,7 @@
     :width='config.imgData.naturalWidth'
     :height='config.imgData.naturalHeight'
     :style='previewImgStyles'
-    :alt='name'
+    :alt='L("Image preview")'
     draggable='false'
     @load='onImgLoad'
   )
@@ -211,7 +211,7 @@ export default {
     },
     onSliderUpdate (e) {
       const center = this.getViewAreaCenter()
-      this.handleZoomUpdate(e.target.value, center)
+      this.handleZoomUpdate(Number(e.target.value), center)
       this.calcPreviewImageDimension()
     },
     handleZoomUpdate (val, zoomPoint = null) {
