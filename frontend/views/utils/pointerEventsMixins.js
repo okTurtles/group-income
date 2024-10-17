@@ -1,6 +1,10 @@
 import { throttle } from '@model/contracts/shared/giLodash.js'
 export const PINCH_ZOOM_THRESHOLD = 2.5
 
+const PINCH_GESTURE = {
+  OUT: 'pinch-out',
+  IN: 'pinch-in'
+}
 const mixinGeneratorDefaultOpts = {
   pointerMoveOnWindow: false
 }
@@ -13,6 +17,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           evts: [],
           prevDistance: null, // tracking distance between two pointers when 'pinch' gesture is happening
           prevDistChangeFactor: null,
+          prevPinchAction: null,
           prevPinchCenter: null
         },
         throttledHandlers: {
@@ -38,6 +43,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
         this.pointer.prevDistance = null
         this.pointer.prevPinchCenter = null
         this.pointer.prevDistChangeFactor = null
+        this.pointer.prevPinchAction = null
 
         this.postPointerCancel && this.postPointerCancel()
       },
@@ -61,7 +67,12 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
             x: (evItem.current.x - evItem.prev.x) * adjustmentFactor,
             y: (evItem.current.y - evItem.prev.y) * adjustmentFactor
           })
+
+          // clear states related to pinch-gesture
+          this.pointer.prevPinchCenter = null
           this.pointer.prevDistance = null
+          this.pointer.prevDistChangeFactor = null
+          this.pointer.prevPinchAction = null
         } else if (pointerType === 'touch' && evts.length === 2) {
           // pinch in/out
           const [evt1, evt2] = evts
@@ -81,23 +92,32 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           // Calculate distance update factor
           const currentLinearDist = Math.sqrt(xDist * xDist + yDist * yDist)
           const prevLinearDist = this.pointer.prevDistance || currentLinearDist
+          const currPinchAction = (currentLinearDist - prevLinearDist) > PINCH_ZOOM_THRESHOLD
+            ? PINCH_GESTURE.OUT
+            : (currentLinearDist - prevLinearDist) < PINCH_ZOOM_THRESHOLD * -1
+                ? PINCH_GESTURE.IN
+                : null
+
           const distChangeFactorCalc = Math.abs(currentLinearDist - prevLinearDist)
           // NOTE for below adjustment: the moment the pinch-action finishes, the distChangeFactor value becomes strangely large,
           // leading to an abrupt change in image scale. so it needs some sort of a ceiling value here to catch/fix that behavior.
-          const changeFactorToUse = this.pointer.prevDistChangeFactor > 0 && (distChangeFactorCalc > this.pointer.prevDistChangeFactor * 3)
+          const changeFactorToUse = currPinchAction === this.pointer.prevPinchAction &&
+            this.pointer.prevDistChangeFactor > 0 &&
+            (distChangeFactorCalc > this.pointer.prevDistChangeFactor * 3)
             ? this.pointer.prevDistChangeFactor
             : distChangeFactorCalc
 
           const args = { changeFactor: changeFactorToUse, center }
 
           this.pointer.prevDistChangeFactor = changeFactorToUse
-          if ((currentLinearDist - prevLinearDist) > PINCH_ZOOM_THRESHOLD) {
+          if (currPinchAction === PINCH_GESTURE.OUT) {
             this.$emit('pinch-out', args)
 
             // The component that registers this mixin needs to be able to listen to this custom event too.
             this.pinchOutHandler &&
               this.pinchOutHandler(args)
-          } else if ((currentLinearDist - prevLinearDist) < PINCH_ZOOM_THRESHOLD * -1) {
+          } else if (currPinchAction === PINCH_GESTURE.IN) {
+            console.log(`!@# pinching-in - distChangeFactorCalc: ${distChangeFactorCalc}, prevDistChangeFactor: ${this.pointer.prevDistChangeFactor}`)
             this.$emit('pinch-in', args)
 
             // The component that registers this mixin needs to be able to listen to this custom event too.
@@ -106,6 +126,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           }
 
           this.pointer.prevDistance = currentLinearDist // track it for the next calculation
+          this.pointer.prevPinchAction = currPinchAction
         }
       }
     },

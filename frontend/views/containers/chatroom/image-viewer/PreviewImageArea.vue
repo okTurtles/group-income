@@ -330,7 +330,6 @@ export default {
         linearScaler.pinchToZoom(changeFactor)
       )
       const newVal = Math.ceil(currZoom - updateVal)
-
       this.handleZoomUpdate(this.clipZoomValue(newVal), center)
     },
     pinchOutHandler ({ changeFactor, center }) {
@@ -341,6 +340,7 @@ export default {
       const updateVal = Math.ceil(
         linearScaler.pinchToZoom(changeFactor)
       )
+
       const newVal = Math.ceil(currZoom + updateVal)
       this.handleZoomUpdate(this.clipZoomValue(newVal), center)
     },
