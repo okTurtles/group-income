@@ -324,7 +324,7 @@ export default {
     pinchInHandler ({ changeFactor, center }) {
       if (!this.isPointInsidePreviewImage(center)) { return }
 
-      // should zoom-out (shrink)
+      // should zoom-out. (shrink)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
         linearScaler.pinchToZoom(changeFactor)
@@ -335,7 +335,7 @@ export default {
     pinchOutHandler ({ changeFactor, center }) {
       if (!this.isPointInsidePreviewImage(center)) { return }
 
-      // should zoom-in (magnify)
+      // should zoom-in. (magnify)
       const currZoom = this.ephemeral.currentZoom
       const updateVal = Math.ceil(
         linearScaler.pinchToZoom(changeFactor)
