@@ -1,10 +1,11 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
-import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import sbp from '@sbp/sbp'
 import { PWA_INSTALLABLE } from '@utils/events.js'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
+import { deserializer } from '~/shared/serdes/index.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -25,6 +26,7 @@ window.addEventListener('beforeinstallprompt', e => {
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
+    console.error('@@@SW SETUP')
     // setup service worker
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
@@ -82,12 +84,19 @@ sbp('sbp/selectors/register', {
               sbp('service-worker/resubscribe-push', data.subscription)
               break
             }
+            case 'event': {
+              console.error('@@@EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              break
+            }
             default:
               console.error('[sw] Received unknown message type from the service worker:', data)
               break
           }
         }
       })
+
+      console.error('@@@SW DONE, returning')
     } catch (e) {
       console.error('error setting up service worker:', e)
     }
@@ -104,6 +113,8 @@ sbp('sbp/selectors/register', {
     }
 
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    if (!pubsub) return // TODO: This needs to be moved into the service worker
+    // proper. pubsub will be undefined in this context.
     const existingSubscription = await registration.pushManager.getSubscription()
     const messageToPushServerIfSocketConnected = (msgPayload) => {
       // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.

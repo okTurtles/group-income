@@ -58,13 +58,15 @@ const setupChelonia = async (): Promise<*> => {
   })
 
   // this is to ensure compatibility between frontend and test/backend.test.js
-  sbp('okTurtles.data/set', 'API_URL', window.location.origin)
+  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: GIMessage) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
-    sbp('appLogs/save')
+    sbp('appLogs/save').catch(e => {
+      console.error('Error saving logs during error notification', e)
+    })
   }
 
   let logoutInProgress = false
@@ -131,13 +133,14 @@ const setupChelonia = async (): Promise<*> => {
         exposedGlobals: {
           // note: needs to be written this way and not simply "Notification"
           // because that breaks on mobile where Notification is undefined
-          Notification: window.Notification
+          Notification: self.Notification
         }
       }
     },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
+          // TODO: Forward to app
           sbp('gi.ui/seriousErrorBanner', e)
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
@@ -250,6 +253,7 @@ const setupChelonia = async (): Promise<*> => {
       },
       [NOTIFICATION_TYPE.KV] ([key, value]) {
         const { contractID, data } = value
+        console.error('@@@### KV_EVENT', { contractID, key, data })
         if (!data) return
 
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })

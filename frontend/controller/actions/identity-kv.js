@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
@@ -51,8 +51,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+      sbp('okTurtles.events/emit', NEW_UNREAD_MESSAGES, currentChatRoomUnreadMessages)
     })
   },
   'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
@@ -192,8 +191,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadPreferences': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setPreferences', preferences)
+      sbp('okTurtles.events/emit', NEW_PREFERENCES, preferences)
     })
   },
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {

@@ -313,6 +313,7 @@ const defaultClientEventHandlers = {
       })
       return client.destroy()
     }
+    console.error('@@@[pubsub] recv msg', msg)
     const handler = client.messageHandlers[msg.type]
 
     if (handler) {
