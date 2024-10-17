@@ -1,5 +1,6 @@
 import { L } from '@common/common.js'
 import { INVITE_INITIAL_CREATOR, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import chatroomGetters from './contracts/shared/getters/chatroom.js'
@@ -11,6 +12,21 @@ const checkedUsername = (state: Object, username: string, userID: string) => {
     return username
   }
 }
+
+// Find the 'anyone can join' invite ID. Since there could be multiple, and some
+// of those could have exipred, we need a for loop
+const anyoneCanJoinInviteId = (invites: Object, getters: Object): ?string =>
+  Object.keys(invites).find(invite =>
+    // First, we want 'anyone can join' invites
+    invites[invite].creatorID === INVITE_INITIAL_CREATOR &&
+    // and that haven't been revoked
+    getters.currentGroupState._vm.invites[invite].status === INVITE_STATUS.VALID &&
+    // and that haven't expired (using negative logic because expires could be
+    // undefined for non expiring-invites)
+    !(getters.currentGroupState._vm.invites[invite].expires < Date.now()) &&
+    // and that that haven't been entirely used up
+    !(getters.currentGroupState._vm.invites[invite].quantity <= 0)
+  )
 
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
@@ -294,8 +310,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   currentWelcomeInvite (state, getters) {
     const invites = getters.currentGroupState.invites
-    const inviteId = Object.keys(invites).find(invite => invites[invite].creatorID === INVITE_INITIAL_CREATOR)
-    const expires = getters.currentGroupState._vm.authorizedKeys[inviteId].meta.expires
+    const inviteId = anyoneCanJoinInviteId(invites, getters)
+    const expires = getters.currentGroupState._vm.invites[inviteId].expires
     return { inviteId, expires }
   },
   // list of group names and contractIDs
@@ -347,7 +363,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     // $FlowFixMe[method-unbinding]
     return [groupMembersPending, getters.groupProfiles].flatMap(Object.keys)
       .filter(memberID => getters.groupProfiles[memberID] ||
-           getters.groupMembersPending[memberID].expires >= Date.now())
+          !(getters.groupMembersPending[memberID].expires < Date.now()))
       .map(memberID => {
         const { contractID, displayName, username } = getters.globalProfile(memberID) || groupMembersPending[memberID] || (getters.groupProfiles[memberID] ? { contractID: memberID } : {})
         return {

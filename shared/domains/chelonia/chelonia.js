@@ -368,10 +368,11 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.currentSyncs)
     clearObject(this.postSyncOperations)
     clearObject(this.sideEffectStacks)
+    const removedContractIDs = Array.from(this.subscriptionSet)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CHELONIA_RESET)
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: removedContractIDs })
     sbp('chelonia/private/startClockSync')
     if (newState) {
       Object.entries(newState).forEach(([key, value]) => {

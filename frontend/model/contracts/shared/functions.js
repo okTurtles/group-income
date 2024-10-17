@@ -3,6 +3,8 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import {
+  INVITE_INITIAL_CREATOR,
+  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   POLL_STATUS,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -310,4 +312,39 @@ export const referenceTally = (selector: string): Object => {
       }
     }
   }
+}
+
+export const doesGroupAnyoneCanJoinNeedUpdating = (state: Object): number | false => {
+  const hasBeenUpdated = Object.keys(state.invites).some(inviteId => {
+    return (
+      // See if there's an 'anyone can join' link
+      state.invites[inviteId].creatorID === INVITE_INITIAL_CREATOR &&
+      // that doesn't expire
+      state._vm.invites[inviteId].expires == null
+    )
+  })
+  // If non-expiring 'anyone can join' links are found, the contract
+  // doesn't need to be updated
+  if (hasBeenUpdated) return false
+
+  // Add up all all used 'anyone can join' invite links
+  // Then, we take the difference and, if the number is less than
+  // MAX_GROUP_MEMBER_COUNT, we need to create a new invite.
+  const usedInvites = Object.keys(state.invites)
+    // First, we only want 'anyone can join invites'
+    .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+    // The reduce function adds the number of 'used' invites in an invite
+    // link across all existing (expired or not) invites
+    .reduce((acc, cv) => acc +
+      (
+        // For this, we take the difference between the `initialQuantity`
+        // and the 'available' invites (`quantity`, which represents how
+        // many invites are available, if the invite was still valid)
+        (state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity) || 0
+      ), 0
+    )
+
+  const quantity = Math.max(MAX_GROUP_MEMBER_COUNT - usedInvites, 0)
+
+  return quantity
 }

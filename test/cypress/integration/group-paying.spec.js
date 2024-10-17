@@ -129,7 +129,7 @@ describe('Group Payments', () => {
       expect(periodBeforePeriod(onePeriodLengthBefore) === undefined, 13).to.be.true
       /* eslint-enable no-unused-expressions */
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('Three users join the group and add their income details', () => {
@@ -369,7 +369,7 @@ describe('Group Payments', () => {
       ['Amount sent', '$50 out of $100']
     ])
 
-    cy.getByDT('paymentInfo').should('contain', '$50 in total, to 1 members')
+    cy.getByDT('paymentInfo').should('contain', '$50 in total, to 1 member')
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', '$50 out of $100')
     })
@@ -564,6 +564,6 @@ describe('Group Payments', () => {
   })
 
   it('log out', () => {
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

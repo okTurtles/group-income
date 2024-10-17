@@ -75,12 +75,14 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
         i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
       template(v-if='!isGroupDirectMessage()')
         span(v-if='pinnedMessages.length') ∙
-        i18n.is-unstyled.c-link(
-          tag='button'
+        button.is-unstyled.c-link(
+          type='button'
           @click='openModal("ChatMembersAllModal")'
-          :args='{ numMembers: summary.numberOfMembers  }'
           data-test='channelMembers'
-        ) {numMembers} members
+        )
+          i18n(v-if='summary.numberOfMembers === 1') 1 member
+          i18n(v-else :args='{ num: summary.numberOfMembers }') {num} members
+
         template(v-if='summary.attributes.description || isChatRoomCreator')
           | ∙
           .is-unstyled(

@@ -211,7 +211,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       })
       cy.giCheckIfJoinedChatroom(c.name, me)
     }
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`user3 joins ${groupName1} group and logout`, () => {
@@ -424,7 +424,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3, true)
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   // TODO: this test case is not necesasry but it is here because of the issue #1176
@@ -470,7 +470,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    cy.getByDT('channelMembers').should('contain', '1 members')
+    cy.getByDT('channelMembers').should('contain', '1 member')
   })
 
   it('user1 leaves/deletes chatroom by himself and logs out', () => {
@@ -483,7 +483,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     // TODO: this is a temporary hack, but not sure why this fixes the Cypress error
     //       https://cloud.cypress.io/projects/q6whky/runs/2663/test-results
     cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
@@ -506,7 +506,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me) // giAcceptGroupInvite already checks this
     cy.getByDT('channelMembers').should('contain', '2 members')
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} channel again and logout`, () => {
@@ -528,7 +528,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me) // giAcceptGroupInvite already checks this
     cy.getByDT('channelMembers').should('contain', '3 members')
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   // NOTE: skip this test case temporarily since the following issue is not resolved yet
@@ -539,7 +539,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.get('.p-title').should('contain', 'Group Settings')
     cy.getByDT('allowPublicChannels').should('not.exist')
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
     cy.giLogin(user1)
     me = user1
 
@@ -570,6 +570,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('.c-public-helper').should('contain', 'This channel is public and everyone on the internet can see its content.')
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })

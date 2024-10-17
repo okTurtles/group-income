@@ -376,7 +376,7 @@ export default (sbp('sbp/selectors/register', {
         return identityContractID
       } catch (e) {
         console.error('gi.app/identity/login failed!', e)
-        const humanErr = L('Failed to login: {reportError}', LError(e))
+        const humanErr = L('Failed to log in: {reportError}', LError(e))
         alert(humanErr)
         await sbp('gi.app/identity/_private/logout')
           .catch((e) => {

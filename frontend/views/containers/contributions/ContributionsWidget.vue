@@ -154,9 +154,14 @@ export default ({
 
         if (receivingNonMonetary) {
           const count = receivingNonMonetary.who.length
+          const isSingularCount = count === 1
           status = givingNonMonetary
-            ? L('You and {count} other members are contributing.', { count })
-            : L('{count} members are contributing.', { count })
+            ? isSingularCount
+              ? L('You and 1 other member are contributing.')
+              : L('You and {count} other members are contributing.', { count })
+            : isSingularCount
+              ? L('1 member is contributing.')
+              : L('{count} members are contributing.', { count })
         } else {
           status = givingNonMonetary
             ? L('You are contributing.')

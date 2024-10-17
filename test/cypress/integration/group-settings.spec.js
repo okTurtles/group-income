@@ -161,7 +161,7 @@ describe('Group Voting Rules', () => {
     cy.giGetInvitationAnyone().then(url => {
       invitationLinkAnyone = url
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('4 new memebers joins the group via shared invitation link', () => {
@@ -194,7 +194,7 @@ describe('Group Voting Rules', () => {
       status: '4 (adjusted to 3*)',
       ruleAdjusted: true
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it.skip('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
@@ -298,6 +298,6 @@ describe('Group Voting Rules', () => {
     cy.log('Verify new Voting System: percentage of 80%.')
     verifyRuleSelected('percentage', { status: '80% (4 out of 5 members)', ruleAdjusted: false })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
