@@ -298,7 +298,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        sbp('appLogs/startCapture', identityContractID)
+        await sbp('appLogs/startCapture', identityContractID)
         const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
         let loginCompleteHandler, loginErrorHandler
 
@@ -410,7 +410,7 @@ export default (sbp('sbp/selectors/register', {
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
-        sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+        await sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

@@ -371,7 +371,9 @@ async function startApp () {
         await sbp('chelonia/contract/wait', identityContractID)
       }).catch(async e => {
         this.removeLoadingAnimation()
-        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
+        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
+          console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
+        }) // https://github.com/okTurtles/group-income/issues/2194
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
         await sbp('gi.app/identity/logout')
         await sbp('gi.ui/prompt', {

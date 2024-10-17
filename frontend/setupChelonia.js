@@ -64,7 +64,9 @@ const setupChelonia = async (): Promise<*> => {
   const errorNotification = (activity: string, error: Error, message: GIMessage) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
-    sbp('appLogs/save')
+    sbp('appLogs/save').catch(e => {
+      console.error('Error saving logs during error notification', e)
+    })
   }
 
   let logoutInProgress = false
