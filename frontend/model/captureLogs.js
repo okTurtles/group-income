@@ -49,7 +49,7 @@ async function captureLogsStart (userLogged: string) {
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', logger.appLogsFilter)
 }
 
-async function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
+async function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): Promise<void> {
   if (wipeOut) { await clearLogs() }
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
   console.log('captureLogs paused')

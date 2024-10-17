@@ -54,15 +54,6 @@ sbp('sbp/selectors/register', {
     // TODO: Remove this selector once it's removed from contracts
     return sbp('chelonia/rootState')
   },
-  'state/vuex/reset': () => {
-    console.error('[sw] CALLED state/vuex/reset WHICH IS UNDEFINED')
-  },
-  'state/vuex/save': () => {
-    console.error('[sw] CALLED state/vuex/save WHICH IS UNDEFINED')
-  },
-  'state/vuex/commit': () => {
-    console.error('[sw] CALLED state/vuex/commit WHICH IS UNDEFINED')
-  },
   'state/vuex/getters': () => {
     const obj = Object.create(null)
     Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
@@ -75,33 +66,6 @@ sbp('sbp/selectors/register', {
     })))
 
     return obj
-    /* return {
-      chatRoomUnreadMessages () {
-        return []
-      },
-      getChatroomNameById () {
-        return ''
-      },
-      groupIdFromChatRoomId () {
-        return ''
-      },
-      isGroupDirectMessage () {
-        return false
-      },
-      notificationsByGroup () {
-        return []
-      },
-      ourContactProfilesByUsername: {},
-      ourIdentityContractId: '',
-      userDisplayNameFromID () {
-        return ''
-      },
-      usernameFromID () {
-        return ''
-      },
-      ourContactProfilesById: {}
-    }
-    */
   }
 })
 
@@ -113,12 +77,15 @@ sbp('sbp/selectors/register', {
 
 sbp('sbp/selectors/register', {
   'gi.ui/seriousErrorBanner': (...args) => {
+    // TODO: Implement this
     console.error('### SERIOUS ERROR ###', ...args)
   }
 })
 
 sbp('sbp/selectors/register', {
-  'appLogs/save': () => {}
+  // TODO: Implement this (and some other logs-related selectors, such as for
+  // starting capture, pausing capture)
+  'appLogs/save': () => Promise.resolve(undefined)
 })
 
 self.addEventListener('install', function (event) {
