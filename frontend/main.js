@@ -212,11 +212,15 @@ async function startApp () {
   })
   sbp('sbp/selectors/register', {
     'sw-namespace/*': (...args) => {
+      // Remove the `sw-` prefix from the selector
       return swRpc(args[0].slice(3), ...args.slice(1))
     }
   })
   sbp('sbp/selectors/register', {
     'gi.notifications/*': swRpc
+  })
+  sbp('sbp/selectors/register', {
+    'swLogs/*': swRpc
   })
 
   /* eslint-disable no-new */

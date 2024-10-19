@@ -2,7 +2,7 @@
 
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import sbp from '@sbp/sbp'
-import { PWA_INSTALLABLE } from '@utils/events.js'
+import { LOGIN_COMPLETE, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
 import { deserializer } from '~/shared/serdes/index.js'
@@ -253,7 +253,14 @@ sbp('sbp/selectors/register', {
     const result = await pwa.deferredInstallPrompt.prompt()
     return result.outcome
   }
-})
+});
+
+// Events that need to be relayed to the SW
+[LOGIN_COMPLETE, SET_APP_LOGS_FILTER].forEach((event) =>
+  sbp('okTurtles.events/on', event, (...data) => {
+    navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
+  })
+)
 
 // helper method
 

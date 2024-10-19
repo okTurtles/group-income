@@ -1,6 +1,7 @@
 'use strict'
 
 import { PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
@@ -27,8 +28,28 @@ deserializer.register(Secret)
 // https://frontendian.co/service-workers
 // https://stackoverflow.com/a/49748437 => https://medium.com/@nekrtemplar/self-destroying-serviceworker-73d62921d717 => https://love2dev.com/blog/how-to-uninstall-a-service-worker/
 
+const reducer = (o, v) => { o[v] = true; return o }
+// Domains for which debug logging won't be enabled.
+const domainBlacklist = [
+  'sbp',
+  'okTurtles.data'
+].reduce(reducer, {})
+// Selectors for which debug logging won't be enabled.
+const selectorBlacklist = [
+  'chelonia/db/get',
+  'chelonia/db/set',
+  'chelonia/rootState',
+  'chelonia/haveSecretKey',
+  'chelonia/private/enqueuePostSyncOps',
+  'chelonia/private/invoke',
+  'state/vuex/state',
+  'state/vuex/getters',
+  'state/vuex/settings',
+  'gi.db/settings/save',
+  'gi.db/logs/save'
+].reduce(reducer, {})
 sbp('sbp/filters/global/add', (domain, selector, data) => {
-  // if (domainBlacklist[domain] || selectorBlacklist[selector]) return
+  if (domainBlacklist[domain] || selectorBlacklist[selector]) return
   console.debug(`[sw] [sbp] ${selector}`, data)
 });
 
@@ -50,10 +71,7 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
 })
 
 sbp('sbp/selectors/register', {
-  'state/vuex/state': () => {
-    // TODO: Remove this selector once it's removed from contracts
-    return sbp('chelonia/rootState')
-  },
+  'state/vuex/state': () => sbp('chelonia/rootState'),
   'state/vuex/getters': () => {
     const obj = Object.create(null)
     Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
@@ -83,10 +101,10 @@ sbp('sbp/selectors/register', {
 })
 
 sbp('sbp/selectors/register', {
-  // TODO: Implement this (and some other logs-related selectors, such as for
-  // starting capture, pausing capture)
-  'appLogs/save': () => Promise.resolve(undefined)
+  'appLogs/save': () => sbp('swLogs/save')
 })
+
+const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
@@ -97,7 +115,7 @@ self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
-  event.waitUntil(setupChelonia().then(() => self.clients.claim()))
+  event.waitUntil(setupPromise.then(() => self.clients.claim()))
 })
 
 self.addEventListener('fetch', function (event) {
@@ -162,6 +180,11 @@ self.addEventListener('message', function (event) {
             // worker is completely removed
             clients.forEach(client => client.navigate(client.url))
           })
+        break
+      case 'event':
+        console.error('@@@SW EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
+        // TODO: UNCOMMENT
+        // // sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
       default:
         console.error('[sw] unknown message type:', event.data)

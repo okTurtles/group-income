@@ -96,5 +96,4 @@ function captureLogEntry (logger: Object, type: string, ...args) {
   // The reason this works is because the entire `sbp` domain is blacklisted
   // from being logged in main.js.
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
-  sbp('sbp/selectors/fn', 'appLogs/logServer')(type, entry.msg)
 }

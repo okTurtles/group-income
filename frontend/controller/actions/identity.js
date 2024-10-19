@@ -245,6 +245,10 @@ export default (sbp('sbp/selectors/register', {
       console.debug('[gi.actions/identity/login] Scheduled call starting', identityContractID)
       transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
+      // If running in a SW, start log capture here
+      if (typeof WorkerGlobalScope === 'function') {
+        await sbp('swLogs/startCapture', identityContractID)
+      }
       await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
@@ -404,6 +408,11 @@ export default (sbp('sbp/selectors/register', {
     }
     // Clear the file cache when logging out to preserve privacy
     sbp('gi.db/filesCache/clear').catch((e) => { console.error('Error clearing file cache', e) })
+    // If running inside a SW, clear logs
+    if (typeof WorkerGlobalScope === 'function') {
+      // clear stored logs to prevent someone else accessing sensitve data
+      sbp('swLogs/pauseCapture', { wipeOut: true }).catch((e) => { console.error('Error clearing file cache', e) })
+    }
     sbp('okTurtles.events/emit', LOGOUT)
     return cheloniaState
   },

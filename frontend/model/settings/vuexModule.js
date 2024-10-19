@@ -26,7 +26,7 @@ const defaultTheme = 'system'
 const defaultColor: string = checkSystemColor()
 
 export const defaultSettings = {
-  appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
+  appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,

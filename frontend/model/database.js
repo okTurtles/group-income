@@ -360,7 +360,7 @@ sbp('sbp/selectors/register', {
 })
 
 // ======================================
-// Archve for proposals and anything else
+// Archive for proposals and anything else
 // ======================================
 
 const archive = localforage.createInstance({
@@ -380,5 +380,29 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/archive/clear': function (): Promise<any> {
     return archive.clear()
+  }
+})
+
+// ======================================
+// Application logs, used for the SW logs
+// ======================================
+
+const logs = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Logs'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/logs/save': function (key: string, value: any): Promise<*> {
+    return logs.setItem(key, value)
+  },
+  'gi.db/logs/load': function (key: string): Promise<any> {
+    return logs.getItem(key)
+  },
+  'gi.db/logs/delete': function (key: string): Promise<Object> {
+    return logs.removeItem(key)
+  },
+  'gi.db/logs/clear': function (): Promise<any> {
+    return logs.clear()
   }
 })

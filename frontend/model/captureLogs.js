@@ -3,6 +3,7 @@ import { SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.js'
 import { L } from '@common/common.js'
 import { createLogger } from './logger.js'
+import logServer from './logServer.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -18,7 +19,7 @@ const originalConsole = self.console
 let logger: Object = null
 let identityContractID: string = ''
 
-// A default storage backend using `localStorage`.
+// A default storage backend using `sessionStorage`.
 const getItem = (key: string): ?string => sessionStorage.getItem(`giConsole/${identityContractID}/${key}`)
 const removeItem = (key: string): void => sessionStorage.removeItem(`giConsole/${identityContractID}/${key}`)
 const setItem = (key: string, value: any): void => {
@@ -46,7 +47,7 @@ async function captureLogsStart (userLogged: string) {
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login).
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', '1') }
-  console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', logger.appLogsFilter)
+  originalConsole.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', logger.appLogsFilter)
 }
 
 async function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): Promise<void> {
@@ -92,11 +93,18 @@ function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnc
   }
 }
 
+// The reason to use the 'visibilitychange' event over the 'beforeunload' event
+// is that the latter is unreliable on mobile. For example, if a tab is set to
+// the background and then closed, the 'beforeunload' event may never be fired.
+// Furthermore, 'beforeunload' has implications for how the bfcache works.
 window.addEventListener('visibilitychange', event => sbp('appLogs/save').catch(e => {
   console.error('Error saving logs during visibilitychange event handler', e)
 }))
 
-sbp('sbp/selectors/register', {
+// Enable logging to the server
+logServer(originalConsole)
+
+export default (sbp('sbp/selectors/register', {
   'appLogs/downloadOrShare': downloadOrShareLogs,
   'appLogs/get' () { return logger?.entries.toArray() ?? [] },
   async 'appLogs/save' () { await logger?.save() },
@@ -107,22 +115,5 @@ sbp('sbp/selectors/register', {
     identityContractID = userID
     try { await clearLogs() } catch {}
     identityContractID = savedID
-  },
-  // only log to server if we're in development mode and connected over the tunnel (which creates URLs that
-  // begin with 'https://gi' per Gruntfile.js)
-  'appLogs/logServer': process.env.NODE_ENV !== 'development' || !window.location.href.startsWith('https://gi')
-    ? () => {}
-    : function (level, stringifyMe) {
-      if (level === 'debug') return // comment out to send much more log info
-      const value = JSON.stringify(stringifyMe)
-      fetch(`${sbp('okTurtles.data/get', 'API_URL')}/log`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ level, value })
-      }).catch(e => {
-        originalConsole.error(`[captureLogs] '${e.message}' attempting to log [${level}] to server:`, value)
-      })
-    }
-})
+  }
+}): string[])

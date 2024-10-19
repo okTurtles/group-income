@@ -50,11 +50,15 @@ const setupChelonia = async (): Promise<*> => {
   //      copies are to be considered a cache and are not authoritative.
   //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
   //      in a single direction: Chelonia -> Vuex)
+  console.error('@@@SW WILL LOAD STATE')
   await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
+    console.error('@@@SW STATE', SETTING_CHELONIA_STATE, cheloniaState)
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
     await sbp('chelonia/reset', cheloniaState)
+    // If there's an active session, we need to start capture now
+    await sbp('swLogs/startCapture', identityContractID)
   })
 
   // this is to ensure compatibility between frontend and test/backend.test.js
@@ -168,8 +172,6 @@ const setupChelonia = async (): Promise<*> => {
     }
   })
 
-  // TODO: This needs to be relayed from the originating tab to the SW. Maybe
-  // creating a selector would be more appropriate.
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
     const state = sbp('chelonia/rootState')
     if (!state.loggedIn) {
