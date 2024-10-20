@@ -2,7 +2,7 @@
   tr.c-row(data-test='payRow')
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
-    td
+    td.c-td-user
       slot(name='cellUser')
       template(v-if='!$slots["cellUser"]')
         .c-user
