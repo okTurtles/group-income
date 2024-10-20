@@ -68,7 +68,6 @@ sbp('okTurtles.events/on', CAPTURED_LOGS, debounce(() => {
     console.error('Error saving logs during CAPTURED_LOGS event handler', e)
   })
 }, 1000))
-isNaN(CAPTURED_LOGS, debounce)
 
 // Enable logging to the server
 logServer(originalConsole)

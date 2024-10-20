@@ -147,11 +147,11 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   }
 })
 
-sbp('okTurtles.events/on', NEW_PREFERENCES, (currentChatRoomUnreadMessages) => {
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
   sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
 })
 
-sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (preferences) => {
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   sbp('state/vuex/commit', 'setPreferences', preferences)
 })
 

@@ -183,8 +183,7 @@ self.addEventListener('message', function (event) {
         break
       case 'event':
         console.error('@@@SW EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
-        // TODO: UNCOMMENT
-        // // sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+        sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
       default:
         console.error('[sw] unknown message type:', event.data)
