@@ -300,21 +300,23 @@ export default (sbp('sbp/selectors/register', {
     // each other
     return sbp('okTurtles.eventQueue/queueEvent', `JOIN_GROUP-${params.contractID}`, async () => {
       console.debug('[gi.actions/group/join] Scheduled call starting', params.contractID, params)
+      const { loggedIn } = sbp('chelonia/rootState')
+      if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
+      const { identityContractID: userID } = loggedIn
       // We want to process any current events first, so that we process leave
       // actions and don't interfere with the leaving process (otherwise, the
       // side-effects could prevent us from fully leaving).
       await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
+
+      // When syncing the group contract, the contract might call /remove on
+      // itself if we had previously joined and left the group. By using
+      // ephemeral we ensure that it's not deleted until we've finished
+      // trying to join.
+      // We use a Set as normally params.originatingContractID and userID will
+      // be the same
+      const retainedContracts = [...new Set([params.contractID, params.originatingContractID])]
+      await sbp('chelonia/contract/retain', retainedContracts, { ephemeral: true })
       try {
-        const { loggedIn } = sbp('chelonia/rootState')
-        if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
-
-        const { identityContractID: userID } = loggedIn
-
-        // When syncing the group contract, the contract might call /remove on
-        // itself if we had previously joined and left the group. By using
-        // ephemeral we ensure that it's not deleted until we've finished
-        // trying to join.
-        await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
         const rootState = sbp('chelonia/rootState')
         if (!rootState.contracts[params.contractID]) {
           console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
@@ -522,7 +524,7 @@ export default (sbp('sbp/selectors/register', {
       // may have left the group. In this case, we execute any pending /remove
       // actions on the contract. This will have no side-effects if /remove on
       // the group contract hasn't been called.
-        await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
+        await sbp('chelonia/contract/release', retainedContracts, { ephemeral: true })
       }
     })
   },
