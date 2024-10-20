@@ -22,7 +22,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -107,6 +107,10 @@ async function startApp () {
     const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
     Vue.set(cache, name, value)
     Vue.set(reverseCache, value, name)
+  })
+
+  sbp('okTurtles.events/on', SERIOUS_ERROR, (error) => {
+    sbp('gi.ui/seriousErrorBanner', error)
   })
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract

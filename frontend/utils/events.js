@@ -69,3 +69,5 @@ export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'
 
 export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
 export const NEW_PREFERENCES = 'new-preferences'
+
+export const SERIOUS_ERROR = 'serious-error'

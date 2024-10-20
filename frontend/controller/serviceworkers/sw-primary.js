@@ -17,7 +17,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
-import { ACCEPTED_GROUP, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SWITCH_GROUP } from '../../utils/events.js'
+import { ACCEPTED_GROUP, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SERIOUS_ERROR, SWITCH_GROUP } from '../../utils/events.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -54,7 +54,7 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   console.debug(`[sw] [sbp] ${selector}`, data)
 });
 
-[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SWITCH_GROUP, PROPOSAL_ARCHIVED].forEach(et => {
+[EVENT_HANDLED, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -91,13 +91,6 @@ sbp('sbp/selectors/register', {
 sbp('sbp/selectors/register', {
   'controller/router': () => {
     return { options: { base: '/app/' } }
-  }
-})
-
-sbp('sbp/selectors/register', {
-  'gi.ui/seriousErrorBanner': (...args) => {
-    // TODO: Implement this
-    console.error('### SERIOUS ERROR ###', ...args)
   }
 })
 
