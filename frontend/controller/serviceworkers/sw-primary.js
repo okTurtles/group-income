@@ -176,7 +176,6 @@ self.addEventListener('message', function (event) {
           })
         break
       case 'event':
-        console.error('@@@SW EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
         sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
       default:

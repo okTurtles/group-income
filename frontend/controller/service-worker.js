@@ -26,7 +26,6 @@ window.addEventListener('beforeinstallprompt', e => {
 
 sbp('sbp/selectors/register', {
   'service-workers/setup': async function () {
-    console.error('@@@SW SETUP')
     // setup service worker
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
@@ -85,7 +84,6 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'event': {
-              console.error('@@@EVENT RECEIVED', event.data.subtype, ...deserializer(event.data.data))
               sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }
@@ -95,8 +93,6 @@ sbp('sbp/selectors/register', {
           }
         }
       })
-
-      console.error('@@@SW DONE, returning')
     } catch (e) {
       console.error('error setting up service worker:', e)
     }

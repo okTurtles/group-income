@@ -21,7 +21,6 @@ export const EXTERNALKM32 = 'externalkm32'
 
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
   if (!(ary instanceof Uint8Array)) {
-    console.error('@@@bytesOrObjectToB64', ary, ary.constructor, ary instanceof Uint8Array)
     throw Error('Unsupported type')
   }
   return bytesToB64(ary)

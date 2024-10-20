@@ -231,7 +231,6 @@ export default (sbp('sbp/selectors/register', {
 
       return userID
     } catch (e) {
-      console.error('@@@gi.app/identity/create failed!', e.message, e.stack)
       console.error('gi.app/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
     }

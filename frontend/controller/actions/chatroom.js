@@ -270,7 +270,6 @@ export default (sbp('sbp/selectors/register', {
 
       const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
-      console.error('@@@@currentKeyIdByName', userIDs)
       const userCSKids = await Promise.all(userIDs.map(async (cID) =>
         [cID, await sbp('chelonia/contract/currentKeyIdByName', cID, 'csk')]
       ))

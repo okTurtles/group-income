@@ -342,7 +342,6 @@ async function startApp () {
             sbp('state/vuex/commit', 'setPreferences', data)
             break
           case KV_KEYS.NOTIFICATIONS:
-            console.error('@@@@@###', data)
             sbp('state/vuex/commit', 'setNotificationStatus', data)
             break
         }

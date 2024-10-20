@@ -50,9 +50,7 @@ const setupChelonia = async (): Promise<*> => {
   //      copies are to be considered a cache and are not authoritative.
   //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
   //      in a single direction: Chelonia -> Vuex)
-  console.error('@@@SW WILL LOAD STATE')
   await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
-    console.error('@@@SW STATE', SETTING_CHELONIA_STATE, cheloniaState)
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
@@ -254,7 +252,6 @@ const setupChelonia = async (): Promise<*> => {
       },
       [NOTIFICATION_TYPE.KV] ([key, value]) {
         const { contractID, data } = value
-        console.error('@@@### KV_EVENT', { contractID, key, data })
         if (!data) return
 
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
