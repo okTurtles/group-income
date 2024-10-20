@@ -76,7 +76,7 @@ export const encryptedAction = (
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
-        const rootState = sbp('state/vuex/state')
+        const rootState = sbp('chelonia/rootState')
 
         // Default signingContractID is the current contract
         const signingContractID = params.signingContractID || contractID
@@ -182,7 +182,7 @@ export const encryptedNotification = (
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
-        const rootState = sbp('state/vuex/state')
+        const rootState = sbp('chelonia/rootState')
 
         // Default signingContractID is the current contract
         const signingContractID = params.signingContractID || contractID

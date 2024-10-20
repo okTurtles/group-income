@@ -419,9 +419,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
     const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
     const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
-
-    const rootState = sbp('state/vuex/state')
-    const foreignContractState = rootState[foreignContractID]
+    const foreignContractState = sbp('chelonia/contract/state', foreignContractID)
 
     const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
 
@@ -448,7 +446,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
-    const rootState = sbp('state/vuex/state')
+    const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
     await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
@@ -501,14 +499,12 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
   ...encryptedAction('gi.actions/identity/createDirectMessage', L('Failed to create a new direct message channel.'), async function (sendMessage, params) {
-    const rootState = sbp('state/vuex/state')
-    // TODO: Can't use rootGetters
     const rootGetters = sbp('state/vuex/getters')
     const partnerIDs = params.data.memberIDs
       .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     const currentGroupId = params.data.currentGroupId
-    const identityContractID = rootState.loggedIn.identityContractID
+    const identityContractID = rootGetters.ourIdentityContractId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
@@ -542,7 +538,7 @@ export default (sbp('sbp/selectors/register', {
 
     const switchChannelAfterJoined = (contractID: string) => {
       if (contractID === message.contractID()) {
-        if (rootState[message.contractID()]?.members?.[identityContractID]) {
+        if (sbp('chelonia/contract/state', message.contractID())?.members?.[identityContractID]) {
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }

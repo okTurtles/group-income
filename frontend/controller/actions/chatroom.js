@@ -213,8 +213,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/chatroom/shareNewKeys': (contractID: string, newKeys) => {
-    const rootState = sbp('state/vuex/state')
-    const state = rootState[contractID]
+    const state = sbp('chelonia/contract/state', contractID)
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 

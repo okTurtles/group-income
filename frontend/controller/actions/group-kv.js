@@ -39,13 +39,12 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/kv/updateLastLoggedIn': ({ contractID, throttle }: { contractID: string, throttle: boolean }) => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update lastLoggedIn without an active session')
     }
 
     if (throttle) {
-      // TODO: Can't use state/vuex/state
       const state = sbp('state/vuex/state')
       const lastLoggedIn = new Date(state.lastLoggedIn[contractID]?.[identityContractID]).getTime()
 

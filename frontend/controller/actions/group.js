@@ -527,7 +527,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
-    const identityContractID = sbp('chelonia/rootState').loggedIn.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
     // This action (`joinWithInviteSecret`) can get invoked while there are
     // events being processed in the group or identity contracts. This can cause
@@ -979,7 +979,7 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
-    const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
+    const memberID = params.data.memberID || sbp('state/vuex/state').loggedIn.identityContractID
     const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
 
     // For more efficient and correct processing, augment the leaveChatRoom
