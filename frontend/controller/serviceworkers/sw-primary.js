@@ -12,6 +12,7 @@ import getters from '~/frontend/model/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -229,4 +230,29 @@ self.addEventListener('pushsubscriptionchange', async function (event) {
     type: 'pushsubscriptionchange',
     subscription
   })
+})
+
+sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
+  const rootState = sbp('chelonia/rootState')
+  switch (key) {
+    case KV_KEYS.LAST_LOGGED_IN: {
+      const [groupID, value] = data
+      rootState.lastLoggedIn[groupID] = value
+      break
+    }
+    case KV_KEYS.UNREAD_MESSAGES: {
+      if (!rootState.chatroom) rootState.chatroom = Object.create(null)
+      rootState.chatroom.unreadMessages = data
+      break
+    }
+    case KV_KEYS.PREFERENCES: {
+      rootState.preferences = data
+      break
+    }
+    case KV_KEYS.NOTIFICATIONS: {
+      if (!rootState.notifications) rootState.notifications = Object.create(null)
+      rootState.notifications.status = data
+      break
+    }
+  }
 })

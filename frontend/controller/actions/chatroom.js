@@ -30,7 +30,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
 
   if (!newMessage) {
     // TODO:  rootState.unreadMessages for SW
-    const isAlreadyAdded = rootState.unreadMessages?.[contractID]?.unreadMessages.find(m => m.messageHash === data.hash)
+    const isAlreadyAdded = rootState.chatroom?.unreadMessages?.[contractID]?.unreadMessages.find(m => m.messageHash === data.hash)
 
     if (isAlreadyAdded && !isMentionedMe) {
       sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
