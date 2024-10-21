@@ -139,12 +139,13 @@ import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
-const collectEventStream = async (s: ReadableStream) => {
+const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
+  s = await s
   const reader = s.getReader()
   const r = []
   for (;;) {
@@ -473,7 +474,7 @@ export default ({
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
-          return false
+          throw e
         }
       }
 
@@ -485,42 +486,37 @@ export default ({
           contractID,
           data,
           hooks: {
-            preSendCheck: (message, state) => {
+            preSendCheck: async (message, state) => {
               // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
-              const [, opV] = message.op()
-              const { meta } = opV.valueOf().valueOf()
-
-              temporaryMessage = createMessage({
-                meta,
-                data: { ...data, attachments },
-                hash: message.hash(),
-                height: message.height(),
-                state: this.messageState.contract,
-                pending: true,
-                innerSigningContractID: this.ourIdentityContractId
-              })
-              this.messages.push(temporaryMessage)
-
               this.stopReplying()
               this.updateScroll()
+
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              temporaryMessage = this.messages.find((m) => m.hash === message.hash())
+
               return false
             }
           }
         }).then(async () => {
-          const isUploaded = await uploadAttachments()
-          if (isUploaded) {
-            const removeTemporaryMessage = () => {
-              // NOTE: remove temporary message which is created before uploading attachments
-              if (temporaryMessage) {
-                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
-                this.messages.splice(msgIndex, 1)
-              }
+          await uploadAttachments()
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+              this.messages.splice(msgIndex, 1)
             }
-            sendMessage(removeTemporaryMessage)
+          }
+          sendMessage(removeTemporaryMessage)
+        }).catch((e) => {
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
           } else {
-            Vue.set(temporaryMessage, 'hasFailed', true)
+            if (temporaryMessage) {
+              Vue.set(temporaryMessage, 'hasFailed', true)
+            }
+            console.error('[ChatMain.vue] Error sending message', e)
           }
         })
       }
@@ -1054,6 +1050,11 @@ export default ({
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
+            // If there's messages, call $state.loaded. This has the effect that
+            // the no-more message will be shown instead of the no-results message
+            if (this.messages.length) {
+              $state.loaded()
+            }
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
@@ -1134,14 +1135,20 @@ export default ({
       }
 
       if (toChatRoomId !== fromChatRoomId) {
+        this.ephemeral.onChatScroll?.flush()
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-        } else {
-          this.refreshContent()
-        }
+        // Force 'chelonia/contract/isSyncing' to be a Promise
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+          // If the chatroom has changed since, return
+          if (this.summary.chatRoomID !== toChatRoomId) return
+          if (isSyncing) {
+            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+          } else {
+            this.refreshContent()
+          }
+        })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }

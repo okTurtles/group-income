@@ -4,7 +4,7 @@ import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -145,6 +145,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   } catch (e) {
     sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
   }
+})
+
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
+  sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+})
+
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
+  sbp('state/vuex/commit', 'setPreferences', preferences)
 })
 
 /* Commented out as persistentActions are not being used
@@ -289,7 +297,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        sbp('appLogs/startCapture', identityContractID)
+        await sbp('appLogs/startCapture', identityContractID)
         const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
         let loginCompleteHandler, loginErrorHandler
 
@@ -401,7 +409,7 @@ export default (sbp('sbp/selectors/register', {
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
-        sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+        await sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
