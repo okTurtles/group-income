@@ -1,6 +1,8 @@
 <template lang="pug">
 .c-image-view-area(
   @wheel.prevent.stop='wheelEventHandler'
+  @mousedown='mouseDownHandler'
+  @mouseup='mouseUpHandler'
 )
   img.c-preview-image(ref='previewImg'
     :class='{ "is-movable": isImageMovable }'
@@ -17,6 +19,8 @@
     @pointerdown.stop=''
     @pointermove.stop=''
     @pointerup.stop=''
+    @mousedown.stop=''
+    @mouseup.stop=''
   )
     slider-continuous.c-zoom-slider(
       v-if='ephemeral.currentZoom !== null'
@@ -72,6 +76,7 @@ export default {
           percentY: null,
           zoomCenter: null
         },
+        mousedownCapture: null,
         showSliderOutput: false
       },
       config: {
@@ -213,6 +218,7 @@ export default {
       const center = this.getViewAreaCenter()
       this.handleZoomUpdate(Number(e.target.value), center)
       this.calcPreviewImageDimension()
+      this.clearPointedZoomActionState()
     },
     handleZoomUpdate (val, zoomPoint = null) {
       const twoPointsAreSame = (p1, p2) => {
@@ -368,10 +374,49 @@ export default {
         this.handleZoomUpdate(this.clipZoomValue(newVal), point)
       }
     },
-    postPointerCancel () {
+    clearPointedZoomActionState () {
       this.ephemeral.pointedZoomAction.percentX = null
       this.ephemeral.pointedZoomAction.percentY = null
       this.ephemeral.pointedZoomAction.zoomCenter = null
+    },
+    postPointerCancel () {
+      this.clearPointedZoomActionState()
+    },
+    mouseDownHandler (e) {
+      const point = { x: e.clientX, y: e.clientY }
+      this.ephemeral.mousedownCapture = this.matchMedia.isTouch || !this.isPointInsidePreviewImage(point)
+        ? null
+        : point
+    },
+    mouseUpHandler (e) {
+      if (!this.ephemeral.mousedownCapture) { return }
+
+      const point = { x: e.clientX, y: e.clientY }
+      const mdownPoint = this.ephemeral.mousedownCapture
+      const distance = (() => {
+        const dx = Math.abs(point.x - mdownPoint.x)
+        const dy = Math.abs(point.y - mdownPoint.y)
+        return Math.sqrt(dx*dx + dy*dy)
+      })()
+
+      if (distance < 1.5) { // !@#
+        const shouldZoomOut = this.isImageMovable
+        const center = this.getViewAreaCenter()
+        if (shouldZoomOut) {
+          this.handleZoomUpdate(this.config.zoomMin, center)
+        } else {
+          const zoomInVal = this.config.zoomMin < 70
+            ? 100
+            : this.config.zoomMin < 100
+              ? 150
+              : 200
+          this.handleZoomUpdate(zoomInVal, mdownPoint)
+        }
+
+        this.calcPreviewImageDimension()
+        this.clearPointedZoomActionState()
+        this.ephemeral.mousedownCapture = null
+      }
     }
   },
   mounted () {
