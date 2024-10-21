@@ -117,7 +117,6 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
             this.pinchOutHandler &&
               this.pinchOutHandler(args)
           } else if (currPinchAction === PINCH_GESTURE.IN) {
-            console.log(`!@# pinching-in - distChangeFactorCalc: ${distChangeFactorCalc}, prevDistChangeFactor: ${this.pointer.prevDistChangeFactor}`)
             this.$emit('pinch-in', args)
 
             // The component that registers this mixin needs to be able to listen to this custom event too.
