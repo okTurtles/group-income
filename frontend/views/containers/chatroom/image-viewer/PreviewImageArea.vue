@@ -319,6 +319,7 @@ export default {
     resizeHandler () {
       this.initViewerSettings()
       this.calcPreviewImageDimension()
+      this.clearPointedZoomActionState()
     },
     clipZoomValue (newVal) {
       return newVal > this.config.zoomMax
