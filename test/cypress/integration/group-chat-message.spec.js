@@ -378,7 +378,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user2 clicks the first pinned message to highlight the original message', () => {
     cy.getByDT('pinnedMessages').within(() => {
-      cy.get('.c-body>.c-pinned-message:first-child').click()
+      // NOTE: Clicking on the center(which is the default position) leads to spawning 'image-viewer' modal which is not something we are checking here. So specifying 'top' instead.
+      cy.get('.c-body>.c-pinned-message:first-child').click('top')
     })
 
     cy.getByDT('conversationWrapper').within(() => {
