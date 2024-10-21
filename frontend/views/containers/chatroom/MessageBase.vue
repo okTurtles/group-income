@@ -63,7 +63,7 @@
           :isForDownload='true'
           :isMsgSender='isMsgSender'
           :ownerID='from'
-          :created-at='datetime'
+          :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
         )
