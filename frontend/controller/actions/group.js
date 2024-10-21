@@ -259,8 +259,11 @@ export default (sbp('sbp/selectors/register', {
         new Secret([CEK, CSK, inviteKey].map(key => ({ key })))
       )
 
-      await sbp('chelonia/contract/wait', contractID).then(() => {
-        return sbp('gi.actions/identity/joinGroup', {
+      // Using ephemeral retain-release to wait until the newly created group
+      // is synced, which includes creating the #general chatroom
+      await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+      try {
+        await sbp('gi.actions/identity/joinGroup', {
           contractID: userID,
           data: {
             groupContractID: contractID,
@@ -268,7 +271,9 @@ export default (sbp('sbp/selectors/register', {
             creatorID: true
           }
         })
-      })
+      } finally {
+        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+      }
 
       return message.contractID()
     } catch (e) {
