@@ -389,7 +389,7 @@ export default {
         : point
     },
     mouseUpHandler (e) {
-      if (!this.ephemeral.mousedownCapture) { return }
+      if (this.matchMedia.isTouch || !this.ephemeral.mousedownCapture) { return }
 
       const point = { x: e.clientX, y: e.clientY }
       const mdownPoint = this.ephemeral.mousedownCapture
