@@ -402,9 +402,10 @@ img.c-preview-image {
   max-width: unset;
   user-select: none;
   will-change: transform;
+  cursor: zoom-in;
 
   &.is-movable {
-    cursor: move;
+    cursor: zoom-out;
   }
 }
 
