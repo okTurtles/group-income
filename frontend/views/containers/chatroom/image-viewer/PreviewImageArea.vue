@@ -396,10 +396,10 @@ export default {
       const distance = (() => {
         const dx = Math.abs(point.x - mdownPoint.x)
         const dy = Math.abs(point.y - mdownPoint.y)
-        return Math.sqrt(dx*dx + dy*dy)
+        return Math.sqrt(dx * dx + dy * dy)
       })()
 
-      if (distance < 1.5) { // !@#
+      if (distance < 1.5) {
         const shouldZoomOut = this.isImageMovable
         const center = this.getViewAreaCenter()
         if (shouldZoomOut) {
