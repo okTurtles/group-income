@@ -44,7 +44,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
     messageHash: msgData.hash,
     height: msgData.height,
     text: msgData.text,
-    isDMOrMention: isMentionedMe || targetChatroomState.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+    isDMOrMention: isMentionedMe || targetChatroomState?.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
     messageType: !newMessage ? MESSAGE_TYPES.TEXT : data.type,
     memberID: innerSigningContractID,
     chatRoomName: getters.chatRoomAttributes.name
