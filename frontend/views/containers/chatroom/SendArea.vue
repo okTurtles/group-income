@@ -77,6 +77,7 @@
     chat-attachment-preview(
       v-if='ephemeral.attachments.length'
       :attachmentList='ephemeral.attachments'
+      :ownerID='ourIdentityContractId'
       @remove='removeAttachment'
     )
 

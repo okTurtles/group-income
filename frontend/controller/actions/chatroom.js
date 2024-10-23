@@ -54,12 +54,12 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams, billableContractID: string) {
+    const rootState = sbp('state/vuex/state')
+    const userID = rootState.loggedIn.identityContractID
+    await sbp('chelonia/contract/retain', userID, { ephemeral: true })
     try {
       let cskOpts = params.options?.csk
       let cekOpts = params.options?.cek
-
-      const rootState = sbp('state/vuex/state')
-      const userID = rootState.loggedIn.identityContractID
 
       if (!cekOpts) {
         const CEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -210,6 +210,8 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/chatroom/register failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create chat channel.'))
+    } finally {
+      await sbp('chelonia/contract/release', userID, { ephemeral: true })
     }
   },
   'gi.actions/chatroom/shareNewKeys': (contractID: string, newKeys) => {

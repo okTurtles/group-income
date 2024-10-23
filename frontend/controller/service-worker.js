@@ -126,7 +126,9 @@ sbp('sbp/selectors/register', {
       }
 
       if (readyState === WebSocket.CLOSED || readyState === WebSocket.CLOSING) {
-        sbp('okTurtles.events/once', PUBSUB_RECONNECTION_SUCCEEDED, sendMsg)
+        sbp('okTurtles.events/once', PUBSUB_RECONNECTION_SUCCEEDED, () => {
+          messageToPushServerIfSocketConnected(msgPayload)
+        })
       } else {
         sendMsg()
       }
