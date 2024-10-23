@@ -284,7 +284,8 @@ export default ({
   margin-bottom: 1.5rem;
 }
 
-.c-filters, .c-source {
+.c-filters,
+.c-source {
   flex-grow: 99; // to be wider than c-download
 
   &-inner {
