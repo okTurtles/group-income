@@ -341,6 +341,19 @@ export default (sbp('sbp/selectors/register', {
             // a new Vuex state to replace their state with.
             await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
           } else {
+            try {
+              await sbp('chelonia/contract/sync', identityContractID)
+            } catch (e) {
+              // To make it easier to test things during development, if the
+              // identity contract no longer exists, we automatically log out
+              // If we're in production mode, we show a prompt instead as logging
+              // out could result in permanent data loss (of the local state).
+              if (process.env.NODE_ENV !== 'production') {
+                console.error('Error syncing identity contract, automatically logging out', identityContractID, e)
+                return sbp('gi.app/identity/_private/logout', e)
+              }
+              throw e
+            }
             // If an existing session exists, we just emit the LOGIN event
             // to set the local Vuex state and signal we're ready.
             sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
@@ -364,7 +377,7 @@ export default (sbp('sbp/selectors/register', {
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (!result) {
-            return sbp('gi.app/identity/logout')
+            return sbp('gi.app/identity/_private/logout')
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
