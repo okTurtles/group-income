@@ -25,6 +25,19 @@
               input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
               i18n Log
 
+        fieldset.c-source(aria-label='L("Source:")')
+          .c-source-inner
+            label.label
+              i18n Log source
+              .selectbox
+                select.select(v-model='form.source')
+                  option(value='combined')
+                    i18n Combined
+                  option(value='browser')
+                    i18n Browser
+                  option(value='serviceworker')
+                    i18n Service worker
+
         button-submit.is-small.c-download(@click='downloadOrShareLogs')
           template(v-if='ephemeral.useWebShare')
             i.icon-share-alt.is-prefix
@@ -37,8 +50,10 @@
 
       banner-scoped.c-err-banner(ref='errBanner')
 
-      textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
+      textarea.textarea.c-logs(ref='textarea' rows='12' v-if='ephemeral.ready' readonly)
         | {{ prettyLogs }}
+      div(v-else)
+        i18n Loading
 
       i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
 
@@ -63,9 +78,11 @@ export default ({
   data () {
     return {
       form: {
-        filter: this.$store.state.settings.appLogsFilter
+        filter: this.$store.state.settings.appLogsFilter,
+        source: 'browser'
       },
       ephemeral: {
+        ready: false,
         logs: [],
         useWebShare: false
       }
@@ -73,21 +90,23 @@ export default ({
   },
   created () {
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
-
-    // Log entries in chronological order (oldest to most recent).
-    this.ephemeral.logs = sbp('appLogs/get')
+    this.getLogs()
   },
   mounted () {
     window.addEventListener('resize', this.checkWebShareAvailable)
     this.checkWebShareAvailable()
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', CAPTURED_LOGS)
+    sbp('okTurtles.events/off', CAPTURED_LOGS, this.addLog)
     window.removeEventListener('resize', this.checkWebShareAvailable)
   },
   watch: {
     'form.filter' (filter) {
       this.setAppLogsFilter(filter)
+    },
+    'form.source' (to, from) {
+      if (to === from) return
+      this.getLogs()
     },
     prettyLogs () {
       this.$nextTick(() => {
@@ -105,7 +124,7 @@ export default ({
     prettyLogs () {
       return this.ephemeral.logs
         .filter(({ type }) => this.form.filter.includes(type))
-        .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map((x) => JSON.stringify(x)).join(' ')}`)
+        .map(({ type, source, msg, timestamp }) => `${timestamp} (${source}) [${type}] ${msg.map((x) => JSON.stringify(x)).join(' ')}`)
         .join('\n')
     },
     issuePageTag () {
@@ -118,10 +137,16 @@ export default ({
     ]),
     addLog (entry: Object) {
       if (entry) {
+        if (this.form.source === 'browser' && entry.source !== 'browser') return
+        if (this.form.source === 'serviceworker' && entry.source !== 'sw') return
         this.ephemeral.logs.push(entry)
         // prevent the amount of logs from growing beyond MAX_LOG_ENTRIES
-        // remove 100 excess logs each time we reach that amount
-        if (this.ephemeral.logs.length >= MAX_LOG_ENTRIES + 100) {
+        // plus 100 lines. If the log entries get too large, remove 100 excess
+        // logs each time we reach that amount
+        // NOTE: When viewing 'combined' logs, we allow for twice as many log
+        // entries.
+        const maxEntries = this.form.source === 'combined' ? 2 * MAX_LOG_ENTRIES : MAX_LOG_ENTRIES
+        if (this.ephemeral.logs.length >= maxEntries + 100) {
           this.ephemeral.logs.splice(0, 100)
         }
       }
@@ -134,15 +159,39 @@ export default ({
         }
       })
     },
-    async downloadOrShareLogs () {
+    downloadOrShareLogs () {
       const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
       const isDownload = actionType === 'download'
 
       try {
-        await sbp('appLogs/downloadOrShare',
-          actionType,
-          isDownload ? this.$refs.linkDownload : undefined
-        )
+        const elLink = this.$refs.linkDownload
+        const filename = 'gi_logs.json.txt'
+        const mimeType = 'text/plain'
+
+        const blob = new Blob([JSON.stringify({
+        // Add instructions in case the user opens the file.
+          _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
+          ua: navigator.userAgent,
+          logs: this.ephemeral.logs
+        }, undefined, 2)], { type: mimeType })
+
+        if (isDownload) {
+          if (!elLink) { return }
+
+          const url = URL.createObjectURL(blob)
+          elLink.href = url
+          elLink.download = filename
+          elLink.click()
+          setTimeout(() => {
+            elLink.href = '#'
+            URL.revokeObjectURL(url)
+          }, 0)
+        } else {
+          return navigator.share({
+            files: [new File([blob], filename, { type: blob.type })],
+            title: L('Application Logs')
+          })
+        }
       } catch (err) {
         const errorDisplay = isDownload
           ? L('Failed to download the app logs. {reportError}', LError(err))
@@ -156,6 +205,60 @@ export default ({
       this.ephemeral.useWebShare = Boolean(navigator.share) &&
         window.matchMedia('(hover: none) and (pointer: coarse)').matches &&
         window.matchMedia('screen and (max-width: 1199px)').matches
+    },
+    getLogs () {
+      // Log entries in chronological order (oldest to most recent).
+      switch (this.form.source) {
+        case 'combined': {
+          this.ephemeral.ready = false
+          const tempLogs = []
+          this.ephemeral.logs = tempLogs
+          sbp('swLogs/get').then((logs) => {
+            // This check ensures that we're not working on a stale request
+            // If the reference to this.ephemeral.logs has changed, it means
+            // that we shouldn't proceed because a newer user action has occurred
+            if (this.ephemeral.logs !== tempLogs) {
+              return
+            }
+            const appLogs = sbp('appLogs/get')
+            const combinedLogs = [...appLogs, ...logs].sort()
+            this.ephemeral.logs = combinedLogs
+            this.ephemeral.ready = true
+          }).catch(err => {
+            const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
+
+            console.error('AppLogs.vue getLogs() error:', err)
+            this.$refs.errBanner.danger(errorDisplay)
+          })
+          break
+        }
+        case 'browser': {
+          this.ephemeral.logs = sbp('appLogs/get')
+          this.ephemeral.ready = true
+          break
+        }
+        case 'serviceworker': {
+          this.ephemeral.ready = false
+          const tempLogs = []
+          this.ephemeral.logs = tempLogs
+          sbp('swLogs/get').then((logs) => {
+            // This check ensures that we're not working on a stale request
+            // If the reference to this.ephemeral.logs has changed, it means
+            // that we shouldn't proceed because a newer user action has occurred
+            if (this.ephemeral.logs !== tempLogs) {
+              return
+            }
+            this.ephemeral.logs = logs
+            this.ephemeral.ready = true
+          }).catch(err => {
+            const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
+
+            console.error('AppLogs.vue getLogs() error:', err)
+            this.$refs.errBanner.danger(errorDisplay)
+          })
+          break
+        }
+      }
     }
   }
 }: Object)
@@ -181,7 +284,7 @@ export default ({
   margin-bottom: 1.5rem;
 }
 
-.c-filters {
+.c-filters, .c-source {
   flex-grow: 99; // to be wider than c-download
 
   &-inner {
@@ -202,6 +305,7 @@ export default ({
 }
 
 .c-filters,
+.c-source,
 .c-download,
 .c-logs {
   margin-bottom: 1rem;

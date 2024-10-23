@@ -11,7 +11,7 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
   const methods = Object.fromEntries(loggingLevels.map((name) =>
     [name, (...args) => {
       originalConsole[name](...args)
-      captureLogEntry(logger, name, ...args)
+      captureLogEntry(logger, name, config.source, ...args)
     }]
   ))
   const appLogsFilter: string[] = []
@@ -65,9 +65,10 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
   return logger
 }
 
-function captureLogEntry (logger: Object, type: string, ...args) {
+function captureLogEntry (logger: Object, type: string, source: string, ...args) {
   const entry = {
     timestamp: new Date().toISOString(),
+    source,
     type,
     // Detect when arg is an Error and capture it properly.
     // ex: uncaught Vue errors or custom try/catch errors.

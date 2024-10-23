@@ -46,7 +46,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (throttle) {
       const state = sbp('state/vuex/state')
-      const lastLoggedIn = new Date(state.lastLoggedIn[contractID]?.[identityContractID]).getTime()
+      const lastLoggedIn = new Date(state.lastLoggedIn?.[contractID]?.[identityContractID]).getTime()
 
       if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
     }

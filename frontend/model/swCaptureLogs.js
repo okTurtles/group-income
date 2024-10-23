@@ -11,7 +11,8 @@ import logServer from './logServer.js'
 */
 
 const config = {
-  maxEntries: MAX_LOG_ENTRIES
+  maxEntries: MAX_LOG_ENTRIES,
+  source: 'sw'
 }
 const originalConsole = self.console
 

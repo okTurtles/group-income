@@ -1,7 +1,6 @@
 import sbp from '@sbp/sbp'
 import { SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.js'
-import { L } from '@common/common.js'
 import { createLogger } from './logger.js'
 import logServer from './logServer.js'
 
@@ -11,7 +10,8 @@ import logServer from './logServer.js'
 */
 
 const config = {
-  maxEntries: MAX_LOG_ENTRIES
+  maxEntries: MAX_LOG_ENTRIES,
+  source: 'browser'
 }
 const originalConsole = self.console
 
@@ -62,37 +62,6 @@ async function clearLogs () {
   await logger?.clear()
 }
 
-// Util to download all stored logs so far.
-function downloadOrShareLogs (actionType: 'share' | 'download', elLink?: HTMLAnchorElement): any {
-  const filename = 'gi_logs.json.txt'
-  const mimeType = 'text/plain'
-
-  const blob = new Blob([JSON.stringify({
-    // Add instructions in case the user opens the file.
-    _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
-    ua: navigator.userAgent,
-    logs: logger?.entries.toArray()
-  }, undefined, 2)], { type: mimeType })
-
-  if (actionType === 'download') {
-    if (!elLink) { return }
-
-    const url = URL.createObjectURL(blob)
-    elLink.href = url
-    elLink.download = filename
-    elLink.click()
-    setTimeout(() => {
-      elLink.href = '#'
-      URL.revokeObjectURL(url)
-    }, 0)
-  } else {
-    return window.navigator.share({
-      files: [new File([blob], filename, { type: blob.type })],
-      title: L('Application Logs')
-    })
-  }
-}
-
 // The reason to use the 'visibilitychange' event over the 'beforeunload' event
 // is that the latter is unreliable on mobile. For example, if a tab is set to
 // the background and then closed, the 'beforeunload' event may never be fired.
@@ -105,7 +74,6 @@ window.addEventListener('visibilitychange', event => sbp('appLogs/save').catch(e
 logServer(originalConsole)
 
 export default (sbp('sbp/selectors/register', {
-  'appLogs/downloadOrShare': downloadOrShareLogs,
   'appLogs/get' () { return logger?.entries.toArray() ?? [] },
   async 'appLogs/save' () { await logger?.save() },
   'appLogs/pauseCapture': captureLogsPause,
