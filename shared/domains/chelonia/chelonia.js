@@ -1011,7 +1011,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const offset = Math.max(0, beforeHeight - limit + 1)
     const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
-    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit, options)
+    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit, undefined, options)
   },
   'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0, { stream } = { stream: true }) {
     if (offset < 0) {
