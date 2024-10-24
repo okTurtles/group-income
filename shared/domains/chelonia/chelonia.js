@@ -21,7 +21,7 @@ import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, checkCanBeGarbageCollected, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
+import { buildShelterAuthorizationHeader, checkCanBeGarbageCollected, clearObject, collectEventStream, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -1005,21 +1005,21 @@ export default (sbp('sbp/selectors/register', {
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
-  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number) {
+  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number, options) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
     }
     const offset = Math.max(0, beforeHeight - limit + 1)
     const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
-    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit)
+    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit, options)
   },
-  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0) {
+  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0, { stream } = { stream: true }) {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
     }
     let reader: ReadableStreamReader
-    return new ReadableStream({
+    const s = new ReadableStream({
       start: async (controller) => {
         const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
         const deserializedHEAD = GIMessage.deserializeHEAD(first)
@@ -1044,6 +1044,10 @@ export default (sbp('sbp/selectors/register', {
         }
       }
     })
+
+    if (stream) return s
+    // Workaround for <https://bugs.webkit.org/show_bug.cgi?id=215485>
+    return collectEventStream(s)
   },
   'chelonia/rootState': function () { return sbp(this.config.stateSelector) },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {

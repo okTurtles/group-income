@@ -144,18 +144,6 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 
-const collectEventStream = async (s: ReadableStream | Promise<ReadableStream>) => {
-  s = await s
-  const reader = s.getReader()
-  const r = []
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    r.push(value)
-  }
-  return r
-}
-
 const ignorableScrollDistanceInPixel = 500
 
 // The following methods are wrapped inside `debounce`, which requires calling
@@ -549,12 +537,12 @@ export default ({
       } else {
         const contractID = this.summary.chatRoomID
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events = await collectEventStream(
+        const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
-          sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2)
-        ).catch((e) => {
-          console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`)
-        })
+          await sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2, { stream: false })
+            .catch((e) => {
+              console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`)
+            })
         if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
@@ -781,18 +769,18 @@ export default ({
         if (shouldLoadMoreEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
           if (!this.checkEventSourceConsistency(chatRoomID)) return
-          events = await collectEventStream(sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit))
+          events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
         const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit))
+        events = sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
       } else {
         let sinceHeight = 0
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
         if (this.messages.length) {
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
-        events = await collectEventStream(sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1))
+        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
       }
 
       if (!this.checkEventSourceConsistency(chatRoomID)) return
