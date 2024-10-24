@@ -1,10 +1,11 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
+import sbp from '@sbp/sbp'
+import { LOGIN_COMPLETE, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { PWA_INSTALLABLE } from '@utils/events.js'
+import { PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
+import { deserializer } from '~/shared/serdes/index.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -82,6 +83,10 @@ sbp('sbp/selectors/register', {
               sbp('service-worker/resubscribe-push', data.subscription)
               break
             }
+            case 'event': {
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              break
+            }
             default:
               console.error('[sw] Received unknown message type from the service worker:', data)
               break
@@ -104,6 +109,8 @@ sbp('sbp/selectors/register', {
     }
 
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    if (!pubsub) return // TODO: This needs to be moved into the service worker
+    // proper. pubsub will be undefined in this context.
     const existingSubscription = await registration.pushManager.getSubscription()
     const messageToPushServerIfSocketConnected = (msgPayload) => {
       // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.
@@ -244,7 +251,14 @@ sbp('sbp/selectors/register', {
     const result = await pwa.deferredInstallPrompt.prompt()
     return result.outcome
   }
-})
+});
+
+// Events that need to be relayed to the SW
+[LOGIN_COMPLETE, SET_APP_LOGS_FILTER].forEach((event) =>
+  sbp('okTurtles.events/on', event, (...data) => {
+    navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
+  })
+)
 
 // helper method
 

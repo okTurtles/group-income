@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { L } from '@common/common.js'
 
@@ -11,7 +11,8 @@ const DMMixin: Object = {
       'ourGroupDirectMessages',
       'ourIdentityContractId',
       'ourGroupDirectMessageFromUserIds'
-    ])
+    ]),
+    ...mapState(['currentGroupId'])
   },
   methods: {
     async createDirectMessage (memberIDs: string | string[]) {
@@ -19,19 +20,19 @@ const DMMixin: Object = {
         memberIDs = [memberIDs]
       }
       try {
+        const identityContractID = this.ourIdentityContractId
+        const currentGroupId = this.currentGroupId
         await sbp('gi.actions/identity/createDirectMessage', {
-          contractID: this.ourIdentityContractId,
-          data: { memberIDs },
+          contractID: identityContractID,
+          data: { currentGroupId, memberIDs },
           hooks: {
-            onprocessed: (message) => {
-              const dmID = message.decryptedValue().data.contractID
-              // The logic for updating paths will not work until the DM chatroom
-              // has been synced
-              sbp('chelonia/queueInvocation', dmID, () => this.redirect(dmID))
+            prepublish (message) {
+              sbp('state/vuex/commit', 'setPendingChatRoomId', { chatRoomID: message.contractID(), groupID: currentGroupId })
             }
           }
         })
       } catch (err) {
+        console.error('[DMMixin.js] Failed to create a new chatroom', err)
         await sbp('gi.ui/prompt', {
           heading: L('Failed to create a new chatroom'),
           question: err.message,

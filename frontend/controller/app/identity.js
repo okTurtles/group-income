@@ -4,7 +4,7 @@ import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -145,6 +145,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   } catch (e) {
     sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
   }
+})
+
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
+  sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+})
+
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
+  sbp('state/vuex/commit', 'setPreferences', preferences)
 })
 
 /* Commented out as persistentActions are not being used
@@ -289,7 +297,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        sbp('appLogs/startCapture', identityContractID)
+        await sbp('appLogs/startCapture', identityContractID)
         const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
         let loginCompleteHandler, loginErrorHandler
 
@@ -333,6 +341,19 @@ export default (sbp('sbp/selectors/register', {
             // a new Vuex state to replace their state with.
             await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
           } else {
+            try {
+              await sbp('chelonia/contract/sync', identityContractID)
+            } catch (e) {
+              // To make it easier to test things during development, if the
+              // identity contract no longer exists, we automatically log out
+              // If we're in production mode, we show a prompt instead as logging
+              // out could result in permanent data loss (of the local state).
+              if (process.env.NODE_ENV !== 'production') {
+                console.error('Error syncing identity contract, automatically logging out', identityContractID, e)
+                return sbp('gi.app/identity/_private/logout', e)
+              }
+              throw e
+            }
             // If an existing session exists, we just emit the LOGIN event
             // to set the local Vuex state and signal we're ready.
             sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
@@ -356,7 +377,7 @@ export default (sbp('sbp/selectors/register', {
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (!result) {
-            return sbp('gi.app/identity/logout')
+            return sbp('gi.app/identity/_private/logout')
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
@@ -401,7 +422,7 @@ export default (sbp('sbp/selectors/register', {
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
-        sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+        await sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

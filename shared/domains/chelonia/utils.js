@@ -560,7 +560,7 @@ export const getContractIDfromKeyId = (contractID: string, signingKeyId: ?string
     : contractID
 }
 
-export function eventsAfter (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string): ReadableStream {
+export function eventsAfter (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string, { stream }: { stream: boolean } = { stream: true }): ReadableStream | Promise<any[]> {
   if (!contractID) {
     // Avoid making a network roundtrip to tell us what we already know
     throw new Error('Missing contract ID')
@@ -591,7 +591,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
   let buffer: string = ''
   let currentEvent: string
   // return ReadableStream with a custom pull function to handle streamed data
-  return new ReadableStream({
+  const s = new ReadableStream({
     // The pull function is called whenever the internal buffer of the stream
     // becomes empty and needs more data.
     async pull (controller) {
@@ -735,6 +735,9 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
       }
     }
   })
+  if (stream) return s
+  // Workaround for <https://bugs.webkit.org/show_bug.cgi?id=215485>
+  return collectEventStream(s)
 }
 
 export function buildShelterAuthorizationHeader (contractID: string, state?: Object): string {
@@ -810,4 +813,15 @@ export const checkCanBeGarbageCollected = function (id: string): boolean {
     !has(this.ephemeralReferenceCount, id)) &&
     // Check foreign keys (i.e., that no keys from this contract are being watched)
     (!has(rootState, id) || !has(rootState[id], '_volatile') || !has(rootState[id]._volatile, 'watch') || rootState[id]._volatile.watch.length === 0 || rootState[id]._volatile.watch.filter(([, cID]) => this.subscriptionSet.has(cID)).length === 0)
+}
+
+export const collectEventStream = async (s: ReadableStream): Promise<any[]> => {
+  const reader = s.getReader()
+  const r = []
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    r.push(value)
+  }
+  return r
 }
