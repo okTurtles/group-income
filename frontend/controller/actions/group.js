@@ -1106,13 +1106,15 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.'), async function (sendMessage, params) {
     const { contractID, data } = params
     const state = await sbp('chelonia/contract/state', contractID)
-    const proposal = state.proposals[data.proposalHash]
-    const proposalToSend = extractProposalData(proposal, { proposalId: data.proposalHash, status: STATUS_EXPIRED })
+
+    for (const proposalHash of data.proposalIds) {
+      const proposal = state.proposals[proposalHash]
+      const proposalToSend = extractProposalData(proposal, { proposalId: proposalHash, status: STATUS_EXPIRED })
+
+      await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+    }
 
     const response = await sendMessage(params)
-
-    await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
-
     return response
   }),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
