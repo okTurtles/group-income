@@ -616,7 +616,7 @@ export default (sbp('sbp/selectors/register', {
                       serializedData: JSON.parse(Buffer.from(msg.data).toString())
                     })])
                   }).catch(e => {
-                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
+                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, msg, e)
                   })
                 }]
               default:
@@ -998,13 +998,13 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
-  'chelonia/out/eventsAfter': eventsAfter,
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
+  'chelonia/out/eventsAfter': eventsAfter,
   'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number, options) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')

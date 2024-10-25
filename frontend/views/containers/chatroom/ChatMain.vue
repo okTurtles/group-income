@@ -541,7 +541,7 @@ export default ({
           // FIX: this.messages[0].height could not be the starting height of the events in the page
           await sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2, { stream: false })
             .catch((e) => {
-              console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`)
+              console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
         if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
@@ -773,7 +773,7 @@ export default ({
         }
       } else if (this.latestEvents.length) {
         const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        events = sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
+        events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
       } else {
         let sinceHeight = 0
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)

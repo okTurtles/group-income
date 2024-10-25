@@ -228,8 +228,7 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
   const rootState = sbp('chelonia/rootState')
   switch (key) {
     case KV_KEYS.LAST_LOGGED_IN: {
-      const [groupID, value] = data
-      rootState.lastLoggedIn[groupID] = value
+      rootState.lastLoggedIn[contractID] = data
       break
     }
     case KV_KEYS.UNREAD_MESSAGES: {

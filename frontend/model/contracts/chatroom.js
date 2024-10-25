@@ -418,7 +418,7 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
-        if (rootState.chatroom?.chatRoomScrollPosition[contractID] === data.hash) {
+        if (rootState.chatroom?.chatRoomScrollPosition?.[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomID: contractID, messageHash: null
           })
