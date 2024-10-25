@@ -6,7 +6,7 @@ import {
   MAX_GROUP_MEMBER_COUNT
 } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
-import { JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { GIActionParams } from '../actions/types.js'
@@ -44,6 +44,10 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
     // open.
     sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupIdToSwitch, forceRefresh: currentGroupId === groupContractID })
   }
+})
+
+sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
+  sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
 })
 
 export default (sbp('sbp/selectors/register', {

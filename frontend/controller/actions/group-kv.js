@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, NEW_LAST_LOGGED_IN, ONLINE } from '~/frontend/utils/events.js'
 
 sbp('okTurtles.events/on', ONLINE, () => {
   sbp('gi.actions/group/kv/load').catch(e => {
@@ -34,8 +34,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/kv/loadLastLoggedIn': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const data = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
+      sbp('okTurtles.events/emit', NEW_LAST_LOGGED_IN, [contractID, data])
     })
   },
   'gi.actions/group/kv/updateLastLoggedIn': ({ contractID, throttle }: { contractID: string, throttle: boolean }) => {
