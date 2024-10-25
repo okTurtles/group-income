@@ -165,7 +165,7 @@ export default ({
               this.usernameAsyncValidation.resolveFn = resolve
               this.usernameAsyncValidation.timer = setTimeout(async () => {
                 try {
-                  resolve(!await sbp('namespace/lookup', value))
+                  resolve(!await sbp('namespace/lookup', value, { skipCache: true }))
                 } catch (e) {
                   console.warn('unexpected exception in SignupForm validation:', e)
                   resolve(true)

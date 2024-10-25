@@ -204,7 +204,12 @@ sbp('sbp/selectors/register', {
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`)
+    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
+      // Delete the unencypted setting key, if it exists
+      sbp('gi.db/settings/delete', user).catch(e => {
+        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for user', user, e)
+      })
+    })
   },
   'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
     return appSettings.getItem('e' + user).then(async (encryptedValue) => {

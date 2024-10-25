@@ -307,7 +307,7 @@ export default (sbp('sbp/selectors/register', {
           // complete
           const loginCompletePromise = new Promise((resolve, reject) => {
             const loginCompleteHandler = ({ identityContractID: id }) => {
-              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler, { identityContractID, state })
               if (id === identityContractID) {
               // Before the promise resolves, we need to save the state
               // by calling 'state/vuex/save' to ensure that refreshing the page
@@ -350,7 +350,7 @@ export default (sbp('sbp/selectors/register', {
               // out could result in permanent data loss (of the local state).
               if (process.env.NODE_ENV !== 'production') {
                 console.error('Error syncing identity contract, automatically logging out', identityContractID, e)
-                return sbp('gi.app/identity/_private/logout', e)
+                return sbp('gi.app/identity/_private/logout', state)
               }
               throw e
             }
@@ -377,7 +377,7 @@ export default (sbp('sbp/selectors/register', {
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (!result) {
-            return sbp('gi.app/identity/_private/logout')
+            return sbp('gi.app/identity/_private/logout', state)
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
@@ -406,9 +406,9 @@ export default (sbp('sbp/selectors/register', {
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
-  'gi.app/identity/_private/logout': async function () {
+  'gi.app/identity/_private/logout': async function (errorState: ?Object) {
     try {
-      const state = cloneDeep(sbp('state/vuex/state'))
+      const state = errorState || cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return
 
       const cheloniaState = await sbp('gi.actions/identity/logout')
