@@ -138,7 +138,7 @@ import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS } from '@utils/events.js'
+import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
@@ -195,7 +195,7 @@ const onChatScroll = function () {
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
-        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+        sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
           chatRoomID: this.renderingChatRoomId,
           messageHash: msg.hash
         })
@@ -203,7 +203,7 @@ const onChatScroll = function () {
       }
     }
   } else if (this.currentChatRoomScrollPosition) {
-    sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+    sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
       chatRoomID: this.renderingChatRoomId,
       messageHash: null
     })
