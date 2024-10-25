@@ -6,6 +6,7 @@ import { LOGIN_COMPLETE, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/eve
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
 import { deserializer } from '~/shared/serdes/index.js'
+import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -73,6 +74,7 @@ sbp('sbp/selectors/register', {
 
       navigator.serviceWorker.addEventListener('message', event => {
         const data = event.data
+        const silentEmit = sbp('sbp/selectors/fn', 'okTurtles.events/emit')
 
         if (typeof data === 'object' && data.type) {
           switch (data.type) {
@@ -85,6 +87,11 @@ sbp('sbp/selectors/register', {
             }
             case 'event': {
               sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              break
+            }
+            case CAPTURED_LOGS: {
+              // Emit silently to avoid flooding logs with event emitted entries
+              silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
               break
             }
             default:

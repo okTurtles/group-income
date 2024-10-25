@@ -54,7 +54,7 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   console.debug(`[sbp] ${selector}`, data)
 });
 
-[CAPTURED_LOGS, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
+[CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -69,6 +69,22 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
         })
       })
   })
+})
+
+// Logs are treated especially to avoid spamming logs with event emitted
+// entries
+sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
+  const { data } = serializer(args)
+  const message = {
+    type: CAPTURED_LOGS,
+    data
+  }
+  self.clients.matchAll()
+    .then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage(message)
+      })
+    })
 })
 
 sbp('sbp/selectors/register', {
