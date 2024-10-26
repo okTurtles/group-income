@@ -26,9 +26,10 @@ const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
 const securityHeaders = {
   // This is the most likely to break things now; it may need changing when sandboxing or federation is implemented.
-  'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-eval'; script-src-elem 'self'; script-src-attr 'none'; style-src 'self'; style-src-elem 'self'; style-src-attr 'none'; img-src 'self' blob: https://unpkg.com; font-src 'self'; connect-src 'self'; media-src 'self'; prefetch-src 'self'; worker-src 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self'",
-  // Block embedding cross-origin resources that don't explicitly allow it.
-  'Cross-Origin-Embedder-Policy': 'require-corp',
+  // Not setting media-src since Background.vue dynamically adds sound assets.
+  'Content-Security-Policy': "child-src 'none'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none'; img-src 'self' blob: https://unpkg.com; manifest-src 'self'; object-src 'none'; script-src 'unsafe-eval'; script-src-attr 'none'; script-src-elem 'self'; style-src 'self'; style-src-attr 'none'; style-src-elem 'self' 'unsafe-inline'; upgrade-insecure-requests; worker-src 'self'",
+  // Block embedding cross-origin resources that don't explicitly allow it. Disabled because it blocks emoji sheet rendering.
+  // 'Cross-Origin-Embedder-Policy': 'require-corp',
   // Don't share context with potentially untrusted sites.
   'Cross-Origin-Opener-Policy': 'same-origin',
   // Block hotlinking.
