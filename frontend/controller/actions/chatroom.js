@@ -23,14 +23,15 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
 }) => {
   const state = sbp('chelonia/contract/state', contractID)
   const rootState = sbp('chelonia/rootState')
+  const getters = sbp('state/vuex/getters')
   const mentions = makeMentionFromUserID(rootState.loggedIn?.identityContractID)
   const msgData = newMessage || data
   const isMentionedMe = (!!newMessage || data.type === MESSAGE_TYPES.TEXT) && msgData.text &&
   (msgData.text.includes(mentions.me) || msgData.text.includes(mentions.all))
 
   if (!newMessage) {
-    // TODO:  rootState.unreadMessages for SW
-    const isAlreadyAdded = rootState.chatroom?.unreadMessages?.[contractID]?.unreadMessages.find(m => m.messageHash === data.hash)
+    const isAlreadyAdded = !!getters
+      .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
 
     if (isAlreadyAdded && !isMentionedMe) {
       sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })

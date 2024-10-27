@@ -9,6 +9,7 @@ import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
 import '~/frontend/controller/sw-namespace.js'
 import getters from '~/frontend/model/getters.js'
+import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
@@ -96,6 +97,14 @@ sbp('sbp/selectors/register', {
         get: () => {
           const state = sbp('chelonia/rootState')
           return fn(state, obj)
+        }
+      }]
+    })))
+    Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
+      return [getter, {
+        get: () => {
+          const state = sbp('chelonia/rootState')
+          return fn(state.chatroom || {}, obj, state)
         }
       }]
     })))
