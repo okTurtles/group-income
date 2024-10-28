@@ -774,7 +774,11 @@ export default ({
       }
     },
     selectEmoticon (emoticon) {
-      this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
+      const inputEl = this.$refs.textarea
+      const valuePrev = inputEl.value.slice(0, inputEl.selectionStart) || ''
+      const valueAfter = inputEl.value.slice(inputEl.selectionEnd) || ''
+      inputEl.value = valuePrev + emoticon.native + valueAfter
+
       this.closeEmoticon()
       this.updateTextWithLines()
     },
