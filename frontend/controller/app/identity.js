@@ -385,6 +385,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // updating the 'lastLoggedIn' field is done as a periodic notification
+        await sbp('chelonia/contract/sync', identityContractID)
         return identityContractID
       } catch (e) {
         console.error('gi.app/identity/login failed!', e)

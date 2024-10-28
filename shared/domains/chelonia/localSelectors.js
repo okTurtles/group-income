@@ -28,57 +28,61 @@ export default (sbp('sbp/selectors/register', {
     reactiveSet: Function,
     reactiveDel: Function
   }) => {
-    sbp('okTurtles.events/on', EVENT_HANDLED, async (contractID, message) => {
-      const { contractState, cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
-      const externalState = sbp(stateSelector)
-      if (cheloniaState) {
-        if (!externalState.contracts) {
-          reactiveSet(externalState, 'contracts', Object.create(null))
-        }
-        reactiveSet(externalState.contracts, contractID, cloneDeep(cheloniaState))
-      } else if (externalState.contracts) {
-        reactiveDel(externalState.contracts, contractID)
-      }
-      if (contractState) {
-        reactiveSet(externalState, contractID, cloneDeep(contractState))
-      } else {
-        reactiveDel(externalState, contractID)
-      }
-
-      // This EVENT_HANDLED_READY event lets the current context (e.g., tab)
-      // know that an event has been processed _and_ committed to the state
-      // (as opposed to EVENT_HANDLED, which means the event was processed by
-      // _Chelonia_ but state changes may not be reflected in the current tab
-      // yet).
-      sbp('okTurtles.events/emit', EVENT_HANDLED_READY, contractID, message)
-    })
-
-    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (subscriptionSet) => {
-      const states = await sbp('chelonia/contract/fullState', subscriptionSet)
-      const vuexState = sbp('state/vuex/state')
-
-      if (!vuexState.contracts) {
-        reactiveSet(vuexState, 'contracts', Object.create(null))
-      }
-
-      const oldContracts = Object.keys(vuexState.contracts)
-      const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.includes(x))
-      const newContracts = subscriptionSet.filter(x => !oldContracts.includes(x))
-
-      oldContractsToRemove.forEach(contractID => {
-        reactiveDel(vuexState.contracts, contractID)
-        reactiveDel(vuexState, contractID)
-      })
-      for (const contractID of newContracts) {
-        const { contractState, cheloniaState } = states[contractID]
+    sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
+      sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
+        const { contractState, cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
+        const externalState = sbp(stateSelector)
         if (cheloniaState) {
-          reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))
+          if (!externalState.contracts) {
+            reactiveSet(externalState, 'contracts', Object.create(null))
+          }
+          reactiveSet(externalState.contracts, contractID, cloneDeep(cheloniaState))
+        } else if (externalState.contracts) {
+          reactiveDel(externalState.contracts, contractID)
         }
         if (contractState) {
-          reactiveSet(vuexState, contractID, cloneDeep(contractState))
+          reactiveSet(externalState, contractID, cloneDeep(contractState))
+        } else {
+          reactiveDel(externalState, contractID)
         }
-      }
-      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet)
+
+        // This EVENT_HANDLED_READY event lets the current context (e.g., tab)
+        // know that an event has been processed _and_ committed to the state
+        // (as opposed to EVENT_HANDLED, which means the event was processed by
+        // _Chelonia_ but state changes may not be reflected in the current tab
+        // yet).
+        sbp('okTurtles.events/emit', EVENT_HANDLED_READY, contractID, message)
+      })
+    })
+
+    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
+      sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
+        const states = await sbp('chelonia/contract/fullState', subscriptionSet)
+        const vuexState = sbp('state/vuex/state')
+
+        if (!vuexState.contracts) {
+          reactiveSet(vuexState, 'contracts', Object.create(null))
+        }
+
+        const oldContracts = Object.keys(vuexState.contracts)
+        const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.includes(x))
+        const newContracts = subscriptionSet.filter(x => !oldContracts.includes(x))
+
+        oldContractsToRemove.forEach(contractID => {
+          reactiveDel(vuexState.contracts, contractID)
+          reactiveDel(vuexState, contractID)
+        })
+        for (const contractID of newContracts) {
+          const { contractState, cheloniaState } = states[contractID]
+          if (cheloniaState) {
+            reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))
+          }
+          if (contractState) {
+            reactiveSet(vuexState, contractID, cloneDeep(contractState))
+          }
+        }
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet)
+      })
     })
   }
 }): string[])

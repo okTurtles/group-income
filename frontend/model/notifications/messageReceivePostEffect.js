@@ -74,6 +74,7 @@ async function messageReceivePostEffect ({
     icon,
     path
   })
+  // `MESSAGE_RECEIVE` should be forwarded to the tab
   shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 

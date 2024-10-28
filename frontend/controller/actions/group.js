@@ -504,7 +504,8 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, contractID: params.contractID })
+          await sbp('chelonia/contract/wait', params.contractID)
+          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: params.contractID })
           // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
           // This means that we've been removed from the group
         } else if (!hasSecretKeys && !pendingKeyShares) {
