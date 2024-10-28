@@ -24,9 +24,6 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const getters = sbp('state/vuex/getters')
   const rootState = sbp('state/vuex/state')
   const targetChatroomState = rootState[contractID]
-  const currentRoute = sbp('controller/router').history.current || ''
-  const isTargetChatroomCurrentlyActive = currentRoute.path.includes('/group-chat') &&
-    getters.currentChatRoomId === contractID // when the target chatroom is currently open/active on the browser, No need to send a notification.
   const mentions = makeMentionFromUserID(getters.ourIdentityContractId)
   const msgData = newMessage || data
   const isMentionedMe = (!!newMessage || data.type === MESSAGE_TYPES.TEXT) && msgData.text &&
@@ -42,7 +39,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
     if (isAlreadyAdded) return
   }
 
-  !isTargetChatroomCurrentlyActive && messageReceivePostEffect({
+  messageReceivePostEffect({
     contractID,
     messageHash: msgData.hash,
     height: msgData.height,
