@@ -774,7 +774,7 @@ export default ({
       }
     },
     selectEmoticon (emoticon) {
-      // Making sure the emoticon is added to the cursor position.
+      // Making sure the emoticon is added to the cursor position
       const inputEl = this.$refs.textarea
       const valuePrev = inputEl.value.slice(0, inputEl.selectionStart) || ''
       const valueAfter = inputEl.value.slice(inputEl.selectionEnd) || ''
