@@ -12,29 +12,46 @@
         )
       .c-post-content
         h3.is-title-4 {{ post.title }}
-        p(v-safe-html:a='renderMarkdown(post.content)')
+        render-message-with-markdown(:text='post.content')
+        //- div(v-safe-html:a='renderMarkdown(post.content)')
 </template>
 
 <script>
 import { humanDate } from '@model/contracts/shared/time.js'
-import { renderMarkdown } from '@view-utils/markdown-utils.js'
 import Avatar from '@components/Avatar.vue'
+import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 
 const dummyPosts = [
   {
-    createdAt: new Date('2024-10-29'),
-    title: '1.1.0: Anyone-can-join Invites Updated! Please read!',
-    content: "Version 1.1.0 introduces many new features and bug fixes, and among them is replacing the old anyone-can-join invite links with new ones that will let your group grow to Dunbar's Number.\n\n" +
-      '**The old links are expired, please use the new ones!**'
+    createdAt: new Date('2024-10-29T00:00:01'),
+    title: '1.1.0 Released!',
+    content: '**New Features**\n\n' +
+      '- New image viewer: zoom in and out of photos with ease!\n' +
+      '- "Notes to self": can create DM\'s to yourself now\n' +
+      '- Notifications for non-monetary contributions updates\n' +
+      '- Anyone-can-join invite links are now updated to support maximum 150 invitations\n\n' +
+      '  NOTE: old anyone-can-join invite links are expired, please use the new one!\n' +
+      '**Bugfixes**\n\n' +
+      '- The emoji selector\'s search field is now selected when you open it\n' +
+      '- Fix for usernames in app notifications when user is removed\n' +
+      '- Fix for "haven\'t logged in" users metric\n' +
+      '- Fixed a markdown-related formatting issue related to lists\n' +
+      '- Fixed send button not enabled when pasting text into chat\n' +
+      '- Fix closing expired proposals\n\n' +
+      '**Improvements**\n\n' +
+      '- Add a red badge to the info icon to make it easier to see where DMs are\n' +
+      '- Improved edit message input field hight\n' +
+      '- Placeholders for payment info fields\n' +
+      '- Misc. internal improvements'
   },
   {
-    createdAt: new Date('2024-07-26'),
+    createdAt: new Date('2024-07-26T00:00:01'),
     title: 'Group Income 1.0 released! 🥳',
     content: '🎦 See the release party footage:\n\n' +
       '[https://groupincome.org/2024/07/group-income-released/](https://groupincome.org/2024/07/group-income-released/)'
   },
   {
-    createdAt: new Date('2023-06-08'),
+    createdAt: new Date('2023-06-08T00:00:01'),
     title: 'The Prototype is Ready',
     content: "It's been quite a journey, but we're finally here. A new kind of software is ready for testing. " +
       "If you have a group of friends/family that's interested in supporting one another using monetary and non-monetary means, " +
@@ -42,7 +59,7 @@ const dummyPosts = [
       '[https://groupincome.org/2023/06/the-prototype-is-ready/](https://groupincome.org/2023/06/the-prototype-is-ready/)'
   },
   {
-    createdAt: new Date('2021-06-08'),
+    createdAt: new Date('2021-06-08T00:00:01'),
     title: 'Roadmap Updates',
     content: "Some say it's not the destination that matters so much, but the journey and friends you meet along the way. " +
     "I couldn't agree more. But also, destinations aren't to be underestimated either! Back in 2019, during the Before Times, " +
@@ -54,7 +71,8 @@ const dummyPosts = [
 export default ({
   name: 'NewAndUpdates',
   components: {
-    Avatar
+    Avatar,
+    RenderMessageWithMarkdown
   },
   data () {
     return {
@@ -62,8 +80,7 @@ export default ({
     }
   },
   methods: {
-    humanDate,
-    renderMarkdown
+    humanDate
   }
 }: Object)
 </script>

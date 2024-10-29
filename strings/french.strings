@@ -22,6 +22,9 @@
 "Failed to unpin message." = "Failed to unpin message.";
 
 /* MISSING TRANSLATION - controller/actions/chatroom.js */
+"Failed to upgrade from version 1.0.8" = "Failed to upgrade from version 1.0.8";
+
+/* MISSING TRANSLATION - controller/actions/chatroom.js */
 "Failed to vote on a poll." = "Failed to vote on a poll.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -58,6 +61,12 @@
 "Failed to update group distribution date." = "Failed to update group distribution date.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to update group invite expiry." = "Failed to update group invite expiry.";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to upgrade from version 1.0.7" = "Failed to upgrade from version 1.0.7";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
 "Mincome changed" = "Mincome changed";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -88,10 +97,16 @@
 "Failed to save delete tokens for the attachments." = "Failed to save delete tokens for the attachments.";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
+"Failed to set group attributes." = "Failed to set group attributes.";
+
+/* MISSING TRANSLATION - controller/actions/identity.js */
 "Failed to upload files: {reportError}" = "Failed to upload files: {reportError}";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Join group error during login: {msg}" = "Join group error during login: {msg}";
+
+/* MISSING TRANSLATION - controller/actions/identity.js, controller/app/identity.js */
+"Failed to log in: {reportError}" = "Failed to log in: {reportError}";
 
 /* MISSING TRANSLATION - controller/app/group.js */
 "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud." = "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.";
@@ -134,9 +149,6 @@
 
 /* MISSING TRANSLATION - main.js */
 "Loading events from server..." = "Loading events from server...";
-
-/* MISSING TRANSLATION - model/contracts/chatroom.js */
-"New message" = "New message";
 
 /* MISSING TRANSLATION - model/contracts/chatroom.js */
 "Only the channel creator can change description." = "Only the channel creator can change description.";
@@ -186,6 +198,9 @@
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "{minutes}m" = "{minutes}m";
 
+/* MISSING TRANSLATION - model/notifications/messageReceivePostEffect.js */
+"New message" = "New message";
+
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "A new distribution period ({period}) has started. Please check Payment TODOs." = "A new distribution period ({period}) has started. Please check Payment TODOs.";
 
@@ -232,7 +247,22 @@
 "rejected" = "rejected";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"{first} and {rest} more" = "{first} and {rest} more";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"{name} added non-monetary contribution: {strong_}{added}{_strong}" = "{name} added non-monetary contribution: {strong_}{added}{_strong}";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"{name} removed non-monetary contribution: {strong_}{removed}{_strong}" = "{name} removed non-monetary contribution: {strong_}{removed}{_strong}";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}" = "{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}." = "{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}.";
@@ -384,6 +414,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Remove pinned message" = "Remove pinned message";
 
+/* MISSING TRANSLATION - views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/NewDirectMessageModal.vue */
+"(you)" = "(you)";
+
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMembersAllModal.vue */
 "Added." = "Added.";
 
@@ -398,6 +431,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/ConversationGreetings.vue */
 "I’m here to keep you update while you are away." = "I’m here to keep you update while you are away.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/ConversationGreetings.vue */
+"You can post private notes to yourself here." = "You can post private notes to yourself here.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue */
 "People from outside the group can see the channel's content" = "People from outside the group can see the channel's content";
@@ -618,6 +654,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
 "Upload attachment" = "Upload attachment";
 
+/* MISSING TRANSLATION - views/containers/chatroom/image-viewer/PreviewImageArea.vue */
+"Image preview" = "Image preview";
+
 /* MISSING TRANSLATION - views/containers/chatroom/poll-message-content/PollToVote.vue */
 "Submit" = "Submit";
 
@@ -640,10 +679,19 @@
 "Voted for “{option}”" = "Voted for “{option}”";
 
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
+"At least one non-monetary contribution is required." = "At least one non-monetary contribution is required.";
+
+/* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
 "Edit contribution settings" = "Edit contribution settings";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */
 "{who0} and {who1}" = "{who0} and {who1}";
+
+/* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
+"1 member is contributing." = "1 member is contributing.";
+
+/* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
+"You and 1 other member are contributing." = "You and 1 other member are contributing.";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
@@ -657,8 +705,35 @@
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Your payment methods are invalid. Please review them and try again." = "Your payment methods are invalid. Please review them and try again.";
 
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"All members can support each other with non-monetary contributions. There's value in time, skills, and willingness to help the group." = "All members can support each other with non-monetary contributions. There's value in time, skills, and willingness to help the group.";
+
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"At least one non-monetary pledge is required" = "At least one non-monetary pledge is required";
+
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"Non-monetary pledge cannot exceed {maxChars} characters" = "Non-monetary pledge cannot exceed {maxChars} characters";
+
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"Non-monetary pledge" = "Non-monetary pledge";
+
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"Pledge value" = "Pledge value";
+
+/* MISSING TRANSLATION - views/containers/contributions/NonMonetaryPledges.vue */
+"Remove pledge entry" = "Remove pledge entry";
+
+/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
+"BTC address" = "BTC address";
+
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Bitcoin" = "Bitcoin";
+
+/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
+"Email, name or URL" = "Email, name or URL";
+
+/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
+"Lightning address" = "Lightning address";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Payment info cannot exceed {maxChars} characters." = "Payment info cannot exceed {maxChars} characters.";
@@ -816,8 +891,20 @@
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
 "See {a_}logs for details{_a}." = "See {a_}logs for details{_a}.";
 
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
+"This invite link doesn't expire" = "This invite link doesn't expire";
+
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
+"Doesn't expire" = "Doesn't expire";
+
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "action" = "action";
+
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
+"{months}mo {days}d left" = "{months}mo {days}d left";
+
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
+"{years}y {months}mo {days}d left" = "{years}y {months}mo {days}d left";
 
 /* MISSING TRANSLATION - views/containers/loading-error/ErrorModal.vue */
 "404" = "404";
@@ -1029,6 +1116,9 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "{username} proposed" = "{username} proposed";
 
+/* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue */
+"Create invitation" = "Create invitation";
+
 /* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
 "Add new member" = "Add new member";
 
@@ -1123,6 +1213,9 @@
 "News & Updates" = "News & Updates";
 
 /* MISSING TRANSLATION - views/pages/GroupChat.vue */
+"1 member" = "1 member";
+
+/* MISSING TRANSLATION - views/pages/GroupChat.vue */
 "Leave {channelName}" = "Leave {channelName}";
 
 /* MISSING TRANSLATION - views/pages/GroupChat.vue */
@@ -1130,6 +1223,9 @@
 
 /* MISSING TRANSLATION - views/pages/GroupChat.vue */
 "{messagesCount} Pinned" = "{messagesCount} Pinned";
+
+/* MISSING TRANSLATION - views/pages/GroupChat.vue */
+"{num} members" = "{num} members";
 
 /* MISSING TRANSLATION - views/pages/GroupDashboard.vue */
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.";
@@ -1181,6 +1277,12 @@
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Try out the {r1}payments simulator.{r2}" = "Try out the {r1}payments simulator.{r2}";
+
+/* MISSING TRANSLATION - views/pages/Payments.vue */
+"{amt} in total, to 1 member" = "{amt} in total, to 1 member";
+
+/* MISSING TRANSLATION - views/pages/Payments.vue */
+"{amt} in total, to {count} members" = "{amt} in total, to {count} members";
 
 /* MISSING TRANSLATION - views/pages/PendingApproval.vue */
 "Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
@@ -1292,9 +1394,6 @@
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";
-
-/* controller/actions/identity.js, controller/app/identity.js */
-"Failed to login: {reportError}" = "Erreur lors de la connexion : {reportError}";
 
 /* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Annuler";
@@ -1587,7 +1686,7 @@
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A password is required." = "Un mot de passe est requis.";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Username" = "Nom d’utilisateur";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/UserProfile.vue */
@@ -1641,7 +1740,7 @@
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Vous avez déjà un compte ?";
 
-/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
+/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue */
 "New" = "Nouveau";
 
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/MessageActions.vue */
@@ -1770,7 +1869,7 @@
 /* views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
 
-/* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
+/* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/NonMonetaryPledges.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
 "Add more" = "Ajouter";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
@@ -2055,6 +2154,9 @@
 /* views/containers/contributions/ContributionsWidget.vue, views/pages/Payments.vue */
 "Send payments" = "Envoyer des paiements";
 
+/* views/containers/contributions/ContributionsWidget.vue, views/pages/Payments.vue */
+"The distribution period begins on: {startDate}" = "La période de distribution commence le : {startDate}";
+
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Based on other members pledges, the group is not able to provide a full mincome yet." = "Le groupe n’est pas encore en mesure de garantir entièrement le revenu minimum défini à partir des contributions actuelles.";
 
@@ -2126,6 +2228,9 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} will ensure you meet the mincome" = "{firstMember} vous garantit un revenu minimum";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"(optional)" = "(facultatif)";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Choose..." = "Choisir...";
@@ -2902,9 +3007,6 @@
 "My account" = "Mon compte";
 
 /* views/containers/user-settings/settings.js */
-"Privacy & Safety" = "Vie privée & Sécurité";
-
-/* views/containers/user-settings/settings.js */
 "User settings" = "Paramètres utilisateur";
 
 /* views/pages/Contributions.vue */
@@ -2963,9 +3065,6 @@
 
 /* views/pages/GroupChat.vue */
 "Update description" = "Mettre à jour la description";
-
-/* views/pages/GroupChat.vue */
-"{numMembers} members" = "{numMembers} membres";
 
 /* views/pages/GroupSettings.vue */
 "Allow members to create public channels" = "Autoriser les membres à créer des chaînes publiques";
@@ -3043,9 +3142,6 @@
 "Search payments..." = "Recherche de paiements...";
 
 /* views/pages/Payments.vue */
-"The distribution period begins on: {startDate}" = "La période de distribution commence le : {startDate}";
-
-/* views/pages/Payments.vue */
 "There are no payments." = "Il n’y a aucun paiement.";
 
 /* views/pages/Payments.vue */
@@ -3063,14 +3159,8 @@
 /* views/pages/Payments.vue */
 "You haven’t received any payments yet" = "Vous n’avez pas encore reçu de paiements";
 
-/* views/pages/Payments.vue */
-"{amount} in total, to {count} members" = "{amount} au total, à {count} membres";
-
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "Erreur fatale : {reportError}";
-
-/* Not currently used */
-"(optional)" = "(facultatif)";
 
 /* Not currently used */
 "2. Wait for the group vote" = "2. Attendez le vote du groupe";
@@ -3200,6 +3290,9 @@
 
 /* Not currently used */
 "Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
+
+/* Not currently used */
+"Failed to login: {reportError}" = "Erreur lors de la connexion : {reportError}";
 
 /* Not currently used */
 "Failed to post message to mailbox." = "L’envoi du message a échoué.";
@@ -3368,6 +3461,9 @@
 
 /* Not currently used */
 "Please enter a valid email." = "Veuillez entrer une adresse email valide.";
+
+/* Not currently used */
+"Privacy & Safety" = "Vie privée & Sécurité";
 
 /* Not currently used */
 "Proposal accepted!" = "Proposition acceptée!";
@@ -3544,6 +3640,9 @@
 "inbox" = "boîte de réception";
 
 /* Not currently used */
+"{amount} in total, to {count} members" = "{amount} au total, à {count} membres";
+
+/* Not currently used */
 "{count} out of {total} members voted." = "{count} membres sur {total} ont voté.";
 
 /* Not currently used */
@@ -3587,6 +3686,9 @@
 
 /* Not currently used */
 "{name} was kicked out of the group. Contributions were updated accordingly." = "{name} a été exclu du groupe. Les contributions ont été mises à jour en conséquence.";
+
+/* Not currently used */
+"{numMembers} members" = "{numMembers} membres";
 
 /* Not currently used */
 "{personName} marked this payment as not received." = "{personName} a marqué ce paiement comme étant non reçu.";
