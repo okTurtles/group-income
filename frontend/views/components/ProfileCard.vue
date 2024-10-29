@@ -63,11 +63,12 @@ tooltip(
         ) Add payment information
 
       .buttons(v-if='!isSelf')
-        i18n.button.is-outlined.is-small(
-          tag='button'
-          @click='sendMessage'
+        button-submit.is-outlined.is-small(
+          type='button'
           data-test='buttonSendMessage'
-        ) Send message
+          @click='sendMessage'
+        )
+          i18n Send message
 
         i18n.button.is-outlined.is-small(
           v-if='groupShouldPropose || isGroupCreator'
@@ -85,6 +86,7 @@ tooltip(
 <script>
 import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
@@ -114,7 +116,8 @@ export default ({
     AvatarUser,
     ModalClose,
     UserName,
-    Tooltip
+    Tooltip,
+    ButtonSubmit
   },
   computed: {
     ...mapGetters([
@@ -165,10 +168,10 @@ export default ({
     toggleTooltip () {
       this.$refs.tooltip.toggle()
     },
-    sendMessage () {
+    async sendMessage () {
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
       if (!chatRoomID) {
-        this.createDirectMessage(this.contractID)
+        await this.createDirectMessage(this.contractID)
       } else {
         if (!this.ourGroupDirectMessages[chatRoomID].visible) {
           this.setDMVisibility(chatRoomID, true)
@@ -178,6 +181,9 @@ export default ({
       }
       this.toggleTooltip()
     }
+  },
+  beforeDestroy () {
+    console.log('!@# destroyed!!')
   }
 }: Object)
 </script>
