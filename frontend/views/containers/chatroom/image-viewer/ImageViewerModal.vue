@@ -2,18 +2,18 @@
 .c-image-viewer-modal(@wheel.prevent.stop='')
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area(:img-src='metaData.imgUrl' :name='metaData.name')
+    preview-image-area(:img-src='ephemeral.currentImage.imgUrl' :name='ephemeral.currentImage.name')
 
     header.c-modal-header
       avatar-user.c-avatar(
-        v-if='metaData.ownerID'
-        :contractID='metaData.ownerID'
+        v-if='ephemeral.currentImage.ownerID'
+        :contractID='ephemeral.currentImage.ownerID'
         size='sm'
       )
 
       .c-img-data
         .c-name.has-ellipsis {{ displayName }}
-        .c-filename.has-ellipsis {{ metaData.name }}
+        .c-filename.has-ellipsis {{ ephemeral.currentImage.name }}
 
       button.is-icon-small.c-close-btn(
         type='button'
@@ -39,31 +39,18 @@ export default {
     PreviewImageArea
   },
   props: {
-    metaData: Object,
-    images: Array
+    images: Array,
+    initialIndex: {
+      type: Number,
+      required: false,
+      default: 0
+    }
   },
   data () {
     return {
-      testImgSrc: '/assets/images/home-bg.jpeg',
       ephemeral: {
-        previewImgAttrs: {
-          width: undefined,
-          height: undefined
-        },
-        currentZoom: 0,
-        showSliderOutput: false
-      },
-      config: {
-        imgData: {
-          minWidth: null,
-          minHeight: null,
-          naturalWidth: null,
-          naturalHeight: null,
-          aspectRatio: 1 // intrinsic ratio value of width / height
-        },
-        zoomMin: 0,
-        zoomMax: 400, // for now.
-        sliderUnit: '%'
+        currentIndex: 0,
+        currentImage: null
       }
     }
   },
@@ -74,18 +61,22 @@ export default {
     ]),
     blurryBgStyles () {
       return {
-        backgroundImage: `url(${this.metaData.imgUrl})`
+        backgroundImage: `url(${this.ephemeral.currentImage.imgUrl})`
       }
     },
     displayName () {
-      const contractID = this.metaData.ownerID
+      const contractID = this.ephemeral.currentImage.ownerID
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
     }
   },
   created () {
-    if (!this.metaData) {
+    if (!Array.isArray(this.images)) {
       this.$nextTick(() => this.close())
+    } else {
+      console.log('!@# initialIndex: ', this.initialIndex)
+      this.ephemeral.currentIndex = this.initialIndex
+      this.ephemeral.currentImage = this.images[this.ephemeral.currentIndex]
     }
   },
   mounted () {
