@@ -39,7 +39,8 @@ export default {
     PreviewImageArea
   },
   props: {
-    metaData: Object
+    metaData: Object,
+    images: Array
   },
   data () {
     return {

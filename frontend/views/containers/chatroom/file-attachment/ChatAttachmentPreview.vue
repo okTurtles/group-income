@@ -213,6 +213,18 @@ export default {
       }
     },
     openImageViewer (objectURL, data) {
+      const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+        .map((entry, index) => {
+          return {
+            name: entry.name,
+            ownerID: this.ownerID,
+            imgUrl: entry.url || this.objectURLList[index] || '',
+            createdAt: this.createdAt || new Date()
+          }
+        })
+
+      console.log('!@# allImageAttachments: ', allImageAttachments)
+
       if (objectURL) {
         sbp(
           'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
