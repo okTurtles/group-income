@@ -149,34 +149,6 @@ export default ({
     @include phone {
       text-align: right;
     }
-
-    @include desktop {
-      min-width: 4.5rem;
-    }
-  }
-
-  th.c-th-method {
-    @include desktop {
-      min-width: 7.25rem;
-    }
-  }
-
-  th.c-th-date {
-    @include desktop {
-      min-width: 6.25rem;
-    }
-  }
-
-  th.c-th-relative-to {
-    @include desktop {
-      min-width: 5.25rem;
-    }
-  }
-
-  ::v-deep td.c-td-user {
-    @include desktop {
-      padding-right: 0.5rem;
-    }
   }
 
   &.c-is-todo {
