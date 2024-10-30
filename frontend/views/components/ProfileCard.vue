@@ -181,9 +181,6 @@ export default ({
       }
       this.toggleTooltip()
     }
-  },
-  beforeDestroy () {
-    console.log('!@# destroyed!!')
   }
 }: Object)
 </script>
