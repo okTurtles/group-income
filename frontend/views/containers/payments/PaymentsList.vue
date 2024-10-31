@@ -150,25 +150,25 @@ export default ({
       text-align: right;
     }
 
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 4.5rem;
     }
   }
 
   th.c-th-method {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 7.25rem;
     }
   }
 
   th.c-th-date {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 6.25rem;
     }
   }
 
   th.c-th-relative-to {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 5.25rem;
     }
   }
@@ -176,6 +176,21 @@ export default ({
   ::v-deep td.c-td-user {
     @include desktop {
       padding-right: 0.5rem;
+      max-width: 12rem;
+      min-width: 10rem;
+      overflow: hidden;
+
+      .c-user {
+        max-width: inherit;
+
+        .c-twrapper {
+          width: 100%;
+        }
+      }
+    }
+
+    @include from (1360px) {
+      max-width: 16rem;
     }
   }
 
@@ -226,7 +241,7 @@ export default ({
         width: 20%;
       }
 
-      @include desktop {
+      @include payment-table-desktop {
         width: 14%;
       }
     }
@@ -236,7 +251,7 @@ export default ({
         width: 24%;
       }
 
-      @include desktop {
+      @include payment-table-desktop {
         width: 19%;
       }
     }
@@ -250,7 +265,7 @@ export default ({
       display: none;
       padding-right: 0;
 
-      @include desktop {
+      @include payment-table-desktop {
         display: table-cell;
         width: 14%;
       }
@@ -259,7 +274,7 @@ export default ({
     th.c-th-action {
       display: none;
 
-      @include desktop {
+      @include payment-table-desktop {
         display: table-cell;
         width: 5%;
       }
