@@ -174,8 +174,11 @@ export default ({
   }
 
   ::v-deep td.c-td-user {
-    @include desktop {
+    @include tablet {
       padding-right: 0.5rem;
+    }
+
+    @include desktop {
       max-width: 12rem;
       min-width: 10rem;
       overflow: hidden;
@@ -208,19 +211,31 @@ export default ({
       width: 40%;
 
       @include tablet {
-        width: 27%;
+        width: 35%;
       }
     }
 
     th.c-th-method {
       width: 20%;
+
+      @include tablet {
+        padding-right: 0.5rem;
+        min-width: 8rem;
+      }
     }
 
     th.c-th-amount {
       width: 55%;
 
       @include tablet {
-        width: 24%;
+        width: 16%;
+      }
+    }
+
+    th.c-th-date {
+      @include desktop {
+        padding-right: 1.5rem;
+        min-width: 4.25rem;
       }
     }
   }
@@ -241,7 +256,7 @@ export default ({
         width: 20%;
       }
 
-      @include payment-table-desktop {
+      @include desktop {
         width: 14%;
       }
     }
@@ -249,6 +264,7 @@ export default ({
     th.c-th-method {
       @include tablet {
         width: 24%;
+        padding-right: 0.5rem;
       }
 
       @include payment-table-desktop {
@@ -259,6 +275,10 @@ export default ({
     th.c-th-date {
       width: 18%;
       padding-right: 0.5rem;
+
+      @include desktop {
+        width: 22%;
+      }
     }
 
     th.c-th-relative-to {
