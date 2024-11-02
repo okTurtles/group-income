@@ -15,6 +15,12 @@
 /* views/pages/Join.vue */
 "(group name unavailable)" = "(group name unavailable)";
 
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"(optional)" = "(optional)";
+
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/NewDirectMessageModal.vue */
+"(you)" = "(you)";
+
 /* views/containers/contributions/SupportHistory.vue, views/containers/contributions/TodoHistory.vue */
 "* This month contains delayed payments for prior months." = "* This month contains delayed payments for prior months.";
 
@@ -23,6 +29,12 @@
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "*This value was automatically adjusted because your group is too small for the disagreement number." = "*This value was automatically adjusted because your group is too small for the disagreement number.";
+
+/* views/pages/GroupChat.vue */
+"1 member" = "1 member";
+
+/* views/containers/contributions/ContributionsWidget.vue */
+"1 member is contributing." = "1 member is contributing.";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "1. Create a new group" = "1. Create a new group";
@@ -168,7 +180,7 @@
 /* views/pages/Contributions.vue */
 "Add members to group" = "Add members to group";
 
-/* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
+/* views/containers/chatroom/CreatePoll.vue, views/containers/contributions/NonMonetaryPledges.vue, views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
 "Add more" = "Add more";
 
 /* views/containers/proposals/ProposalsWidget.vue */
@@ -224,6 +236,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "All links" = "All links";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"All members can support each other with non-monetary contributions. There's value in time, skills, and willingness to help the group." = "All members can support each other with non-monetary contributions. There's value in time, skills, and willingness to help the group.";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "All messages exchanged between members will be {strong_} deleted permanently{_strong}." = "All messages exchanged between members will be {strong_} deleted permanently{_strong}.";
@@ -336,6 +351,12 @@
 /* views/containers/chatroom/CreatePoll.vue */
 "Ask a question!" = "Ask a question!";
 
+/* views/containers/contributions/Contribution.vue */
+"At least one non-monetary contribution is required." = "At least one non-monetary contribution is required.";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"At least one non-monetary pledge is required" = "At least one non-monetary pledge is required";
+
 /* views/containers/contributions/ContributionsWidget.vue */
 "At the moment, no one is in need of contributions." = "At the moment, no one is in need of contributions.";
 
@@ -356,6 +377,9 @@
 
 /* views/components/GroupWelcome.vue, views/containers/group-settings/InvitationLinkModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Awesome" = "Awesome";
+
+/* views/containers/contributions/PaymentMethods.vue */
+"BTC address" = "BTC address";
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Back" = "Back";
@@ -600,6 +624,9 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Create channel" = "Create channel";
 
+/* views/containers/proposals/ProposalTemplate.vue */
+"Create invitation" = "Create invitation";
+
 /* views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/SendArea.vue */
 "Create poll" = "Create poll";
 
@@ -720,6 +747,9 @@
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Does not match" = "Does not match";
 
+/* views/containers/group-settings/InvitationsTable.vue */
+"Doesn't expire" = "Doesn't expire";
+
 /* views/containers/navigation/Navigation.vue */
 "Donate" = "Donate";
 
@@ -761,6 +791,9 @@
 
 /* views/components/ProfileCard.vue */
 "Edit payment info" = "Edit payment info";
+
+/* views/containers/contributions/PaymentMethods.vue */
+"Email, name or URL" = "Email, name or URL";
 
 /* views/pages/Home.vue */
 "Enter an existing group using your username." = "Enter an existing group using your username.";
@@ -912,11 +945,11 @@
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
 
+/* controller/actions/identity.js, controller/app/identity.js */
+"Failed to log in: {reportError}" = "Failed to log in: {reportError}";
+
 /* main.js */
 "Failed to login" = "Failed to login";
-
-/* controller/actions/identity.js, controller/app/identity.js */
-"Failed to login: {reportError}" = "Failed to login: {reportError}";
 
 /* controller/actions/chatroom.js */
 "Failed to make emotion." = "Failed to make emotion.";
@@ -961,6 +994,9 @@
 "Failed to set direct message visibility." = "Failed to set direct message visibility.";
 
 /* controller/actions/identity.js */
+"Failed to set group attributes." = "Failed to set group attributes.";
+
+/* controller/actions/identity.js */
 "Failed to set profile attributes." = "Failed to set profile attributes.";
 
 /* views/containers/user-settings/AppLogs.vue */
@@ -979,6 +1015,9 @@
 "Failed to update group distribution date." = "Failed to update group distribution date.";
 
 /* controller/actions/group.js */
+"Failed to update group invite expiry." = "Failed to update group invite expiry.";
+
+/* controller/actions/group.js */
 "Failed to update group profile." = "Failed to update group profile.";
 
 /* controller/actions/group.js */
@@ -992,6 +1031,12 @@
 
 /* controller/actions/group.js */
 "Failed to update voting rules. {codeError}" = "Failed to update voting rules. {codeError}";
+
+/* controller/actions/group.js */
+"Failed to upgrade from version 1.0.7" = "Failed to upgrade from version 1.0.7";
+
+/* controller/actions/chatroom.js */
+"Failed to upgrade from version 1.0.8" = "Failed to upgrade from version 1.0.8";
 
 /* views/components/AvatarUpload.vue */
 "Failed to upload avatar. {reportError}" = "Failed to upload avatar. {reportError}";
@@ -1185,6 +1230,9 @@
 /* views/containers/user-settings/Acknowledgements.vue */
 "Illustrations" = "Illustrations";
 
+/* views/containers/chatroom/image-viewer/PreviewImageArea.vue */
+"Image preview" = "Image preview";
+
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.";
 
@@ -1304,6 +1352,9 @@
 
 /* views/containers/contributions/PaymentMethods.vue, views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
+
+/* views/containers/contributions/PaymentMethods.vue */
+"Lightning address" = "Lightning address";
 
 /* views/containers/chatroom/SendArea.vue */
 "Link" = "Link";
@@ -1431,7 +1482,7 @@
 /* views/containers/contributions/SupportHistory.vue */
 "Needed: {todo}" = "Needed: {todo}";
 
-/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
+/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue */
 "New" = "New";
 
 /* views/containers/chatroom/NewDirectMessageModal.vue */
@@ -1443,7 +1494,7 @@
 /* views/containers/proposals/DistributionDate.vue */
 "New distribution date" = "New distribution date";
 
-/* model/contracts/chatroom.js */
+/* model/notifications/messageReceivePostEffect.js */
 "New message" = "New message";
 
 /* views/containers/proposals/Mincome.vue */
@@ -1499,6 +1550,12 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"Non-monetary pledge" = "Non-monetary pledge";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"Non-monetary pledge cannot exceed {maxChars} characters" = "Non-monetary pledge cannot exceed {maxChars} characters";
 
 /* model/contracts/identity.js */
 "Not existing direct message." = "Not existing direct message.";
@@ -1767,6 +1824,9 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "Pledge amount cannot exceed {max}" = "Pledge amount cannot exceed {max}";
 
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"Pledge value" = "Pledge value";
+
 /* views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "Poll closed" = "Poll closed";
 
@@ -1775,9 +1835,6 @@
 
 /* views/containers/payments/PaymentsPagination.vue */
 "Previous page" = "Previous page";
-
-/* views/containers/user-settings/settings.js */
-"Privacy & Safety" = "Privacy & Safety";
 
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
@@ -1973,6 +2030,9 @@
 
 /* views/containers/chatroom/ChatMain.vue */
 "Remove pinned message" = "Remove pinned message";
+
+/* views/containers/contributions/NonMonetaryPledges.vue */
+"Remove pledge entry" = "Remove pledge entry";
 
 /* views/containers/proposals/RemoveMember.vue */
 "Remove {name} from the group" = "Remove {name} from the group";
@@ -2250,7 +2310,7 @@
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/Mincome.vue */
 "The amount must be a number. (E.g. 100.75)" = "The amount must be a number. (E.g. 100.75)";
 
-/* views/pages/Payments.vue */
+/* views/containers/contributions/ContributionsWidget.vue, views/pages/Payments.vue */
 "The distribution period begins on: {startDate}" = "The distribution period begins on: {startDate}";
 
 /* views/containers/contributions/SupportHistory.vue, views/containers/contributions/TodoHistory.vue */
@@ -2330,6 +2390,9 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
 "This field is required" = "This field is required";
+
+/* views/containers/group-settings/InvitationLinkModal.vue */
+"This invite link doesn't expire" = "This invite link doesn't expire";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "This invite link expires on {expireDate}." = "This invite link expires on {expireDate}.";
@@ -2496,7 +2559,7 @@
 /* views/containers/user-settings/settings.js */
 "User settings" = "User settings";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Username" = "Username";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -2596,6 +2659,9 @@
 "You" = "You";
 
 /* views/containers/contributions/ContributionsWidget.vue */
+"You and 1 other member are contributing." = "You and 1 other member are contributing.";
+
+/* views/containers/contributions/ContributionsWidget.vue */
 "You and {count} other members are contributing." = "You and {count} other members are contributing.";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
@@ -2639,6 +2705,9 @@
 
 /* views/pages/Contributions.vue */
 "You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!" = "You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!";
+
+/* views/containers/chatroom/ConversationGreetings.vue */
+"You can post private notes to yourself here." = "You can post private notes to yourself here.";
 
 /* views/pages/Join.vue */
 "You cannot join already joined group." = "You cannot join already joined group.";
@@ -2829,14 +2898,17 @@
 /* views/containers/contributions/ContributionItem.vue */
 "{amount} from {listName}" = "{amount} from {listName}";
 
-/* views/pages/Payments.vue */
-"{amount} in total, to {count} members" = "{amount} in total, to {count} members";
-
 /* views/containers/contributions/ContributionItem.vue */
 "{amount} to {who}" = "{amount} to {who}";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "{amount} will be used." = "{amount} will be used.";
+
+/* views/pages/Payments.vue */
+"{amt} in total, to 1 member" = "{amt} in total, to 1 member";
+
+/* views/pages/Payments.vue */
+"{amt} in total, to {count} members" = "{amt} in total, to {count} members";
 
 /* views/containers/proposals/ProposalItem.vue */
 "{automated}Remove {user} (you) from the group." = "{automated}Remove {user} (you) from the group.";
@@ -2872,6 +2944,9 @@
 "{days}d {hours}h {minutes}m left" = "{days}d {hours}h {minutes}m left";
 
 /* model/notifications/templates.js */
+"{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
+
+/* model/notifications/templates.js */
 "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'";
 
 /* views/containers/contributions/IncomeDetails.vue */
@@ -2882,6 +2957,9 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} will ensure you meet the mincome" = "{firstMember} will ensure you meet the mincome";
+
+/* model/notifications/templates.js */
+"{first} and {rest} more" = "{first} and {rest} more";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} created a proposal. \"{title}\"" = "{from} created a proposal. \"{title}\"";
@@ -2922,17 +3000,29 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "{minutes}m left" = "{minutes}m left";
 
+/* views/containers/group-settings/InvitationsTable.vue */
+"{months}mo {days}d left" = "{months}mo {days}d left";
+
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{name} (you)" = "{name} (you)";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
 "{name} Note:" = "{name} Note:";
 
-/* views/pages/GroupChat.vue */
-"{numMembers} members" = "{numMembers} members";
+/* model/notifications/templates.js */
+"{name} added non-monetary contribution: {strong_}{added}{_strong}" = "{name} added non-monetary contribution: {strong_}{added}{_strong}";
+
+/* model/notifications/templates.js */
+"{name} removed non-monetary contribution: {strong_}{removed}{_strong}" = "{name} removed non-monetary contribution: {strong_}{removed}{_strong}";
+
+/* model/notifications/templates.js */
+"{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}" = "{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} used";
+
+/* views/pages/GroupChat.vue */
+"{num} members" = "{num} members";
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} new notifications";
@@ -3068,4 +3158,7 @@
 
 /* views/pages/Join.vue */
 "{who} invited you to join their group!" = "{who} invited you to join their group!";
+
+/* views/containers/group-settings/InvitationsTable.vue */
+"{years}y {months}mo {days}d left" = "{years}y {months}mo {days}d left";
 

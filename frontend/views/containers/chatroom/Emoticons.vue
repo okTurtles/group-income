@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-picker(:class='{ "is-active": isActive }' @click='clickBackDrop')
-  .c-picker-wrapper(:style='position')
-    picker(@select='select' :data='emoji' :show-preview='false')
+  .c-picker-wrapper(ref='pickerWrapper' :style='position')
+    picker(@select='select' :data='emoji' :show-preview='false' :auto-focus='true')
 </template>
 
 <script>
@@ -53,6 +53,8 @@ export default ({
       }
       this.lastFocus = document.activeElement
       this.isActive = true
+
+      this.$nextTick(this.focusSearch)
     },
     select (emoticon) {
       sbp('okTurtles.events/emit', SELECT_EMOTICON, emoticon)
@@ -105,6 +107,13 @@ export default ({
         this.closeEmoticonDlg()
       }
       this.debouncedSetPosition()
+    },
+    focusSearch () {
+      // It appears that there is no component-level method provided to focus the search. So using browser API instead here.
+      // (reference: https://github.com/serebrov/emoji-mart-vue/blob/master/src/components/search.vue)
+      const searchInputEl = this.$refs.pickerWrapper.querySelector('.emoji-mart-search input')
+
+      searchInputEl && searchInputEl.focus()
     }
   },
   watch: {

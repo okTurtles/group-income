@@ -39,9 +39,17 @@ async function messageReceivePostEffect ({
       sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
     }
 
+    /*
+    // TODO: This needs to be done differently in the SW
+    const currentRoute = sbp('controller/router').history.current || ''
+    const isTargetChatroomCurrentlyActive = currentRoute.path.includes('/group-chat') &&
+  rootGetters.currentChatRoomId === contractID // when the target chatroom is currently open/active on the browser, No need to send a notification.
+    if (isTargetChatroomCurrentlyActive) return // Skip notifications
+    // END TODO: This needs to be done differently in the SW
+    */
+
     let title = `# ${chatRoomName}`
     let icon
-
     if (isDM) {
     // NOTE: partner identity contract could not be synced yet
       const members = rootState[contractID].members
