@@ -1257,8 +1257,8 @@ export default (sbp('sbp/selectors/register', {
       console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
       // there is a chance two users are logged in to the same machine and must check their contracts before syncing
       const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
-      const isSubcribed = this.subscriptionSet.has(contractID)
-      if (!isSubcribed) {
+      const isSubscribed = this.subscriptionSet.has(contractID)
+      if (!isSubscribed) {
         const entry = this.pending.find((entry) => entry?.contractID === contractID)
         // we're syncing a contract for the first time, make sure to add to pending
         // so that handleEvents knows to expect events from this contract
@@ -1294,7 +1294,7 @@ export default (sbp('sbp/selectors/register', {
           // this must be called directly, instead of via enqueueHandleEvent
           await sbp('chelonia/private/in/handleEvent', contractID, event)
         }
-      } else if (!isSubcribed) {
+      } else if (!isSubscribed) {
         this.subscriptionSet.add(contractID)
         sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [contractID], removed: [] })
         const entryIndex = this.pending.findIndex((entry) => entry?.contractID === contractID)

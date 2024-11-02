@@ -70,7 +70,7 @@ const groupGuard = {
 const pendingApprovalGuard = {
   guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
   redirect: (to, from) => {
-    console.error('@@@@redirect pa guard', store.state.currentGroupId, !store.getters.ourProfileActive, to, from, new Error().stack)
+    sbp('chelonia/rootState').then(c => console.error('@@@@redirect pa guard', store.state.currentGroupId, !store.getters.ourProfileActive, to, from, new Error().stack, sbp('state/vuex/state'), c))
     return ({ path: '/pending-approval' })
   }
 }

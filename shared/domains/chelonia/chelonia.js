@@ -795,7 +795,6 @@ export default (sbp('sbp/selectors/register', {
   },
   // resolves when all pending actions for these contractID(s) finish
   'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<*> {
-    console.error('@@@wait', new Error().stack)
     const listOfIds = contractIDs
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)

@@ -44,6 +44,7 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
   // This function is called when the set of subscribed contracts is modified
   const modifiedHandler = (_, { added }) => {
     // Wait for the added contracts to be ready, then call the update function
+    if (!added.length) return
     sbp('chelonia/contract/wait', added).then(() => {
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, added)

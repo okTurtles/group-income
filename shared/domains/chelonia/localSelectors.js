@@ -55,24 +55,22 @@ export default (sbp('sbp/selectors/register', {
       })
     })
 
-    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
+    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet, { added, removed }) => {
       sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
-        const states = await sbp('chelonia/contract/fullState', subscriptionSet)
+        const states = added.length
+          ? await sbp('chelonia/contract/fullState', added)
+          : {}
         const vuexState = sbp('state/vuex/state')
 
         if (!vuexState.contracts) {
           reactiveSet(vuexState, 'contracts', Object.create(null))
         }
 
-        const oldContracts = Object.keys(vuexState.contracts)
-        const oldContractsToRemove = oldContracts.filter(x => !subscriptionSet.includes(x))
-        const newContracts = subscriptionSet.filter(x => !oldContracts.includes(x))
-
-        oldContractsToRemove.forEach(contractID => {
+        removed.forEach(contractID => {
           reactiveDel(vuexState.contracts, contractID)
           reactiveDel(vuexState, contractID)
         })
-        for (const contractID of newContracts) {
+        for (const contractID of added) {
           const { contractState, cheloniaState } = states[contractID]
           if (cheloniaState) {
             reactiveSet(vuexState.contracts, contractID, cloneDeep(cheloniaState))
@@ -81,7 +79,7 @@ export default (sbp('sbp/selectors/register', {
             reactiveSet(vuexState, contractID, cloneDeep(contractState))
           }
         }
-        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet)
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet, { added, removed })
       })
     })
   }

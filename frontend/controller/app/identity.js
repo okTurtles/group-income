@@ -6,6 +6,7 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -55,96 +56,99 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   //   or new Vuex state: any Chelonia-specific state will be set directly from
   //   `cheloniaState` and any exisiting contract state in `state` or `vuexState`
   //   will be discarded.
-  try {
-    const vuexState = sbp('state/vuex/state')
-    if (vuexState.loggedIn && vuexState.loggedIn.identityContractID !== identityContractID) {
+  await sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
+    try {
+      const vuexState = sbp('state/vuex/state')
+      if (vuexState.loggedIn && vuexState.loggedIn.identityContractID !== identityContractID) {
       // This shouldn't happen. It means that we received a LOGIN event but
       // there's an active session for a different user. If this happens, it
       // means that there's buggy login logic that should be reported and fixed
-      console.error('Received login event during active session', { receivedIdentityContractID: identityContractID, existingIdentityContractID: vuexState.loggedIn.identityContractID })
-      throw new Error('Received login event but there already is an active session')
-    }
-    const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
-    // If `state` is set, process it and replace Vuex state with it
-    if (state) {
+        console.error('Received login event during active session', { receivedIdentityContractID: identityContractID, existingIdentityContractID: vuexState.loggedIn.identityContractID })
+        throw new Error('Received login event but there already is an active session')
+      }
+      const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
+      console.error('@@@@CHELONIA STATE', cheloniaState)
+      // If `state` is set, process it and replace Vuex state with it
+      if (state) {
       // Exclude contracts from the state
-      if (state.contracts) {
-        Object.keys(state.contracts).forEach(k => {
+        if (state.contracts) {
+          Object.keys(state.contracts).forEach(k => {
           // Vue.delete not needed as the entire object will replace the state
-          delete state[k]
-        })
-      }
-      // Augment state with Chelonia state
-      Object.keys(cheloniaState.contracts).forEach(k => {
-        if (cheloniaState[k]) {
-          // Vue.set not needed as the entire object will replace the state
-          state[k] = cheloniaState[k]
+            delete state[k]
+          })
         }
-      })
-      state.contracts = cheloniaState.contracts
-      if (cheloniaState.namespaceLookups) {
-        state.namespaceLookups = cheloniaState.namespaceLookups
-      }
-      // End exclude contracts
-      sbp('state/vuex/postUpgradeVerification', state)
-      sbp('state/vuex/replace', state)
-    } else {
+        // Augment state with Chelonia state
+        Object.keys(cheloniaState.contracts).forEach(k => {
+          if (cheloniaState[k]) {
+          // Vue.set not needed as the entire object will replace the state
+            state[k] = cheloniaState[k]
+          }
+        })
+        state.contracts = cheloniaState.contracts
+        if (cheloniaState.namespaceLookups) {
+          state.namespaceLookups = cheloniaState.namespaceLookups
+        }
+        // End exclude contracts
+        sbp('state/vuex/postUpgradeVerification', state)
+        sbp('state/vuex/replace', state)
+      } else {
       // Else, if `state` was not given, just sync add contracts from Chelonia
       // to the current Vuex state
-      const state = vuexState
-      // Exclude contracts from the state
-      if (state.contracts) {
-        Object.keys(state.contracts).forEach(k => {
-          Vue.delete(state, k)
-        })
-      }
-      Object.keys(cheloniaState.contracts).forEach(k => {
-        if (cheloniaState[k]) {
-          Vue.set(state, k, cheloniaState[k])
+        const state = vuexState
+        // Exclude contracts from the state
+        if (state.contracts) {
+          Object.keys(state.contracts).forEach(k => {
+            Vue.delete(state, k)
+          })
         }
+        Object.keys(cheloniaState.contracts).forEach(k => {
+          if (cheloniaState[k]) {
+            Vue.set(state, k, cheloniaState[k])
+          }
+        })
+        Vue.set(state, 'contracts', cheloniaState.contracts)
+        if (cheloniaState.namespaceLookups) {
+          Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+        }
+        // End exclude contracts
+        sbp('state/vuex/postUpgradeVerification', state)
+      }
+
+      if (encryptionParams) {
+        sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
+      }
+
+      // NOTE: users could notice that they leave the group by someone
+      // else when they log in
+      const currentState = sbp('state/vuex/state')
+      if (!currentState.currentGroupId) {
+        const gId = Object.keys(currentState.contracts)
+          .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
+
+        if (gId) {
+          sbp('gi.app/group/switch', gId)
+        }
+      }
+
+      // Whenever there's an active session, the encrypted save state should be
+      // removed, as it is only used for recovering the state when logging in
+      sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
+        console.error('Error deleting encrypted settings after login')
       })
-      Vue.set(state, 'contracts', cheloniaState.contracts)
-      if (cheloniaState.namespaceLookups) {
-        Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
-      }
-      // End exclude contracts
-      sbp('state/vuex/postUpgradeVerification', state)
+
+      /* Commented out as persistentActions are not being used
+      // TODO: [SW] It may make more sense to load persistent actions in
+      // actions in the SW instead of on each tab
+      const databaseKey = `chelonia/persistentActions/${identityContractID}`
+      sbp('chelonia.persistentActions/configure', { databaseKey })
+      await sbp('chelonia.persistentActions/load')
+      */
+
+      sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
+    } catch (e) {
+      sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
     }
-
-    if (encryptionParams) {
-      sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
-    }
-
-    // NOTE: users could notice that they leave the group by someone
-    // else when they log in
-    const currentState = sbp('state/vuex/state')
-    if (!currentState.currentGroupId) {
-      const gId = Object.keys(currentState.contracts)
-        .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
-
-      if (gId) {
-        sbp('gi.app/group/switch', gId)
-      }
-    }
-
-    // Whenever there's an active session, the encrypted save state should be
-    // removed, as it is only used for recovering the state when logging in
-    sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
-      console.error('Error deleting encrypted settings after login')
-    })
-
-    /* Commented out as persistentActions are not being used
-    // TODO: [SW] It may make more sense to load persistent actions in
-    // actions in the SW instead of on each tab
-    const databaseKey = `chelonia/persistentActions/${identityContractID}`
-    sbp('chelonia.persistentActions/configure', { databaseKey })
-    await sbp('chelonia.persistentActions/load')
-    */
-
-    sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
-  } catch (e) {
-    sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
-  }
+  })
 })
 
 sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
@@ -307,7 +311,7 @@ export default (sbp('sbp/selectors/register', {
           // complete
           const loginCompletePromise = new Promise((resolve, reject) => {
             const loginCompleteHandler = ({ identityContractID: id }) => {
-              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler, { identityContractID, state })
+              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
               if (id === identityContractID) {
               // Before the promise resolves, we need to save the state
               // by calling 'state/vuex/save' to ensure that refreshing the page
@@ -385,7 +389,6 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // updating the 'lastLoggedIn' field is done as a periodic notification
-        await sbp('chelonia/contract/sync', identityContractID)
         return identityContractID
       } catch (e) {
         console.error('gi.app/identity/login failed!', e)

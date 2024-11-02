@@ -33,49 +33,53 @@ async function messageReceivePostEffect ({
   const isDM = rootState[identityContractID].chatRooms[contractID]
   const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
-  await sbp('chelonia/contract/wait', contractID)
-  if (shouldAddToUnreadMessages) {
-    sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
-  }
+  await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+  try {
+    if (shouldAddToUnreadMessages) {
+      sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
+    }
 
-  let title = `# ${chatRoomName}`
-  let icon
+    let title = `# ${chatRoomName}`
+    let icon
 
-  if (isDM) {
+    if (isDM) {
     // NOTE: partner identity contract could not be synced yet
-    const members = rootState[contractID].members
-    const isDMToMyself = members.length === 1 && members[0] === identityContractID
-    const partners = members
-      .filter(memberID => memberID !== identityContractID)
-      .sort((p1, p2) => {
-        const p1JoinedDate = new Date(identityContractID.members[p1].joinedDate).getTime()
-        const p2JoinedDate = new Date(identityContractID.members[p2].joinedDate).getTime()
-        return p1JoinedDate - p2JoinedDate
-      })
-    const lastJoinedPartner = isDMToMyself ? identityContractID : partners[partners.length - 1]
+      const members = rootState[contractID].members
+      const isDMToMyself = members.length === 1 && members[0] === identityContractID
+      const partners = members
+        .filter(memberID => memberID !== identityContractID)
+        .sort((p1, p2) => {
+          const p1JoinedDate = new Date(identityContractID.members[p1].joinedDate).getTime()
+          const p2JoinedDate = new Date(identityContractID.members[p2].joinedDate).getTime()
+          return p1JoinedDate - p2JoinedDate
+        })
+      const lastJoinedPartner = isDMToMyself ? identityContractID : partners[partners.length - 1]
 
-    title = isDMToMyself
-      ? rootGetters.userDisplayNameFromID(identityContractID)
-      : partners.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
-    icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
-  }
-  const path = `/group-chat/${contractID}`
+      title = isDMToMyself
+        ? rootGetters.userDisplayNameFromID(identityContractID)
+        : partners.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
+      icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
+    }
+    const path = `/group-chat/${contractID}`
 
-  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
-  const { messageNotification, messageSound } = chatNotificationSettings
-  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
+    const { messageNotification, messageSound } = chatNotificationSettings
+    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
       (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
-  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
       (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  shouldNotifyMessage && makeNotification({
-    title,
-    body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
-    icon,
-    path
-  })
-  // `MESSAGE_RECEIVE` should be forwarded to the tab
-  shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
+    shouldNotifyMessage && makeNotification({
+      title,
+      body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
+      icon,
+      path
+    })
+    // `MESSAGE_RECEIVE` should be forwarded to the tab
+    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
+  } finally {
+    await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+  }
 }
 
 export default messageReceivePostEffect
