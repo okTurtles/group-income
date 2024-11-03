@@ -1,19 +1,12 @@
+import { aes128gcm } from '@exact-realty/rfc8188/encodings'
+import encrypt from '@exact-realty/rfc8188/encrypt'
 // $FlowFixMe[missing-export]
 import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
 import rfc8291Ikm from './rfc8291Ikm.js'
+import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
 
 // const pushController = require('web-push')
-const giConfig = require('../giconf.json')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
-
-// NOTE: VAPID public/private keys can be generated via 'npx web-push generate-vapid-keys' command.
-const publicKey = process.env.VAPID_PUBLIC_KEY || giConfig.VAPID_PUBLIC_KEY
-// const privateKey = process.env.VAPID_PRIVATE_KEY || giConfig.VAPID_PRIVATE_KEY
-/* pushController.setVapidDetails(
-  process.env.VAPID_EMAIL || giConfig.VAPID_EMAIL,
-  publicKey,
-  privateKey
-) */
 
 // Generate an UUID from a `PushSubscription'
 export const getSubscriptionId = async (subscriptionInfo: Object): Promise<string> => {
@@ -118,7 +111,7 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
 export const pushServerActionhandlers: any = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
     const socket = this
-    socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: publicKey }))
+    socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
   },
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
@@ -132,5 +125,57 @@ export const pushServerActionhandlers: any = {
     const subscriptionId = JSON.parse(payload)
 
     delete socket.server.pushSubscriptions[subscriptionId]
+  }
+}
+
+// TODO: Implement
+const deleteClient = (_) => {}
+
+const encryptPayload = async (subcription: Object, data: any) => {
+  const readableStream = new Response(data).body
+  const [asPublic, IKM] = await subcription.encryptionKeys
+
+  return encrypt(aes128gcm, readableStream, 32768, asPublic, IKM)
+}
+
+export const postEvent = async (subscription: Object, event: any): Promise<void> => {
+  const authorization = await vapidAuthorization(subscription.endpoint)
+  const body = await encryptPayload(subscription, JSON.stringify(event)).then(async (bodyStream) => {
+    const chunks = []
+    const reader = bodyStream.getReader()
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(new Uint8Array(value))
+    }
+    return Buffer.concat(chunks)
+  })
+
+  const req = await fetch(subscription.endpoint, {
+    method: 'POST',
+    headers: [
+      ['authorization', authorization],
+      ['content-encoding', 'aes128gcm'],
+      [
+        'content-type',
+        'application/octet-stream'
+      ],
+      // ["push-receipt", ""],
+      ['ttl', '60']
+    ],
+    body
+  })
+
+  if (!req.ok) {
+    // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
+    // it likely means that the subscription no longer exists.
+    if ([401, 404, 410].includes(req.status)) {
+      console.warn(
+        new Date().toISOString(),
+        'Removing subscription',
+        subscription.id
+      )
+      deleteClient(subscription.id)
+    }
   }
 }
