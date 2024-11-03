@@ -4,24 +4,63 @@ import sbp from '@sbp/sbp'
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.
 
+const handler = (permission) => {
+  const granted = (permission === 'granted')
+  sbp('state/vuex/commit', 'setNotificationEnabled', granted)
+  if (granted) return
+
+  sbp('service-worker/setup-push-subscription').catch((e) => {
+    console.error('Error setting up service worker', e)
+  })
+}
+
+const fallbackChangeListener = () => {
+  if (!Notification.permission) return
+  handler(Notification.permission)
+  let oldValue = Notification.permission
+  setInterval(() => {
+    const newValue = Notification.permission
+    if (oldValue !== newValue) {
+      oldValue = newValue
+      handler(newValue)
+    }
+  }, 100)
+}
+
+if (typeof window === 'object' && typeof Notification === 'function') {
+  if (
+    typeof navigator.permissions === 'object' &&
+    // $FlowFixMe[method-unbinding]
+    typeof navigator.permissions.query === 'function'
+  ) {
+    navigator.permissions.query({ name: 'notifications' }).then(
+      (result) => {
+        handler(result.state)
+        result.addEventListener('change', () => {
+          handler(result.state)
+        }, false)
+      }
+    ).catch((e) => {
+      console.error('Error querying notifications permission', e)
+      fallbackChangeListener()
+    })
+  } else {
+    fallbackChangeListener()
+  }
+}
+
 export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
-  if (typeof Notification === 'undefined') {
+  if (typeof Notification !== 'function') {
     return null
   }
 
   if (force || Notification.permission === 'default') {
     try {
-      sbp('state/vuex/commit', 'setNotificationEnabled', await Notification.requestPermission() === 'granted')
+      await Notification.requestPermission()
     } catch (e) {
       console.error('requestNotificationPermission:', e.message)
       return null
     }
-  }
-
-  if (Notification.permission === 'granted') {
-    await sbp('service-worker/setup-push-subscription').catch((e) => {
-      console.error('Error setting up service worker', e)
-    })
   }
 
   return Notification.permission

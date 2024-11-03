@@ -355,7 +355,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
           const eventHandler = ({ groupContractID }) => {
             if (groupContractID === cID) {
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-              sbp('chelonia/contract/retain', groupContractID, { ephemeral: true }).then(() => sbp('okTurtles.eventQueue/queueEvent', 'event-handled', Boolean)).then(() => {
+              sbp('chelonia/contract/retain', groupContractID, { ephemeral: true }).then(() => sbp('chelonia/contract/sync', groupContractID)).then(() => sbp('okTurtles.eventQueue/queueEvent', 'event-handled', Boolean)).then(() => {
                 if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
                   clearTimeout(timeoutId)
                   resolve()

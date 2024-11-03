@@ -34,7 +34,6 @@ declare module '@hapi/inert' { declare module.exports: any }
 declare module '@hapi/joi' { declare module.exports: any }
 declare module 'hapi-pino' { declare module.exports: any }
 declare module 'pino' { declare module.exports: any }
-declare module 'web-push' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }

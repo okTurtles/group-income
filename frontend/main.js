@@ -229,6 +229,9 @@ async function startApp () {
   sbp('sbp/selectors/register', {
     'swLogs/*': swRpc
   })
+  sbp('sbp/selectors/register', {
+    'push/*': swRpc
+  })
 
   /* eslint-disable no-new */
   new Vue({

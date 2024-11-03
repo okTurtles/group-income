@@ -641,6 +641,10 @@ export default (sbp('sbp/selectors/register', {
     }
     return this.pubsub
   },
+  'chelonia/handleEvent': function (event) {
+    const { contractID } = GIMessage.deserializeHEAD(event)
+    sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
+  },
   'chelonia/defineContract': function (contract: Object) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }

@@ -8,17 +8,18 @@ import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
 import '~/frontend/controller/sw-namespace.js'
-import getters from '~/frontend/model/getters.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
+import getters from '~/frontend/model/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { ACCEPTED_GROUP, CAPTURED_LOGS, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, SERIOUS_ERROR, SWITCH_GROUP } from '../../utils/events.js'
+import './push.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -144,7 +145,7 @@ self.addEventListener('fetch', function (event) {
 // TODO: this doesn't persist data across browser restarts, so try to use
 // the cache instead, or just localstorage. Investigate whether the service worker
 // has the ability to access and clear the localstorage periodically.
-const store = {}
+/* const store = {}
 const sendMessageToClient = async function (payload) {
   if (!store.clientId) {
     console.error('[sw] Cannot send a message to a client, because no client id is found')
@@ -156,15 +157,16 @@ const sendMessageToClient = async function (payload) {
     client.postMessage(payload)
   }
 }
+*/
 
 self.addEventListener('message', function (event) {
-  console.debug(`[sw] message from ${event.source.id}. Current store:`, store)
+  console.debug(`[sw] message from ${event.source.id}.`)
   // const client = await self.clients.get(event.source.id)
   // const client = await self.clients.get(event.clientId)
   if (typeof event.data === 'object' && event.data.type) {
     console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
-      case 'set':
+      /* case 'set':
         store[event.data.key] = event.data.value
         break
       case 'get':
@@ -175,6 +177,7 @@ self.addEventListener('message', function (event) {
       case 'store-client-id':
         store.clientId = event.source.id
         break
+      */
       case 'sbp': {
         const port = event.data.port;
         (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
@@ -215,38 +218,6 @@ self.addEventListener('message', function (event) {
 // Handle clicks on notifications issued via registration.showNotification().
 self.addEventListener('notificationclick', event => {
   console.debug('[sw] Notification clicked:', event.notification)
-})
-
-self.addEventListener('push', function (event) {
-  // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
-
-  if (!(self.Notification && self.Notification.permission === 'granted')) {
-    console.debug("[sw] received a push notification but aren't displaying it due to the permission not granted")
-    return
-  }
-
-  const data = event.data.json()
-  console.debug('[sw] push received: ', data)
-
-  self.registration.showNotification(
-    data.title,
-    {
-      body: data.body || '',
-      icon: '/assets/images/pwa-icons/group-income-icon-transparent.svg'
-    }
-  )
-})
-
-self.addEventListener('pushsubscriptionchange', async function (event) {
-  // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
-  // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
-  const subscription = await self.registration.pushManger.subscribe(event.oldSubscription.options)
-
-  // Sending the client a message letting it know of the subscription change.
-  await sendMessageToClient({
-    type: 'pushsubscriptionchange',
-    subscription
-  })
 })
 
 sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
