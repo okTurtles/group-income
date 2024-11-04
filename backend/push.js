@@ -100,6 +100,12 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
           return resultPromise
         }
       })()
+    },
+    'sockets': {
+      value: new Set()
+    },
+    'subscriptions': {
+      value: new Set()
     }
   })
 
@@ -115,15 +121,47 @@ export const pushServerActionhandlers: any = {
   },
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
+    const { server } = socket
     const subscription = payload
     const subscriptionId = await getSubscriptionId(subscription)
 
-    socket.server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+    if (!server.pushSubscriptions[subscriptionId]) {
+      server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+    } else {
+      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) return
+          server.subscribersByChannelID[channelID].delete(server.pushSubscriptions[subscriptionId])
+        })
+      }
+    }
+    if (socket.pushSubscriptionId) {
+      if (socket.pushSubscriptionId === subscriptionId) return
+      const oldSubscriptionId = socket.pushSubscriptionId
+      server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
+      if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[oldSubscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) {
+            server.subscribersByChannelID[channelID] = new Set()
+          }
+          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
+        })
+      }
+    }
+    socket.pushSubscriptionId = subscriptionId
+    server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+      server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
+    })
+    server.pushSubscriptions[subscriptionId].sockets.add(socket)
+    socket.subscriptions?.forEach(channelID => {
+      server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
+    })
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] (payload) {
     const socket = this
     const subscriptionId = JSON.parse(payload)
 
+    // TODO
     delete socket.server.pushSubscriptions[subscriptionId]
   }
 }

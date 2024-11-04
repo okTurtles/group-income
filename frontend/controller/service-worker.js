@@ -91,13 +91,10 @@ sbp('sbp/selectors/register', {
         return
       }
 
-      const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-      if (!pubsub) return // TODO: This needs to be moved into the service worker
-      // proper. pubsub will be undefined in this context.
       const existingSubscription = await registration.pushManager.getSubscription().then((subscription) => {
         if (
           !subscription ||
-        (subscription.expirationTime != null &&
+          (subscription.expirationTime != null &&
           subscription.expirationTime <= Date.now())
         ) {
           console.info(
@@ -111,9 +108,10 @@ sbp('sbp/selectors/register', {
       })
 
       // TODO: Consider throwing an exception here
-      if (!existingSubscription) return
+      if (!existingSubscription) return false
 
       await sbp('push/reportExistingSubscription', existingSubscription.toJSON())
+      return true
     })
   },
   'service-worker/update': async function () {

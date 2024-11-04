@@ -21,6 +21,7 @@ import type {
 } from '~/shared/pubsub.js'
 
 import type { JSONType, JSONObject } from '~/shared/types.js'
+import { postEvent } from './push.js'
 
 const { bold } = require('chalk')
 const WebSocket = require('ws')
@@ -105,7 +106,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   server.channels = new Set()
   server.customServerEventHandlers = { ...options.serverHandlers }
   server.customSocketEventHandlers = { ...options.socketHandlers }
-  server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
+  server.customMessageHandlers = { ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByChannelID = Object.create(null)
   server.pushSubscriptions = Object.create(null)
@@ -231,14 +232,16 @@ const defaultSocketEventHandlers = {
     }
     // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
-    const handler = server.messageHandlers[msg.type]
+    const defaultHandler = defaultMessageHandlers[msg.type]
+    const customHandler = server.customMessageHandlers[msg.type]
 
-    if (handler) {
+    if (defaultHandler || customHandler) {
       try {
-        handler.call(socket, msg)
+        defaultHandler?.call(socket, msg)
+        customHandler?.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
-        log.error(error, 'onMesage')
+        log.error(error, 'onMessage')
         server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
@@ -323,8 +326,16 @@ const publicMethods = {
     const server = this
 
     for (const client of to || server.clients) {
+      const msg = typeof message === 'string' ? message : JSON.stringify(message)
+      if (client.endpoint) {
+        console.error('@@@@POSTING PUSH EVENT')
+        postEvent(client, msg).catch(e => {
+          console.error(e, 'Error posting push notification')
+        })
+        continue
+      }
       if (client.readyState === WebSocket.OPEN && client !== except) {
-        client.send(typeof message === 'string' ? message : JSON.stringify(message))
+        client.send(msg)
       }
     }
   },

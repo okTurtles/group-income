@@ -52,7 +52,7 @@ export const initVapid = async () => {
   vapidPublicKey = vapidKeyPair[1]
 }
 
-const generateJwt = async (endpoint) => {
+const generateJwt = async (endpoint: URL): Promise<string> => {
   const privateKey = await crypto.subtle.importKey(
     'jwk',
     vapidPrivateKey,
@@ -67,6 +67,7 @@ const generateJwt = async (endpoint) => {
 
   const header = Buffer.from(JSON.stringify(
     Object.fromEntries([['typ', 'JWT'], ['alg', 'ES256']])
+    // $FlowFixMe[incompatible-call]
   )).toString('base64url')
   const body = Buffer.from(JSON.stringify(
     Object.fromEntries([
@@ -76,6 +77,7 @@ const generateJwt = async (endpoint) => {
       ['nbf', now - 60],
       ['sub', vapid.VAPID_EMAIL]
     ])
+    // $FlowFixMe[incompatible-call]
   )).toString('base64url')
 
   const signature = Buffer.from(
@@ -91,7 +93,7 @@ const generateJwt = async (endpoint) => {
 
 export const getVapidPublicKey = (): string => vapidPublicKey
 
-export const vapidAuthorization = async (endpoint: string): Promise<string> => {
+export const vapidAuthorization = async (endpoint: URL): Promise<string> => {
   const jwt = await generateJwt(endpoint)
   return `vapid t=${jwt}, k=${vapidPublicKey}`
 }

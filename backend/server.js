@@ -21,6 +21,7 @@ import { pushServerActionhandlers } from './push.js'
 // $FlowFixMe[cannot-resolve-module]
 import { webcrypto } from 'node:crypto'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -206,6 +207,33 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       socket.send(createNotification(NOTIFICATION_TYPE.VERSION_INFO, versionInfo))
     }
   },
+  socketHandlers: {
+    close () {
+      const socket = this
+      const { server } = this
+
+      const subscriptionId = socket.pushSubscriptionId
+
+      if (!subscriptionId) return
+      delete socket.pushSubscriptionId
+
+      if (!server.pushSubscriptions[subscriptionId]) return
+
+      server.pushSubscriptions[subscriptionId].sockets.delete(socket)
+      delete socket.pushSubscriptionId
+
+      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) return
+      server.pushSubscriptions[subscriptionId].sockets.delete(socket)
+      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) {
+            server.subscribersByChannelID[channelID] = new Set()
+          }
+          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[subscriptionId])
+        })
+      }
+    }
+  },
   messageHandlers: {
     [REQUEST_TYPE.PUSH_ACTION]: async function ({ data }) {
       const socket = this
@@ -229,6 +257,30 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       } else {
         socket.send(createPushErrorResponse({ message: `No handler for the '${action}' action` }))
       }
+    },
+    [NOTIFICATION_TYPE.SUB] ({ channelID }: SubMessage) {
+      const socket = this
+      const { server } = this
+
+      if (!socket.pushSubscriptionId) return
+      if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
+        delete socket.pushSubscriptionId
+        return
+      }
+
+      server.pushSubscriptions[socket.pushSubscriptionId].subscriptions.add(channelID)
+    },
+    [NOTIFICATION_TYPE.UNSUB] ({ channelID }: UnsubMessage) {
+      const socket = this
+      const { server } = this
+
+      if (!socket.pushSubscriptionId) return
+      if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
+        delete socket.pushSubscriptionId
+        return
+      }
+
+      server.pushSubscriptions[socket.pushSubscriptionId].subscriptions.delete(channelID)
     }
   }
 }))
