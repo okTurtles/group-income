@@ -1,6 +1,6 @@
 <template lang='pug'>
   button.is-loader(
-    type='submit'
+    :type='type'
     ref='btn'
     v-bind='$attrs'
     v-on='bindListeners'
@@ -43,7 +43,11 @@ https://github.com/okTurtles/group-income/pull/854/files#r388638068
 export default ({
   name: 'ButtonSubmit',
   props: {
-    disabled: Boolean
+    disabled: Boolean,
+    type: {
+      type: String,
+      default: 'submit'
+    }
   },
   data: () => ({
     ephemeral: {

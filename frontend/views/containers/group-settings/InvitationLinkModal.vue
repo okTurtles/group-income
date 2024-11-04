@@ -6,7 +6,7 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
   .c-container
     template(v-if='link')
       i18n.is-title-4(tag='h3') Share this link to grant access to your group.
-      i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
+      i18n.has-text-1(tag='p' :args='{ count: anyoneLinkMax }') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!
       link-to-copy.c-link(:link='link')
       i18n.has-text-1(v-if='expireDate' tag='p' :args='{ expireDate }') This invite link expires on {expireDate}.
       i18n.has-text-1(v-else tag='p') This invite link doesn't expire
@@ -33,6 +33,7 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
+import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'InvitationLinkModal',
@@ -62,6 +63,9 @@ export default ({
     },
     expireDate () {
       return humanDate(this.currentWelcomeInvite.expires, { month: 'long', day: 'numeric' })
+    },
+    anyoneLinkMax () {
+      return MAX_GROUP_MEMBER_COUNT
     }
   },
   methods: {

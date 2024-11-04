@@ -19,7 +19,7 @@ fieldset(
         .inputgroup
           input.input(
             type='text'
-            v-model='pledge.value'
+            v-model.trim='pledge.value'
             data-test='inputNonMonetaryPledge'
             :maxlength='config.maxChar'
             :aria-label='L("Pledge value")'
