@@ -2,7 +2,12 @@
 .c-image-viewer-modal(@wheel.prevent.stop='')
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area(:img-src='ephemeral.currentImage.imgUrl' :name='ephemeral.currentImage.name')
+    preview-image-area(
+      v-for='image in images'
+      :key='image.id'
+      :img-src='image.imgUrl'
+      :name='image.name'
+    )
 
     header.c-modal-header
       avatar-user.c-avatar(
@@ -68,13 +73,15 @@ export default {
       const contractID = this.ephemeral.currentImage.ownerID
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
+    },
+    hasMultipleImages () {
+      return Array.isArray(this.images) && this.images.length > 1
     }
   },
   created () {
     if (!Array.isArray(this.images)) {
       this.$nextTick(() => this.close())
     } else {
-      console.log('!@# initialIndex: ', this.initialIndex)
       this.ephemeral.currentIndex = this.initialIndex
       this.ephemeral.currentImage = this.images[this.ephemeral.currentIndex]
     }
@@ -132,6 +139,9 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
 
   @include from($tablet) {
     border-radius: 0.375rem;

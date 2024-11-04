@@ -94,6 +94,7 @@ import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -221,7 +222,8 @@ export default {
             name: entry.name,
             ownerID: this.ownerID,
             imgUrl: entry.url || this.objectURLList[index] || '',
-            createdAt: this.createdAt || new Date()
+            createdAt: this.createdAt || new Date(),
+            id: randomHexString(12)
           }
         })
       const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL) || 0
