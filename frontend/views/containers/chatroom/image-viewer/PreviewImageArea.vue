@@ -4,34 +4,37 @@
   @mousedown='mouseDownHandler'
   @mouseup='mouseUpHandler'
 )
-  img.c-preview-image(ref='previewImg'
-    :class='{ "is-movable": isImageMovable }'
-    :src='imgSrc'
-    :width='config.imgData.naturalWidth'
-    :height='config.imgData.naturalHeight'
-    :style='previewImgStyles'
-    :alt='L("Image preview")'
-    draggable='false'
-    @load='onImgLoad'
-  )
-
-  .c-zoom-slider-container(
-    @pointerdown.stop=''
-    @pointermove.stop=''
-    @pointerup.stop=''
-    @mousedown.stop=''
-    @mouseup.stop=''
-  )
-    slider-continuous.c-zoom-slider(
-      v-if='ephemeral.currentZoom !== null'
-      :class='{ "show-slider-output": ephemeral.showSliderOutput }'
-      uid='zoomslider'
-      :value='ephemeral.currentZoom'
-      :min='config.zoomMin'
-      :max='config.zoomMax'
-      :unit='config.sliderUnit'
-      @input='onSliderUpdate'
+  template(v-if='ephemeral.isLoaded')
+    img.c-preview-image(ref='previewImg'
+      :class='{ "is-movable": isImageMovable }'
+      :src='imgSrc'
+      :width='config.imgData.naturalWidth'
+      :height='config.imgData.naturalHeight'
+      :style='previewImgStyles'
+      :alt='L("Image preview")'
+      draggable='false'
+      @load='onImgLoad'
     )
+
+    .c-zoom-slider-container(
+      @pointerdown.stop=''
+      @pointermove.stop=''
+      @pointerup.stop=''
+      @mousedown.stop=''
+      @mouseup.stop=''
+    )
+      slider-continuous.c-zoom-slider(
+        v-if='ephemeral.currentZoom !== null'
+        :class='{ "show-slider-output": ephemeral.showSliderOutput }'
+        uid='zoomslider'
+        :value='ephemeral.currentZoom'
+        :min='config.zoomMin'
+        :max='config.zoomMax'
+        :unit='config.sliderUnit'
+        @input='onSliderUpdate'
+      )
+
+  .c-loader-animation(v-else)
 </template>
 
 <script>
@@ -62,6 +65,7 @@ export default {
   data () {
     return {
       ephemeral: {
+        isLoaded: false,
         previewImgAttrs: {
           width: undefined,
           height: undefined,
@@ -127,6 +131,7 @@ export default {
       const naturalHeight = imgEl.naturalHeight
       const aspectRatio = naturalWidth / naturalHeight
 
+      this.ephemeral.isLoaded = true
       this.config.imgData.naturalWidth = naturalWidth
       this.config.imgData.naturalHeight = naturalHeight
       this.config.imgData.aspectRatio = aspectRatio
@@ -500,5 +505,26 @@ img.c-preview-image {
   &.show-slider-output ::v-deep .sOutput {
     display: inline-block;
   }
+}
+
+.c-loader-animation {
+  pointer-events: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--image-viewer-text-color);
+  animation: loader-ani 1.75s infinite linear;
+
+  @include desktop {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@keyframes loader-ani {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
