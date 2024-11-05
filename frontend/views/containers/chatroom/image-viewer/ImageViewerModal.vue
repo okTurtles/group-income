@@ -110,10 +110,10 @@ export default {
     }
   },
   mounted () {
-    document.addEventListener('keydown', this.trapFocus)
+    document.addEventListener('keydown', this.keydownHandler)
   },
   beforeDestroy () {
-    document.removeEventListener('keydown', this.trapFocus)
+    document.removeEventListener('keydown', this.keydownHandler)
   },
   methods: {
     close () {
@@ -127,6 +127,17 @@ export default {
     selectPrevImage () {
       if (this.ephemeral.currentIndex > 0) {
         this.ephemeral.currentIndex -= 1
+      }
+    },
+    keydownHandler (e) {
+      this.trapFocus(e)
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          this.selectPrevImage()
+          break
+        case 'ArrowRight':
+          this.selectNextImage()
       }
     }
   }
