@@ -3,28 +3,42 @@
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
     preview-image-area(
-      v-for='image in images'
-      :key='image.id'
-      :img-src='image.imgUrl'
-      :name='image.name'
+      v-if='currentImage'
+      :key='currentImage.id'
+      :img-src='currentImage.imgUrl'
+      :name='currentImage.name'
     )
 
     header.c-modal-header
       avatar-user.c-avatar(
-        v-if='ephemeral.currentImage.ownerID'
-        :contractID='ephemeral.currentImage.ownerID'
+        v-if='currentImage.ownerID'
+        :contractID='currentImage.ownerID'
         size='sm'
       )
 
       .c-img-data
         .c-name.has-ellipsis {{ displayName }}
-        .c-filename.has-ellipsis {{ ephemeral.currentImage.name }}
+        .c-filename.has-ellipsis {{ currentImage.name }}
 
       button.is-icon-small.c-close-btn(
         type='button'
         @click.stop='close'
       )
         i.icon-times
+
+    button.is-icon.c-image-nav-btn.is-prev(
+      v-if='showPrevButton'
+      type='button'
+      @click='selectPrevImage'
+    )
+      i.icon-chevron-left
+
+    button.is-icon.c-image-nav-btn.is-next(
+      v-if='showNextButton'
+      type='button'
+      @click='selectNextImage'
+    )
+      i.icon-chevron-right
 </template>
 
 <script>
@@ -54,8 +68,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        currentIndex: 0,
-        currentImage: null
+        currentIndex: 0
       }
     }
   },
@@ -66,16 +79,27 @@ export default {
     ]),
     blurryBgStyles () {
       return {
-        backgroundImage: `url(${this.ephemeral.currentImage.imgUrl})`
+        backgroundImage: `url(${this.currentImage.imgUrl})`
       }
     },
     displayName () {
-      const contractID = this.ephemeral.currentImage.ownerID
+      const contractID = this.currentImage.ownerID
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
     },
     hasMultipleImages () {
       return Array.isArray(this.images) && this.images.length > 1
+    },
+    showPrevButton () {
+      const len = this.images.length
+      return len > 1 && this.ephemeral.currentIndex > 0
+    },
+    showNextButton () {
+      const len = this.images.length
+      return len > 1 && this.ephemeral.currentIndex < len - 1
+    },
+    currentImage () {
+      return this.images[this.ephemeral.currentIndex]
     }
   },
   created () {
@@ -83,7 +107,6 @@ export default {
       this.$nextTick(() => this.close())
     } else {
       this.ephemeral.currentIndex = this.initialIndex
-      this.ephemeral.currentImage = this.images[this.ephemeral.currentIndex]
     }
   },
   mounted () {
@@ -95,6 +118,16 @@ export default {
   methods: {
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
+    },
+    selectNextImage () {
+      if (this.ephemeral.currentIndex < this.images.length - 1) {
+        this.ephemeral.currentIndex += 1
+      }
+    },
+    selectPrevImage () {
+      if (this.ephemeral.currentIndex > 0) {
+        this.ephemeral.currentIndex -= 1
+      }
     }
   }
 }
@@ -102,6 +135,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+$cta-zindex: 3;
 
 .c-image-viewer-modal {
   position: fixed;
@@ -156,7 +190,7 @@ export default {
   top: 0;
   left: 0;
   height: auto;
-  z-index: 3;
+  z-index: $cta-zindex;
   padding: 1rem;
   padding-right: 3rem;
   display: flex;
@@ -230,6 +264,36 @@ export default {
   &:focus {
     background-color: var(--image-viewer-btn-color_active);
     color: var(--image-viewer-btn-text-color_active);
+  }
+}
+
+.c-image-nav-btn {
+  position: absolute;
+  z-index: $cta-zindex;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--image-viewer-btn-color);
+
+  &.is-prev {
+    left: 1rem;
+  }
+
+  &.is-next {
+    right: 1rem;
+  }
+
+  @include phone {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+
+    &.is-prev {
+      left: 0.75rem;
+    }
+
+    &.is-next {
+      right: 0.75rem;
+    }
   }
 }
 </style>
