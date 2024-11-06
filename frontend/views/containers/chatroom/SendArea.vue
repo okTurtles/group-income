@@ -65,7 +65,7 @@
       :style='textareaStyles'
       :maxlength='config.messageMaxChar'
       @blur='textAreaBlur'
-      @keydown.enter.exact.prevent='handleKeyDownEnter'
+      @keydown.enter.exact='handleKeyDownEnter'
       @keydown.tab.exact='handleKeyDownTab'
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
@@ -376,9 +376,9 @@ export default ({
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    const mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
-    this.ephemeral.isPhone = mediaIsPhone.matches
-    mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
+    this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
+    this.ephemeral.isPhone = this.mediaIsPhone.matches
+    this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
     this.$refs.textarea.value = this.defaultText || ''
@@ -397,6 +397,7 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
+    this.mediaIsPhone.onchange = null
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
@@ -531,12 +532,17 @@ export default ({
       this.$refs.textarea.focus()
       this.addSelectedMention(index)
     },
-    handleKeyDownEnter () {
+    handleKeyDownEnter (e) {
+      const isNotPhone = !this.ephemeral.isPhone
+
       if (this.ephemeral.mention.options.length) {
         this.addSelectedMention(this.ephemeral.mention.index)
-      } else {
+        !this.ephemeral.isPhone
+      } else if (isNotPhone) {
         this.sendMessage()
       }
+
+      isNotPhone && e.preventDefault()
     },
     handleKeyDownTab (e) {
       if (this.ephemeral.mention.options.length) {
