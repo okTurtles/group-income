@@ -68,7 +68,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        currentIndex: 0
+        currentIndex: 0,
+        isTouch: false
       }
     }
   },
@@ -108,12 +109,19 @@ export default {
     } else {
       this.ephemeral.currentIndex = this.initialIndex
     }
+
+    this.touchMatchMedia = window.matchMedia('(hover: none) and (pointer: coarse)')
+    this.ephemeral.isTouch = this.touchMatchMedia.matches
+    this.touchMatchMedia.onchange = (e) => {
+      this.ephemeral.isTouch = e.matches
+    }
   },
   mounted () {
     document.addEventListener('keydown', this.keydownHandler)
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.keydownHandler)
+    this.touchMatchMedia.onchange = null
   },
   methods: {
     close () {
@@ -283,7 +291,10 @@ $cta-zindex: 3;
   z-index: $cta-zindex;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--image-viewer-btn-color);
+  background-color: var(--image-viewer-text-color);
+  color: var(--image-viewer-btn-color);
+  width: 2.5rem;
+  height: 2.5rem;
 
   &.is-prev {
     left: 1rem;

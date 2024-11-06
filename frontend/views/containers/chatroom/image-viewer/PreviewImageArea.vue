@@ -4,37 +4,37 @@
   @mousedown='mouseDownHandler'
   @mouseup='mouseUpHandler'
 )
-  template(v-if='ephemeral.isLoaded')
-    img.c-preview-image(ref='previewImg'
-      :class='{ "is-movable": isImageMovable }'
-      :src='imgSrc'
-      :width='config.imgData.naturalWidth'
-      :height='config.imgData.naturalHeight'
-      :style='previewImgStyles'
-      :alt='L("Image preview")'
-      draggable='false'
-      @load='onImgLoad'
+  img.c-preview-image(ref='previewImg'
+    :class='{ "is-movable": isImageMovable }'
+    :src='imgSrc'
+    :width='config.imgData.naturalWidth'
+    :height='config.imgData.naturalHeight'
+    :style='previewImgStyles'
+    :alt='L("Image preview")'
+    draggable='false'
+    @load='onImgLoad'
+  )
+
+  .c-zoom-slider-container(
+    v-if='ephemeral.isLoaded'
+    @pointerdown.stop=''
+    @pointermove.stop=''
+    @pointerup.stop=''
+    @mousedown.stop=''
+    @mouseup.stop=''
+  )
+    slider-continuous.c-zoom-slider(
+      v-if='ephemeral.currentZoom !== null'
+      :class='{ "show-slider-output": ephemeral.showSliderOutput }'
+      uid='zoomslider'
+      :value='ephemeral.currentZoom'
+      :min='config.zoomMin'
+      :max='config.zoomMax'
+      :unit='config.sliderUnit'
+      @input='onSliderUpdate'
     )
 
-    .c-zoom-slider-container(
-      @pointerdown.stop=''
-      @pointermove.stop=''
-      @pointerup.stop=''
-      @mousedown.stop=''
-      @mouseup.stop=''
-    )
-      slider-continuous.c-zoom-slider(
-        v-if='ephemeral.currentZoom !== null'
-        :class='{ "show-slider-output": ephemeral.showSliderOutput }'
-        uid='zoomslider'
-        :value='ephemeral.currentZoom'
-        :min='config.zoomMin'
-        :max='config.zoomMax'
-        :unit='config.sliderUnit'
-        @input='onSliderUpdate'
-      )
-
-  .c-loader-animation(v-else)
+  .c-loader-animation(v-if='!ephemeral.isLoaded')
 </template>
 
 <script>
@@ -508,6 +508,10 @@ img.c-preview-image {
 }
 
 .c-loader-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
   width: 1.5rem;
   height: 1.5rem;
@@ -516,6 +520,7 @@ img.c-preview-image {
   border-radius: 50%;
   color: var(--image-viewer-text-color);
   animation: loader-ani 1.75s infinite linear;
+  z-index: 2;
 
   @include desktop {
     width: 1.75rem;
