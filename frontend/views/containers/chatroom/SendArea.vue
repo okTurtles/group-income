@@ -397,7 +397,7 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
-    this.mediaIsPhone.onchange = null
+    this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
