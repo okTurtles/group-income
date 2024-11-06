@@ -537,7 +537,6 @@ export default ({
 
       if (this.ephemeral.mention.options.length) {
         this.addSelectedMention(this.ephemeral.mention.index)
-        !this.ephemeral.isPhone
       } else if (isNotPhone) {
         this.sendMessage()
       }
