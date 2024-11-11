@@ -5,7 +5,7 @@
   @mouseup='mouseUpHandler'
 )
   img.c-preview-image(ref='previewImg'
-    :class='{ "is-movable": isImageMovable }'
+    :class='{ "is-movable": isImageMovable, "is-hidden": !ephemeral.imgInitDone }'
     :src='imgSrc'
     :width='config.imgData.naturalWidth'
     :height='config.imgData.naturalHeight'
@@ -66,6 +66,7 @@ export default {
     return {
       ephemeral: {
         isLoaded: false,
+        imgInitDone: false,
         previewImgAttrs: {
           width: undefined,
           height: undefined,
@@ -139,6 +140,10 @@ export default {
 
       this.initViewerSettings()
       this.calcPreviewImageDimension()
+
+      this.$nextTick(() => {
+        this.ephemeral.imgInitDone = true
+      })
     },
     initViewerSettings () {
       const { naturalWidth, naturalHeight, aspectRatio } = this.config.imgData
@@ -457,6 +462,10 @@ img.c-preview-image {
 
   &.is-movable {
     cursor: zoom-out;
+  }
+
+  &.is-hidden {
+    opacity: 0;
   }
 }
 
