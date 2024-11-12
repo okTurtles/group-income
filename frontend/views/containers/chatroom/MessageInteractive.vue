@@ -15,6 +15,7 @@ message-base(v-bind='$props' @wrapperAction='action')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import {
@@ -149,9 +150,9 @@ export default ({
       const openProposalIds = Object.keys(this.currentGroupState.proposals)
 
       if (openProposalIds.includes(this.proposal.proposalId)) { // the proposal is currently active
-        this.$router.push({ path: "/dashboard#proposals" })
+        this.$router.push({ path: '/dashboard#proposals' })
       } else { // the proposal has been archived
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: this.proposal.proposalId })
       }
     }
   },
