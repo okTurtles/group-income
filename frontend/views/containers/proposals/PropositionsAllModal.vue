@@ -66,11 +66,11 @@ export default ({
       const targetId = this.$route.query?.targetProposal || ''
 
       if (targetId && this.ephemeral.proposals.some(entry => entry[0] === targetId)) {
-        setTimeout(() => {
+        this.$nextTick(() => {
           const targetEl = this.$refs.pList.querySelector(`[data-proposal-hash="${targetId}"]`)
 
           targetEl && targetEl.scrollIntoView({ block: 'center' })
-        }, 150)
+        })
       }
     }
   },
