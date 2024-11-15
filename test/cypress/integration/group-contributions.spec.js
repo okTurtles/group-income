@@ -27,6 +27,9 @@ function addNonMonetaryContribution (name) {
 }
 
 function assertNonMonetaryEditableValue (name) {
+  // Need to wait until the event is processed
+  cy.giEmptyInvocationQueue()
+
   cy.getByDT('buttonEditNonMonetaryContribution').click()
   cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
   cy.getByDT('buttonSaveNonMonetaryContribution').click()
