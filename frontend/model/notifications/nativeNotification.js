@@ -69,24 +69,29 @@ export async function requestNotificationPermission (force: boolean = false): Pr
 export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
 }): void {
-  if (Notification?.permission === 'granted' && sbp('state/vuex/settings').notificationEnabled) {
-    try {
-      const notification = new Notification(title, { body, icon })
-      if (path) {
-        notification.onclick = (event) => {
-          sbp('controller/router').push({ path }).catch(console.warn)
+  console.error('@@@called makeNotification', { title, body, icon, path }, Notification?.permission)
+  if (Notification?.permission === 'granted' /* && sbp('state/vuex/settings').notificationEnabled */) {
+    if (typeof window === 'object') {
+      try {
+        const notification = new Notification(title, { body, icon })
+        if (isNaN(1) && path) {
+          notification.onclick = (event) => {
+            sbp('controller/router').push({ path }).catch(console.warn)
+          }
+        }
+      } catch {
+        try {
+        // FIXME: find a cross-browser way to pass the 'path' parameter when the notification is clicked.
+          navigator.serviceWorker?.ready.then(registration => {
+          // $FlowFixMe
+            return registration.showNotification(title, { body, icon })
+          }).catch(console.warn)
+        } catch (error) {
+          console.error('makeNotification: ', error.message)
         }
       }
-    } catch {
-      try {
-        // FIXME: find a cross-browser way to pass the 'path' parameter when the notification is clicked.
-        navigator.serviceWorker?.ready.then(registration => {
-          // $FlowFixMe
-          registration.showNotification(title, { body, icon })
-        }).catch(console.warn)
-      } catch (error) {
-        console.error('makeNotification: ', error.message)
-      }
+    } else {
+      self.registration.showNotification(title, { body, icon }).catch(console.warn)
     }
   }
 }

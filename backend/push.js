@@ -1,5 +1,5 @@
-import { aes128gcm } from '@exact-realty/rfc8188/encodings'
-import encrypt from '@exact-realty/rfc8188/encrypt'
+import { aes128gcm } from '@apeleghq/rfc8188/encodings'
+import encrypt from '@apeleghq/rfc8188/encrypt'
 // $FlowFixMe[missing-export]
 import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
 import rfc8291Ikm from './rfc8291Ikm.js'
@@ -118,6 +118,7 @@ export const pushServerActionhandlers: any = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
     const socket = this
     socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
+    console.error('@@@@SENT PK')
   },
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
@@ -156,6 +157,7 @@ export const pushServerActionhandlers: any = {
     socket.subscriptions?.forEach(channelID => {
       server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
     })
+    console.error('@@@@ADD PUSH SUBSCRIPTION')
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] (payload) {
     const socket = this
@@ -173,12 +175,7 @@ const encryptPayload = async (subcription: Object, data: any) => {
   const readableStream = new Response(data).body
   const [asPublic, IKM] = await subcription.encryptionKeys
 
-  return encrypt(aes128gcm, readableStream, 32768, asPublic, IKM)
-}
-
-export const postEvent = async (subscription: Object, event: any): Promise<void> => {
-  const authorization = await vapidAuthorization(subscription.endpoint)
-  const body = await encryptPayload(subscription, JSON.stringify(event)).then(async (bodyStream) => {
+  return encrypt(aes128gcm, readableStream, 32768, asPublic, IKM).then(async (bodyStream) => {
     const chunks = []
     const reader = bodyStream.getReader()
     for (;;) {
@@ -188,20 +185,37 @@ export const postEvent = async (subscription: Object, event: any): Promise<void>
     }
     return Buffer.concat(chunks)
   })
+}
+
+export const postEvent = async (subscription: Object, event: any): Promise<void> => {
+  const authorization = await vapidAuthorization(subscription.endpoint)
+  const body = event
+    ? await encryptPayload(subscription, JSON.stringify(event))
+    : undefined
+
+  /* if (body) {
+    body[body.length - 2] = 0
+  } */
 
   const req = await fetch(subscription.endpoint, {
     method: 'POST',
     headers: [
       ['authorization', authorization],
-      ['content-encoding', 'aes128gcm'],
-      [
-        'content-type',
-        'application/octet-stream'
-      ],
-      // ["push-receipt", ""],
+      ...(body
+        ? [['content-encoding', 'aes128gcm'],
+            [
+              'content-type',
+              'application/octet-stream'
+            ]
+          ]
+        : []),
+      // ['push-receipt', ''],
       ['ttl', '60']
     ],
     body
+  }).then(async (req) => {
+    console.error('@@@@postEvent', body, subscription.endpoint, req.status, await req.text())
+    return req
   })
 
   if (!req.ok) {

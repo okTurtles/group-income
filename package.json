@@ -109,7 +109,7 @@
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "2.2.3",
     "@exact-realty/multipart-parser": "1.0.12",
-    "@exact-realty/rfc8188": "1.0.5",
+    "@apeleghq/rfc8188": "1.0.7",
     "@hapi/boom": "9.1.0",
     "@hapi/hapi": "20.1.2",
     "@hapi/inert": "6.0.3",

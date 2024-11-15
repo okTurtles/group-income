@@ -1,6 +1,5 @@
 'use strict'
 
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
@@ -105,6 +104,7 @@ sbp('sbp/selectors/register', {
             return registration.pushManager.subscribe(options)
           })
         }
+        return subscription
       })
 
       // TODO: Consider throwing an exception here

@@ -65,18 +65,21 @@ export default (sbp('sbp/selectors/register', {
   }
 }): string[])
 
-self.addEventListener('push', function (event) {
+console.error('@@Adding push event listener')
+self.pushHandler = function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
+  if (!event.data) return
   const data = event.data.json()
   if (data.type === NOTIFICATION_TYPE.ENTRY) {
     event.waitUntil(sbp('chelonia/handleEvent', data.data))
   }
-})
+}
+self.addEventListener('push', self.pushHandler, false)
 
 self.addEventListener('pushsubscriptionchange', async function (event) {
   // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
   // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
-  const subscription = await self.registration.pushManger.subscribe(
+  const subscription = await self.registration.pushManager.subscribe(
     event.oldSubscription.options
   )
 
@@ -88,4 +91,4 @@ self.addEventListener('pushsubscriptionchange', async function (event) {
     type: 'pushsubscriptionchange',
     subscription
   }) */
-})
+}, false)

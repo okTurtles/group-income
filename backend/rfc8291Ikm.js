@@ -62,7 +62,10 @@ export default async (uaPublic: Uint8Array, salt: SharedArrayBuffer): Promise<[A
   const info = new Uint8Array(infoString.byteLength + uaPublic.byteLength + asPublic.byteLength)
   info.set(infoString, 0)
   info.set(uaPublic, infoString.byteLength)
-  info.set(asPublic, infoString.byteLength + uaPublic.byteLength)
+  info.set(
+    new Uint8Array(asPublic),
+    infoString.byteLength + uaPublic.byteLength
+  )
 
   const IKM = await crypto.subtle.deriveBits(
     {
@@ -74,6 +77,8 @@ export default async (uaPublic: Uint8Array, salt: SharedArrayBuffer): Promise<[A
     ecdhSecret,
     32 << 3
   )
+
+  console.error('@@@ asPublic IKM', Buffer.from(asPublic).toString('hex'), Buffer.from(IKM).toString('hex'))
 
   // Role in RFC8188: `asPublic` is used as key ID, IKM as IKM.
   return [asPublic, IKM]

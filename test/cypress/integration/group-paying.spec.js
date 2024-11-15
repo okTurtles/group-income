@@ -325,6 +325,11 @@ describe('Group Payments', () => {
 
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`)
+    // The following 'wait' addresses an issue whereby the 'thank you'
+    // notification isn't yet rendered.
+    /* cy.window().its('sbp').then(sbp => {
+      return sbp('chelonia/contract/wait', sbp('state/vuex/state').currentGroupId)
+    }) */
     openNotificationCard({
       // no need to check the exact number of notifications but do check if the notification list contains the item for thank-you message.
       notificationsCount: 0,

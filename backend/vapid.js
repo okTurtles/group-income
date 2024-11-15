@@ -6,7 +6,7 @@ let vapidPublicKey: string
 let vapidPrivateKey: Object
 
 // TODO: Load from configuration
-const vapid = { VAPID_EMAIL: 'test@example.com' }
+const vapid = { VAPID_EMAIL: 'mailto:test@example.com' }
 
 export const initVapid = async () => {
   const vapidKeyPair = await sbp('chelonia/db/get', '_private_immutable_vapid_key').then(async (vapidKeyPair: string): Promise<[Object, string]> => {
@@ -53,15 +53,7 @@ export const initVapid = async () => {
 }
 
 const generateJwt = async (endpoint: URL): Promise<string> => {
-  const privateKey = await crypto.subtle.importKey(
-    'jwk',
-    vapidPrivateKey,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  )
-
-  const now = Math.round(Date.now() / 1e3)
+  const now = Date.now() / 1e3 | 0
 
   const audience = endpoint.origin
 
@@ -72,9 +64,9 @@ const generateJwt = async (endpoint: URL): Promise<string> => {
   const body = Buffer.from(JSON.stringify(
     Object.fromEntries([
       ['aud', audience],
-      ['exp', now + 60],
+      ['exp', now + 90],
       ['iat', now],
-      ['nbf', now - 60],
+      ['nbf', now - 90],
       ['sub', vapid.VAPID_EMAIL]
     ])
     // $FlowFixMe[incompatible-call]
@@ -83,10 +75,12 @@ const generateJwt = async (endpoint: URL): Promise<string> => {
   const signature = Buffer.from(
     await crypto.subtle.sign(
       { name: 'ECDSA', hash: 'SHA-256' },
-      privateKey,
+      vapidPrivateKey,
       Buffer.from([header, body].join('.'))
     )
   ).toString('base64url')
+
+  console.error('@@@JWT', [header, body, signature].join('.'))
 
   return [header, body, signature].join('.')
 }

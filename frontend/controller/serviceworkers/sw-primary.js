@@ -1,6 +1,6 @@
 'use strict'
 
-import { PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -56,7 +56,7 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   console.debug(`[sbp] ${selector}`, data)
 });
 
-[CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
+[CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {
@@ -124,7 +124,17 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
-const setupPromise = setupChelonia()
+const setupPromise = setupChelonia().then(() => {
+  return self.registration.pushManager?.getSubscription().then((subscription) => {
+    if (!subscription) {
+      console.warn('[sw-primary] No existing push subscription')
+      return
+    }
+    return sbp('push/reportExistingSubscription', subscription?.toJSON()).catch(e => {
+      console.error('[sw-primary] Error reporting push subscription', e)
+    })
+  })
+})
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')

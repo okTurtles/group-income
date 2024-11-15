@@ -73,9 +73,9 @@ declare module 'uuid' { declare module.exports: any }
 declare module 'marked' { declare module.exports: any }
 declare module 'bottleneck' { declare module.exports: any }
 declare module '@exact-realty/multipart-parser/encodeMultipartMessage' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/decrypt' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/encodings' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/encrypt' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/decrypt' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/encodings' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/encrypt' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
