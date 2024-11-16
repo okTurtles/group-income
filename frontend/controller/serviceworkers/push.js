@@ -65,16 +65,14 @@ export default (sbp('sbp/selectors/register', {
   }
 }): string[])
 
-console.error('@@Adding push event listener')
-self.pushHandler = function (event) {
+self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
   const data = event.data.json()
   if (data.type === NOTIFICATION_TYPE.ENTRY) {
     event.waitUntil(sbp('chelonia/handleEvent', data.data))
   }
-}
-self.addEventListener('push', self.pushHandler, false)
+}, false)
 
 self.addEventListener('pushsubscriptionchange', async function (event) {
   // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.

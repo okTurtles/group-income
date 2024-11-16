@@ -79,8 +79,6 @@ sbp('sbp/selectors/register', {
     }
   },
   'service-worker/setup-push-subscription': async function () {
-    if (!('serviceWorker' in navigator)) { return }
-
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
     // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
@@ -90,27 +88,28 @@ sbp('sbp/selectors/register', {
         return
       }
 
-      const existingSubscription = await registration.pushManager.getSubscription().then((subscription) => {
-        if (
-          !subscription ||
+      const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
+
+      const existingSubscription = permissionState === 'granted'
+        ? await registration.pushManager.getSubscription().then((subscription) => {
+          if (
+            !subscription ||
           (subscription.expirationTime != null &&
           subscription.expirationTime <= Date.now())
-        ) {
-          console.info(
-            'Attempting to create a new subscription',
-            subscription
-          )
-          return sbp('push/getSubscriptionOptions').then(function (options) {
-            return registration.pushManager.subscribe(options)
-          })
-        }
-        return subscription
-      })
+          ) {
+            console.info(
+              'Attempting to create a new subscription',
+              subscription
+            )
+            return sbp('push/getSubscriptionOptions').then(function (options) {
+              return registration.pushManager.subscribe(options)
+            })
+          }
+          return subscription
+        })
+        : null
 
-      // TODO: Consider throwing an exception here
-      if (!existingSubscription) return false
-
-      await sbp('push/reportExistingSubscription', existingSubscription.toJSON())
+      await sbp('push/reportExistingSubscription', existingSubscription?.toJSON())
       return true
     })
   },

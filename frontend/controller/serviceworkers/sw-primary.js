@@ -228,6 +228,10 @@ self.addEventListener('message', function (event) {
 // Handle clicks on notifications issued via registration.showNotification().
 self.addEventListener('notificationclick', event => {
   console.debug('[sw] Notification clicked:', event.notification)
+  console.error('@@@@ DATA', event.notification.data)
+  if (event.notification.data?.path) {
+    self.clients.openWindow(`/app${event.notification.data.path}`)
+  }
 })
 
 sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {

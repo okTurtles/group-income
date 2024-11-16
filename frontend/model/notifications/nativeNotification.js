@@ -4,40 +4,50 @@ import sbp from '@sbp/sbp'
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.
 
-const handler = (permission) => {
-  const granted = (permission === 'granted')
+const handler = (statuses: string[]) => {
+  const granted = statuses.every(status => status === 'granted')
   sbp('state/vuex/commit', 'setNotificationEnabled', granted)
-  if (granted) return
+  if (!granted) return
 
   sbp('service-worker/setup-push-subscription').catch((e) => {
-    console.error('Error setting up service worker', e)
+    console.error('Error setting up push subscription in service worker', e)
   })
 }
 
 const fallbackChangeListener = () => {
   if (!Notification.permission) return
-  handler(Notification.permission)
   let oldValue = Notification.permission
+  handler([oldValue])
   setInterval(() => {
     const newValue = Notification.permission
     if (oldValue !== newValue) {
       oldValue = newValue
-      handler(newValue)
+      handler([oldValue])
     }
   }, 100)
 }
 
-if (typeof window === 'object' && typeof Notification === 'function') {
+// $FlowFixMe[cannot-resolve-name]
+if (typeof Window === 'function' && self instanceof Window && typeof navigator === 'object' && typeof Notification === 'function' && typeof PushManager === 'function' && typeof ServiceWorker === 'function' && typeof navigator.serviceWorker === 'object') {
   if (
     typeof navigator.permissions === 'object' &&
     // $FlowFixMe[method-unbinding]
     typeof navigator.permissions.query === 'function'
   ) {
-    navigator.permissions.query({ name: 'notifications' }).then(
-      (result) => {
-        handler(result.state)
-        result.addEventListener('change', () => {
-          handler(result.state)
+    Promise.all([
+      navigator.permissions.query({ name: 'notifications' }),
+      navigator.permissions.query({ name: 'push', userVisibleOnly: true })
+    ]).then(
+      (statuses) => {
+        const states = statuses.map(status => status.state)
+        handler(states)
+        statuses[0].addEventListener('change', () => {
+          states[0] = statuses[0].state
+          handler(states)
+        }, false)
+        statuses[1].addEventListener('change', () => {
+          states[1] = statuses[1].state
+          handler(states)
         }, false)
       }
     ).catch((e) => {
@@ -71,27 +81,28 @@ export function makeNotification ({ title, body, icon, path }: {
 }): void {
   console.error('@@@called makeNotification', { title, body, icon, path }, Notification?.permission)
   if (Notification?.permission === 'granted' /* && sbp('state/vuex/settings').notificationEnabled */) {
+    // If not running on a SW
     if (typeof window === 'object') {
       try {
         const notification = new Notification(title, { body, icon })
-        if (isNaN(1) && path) {
+        if (path) {
           notification.onclick = (event) => {
             sbp('controller/router').push({ path }).catch(console.warn)
           }
         }
       } catch {
         try {
-        // FIXME: find a cross-browser way to pass the 'path' parameter when the notification is clicked.
           navigator.serviceWorker?.ready.then(registration => {
-          // $FlowFixMe
-            return registration.showNotification(title, { body, icon })
+            // $FlowFixMe
+            return registration.showNotification(title, { body, icon, data: { path } })
           }).catch(console.warn)
         } catch (error) {
           console.error('makeNotification: ', error.message)
         }
       }
     } else {
-      self.registration.showNotification(title, { body, icon }).catch(console.warn)
+    // If running in a SW
+      self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
     }
   }
 }
