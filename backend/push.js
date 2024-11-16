@@ -1,12 +1,54 @@
 import { aes128gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
+import sbp from '@sbp/sbp'
 // $FlowFixMe[missing-export]
 import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
+import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
 
 // const pushController = require('web-push')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
+
+const addSubscriptionToIndex = async (subcriptionId: string) => {
+  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
+    const currentIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+    // Add the current subscriptionId to the subscription index. Entries in the
+    // index are separated by \x00 (NUL). The index itself is used to know
+    // which entries to load.
+    const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${subcriptionId}`
+    await sbp('chelonia/db/set', '_private_webpush_index', updatedIndex)
+  })
+}
+
+const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
+  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
+    const currentIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+    const index = currentIndex.indexOf(subcriptionId)
+    if (index === -1) return
+    const updatedIndex = currentIndex.slice(0, index) + currentIndex.slice(index + subcriptionId.length + 1)
+    await sbp('chelonia/db/set', '_private_webpush_index', updatedIndex)
+  })
+}
+
+const saveSubscription = (server, subscriptionId) => {
+  sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
+    subscription: server.pushSubscriptions[subscriptionId],
+    channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
+  })).catch(e => {
+    console.error(e, 'Error saving subscription', subscriptionId)
+  })
+}
+
+export const addChannelToSubscription = (server: Object, subscriptionId: string, channelID: string): void => {
+  server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
+  saveSubscription(server, subscriptionId)
+}
+
+export const deleteChannelFromSubscription = (server: Object, subscriptionId: string, channelID: string): void => {
+  server.pushSubscriptions[subscriptionId].subscriptions.delete(channelID)
+  saveSubscription(server, subscriptionId)
+}
 
 // Generate an UUID from a `PushSubscription'
 export const getSubscriptionId = async (subscriptionInfo: Object): Promise<string> => {
@@ -61,7 +103,7 @@ export const getSubscriptionId = async (subscriptionInfo: Object): Promise<strin
 
 // Wrap a SubscriptionInfo object to include a subscription ID and encryption
 // keys
-export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object): Object => {
+export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, channelIDs: ?string[]): Object => {
   subscriptionInfo.endpoint = new URL(subscriptionInfo.endpoint)
 
   Object.defineProperties(subscriptionInfo, {
@@ -105,7 +147,7 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
       value: new Set()
     },
     'subscriptions': {
-      value: new Set()
+      value: new Set(channelIDs)
     }
   })
 
@@ -128,6 +170,9 @@ export const pushServerActionhandlers: any = {
 
     if (!server.pushSubscriptions[subscriptionId]) {
       server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+      addSubscriptionToIndex(subscriptionId).then(() => {
+        return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
+      }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
     } else {
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
@@ -157,19 +202,36 @@ export const pushServerActionhandlers: any = {
     socket.subscriptions?.forEach(channelID => {
       server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
     })
+    saveSubscription(server, subscriptionId)
     console.error('@@@@ADD PUSH SUBSCRIPTION')
   },
-  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] (payload) {
+  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
     const socket = this
-    const subscriptionId = JSON.parse(payload)
+    const { server, pushSubscriptionId: subscriptionId } = socket
 
-    // TODO
-    delete socket.server.pushSubscriptions[subscriptionId]
+    if (subscriptionId) {
+      removeSubscription(server, subscriptionId)
+    }
   }
 }
 
-// TODO: Implement
-const deleteClient = (_) => {}
+const removeSubscription = (server, subscriptionId) => {
+  const subscription = server.pushSubscriptions[subscriptionId]
+  delete server.pushSubscriptions[subscriptionId]
+  if (server.subscribersByChannelID) {
+    subscription.subscriptions.forEach((channelID) => {
+      server.subscribersByChannelID[channelID].delete(subscription)
+    })
+  }
+  deleteSubscriptionFromIndex(subscriptionId).then(() => {
+    return sbp('chelonia/db/delete', `_private_webpush_${subscriptionId}`)
+  }).catch((e) => console.error(e, 'Error removing subscription', subscriptionId))
+}
+
+const deleteClient = (subscriptionId) => {
+  const server = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+  removeSubscription(server, subscriptionId)
+}
 
 const encryptPayload = async (subcription: Object, data: any) => {
   const readableStream = new Response(data).body

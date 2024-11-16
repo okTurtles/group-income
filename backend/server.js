@@ -17,7 +17,7 @@ import {
   createPushErrorResponse,
   createServer
 } from './pubsub.js'
-import { pushServerActionhandlers } from './push.js'
+import { addChannelToSubscription, deleteChannelFromSubscription, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 // $FlowFixMe[cannot-resolve-module]
 import { webcrypto } from 'node:crypto'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -270,7 +270,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         return
       }
 
-      server.pushSubscriptions[socket.pushSubscriptionId].subscriptions.add(channelID)
+      addChannelToSubscription(server, socket.pushSubscriptionId, channelID)
     },
     [NOTIFICATION_TYPE.UNSUB] ({ channelID }: UnsubMessage) {
       const socket = this
@@ -282,7 +282,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         return
       }
 
-      server.pushSubscriptions[socket.pushSubscriptionId].subscriptions.delete(channelID)
+      deleteChannelFromSubscription(server, socket.pushSubscriptionId, channelID)
     }
   }
 }))
@@ -312,6 +312,24 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       channels.add(contractID)
     }))
     Object.assign(sbp('chelonia/rootState'), recoveredState)
+  }
+  // Then, load push subscriptions
+  const savedWebPushIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+  if (savedWebPushIndex) {
+    const { pushSubscriptions, subscribersByChannelID } = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    await Promise.all(savedWebPushIndex.split('\x00').map(async (subscriptionId) => {
+      const subscriptionSerialized = await sbp('chelonia/db/get', `_private_webpush_${subscriptionId}`)
+      if (!subscriptionSerialized) {
+        console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
+        return
+      }
+      const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)
+      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription, channelIDs)
+      channelIDs.forEach((channelID) => {
+        if (!subscribersByChannelID[channelID]) subscribersByChannelID[channelID] = new Set()
+        subscribersByChannelID[channelID].add(pushSubscriptions[subscriptionId])
+      })
+    }))
   }
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
