@@ -20,6 +20,7 @@ export const CHAT_ATTACHMENT_SUPPORTED_EXTENSIONS = [
 // TODO: fetch this value from a server API
 export const MEGABYTE = 1 << 20
 export const CHAT_ATTACHMENT_SIZE_LIMIT = 30 * MEGABYTE // in byte.
+export const IMAGE_ATTACHMENT_MAX_SIZE = 400000 // 400KB
 
 export const TextObjectType = {
   Text: 'TEXT',

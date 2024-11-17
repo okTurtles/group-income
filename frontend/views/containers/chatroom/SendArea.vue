@@ -279,7 +279,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MAX_MESSAGE_LEN
 } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import {
@@ -689,13 +689,21 @@ export default ({
       this.$emit(
         'send',
         msgToSend,
-        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : null,
+        this.hasAttachments
+          ? cloneDeep(this.ephemeral.attachments).map(this.compressImage)
+          : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
+    },
+    compressImage (attachment) {
+      if (attachment.needsIamgeCompression) {
+        console.log('TODO: implement image compression logic here')
+      }
+      return attachment
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -752,6 +760,9 @@ export default ({
             attachment.dimension = { width, height }
           }
           img.src = fileUrl
+
+          // Determine if the image needs lossy-compression before upload.
+          attachment.needsIamgeCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
         }
 
         list.push(attachment)
