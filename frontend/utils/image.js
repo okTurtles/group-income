@@ -28,3 +28,48 @@ export const imageUpload = async (imageFile: File, params: ?Object): Promise<Obj
   const { download } = await sbp('chelonia/fileUpload', imageFile, { type: file.type, cipher: 'aes256gcm' }, params)
   return download
 }
+
+// Image compression
+function loadImage (url): any {
+  const imgEl = new Image()
+
+  return new Promise((resolve) => {
+    imgEl.onload = () => { resolve(imgEl) }
+    imgEl.src = url
+  })
+}
+export async function compressImage (imgUrl: string): Promise<any> {
+  // takes a source image url and generate another objectURL of the compressed image
+  const resizingFactor = 0.8
+  const quality = 0.8
+
+  const sourceImage = await loadImage(imgUrl)
+  const { naturalWidth, naturalHeight } = sourceImage
+  const canvasEl = document.createElement('canvas')
+  const c = canvasEl.getContext('2d')
+
+  canvasEl.width = naturalWidth * resizingFactor
+  canvasEl.height = naturalHeight * resizingFactor
+
+  // 1. draw the resized source iamge to canvas
+  c.drawImage(
+    sourceImage,
+    0,
+    0,
+    canvasEl.width,
+    canvasEl.height
+  )
+
+  // 2. extract the drawn image as a blob
+  return new Promise((resolve) => {
+    // reference: canvas API toBlob(): https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+    canvasEl.toBlob(blob => {
+      if (blob) {
+        const compressedUrl = URL.createObjectURL(blob)
+        resolve(compressedUrl)
+      } else {
+        resolve('')
+      }
+    }, 'image/jpeg', quality)
+  })
+}
