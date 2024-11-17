@@ -713,25 +713,36 @@ export default (sbp('sbp/selectors/register', {
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/addChatRoom', {
-      ...omit(params, ['options', 'hooks']),
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
+    // Retain needed for the sync placed later to be guaranteed to work
+    await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
+    try {
+      const message = await sbp('gi.actions/group/addChatRoom', {
+        ...omit(params, ['options', 'hooks']),
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
 
-    const chatRoomID = message.contractID()
+      const chatRoomID = message.contractID()
 
-    await sbp('gi.actions/group/joinChatRoom', {
-      ...omit(params, ['options', 'data', 'hooks']),
-      data: { chatRoomID },
-      hooks: {
-        postpublish: params.hooks?.postpublish
-      }
-    })
+      // Sync needed here to avoid "Cannot join a chatroom which isn't part of
+      // the group" error
+      await sbp('chelonia/contract/sync', params.contractID)
+      await sbp('gi.actions/group/joinChatRoom', {
+        ...omit(params, ['options', 'data', 'hooks']),
+        data: { chatRoomID },
+        hooks: {
+          postpublish: params.hooks?.postpublish
+        }
+      })
 
-    return chatRoomID
+      return chatRoomID
+    } finally {
+      sbp('chelonia/contract/release', params.contractID, { ephemeral: true }).catch(e =>
+        console.error('[gi.actions/group/addAndJoinChatRoom] Error releasing group chatroom', e)
+      )
+    }
   },
   ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
     await sbp('gi.actions/chatroom/rename', {
