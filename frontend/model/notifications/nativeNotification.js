@@ -7,7 +7,6 @@ import sbp from '@sbp/sbp'
 const handler = (statuses: string[]) => {
   const granted = statuses.every(status => status === 'granted')
   sbp('state/vuex/commit', 'setNotificationEnabled', granted)
-  if (!granted) return
 
   sbp('service-worker/setup-push-subscription').catch((e) => {
     console.error('Error setting up push subscription in service worker', e)
@@ -27,8 +26,9 @@ const fallbackChangeListener = () => {
   }, 100)
 }
 
-// $FlowFixMe[cannot-resolve-name]
-if (typeof Window === 'function' && self instanceof Window && typeof navigator === 'object' && typeof Notification === 'function' && typeof PushManager === 'function' && typeof ServiceWorker === 'function' && typeof navigator.serviceWorker === 'object') {
+export const setupNativeNotificationsListeners = () => {
+  if (typeof navigator !== 'object' || typeof Notification !== 'function' || typeof PushManager !== 'function' || typeof ServiceWorker !== 'function' || typeof navigator.serviceWorker !== 'object') return
+
   if (
     typeof navigator.permissions === 'object' &&
     // $FlowFixMe[method-unbinding]

@@ -26,7 +26,7 @@ const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
     const currentIndex = await sbp('chelonia/db/get', '_private_webpush_index')
     const index = currentIndex.indexOf(subcriptionId)
     if (index === -1) return
-    const updatedIndex = currentIndex.slice(0, index) + currentIndex.slice(index + subcriptionId.length + 1)
+    const updatedIndex = currentIndex.slice(0, index > 1 ? index - 1 : 0) + currentIndex.slice(index + subcriptionId.length)
     await sbp('chelonia/db/set', '_private_webpush_index', updatedIndex)
   })
 }

@@ -3,6 +3,7 @@
 // import SBP stuff before anything else so that domains register themselves before called
 import { L, LError } from '@common/common.js'
 import '@model/captureLogs.js'
+import { setupNativeNotificationsListeners } from '@model/notifications/nativeNotification.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
@@ -232,6 +233,8 @@ async function startApp () {
   sbp('sbp/selectors/register', {
     'push/*': swRpc
   })
+
+  setupNativeNotificationsListeners()
 
   /* eslint-disable no-new */
   new Vue({

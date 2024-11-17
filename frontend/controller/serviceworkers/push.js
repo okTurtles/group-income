@@ -1,5 +1,6 @@
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import sbp from '@sbp/sbp'
+import { ONLINE } from '~/frontend/utils/events.js'
 import { NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
 
 export default (sbp('sbp/selectors/register', {
@@ -48,22 +49,54 @@ export default (sbp('sbp/selectors/register', {
       return result
     }
   })(),
-  // eslint-disable-next-line require-await
-  'push/reportExistingSubscription': async (subscriptionInfo) => {
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    if (!pubsub) throw new Error('Missing pubsub instance')
+  'push/reportExistingSubscription': (() => {
+    const map = new WeakMap()
+    // eslint-disable-next-line require-await
+    return async (subscriptionInfo) => {
+      const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+      if (!pubsub) throw new Error('Missing pubsub instance')
 
-    const readyState = pubsub.socket.readyState
-    if (readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket connection is not open')
+      const readyState = pubsub.socket.readyState
+      if (readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket connection is not open')
+      }
+
+      const socket = pubsub.socket
+      const reported = map.get(socket)
+      map.set(socket, subscriptionInfo)
+      if (subscriptionInfo?.endpoint && reported !== subscriptionInfo.endpoint) {
+        // If the subscription has changed, report it to the server
+        pubsub.socket.send(createMessage(
+          REQUEST_TYPE.PUSH_ACTION,
+          { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
+        ))
+      } else if (!subscriptionInfo && reported) {
+        // If the subscription has been removed, also report it to the server
+        pubsub.socket.send(createMessage(
+          REQUEST_TYPE.PUSH_ACTION,
+          { action: PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION, payload: null }
+        ))
+      }
     }
-
-    pubsub.socket.send(createMessage(
-      REQUEST_TYPE.PUSH_ACTION,
-      { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
-    ))
-  }
+  })()
 }): string[])
+
+if (self.registration?.pushManager) {
+  (() => {
+    let inProgress = false
+    sbp('okTurtles.events/on', ONLINE, () => {
+      if (inProgress) return
+      inProgress = true
+      self.registration.pushManager.getSubscription().then((subscription) =>
+        sbp('push/reportExistingSubscription', subscription?.toJSON())
+      ).catch((e) => {
+        console.error('Error reporting subscription on reconnection', e)
+      }).finally(() => {
+        inProgress = false
+      })
+    })
+  })()
+}
 
 self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
@@ -84,9 +117,4 @@ self.addEventListener('pushsubscriptionchange', async function (event) {
   sbp('push/reportExistingSubscription', subscription?.toJSON()).catch(e => {
     console.error('[pushsubscriptionchange] Error reporting subscription', e)
   })
-  // Sending the client a message letting it know of the subscription change.
-  /* await sendMessageToClient({
-    type: 'pushsubscriptionchange',
-    subscription
-  }) */
 }, false)

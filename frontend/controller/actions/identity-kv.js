@@ -7,6 +7,9 @@ import { isExpired } from '@model/notifications/utils.js'
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
 sbp('okTurtles.events/on', ONLINE, () => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
+    return
+  }
   sbp('gi.actions/identity/kv/load').catch(e => {
     console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
   })

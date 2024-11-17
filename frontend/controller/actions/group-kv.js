@@ -4,8 +4,11 @@ import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/consta
 import { KV_QUEUE, NEW_LAST_LOGGED_IN, ONLINE } from '~/frontend/utils/events.js'
 
 sbp('okTurtles.events/on', ONLINE, () => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
+    return
+  }
   sbp('gi.actions/group/kv/load').catch(e => {
-    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
+    console.error("Error from 'gi.actions/group/kv/load' after reestablished connection:", e)
   })
 })
 
