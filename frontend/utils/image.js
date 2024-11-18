@@ -30,6 +30,20 @@ export const imageUpload = async (imageFile: File, params: ?Object): Promise<Obj
 }
 
 // Image compression
+
+export function supportsWebP (): Promise<boolean> {
+  // Uses a very small webP image to check if the browser supports 'image/webp' format.
+  // (reference: https://developers.google.com/speed/webp/faq#in_your_own_javascript)
+  const verySmallWebP = 'data:image/webp;base64,UklGRhIAAABXRUJQVlA4WAoAAAAQAAAAMwAAQUxQSAwAAAAwAQCdASoEAAQAAVAfCWkAQUwAAAABABgAAgAAAAAABAAAAAAAAAA'
+  const img = new Image()
+
+  return new Promise(resolve => {
+    img.onload = () => resolve(img.height > 0)
+    img.onerror = () => resolve(false)
+    img.src = verySmallWebP
+  })
+}
+
 function loadImage (url): any {
   const imgEl = new Image()
 
