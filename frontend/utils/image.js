@@ -82,17 +82,29 @@ function generateImageBlobByCanvas ({
   })
 }
 
+function getResizingFactor (sourceImage) {
+  // If image's physical size is greater than the max dimension, resize the image to the max dimension.
+  const imageMaxDimension = { width: 1024, height: 768 }
+  const { naturalWidth, naturalHeight } = sourceImage
+
+  if (naturalWidth > imageMaxDimension.width || naturalHeight > imageMaxDimension.height) {
+    return Math.min(imageMaxDimension.width / naturalWidth, imageMaxDimension.height / naturalHeight)
+  }
+
+  return 1
+}
+
 export async function compressImage (imgUrl: string, sourceMimeType?: string): Promise<any> {
   // Takes a source image url and generate a blob of the compressed image.
 
-  // According to the testing result, 0.8 is a good starting point for both resizingFactor and quality for .jpeg and .webp.
-  // For other image types, we use 0.9 as the starting point.
-  const defaultFactor = ['image/jpeg', 'image/webp'].includes(sourceMimeType) ? 0.8 : 0.9
-  let resizingFactor = defaultFactor
-  let quality = defaultFactor
   // According to the testing result, webP format has a better compression ratio than jpeg.
   const compressToType = await supportsWebP() ? 'image/webp' : 'image/jpeg'
   const sourceImage = await loadImage(imgUrl)
+
+  // According to the testing result, 0.8 is a good starting point for quality for .jpeg and .webp.
+  // For other image types, use 0.9 as the starting point.
+  let quality = ['image/jpeg', 'image/webp'].includes(sourceMimeType) ? 0.8 : 0.9
+  const resizingFactor = getResizingFactor(sourceImage)
 
   while (true) {
     const blob = await generateImageBlobByCanvas({
@@ -109,7 +121,6 @@ export async function compressImage (imgUrl: string, sourceMimeType?: string): P
     } else {
       // if the size difference is greater than 100KB, reduce the next compression factors by 10%, otherwise 5%.
       const minusFactor = sizeDiff > 100 * 1000 ? 0.1 : 0.05
-      resizingFactor -= minusFactor
       quality -= minusFactor
     }
   }
