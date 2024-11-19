@@ -35,12 +35,12 @@ export const imageUpload = async (imageFile: File, params: ?Object): Promise<Obj
 export function supportsWebP (): Promise<boolean> {
   // Uses a very small webP image to check if the browser supports 'image/webp' format.
   // (reference: https://developers.google.com/speed/webp/faq#in_your_own_javascript)
-  const verySmallWebP = 'data:image/webp;base64,UklGRhIAAABXRUJQVlA4WAoAAAAQAAAAMwAAQUxQSAwAAAAwAQCdASoEAAQAAVAfCWkAQUwAAAABABgAAgAAAAAABAAAAAAAAAA'
+  const verySmallWebP = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA'
   const img = new Image()
 
   return new Promise(resolve => {
-    img.onload = () => resolve(img.height > 0)
-    img.onerror = () => resolve(false)
+    img.onload = () => { resolve(img.height > 0) }
+    img.onerror = (e) => { resolve(false) }
     img.src = verySmallWebP
   })
 }
@@ -82,12 +82,14 @@ function generateImageBlobByCanvas ({
   })
 }
 
-export async function compressImage (imgUrl: string): Promise<any> {
-  // Takes a source image url and generate another objectURL of the compressed image.
+export async function compressImage (imgUrl: string, sourceMimeType?: string): Promise<any> {
+  // Takes a source image url and generate a blob of the compressed image.
 
-  // According to the testing result, 0.8 is a good starting point for both resizingFactor and quality.
-  let resizingFactor = 0.8
-  let quality = 0.8
+  // According to the testing result, 0.8 is a good starting point for both resizingFactor and quality for .jpeg and .webp.
+  // For other image types, we use 0.9 as the starting point.
+  const defaultFactor = ['image/jpeg', 'image/webp'].includes(sourceMimeType) ? 0.8 : 0.9
+  let resizingFactor = defaultFactor
+  let quality = defaultFactor
   // According to the testing result, webP format has a better compression ratio than jpeg.
   const compressToType = await supportsWebP() ? 'image/webp' : 'image/jpeg'
   const sourceImage = await loadImage(imgUrl)
@@ -103,7 +105,7 @@ export async function compressImage (imgUrl: string): Promise<any> {
 
     if (sizeDiff <= 0 || // if the compressed image is already smaller than the max size, return the compressed image.
       quality <= 0.4) { // Do not sacrifice the image quality too much.
-      return URL.createObjectURL(blob)
+      return blob
     } else {
       // if the size difference is greater than 100KB, reduce the next compression factors by 10%, otherwise 5%.
       const minusFactor = sizeDiff > 100 * 1000 ? 0.1 : 0.05

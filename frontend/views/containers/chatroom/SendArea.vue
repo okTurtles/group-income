@@ -690,7 +690,7 @@ export default ({
         'send',
         msgToSend,
         this.hasAttachments
-          ? cloneDeep(this.ephemeral.attachments).map(this.compressImage)
+          ? cloneDeep(this.ephemeral.attachments)
           : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
@@ -698,12 +698,6 @@ export default ({
       this.updateTextArea()
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
-    },
-    compressImage (attachment) {
-      if (attachment.needsIamgeCompression) {
-        console.log('TODO: implement image compression logic here')
-      }
-      return attachment
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
