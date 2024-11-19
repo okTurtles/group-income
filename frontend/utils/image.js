@@ -104,7 +104,7 @@ export async function compressImage (imgUrl: string, sourceMimeType?: string): P
     const sizeDiff = blob.size - IMAGE_ATTACHMENT_MAX_SIZE
 
     if (sizeDiff <= 0 || // if the compressed image is already smaller than the max size, return the compressed image.
-      quality <= 0.4) { // Do not sacrifice the image quality too much.
+      quality <= 0.3) { // Do not sacrifice the image quality too much.
       return blob
     } else {
       // if the size difference is greater than 100KB, reduce the next compression factors by 10%, otherwise 5%.
