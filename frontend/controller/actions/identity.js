@@ -587,13 +587,13 @@ export default (sbp('sbp/selectors/register', {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
-        const { url, needsIamgeCompression } = attachment
+        const { url, needsImageCompression } = attachment
         // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-        const attachmentBlob = needsIamgeCompression
+        const attachmentBlob = needsImageCompression
           ? await compressImage(url)
           : await objectURLtoBlob(url)
 
-        if (needsIamgeCompression) {
+        if (needsImageCompression) {
           // Update the attachment details to reflect the compressed image.
           const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
           const extension = attachmentBlob.type.split('/')[1]
@@ -607,7 +607,7 @@ export default (sbp('sbp/selectors/register', {
         }, { billableContractID })
         const { delete: token, download: downloadData } = response
         return {
-          attributes: omit(attachment, ['url', 'needsIamgeCompression']),
+          attributes: omit(attachment, ['url', 'needsImageCompression']),
           downloadData,
           deleteData: { token }
         }

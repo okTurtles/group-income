@@ -756,7 +756,7 @@ export default ({
           img.src = fileUrl
 
           // Determine if the image needs lossy-compression before upload.
-          attachment.needsIamgeCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
+          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
         }
 
         list.push(attachment)
