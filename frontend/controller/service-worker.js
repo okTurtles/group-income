@@ -106,7 +106,7 @@ sbp('sbp/selectors/register', {
             })
           }
           return subscription
-        })
+        }).catch(e => alert(e.message))
         : null
 
       await sbp('push/reportExistingSubscription', existingSubscription?.toJSON())

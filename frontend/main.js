@@ -234,8 +234,6 @@ async function startApp () {
     'push/*': swRpc
   })
 
-  setupNativeNotificationsListeners()
-
   /* eslint-disable no-new */
   new Vue({
     router: router,
@@ -405,6 +403,7 @@ async function startApp () {
           const onready = () => {
             this.ephemeral.ready = true
             this.removeLoadingAnimation()
+            setupNativeNotificationsListeners()
           }
           if (!sw.controller) {
             const listener = (ev: Event) => {

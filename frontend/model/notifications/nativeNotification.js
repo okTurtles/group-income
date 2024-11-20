@@ -79,30 +79,31 @@ export async function requestNotificationPermission (force: boolean = false): Pr
 export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
 }): void {
-  console.error('@@@called makeNotification', { title, body, icon, path }, Notification?.permission)
-  if (Notification?.permission === 'granted' /* && sbp('state/vuex/settings').notificationEnabled */) {
-    // If not running on a SW
-    if (typeof window === 'object') {
-      try {
-        const notification = new Notification(title, { body, icon })
-        if (path) {
-          notification.onclick = (event) => {
-            sbp('controller/router').push({ path }).catch(console.warn)
-          }
-        }
-      } catch {
-        try {
-          navigator.serviceWorker?.ready.then(registration => {
-            // $FlowFixMe
-            return registration.showNotification(title, { body, icon, data: { path } })
-          }).catch(console.warn)
-        } catch (error) {
-          console.error('makeNotification: ', error.message)
+  if (typeof Notification !== 'function') return
+  // If not running on a SW
+  if (typeof window === 'object') {
+    try {
+      if (navigator.vendor === 'Apple Computer, Inc.') {
+        throw new Error('Safari requires a service worker for the notification to be displayed')
+      }
+      const notification = new Notification(title, { body, icon })
+      if (path) {
+        notification.onclick = (event) => {
+          sbp('controller/router').push({ path }).catch(console.warn)
         }
       }
-    } else {
-    // If running in a SW
-      self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+    } catch (e) {
+      try {
+        navigator.serviceWorker?.ready.then(registration => {
+          // $FlowFixMe
+          return registration.showNotification(title, { body, icon, data: { path } })
+        }).catch(console.warn)
+      } catch (error) {
+        console.error('makeNotification: ', error.message)
+      }
     }
+  } else {
+  // If running in a SW
+    self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
   }
 }

@@ -218,14 +218,14 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it('user3 adds user2 to the DM, so all group members are in the same DM', () => {
-    cy.log('XXXXXXXX')
+    cy.log('@@XXXXXXXX')
     switchUser(user3)
-    cy.log('YYYYYYYY')
+    cy.log('@@YYYYYYYY')
     cy.giRedirectToGroupChat()
-    cy.log('ZZZZZZZZ')
+    cy.log('@@ZZZZZZZZ')
 
     openDMByMembers([user4, user1])
-    cy.log('WWWWWWW')
+    cy.log('@@WWWWWWW')
 
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()

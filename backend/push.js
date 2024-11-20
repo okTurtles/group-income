@@ -203,7 +203,7 @@ export const pushServerActionhandlers: any = {
       server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
     })
     saveSubscription(server, subscriptionId)
-    console.error('@@@@ADD PUSH SUBSCRIPTION')
+    console.error('@@@@ADD PUSH SUBSCRIPTION', subscriptionId, subscription.endpoint)
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
     const socket = this

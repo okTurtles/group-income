@@ -77,7 +77,7 @@ async function messageReceivePostEffect ({
     const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
       (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-    ;(shouldNotifyMessage || isNaN(NaN)) && makeNotification({
+    shouldNotifyMessage && makeNotification({
       title,
       body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
       icon,
