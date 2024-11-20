@@ -37,7 +37,7 @@ nav.c-navigation(
         notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
 
       .c-navigation-body(
-        @click.self='enableTimeTravel'
+        @click.stop='onMenuItemsClick'
         v-if='!notApprovedToGroupYet && groupsByName.length'
       )
         .c-navigation-body-top
@@ -131,8 +131,7 @@ export default ({
       },
       ephemeral: {
         isActive: false,
-        isTouch: null,
-        timeTravelComponentName: null
+        isTouch: null
       }
     }
   },
@@ -187,14 +186,11 @@ export default ({
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
-    enableTimeTravel (evt) {
-      if (evt.shiftKey && process.env.NODE_ENV !== 'production') {
-        console.debug('enable time travel!')
-        this.ephemeral.timeTravelComponentName = 'TimeTravel'
-      }
-    },
     checkIsTouch () {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
+    },
+    onMenuItemsClick () {
+      this.ephemeral.isActive = false
     }
   }
 }: Object)
