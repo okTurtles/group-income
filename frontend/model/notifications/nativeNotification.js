@@ -83,6 +83,7 @@ export function makeNotification ({ title, body, icon, path }: {
   // If not running on a SW
   if (typeof window === 'object') {
     try {
+      // $FlowFixMe[incompatible-type]
       if (navigator.vendor === 'Apple Computer, Inc.') {
         throw new Error('Safari requires a service worker for the notification to be displayed')
       }
