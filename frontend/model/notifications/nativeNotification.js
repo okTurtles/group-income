@@ -59,18 +59,16 @@ export const setupNativeNotificationsListeners = () => {
   }
 }
 
-export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
+export async function requestNotificationPermission (): Promise<null | string> {
   if (typeof Notification !== 'function') {
     return null
   }
 
-  if (force || Notification.permission === 'default') {
-    try {
-      await Notification.requestPermission()
-    } catch (e) {
-      console.error('requestNotificationPermission:', e.message)
-      return null
-    }
+  try {
+    await Notification.requestPermission()
+  } catch (e) {
+    console.error('requestNotificationPermission:', e.message)
+    return null
   }
 
   return Notification.permission

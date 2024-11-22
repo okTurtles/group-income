@@ -52,7 +52,7 @@ async function messageReceivePostEffect ({
     let icon
     if (isDM) {
     // NOTE: partner identity contract could not be synced yet
-      const members = rootState[contractID].members
+      const members = Object.keys(rootState[contractID].members)
       const isDMToMyself = members.length === 1 && members[0] === identityContractID
       const partners = members
         .filter(memberID => memberID !== identityContractID)

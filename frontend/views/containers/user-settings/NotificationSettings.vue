@@ -7,6 +7,8 @@
         .c-text-content
           i18n.c-smaller-title(tag='h3') Allow browser notifications
           i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
+          input(:value='pushNotificationSupported')
+          input(:value='pushNotificationGranted')
           p
             i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
             i18n.c-description(v-else-if='pushNotificationGranted !== null' tag='strong') Once set, the notification permission can only be adjusted by the browser in the browser settings.
@@ -91,9 +93,10 @@ export default ({
       let permission = Notification.permission
 
       if (permission === 'default') {
-        permission = await requestNotificationPermission(true)
+        permission = await requestNotificationPermission()
       } else if (permission) {
         alert(L('Sorry, you should reset browser notification permission again.'))
+        // return
       }
       const granted = (Notification.permission === 'granted')
       e.target.checked = granted

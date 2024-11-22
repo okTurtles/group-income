@@ -131,7 +131,7 @@ export default ({
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        await requestNotificationPermission()
+        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg?.danger(e.message)

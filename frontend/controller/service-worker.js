@@ -80,7 +80,7 @@ sbp('sbp/selectors/register', {
   },
   'service-worker/setup-push-subscription': async function () {
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
-    // Get the installed service-worker registration
+      // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
 
       if (!registration) {
@@ -94,8 +94,8 @@ sbp('sbp/selectors/register', {
         ? await registration.pushManager.getSubscription().then((subscription) => {
           if (
             !subscription ||
-          (subscription.expirationTime != null &&
-          subscription.expirationTime <= Date.now())
+            (subscription.expirationTime != null &&
+            subscription.expirationTime <= Date.now())
           ) {
             console.info(
               'Attempting to create a new subscription',

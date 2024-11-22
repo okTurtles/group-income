@@ -128,7 +128,6 @@ const setupPromise = setupChelonia().then(() => {
   return self.registration.pushManager?.getSubscription().then((subscription) => {
     if (!subscription) {
       console.warn('[sw-primary] No existing push subscription')
-      return
     }
     return sbp('push/reportExistingSubscription', subscription?.toJSON()).catch(e => {
       console.error('[sw-primary] Error reporting push subscription', e)
