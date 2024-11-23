@@ -70,6 +70,11 @@ const mutations = {
     state.increasedContrast = isChecked
   },
   setNotificationEnabled (state, enabled) {
+    if (state.notificationEnabled !== enabled) {
+      sbp('service-worker/setup-push-subscription').catch(e => {
+        console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
+      })
+    }
     state.notificationEnabled = enabled
   },
   setReducedMotion (state, isChecked) {

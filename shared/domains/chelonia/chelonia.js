@@ -641,9 +641,12 @@ export default (sbp('sbp/selectors/register', {
     }
     return this.pubsub
   },
-  'chelonia/handleEvent': function (event) {
+  'chelonia/handleEvent': async function (event: string) {
     const { contractID } = GIMessage.deserializeHEAD(event)
-    sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
+    if (self.registration) {
+      self.registration.showNotification('@@' + contractID, { body: sbp(this.config.stateSelector)[contractID] })
+    }
+    return await sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
   },
   'chelonia/defineContract': function (contract: Object) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)

@@ -299,4 +299,15 @@ const setupChelonia = async (): Promise<*> => {
   })
 }
 
-export default setupChelonia
+export default ((() => {
+  let promise
+  return () => {
+    if (!promise) {
+      promise = setupChelonia().catch((e) => {
+        promise = undefined
+        throw e
+      })
+    }
+    return promise
+  }
+})(): () => Promise<void>)

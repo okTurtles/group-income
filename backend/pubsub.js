@@ -330,7 +330,6 @@ const publicMethods = {
     for (const client of to || server.clients) {
       const msg = typeof message === 'string' ? message : JSON.stringify(message)
       if (client.endpoint) {
-        console.error('@@@@POSTING PUSH EVENT')
         postEvent(client, msg).catch(e => {
           console.error(e, 'Error posting push notification')
         })

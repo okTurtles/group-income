@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { deserializer } from '~/shared/serdes/index.js'
+import { ONLINE } from '../utils/events.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -78,7 +79,7 @@ sbp('sbp/selectors/register', {
       console.error('error setting up service worker:', e)
     }
   },
-  'service-worker/setup-push-subscription': async function () {
+  'service-worker/setup-push-subscription': async function (retryCount?: number) {
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
@@ -106,10 +107,21 @@ sbp('sbp/selectors/register', {
             })
           }
           return subscription
-        }).catch(e => alert(e.message))
+        }).catch(e => {
+          if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
+            sbp('okTurtles.events/once', ONLINE, () => {
+              setTimeout(() => sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1), 200)
+            })
+            return
+          }
+          console.error('[service-worker/setup-push-subscription] Error setting up push subscription', e)
+          alert(e?.message || 'Error')
+        })
         : null
 
-      await sbp('push/reportExistingSubscription', existingSubscription?.toJSON())
+      await sbp('push/reportExistingSubscription', existingSubscription?.toJSON()).catch(e => {
+        console.error('[service-worker/setup-push-subscription] Error reporting existing subscription', e)
+      })
       return true
     })
   },

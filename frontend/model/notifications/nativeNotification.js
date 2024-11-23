@@ -5,7 +5,9 @@ import sbp from '@sbp/sbp'
 //       be safe to modify them without worrying about version conflicts.
 
 const handler = (statuses: string[]) => {
-  const granted = statuses.every(status => status === 'granted')
+  // For some reason, Safari seems to always return `'prompt'` with
+  // `Notification.permission` being correct.
+  const granted = statuses.every(status => status === 'granted') || (statuses.every(status => status === 'prompt') && Notification.permission === 'granted')
   sbp('state/vuex/commit', 'setNotificationEnabled', granted)
 
   sbp('service-worker/setup-push-subscription').catch((e) => {
@@ -65,13 +67,11 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 
   try {
-    await Notification.requestPermission()
+    return await Notification.requestPermission()
   } catch (e) {
     console.error('requestNotificationPermission:', e.message)
     return null
   }
-
-  return Notification.permission
 }
 
 export function makeNotification ({ title, body, icon, path }: {

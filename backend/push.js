@@ -173,6 +173,7 @@ export const pushServerActionhandlers: any = {
       addSubscriptionToIndex(subscriptionId).then(() => {
         return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
       }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
+      postEvent(server.pushSubscriptions[subscriptionId], '{}')
     } else {
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
@@ -233,7 +234,7 @@ const deleteClient = (subscriptionId) => {
   removeSubscription(server, subscriptionId)
 }
 
-const encryptPayload = async (subcription: Object, data: any) => {
+const encryptPayload = async (subcription: Object, data: string) => {
   const readableStream = new Response(data).body
   const [asPublic, IKM] = await subcription.encryptionKeys
 
@@ -249,10 +250,10 @@ const encryptPayload = async (subcription: Object, data: any) => {
   })
 }
 
-export const postEvent = async (subscription: Object, event: any): Promise<void> => {
+export const postEvent = async (subscription: Object, event: string): Promise<void> => {
   const authorization = await vapidAuthorization(subscription.endpoint)
   const body = event
-    ? await encryptPayload(subscription, JSON.stringify(event))
+    ? await encryptPayload(subscription, event)
     : undefined
 
   /* if (body) {
@@ -276,7 +277,7 @@ export const postEvent = async (subscription: Object, event: any): Promise<void>
     ],
     body
   }).then(async (req) => {
-    console.error('@@@@postEvent', body, subscription.endpoint, req.status, await req.text())
+    console.error('@@@@postEvent', body, event, subscription.endpoint, req.status, await req.text())
     return req
   })
 

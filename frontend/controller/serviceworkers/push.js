@@ -1,7 +1,7 @@
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import sbp from '@sbp/sbp'
-import { ONLINE } from '~/frontend/utils/events.js'
-import { NOTIFICATION_TYPE, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
+import setupChelonia from '~/frontend/setupChelonia.js'
+import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
 
 export default (sbp('sbp/selectors/register', {
   'push/getSubscriptionOptions': (() => {
@@ -52,7 +52,7 @@ export default (sbp('sbp/selectors/register', {
   'push/reportExistingSubscription': (() => {
     const map = new WeakMap()
     // eslint-disable-next-line require-await
-    return async (subscriptionInfo) => {
+    return async (subscriptionInfo: Object) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 
@@ -84,7 +84,7 @@ export default (sbp('sbp/selectors/register', {
 if (self.registration?.pushManager) {
   (() => {
     let inProgress = false
-    sbp('okTurtles.events/on', ONLINE, () => {
+    sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, () => {
       if (inProgress) return
       inProgress = true
       self.registration.pushManager.getSubscription().then((subscription) =>
@@ -102,8 +102,12 @@ self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
   const data = event.data.json()
-  if (data.type === NOTIFICATION_TYPE.ENTRY) {
-    event.waitUntil(sbp('chelonia/handleEvent', data.data))
+  if (data.type === NOTIFICATION_TYPE.ENTRY && data.data) {
+    event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).then(() => {
+      return self.registration.showNotification('@@ok')
+    }).catch((e) => {
+      return self.registration.showNotification('@@err', { body: e.message })
+    }))
   }
 }, false)
 

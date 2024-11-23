@@ -7,8 +7,6 @@
         .c-text-content
           i18n.c-smaller-title(tag='h3') Allow browser notifications
           i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
-          input(:value='pushNotificationSupported')
-          input(:value='pushNotificationGranted')
           p
             i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
             i18n.c-description(v-else-if='pushNotificationGranted !== null' tag='strong') Once set, the notification permission can only be adjusted by the browser in the browser settings.
@@ -17,7 +15,7 @@
             type='checkbox'
             name='switch'
             :checked='!!pushNotificationGranted'
-            :disabled='pushNotificationGranted !== null'
+            :disabled='!pushNotificationSupported || pushNotificationGranted !== null'
             @click.prevent='handleNotificationSettings'
           )
 </template>
@@ -58,7 +56,7 @@ export default ({
       handler(Notification.permission)
       const intervalId = setInterval(() => {
         handler(Notification.permission)
-      }, 100)
+      }, 500)
       this.cancelListener = () => clearInterval(intervalId)
     }
     if (
@@ -67,7 +65,12 @@ export default ({
       typeof navigator.permissions.query === 'function'
     ) {
       navigator.permissions.query({ name: 'notifications' }).then((status) => {
-        const listener = () => handler(status.state)
+        const listener = () => {
+          // For some reason, Safari seems to always return `'prompt'` with
+          // `Notification.permission` being correct.
+          const state = (status.state === 'prompt' && Notification.permission !== 'default') ? Notification.permission : status.state
+          handler(state)
+        }
         listener()
         status.addEventListener('change', listener, false)
         this.cancelListener = () => status.removeEventListener('change', listener, false)
@@ -96,7 +99,7 @@ export default ({
         permission = await requestNotificationPermission()
       } else if (permission) {
         alert(L('Sorry, you should reset browser notification permission again.'))
-        // return
+        return
       }
       const granted = (Notification.permission === 'granted')
       e.target.checked = granted
