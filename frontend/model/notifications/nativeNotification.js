@@ -103,6 +103,9 @@ export function makeNotification ({ title, body, icon, path }: {
     }
   } else {
   // If running in a SW
-    self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      if (clientList.length) return
+      self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+    })
   }
 }

@@ -173,7 +173,7 @@ export const pushServerActionhandlers: any = {
       addSubscriptionToIndex(subscriptionId).then(() => {
         return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
       }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
-      postEvent(server.pushSubscriptions[subscriptionId], '{}')
+      postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
     } else {
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {

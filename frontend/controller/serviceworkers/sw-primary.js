@@ -166,18 +166,6 @@ self.addEventListener('message', function (event) {
   if (typeof event.data === 'object' && event.data.type) {
     console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
-      /* case 'set':
-        store[event.data.key] = event.data.value
-        break
-      case 'get':
-        event.source.postMessage({
-          response: store[event.data.key]
-        })
-        break
-      case 'store-client-id':
-        store.clientId = event.source.id
-        break
-      */
       case 'sbp': {
         const port = event.data.port;
         (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
@@ -218,10 +206,36 @@ self.addEventListener('message', function (event) {
 // Handle clicks on notifications issued via registration.showNotification().
 self.addEventListener('notificationclick', event => {
   console.debug('[sw] Notification clicked:', event.notification)
-  console.error('@@@@ DATA', event.notification.data)
-  if (event.notification.data?.path) {
-    self.clients.openWindow(`/app${event.notification.data.path}`)
-  }
+  event.notification.close()
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      clientList.sort((a, b) => {
+        if (a.focused !== b.focused) {
+          return a.focused ? -1 : 1
+        }
+        if (a.visibilityState !== b.visibilityState) {
+        // order is visible, prerender, hidden
+          if (a.visibilityState === 'visible') return -1
+          if (b.visibilityState === 'visible') return 1
+          if (a.visibilityState === 'hidden') return 1
+          if (b.visibilityState === 'hidden') return -1
+        }
+
+        return 0
+      })
+      if (!clientList.length) {
+        return self.clients.openWindow(`/app${event.notification.data.path ?? '/'}`)
+      }
+      const client = clientList[0]
+      if (event.notification.data?.path) {
+        client.postMessage({
+          type: 'navigate',
+          path: event.notification.data.path
+        })
+      }
+      if (!client.focused) return client.focus()
+    }))
 })
 
 sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {

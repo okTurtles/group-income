@@ -64,6 +64,10 @@ sbp('sbp/selectors/register', {
               sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
               break
             }
+            case 'navigate': {
+              sbp('controller/router').push({ path: data.path }).catch(console.warn)
+              break
+            }
             case CAPTURED_LOGS: {
               // Emit silently to avoid flooding logs with event emitted entries
               silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
