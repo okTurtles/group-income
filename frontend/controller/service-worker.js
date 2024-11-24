@@ -34,7 +34,8 @@ sbp('sbp/selectors/register', {
     }
 
     try {
-      const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
+      const isPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js${isPwa ? '#?standalone=1' : ''}`, { scope: '/' })
 
       // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
       await swRegistration.update()

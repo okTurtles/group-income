@@ -102,6 +102,7 @@ self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
   const data = event.data.json()
+  self.registration.showNotification('@@incoming', { body: `${data.type} ${data.data?.slice(0, 30)}` })
   if (data.type === NOTIFICATION_TYPE.ENTRY && data.data) {
     event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).then(() => {
       return self.registration.showNotification('@@ok')

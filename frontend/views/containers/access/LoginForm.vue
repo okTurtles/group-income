@@ -4,6 +4,7 @@ form(data-test='login' @submit.prevent='')
     i18n.label Username
     input.input(
       :class='{error: $v.form.username.$error}'
+      autocapitalize='off'
       name='username'
       ref='username'
       v-model='form.username'
