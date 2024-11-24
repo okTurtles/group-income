@@ -23,7 +23,8 @@ export default ({
   },
   methods: {
     shouldPlay () {
-      return document.hidden || this.isAppIdle
+      const isPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+      return !isPwa && (document.hidden || this.isAppIdle)
     },
     playMessageReceive () {
       if (this.shouldPlay()) {
