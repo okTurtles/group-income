@@ -190,6 +190,7 @@ export default ({
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
     },
     onMenuItemsClick () {
+      // Close the menu when a menu item is clicked.
       this.ephemeral.isActive = false
     }
   }
