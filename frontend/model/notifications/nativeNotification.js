@@ -9,10 +9,6 @@ const handler = (statuses: string[]) => {
   // `Notification.permission` being correct.
   const granted = statuses.every(status => status === 'granted') || (statuses.every(status => status === 'prompt') && Notification.permission === 'granted')
   sbp('state/vuex/commit', 'setNotificationEnabled', granted)
-
-  sbp('service-worker/setup-push-subscription').catch((e) => {
-    console.error('Error setting up push subscription in service worker', e)
-  })
 }
 
 const fallbackChangeListener = () => {
@@ -67,7 +63,9 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 
   try {
-    return await Notification.requestPermission()
+    const result = await Notification.requestPermission()
+    sbp('state/vuex/commit', 'setNotificationEnabled', result === 'granted')
+    return result
   } catch (e) {
     console.error('requestNotificationPermission:', e.message)
     return null

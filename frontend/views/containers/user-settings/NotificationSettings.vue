@@ -18,6 +18,9 @@
             :disabled='!pushNotificationSupported || pushNotificationGranted !== null'
             @click.prevent='handleNotificationSettings'
           )
+    div
+      pre
+        | {{ subscriptionInfo }}
 </template>
 
 <script>
@@ -34,7 +37,8 @@ export default ({
     return {
       pushNotificationSupported: false,
       pushNotificationGranted: null,
-      cancelListener: () => {}
+      cancelListener: () => {},
+      subscriptionInfo: ''
     }
   },
   beforeMount () {
@@ -78,6 +82,11 @@ export default ({
     } else {
       fallback()
     }
+    navigator.serviceWorker.ready?.then(r => {
+      r.pushManager.getSubscription().then((s) => {
+        this.subscriptionInfo = JSON.stringify(s, undefined, 2)
+      })
+    })
   },
   destroyed () {
     this.cancelListener()

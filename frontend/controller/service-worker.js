@@ -97,7 +97,7 @@ sbp('sbp/selectors/register', {
 
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
 
-      const existingSubscription = permissionState === 'granted'
+      const existingSubscription = permissionState === 'granted' || Notification.permission === 'granted'
         ? await registration.pushManager.getSubscription().then((subscription) => {
           if (
             !subscription ||
