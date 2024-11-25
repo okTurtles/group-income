@@ -1,8 +1,6 @@
 import { aes128gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
-// $FlowFixMe[missing-export]
-import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'

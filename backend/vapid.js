@@ -1,6 +1,4 @@
 import sbp from '@sbp/sbp'
-// $FlowFixMe[missing-export]
-import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
 
 let vapidPublicKey: string
 let vapidPrivateKey: Object

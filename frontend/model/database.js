@@ -16,6 +16,12 @@ const localforage = {
         reject(new Error('Unsupported characters in name: -'))
         return
       }
+      if (!self.indexedDB) {
+        throw new Error('NO self.indexedDB' + typeof indexedDB)
+      }
+      if (!self.indexedDB.open) {
+        throw new Error('NO self.indexedDB.open')
+      }
       const request = self.indexedDB.open(name + '--' + storeName)
 
       // Create the object store if it doesn't exist

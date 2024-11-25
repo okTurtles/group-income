@@ -18,10 +18,24 @@ import {
   createServer
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
-// $FlowFixMe[cannot-resolve-module]
-import { webcrypto } from 'node:crypto'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+
+// Node.js version 18 and lower don't have global.crypto defined
+// by default
+if (
+  !('crypto' in global) &&
+  typeof require === 'function'
+) {
+  const { webcrypto } = require('crypto')
+  if (webcrypto) {
+    Object.defineProperty(global, 'crypto', {
+      'enumerable': true,
+      'configurable': true,
+      'get': () => webcrypto
+    })
+  }
+}
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -183,7 +197,7 @@ sbp('sbp/selectors/register', {
   'backend/server/saveDeletionToken': async function (resourceID: string) {
     const deletionTokenRaw = new Uint8Array(18)
     // $FlowFixMe[cannot-resolve-name]
-    webcrypto.getRandomValues(deletionTokenRaw)
+    crypto.getRandomValues(deletionTokenRaw)
     // $FlowFixMe[incompatible-call]
     const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
     await sbp('chelonia/db/set', `_private_deletionToken_${resourceID}`, deletionToken)

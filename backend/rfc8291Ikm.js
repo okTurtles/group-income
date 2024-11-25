@@ -1,6 +1,3 @@
-// $FlowFixMe[missing-export]
-import { webcrypto as crypto } from 'crypto' // Needed for Node 18 and under
-
 // Key derivation as per RFC 8291 (for sending encrypted push notifications)
 export default async (uaPublic: Uint8Array, salt: SharedArrayBuffer): Promise<[ArrayBuffer, ArrayBuffer]> => {
   const [[asPrivateKey, asPublic], uaPublicKey] = await Promise.all([

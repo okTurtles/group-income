@@ -22,6 +22,10 @@ declare var logger: Object
 declare var process: any
 // Third-party globals
 declare var Compartment: Function
+declare var crypto: {
+    getRandomValues: (buffer: Uint8Array) => Uint8Array,
+    subtle: { [k: string]: Function }
+}
 
 // =======================
 // Fix "Required module not found" in a hackish way.
