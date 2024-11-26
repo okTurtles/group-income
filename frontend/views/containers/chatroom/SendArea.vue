@@ -359,7 +359,8 @@ export default ({
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN
       },
       typingUserTimeoutIds: {},
-      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
+      mediaIsPhone: null
     }
   },
   watch: {
