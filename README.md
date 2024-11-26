@@ -122,6 +122,8 @@ npm run cy:open
 npx cypress run -c 'baseUrl=http://localhost:8000' --spec "test/cypress/integration/group-chat.spec.js"
 ```
 
+This project is tested with BrowserStack. <!-- This string is necessary here for BrowserStack's free OSS testing. -->
+
 #### Using Docker for extra security
 
 You can run commands in a Docker container by using `npm run docker -- <cmd>` instead.
