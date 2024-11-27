@@ -17,7 +17,7 @@
           .c-file-name.has-ellipsis {{ entry.name }}
           .c-file-ext-and-size
             .c-file-ext {{ fileExt(entry) }}
-            .c-file-size(v-if='entry.size') {{ fileSize(entry) }}
+            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
 
       .c-preview-img(v-else)
         img(
@@ -38,7 +38,7 @@
         .c-attachment-actions
           tooltip(
             direction='top'
-            :text='L("Download")'
+            :text='getDownloadTooltipText(entry)'
           )
             button.is-icon-small(
               :aria-label='L("Download")'
@@ -93,9 +93,10 @@
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType } from '@view-utils/filters.js'
+import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { L } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -156,8 +157,13 @@ export default {
     fileExt ({ name }) {
       return getFileExtension(name, true)
     },
-    fileSize ({ size }) {
-      return size ? `${size} bytes` : ''
+    fileSizeDisplay ({ size }) {
+      return size ? formatBytesDecimal(size) : ''
+    },
+    getDownloadTooltipText ({ size }) {
+      return this.shouldPreviewImages
+        ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
+        : L('Download')
     },
     fileType ({ mimeType }) {
       return getFileType(mimeType)
@@ -279,8 +285,14 @@ export default {
 
       .c-file-ext-and-size {
         display: flex;
+        align-items: flex-end;
         flex-direction: row;
-        column-gap: 0.25rem;
+        column-gap: 0.325rem;
+      }
+
+      .c-file-size {
+        color: $text_1;
+        font-size: 0.8em;
       }
     }
 
@@ -314,6 +326,8 @@ export default {
     .is-download-item {
       &:hover .c-attachment-actions-wrapper {
         display: flex;
+        flex-direction: column;
+        align-items: flex-end;
       }
 
       .c-preview-non-image {

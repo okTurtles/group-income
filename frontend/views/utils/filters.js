@@ -15,6 +15,17 @@ export const getFileType = (
   return mimeType.match('image/') ? 'image' : 'non-image'
 }
 
+export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {
+  if (bytes === 0) { return '0 Bytes' }
+
+  const k = 1000 // Decimal base
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  const formattedValue = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))
+  return `${formattedValue} ${sizes[i]}`
+}
+
 /**
  * this function filters `list` by `keyword`
  * `list` should be an array of objects and strings
