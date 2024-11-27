@@ -2,24 +2,43 @@
 .c-image-viewer-modal(@wheel.prevent.stop='')
   .c-image-viewer-content
     .c-image-blurry-background(:style='blurryBgStyles')
-    preview-image-area(:img-src='metaData.imgUrl' :name='metaData.name')
+    preview-image-area(
+      v-if='currentImage'
+      :key='currentImage.id'
+      :img-src='currentImage.imgUrl'
+      :name='currentImage.name'
+    )
 
     header.c-modal-header
       avatar-user.c-avatar(
-        v-if='metaData.ownerID'
-        :contractID='metaData.ownerID'
+        v-if='currentImage.ownerID'
+        :contractID='currentImage.ownerID'
         size='sm'
       )
 
       .c-img-data
         .c-name.has-ellipsis {{ displayName }}
-        .c-filename.has-ellipsis {{ metaData.name }}
+        .c-filename.has-ellipsis {{ currentImage.name }}
 
       button.is-icon-small.c-close-btn(
         type='button'
         @click.stop='close'
       )
         i.icon-times
+
+    button.is-icon.c-image-nav-btn.is-prev(
+      v-if='showPrevButton'
+      type='button'
+      @click='selectPrevImage'
+    )
+      i.icon-chevron-left
+
+    button.is-icon.c-image-nav-btn.is-next(
+      v-if='showNextButton'
+      type='button'
+      @click='selectNextImage'
+    )
+      i.icon-chevron-right
 </template>
 
 <script>
@@ -39,30 +58,19 @@ export default {
     PreviewImageArea
   },
   props: {
-    metaData: Object
+    images: Array,
+    initialIndex: {
+      type: Number,
+      required: false,
+      default: 0
+    }
   },
   data () {
     return {
-      testImgSrc: '/assets/images/home-bg.jpeg',
+      touchMatchMedia: null,
       ephemeral: {
-        previewImgAttrs: {
-          width: undefined,
-          height: undefined
-        },
-        currentZoom: 0,
-        showSliderOutput: false
-      },
-      config: {
-        imgData: {
-          minWidth: null,
-          minHeight: null,
-          naturalWidth: null,
-          naturalHeight: null,
-          aspectRatio: 1 // intrinsic ratio value of width / height
-        },
-        zoomMin: 0,
-        zoomMax: 400, // for now.
-        sliderUnit: '%'
+        currentIndex: 0,
+        isTouch: false
       }
     }
   },
@@ -73,29 +81,73 @@ export default {
     ]),
     blurryBgStyles () {
       return {
-        backgroundImage: `url(${this.metaData.imgUrl})`
+        backgroundImage: `url(${this.currentImage.imgUrl})`
       }
     },
     displayName () {
-      const contractID = this.metaData.ownerID
+      const contractID = this.currentImage.ownerID
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
+    },
+    hasMultipleImages () {
+      return Array.isArray(this.images) && this.images.length > 1
+    },
+    showPrevButton () {
+      const len = this.images.length
+      return len > 1 && this.ephemeral.currentIndex > 0
+    },
+    showNextButton () {
+      const len = this.images.length
+      return len > 1 && this.ephemeral.currentIndex < len - 1
+    },
+    currentImage () {
+      return this.images[this.ephemeral.currentIndex]
     }
   },
   created () {
-    if (!this.metaData) {
+    if (!Array.isArray(this.images)) {
       this.$nextTick(() => this.close())
+    } else {
+      this.ephemeral.currentIndex = this.initialIndex
+    }
+
+    this.touchMatchMedia = window.matchMedia('(hover: none) and (pointer: coarse)')
+    this.ephemeral.isTouch = this.touchMatchMedia.matches
+    this.touchMatchMedia.onchange = (e) => {
+      this.ephemeral.isTouch = e.matches
     }
   },
   mounted () {
-    document.addEventListener('keydown', this.trapFocus)
+    document.addEventListener('keydown', this.keydownHandler)
   },
   beforeDestroy () {
-    document.removeEventListener('keydown', this.trapFocus)
+    document.removeEventListener('keydown', this.keydownHandler)
+    this.touchMatchMedia.onchange = null
   },
   methods: {
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
+    },
+    selectNextImage () {
+      if (this.ephemeral.currentIndex < this.images.length - 1) {
+        this.ephemeral.currentIndex += 1
+      }
+    },
+    selectPrevImage () {
+      if (this.ephemeral.currentIndex > 0) {
+        this.ephemeral.currentIndex -= 1
+      }
+    },
+    keydownHandler (e) {
+      this.trapFocus(e)
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          this.selectPrevImage()
+          break
+        case 'ArrowRight':
+          this.selectNextImage()
+      }
     }
   }
 }
@@ -103,6 +155,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+$cta-zindex: 3;
 
 .c-image-viewer-modal {
   position: fixed;
@@ -140,6 +193,9 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
 
   @include from($tablet) {
     border-radius: 0.375rem;
@@ -154,7 +210,7 @@ export default {
   top: 0;
   left: 0;
   height: auto;
-  z-index: 3;
+  z-index: $cta-zindex;
   padding: 1rem;
   padding-right: 3rem;
   display: flex;
@@ -228,6 +284,39 @@ export default {
   &:focus {
     background-color: var(--image-viewer-btn-color_active);
     color: var(--image-viewer-btn-text-color_active);
+  }
+}
+
+.c-image-nav-btn {
+  position: absolute;
+  z-index: $cta-zindex;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--image-viewer-text-color);
+  color: var(--image-viewer-btn-color);
+  width: 2.5rem;
+  height: 2.5rem;
+
+  &.is-prev {
+    left: 1rem;
+  }
+
+  &.is-next {
+    right: 1rem;
+  }
+
+  @include phone {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+
+    &.is-prev {
+      left: 0.75rem;
+    }
+
+    &.is-next {
+      right: 0.75rem;
+    }
   }
 }
 </style>
