@@ -100,16 +100,16 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
 
           const distChangeFactorCalc = Math.abs(currentLinearDist - prevLinearDist)
           // NOTE for below adjustment: the moment the pinch-action finishes, the distChangeFactor value becomes strangely large,
-          // leading to an abrupt change in image scale. so it needs some sort of a ceiling value here to catch/fix that behavior.
-          const changeFactorToUse = currPinchAction === this.pointer.prevPinchAction &&
+          // leading to an abrupt change in image scale. so it needs to ignore this value.
+          const changeFactorTooLarge = currPinchAction === this.pointer.prevPinchAction &&
             this.pointer.prevDistChangeFactor > 0 &&
-            (distChangeFactorCalc > this.pointer.prevDistChangeFactor * 3)
-            ? this.pointer.prevDistChangeFactor
-            : distChangeFactorCalc
+            distChangeFactorCalc > this.pointer.prevDistChangeFactor * 3
 
-          const args = { changeFactor: changeFactorToUse, center }
+          if (changeFactorTooLarge) { return }
 
-          this.pointer.prevDistChangeFactor = changeFactorToUse
+          const args = { changeFactor: distChangeFactorCalc, center }
+          this.pointer.prevDistChangeFactor = distChangeFactorCalc
+
           if (currPinchAction === PINCH_GESTURE.OUT) {
             this.$emit('pinch-out', args)
 

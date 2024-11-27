@@ -5,7 +5,7 @@
   @mouseup='mouseUpHandler'
 )
   img.c-preview-image(ref='previewImg'
-    :class='{ "is-movable": isImageMovable }'
+    :class='{ "is-movable": isImageMovable, "is-hidden": !ephemeral.imgInitDone }'
     :src='imgSrc'
     :width='config.imgData.naturalWidth'
     :height='config.imgData.naturalHeight'
@@ -16,6 +16,7 @@
   )
 
   .c-zoom-slider-container(
+    v-if='ephemeral.isLoaded'
     @pointerdown.stop=''
     @pointermove.stop=''
     @pointerup.stop=''
@@ -32,6 +33,8 @@
       :unit='config.sliderUnit'
       @input='onSliderUpdate'
     )
+
+  .c-loader-animation(v-if='!ephemeral.isLoaded')
 </template>
 
 <script>
@@ -62,6 +65,8 @@ export default {
   data () {
     return {
       ephemeral: {
+        isLoaded: false,
+        imgInitDone: false,
         previewImgAttrs: {
           width: undefined,
           height: undefined,
@@ -127,6 +132,7 @@ export default {
       const naturalHeight = imgEl.naturalHeight
       const aspectRatio = naturalWidth / naturalHeight
 
+      this.ephemeral.isLoaded = true
       this.config.imgData.naturalWidth = naturalWidth
       this.config.imgData.naturalHeight = naturalHeight
       this.config.imgData.aspectRatio = aspectRatio
@@ -134,6 +140,10 @@ export default {
 
       this.initViewerSettings()
       this.calcPreviewImageDimension()
+
+      this.$nextTick(() => {
+        this.ephemeral.imgInitDone = true
+      })
     },
     initViewerSettings () {
       const { naturalWidth, naturalHeight, aspectRatio } = this.config.imgData
@@ -433,15 +443,15 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-image-view-area {
-  position: absolute;
+  position: relative;
   width: 100%;
   height: 100%;
-  top: 0;
-  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: none;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 img.c-preview-image {
@@ -452,6 +462,10 @@ img.c-preview-image {
 
   &.is-movable {
     cursor: zoom-out;
+  }
+
+  &.is-hidden {
+    opacity: 0;
   }
 }
 
@@ -500,5 +514,31 @@ img.c-preview-image {
   &.show-slider-output ::v-deep .sOutput {
     display: inline-block;
   }
+}
+
+.c-loader-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--image-viewer-text-color);
+  animation: loader-ani 1.75s infinite linear;
+  z-index: 2;
+
+  @include desktop {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@keyframes loader-ani {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
