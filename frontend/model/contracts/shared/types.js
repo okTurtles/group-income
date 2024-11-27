@@ -19,7 +19,6 @@ import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from './constants.js'
-import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 
 // group.js related
 
@@ -65,19 +64,21 @@ export const messageType: any = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
   }),
-  attachments: arrayOf(objectOf({
-    name: string,
-    mimeType: string,
-    size: optional(numberRange(1, CHAT_ATTACHMENT_SIZE_LIMIT)),
-    dimension: optional(objectOf({
-      width: number,
-      height: number
-    })),
-    downloadData: objectOf({
-      manifestCid: string,
-      downloadParams: optional(object)
-    })
-  })),
+  attachments: optional(
+    arrayOf(objectOf({
+      name: string,
+      mimeType: string,
+      size: optional(numberRange(1, Number.MAX_SAFE_INTEGER)),
+      dimension: optional(objectOf({
+        width: number,
+        height: number
+      })),
+      downloadData: objectOf({
+        manifestCid: string,
+        downloadParams: optional(object)
+      })
+    }))
+  ),
   replyingMessage: objectOf({
     hash: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)
