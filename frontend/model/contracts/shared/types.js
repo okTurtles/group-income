@@ -2,7 +2,7 @@
 
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf, boolean,
-  object, string, stringMax, optional, number, mapOf, literalOf
+  object, string, stringMax, optional, number, mapOf, literalOf, numberRange
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES,
@@ -19,6 +19,7 @@ import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from './constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
 
 // group.js related
 
@@ -67,6 +68,7 @@ export const messageType: any = objectMaybeOf({
   attachments: arrayOf(objectOf({
     name: string,
     mimeType: string,
+    size: optional(numberRange(1, CHAT_ATTACHMENT_SIZE_LIMIT)),
     dimension: optional(objectOf({
       width: number,
       height: number

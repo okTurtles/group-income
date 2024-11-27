@@ -748,6 +748,7 @@ export default ({
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
+          size: fileSize,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         }
 

@@ -15,7 +15,9 @@
 
         .c-non-image-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext {{ fileExt(entry) }}
+          .c-file-ext-and-size
+            .c-file-ext {{ fileExt(entry) }}
+            .c-file-size(v-if='entry.size') {{ fileSize(entry) }}
 
       .c-preview-img(v-else)
         img(
@@ -154,6 +156,9 @@ export default {
     fileExt ({ name }) {
       return getFileExtension(name, true)
     },
+    fileSize ({ size }) {
+      return size ? `${size} bytes` : ''
+    },
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
@@ -267,8 +272,16 @@ export default {
   &.is-for-download {
     padding: 0;
 
-    .c-preview-non-image .c-non-image-file-info {
-      width: calc(100% - 4rem);
+    .c-preview-non-image {
+      .c-non-image-file-info {
+        width: calc(100% - 4rem);
+      }
+
+      .c-file-ext-and-size {
+        display: flex;
+        flex-direction: row;
+        column-gap: 0.25rem;
+      }
     }
 
     .c-attachment-actions-wrapper {
