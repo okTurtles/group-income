@@ -226,14 +226,14 @@ export default {
             id: randomHexString(12)
           }
         })
-      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL) || 0
+      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
 
       sbp(
         'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
         null,
         {
           images: allImageAttachments,
-          initialIndex
+          initialIndex: initialIndex === -1 ? 0 : initialIndex
         }
       )
     }

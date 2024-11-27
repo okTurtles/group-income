@@ -67,6 +67,7 @@ export default {
   },
   data () {
     return {
+      touchMatchMedia: null,
       ephemeral: {
         currentIndex: 0,
         isTouch: false
