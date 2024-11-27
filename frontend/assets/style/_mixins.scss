@@ -48,6 +48,13 @@
   }
 }
 
+$payment-table-desktop-bp: 1290px;
+@mixin payment-table-desktop {
+  @media screen and (min-width: $payment-table-desktop-bp) {
+    @content;
+  }
+}
+
 %unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;

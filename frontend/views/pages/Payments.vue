@@ -90,14 +90,13 @@ page(
 
       .tab-section
         .c-container(v-if='paymentsFiltered.length')
-          .c-payments-table-container
-            payments-list(
-              ref='paymentList'
-              :titles='tableTitles'
-              :paymentsList='paginateList(paymentsFiltered)'
-              :paymentsType='ephemeral.activeTab'
-              :selectedTodoItems.sync='ephemeral.selectedTodoItems'
-            )
+          payments-list(
+            ref='paymentList'
+            :titles='tableTitles'
+            :paymentsList='paginateList(paymentsFiltered)'
+            :paymentsType='ephemeral.activeTab'
+            :selectedTodoItems.sync='ephemeral.selectedTodoItems'
+          )
 
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
@@ -655,16 +654,6 @@ export default ({
       // if the text input element is empty.
       padding-right: 1.375rem;
     }
-  }
-}
-
-.c-payments-table-container {
-  position: relative;
-
-  @include desktop {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
   }
 }
 
