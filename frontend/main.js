@@ -166,6 +166,9 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
+  if (typeof Notification === 'function') {
+    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
+  }
 
   /* TODO: MOVE TO ANOTHER FILE */
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)

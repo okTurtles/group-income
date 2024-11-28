@@ -31,7 +31,7 @@ export const defaultSettings = {
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
-  notificationEnabled: true,
+  notificationEnabled: false,
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
