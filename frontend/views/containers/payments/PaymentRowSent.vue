@@ -117,7 +117,7 @@ export default ({
 .c-relative-to {
   display: none;
 
-  @include desktop {
+  @include payment-table-desktop {
     display: block;
   }
 }

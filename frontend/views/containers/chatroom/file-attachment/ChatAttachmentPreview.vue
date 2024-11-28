@@ -22,7 +22,7 @@
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
-          @click='openImageViewer(objectURLList[entryIndex], entry)'
+          @click='openImageViewer(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -60,7 +60,7 @@
       v-for='(entry, entryIndex) in attachmentList'
       :key='entryIndex'
       :class='"is-" + fileType(entry)'
-      @click='openImageViewer(entry.url, entry)'
+      @click='openImageViewer(entry.url)'
     )
       img.c-preview-img(
         v-if='fileType(entry) === "image" && entry.url'
@@ -94,6 +94,7 @@ import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -212,21 +213,29 @@ export default {
         height: `${heightInPixel}px`
       }
     },
-    openImageViewer (objectURL, data) {
-      if (objectURL) {
-        sbp(
-          'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
-          null,
-          {
-            metaData: {
-              name: data.name,
-              ownerID: this.ownerID,
-              imgUrl: objectURL,
-              createdAt: this.createdAt || new Date()
-            }
+    openImageViewer (objectURL) {
+      if (!objectURL) { return }
+
+      const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+        .map((entry, index) => {
+          return {
+            name: entry.name,
+            ownerID: this.ownerID,
+            imgUrl: entry.url || this.objectURLList[index] || '',
+            createdAt: this.createdAt || new Date(),
+            id: randomHexString(12)
           }
-        )
-      }
+        })
+      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
+
+      sbp(
+        'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+        null,
+        {
+          images: allImageAttachments,
+          initialIndex: initialIndex === -1 ? 0 : initialIndex
+        }
+      )
     }
   },
   watch: {

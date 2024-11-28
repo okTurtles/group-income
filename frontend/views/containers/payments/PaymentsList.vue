@@ -150,32 +150,50 @@ export default ({
       text-align: right;
     }
 
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 4.5rem;
     }
   }
 
   th.c-th-method {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 7.25rem;
     }
   }
 
   th.c-th-date {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 6.25rem;
     }
   }
 
   th.c-th-relative-to {
-    @include desktop {
+    @include payment-table-desktop {
       min-width: 5.25rem;
     }
   }
 
   ::v-deep td.c-td-user {
-    @include desktop {
+    @include tablet {
       padding-right: 0.5rem;
+    }
+
+    @include desktop {
+      max-width: 12rem;
+      min-width: 10rem;
+      overflow: hidden;
+
+      .c-user {
+        max-width: inherit;
+
+        .c-twrapper {
+          width: 100%;
+        }
+      }
+    }
+
+    @include from (1360px) {
+      max-width: 16rem;
     }
   }
 
@@ -193,19 +211,31 @@ export default ({
       width: 40%;
 
       @include tablet {
-        width: 27%;
+        width: 35%;
       }
     }
 
     th.c-th-method {
       width: 20%;
+
+      @include tablet {
+        padding-right: 0.5rem;
+        min-width: 8rem;
+      }
     }
 
     th.c-th-amount {
       width: 55%;
 
       @include tablet {
-        width: 24%;
+        width: 16%;
+      }
+    }
+
+    th.c-th-date {
+      @include desktop {
+        padding-right: 1.5rem;
+        min-width: 4.25rem;
       }
     }
   }
@@ -234,9 +264,10 @@ export default ({
     th.c-th-method {
       @include tablet {
         width: 24%;
+        padding-right: 0.5rem;
       }
 
-      @include desktop {
+      @include payment-table-desktop {
         width: 19%;
       }
     }
@@ -244,13 +275,17 @@ export default ({
     th.c-th-date {
       width: 18%;
       padding-right: 0.5rem;
+
+      @include desktop {
+        width: 22%;
+      }
     }
 
     th.c-th-relative-to {
       display: none;
       padding-right: 0;
 
-      @include desktop {
+      @include payment-table-desktop {
         display: table-cell;
         width: 14%;
       }
@@ -259,7 +294,7 @@ export default ({
     th.c-th-action {
       display: none;
 
-      @include desktop {
+      @include payment-table-desktop {
         display: table-cell;
         width: 5%;
       }

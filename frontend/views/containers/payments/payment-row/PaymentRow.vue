@@ -27,7 +27,7 @@
     td(v-if='$slots["cellRelativeTo"]')
       slot(name='cellRelativeTo')
 
-    td
+    td.c-td-actions
       .cpr-actions
         slot(name='cellActions')
 
@@ -109,6 +109,12 @@ export default ({
   @include phone {
     display: inline-block;
     margin-left: 0;
+  }
+}
+
+td.c-td-actions {
+  @include desktop {
+    padding-right: 1.5rem;
   }
 }
 </style>
