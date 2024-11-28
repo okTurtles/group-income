@@ -488,6 +488,11 @@ img.c-preview-image {
     background-color: var(--image-viewer-slider-bg-color);
     border-radius: 0.5rem;
     opacity: 0.675;
+
+    @media (forced-colors: active) {
+      border: 1px solid;
+      opacity: 1;
+    }
   }
 }
 
@@ -513,6 +518,10 @@ img.c-preview-image {
 
   &.show-slider-output ::v-deep .sOutput {
     display: inline-block;
+  }
+
+  ::v-deep input.sInput {
+    forced-color-adjust: none;
   }
 }
 
