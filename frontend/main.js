@@ -45,6 +45,7 @@ import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
+/*
 const debugFetch = self.fetch
 self.fetch = function (...args) {
   return debugFetch.apply(this, args).catch(e => {
@@ -52,6 +53,7 @@ self.fetch = function (...args) {
     throw e
   })
 }
+*/
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
