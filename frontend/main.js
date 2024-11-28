@@ -45,6 +45,14 @@ import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
+const debugFetch = self.fetch
+self.fetch = function (...args) {
+  return debugFetch.apply(this, args).catch(e => {
+    console.error('@@@FETCH ERROR', e?.message, e?.stack, args)
+    throw e
+  })
+}
+
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
