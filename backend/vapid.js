@@ -3,8 +3,14 @@ import sbp from '@sbp/sbp'
 let vapidPublicKey: string
 let vapidPrivateKey: Object
 
-// TODO: Load from configuration
-const vapid = { VAPID_EMAIL: 'mailto:test@example.com' }
+// The Voluntary Application Server Identification (VAPID) email field is "a
+// stable identity for the application server" that "can be used by a push
+// service to establish behavioral expectations for an application server"
+// RFC 8292
+if (!process.env.VAPID_EMAIL) {
+  console.warn('Missing VAPID identification. Please set VAPID_EMAIL to a value like "mailto:some@example".')
+}
+const vapid = { VAPID_EMAIL: process.env.VAPID_EMAIL || 'mailto:test@example.com' }
 
 export const initVapid = async () => {
   const vapidKeyPair = await sbp('chelonia/db/get', '_private_immutable_vapid_key').then(async (vapidKeyPair: string): Promise<[Object, string]> => {
