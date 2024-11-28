@@ -248,15 +248,14 @@ const encryptPayload = async (subcription: Object, data: string) => {
   })
 }
 
-export const postEvent = async (subscription: Object, event: string): Promise<void> => {
+export const postEvent = async (subscription: Object, event: ?string): Promise<void> => {
   const authorization = await vapidAuthorization(subscription.endpoint)
+  // Note: web push notifications can be 'bodyless' or they can contain a body
+  // If there's no body, there isn't anything to encrypt, so we skip both the
+  // encryption and the encryption headers.
   const body = event
     ? await encryptPayload(subscription, event)
     : undefined
-
-  /* if (body) {
-    body[body.length - 2] = 0
-  } */
 
   const req = await fetch(subscription.endpoint, {
     method: 'POST',

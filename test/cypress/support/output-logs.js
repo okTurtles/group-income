@@ -68,6 +68,11 @@ Cypress.mocha.getRunner().on('test', () => {
 // current fail, to the end of the error.stack property.
 Cypress.on('fail', (error) => {
   error.stack += '\nConsole Logs:\n========================\n'
+  // There isn't a 'good' way to capture browser logs from Cypress, so we
+  // capture them with the handler above. The logs can get pretty big, and this
+  // interferes with being able to upload test results to Cypress Cloud. Hence,
+  // the `.slice(-500)` part below to only keep the last 500 lines.
+  // TODO: Restore the slice part
   error.stack += '[' + logs./* slice(-500) */join('\n') + ']'
   // clear logs after fail so we dont see duplicate logs
   logs = []
