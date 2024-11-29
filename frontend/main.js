@@ -35,9 +35,6 @@ import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { deserializer, serializer } from '~/shared/serdes/index.js'
 import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
@@ -45,9 +42,6 @@ import FaviconBadge from './utils/faviconBadge.js'
 import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
-
-deserializer.register(GIMessage)
-deserializer.register(Secret)
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
@@ -100,9 +94,9 @@ async function startApp () {
   // Set up event listeners to keep local (Vuex) and Chelonia states in sync
   sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
 
-  // TODO: [SW] The following will be needed to keep namespace registrations
-  // in sync between the SW and each tab. It is not needed now because everything
-  // is running in the same context
+  // [SW] The following is be needed to keep namespace registrations in sync
+  // between the SW and each tab. It is not needed if everything is running in
+  // the same context
   sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
     const cache = sbp('state/vuex/state').namespaceLookups
     const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
@@ -170,72 +164,7 @@ async function startApp () {
     sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
   }
 
-  /* TODO: MOVE TO ANOTHER FILE */
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
-  const swRpc = (() => {
-    if (!navigator.serviceWorker) {
-      throw new Error('Missing service worker object')
-    }
-    let controller: ?ServiceWorker = navigator.serviceWorker.controller
-    navigator.serviceWorker.addEventListener('controllerchange', (ev: Event) => {
-      controller = (navigator.serviceWorker: any).controller
-    }, false)
-
-    return (...args) => {
-      return new Promise((resolve, reject) => {
-        if (!controller) {
-          reject(new Error('Service worker not ready'))
-          return
-        }
-        const messageChannel = new MessageChannel()
-        messageChannel.port1.addEventListener('message', (event: MessageEvent) => {
-          if (event.data && Array.isArray(event.data)) {
-            const r = deserializer(event.data[1])
-            // $FlowFixMe[incompatible-use]
-            if (event.data[0] === true) {
-              resolve(r)
-            } else {
-              reject(r)
-            }
-            messageChannel.port1.close()
-          }
-        }, false)
-        messageChannel.port1.addEventListener('messageerror', (event: MessageEvent) => {
-          reject(event.data)
-          messageChannel.port1.close()
-        }, false)
-        messageChannel.port1.start()
-        const { data, transferables } = serializer(args)
-        controller.postMessage({
-          type: 'sbp',
-          port: messageChannel.port2,
-          data
-        }, [messageChannel.port2, ...transferables])
-      })
-    }
-  })()
-
-  sbp('sbp/selectors/register', {
-    'gi.actions/*': swRpc
-  })
-  sbp('sbp/selectors/register', {
-    'chelonia/*': swRpc
-  })
-  sbp('sbp/selectors/register', {
-    'sw-namespace/*': (...args) => {
-      // Remove the `sw-` prefix from the selector
-      return swRpc(args[0].slice(3), ...args.slice(1))
-    }
-  })
-  sbp('sbp/selectors/register', {
-    'gi.notifications/*': swRpc
-  })
-  sbp('sbp/selectors/register', {
-    'swLogs/*': swRpc
-  })
-  sbp('sbp/selectors/register', {
-    'push/*': swRpc
-  })
 
   /* eslint-disable no-new */
   new Vue({

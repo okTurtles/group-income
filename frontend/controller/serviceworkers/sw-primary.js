@@ -7,7 +7,7 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
-import '~/frontend/controller/sw-namespace.js'
+import './sw-namespace.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
 import '~/frontend/model/notifications/selectors.js'
@@ -18,7 +18,14 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
-import { ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, SERIOUS_ERROR, SWITCH_GROUP } from '../../utils/events.js'
+import {
+  ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
+  CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP,
+  KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
+  NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
+  NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
+  NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, SERIOUS_ERROR, SWITCH_GROUP
+} from '../../utils/events.js'
 import './push.js'
 
 deserializer.register(GIMessage)
@@ -54,9 +61,19 @@ const selectorBlacklist = [
 sbp('sbp/filters/global/add', (domain, selector, data) => {
   if (domainBlacklist[domain] || selectorBlacklist[selector]) return
   console.debug(`[sbp] ${selector}`, data)
-});
+})
 
-[CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP].forEach(et => {
+// These are all of the events that will be forwarded to all open tabs and windows
+;[
+  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN,
+  LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING,
+  CHATROOM_USER_TYPING, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP,
+  JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND,
+  NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN,
+  NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
+  NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
+  PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
+].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
     const { data } = serializer(args)
     const message = {

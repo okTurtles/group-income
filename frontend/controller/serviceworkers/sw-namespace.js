@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { NAMESPACE_REGISTRATION } from '../utils/events.js'
+import { NAMESPACE_REGISTRATION } from '~/frontend/utils/events.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {

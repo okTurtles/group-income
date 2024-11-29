@@ -3,13 +3,18 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { deserializer } from '~/shared/serdes/index.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { ONLINE } from '../utils/events.js'
 
 const pwa = {
   deferredInstallPrompt: null,
   installed: false
 }
+
+deserializer.register(GIMessage)
+deserializer.register(Secret)
 
 // How to provide your own in-app PWA install experience:
 // https://web.dev/articles/customize-install
@@ -169,21 +174,67 @@ sbp('sbp/selectors/register', {
   })
 )
 
-// helper method
-/*
-function urlBase64ToUint8Array (base64String) {
-  // reference: https://gist.github.com/Klerith/80abd742d726dd587f4bd5d6a0ab26b6
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-
-  const rawData = atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i)
+const swRpc = (() => {
+  if (!navigator.serviceWorker) {
+    throw new Error('Missing service worker object')
   }
-  return outputArray
-}
-*/
+  let controller: ?ServiceWorker = navigator.serviceWorker.controller
+  navigator.serviceWorker.addEventListener('controllerchange', (ev: Event) => {
+    controller = (navigator.serviceWorker: any).controller
+  }, false)
+
+  return (...args) => {
+    return new Promise((resolve, reject) => {
+      if (!controller) {
+        reject(new Error('Service worker not ready'))
+        return
+      }
+      const messageChannel = new MessageChannel()
+      messageChannel.port1.addEventListener('message', (event: MessageEvent) => {
+        if (event.data && Array.isArray(event.data)) {
+          const r = deserializer(event.data[1])
+          // $FlowFixMe[incompatible-use]
+          if (event.data[0] === true) {
+            resolve(r)
+          } else {
+            reject(r)
+          }
+          messageChannel.port1.close()
+        }
+      }, false)
+      messageChannel.port1.addEventListener('messageerror', (event: MessageEvent) => {
+        reject(event.data)
+        messageChannel.port1.close()
+      }, false)
+      messageChannel.port1.start()
+      const { data, transferables } = serializer(args)
+      controller.postMessage({
+        type: 'sbp',
+        port: messageChannel.port2,
+        data
+      }, [messageChannel.port2, ...transferables])
+    })
+  }
+})()
+
+sbp('sbp/selectors/register', {
+  'gi.actions/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'chelonia/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'sw-namespace/*': (...args) => {
+    // Remove the `sw-` prefix from the selector
+    return swRpc(args[0].slice(3), ...args.slice(1))
+  }
+})
+sbp('sbp/selectors/register', {
+  'gi.notifications/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'swLogs/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'push/*': swRpc
+})
