@@ -1134,6 +1134,7 @@ export default (sbp('sbp/selectors/register', {
     }: GIOpContract)
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
+      height: 0,
       op: [
         GIMessage.OP_CONTRACT,
         signedOutgoingDataWithRawKey(signingKey, payload)

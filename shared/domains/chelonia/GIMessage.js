@@ -237,7 +237,11 @@ export class GIMessage {
     {
       contractID,
       previousHEAD = null,
-      height = 0,
+      // Height will be automatically set to the correct value when sending
+      // The reason to set it to Number.MAX_SAFE_INTEGER is so that we can
+      // temporarily process outgoing messages with signature validation
+      // still working
+      height = Number.MAX_SAFE_INTEGER,
       op,
       manifest
     }: {

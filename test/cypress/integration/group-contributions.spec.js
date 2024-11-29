@@ -32,7 +32,7 @@ function assertNonMonetaryEditableValue (name) {
 
   cy.getByDT('buttonEditNonMonetaryContribution').click()
   cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
-  cy.getByDT('buttonSaveNonMonetaryContribution').click()
+  cy.getByDT('buttonCancelNonMonetaryContribution').click()
 }
 
 function assertGraphicSummary (legendListItems) {

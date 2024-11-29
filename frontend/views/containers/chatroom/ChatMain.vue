@@ -406,6 +406,7 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
+          console.error('@@@@beforeRequest', performance.now(), message, oldMessage)
           if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
             if (!this.checkEventSourceConsistency(contractID)) return
@@ -475,6 +476,7 @@ export default ({
           data,
           hooks: {
             preSendCheck: async (message, state) => {
+              console.error('@@@preSendCheck', performance.now(), message)
               // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
@@ -488,6 +490,7 @@ export default ({
             }
           }
         }).then(async () => {
+          console.error('@@@preSendCheck addMsg', performance.now())
           await uploadAttachments()
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
