@@ -79,7 +79,7 @@ export default ({
     return {
       form: {
         filter: this.$store.state.settings.appLogsFilter,
-        source: 'browser'
+        source: 'combined'
       },
       ephemeral: {
         ready: false,

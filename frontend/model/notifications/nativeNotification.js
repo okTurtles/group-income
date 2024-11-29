@@ -15,17 +15,27 @@ const fallbackChangeListener = () => {
   if (!Notification.permission) return
   let oldValue = Notification.permission
   handler([oldValue])
+  // This fallback runs when `navigator.permissions.query` isn't available
+  // It's meant to run while the tab is open to react to permission changes,
+  // and therefore it's not meant to be cleared
   setInterval(() => {
     const newValue = Notification.permission
     if (oldValue !== newValue) {
       oldValue = newValue
       handler([oldValue])
     }
-  }, 100)
+  }, 1000)
 }
 
 export const setupNativeNotificationsListeners = () => {
-  if (typeof navigator !== 'object' || typeof Notification !== 'function' || typeof PushManager !== 'function' || typeof ServiceWorker !== 'function' || typeof navigator.serviceWorker !== 'object') return
+  // If the required APIs for native notifications aren't available, skip setup
+  if (
+    typeof navigator !== 'object' ||
+    typeof Notification !== 'function' ||
+    typeof PushManager !== 'function' ||
+    typeof ServiceWorker !== 'function' ||
+    typeof navigator.serviceWorker !== 'object'
+  ) return
 
   if (
     typeof navigator.permissions === 'object' &&
@@ -77,7 +87,7 @@ export function makeNotification ({ title, body, icon, path }: {
 }): void {
   if (typeof Notification !== 'function') return
   // If not running on a SW
-  if (typeof window === 'object') {
+  if (typeof WorkerGlobalScope !== 'function') {
     try {
       // $FlowFixMe[incompatible-type]
       if (navigator.vendor === 'Apple Computer, Inc.') {
@@ -105,7 +115,12 @@ export function makeNotification ({ title, body, icon, path }: {
       if (clientList.length) {
         // If this is a PWA that's not open, display a notification
         // However, if it's not a PWA that's open, we don't use native notifications
-        if (clientList.length !== 1 || self.location.query !== '?standalone=1' || clientList[0].visibilityState !== 'hidden' || clientList[0].focused) {
+        if (
+          clientList.length !== 1 ||
+          self.location.query !== '?standalone=1' ||
+          clientList[0].visibilityState !== 'hidden' ||
+          clientList[0].focused
+        ) {
           return
         }
       }

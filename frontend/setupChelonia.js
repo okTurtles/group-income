@@ -15,7 +15,7 @@ import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIE
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
 // worker should call this function. On the other hand, if Chelonia is running
-// in the browsing context, the service worker is the one that should call this
+// in the browsing context, the browsing context is the one that should call this
 // function.
 const setupChelonia = async (): Promise<*> => {
   // Load Chelonia state (this needs to be done in the SW when Chelonia is
@@ -55,8 +55,10 @@ const setupChelonia = async (): Promise<*> => {
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
     await sbp('chelonia/reset', cheloniaState)
-    // If there's an active session, we need to start capture now
-    await sbp('swLogs/startCapture', identityContractID)
+    // [SW] If there's an active session, we need to start capture now
+    if (typeof WorkerGlobalScope === 'function') {
+      await sbp('swLogs/startCapture', identityContractID)
+    }
   })
 
   // this is to ensure compatibility between frontend and test/backend.test.js
@@ -299,13 +301,17 @@ const setupChelonia = async (): Promise<*> => {
   })
 }
 
+// This implements a 'singleton promise' or 'lazy intialization' of setupChelonia.
+// The idea is that `setupChelonia` be called only once, regardless of how many
+// actual invocations actually happen (unless the last invocation resolved
+// and rejected)
 export default ((() => {
   let promise
   return () => {
     if (!promise) {
       promise = setupChelonia().catch((e) => {
-        promise = undefined
-        throw e
+        promise = undefined // Reset on error
+        throw e // Re-throw the error
       })
     }
     return promise

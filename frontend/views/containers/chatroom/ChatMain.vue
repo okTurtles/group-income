@@ -1127,7 +1127,14 @@ export default ({
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        // Force 'chelonia/contract/isSyncing' to be a Promise
+        // Coerce 'chelonia/contract/isSyncing' into a Promise
+        // This may seem weird, but it's needed because the result may be a
+        // boolean when Chelonia is running in the browsing context, or it may
+        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
+        // like when using a SW.
+        // We also don't use `await`, which would be more straightforward because
+        // that'd require this entire function to be `async`, which could result
+        // in race conditions as this is a watcher.
         Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
           // If the chatroom has changed since, return
           if (this.summary.chatRoomID !== toChatRoomId) return

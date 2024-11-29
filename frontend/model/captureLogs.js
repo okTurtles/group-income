@@ -65,7 +65,9 @@ async function clearLogs () {
 // The reason to use the 'visibilitychange' event over the 'beforeunload' event
 // is that the latter is unreliable on mobile. For example, if a tab is set to
 // the background and then closed, the 'beforeunload' event may never be fired.
-// Furthermore, 'beforeunload' has implications for how the bfcache works.
+// Furthermore, 'beforeunload' has implications for how the 'bfcache' works.
+// See <https://web.dev/articles/bfcache>. 'bfcache' or 'Back/forward cache' is
+// what enables instant navigation using the browser back and forward buttons.
 window.addEventListener('visibilitychange', event => sbp('appLogs/save').catch(e => {
   console.error('Error saving logs during visibilitychange event handler', e)
 }))

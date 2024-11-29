@@ -27,6 +27,12 @@ const DMMixin: Object = {
           data: { currentGroupId, memberIDs },
           hooks: {
             prepublish (message) {
+              // When we create a DM, setting the chatroom ID directly is
+              // problematic, because it'll trigger navigation but the contract
+              // state may not be loaded yet. Therefore, we set an intermediary
+              // state ('pending') and we'll set the chatroom ID when the
+              // contract is loaded.
+              // This is done in the JOINED_CHATROOM event.
               sbp('state/vuex/commit', 'setPendingChatRoomId', { chatRoomID: message.contractID(), groupID: currentGroupId })
             }
           }

@@ -29,6 +29,14 @@ export default (sbp('sbp/selectors/register', {
     reactiveDel: Function
   }) => {
     sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
+      // The purpose of putting things immediately into a queue is to have
+      // state mutations happen in a well-defined order. This is done for two
+      // purposes:
+      //   1. It avoids race conditions
+      //   2. It allows the app to use the EVENT_HANDLED queue to ensure that
+      //      the SW state has been copied over to the local state. This is
+      //      useful in the same sense that `chelonia/contract/wait` is useful
+      //      (i.e., set up a barrier / sync checkpoint).
       sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
         const { contractState, cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
         const externalState = sbp(stateSelector)

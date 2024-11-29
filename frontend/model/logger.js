@@ -52,7 +52,17 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
     }
   }
 
-  const previousEntries = JSON.parse(await getItem('entries') ?? '[]')
+  // Handle potential data corruption gracefully
+  const previousEntries = await (async () => {
+    try {
+      const stored = await getItem('entries')
+      return stored ? JSON.parse(stored) : []
+    } catch (error) {
+      consoleProxy.error('Failed to parse stored entries:', error)
+      return []
+    }
+  })()
+
   // If `maxEntries` is changed in a release, this will discard oldest logs as necessary.
   if (config.maxEntries < previousEntries.length) {
     previousEntries.splice(0, previousEntries.length - config.maxEntries)
@@ -74,6 +84,7 @@ function captureLogEntry (logger: Object, type: string, source: string, ...args)
     // ex: uncaught Vue errors or custom try/catch errors.
     msg: args.map((arg) => {
       try {
+        const seen = new WeakSet()
         return JSON.parse(
           JSON.stringify(arg, (_, v) => {
             if (v instanceof Error) {
@@ -82,6 +93,13 @@ function captureLogEntry (logger: Object, type: string, source: string, ...args)
                 message: v.message,
                 stack: v.stack
               }
+            }
+            // Handle circular references
+            if (typeof v === 'object' && v !== null) {
+              if (seen.has(v)) {
+                return '[Circular Reference]'
+              }
+              seen.add(v)
             }
             return v
           })
