@@ -643,12 +643,8 @@ export default (sbp('sbp/selectors/register', {
   },
   // This selector is defined primarily for ingesting web push notifications,
   // although it can be used as a general-purpose API to process events received
-  // from 'external' sources, with 'external' meaning sources not directly
-  // managed by Chelonia (i.e., the WebSocket connection)
-  // This API creates some potential asymmetry in terms of how events are ingested.
-  // However, it adds flexibility for application developers in terms of managing,
-  // e.g., web push subcriptions, which can be an involved process that in modern
-  // browsers requires user interaction.
+  // from other external sources that are not managed by Chelonia itself (i.e. sources
+  // other than the Chelonia-managed websocket connection and RESTful API).
   'chelonia/handleEvent': async function (event: string) {
     const { contractID } = GIMessage.deserializeHEAD(event)
     if (self.registration) {

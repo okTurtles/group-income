@@ -67,12 +67,16 @@ export const encryptedAction = (
       // are written
       const finished = enqueueDeferredPromise('encrypted-action')
 
+      let retainFailed = false
       try {
         // Writing to a contract requires being subscribed to it
         // Since we're only interested in writing and we don't know whether
         // we're subscribed or should be, we use an ephemeral retain here that
         // is undone at the end in a finally block.
-        await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+        await sbp('chelonia/contract/retain', contractID, { ephemeral: true }).catch(e => {
+          retainFailed = true
+          throw e
+        })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
@@ -141,7 +145,9 @@ export const encryptedAction = (
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
         finished()
-        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+        if (!retainFailed) {
+          await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+        }
       }
     }
   }

@@ -15,6 +15,7 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
     }]
   ))
   const appLogsFilter: string[] = []
+  // Make a copy of 'methods' to prevent reassignment by 'setAppLogsFilter'
   const consoleProxy = new Proxy({ ...methods }, {
     get (o, p, r) {
       return Reflect.has(o, p) ? Reflect.get(o, p, r) : Reflect.get(originalConsole, p, r)
