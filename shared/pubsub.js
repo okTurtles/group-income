@@ -207,8 +207,8 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   return client
 }
 
-export function createMessage (type: string, data: JSONType): string {
-  return JSON.stringify({ type, data })
+export function createMessage (type: string, data: JSONType, meta: ?Object): string {
+  return JSON.stringify({ ...meta, type, data })
 }
 
 export function createKvMessage (channelID: string, key: string, data: JSONType): string {

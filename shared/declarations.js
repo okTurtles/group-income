@@ -16,7 +16,7 @@
 //       Have the script explain which files represent what.
 
 // Our globals.
-declare function fetchServerTime(): Promise<string>
+declare function fetchServerTime(fallback: ?boolean): Promise<string>
 declare var logger: Object
 // Nodejs globals.
 declare var process: any
