@@ -77,7 +77,7 @@ sbp('chelonia/defineContract', {
     }),
     async create () {
       return {
-        createdDate: await fetchServerTime()
+        createdDate: await fetchServerTime(true)
       }
     }
   },

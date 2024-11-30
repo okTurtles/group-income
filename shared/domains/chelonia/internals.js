@@ -362,7 +362,7 @@ export default (sbp('sbp/selectors/register', {
           : this.config.contracts.defaults.modules[dep]
       },
       sbp: contractSBP,
-      fetchServerTime: async () => {
+      fetchServerTime: async (fallback: ?boolean) => {
         // If contracts need the current timestamp (for example, for metadata 'createdDate')
         // they must call this function so that clients are kept synchronized to the server's
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict
@@ -372,6 +372,9 @@ export default (sbp('sbp/selectors/register', {
           const response = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
           return handleFetchResult('text')(response)
         } catch (e) {
+          if (fallback) {
+            return new Date(sbp('chelonia/time') * 1000).toISOString()
+          }
           throw new ChelErrorFetchServerTimeFailed('Can not fetch server time. Please check your internet connection.')
         }
       }
