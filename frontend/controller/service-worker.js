@@ -39,7 +39,7 @@ sbp('sbp/selectors/register', {
     }
 
     try {
-      const isPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+      const isPwa = window.matchMedia('(display-mode: standalone) or (display-mode: window-controls-overlay)').matches || navigator.standalone
       // Using hash (#) is possible, but seems to get reset when the SW restarts
       const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js${isPwa ? '?standalone=1' : ''}`, { scope: '/' })
 

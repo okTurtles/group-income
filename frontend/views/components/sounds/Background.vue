@@ -23,7 +23,7 @@ export default ({
   },
   methods: {
     shouldPlay () {
-      const isPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+      const isPwa = window.matchMedia('(display-mode: standalone) or (display-mode: window-controls-overlay)').matches || navigator.standalone
       return !isPwa && (document.hidden || this.isAppIdle)
     },
     playMessageReceive () {
