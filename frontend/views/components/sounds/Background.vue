@@ -7,6 +7,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
+import isPwa from '@utils/isPwa.js'
 
 export default ({
   name: 'BackgroundSounds',
@@ -23,8 +24,7 @@ export default ({
   },
   methods: {
     shouldPlay () {
-      const isPwa = window.matchMedia('(display-mode: standalone) or (display-mode: window-controls-overlay)').matches || navigator.standalone
-      return !isPwa && (document.hidden || this.isAppIdle)
+      return !isPwa() && (document.hidden || this.isAppIdle)
     },
     playMessageReceive () {
       if (this.shouldPlay()) {

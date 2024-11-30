@@ -2,6 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
@@ -39,9 +40,8 @@ sbp('sbp/selectors/register', {
     }
 
     try {
-      const isPwa = window.matchMedia('(display-mode: standalone) or (display-mode: window-controls-overlay)').matches || navigator.standalone
       // Using hash (#) is possible, but seems to get reset when the SW restarts
-      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js${isPwa ? '?standalone=1' : ''}`, { scope: '/' })
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js${isPwa() ? '?standalone=1' : ''}`, { scope: '/' })
 
       // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
       await swRegistration.update()
