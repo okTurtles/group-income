@@ -283,7 +283,6 @@ const mutations = {
       if (sbp('controller/router').history.current.path === '/join') return
       sbp('controller/router').push({ path: '/' }).catch(() => {})
     } else if (isNewlyCreated) {
-      console.error('@@@@redirect state', currentGroupId)
       sbp('controller/router').push({ path: '/pending-approval' }).catch(() => {})
     }
   },

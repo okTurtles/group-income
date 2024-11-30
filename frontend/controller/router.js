@@ -34,9 +34,6 @@ Vue.use(Router)
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
   redirect: (to, from) => {
-    if (!store.getters.seenWelcomeScreen) {
-      console.error('@@@@redirect h guard', store.state.currentGroupId)
-    }
     return ({
       path:
       // If we haven't accepted the invite OR we haven't clicked 'Awesome' on
@@ -69,10 +66,7 @@ const groupGuard = {
 
 const pendingApprovalGuard = {
   guard: (to, from) => store.state.currentGroupId && !store.getters.ourProfileActive,
-  redirect: (to, from) => {
-    sbp('chelonia/rootState').then(c => console.error('@@@@redirect pa guard', store.state.currentGroupId, !store.getters.ourProfileActive, to, from, new Error().stack, sbp('state/vuex/state'), c))
-    return ({ path: '/pending-approval' })
-  }
+  redirect: (to, from) => ({ path: '/pending-approval' })
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary

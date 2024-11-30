@@ -67,7 +67,6 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         throw new Error('Received login event but there already is an active session')
       }
       const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
-      console.error('@@@@CHELONIA STATE', cheloniaState)
       // If `state` is set, process it and replace Vuex state with it
       if (state) {
       // Exclude contracts from the state
