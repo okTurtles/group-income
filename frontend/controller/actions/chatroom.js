@@ -285,7 +285,7 @@ export default (sbp('sbp/selectors/register', {
             'chelonia/out/keyAdd', {
             // TODO: Find a way to have this wrapping be done by Chelonia directly
               data: userCSKids.map(([cID, cskID]: [string, string]) => encryptedOutgoingData(params.contractID, CEKid, {
-                foreignKey: `sp:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
+                foreignKey: `shelter:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
                 id: cskID,
                 data: rootState[cID]._vm.authorizedKeys[cskID].data,
                 permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],

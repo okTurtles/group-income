@@ -211,7 +211,7 @@ describe('Full walkthrough', function () {
           permissions: '*',
           allowedActions: '*',
           data: sbp('chelonia/rootState')[creator.contractID()]._vm.authorizedKeys[creator.signingKeyId()].data,
-          foreignKey: `sp:${encodeURIComponent(creator.contractID())}?keyName=${encodeURIComponent('csk')}`
+          foreignKey: `shelter:${encodeURIComponent(creator.contractID())}?keyName=${encodeURIComponent('csk')}`
         }
       ],
       data: {

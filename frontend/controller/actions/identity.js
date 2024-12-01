@@ -431,7 +431,7 @@ export default (sbp('sbp/selectors/register', {
       contractID,
       contractName: 'gi.contracts/identity',
       data: [encryptedOutgoingData(contractID, CEKid, {
-        foreignKey: `sp:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
+        foreignKey: `shelter:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
         id: keyId,
         data: foreignContractState._vm.authorizedKeys[keyId].data,
         // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty

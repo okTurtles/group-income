@@ -107,7 +107,7 @@ self.addEventListener('push', function (event) {
     event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).catch((e) => {
       console.error('Error processing push event', e)
       if (data.contractType === 'gi.contracts/chatroom') {
-        return makeNotification({ title: '@err', body: e.message })
+        return makeNotification({ title: '@@@err', body: e.message })
       }
     }))
   }

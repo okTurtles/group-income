@@ -466,7 +466,7 @@ export default (sbp('sbp/selectors/register', {
                   contractID: params.contractID,
                   contractName: 'gi.contracts/group',
                   data: [encryptedOutgoingData(params.contractID, CEKid, {
-                    foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                    foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
                     id: userCSKid,
                     data: userCSKdata,
                     permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
@@ -612,14 +612,14 @@ export default (sbp('sbp/selectors/register', {
     const cskId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
     const csk = {
       id: cskId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
       data: contractState._vm.authorizedKeys[cskId].data
     }
 
     const cekId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
     const cek = {
       id: cekId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
       data: contractState._vm.authorizedKeys[cekId].data
     }
 
