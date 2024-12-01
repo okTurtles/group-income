@@ -55,6 +55,12 @@ $payment-table-desktop-bp: 1290px;
   }
 }
 
+@mixin forced-color-mode {
+  @media (forced-colors: active) {
+    @content;
+  }
+}
+
 %unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;

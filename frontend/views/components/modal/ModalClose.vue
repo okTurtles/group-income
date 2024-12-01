@@ -37,6 +37,10 @@ export default ({
   cursor: pointer;
   background-color: $general_1;
 
+  @include forced-color-mode {
+    border: 1px solid $white;
+  }
+
   @include tablet {
     top: 1.5rem;
     right: 1.5rem;
@@ -87,6 +91,11 @@ export default ({
     transition: transform 0.15s ease-in;
     transform: translateX(-50%) translateY(-50%) rotate(45deg);
     transform-origin: center center;
+    forced-color-adjust: none;
+
+    @include forced-color-mode {
+      background-color: $white;
+    }
   }
 
   &::after {

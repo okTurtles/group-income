@@ -489,8 +489,8 @@ img.c-preview-image {
     border-radius: 0.5rem;
     opacity: 0.675;
 
-    @media (forced-colors: active) {
-      border: 1px solid;
+    @include forced-color-mode {
+      border: 1px solid $white;
       opacity: 1;
     }
   }
@@ -522,6 +522,12 @@ img.c-preview-image {
 
   ::v-deep input.sInput {
     forced-color-adjust: none;
+
+    @include forced-color-mode {
+      background: none;
+      border: 1px solid $white;
+      color: $white;
+    }
   }
 }
 
