@@ -116,7 +116,7 @@ export function makeNotification ({ title, body, icon, path }: {
         // If this is a PWA that's not open, display a notification
         // However, if it's not a PWA that's open, we don't use native notifications
         if (
-          self.location.query !== '?standalone=1' ||
+          self.location.search !== '?standalone=1' ||
           clientList.some(client => client.focused)
         ) {
           return
