@@ -108,15 +108,9 @@ export function makeNotification ({ title, body, icon, path }: {
   } else {
   // If running in a SW
     return self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      if (clientList.length) {
-        // If this is a PWA that's not open, display a notification
-        // However, if it's not a PWA that's open, we don't use native notifications
-        if (
-          self.location.search !== '?standalone=1' ||
-          clientList.some(client => client.focused)
-        ) {
-          return
-        }
+      // If the no window is focused, display a native notification
+      if (clientList.some(client => client.focused)) {
+        return
       }
       return self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
     })
