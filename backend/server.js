@@ -145,8 +145,10 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/broadcastEntry': async function (deserializedHEAD: Object, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry, { contractID: deserializedHEAD.contractID })
-    const subscribers = pubsub.enumerateSubscribers(deserializedHEAD.contractID)
+    const contractID = deserializedHEAD.contractID
+    const contractType = sbp('chelonia/rootState').contracts[contractID]?.type
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry, { contractID, contractType })
+    const subscribers = pubsub.enumerateSubscribers(contractID)
     console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${deserializedHEAD.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },

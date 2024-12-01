@@ -100,18 +100,14 @@ export function makeNotification ({ title, body, icon, path }: {
         }
       }
     } catch (e) {
-      try {
-        navigator.serviceWorker?.ready.then(registration => {
-          // $FlowFixMe
-          return registration.showNotification(title, { body, icon, data: { path } })
-        }).catch(console.warn)
-      } catch (error) {
-        console.error('makeNotification: ', error.message)
-      }
+      return navigator.serviceWorker?.ready.then(registration => {
+        // $FlowFixMe
+        return registration.showNotification(title, { body, icon, data: { path } })
+      }).catch(console.warn)
     }
   } else {
   // If running in a SW
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+    return self.clients.matchAll({ type: 'window' }).then((clientList) => {
       if (clientList.length) {
         // If this is a PWA that's not open, display a notification
         // However, if it's not a PWA that's open, we don't use native notifications
@@ -122,7 +118,7 @@ export function makeNotification ({ title, body, icon, path }: {
           return
         }
       }
-      self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+      return self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
     })
   }
 }

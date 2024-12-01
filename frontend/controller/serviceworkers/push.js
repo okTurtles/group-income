@@ -1,4 +1,5 @@
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
+import { makeNotification } from '@model/notifications/nativeNotification.js'
 import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
@@ -102,12 +103,12 @@ self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
   const data = event.data.json()
-  self.registration.showNotification('@@incoming', { body: `${data.type} ${data.data?.slice(0, 30)}` })
   if (data.type === NOTIFICATION_TYPE.ENTRY && data.data) {
-    event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).then(() => {
-      return self.registration.showNotification('@@ok')
-    }).catch((e) => {
-      return self.registration.showNotification('@@err', { body: e.message })
+    event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).catch((e) => {
+      console.error('Error processing push event', e)
+      if (data.contractType === 'gi.contracts/chatroom') {
+        return makeNotification({ title: '@err', body: e.message })
+      }
     }))
   }
 }, false)

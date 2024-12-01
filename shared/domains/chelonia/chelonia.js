@@ -647,11 +647,6 @@ export default (sbp('sbp/selectors/register', {
   // other than the Chelonia-managed websocket connection and RESTful API).
   'chelonia/handleEvent': async function (event: string) {
     const { contractID } = GIMessage.deserializeHEAD(event)
-    // TODO REMOVEME
-    if (self.registration) {
-      self.registration.showNotification('@@@' + contractID, { body: sbp(this.config.stateSelector)[contractID] })
-    }
-    // /TODO REMOVEME
     return await sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
   },
   'chelonia/defineContract': function (contract: Object) {
