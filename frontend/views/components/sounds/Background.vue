@@ -9,6 +9,8 @@ import sbp from '@sbp/sbp'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
 import isPwa from '@utils/isPwa.js'
 
+alert('@@@isPwa: ' + isPwa())
+
 export default ({
   name: 'BackgroundSounds',
   created () {

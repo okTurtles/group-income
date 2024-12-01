@@ -3,110 +3,114 @@
 import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '../../shared/domains/chelonia/crypto.js'
 
-const _instances = []
+const _instances: (() => Promise<*>)[] = []
 // Localforage-like API for IndexedDB
 const localforage = {
   async ready () {
-    await Promise.all(_instances).then(() => {})
+    await Promise.all(_instances.map((lazyInitDb) => lazyInitDb()))
   },
   createInstance ({ name, storeName }: { name: string, storeName: string }) {
     // Open the IndexedDB database
-    const db = new Promise((resolve, reject) => {
-      if (name.includes('-') || storeName.includes('-')) {
-        reject(new Error('Unsupported characters in name: -'))
-        return
-      }
-      // TODO REMOVEME
-      if (!self.indexedDB) {
-        throw new Error('NO self.indexedDB' + typeof indexedDB)
-      }
-      if (!self.indexedDB.open) {
-        throw new Error('NO self.indexedDB.open')
-      }
-      // END TODO REMOVEME
-      const request = self.indexedDB.open(name + '--' + storeName)
+    const lazyInitDb = (() => {
+      let promise
+      return () => {
+        if (!promise) {
+          promise = new Promise((resolve, reject) => {
+            if (name.includes('-') || storeName.includes('-')) {
+              reject(new Error('Unsupported characters in name: -'))
+              return
+            }
+            // TODO REMOVEME
+            if (!self.indexedDB) {
+              throw new Error('NO self.indexedDB' + typeof indexedDB)
+            }
+            if (!self.indexedDB.open) {
+              throw new Error('NO self.indexedDB.open')
+            }
+            // END TODO REMOVEME
+            const request = self.indexedDB.open(name + '--' + storeName)
 
-      // Create the object store if it doesn't exist
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result
-        db.createObjectStore(storeName)
-      }
+            // Create the object store if it doesn't exist
+            request.onupgradeneeded = (event) => {
+              const db = event.target.result
+              db.createObjectStore(storeName)
+            }
 
-      request.onsuccess = (event) => {
-        const db = event.target.result
-        resolve(db)
-      }
+            request.onsuccess = (event) => {
+              const db = event.target.result
+              resolve(db)
+            }
 
-      request.onerror = (error) => {
-        reject(error)
-      }
+            request.onerror = (error) => {
+              reject(error)
+            }
 
-      request.onblocked = (event) => {
-        reject(new Error('DB is blocked'))
+            request.onblocked = (event) => {
+              reject(new Error('DB is blocked'))
+            }
+          })
+        }
+        return promise
       }
-    })
+    })()
 
-    _instances.push(db)
+    _instances.push(lazyInitDb)
 
     return {
-      clear () {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.clear()
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e)
-            }
-          })
+      async clear () {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.clear()
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
         })
       },
-      getItem (key: string) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readonly')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.get(key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = (event) => {
-              resolve(event.target.result)
-            }
-            request.onerror = (e) => {
-              reject(e)
-            }
-          })
+      async getItem (key: string) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readonly')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.get(key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            resolve(event.target.result)
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
         })
       },
-      removeItem (key: string) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.delete(key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e.target.error)
-            }
-          })
+      async removeItem (key: string) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.delete(key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e.target.error)
+          }
         })
       },
-      setItem (key: string, value: any) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.put(value, key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e.target.error)
-            }
-          })
+      async setItem (key: string, value: any) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.put(value, key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e.target.error)
+          }
         })
       }
     }
