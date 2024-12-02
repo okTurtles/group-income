@@ -84,9 +84,10 @@ function generateImageBlobByCanvas ({
 
 function getResizingFactor (sourceImage) {
   // If image's physical size is greater than the max dimension, resize the image to the max dimension.
-  const imageMaxDimension = { width: 1024, height: 768 }
+  const imageMaxDimension = { width: 2048, height: 1536 }
   const { naturalWidth, naturalHeight } = sourceImage
 
+  console.log(`!@# naturalWidth: ${naturalWidth}, naturalHeight: ${naturalHeight}`)
   if (naturalWidth > imageMaxDimension.width || naturalHeight > imageMaxDimension.height) {
     return Math.min(imageMaxDimension.width / naturalWidth, imageMaxDimension.height / naturalHeight)
   }
@@ -98,7 +99,8 @@ export async function compressImage (imgUrl: string, sourceMimeType?: string): P
   // Takes a source image url and generate a blob of the compressed image.
 
   // According to the testing result, webP format has a better compression ratio than jpeg.
-  const compressToType = await supportsWebP() ? 'image/webp' : 'image/jpeg'
+  // const compressToType = await supportsWebP() ? 'image/webp' : 'image/jpeg'
+  const compressToType = 'image/jpeg'
   const sourceImage = await loadImage(imgUrl)
 
   // According to the testing result, 0.8 is a good starting point for quality for .jpeg and .webp.
@@ -106,6 +108,7 @@ export async function compressImage (imgUrl: string, sourceMimeType?: string): P
   let quality = ['image/jpeg', 'image/webp'].includes(sourceMimeType) ? 0.8 : 0.9
   const resizingFactor = getResizingFactor(sourceImage)
 
+  console.log(`!@# resizingFactor: ${resizingFactor}`)
   while (true) {
     const blob = await generateImageBlobByCanvas({
       sourceImage,
