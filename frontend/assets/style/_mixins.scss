@@ -55,7 +55,7 @@ $payment-table-desktop-bp: 1290px;
   }
 }
 
-@mixin forced-color-mode {
+@mixin if-forced-color-mode {
   @media (forced-colors: active) {
     @content;
   }

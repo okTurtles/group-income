@@ -489,8 +489,8 @@ img.c-preview-image {
     border-radius: 0.5rem;
     opacity: 0.675;
 
-    @include forced-color-mode {
-      border: 1px solid $white;
+    @include if-forced-color-mode {
+      border: 1px solid buttonborder;
       opacity: 1;
     }
   }
@@ -523,10 +523,10 @@ img.c-preview-image {
   ::v-deep input.sInput {
     forced-color-adjust: none;
 
-    @include forced-color-mode {
+    @include if-forced-color-mode {
       background: none;
-      border: 1px solid $white;
-      color: $white;
+      border: 1px solid buttonborder;
+      color: buttonborder;
     }
   }
 }

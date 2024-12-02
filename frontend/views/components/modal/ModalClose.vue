@@ -37,8 +37,8 @@ export default ({
   cursor: pointer;
   background-color: $general_1;
 
-  @include forced-color-mode {
-    border: 1px solid $white;
+  @include if-forced-color-mode {
+    border: 1px solid buttonborder;
   }
 
   @include tablet {
@@ -91,10 +91,9 @@ export default ({
     transition: transform 0.15s ease-in;
     transform: translateX(-50%) translateY(-50%) rotate(45deg);
     transform-origin: center center;
-    forced-color-adjust: none;
 
-    @include forced-color-mode {
-      background-color: $white;
+    @include if-forced-color-mode {
+      background-color: buttonborder;
     }
   }
 
