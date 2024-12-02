@@ -526,7 +526,7 @@ img.c-preview-image {
     @include if-forced-color-mode {
       background: none;
       border: 1px solid buttonborder;
-      color: buttonborder;
+      color: buttontext;
     }
   }
 }
