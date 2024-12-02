@@ -4,7 +4,7 @@ component(
   :key='members.length'
   :opacity='members.length === 0 ? 0 : 0.95'
   triggerElementSelector='.t-trigger'
-  direction='bottom-right'
+  direction='bottom'
 )
   // The reason for using <component /> tag here instead of <tooltip /> and specifying 'key' attr is,
   // to fix the bug where the link between the tooltip content(template(slot='tooltip') below) and the trigger target element(.t-trigger)
