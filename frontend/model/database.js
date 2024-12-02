@@ -11,6 +11,12 @@ const localforage = {
   },
   createInstance ({ name, storeName }: { name: string, storeName: string }) {
     // Open the IndexedDB database
+    // We lazy load the IndexedDB, because before we were loading it when this
+    // file was imported, but on iOS IndexedDB is not available in the service
+    // worker when the PWA is in the background.
+    // <https://bugs.webkit.org/show_bug.cgi?id=283793>
+    // So for that reason, and potentially other situations where IndexedDB
+    // might not be available, we lazy load it like this upon creation.
     const lazyInitDb = (() => {
       let promise
       return () => {
