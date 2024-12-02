@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { IMAGE_ATTACHMENT_MAX_SIZE } from './constants.js'
+import { KILOBYTE, IMAGE_ATTACHMENT_MAX_SIZE } from './constants.js'
 
 // Copied from https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
 export function objectURLtoBlob (url: string): Promise<Blob> {
@@ -120,7 +120,7 @@ export async function compressImage (imgUrl: string, sourceMimeType?: string): P
       return blob
     } else {
       // if the size difference is greater than 100KB, reduce the next compression factors by 10%, otherwise 5%.
-      const minusFactor = sizeDiff > 100 * 1000 ? 0.1 : 0.05
+      const minusFactor = sizeDiff > 100 * KILOBYTE ? 0.1 : 0.05
       quality -= minusFactor
     }
   }
