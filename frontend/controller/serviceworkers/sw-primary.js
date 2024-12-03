@@ -113,7 +113,7 @@ sbp('sbp/selectors/register', {
     let obj
     return () => {
       if (!obj) {
-        const obj = Object.create(null)
+        obj = Object.create(null)
         Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
             get: () => {
@@ -292,7 +292,7 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
     default:
       return
   }
-  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED)
+  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
 })
 
 sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageHash }) => {
@@ -308,5 +308,5 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
 
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
-  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED)
+  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
 })
