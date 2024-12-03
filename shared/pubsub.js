@@ -95,8 +95,6 @@ export type UnsubMessage = {
 // ====== Enums ====== //
 
 export const NOTIFICATION_TYPE = Object.freeze({
-  // used for push notifications in excess of 4 KiB
-  ABBREVIATED_ENTRY: 'abbreviated_entry',
   ENTRY: 'entry',
   KV: 'kv',
   PING: 'ping',

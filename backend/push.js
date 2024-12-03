@@ -288,6 +288,10 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
         subscription.id
       )
       deleteClient(subscription.id)
+      return
+    }
+    if (req.status === 413) {
+      throw new Error('Payload too large')
     }
   }
 }

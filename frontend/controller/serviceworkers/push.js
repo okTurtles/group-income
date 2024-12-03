@@ -103,8 +103,16 @@ self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
   const data = event.data.json()
-  if (data.type === NOTIFICATION_TYPE.ENTRY && data.data) {
-    event.waitUntil(setupChelonia().then(() => sbp('chelonia/handleEvent', data.data)).catch((e) => {
+  if (data.type === NOTIFICATION_TYPE.ENTRY) {
+    event.waitUntil(setupChelonia().then(() => {
+      // We have event data, so we process it
+      if (data.data) return sbp('chelonia/handleEvent', data.data)
+      // We just sync the contract if there's no event data. Sync could fail if
+      // there are no references, hence the catch
+      return sbp('chelonia/contract/sync', data.contractID).catch(e => {
+        console.error('[push event] Error syncing', data.contractID, e)
+      })
+    }).catch((e) => {
       console.error('Error processing push event', e)
       if (data.contractType === 'gi.contracts/chatroom') {
         return makeNotification({ title: '@@@err', body: e.message })

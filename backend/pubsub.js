@@ -338,14 +338,44 @@ const publicMethods = {
   ) {
     const server = this
 
+    const msg = typeof message === 'string' ? message : JSON.stringify(message)
+    let shortMsg
+    // Utility function to remove `data` (i.e., the GIMessage data) from a
+    // message. We need this for push notifications, which may have a certain
+    // maximum size (usually around 4 KiB)
+    const shortenPayload = () => {
+      if (!shortMsg && (typeof message === 'object' && message.type === NOTIFICATION_TYPE.ENTRY && message.data)) {
+        delete message.data
+        shortMsg = JSON.stringify(message)
+      }
+      return shortMsg
+    }
+
     for (const client of to || server.clients) {
-      const msg = typeof message === 'string' ? message : JSON.stringify(message)
       if (client.endpoint) {
-        if (msg.length > 1) {
-          console.error('@@XXX1 posting', typeof message, message)
+        // The max length for push notifications in many providers is 4 KiB.
+        // However, encrypting adds a slight overhead of 17 bytes at the end
+        // and 86 bytes at the start.
+        if (msg.length > (4096 - 86 - 17)) {
+          if (!shortenPayload()) {
+            console.info('Skipping too large of a payload for', client.id)
+            continue
+          }
         }
-        console.error('@@@UUU', typeof message, message?.type, message?.data)
-        postEvent(client, msg).catch(e => {
+        postEvent(client, shortMsg || msg).catch(e => {
+          // If we have an error posting due to too large of a payload and the
+          // message wasn't already shortened, try again
+          if (e?.message === 'Payload too large') {
+            if (shortMsg || !shortenPayload()) {
+              // The max length for push notifications in many providers is 4 KiB.
+              console.info('Skipping too large of a payload for', client.id)
+              return
+            }
+            postEvent(client, shortMsg).catch(e => {
+              console.error(e, 'Error posting push notification')
+            })
+            return
+          }
           console.error(e, 'Error posting push notification')
         })
         continue
