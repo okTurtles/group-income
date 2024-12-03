@@ -10,7 +10,9 @@ export default (sbp('sbp/selectors/register', {
     return () => {
       if (
         cachedVapidInformation &&
-        (performance.now() - cachedVapidInformation[0]) < 3600
+        // Cache the VAPID information for one hour. The server public
+        // information should change very infrequently, if it changes at all.
+        (performance.now() - cachedVapidInformation[0]) < 3600e3
       ) {
         return cachedVapidInformation[1]
       }
