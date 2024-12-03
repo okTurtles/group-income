@@ -185,7 +185,7 @@ const sendMessageToClient = async function (payload) {
 */
 
 self.addEventListener('message', function (event) {
-  console.debug(`[sw] message from ${event.source.id}.`)
+  console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
   // const client = await self.clients.get(event.source.id)
   // const client = await self.clients.get(event.clientId)
   if (typeof event.data === 'object' && event.data.type) {
