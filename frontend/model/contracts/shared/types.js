@@ -68,7 +68,7 @@ export const messageType: any = objectMaybeOf({
     arrayOf(objectOf({
       name: string,
       mimeType: string,
-      size: optional(numberRange(1, Number.MAX_SAFE_INTEGER)),
+      size: numberRange(1, Number.MAX_SAFE_INTEGER),
       dimension: optional(objectOf({
         width: number,
         height: number
