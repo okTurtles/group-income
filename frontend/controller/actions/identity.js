@@ -600,6 +600,7 @@ export default (sbp('sbp/selectors/register', {
 
           attachment.mimeType = attachmentBlob.type
           attachment.name = `${fileNameWithoutExtension}.${extension}`
+          attachment.size = attachmentBlob.size
         }
         const response = await sbp('chelonia/fileUpload', attachmentBlob, {
           type: attachment.mimeType,
