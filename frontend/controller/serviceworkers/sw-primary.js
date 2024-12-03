@@ -13,7 +13,7 @@ import getters from '~/frontend/model/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -108,27 +108,35 @@ sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
 
 sbp('sbp/selectors/register', {
   'state/vuex/state': () => sbp('chelonia/rootState'),
-  'state/vuex/getters': () => {
-    const obj = Object.create(null)
-    Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
-      return [getter, {
-        get: () => {
-          const state = sbp('chelonia/rootState')
-          return fn(state, obj)
-        }
-      }]
-    })))
-    Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
-      return [getter, {
-        get: () => {
-          const state = sbp('chelonia/rootState')
-          return fn(state.chatroom || {}, obj, state)
-        }
-      }]
-    })))
+  'state/vuex/getters': (() => {
+    // Singleton lazily generated getters
+    let obj
+    return () => {
+      if (!obj) {
+        const obj = Object.create(null)
+        Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
+          return [getter, {
+            get: () => {
+              const state = sbp('chelonia/rootState')
+              return fn(state, obj)
+            }
+          }]
+        })))
+        Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
+          return [getter, {
+            get: () => {
+              const state = sbp('chelonia/rootState')
+              // `state.chatroom` represents the `chatroom` module. For the SW,
+              // this is defined in `sw-primary.js`.
+              return fn(state.chatroom || {}, obj, state)
+            }
+          }]
+        })))
+      }
 
-    return obj
-  }
+      return obj
+    }
+  })()
 })
 
 sbp('sbp/selectors/register', {
@@ -257,6 +265,10 @@ self.addEventListener('notificationclick', event => {
 
 sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
   const rootState = sbp('chelonia/rootState')
+  const ourIdentityContractID = rootState.loggedIn?.identityContractID
+  if (contractID !== ourIdentityContractID) return
+  // the following keys mirror the corresponding keys in Vuex modules in the
+  // app
   switch (key) {
     case KV_KEYS.LAST_LOGGED_IN: {
       if (!rootState.lastLoggedIn) rootState.lastLoggedIn = Object.create(null)
@@ -277,12 +289,16 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
       rootState.notifications.status = data
       break
     }
+    default:
+      return
   }
+  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED)
 })
 
 sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageHash }) => {
   const rootState = sbp('chelonia/rootState')
   if (messageHash) {
+    // `rootState.chatroom` mirrors the 'chatroom' module in the app
     if (!rootState.chatroom) rootState.chatroom = Object.create(null)
     if (!rootState.chatroom.chatRoomScrollPosition) rootState.chatroom.chatRoomScrollPosition = Object.create(null)
 
@@ -292,4 +308,5 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
 
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
+  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED)
 })

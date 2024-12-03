@@ -374,7 +374,7 @@ sbp('sbp/selectors/register', {
         await filesCache.setItem('keys', keys)
       }
     }).catch(e => {
-      console.error('[gi.db/filesCache/load] Error updating keys')
+      console.error('[gi.db/filesCache/delete] Error updating keys')
     })
   },
   'gi.db/filesCache/clear': async function (): Promise<void> {

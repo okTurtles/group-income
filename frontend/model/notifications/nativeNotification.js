@@ -84,7 +84,7 @@ export async function requestNotificationPermission (): Promise<null | string> {
 
 export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
-}): void {
+}): void | Promise<void> {
   if (typeof Notification !== 'function') return
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {

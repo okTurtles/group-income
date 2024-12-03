@@ -164,11 +164,22 @@ const defaultServerHandlers = {
     const url = request.url
     const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
     const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
+    const send = socket.send.bind(socket)
     socket.id = generateSocketID(debugID)
     socket.activeSinceLastPing = true
     socket.pinged = false
     socket.server = server
     socket.subscriptions = new Set()
+    // Sometimes (like when using `createMessage`), we want to send objects that
+    // are serialized as strings. The `ws` library sends these as binary data,
+    // whereas the client expects strings. This avoids having to manually
+    // specify `{ binary: false }` along with calls.
+    socket.send = function (data) {
+      if (typeof data === 'object' && typeof data[Symbol.toPrimitive] === 'function') {
+        return send(data[Symbol.toPrimitive]())
+      }
+      return send(data)
+    }
 
     log.bold(`Socket ${socket.id} connected. Total: ${this.clients.size}`)
 
@@ -333,6 +344,7 @@ const publicMethods = {
         if (msg.length > 1) {
           console.error('@@XXX1 posting', typeof message, message)
         }
+        console.error('@@@UUU', typeof message, message?.type, message?.data)
         postEvent(client, msg).catch(e => {
           console.error(e, 'Error posting push notification')
         })
