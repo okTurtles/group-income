@@ -1549,7 +1549,12 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposal) {
       const { loggedIn } = sbp('state/vuex/state')
       if (isActionNewerThanUserJoinedDate(height, state.profiles[loggedIn.identityContractID])) {
-        sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', { createdDate: meta.createdDate, groupID: contractID, proposal })
+        sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+          createdDate: meta.createdDate,
+          groupID: contractID,
+          isCreator: loggedIn.identityContractID === proposal.creatorID,
+          proposal
+        })
       }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {

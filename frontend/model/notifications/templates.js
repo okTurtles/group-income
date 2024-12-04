@@ -219,7 +219,7 @@ export default ({
       data: { proposalId: data.proposalId }
     }
   },
-  PROPOSAL_CLOSED (data: { proposal: Object }) {
+  PROPOSAL_CLOSED (data: { proposal: Object, isCreator: boolean }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
 
     const statusMap = {
@@ -232,7 +232,7 @@ export default ({
       ...options,
       ...LTags('strong'),
       closedWith: statusMap[status].closedWith,
-      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}`
+      name: !data.isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
     }
 
     if (options.memberID) {
@@ -242,16 +242,21 @@ export default ({
     }
 
     const bodyTemplateMap = {
-      [PROPOSAL_INVITE_MEMBER]:
-        L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_REMOVE_MEMBER]:
-        L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_GROUP_SETTING_CHANGE]:
-        L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_PROPOSAL_SETTING_CHANGE]:
-        L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_GENERIC]:
-        L('{strong_}{name}\'s{_strong} proposal "{title}" was {strong_}{closedWith}{_strong}.', args)
+      [PROPOSAL_INVITE_MEMBER]: data.isCreator
+        ? L('your proposal to add {member} to the group was {strong_}{closedWith}{_strong}.', args)
+        : L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_REMOVE_MEMBER]: data.isCreator
+        ? L('your proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.', args)
+        : L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_GROUP_SETTING_CHANGE]: data.isCreator
+        ? L('your proposal to change group\'s {setting} to {value} was {strong_}{closedWith}{_strong}.', args)
+        : L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]: data.isCreator
+        ? L('your proposal to change group\'s {setting} was {strong_}{closedWith}{_strong}.', args)
+        : L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
+      [PROPOSAL_GENERIC]: data.isCreator
+        ? L('your proposal "{title}" was {strong_}{closedWith}{_strong}.', args)
+        : L("{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}.", args)
     }
 
     return {
