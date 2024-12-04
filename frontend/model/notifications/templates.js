@@ -144,18 +144,33 @@ export default ({
       scope: 'group'
     }
   },
-  NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
-    const args = {
-      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
-      ...LTags('strong')
-    }
+  NEW_PROPOSAL (data: { groupID: string, creatorID: string, isCreator: boolean, subtype: NewProposalType }) {
+    const args = data.isCreator
+      ? null
+      : {
+          name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
+          ...LTags('strong')
+        }
+
     const bodyTemplateMap = {
-      ADD_MEMBER: L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args),
-      CHANGE_MINCOME: L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args),
-      CHANGE_DISTRIBUTION_DATE: L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args),
-      CHANGE_VOTING_RULE: L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args),
-      REMOVE_MEMBER: L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args),
-      GENERIC: L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
+      ADD_MEMBER: data.isCreator
+        ? L('you proposed to add a member to the group.')
+        : L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args),
+      CHANGE_MINCOME: data.isCreator
+        ? L('you proposed to change the group mincome.')
+        : L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args),
+      CHANGE_DISTRIBUTION_DATE: data.isCreator
+        ? L('you proposed to change the group distribution date.')
+        : L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args),
+      CHANGE_VOTING_RULE: data.isCreator
+        ? L('you proposed to change the group voting system.')
+        : L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args),
+      REMOVE_MEMBER: data.isCreator
+        ? L('you proposed to remove a member from the group.')
+        : L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args),
+      GENERIC: data.isCreator
+        ? L('you created a proposal.')
+        : L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
     }
 
     const iconMap = {
