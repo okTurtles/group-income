@@ -25,10 +25,10 @@
               input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
               i18n Log
 
-        fieldset.c-source(aria-label='L("Source:")')
+        fieldset.c-source(:aria-label='L("Source:")')
           .c-source-inner
-            label.label
-              i18n Log source
+            label.c-label
+              i18n.c-source-legend Log source:
               .selectbox
                 select.select(v-model='form.source')
                   option(value='combined')
@@ -282,23 +282,31 @@ export default ({
 
 .c-instructions {
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .c-filters,
 .c-source {
+  width: 100%;
   flex-grow: 99; // to be wider than c-download
 
   &-inner {
     display: flex;
   }
 
-  &-legend {
-    margin-right: 1.5rem;
+  &-legend::after {
+    content: "\2003";
   }
 
-  .checkbox:last-child {
-    margin-right: 1rem;
+  .checkbox:last-child::after {
+    content: "\2002";
   }
+}
+
+.c-source .c-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .c-download {
