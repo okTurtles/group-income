@@ -94,6 +94,14 @@ sbp('sbp/selectors/register', {
       console.error('error setting up service worker:', e)
     }
   },
+  // We call this when the notification permission changes, to create a push
+  // subscription and report it to the server. We need to do this outside of the
+  // service worker because this generally happens after requesting the
+  // notifications permission, which requires user interaction and can't be
+  // done form the SW itself.
+  // In theory, the `PushManager` APIs used are available in the SW and we could
+  // have this function there. However, most examples perform this outside of the
+  // SW, and private testing showed that it's more reliable doing it here.
   'service-worker/setup-push-subscription': async function (retryCount?: number) {
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       // Get the installed service-worker registration
@@ -106,6 +114,8 @@ sbp('sbp/selectors/register', {
 
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
 
+      // Safari sometimes incorrectly reports 'prompt' when using
+      // `registration.pushManager.permissionState`.
       const existingSubscription = permissionState === 'granted' || Notification.permission === 'granted'
         ? await registration.pushManager.getSubscription().then((subscription) => {
           if (

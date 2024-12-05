@@ -52,6 +52,18 @@ export default (sbp('sbp/selectors/register', {
       return result
     }
   })(),
+  // This function reports the existing push subscription to the server
+  // It is called in three scenarios:
+  //   1. When a push subscription is created (usually right after granting the
+  //      notification permission). This is done from outside of the SW, because
+  //      requesting permissions can't be done from the SW itself and typically
+  //      requires user interaction.
+  //   2. When re-connecting (or connecting) to the server via WebSocket. This
+  //      keeps push subscriptions paired to WS connections, so that we can
+  //      seamlessly switch from WS to Web Push notifications on disconnection.
+  //   3. On the 'pushsubscriptionchange' event. This is to let the server know
+  //      to update the existing push subscription and replace it with a new
+  //      one.
   'push/reportExistingSubscription': (() => {
     const map = new WeakMap()
     // eslint-disable-next-line require-await
