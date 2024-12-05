@@ -72,6 +72,7 @@ const mutations = {
   setNotificationEnabled (state, enabled) {
     if (state.notificationEnabled !== enabled) {
       sbp('service-worker/setup-push-subscription').catch(e => {
+        state.notificationEnabled = false
         console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
       })
     }

@@ -9,13 +9,13 @@
           i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
           p
             i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
-            i18n.c-description(v-else-if='pushNotificationGranted !== null' tag='strong') Once set, the notification permission can only be adjusted by the browser in the browser settings.
+            i18n.c-description(v-else-if='pushNotificationGranted !== null && !inconsistentNotificationEnabled' tag='strong') Once set, the notification permission can only be adjusted by the browser in the browser settings.
         .switch-wrapper
           input.switch(
             type='checkbox'
             name='switch'
-            :checked='!!pushNotificationGranted'
-            :disabled='!pushNotificationSupported || pushNotificationGranted !== null'
+            :checked='!!pushNotificationGranted && !inconsistentNotificationEnabled'
+            :disabled='!pushNotificationSupported || (pushNotificationGranted !== null && !inconsistentNotificationEnabled)'
             @click.prevent='handleNotificationSettings'
           )
 </template>
@@ -85,6 +85,12 @@ export default ({
   computed: {
     notificationEnabled () {
       return this.$store.state.settings.notificationEnabled
+    },
+    inconsistentNotificationEnabled () {
+      // This can happen if the permission has been granted but setting up
+      // the push subscription failed. In this case, we show the toggle for
+      // manually letting users set up a push subscription.
+      return this.pushNotificationGranted && !this.notificationEnabled
     }
   },
   methods: {
@@ -97,12 +103,11 @@ export default ({
 
       if (permission === 'default') {
         permission = await requestNotificationPermission()
-      } else if (permission) {
+      } else if (permission && !this.inconsistentNotificationEnabled) {
         alert(L('Sorry, you should reset browser notification permission again.'))
         return
       }
       const granted = (Notification.permission === 'granted')
-      e.target.checked = granted
       this.setNotificationEnabled(granted)
       if (granted) {
         this.pushNotificationGranted = true
