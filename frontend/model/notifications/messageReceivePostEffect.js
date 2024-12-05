@@ -25,7 +25,6 @@ async function messageReceivePostEffect ({
     memberID: string,
     chatRoomName: string
   }): Promise<void> {
-  // TODO: This can't be a root getter when running in a SW
   const rootGetters = await sbp('state/vuex/getters')
   const rootState = await sbp('state/vuex/state')
   const identityContractID = rootState.loggedIn?.identityContractID

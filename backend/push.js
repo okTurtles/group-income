@@ -158,7 +158,6 @@ export const pushServerActionhandlers: any = {
   [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
     const socket = this
     socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
-    console.error('@@@@SENT PK')
   },
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
@@ -202,7 +201,6 @@ export const pushServerActionhandlers: any = {
       server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
     })
     saveSubscription(server, subscriptionId)
-    console.error('@@@@ADD PUSH SUBSCRIPTION', subscriptionId, subscription.endpoint)
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
     const socket = this
@@ -273,9 +271,6 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
       ['ttl', '60']
     ],
     body
-  }).then(async (req) => {
-    console.error('@@@@postEvent', body, event, subscription.endpoint, req.status, await req.text())
-    return req
   })
 
   if (!req.ok) {

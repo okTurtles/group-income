@@ -75,8 +75,6 @@ export default async (uaPublic: Uint8Array, salt: SharedArrayBuffer): Promise<[A
     32 << 3
   )
 
-  console.error('@@@ asPublic IKM', Buffer.from(asPublic).toString('hex'), Buffer.from(IKM).toString('hex'))
-
   // Role in RFC8188: `asPublic` is used as key ID, IKM as IKM.
   return [asPublic, IKM]
 }

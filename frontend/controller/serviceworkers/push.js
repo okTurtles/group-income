@@ -123,6 +123,7 @@ self.addEventListener('push', function (event) {
     }).catch((e) => {
       console.error('Error processing push event', e)
       if (data.contractType === 'gi.contracts/chatroom') {
+        // TODO: Text for this notification
         return makeNotification({ title: '@@@err', body: e.message })
       }
     }))

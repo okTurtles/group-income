@@ -72,8 +72,7 @@ Cypress.on('fail', (error) => {
   // capture them with the handler above. The logs can get pretty big, and this
   // interferes with being able to upload test results to Cypress Cloud. Hence,
   // the `.slice(-500)` part below to only keep the last 500 lines.
-  // TODO: Restore the slice part
-  error.stack += '[' + logs./* slice(-500) */join('\n') + ']'
+  error.stack += '[' + logs.slice(-500).join('\n') + ']'
   // clear logs after fail so we dont see duplicate logs
   logs = []
   // still need to throw the error so tests wont be marked as a pass

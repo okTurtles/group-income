@@ -219,10 +219,8 @@ const defaultSocketEventHandlers = {
 
     for (const channelID of socket.subscriptions) {
       // Remove this socket from the channel subscribers.
-      console.error('@@@@CHID', channelID)
       server.subscribersByChannelID[channelID].delete(socket)
     }
-    console.error('@@@@CLOSED PUBSUB', [...socket.subscriptions])
     socket.subscriptions.clear()
   },
 

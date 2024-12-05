@@ -84,8 +84,6 @@ const generateJwt = async (endpoint: URL): Promise<string> => {
     )
   ).toString('base64url')
 
-  console.error('@@@JWT', [header, body, signature].join('.'))
-
   return [header, body, signature].join('.')
 }
 

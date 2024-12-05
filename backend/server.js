@@ -229,24 +229,20 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const { server } = this
 
       const subscriptionId = socket.pushSubscriptionId
-      console.error('@@@PUSHSUBS close evt', socket.pushSubscriptionId)
 
       if (!subscriptionId) return
       delete socket.pushSubscriptionId
 
-      console.error('@@@PUSHSUBS close', socket.pushSubscriptionId, server.pushSubscriptions[subscriptionId], server.pushSubscriptions[subscriptionId].sockets.size)
       if (!server.pushSubscriptions[subscriptionId]) return
 
       server.pushSubscriptions[subscriptionId].sockets.delete(socket)
       delete socket.pushSubscriptionId
 
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
-        console.error('@@@PUSHSUBS close sz=0', socket.pushSubscriptionId, server.pushSubscriptions[subscriptionId])
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
           if (!server.subscribersByChannelID[channelID]) {
             server.subscribersByChannelID[channelID] = new Set()
           }
-          console.error('@@@PUSHSUBS close add', socket.pushSubscriptionId, channelID)
           server.subscribersByChannelID[channelID].add(server.pushSubscriptions[subscriptionId])
         })
       }
