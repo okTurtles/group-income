@@ -104,7 +104,13 @@ if (self.registration?.pushManager) {
 self.addEventListener('push', function (event) {
   // PushEvent reference: https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
   if (!event.data) return
-  const data = event.data.json()
+  let data
+  try {
+    data = event.data.json()
+  } catch (e) {
+    console.error('[push event] Invalid JSON:', e)
+    return
+  }
   if (data.type === NOTIFICATION_TYPE.ENTRY) {
     event.waitUntil(setupChelonia().then(() => {
       // We have event data, so we process it
@@ -123,14 +129,17 @@ self.addEventListener('push', function (event) {
   }
 }, false)
 
-self.addEventListener('pushsubscriptionchange', async function (event) {
+self.addEventListener('pushsubscriptionchange', function (event) {
   // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
   // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
-  const subscription = await self.registration.pushManager.subscribe(
-    event.oldSubscription.options
-  )
-
-  sbp('push/reportExistingSubscription', subscription?.toJSON()).catch(e => {
-    console.error('[pushsubscriptionchange] Error reporting subscription', e)
-  })
+  event.waitUntil((async () => {
+    try {
+      const subscription = await self.registration.pushManager.subscribe(
+        event.oldSubscription.options
+      )
+      await sbp('push/reportExistingSubscription', subscription?.toJSON())
+    } catch (e) {
+      console.error('[pushsubscriptionchange] Error resubscribing:', e)
+    }
+  })())
 }, false)

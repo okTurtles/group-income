@@ -139,9 +139,11 @@ sbp('sbp/selectors/register', {
   })()
 })
 
+const x = new URL(self.location)
+
 sbp('sbp/selectors/register', {
   'controller/router': () => {
-    return { options: { base: '/app/' } }
+    return { options: { base: x.searchParams.get('routerBase') } }
   }
 })
 
@@ -192,13 +194,15 @@ self.addEventListener('message', function (event) {
     console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
       case 'sbp': {
-        const port = event.data.port;
-        (async () => await sbp(...deserializer(event.data.data)))().then((r) => {
+        const port = event.data.port
+        ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           const { data, transferables } = serializer(r)
           port.postMessage([true, data], transferables)
         }).catch((e) => {
           const { data, transferables } = serializer(e)
           port.postMessage([false, data], transferables)
+        }).finally(() => {
+          port.close()
         })
         break
       }
@@ -250,7 +254,7 @@ self.addEventListener('notificationclick', event => {
         return 0
       })
       if (!clientList.length) {
-        return self.clients.openWindow(`/app${event.notification.data.path ?? '/'}`)
+        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`)
       }
       const client = clientList[0]
       if (event.notification.data?.path) {

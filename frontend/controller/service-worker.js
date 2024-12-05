@@ -41,7 +41,11 @@ sbp('sbp/selectors/register', {
 
     try {
       // Using hash (#) is possible, but seems to get reset when the SW restarts
-      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js${isPwa() ? '?standalone=1' : ''}`, { scope: '/' })
+      const params = new URLSearchParams([
+        ['routerBase', sbp('controller/router').options.base ?? ''],
+        ['standalone', isPwa() ? '1' : '0']
+      ])
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { scope: '/' })
 
       // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
       await swRegistration.update()
@@ -165,10 +169,10 @@ sbp('sbp/selectors/register', {
     const result = await pwa.deferredInstallPrompt.prompt()
     return result.outcome
   }
-});
+})
 
 // Events that need to be relayed to the SW
-[LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, SET_APP_LOGS_FILTER].forEach((event) =>
+;[LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, SET_APP_LOGS_FILTER].forEach((event) =>
   sbp('okTurtles.events/on', event, (...data) => {
     navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
   })
@@ -189,23 +193,34 @@ const swRpc = (() => {
         reject(new Error('Service worker not ready'))
         return
       }
-      const messageChannel = new MessageChannel()
-      messageChannel.port1.addEventListener('message', (event: MessageEvent) => {
-        if (event.data && Array.isArray(event.data)) {
-          const r = deserializer(event.data[1])
-          // $FlowFixMe[incompatible-use]
-          if (event.data[0] === true) {
-            resolve(r)
-          } else {
-            reject(r)
+      // The revocable Proxy ensures that there are no dangling references after
+      // the promise resolves
+      const { proxy: [messageChannel, onmessage, onmessageerror, cleanup], revoke } = Proxy.revocable([
+        new MessageChannel(),
+        (event: MessageEvent) => {
+          if (event.data && Array.isArray(event.data)) {
+            const r = deserializer(event.data[1])
+            // $FlowFixMe[incompatible-use]
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+            cleanup()
           }
-          messageChannel.port1.close()
+        },
+        (event: MessageEvent) => {
+          reject(event.data)
+          cleanup()
+        },
+        () => {
+          messageChannel.port1.removeEventListener('message', onmessage, false)
+          messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
+          revoke()
         }
-      }, false)
-      messageChannel.port1.addEventListener('messageerror', (event: MessageEvent) => {
-        reject(event.data)
-        messageChannel.port1.close()
-      }, false)
+      ], {})
+      messageChannel.port1.addEventListener('message', onmessage, false)
+      messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
       messageChannel.port1.start()
       const { data, transferables } = serializer(args)
       controller.postMessage({

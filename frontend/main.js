@@ -331,7 +331,10 @@ async function startApp () {
         // Wait for SW to be ready
         console.debug('[app] Waiting for SW to be ready')
         const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
-        sw.ready.then(() => {
+        Promise.race([
+          sw.ready,
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
+        ]).then(() => {
           const onready = () => {
             this.ephemeral.ready = true
             this.removeLoadingAnimation()
@@ -346,6 +349,11 @@ async function startApp () {
           } else {
             onready()
           }
+        }).catch(e => {
+          console.error('[app] Service worker failed to become ready:', e)
+          // Fallback behavior
+          this.removeLoadingAnimation()
+          alert(L('Error while setting up service worker'))
         })
       })
     },
