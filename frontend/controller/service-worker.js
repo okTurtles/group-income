@@ -188,37 +188,38 @@ const swRpc = (() => {
   }, false)
 
   return (...args) => {
+    let cleanup
     return new Promise((resolve, reject) => {
       if (!controller) {
         reject(new Error('Service worker not ready'))
         return
       }
-      // The revocable Proxy ensures that there are no dangling references after
-      // the promise resolves
-      const { proxy: [messageChannel, onmessage, onmessageerror, cleanup], revoke } = Proxy.revocable([
-        new MessageChannel(),
-        (event: MessageEvent) => {
-          if (event.data && Array.isArray(event.data)) {
-            const r = deserializer(event.data[1])
-            // $FlowFixMe[incompatible-use]
-            if (event.data[0] === true) {
-              resolve(r)
-            } else {
-              reject(r)
-            }
-            cleanup()
+      const messageChannel = new MessageChannel()
+      const onmessage = (event: MessageEvent) => {
+        if (event.data && Array.isArray(event.data)) {
+          const r = deserializer(event.data[1])
+          // $FlowFixMe[incompatible-use]
+          if (event.data[0] === true) {
+            resolve(r)
+          } else {
+            reject(r)
           }
-        },
-        (event: MessageEvent) => {
-          reject(event.data)
           cleanup()
-        },
-        () => {
-          messageChannel.port1.removeEventListener('message', onmessage, false)
-          messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
-          revoke()
         }
-      ], {})
+      }
+      const onmessageerror = (event: MessageEvent) => {
+        reject(event.data)
+        cleanup()
+      }
+      cleanup = () => {
+        // This can help prevent memory leaks if the GC doesn't clean up once
+        // the port goes out of scope
+        messageChannel.port1.removeEventListener('message', onmessage, false)
+        messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
+        messageChannel.port1.close()
+        // Remove potential references to the messageChannel
+        cleanup = undefined
+      }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
       messageChannel.port1.start()
@@ -228,7 +229,7 @@ const swRpc = (() => {
         port: messageChannel.port2,
         data
       }, [messageChannel.port2, ...transferables])
-    })
+    }).finally(cleanup)
   }
 })()
 
