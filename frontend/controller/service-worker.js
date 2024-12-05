@@ -188,7 +188,6 @@ const swRpc = (() => {
   }, false)
 
   return (...args) => {
-    let cleanup
     return new Promise((resolve, reject) => {
       if (!controller) {
         reject(new Error('Service worker not ready'))
@@ -211,14 +210,12 @@ const swRpc = (() => {
         reject(event.data)
         cleanup()
       }
-      cleanup = () => {
+      const cleanup = () => {
         // This can help prevent memory leaks if the GC doesn't clean up once
         // the port goes out of scope
         messageChannel.port1.removeEventListener('message', onmessage, false)
         messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
         messageChannel.port1.close()
-        // Remove potential references to the messageChannel
-        cleanup = undefined
       }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
@@ -229,7 +226,7 @@ const swRpc = (() => {
         port: messageChannel.port2,
         data
       }, [messageChannel.port2, ...transferables])
-    }).finally(cleanup)
+    })
   }
 })()
 
