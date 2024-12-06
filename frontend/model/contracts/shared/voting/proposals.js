@@ -33,7 +33,7 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   //       because we remove the state.proposals[proposalHash] in the process function
   //       and can not access the proposal data in the sideEffect
   sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposal]
+    ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposalHash, proposal]
   )
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
