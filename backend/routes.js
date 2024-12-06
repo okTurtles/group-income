@@ -821,7 +821,7 @@ route.GET('/zkpp/{name}/contract_hash', {
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/updatePasswordHash/{name}', {
+route.POST('/zkpp/{name}/updatePasswordHash', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -841,7 +841,7 @@ route.POST('/zkpp/updatePasswordHash/{name}', {
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message)
+    console.error(e, 'Error at POST /zkpp/{name}/updatePasswordHash: ' + e.message)
   }
 
   return Boom.internal('internal error')

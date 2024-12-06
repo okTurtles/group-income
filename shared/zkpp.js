@@ -114,3 +114,29 @@ export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uin
 
   return [contractSalt, base64ToBase64url(Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64'))]
 }
+
+export const buildUpdateSaltRequestEa = async (password: string, c: Uint8Array): Promise<[string, string]> => {
+  // TODO: Derive S_A and S_C as follows:
+  //   -> q -< random
+  //   -> r -< SHA-512(SHA-512('SU') + SHA-512(q))
+  //   -> b -< SHA-512(r) // as it's now
+  // Then,
+  //   -> S_T -< BASE64(SHA-512(SHA-512(T) + SHA-512(q))[0..18]) with T being
+  //     `AUTHSALT` or `CONTRACTSALT`
+  // This way, we ensure both the server and the client contribute to the
+  //   salts' entropy.
+  // When sending the encrypted data, the encrypted information would be
+  // `[hashedPassword, q]`, which needs to be verified server-side to verify
+  // it matches p and would be used to derive S_A and S_C.
+  const [authSalt, contractSalt] = ['a', 'b']
+
+  const encryptionKey = nacl.hash(Buffer.concat([Buffer.from('SU'), c])).slice(0, nacl.secretbox.keyLength)
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
+
+  const hashedPassword = await hashPassword(password, authSalt)
+  const encryptedArgsCiphertext = nacl.secretbox(Buffer.from(JSON.stringify([hashedPassword, authSalt, contractSalt])), nonce, encryptionKey)
+
+  const encryptedArgs = Buffer.concat([nonce, encryptedArgsCiphertext])
+
+  return [contractSalt, base64ToBase64url(encryptedArgs.toString('base64'))]
+}
