@@ -177,7 +177,7 @@ export default (sbp('sbp/selectors/register', {
 
     return decryptContractSalt(c, contractHash)
   },
-  'gi.app/identity/updateSalt': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
+  'gi.app/identity/updateSaltRequest': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -189,9 +189,9 @@ export default (sbp('sbp/selectors/register', {
 
     const [c, hc] = computeCAndHc(r, s, h)
 
-    const [contractHash, encryptedArgs] = await buildUpdateSaltRequestEa(newPassword.valueOf(), c)
+    const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEa(newPassword.valueOf(), c)
 
-    await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
+    const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -202,11 +202,13 @@ export default (sbp('sbp/selectors/register', {
           's': s,
           'sig': sig,
           'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, ''),
-          'Ea': encryptedArgs.toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
+          'Ea': encryptedArgs
         })).toString()}`
     }).then(handleFetchResult('text'))
 
-    return contractHash
+    const [oldContractSalt, updateToken] = JSON.parse(decryptContractSalt(c, response))
+
+    return [contractSalt, oldContractSalt, updateToken]
   },
   'gi.app/identity/create': async function ({
     data: { username, email, password, picture },
@@ -448,14 +450,26 @@ export default (sbp('sbp/selectors/register', {
 
     const { identityContractID } = state.loggedIn
     const username = getters.usernameFromID(identityContractID)
-    // const oldPassword = woldPassword.valueOf()
-    // const newPassword = wnewPassword.valueOf()
+    const oldPassword = woldPassword.valueOf()
+    const newPassword = wnewPassword.valueOf()
 
-    const contractSalt = await sbp('gi.app/identity/updateSalt', username, woldPassword, wnewPassword)
+    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, woldPassword, wnewPassword)
 
-    return contractSalt
+    const oldIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, oldPassword, oldContractSalt)
+    const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)
+    const newIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
+    const newIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, newPassword, newContractSalt)
+    const newSAK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
 
-    /* const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, contractSalt)
-    const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, newPassword, contractSalt) */
+    return sbp('gi.actions/identity/changePassword', {
+      identityContractID,
+      username,
+      oldIPK,
+      oldIEK,
+      newIPK,
+      newIEK,
+      newSAK,
+      updateToken
+    })
   }
 }): string[])

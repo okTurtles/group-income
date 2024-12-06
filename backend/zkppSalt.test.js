@@ -111,6 +111,6 @@ describe('ZKPP Salt functions', () => {
     const encryptedArgs = Buffer.concat([nonce, encryptedArgsCiphertext]).toString('base64url')
 
     const updateRes = await updateContractSalt(contract, r, challenge.s, challenge.sig, Buffer.from(hc).toString('base64url'), encryptedArgs)
-    should(updateRes).equal(true, 'updateContractSalt should be successful')
+    should(!!updateRes).equal(true, 'updateContractSalt should be successful')
   })
 })

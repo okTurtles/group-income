@@ -9,12 +9,13 @@ import {
 import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
-import { imageUpload, objectURLtoBlob, compressImage } from '@utils/image.js'
+import { compressImage, imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -679,6 +680,135 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
+  },
+  'gi.actions/identity/changePassword': async ({
+    identityContractID,
+    username,
+    oldIPK,
+    oldIEK,
+    newIPK: IPK,
+    newIEK: IEK,
+    newSAK: SAK,
+    updateToken
+  }) => {
+    // Create the necessary keys to initialise the contract
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
+    const CEK = keygen(CURVE25519XSALSA20POLY1305)
+    const PEK = keygen(CURVE25519XSALSA20POLY1305)
+
+    // Key IDs
+    const oldIPKid = keyId(oldIPK)
+    const oldIEKid = keyId(oldIEK)
+    const IPKid = keyId(IPK)
+    const IEKid = keyId(IEK)
+    const CSKid = keyId(CSK)
+    const CEKid = keyId(CEK)
+    const PEKid = keyId(PEK)
+    const SAKid = keyId(SAK)
+
+    // Public keys to be stored in the contract
+    const IPKp = serializeKey(IPK, false)
+    const IEKp = serializeKey(IEK, false)
+    const CSKp = serializeKey(CSK, false)
+    const CEKp = serializeKey(CEK, false)
+    const PEKp = serializeKey(PEK, false)
+    const SAKp = serializeKey(SAK, false)
+
+    // Secret keys to be stored encrypted in the contract
+    const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
+    const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
+    const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
+
+    const state = sbp('chelonia/contract/state', identityContractID)
+
+    // Before rotating keys the contract, put all keys into transient store
+    await sbp('chelonia/storeSecretKeys',
+      new Secret([oldIPK, oldIEK, IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true })))
+    )
+
+    await sbp('chelonia/out/keyUpdate', {
+      contractID: identityContractID,
+      contractName: 'gi.contracts/identity',
+      data: [
+        {
+          id: IPKid,
+          name: 'ipk',
+          oldKeyId: oldIPKid,
+          meta: {
+            private: {
+              transient: true
+            }
+          },
+          data: IPKp
+        },
+        {
+          id: IEKid,
+          name: 'iek',
+          oldKeyId: oldIEKid,
+          meta: {
+            private: {
+              transient: true
+            }
+          },
+          data: IEKp
+        },
+        {
+          id: CSKid,
+          name: 'csk',
+          oldKeyId: findKeyIdByName(state, 'csk'),
+          meta: {
+            private: {
+              content: CSKs
+            }
+          },
+          data: CSKp
+        },
+        {
+          id: CEKid,
+          name: 'cek',
+          oldKeyId: findKeyIdByName(state, 'cek'),
+          meta: {
+            private: {
+              content: CEKs
+            }
+          },
+          data: CEKp
+        },
+        {
+          id: PEKid,
+          name: 'pek',
+          oldKeyId: findKeyIdByName(state, 'pek'),
+          meta: {
+            private: {
+              content: PEKs
+            }
+          },
+          data: PEKp
+        },
+        {
+          id: SAKid,
+          name: '#sak',
+          oldKeyId: findKeyIdByName(state, '#sak'),
+          meta: {
+            private: {
+              content: SAKs
+            }
+          },
+          data: SAKp
+        }
+      ],
+      signingKeyId: oldIPKid,
+      publishOptions: {
+        headers: {
+          'shelter-name': username,
+          'shelter-salt-update-token': updateToken
+        }
+      }
+      /* hooks: {
+        preSendCheck
+      } */
+    })
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),

@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { randomBytes, timingSafeEqual } from 'crypto'
 import nacl from 'tweetnacl'
-import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, encryptContractSalt, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
+import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, encryptContractSalt, encryptSaltUpdate, decryptSaltUpdate, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
 
 // used to encrypt salts in database
 let recordSecret: string
@@ -9,6 +9,8 @@ let recordSecret: string
 let challengeSecret: string
 // corresponds to a component of s in Step 3 of "Salt registration"
 let registrationSecret: string
+// used to encrypt a stateless token for atomic hash updates
+let hashUpdateSecret: string
 
 // Input keying material used to derive various secret keys used in this
 // protocol: recordSecret, challengeSecret and registrationSecret.
@@ -60,9 +62,22 @@ export const initZkpp = async () => {
   recordSecret = Buffer.from(hashStringArray('private/recordSecret', IKM)).toString('base64')
   challengeSecret = Buffer.from(hashStringArray('private/challengeSecret', IKM)).toString('base64')
   registrationSecret = Buffer.from(hashStringArray('private/registrationSecret', IKM)).toString('base64')
+  hashUpdateSecret = Buffer.from(hashStringArray('private/hashUpdateSecret', IKM)).toString('base64')
 }
 
 const maxAge = 30
+
+const computeZkppSaltRecordId = async (contractID: string) => {
+  const recordId = `_private_rid_${contractID}`
+  const record = await sbp('chelonia/db/get', recordId)
+
+  if (!record) {
+    return null
+  }
+
+  const recordBuf = Buffer.concat([Buffer.from(contractID), Buffer.from(record)])
+  return hash(recordBuf)
+}
 
 const getZkppSaltRecord = async (contractID: string) => {
   const recordId = `_private_rid_${contractID}`
@@ -254,7 +269,7 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
   return encryptContractSalt(c, contractSalt)
 }
 
-export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
+export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean | string> => {
   if (!verifyChallenge(contract, r, s, sig)) {
     console.warn('update: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
     throw new Error('update: Bad challenge')
@@ -266,7 +281,7 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
     console.error('update: Error obtaining ZKPP salt record for contract ID ' + contract)
     return false
   }
-  const { hashedPassword } = record
+  const { hashedPassword, contractSalt: oldContractSalt } = record
 
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
@@ -297,12 +312,45 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
 
     const [hashedPassword, authSalt, contractSalt] = argsObj
 
-    await setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt)
+    const recordId = await computeZkppSaltRecordId(contract)
+    if (!recordId) {
+      console.error(`update: Error obtaining record ID for contract ID ${contract}`)
+      return false
+    }
 
-    return true
+    const token = encryptSaltUpdate(
+      hashUpdateSecret,
+      recordId,
+      JSON.stringify([Date.now(), hashedPassword, authSalt, contractSalt])
+    )
+
+    return encryptContractSalt(c, JSON.stringify([oldContractSalt, token]))
   } catch {
     console.error(`update: Error parsing encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
   }
 
   return false
+}
+
+export const redeemSaltUpdateToken = async (contract: string, token: string): Promise<() => Promise<void>> => {
+  const recordId = await computeZkppSaltRecordId(contract)
+  if (!recordId) {
+    throw new Error('Record ID not found')
+  }
+
+  const decryptedToken = decryptSaltUpdate(
+    hashUpdateSecret,
+    recordId,
+    token
+  )
+
+  const [timestamp, hashedPassword, authSalt, contractSalt] = JSON.parse(decryptedToken)
+
+  if (timestamp < (Date.now() - 180e3)) {
+    throw new Error('ZKPP token expired')
+  }
+
+  return () => {
+    return setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt)
+  }
 }

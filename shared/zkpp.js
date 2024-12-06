@@ -18,7 +18,7 @@ export const randomNonce = (): string => {
   return base64ToBase64url(Buffer.from(nacl.randomBytes(12)).toString('base64'))
 }
 
-export const hash = (v: string): string => {
+export const hash = (v: string | Buffer): string => {
   return base64ToBase64url(Buffer.from(nacl.hash(Buffer.from(v))).toString('base64'))
 }
 
@@ -47,6 +47,27 @@ export const decryptContractSalt = (c: Uint8Array, encryptedContractSaltBox: str
   const encryptedContractSalt = encryptedContractSaltBoxBuf.slice(nacl.secretbox.nonceLength)
 
   return Buffer.from(nacl.secretbox.open(encryptedContractSalt, nonce, encryptionKey)).toString()
+}
+
+export const encryptSaltUpdate = (secret: string, recordId: string, record: string): string => {
+  // The nonce is also used to derive a single-use encryption key
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
+  const encryptionKey = hashRawStringArray('SU', secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
+
+  const encryptedRecord = nacl.secretbox(Buffer.from(record), nonce, encryptionKey)
+
+  return base64ToBase64url(Buffer.concat([nonce, encryptedRecord]).toString('base64'))
+}
+
+export const decryptSaltUpdate = (secret: string, recordId: string, encryptedRecordBox: string): string => {
+  // The nonce is also used to derive a single-use encryption key
+  const encryptedRecordBoxBuf = Buffer.from(base64urlToBase64(encryptedRecordBox), 'base64')
+  const nonce = encryptedRecordBoxBuf.slice(0, nacl.secretbox.nonceLength)
+  const encryptionKey = hashRawStringArray('SU', secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
+
+  const encryptedRecord = encryptedRecordBoxBuf.slice(nacl.secretbox.nonceLength)
+
+  return Buffer.from(nacl.secretbox.open(encryptedRecord, nonce, encryptionKey)).toString()
 }
 
 export const hashPassword = (password: string, salt: string): Promise<string> => {
@@ -130,7 +151,9 @@ export const buildUpdateSaltRequestEa = async (password: string, c: Uint8Array):
   // it matches p and would be used to derive S_A and S_C.
   const [authSalt, contractSalt] = ['a', 'b']
 
-  const encryptionKey = nacl.hash(Buffer.concat([Buffer.from('SU'), c])).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = nacl.hash(Buffer.concat([
+    Buffer.from('SU'), Buffer.from(c)
+  ])).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
 
   const hashedPassword = await hashPassword(password, authSalt)
