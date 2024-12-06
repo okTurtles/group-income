@@ -2,7 +2,7 @@
 
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf, boolean,
-  object, string, stringMax, optional, number, mapOf, literalOf
+  object, string, stringMax, optional, number, mapOf, literalOf, numberRange
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES,
@@ -64,18 +64,21 @@ export const messageType: any = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
   }),
-  attachments: arrayOf(objectOf({
-    name: string,
-    mimeType: string,
-    dimension: optional(objectOf({
-      width: number,
-      height: number
-    })),
-    downloadData: objectOf({
-      manifestCid: string,
-      downloadParams: optional(object)
-    })
-  })),
+  attachments: optional(
+    arrayOf(objectOf({
+      name: string,
+      mimeType: string,
+      size: numberRange(1, Number.MAX_SAFE_INTEGER),
+      dimension: optional(objectOf({
+        width: number,
+        height: number
+      })),
+      downloadData: objectOf({
+        manifestCid: string,
+        downloadParams: optional(object)
+      })
+    }))
+  ),
   replyingMessage: objectOf({
     hash: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)

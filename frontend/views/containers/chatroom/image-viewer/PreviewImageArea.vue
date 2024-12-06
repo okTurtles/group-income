@@ -488,6 +488,11 @@ img.c-preview-image {
     background-color: var(--image-viewer-slider-bg-color);
     border-radius: 0.5rem;
     opacity: 0.675;
+
+    @include if-forced-color-mode {
+      border: 1px solid buttonborder;
+      opacity: 1;
+    }
   }
 }
 
@@ -513,6 +518,16 @@ img.c-preview-image {
 
   &.show-slider-output ::v-deep .sOutput {
     display: inline-block;
+  }
+
+  ::v-deep input.sInput {
+    forced-color-adjust: none;
+
+    @include if-forced-color-mode {
+      background: none;
+      border: 1px solid buttonborder;
+      color: buttontext;
+    }
   }
 }
 
