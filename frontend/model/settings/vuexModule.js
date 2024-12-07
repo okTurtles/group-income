@@ -26,12 +26,12 @@ const defaultTheme = 'system'
 const defaultColor: string = checkSystemColor()
 
 export const defaultSettings = {
-  appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
+  appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
-  notificationEnabled: true,
+  notificationEnabled: false,
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
@@ -70,6 +70,16 @@ const mutations = {
     state.increasedContrast = isChecked
   },
   setNotificationEnabled (state, enabled) {
+    if (state.notificationEnabled !== enabled) {
+      // We do this call to `service-worker` here to avoid DRY violations.
+      // The intent is creating a subscription if none exists and letting the
+      // server know of the subscription
+      sbp('service-worker/setup-push-subscription').catch(e => {
+        // The parent `if` branch should prevent infinite loops
+        sbp('state/vuex/commit', 'setNotificationEnabled', false)
+        console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
+      })
+    }
     state.notificationEnabled = enabled
   },
   setReducedMotion (state, isChecked) {

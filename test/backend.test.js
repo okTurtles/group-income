@@ -5,7 +5,7 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
-import '~/frontend/controller/namespace.js'
+import '~/frontend/controller/serviceworkers/sw-namespace.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 import { PROFILE_STATUS, PROPOSAL_GENERIC, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.js'
@@ -211,7 +211,7 @@ describe('Full walkthrough', function () {
           permissions: '*',
           allowedActions: '*',
           data: sbp('chelonia/rootState')[creator.contractID()]._vm.authorizedKeys[creator.signingKeyId()].data,
-          foreignKey: `sp:${encodeURIComponent(creator.contractID())}?keyName=${encodeURIComponent('csk')}`
+          foreignKey: `shelter:${encodeURIComponent(creator.contractID())}?keyName=${encodeURIComponent('csk')}`
         }
       ],
       data: {

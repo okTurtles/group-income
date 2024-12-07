@@ -16,12 +16,16 @@
 //       Have the script explain which files represent what.
 
 // Our globals.
-declare function fetchServerTime(): Promise<string>
+declare function fetchServerTime(fallback: ?boolean): Promise<string>
 declare var logger: Object
 // Nodejs globals.
 declare var process: any
 // Third-party globals
 declare var Compartment: Function
+declare var crypto: {
+    getRandomValues: (buffer: Uint8Array) => Uint8Array,
+    subtle: { [k: string]: Function }
+}
 
 // =======================
 // Fix "Required module not found" in a hackish way.
@@ -34,7 +38,6 @@ declare module '@hapi/inert' { declare module.exports: any }
 declare module '@hapi/joi' { declare module.exports: any }
 declare module 'hapi-pino' { declare module.exports: any }
 declare module 'pino' { declare module.exports: any }
-declare module 'web-push' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
@@ -74,9 +77,9 @@ declare module 'uuid' { declare module.exports: any }
 declare module 'marked' { declare module.exports: any }
 declare module 'bottleneck' { declare module.exports: any }
 declare module '@exact-realty/multipart-parser/encodeMultipartMessage' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/decrypt' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/encodings' { declare module.exports: any }
-declare module '@exact-realty/rfc8188/encrypt' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/decrypt' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/encodings' { declare module.exports: any }
+declare module '@apeleghq/rfc8188/encrypt' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }

@@ -40,9 +40,6 @@ sbp('sbp/selectors/register', {
       type
     }
     const rootState = sbp('chelonia/rootState')
-    if (!rootState.notifications) {
-      rootState.notifications = { items: [], status: {} }
-    }
     if (rootState.notifications.items.some(item => item.hash === notification.hash)) {
       // We cannot throw here, as this code might be called from within a contract side effect.
       return console.error('[gi.notifications/emit] This notification is already in the store.', notification.hash)
@@ -81,9 +78,6 @@ sbp('sbp/selectors/register', {
   },
   'gi.notifications/setNotificationStatus' (status) {
     const rootState = sbp('chelonia/rootState')
-    if (!rootState.notifications) {
-      rootState.notifications = { items: [], status: {} }
-    }
     rootState.notifications.status = status
     sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
     sbp('okTurtles.events/emit', NOTIFICATION_STATUS_LOADED, status)

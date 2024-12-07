@@ -411,8 +411,8 @@ describe('Proposals - Add members', () => {
     // https://docs.cypress.io/guides/tooling/visual-testing.html#Functional-vs-visual-testing#article
     getProposalItems().should('have.length', 5)
     cy.getByDT('openAllProposals').click()
-    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
-    cy.getByDT('modal').within(() => {
+    cy.get('[data-test="modal"][aria-label="All proposals"] > .c-container .c-title').should('contain', 'Archived proposals')
+    cy.get('[data-test="modal"][aria-label="All proposals"]').within(() => {
       // NOTE: this is to wait until all of the 5 proposals are loaded inside the modal
       cy.get('.c-container > .c-header-info .has-text-1').should('contain', '5 proposals')
 

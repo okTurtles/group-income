@@ -21,10 +21,10 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   // If newMessage is undefined, it means that an existing message is being edited
   newMessage
 }) => {
+  const state = sbp('chelonia/contract/state', contractID)
+  const rootState = sbp('chelonia/rootState')
   const getters = sbp('state/vuex/getters')
-  const rootState = sbp('state/vuex/state')
-  const targetChatroomState = rootState[contractID]
-  const mentions = makeMentionFromUserID(getters.ourIdentityContractId)
+  const mentions = makeMentionFromUserID(rootState.loggedIn?.identityContractID)
   const msgData = newMessage || data
   const isMentionedMe = (!!newMessage || data.type === MESSAGE_TYPES.TEXT) && msgData.text &&
   (msgData.text.includes(mentions.me) || msgData.text.includes(mentions.all))
@@ -44,10 +44,10 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
     messageHash: msgData.hash,
     height: msgData.height,
     text: msgData.text,
-    isDMOrMention: isMentionedMe || targetChatroomState?.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE,
+    isDMOrMention: isMentionedMe || state.attributes?.type === CHATROOM_TYPES.DIRECT_MESSAGE,
     messageType: !newMessage ? MESSAGE_TYPES.TEXT : data.type,
     memberID: innerSigningContractID,
-    chatRoomName: getters.chatRoomAttributes.name
+    chatRoomName: state.attributes?.name
   }).catch(e => {
     console.error('[action/chatroom.js] Error on messageReceivePostEffect', e)
   })
@@ -216,8 +216,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/chatroom/shareNewKeys': (contractID: string, newKeys) => {
-    const rootState = sbp('state/vuex/state')
-    const state = rootState[contractID]
+    const state = sbp('chelonia/contract/state', contractID)
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
@@ -254,44 +253,65 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/unpinMessage', L('Failed to unpin message.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootState = sbp('state/vuex/state')
-    const userID = params.data.memberID || rootState.loggedIn.identityContractID
+    const identityContractID = rootState.loggedIn.identityContractID
+    // We accept an array for memberID to aggregate all joins
+    const userIDs = (
+      Array.isArray(params.data.memberID) ? params.data.memberID : [params.data.memberID]
+    // If the memberID isn't specified, it's ourselves joining. This is
+    // consistent with how the contract works and produces shorter messages
+    ).map(memberID => memberID == null ? identityContractID : memberID)
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
     // operations in those contracts have completed
-    await sbp('chelonia/contract/wait', [params.contractID, userID])
+    await sbp('chelonia/contract/retain', userIDs, { ephemeral: true })
+    try {
+      await sbp('chelonia/contract/wait', params.contractID)
 
-    if (!userID || !has(rootState.contracts, userID)) {
-      throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${userID} is missing`)
-    }
+      userIDs.forEach(cID => {
+        if (!cID || !has(rootState.contracts, cID) || !has(rootState, cID)) {
+          throw new Error(`Unable to send gi.actions/chatroom/join on ${params.contractID} because user ID contract ${cID} is missing`)
+        }
+      })
 
-    const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
+      const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
 
-    const userCSKid = sbp('chelonia/contract/currentKeyIdByName', userID, 'csk')
-    return await sbp('chelonia/out/atomic', {
-      ...params,
-      contractName: 'gi.contracts/chatroom',
-      data: [
+      const userCSKids = await Promise.all(userIDs.map(async (cID) =>
+        [cID, await sbp('chelonia/contract/currentKeyIdByName', cID, 'csk')]
+      ))
+      return await sbp('chelonia/out/atomic', {
+        ...params,
+        contractName: 'gi.contracts/chatroom',
+        data: [
         // Add the user's CSK to the contract
-        [
-          'chelonia/out/keyAdd', {
+          [
+            'chelonia/out/keyAdd', {
             // TODO: Find a way to have this wrapping be done by Chelonia directly
-            data: [encryptedOutgoingData(params.contractID, CEKid, {
-              foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-              id: userCSKid,
-              data: rootState[userID]._vm.authorizedKeys[userCSKid].data,
-              permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-              allowedActions: '*',
-              purpose: ['sig'],
-              ringLevel: Number.MAX_SAFE_INTEGER,
-              name: `${userID}/${userCSKid}`
-            })]
-          }
+              data: userCSKids.map(([cID, cskID]: [string, string]) => encryptedOutgoingData(params.contractID, CEKid, {
+                foreignKey: `shelter:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
+                id: cskID,
+                data: rootState[cID]._vm.authorizedKeys[cskID].data,
+                permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                allowedActions: '*',
+                purpose: ['sig'],
+                ringLevel: Number.MAX_SAFE_INTEGER,
+                name: `${cID}/${cskID}`
+              }))
+            }
+          ],
+          ...userIDs.map(cID => sendMessage({
+            ...params,
+            data: cID === identityContractID
+              ? {}
+              : { memberID: cID },
+            returnInvocation: true
+          }))
         ],
-        sendMessage({ ...params, returnInvocation: true })
-      ],
-      signingKeyId
-    })
+        signingKeyId
+      })
+    } finally {
+      await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
+    }
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),

@@ -4,6 +4,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
+import { NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -418,8 +419,8 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
-        if (rootState.chatroom.chatRoomScrollPosition[contractID] === data.hash) {
-          sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+        if (rootState.chatroom?.chatRoomScrollPosition?.[contractID] === data.hash) {
+          sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
             chatRoomID: contractID, messageHash: null
           })
         }

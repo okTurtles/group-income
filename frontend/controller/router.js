@@ -33,14 +33,16 @@ Vue.use(Router)
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
-  redirect: (to, from) => ({
-    path:
+  redirect: (to, from) => {
+    return ({
+      path:
       // If we haven't accepted the invite OR we haven't clicked 'Awesome' on
       // the welcome screen, redirect to the '/pending-approval' page
       store.getters.seenWelcomeScreen
         ? '/dashboard'
         : '/pending-approval'
-  })
+    })
+  }
 }
 
 const loginGuard = {

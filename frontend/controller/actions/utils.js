@@ -67,16 +67,24 @@ export const encryptedAction = (
       // are written
       const finished = enqueueDeferredPromise('encrypted-action')
 
+      let retainFailed = false
       try {
         // Writing to a contract requires being subscribed to it
         // Since we're only interested in writing and we don't know whether
         // we're subscribed or should be, we use an ephemeral retain here that
         // is undone at the end in a finally block.
-        await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+        await sbp('chelonia/contract/retain', contractID, { ephemeral: true }).catch(e => {
+          // We use `retainFailed` because the `finally` block should only
+          // release when `retain` succeeded. Moving the `retain` call outside
+          // of the `try` block would have the same effect but would require
+          // duplicating the error handler.
+          retainFailed = true
+          throw e
+        })
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
-        const rootState = sbp('state/vuex/state')
+        const rootState = sbp('chelonia/rootState')
 
         // Default signingContractID is the current contract
         const signingContractID = params.signingContractID || contractID
@@ -141,7 +149,9 @@ export const encryptedAction = (
         throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
         finished()
-        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+        if (!retainFailed) {
+          await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+        }
       }
     }
   }
@@ -182,7 +192,7 @@ export const encryptedNotification = (
         const state = {
           [contractID]: await sbp('chelonia/latestContractState', contractID)
         }
-        const rootState = sbp('state/vuex/state')
+        const rootState = sbp('chelonia/rootState')
 
         // Default signingContractID is the current contract
         const signingContractID = params.signingContractID || contractID

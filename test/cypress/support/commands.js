@@ -242,16 +242,30 @@ Cypress.Commands.add('giLogin', (username, {
     cy.getByDT('app').should('have.attr', 'data-ready', 'true')
 
     cy.window().its('sbp').then(sbp => {
-      const joinedGroupPromise = new Promise((resolve) => {
+      const joinedGroupPromise = new Promise((resolve, reject) => {
         if (firstLoginAfterJoinGroup) {
           const eventHandler = ({ groupContractID }) => {
             sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-            const invervalId = setInterval(() => {
+            // We call 'retain' to force a sync in a safe manner
+            sbp('chelonia/contract/retain', groupContractID, { ephemeral: true }).then(
+              // This second 'sync' looks weird, but it's here to ensure we have
+              // all processed all events, even those that happened after
+              // calling retain
+              () => sbp('chelonia/contract/sync', groupContractID)
+            ).then(
+              // And then, we want to wait for the state to be copied over
+              // from the SW to Vuex
+              () => sbp('okTurtles.eventQueue/queueEvent', 'event-handled', Boolean)
+            ).then(() => {
               if (sbp('state/vuex/getters').ourProfileActive) {
-                clearInterval(invervalId)
-                resolve(sbp('chelonia/contract/wait', groupContractID))
+                resolve()
+              } else {
+                reject(new Error('Expected our profile to be active (giLogin)'))
               }
-            }, 5)
+            }).finally(() => {
+              // We call 'release' to be paired with the 'retain' call
+              sbp('chelonia/contract/release', groupContractID, { ephemeral: true })
+            })
           }
 
           sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
@@ -352,13 +366,27 @@ Cypress.Commands.add('giCreateGroup', (name, {
           const eventHandler = ({ groupContractID }) => {
             if (groupContractID === cID) {
               sbp('okTurtles.events/off', JOINED_GROUP, eventHandler)
-              const invervalId = setInterval(() => {
+              // We call 'retain' to force a sync in a safe manner
+              sbp('chelonia/contract/retain', groupContractID, { ephemeral: true }).then(
+                // This second 'sync' looks weird, but it's here to ensure we have
+                // all processed all events, even those that happened after
+                // calling retain
+                () => sbp('chelonia/contract/sync', groupContractID)
+              ).then(
+                // And then, we want to wait for the state to be copied over
+                // from the SW to Vuex
+                () => sbp('okTurtles.eventQueue/queueEvent', 'event-handled', Boolean)
+              ).then(() => {
                 if (sbp('state/vuex/state').currentGroupId === groupContractID && sbp('state/vuex/getters').ourProfileActive) {
-                  clearInterval(invervalId)
                   clearTimeout(timeoutId)
-                  resolve(sbp('chelonia/contract/wait', groupContractID))
+                  resolve()
+                } else {
+                  reject(new Error('Expected our profile to be active (giCreateGroup)'))
                 }
-              }, 5)
+              }).finally(() => {
+                // We call 'release' to be paired with the 'retain' call
+                sbp('chelonia/contract/release', groupContractID, { ephemeral: true })
+              })
             }
           }
           sbp('okTurtles.events/on', JOINED_GROUP, eventHandler)
@@ -731,6 +759,7 @@ Cypress.Commands.add('giAddNewChatroom', ({
 
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('conversationWrapper').within(() => {
+    // This checks for the 'no-more' slot of the infinite loader
     cy.get('.infinite-status-prompt:nth-child(3)')
       .invoke('attr', 'style')
       .should('not.include', 'display: none')
