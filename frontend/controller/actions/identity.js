@@ -217,9 +217,9 @@ export default (sbp('sbp/selectors/register', {
         namespaceRegistration: username
       })
 
-      // After the contract has been created, store pesistent keys
+      // After the contract has been created, store persistent keys
       await sbp('chelonia/storeSecretKeys',
-        new Secret([CEK, CSK, PEK].map(key => ({ key })))
+        new Secret([CEK, CSK, PEK, SAK].map(key => ({ key })))
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
@@ -809,6 +809,13 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck
       } */
     })
+
+    // After the contract has been updated, store persistent keys
+    await sbp('chelonia/storeSecretKeys',
+      new Secret([CEK, CSK, PEK, SAK].map(key => ({ key })))
+    )
+    // And remove transient keys, which require a user password
+    sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
