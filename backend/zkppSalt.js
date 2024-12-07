@@ -303,20 +303,16 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
   }
 
   try {
-    const argsObj = JSON.parse(Buffer.from(args).toString())
-
-    if (!Array.isArray(argsObj) || argsObj.length !== 3 || !argsObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
-      console.error(`update: Error validating the encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
-      return false
-    }
-
-    const [hashedPassword, authSalt, contractSalt] = argsObj
+    const hashedPassword = Buffer.from(args).toString()
 
     const recordId = await computeZkppSaltRecordId(contract)
     if (!recordId) {
       console.error(`update: Error obtaining record ID for contract ID ${contract}`)
       return false
     }
+
+    const authSalt = Buffer.from(hashStringArray('AUTHSALT', c)).slice(0, 18).toString('base64')
+    const contractSalt = Buffer.from(hashStringArray('CONTRACTSALT', c)).slice(0, 18).toString('base64')
 
     const token = encryptSaltUpdate(
       hashUpdateSecret,
