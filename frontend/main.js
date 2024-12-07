@@ -160,6 +160,8 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
+  // Call `setNotificationEnabled` after the service worker setup, because it
+  // calls `service-worker/setup-push-subscription`.
   if (typeof Notification === 'function') {
     sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
   }

@@ -371,8 +371,8 @@ export default (sbp('sbp/selectors/register', {
               return
             }
 
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-            sbp('okTurtles.events/off', LOGOUT, logoutHandler)
+            removeEventHandler()
+            removeLogoutHandler()
             // The event handler recursively calls this same selector
             // A different path should be taken, since te event handler
             // should be called after the key request has been answered
@@ -382,13 +382,13 @@ export default (sbp('sbp/selectors/register', {
             })
           }
           const logoutHandler = () => {
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+            removeEventHandler()
           }
 
           // The event handler is configured before sending the request
           // to avoid race conditions
-          sbp('okTurtles.events/once', LOGOUT, logoutHandler)
-          sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          const removeLogoutHandler = sbp('okTurtles.events/once', LOGOUT, logoutHandler)
+          const removeEventHandler = sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
         }
 
         // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares

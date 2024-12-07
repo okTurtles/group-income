@@ -150,6 +150,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   })
 })
 
+// handle incoming identity-related events that are sent from the service worker
 sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
   sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
 })
@@ -310,7 +311,7 @@ export default (sbp('sbp/selectors/register', {
           // complete
           const loginCompletePromise = new Promise((resolve, reject) => {
             const loginCompleteHandler = ({ identityContractID: id }) => {
-              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+              removeLoginErrorHandler()
               if (id === identityContractID) {
               // Before the promise resolves, we need to save the state
               // by calling 'state/vuex/save' to ensure that refreshing the page
@@ -321,7 +322,7 @@ export default (sbp('sbp/selectors/register', {
               }
             }
             const loginErrorHandler = ({ identityContractID: id, error }) => {
-              sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
+              removeLoginCompleteHandler()
               if (id === identityContractID) {
                 reject(error)
               } else {
@@ -329,8 +330,8 @@ export default (sbp('sbp/selectors/register', {
               }
             }
 
-            sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
-            sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
+            const removeLoginCompleteHandler = sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
+            const removeLoginErrorHandler = sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
           })
 
           // Are we logging in and setting up a fresh session or loading an

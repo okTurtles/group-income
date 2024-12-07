@@ -63,6 +63,24 @@ sbp('sbp/filters/global/add', (domain, selector, data) => {
   console.debug(`[sbp] ${selector}`, data)
 })
 
+// This function sets up state keys used in the SW that mirror the corresponding
+// Vuex keys
+const setupRootState = () => {
+  const rootState = sbp('chelonia/rootState')
+
+  if (!rootState.chatroom) rootState.chatroom = Object.create(null)
+  if (!rootState.chatroom.chatRoomScrollPosition) rootState.chatroom.chatRoomScrollPosition = Object.create(null)
+  if (!rootState.chatroom.unreadMessages) rootState.chatroom.unreadMessages = Object.create(null)
+
+  if (!rootState.lastLoggedIn) rootState.lastLoggedIn = Object.create(null)
+
+  if (!rootState.notifications) rootState.notifications = Object.create(null)
+  if (!rootState.notifications.items) rootState.notifications.items = []
+  if (!rootState.notifications.status) rootState.notifications.status = Object.create(null)
+}
+
+sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
+
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
   CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN,
@@ -151,6 +169,7 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
+setupRootState()
 const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
@@ -194,6 +213,8 @@ self.addEventListener('message', function (event) {
     console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
       case 'sbp': {
+        // We don't filter the selectors because such a filter would be
+        // difficult to implement and easy to circumvent.
         const port = event.data.port
         ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           const { data, transferables } = serializer(r)
@@ -275,12 +296,10 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
   // app
   switch (key) {
     case KV_KEYS.LAST_LOGGED_IN: {
-      if (!rootState.lastLoggedIn) rootState.lastLoggedIn = Object.create(null)
       rootState.lastLoggedIn[contractID] = data
       break
     }
     case KV_KEYS.UNREAD_MESSAGES: {
-      if (!rootState.chatroom) rootState.chatroom = Object.create(null)
       rootState.chatroom.unreadMessages = data
       break
     }
@@ -289,7 +308,6 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
       break
     }
     case KV_KEYS.NOTIFICATIONS: {
-      if (!rootState.notifications) rootState.notifications = Object.create(null)
       rootState.notifications.status = data
       break
     }
@@ -302,14 +320,8 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
 sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageHash }) => {
   const rootState = sbp('chelonia/rootState')
   if (messageHash) {
-    // `rootState.chatroom` mirrors the 'chatroom' module in the app
-    if (!rootState.chatroom) rootState.chatroom = Object.create(null)
-    if (!rootState.chatroom.chatRoomScrollPosition) rootState.chatroom.chatRoomScrollPosition = Object.create(null)
-
     rootState.chatroom.chatRoomScrollPosition[chatRoomID] = messageHash
   } else {
-    if (!rootState.chatroom?.chatRoomScrollPosition) return
-
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
   sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)

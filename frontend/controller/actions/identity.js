@@ -532,8 +532,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/chatroom/join', {
       ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
-      // 'undefined' is for ourselves
-      data: { memberID: [undefined, ...partnerIDs] }
+      data: { memberID: [identityContractID, ...partnerIDs] }
     })
 
     const switchChannelAfterJoined = (contractID: string) => {

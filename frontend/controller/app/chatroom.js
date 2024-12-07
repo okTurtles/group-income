@@ -10,6 +10,7 @@ const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, cha
   }
 }
 
+// handle incoming chatroom-related events that are sent from the service worker
 sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return

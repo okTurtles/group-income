@@ -74,6 +74,10 @@ export const encryptedAction = (
         // we're subscribed or should be, we use an ephemeral retain here that
         // is undone at the end in a finally block.
         await sbp('chelonia/contract/retain', contractID, { ephemeral: true }).catch(e => {
+          // We use `retainFailed` because the `finally` block should only
+          // release when `retain` succeeded. Moving the `retain` call outside
+          // of the `try` block would have the same effect but would require
+          // duplicating the error handler.
           retainFailed = true
           throw e
         })

@@ -11,6 +11,7 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { GIActionParams } from '../actions/types.js'
 
+// handle incoming group-related events that are sent from the service worker
 sbp('okTurtles.events/on', JOINED_GROUP, ({ identityContractID, groupContractID }) => {
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return

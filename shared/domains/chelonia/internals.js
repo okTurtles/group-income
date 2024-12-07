@@ -362,7 +362,7 @@ export default (sbp('sbp/selectors/register', {
           : this.config.contracts.defaults.modules[dep]
       },
       sbp: contractSBP,
-      fetchServerTime: async (fallback: ?boolean) => {
+      fetchServerTime: async (fallback: ?boolean = true) => {
         // If contracts need the current timestamp (for example, for metadata 'createdDate')
         // they must call this function so that clients are kept synchronized to the server's
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict

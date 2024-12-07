@@ -66,11 +66,20 @@ const generateJwt = async (endpoint: URL): Promise<string> => {
     // $FlowFixMe[incompatible-call]
   )).toString('base64url')
   const body = Buffer.from(JSON.stringify(
+    // We're expecting to use the JWT immediately. We set a 10-minute window
+    // for using the JWT (5 minutes into the past, 5 minutes into the future)
+    // to account for potential network delays and clock drift.
     Object.fromEntries([
+      // token audience
       ['aud', audience],
-      ['exp', now + 90],
+      // 'expiry' / 'not after' value for the token
+      ['exp', now + 300],
+      // (optional) issuance time for the token
       ['iat', now],
-      ['nbf', now - 90],
+      // 'not before' value for the JWT
+      ['nbf', now - 300],
+      // URI used for identifying ourselves. This can be used by the push
+      // provider to get in touch in case of issues.
       ['sub', vapid.VAPID_EMAIL]
     ])
     // $FlowFixMe[incompatible-call]

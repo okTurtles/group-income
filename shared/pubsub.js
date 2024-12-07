@@ -207,8 +207,10 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
 
 export function createMessage (type: string, data: JSONType, meta: ?Object): Object {
   const message = { ...meta, type, data }
+  let string: string
   const stringify = function () {
-    return JSON.stringify(this)
+    if (!string) string = JSON.stringify(this)
+    return string
   }
   // $FlowFixMe[prop-missing]
   Object.defineProperties(message, {

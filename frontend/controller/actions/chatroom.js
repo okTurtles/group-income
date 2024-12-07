@@ -253,10 +253,13 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/unpinMessage', L('Failed to unpin message.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
     const rootState = sbp('state/vuex/state')
-    const userID = params.data.memberID || rootState.loggedIn.identityContractID
-    const userIDs = Array.isArray(userID)
-      ? userID.map(x => x == null ? rootState.loggedIn.identityContractID : x)
-      : [userID]
+    const identityContractID = rootState.loggedIn.identityContractID
+    // We accept an array for memberID to aggregate all joins
+    const userIDs = (
+      Array.isArray(params.data.memberID) ? params.data.memberID : [params.data.memberID]
+    // If the memberID isn't specified, it's ourselves joining. This is
+    // consistent with how the contract works and produces shorter messages
+    ).map(memberID => memberID == null ? identityContractID : memberID)
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
@@ -296,10 +299,13 @@ export default (sbp('sbp/selectors/register', {
               }))
             }
           ],
-          ...(Array.isArray(userID)
-            ? userID.map(cID => sendMessage({ ...params, data: { memberID: cID }, returnInvocation: true }))
-            : [sendMessage({ ...params, returnInvocation: true })]
-          )
+          ...userIDs.map(cID => sendMessage({
+            ...params,
+            data: cID === identityContractID
+              ? {}
+              : { memberID: cID },
+            returnInvocation: true
+          }))
         ],
         signingKeyId
       })

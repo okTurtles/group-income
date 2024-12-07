@@ -85,7 +85,13 @@ sbp('sbp/selectors/register', {
     const contractID = deserializedHEAD.contractID
     const cheloniaState = sbp('chelonia/rootState')
     // If the contract has been removed or the height hasn't been updated,
-    // there's nothing to persist
+    // there's nothing to persist.
+    // If `!cheloniaState.contracts[contractID]`, the contract's been removed
+    // and therefore we shouldn't save it.
+    // If `cheloniaState.contracts[contractID].height < deserializedHEAD.head.height`,
+    // it means that the message wasn't processed (we'd expect the height to
+    // be `>=` than the message's height if so), and therefore we also shouldn't
+    // save it.
     if (!cheloniaState.contracts[contractID] || cheloniaState.contracts[contractID].height < deserializedHEAD.head.height) {
       return
     }
@@ -224,6 +230,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     }
   },
   socketHandlers: {
+    // The `close()` handler signals the server that the WS has been closed and
+    // that subsequent messages to subscribed channels should now be sent to its
+    // associated web push subscription, if it exists.
     close () {
       const socket = this
       const { server } = this
@@ -231,8 +240,6 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const subscriptionId = socket.pushSubscriptionId
 
       if (!subscriptionId) return
-      delete socket.pushSubscriptionId
-
       if (!server.pushSubscriptions[subscriptionId]) return
 
       server.pushSubscriptions[subscriptionId].sockets.delete(socket)
@@ -272,11 +279,17 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         socket.send(createPushErrorResponse({ message: `No handler for the '${action}' action` }))
       }
     },
+    // This handler adds subscribed channels to the web push subscription
+    // associated with the WS, so that when the WS is closed we can continue
+    // sending messages as web push notifications.
     [NOTIFICATION_TYPE.SUB] ({ channelID }: SubMessage) {
       const socket = this
       const { server } = this
 
+      // If the WS doesn't have an associated push subscription, we're done
       if (!socket.pushSubscriptionId) return
+      // If the WS has an associated push subscription that's since been
+      // removed, delete the association and return.
       if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
         delete socket.pushSubscriptionId
         return
@@ -284,11 +297,17 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
       addChannelToSubscription(server, socket.pushSubscriptionId, channelID)
     },
+    // This handler removes subscribed channels from the web push subscription
+    // associated with the WS, so that when the WS is closed we don't send
+    // messages as web push notifications.
     [NOTIFICATION_TYPE.UNSUB] ({ channelID }: UnsubMessage) {
       const socket = this
       const { server } = this
 
+      // If the WS doesn't have an associated push subscription, we're done
       if (!socket.pushSubscriptionId) return
+      // If the WS has an associated push subscription that's since been
+      // removed, delete the association and return.
       if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
         delete socket.pushSubscriptionId
         return
