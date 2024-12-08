@@ -18,7 +18,9 @@
 
       .c-img-data
         .c-name.has-ellipsis {{ displayName }}
-        .c-filename.has-ellipsis {{ currentImage.name }}
+        .c-filename-and-size
+          .c-filename.has-ellipsis {{ currentImage.name }}
+          .c-file-size {{ displayFilesize(currentImage.size) }}
 
       button.is-icon-small.c-close-btn(
         type='button'
@@ -48,6 +50,7 @@ import trapFocus from '@utils/trapFocus.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
+import { formatBytesDecimal } from '@view-utils/filters.js'
 
 export default {
   // NOTE: gave this component a generic name in case this is used outside the chatroom area. (eg. instead of 'ChatImageViewer' etc.)
@@ -125,6 +128,9 @@ export default {
     this.touchMatchMedia.onchange = null
   },
   methods: {
+    displayFilesize (size) {
+      return `(${formatBytesDecimal(size)})`
+    },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
     },
@@ -250,12 +256,25 @@ $cta-zindex: 3;
     font-weight: 700;
   }
 
-  .c-filename {
+  .c-filename-and-size {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    column-gap: 0.5rem;
+  }
+
+  .c-file-size {
+    flex-shrink: 0;
+  }
+
+  .c-filename,
+  .c-file-size {
     font-size: $size_5;
   }
 
   .c-name,
-  .c-filename {
+  .c-filename,
+  .c-file-size {
     user-select: none;
     text-shadow: 1px 1px 2px #1e2021;
   }

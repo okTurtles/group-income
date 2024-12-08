@@ -234,7 +234,8 @@ export default {
             ownerID: this.ownerID,
             imgUrl: entry.url || this.objectURLList[index] || '',
             createdAt: this.createdAt || new Date(),
-            id: randomHexString(12)
+            id: randomHexString(12),
+            size: entry.size
           }
         })
       const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
