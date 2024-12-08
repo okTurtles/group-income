@@ -41,6 +41,8 @@
       @click='selectNextImage'
     )
       i.icon-chevron-right
+
+  a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
@@ -337,5 +339,13 @@ $cta-zindex: 3;
       right: 0.75rem;
     }
   }
+}
+
+.c-invisible-link {
+  position: relative;
+  top: -10rem;
+  left: -10rem;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
