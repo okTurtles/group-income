@@ -145,7 +145,7 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
-    const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId
+    const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
     const args = isCreator
       ? null
       : {
@@ -222,7 +222,7 @@ export default ({
   },
   PROPOSAL_CLOSED (data: { proposal: Object, isCreator: boolean }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
-    const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId
+    const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
 
     const statusMap = {
       [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
