@@ -702,7 +702,6 @@ sbp('chelonia/defineContract', {
             createdDate: meta.createdDate,
             groupID: contractID,
             creatorID: innerSigningContractID,
-            isCreator: innerSigningContractID === loggedIn.identityContractID,
             subtype: typeToSubTypeMap[data.proposalType]
           })
         }
@@ -1552,7 +1551,6 @@ sbp('chelonia/defineContract', {
         sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
           createdDate: meta.createdDate,
           groupID: contractID,
-          isCreator: loggedIn.identityContractID === proposal.creatorID,
           proposal
         })
       }

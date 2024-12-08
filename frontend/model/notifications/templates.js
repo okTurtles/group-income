@@ -144,8 +144,9 @@ export default ({
       scope: 'group'
     }
   },
-  NEW_PROPOSAL (data: { groupID: string, creatorID: string, isCreator: boolean, subtype: NewProposalType }) {
-    const args = data.isCreator
+  NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
+    const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId
+    const args = isCreator
       ? null
       : {
           name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
@@ -153,22 +154,22 @@ export default ({
         }
 
     const bodyTemplateMap = {
-      ADD_MEMBER: data.isCreator
+      ADD_MEMBER: isCreator
         ? L('you proposed to add a member to the group.')
         : L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', args),
-      CHANGE_MINCOME: data.isCreator
+      CHANGE_MINCOME: isCreator
         ? L('you proposed to change the group mincome.')
         : L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', args),
-      CHANGE_DISTRIBUTION_DATE: data.isCreator
+      CHANGE_DISTRIBUTION_DATE: isCreator
         ? L('you proposed to change the group distribution date.')
         : L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', args),
-      CHANGE_VOTING_RULE: data.isCreator
+      CHANGE_VOTING_RULE: isCreator
         ? L('you proposed to change the group voting system.')
         : L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', args),
-      REMOVE_MEMBER: data.isCreator
+      REMOVE_MEMBER: isCreator
         ? L('you proposed to remove a member from the group.')
         : L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', args),
-      GENERIC: data.isCreator
+      GENERIC: isCreator
         ? L('you created a proposal.')
         : L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
     }
@@ -221,6 +222,7 @@ export default ({
   },
   PROPOSAL_CLOSED (data: { proposal: Object, isCreator: boolean }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
+    const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId
 
     const statusMap = {
       [STATUS_PASSED]: { icon: 'check', level: 'success', closedWith: L('accepted') },
@@ -232,7 +234,7 @@ export default ({
       ...options,
       ...LTags('strong'),
       closedWith: statusMap[status].closedWith,
-      name: !data.isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
+      name: !isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
     }
 
     if (options.memberID) {
@@ -242,19 +244,19 @@ export default ({
     }
 
     const bodyTemplateMap = {
-      [PROPOSAL_INVITE_MEMBER]: data.isCreator
+      [PROPOSAL_INVITE_MEMBER]: isCreator
         ? L('your proposal to add {member} to the group was {strong_}{closedWith}{_strong}.', args)
         : L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_REMOVE_MEMBER]: data.isCreator
+      [PROPOSAL_REMOVE_MEMBER]: isCreator
         ? L('your proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.', args)
         : L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_GROUP_SETTING_CHANGE]: data.isCreator
+      [PROPOSAL_GROUP_SETTING_CHANGE]: isCreator
         ? L('your proposal to change group\'s {setting} to {value} was {strong_}{closedWith}{_strong}.', args)
         : L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_PROPOSAL_SETTING_CHANGE]: data.isCreator
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]: isCreator
         ? L('your proposal to change group\'s {setting} was {strong_}{closedWith}{_strong}.', args)
         : L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", args),
-      [PROPOSAL_GENERIC]: data.isCreator
+      [PROPOSAL_GENERIC]: isCreator
         ? L('your proposal "{title}" was {strong_}{closedWith}{_strong}.', args)
         : L("{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}.", args)
     }
