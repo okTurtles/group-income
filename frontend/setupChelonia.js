@@ -10,12 +10,12 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
 // worker should call this function. On the other hand, if Chelonia is running
-// in the browsing context, the service worker is the one that should call this
+// in the browsing context, the browsing context is the one that should call this
 // function.
 const setupChelonia = async (): Promise<*> => {
   // Load Chelonia state (this needs to be done in the SW when Chelonia is
@@ -55,16 +55,22 @@ const setupChelonia = async (): Promise<*> => {
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
     await sbp('chelonia/reset', cheloniaState)
+    // [SW] If there's an active session, we need to start capture now
+    if (typeof WorkerGlobalScope === 'function') {
+      await sbp('swLogs/startCapture', identityContractID)
+    }
   })
 
   // this is to ensure compatibility between frontend and test/backend.test.js
-  sbp('okTurtles.data/set', 'API_URL', window.location.origin)
+  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: GIMessage) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
-    sbp('appLogs/save')
+    sbp('appLogs/save').catch(e => {
+      console.error('Error saving logs during error notification', e)
+    })
   }
 
   let logoutInProgress = false
@@ -131,14 +137,14 @@ const setupChelonia = async (): Promise<*> => {
         exposedGlobals: {
           // note: needs to be written this way and not simply "Notification"
           // because that breaks on mobile where Notification is undefined
-          Notification: window.Notification
+          Notification: self.Notification
         }
       }
     },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
-          sbp('gi.ui/seriousErrorBanner', e)
+          sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
           // Avoid duplicate notifications for the same message.
@@ -158,15 +164,13 @@ const setupChelonia = async (): Promise<*> => {
         errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        sbp('gi.ui/seriousErrorBanner', e)
+        sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
     }
   })
 
-  // TODO: This needs to be relayed from the originating tab to the SW. Maybe
-  // creating a selector would be more appropriate.
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
     const state = sbp('chelonia/rootState')
     if (!state.loggedIn) {
@@ -297,4 +301,19 @@ const setupChelonia = async (): Promise<*> => {
   })
 }
 
-export default setupChelonia
+// This implements a 'singleton promise' or 'lazy intialization' of setupChelonia.
+// The idea is that `setupChelonia` be called only once, regardless of how many
+// actual invocations actually happen (unless the last invocation resolved
+// and rejected)
+export default ((() => {
+  let promise
+  return () => {
+    if (!promise) {
+      promise = setupChelonia().catch((e) => {
+        promise = undefined // Reset on error
+        throw e // Re-throw the error
+      })
+    }
+    return promise
+  }
+})(): () => Promise<void>)

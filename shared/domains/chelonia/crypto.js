@@ -19,6 +19,10 @@ export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 // 32 bytes of keying material, used for external keys (such as files)
 export const EXTERNALKM32 = 'externalkm32'
 
+if (process.env.NODE_ENV === 'production' && process.env.ENABLE_UNSAFE_NULL_CRYPTO === 'true') {
+  throw new Error('ENABLE_UNSAFE_NULL_CRYPTO cannot be enabled in production mode')
+}
+
 const bytesOrObjectToB64 = (ary: Uint8Array) => {
   if (!(ary instanceof Uint8Array)) {
     throw Error('Unsupported type')
@@ -402,6 +406,7 @@ export const encrypt = (inKey: Key | string, data: string, ad?: string): string 
     const ephemeralKey = nacl.box.keyPair()
     const box = nacl.box(messageUint8, encryptionNonce, key.publicKey, ephemeralKey.secretKey)
     // Attempt to discard the data in memory for ephemeralKey.secretKey
+    crypto.getRandomValues(ephemeralKey.secretKey)
     ephemeralKey.secretKey.fill(0)
 
     const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)

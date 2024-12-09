@@ -21,6 +21,7 @@ import type {
 } from '~/shared/pubsub.js'
 
 import type { JSONType, JSONObject } from '~/shared/types.js'
+import { postEvent } from './push.js'
 
 const { bold } = require('chalk')
 const WebSocket = require('ws')
@@ -105,7 +106,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   server.channels = new Set()
   server.customServerEventHandlers = { ...options.serverHandlers }
   server.customSocketEventHandlers = { ...options.socketHandlers }
-  server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
+  server.customMessageHandlers = { ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByChannelID = Object.create(null)
   server.pushSubscriptions = Object.create(null)
@@ -163,11 +164,22 @@ const defaultServerHandlers = {
     const url = request.url
     const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
     const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
+    const send = socket.send.bind(socket)
     socket.id = generateSocketID(debugID)
     socket.activeSinceLastPing = true
     socket.pinged = false
     socket.server = server
     socket.subscriptions = new Set()
+    // Sometimes (like when using `createMessage`), we want to send objects that
+    // are serialized as strings. The `ws` library sends these as binary data,
+    // whereas the client expects strings. This avoids having to manually
+    // specify `{ binary: false }` along with calls.
+    socket.send = function (data) {
+      if (typeof data === 'object' && typeof data[Symbol.toPrimitive] === 'function') {
+        return send(data[Symbol.toPrimitive]())
+      }
+      return send(data)
+    }
 
     log.bold(`Socket ${socket.id} connected. Total: ${this.clients.size}`)
 
@@ -231,14 +243,16 @@ const defaultSocketEventHandlers = {
     }
     // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
-    const handler = server.messageHandlers[msg.type]
+    const defaultHandler = defaultMessageHandlers[msg.type]
+    const customHandler = server.customMessageHandlers[msg.type]
 
-    if (handler) {
+    if (defaultHandler || customHandler) {
       try {
-        handler.call(socket, msg)
+        defaultHandler?.call(socket, msg)
+        customHandler?.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
-        log.error(error, 'onMesage')
+        log.error(error, 'onMessage')
         server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
@@ -322,9 +336,57 @@ const publicMethods = {
   ) {
     const server = this
 
+    const msg = typeof message === 'string' ? message : JSON.stringify(message)
+    let shortMsg
+    // Utility function to remove `data` (i.e., the GIMessage data) from a
+    // message. We need this for push notifications, which may have a certain
+    // maximum size (usually around 4 KiB)
+    const shortenPayload = () => {
+      if (!shortMsg && (typeof message === 'object' && message.type === NOTIFICATION_TYPE.ENTRY && message.data)) {
+        delete message.data
+        shortMsg = JSON.stringify(message)
+      }
+      return shortMsg
+    }
+
     for (const client of to || server.clients) {
+      // `client` could be either a WebSocket or a wrapped subscription info
+      // object
+      // Duplicate message sending (over both WS and push) is handled on the
+      // WS logic, for the `close` event (to remove the WS and send over push)
+      // and for the `STORE_SUBSCRIPTION` WS action.
+      if (client.endpoint) {
+        // `client.endpoint` means the client is a subscription info object
+        // The max length for push notifications in many providers is 4 KiB.
+        // However, encrypting adds a slight overhead of 17 bytes at the end
+        // and 86 bytes at the start.
+        if (msg.length > (4096 - 86 - 17)) {
+          if (!shortenPayload()) {
+            console.info('Skipping too large of a payload for', client.id)
+            continue
+          }
+        }
+        postEvent(client, shortMsg || msg).catch(e => {
+          // If we have an error posting due to too large of a payload and the
+          // message wasn't already shortened, try again
+          if (e?.message === 'Payload too large') {
+            if (shortMsg || !shortenPayload()) {
+              // The max length for push notifications in many providers is 4 KiB.
+              console.info('Skipping too large of a payload for', client.id)
+              return
+            }
+            postEvent(client, shortMsg).catch(e => {
+              console.error(e, 'Error posting push notification')
+            })
+            return
+          }
+          console.error(e, 'Error posting push notification')
+        })
+        continue
+      }
       if (client.readyState === WebSocket.OPEN && client !== except) {
-        client.send(typeof message === 'string' ? message : JSON.stringify(message))
+        // In this branch, we're dealing with a WebSocket
+        client.send(msg)
       }
     }
   },

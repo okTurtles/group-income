@@ -9,6 +9,7 @@ import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
+import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
 
 const Boom = require('@hapi/boom')
@@ -211,5 +212,5 @@ export default async () => {
     }
     numNewKeys && console.info(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
-  await initZkpp()
+  await Promise.all([initVapid(), initZkpp()])
 }

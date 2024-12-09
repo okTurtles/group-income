@@ -634,7 +634,7 @@ route.POST('/kv/{contractID}/{key}', {
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
-  await sbp('backend/server/broadcastKV', contractID, key, request.payload)
+  await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
   return h.response().code(204)
 })

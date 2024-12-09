@@ -91,8 +91,7 @@ sbp('sbp/selectors/register', {
     keysToRotate: string[] | '*' | 'pending',
     shareNewKeysSelector?: string
   ) => {
-    const rootState = sbp('state/vuex/state')
-    const state = rootState[contractID]
+    const state = sbp('chelonia/contract/state', contractID)
 
     if (!state) {
       throw new Error(`[gi.actions/out/rotateKeys] Cannot rotate keys for ${contractID}: No state exists`)

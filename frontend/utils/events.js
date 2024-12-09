@@ -66,3 +66,10 @@ export const CHELONIA_STATE_MODIFIED = 'chelonia-state-modified'
 export const NOTIFICATION_EMITTED = 'notification-emitted'
 export const NOTIFICATION_REMOVED = 'notification-removed'
 export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'
+
+export const NEW_CHATROOM_UNREAD_POSITION = 'new-chatroom-unread-position'
+export const NEW_LAST_LOGGED_IN = 'new-last-logged-in'
+export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
+export const NEW_PREFERENCES = 'new-preferences'
+
+export const SERIOUS_ERROR = 'serious-error'
