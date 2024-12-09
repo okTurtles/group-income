@@ -515,14 +515,25 @@ img.c-preview-image {
   display: flex;
   align-items: center;
   transform: translateY(0.25rem);
+  column-gap: 0.5rem;
   z-index: 1;
 
   button.c-cta-btn {
-    color: $general_0;
+    color: var(--image-viewer-cta-color);
+    background-color: var(--image-viewer-slider-bg-color);
+    border-radius: 0.25rem;
+    border: 1px solid var(--image-viewer-cta-color);
+
+    @include phone {
+      font-size: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
 
     &:hover,
     &:focus {
-      color: var(--image-viewer-text-color);
+      color: var(--image-viewer-cta-color_active);
+      border-color: var(--image-viewer-cta-color_active);
     }
   }
 }

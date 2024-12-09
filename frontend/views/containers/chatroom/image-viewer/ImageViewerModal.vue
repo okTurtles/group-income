@@ -181,6 +181,8 @@ $cta-zindex: 3;
   --image-viewer-slider-bg-color: #2e3032;
   --image-viewer-btn-color_active: #717879;
   --image-viewer-btn-text-color_active: #1e2021;
+  --image-viewer-cta-color: #aeaeae;
+  --image-viewer-cta-color_active: #ededed;
 
   .is-dark-theme & {
     --image-viewer-bg-color: #717879;
@@ -189,6 +191,8 @@ $cta-zindex: 3;
     --image-viewer-slider-bg-color: #1e2021;
     --image-viewer-btn-color_active: #2e3032;
     --image-viewer-btn-text-color_active: #e8e8e8;
+    --image-viewer-cta-color: #aeaeae;
+    --image-viewer-cta-color_active: #ededed;
   }
 }
 
