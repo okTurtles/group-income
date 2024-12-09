@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-item-wrapper(data-test='proposalItem')
+li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
   .c-item
     .c-main
       .c-icons
