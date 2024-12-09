@@ -31,8 +31,6 @@ const path = require('path')
 chalk.level = 2 // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
 
-// var unsignedMsg = sign(personas[0], 'futz')
-
 // TODO: replay attacks? (need server-provided challenge for `msg`?)
 //       nah, this should be taken care of by TLS. However, for message
 //       passing we should be using a forward-secure protocol. See

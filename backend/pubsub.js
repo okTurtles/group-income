@@ -350,7 +350,13 @@ const publicMethods = {
     }
 
     for (const client of to || server.clients) {
+      // `client` could be either a WebSocket or a wrapped subscription info
+      // object
+      // Duplicate message sending (over both WS and push) is handled on the
+      // WS logic, for the `close` event (to remove the WS and send over push)
+      // and for the `STORE_SUBSCRIPTION` WS action.
       if (client.endpoint) {
+        // `client.endpoint` means the client is a subscription info object
         // The max length for push notifications in many providers is 4 KiB.
         // However, encrypting adds a slight overhead of 17 bytes at the end
         // and 86 bytes at the start.
@@ -379,6 +385,7 @@ const publicMethods = {
         continue
       }
       if (client.readyState === WebSocket.OPEN && client !== except) {
+        // In this branch, we're dealing with a WebSocket
         client.send(msg)
       }
     }

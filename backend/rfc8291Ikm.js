@@ -1,5 +1,5 @@
 // Key derivation as per RFC 8291 (for sending encrypted push notifications)
-export default async (uaPublic: Uint8Array, salt: SharedArrayBuffer): Promise<[ArrayBuffer, ArrayBuffer]> => {
+export default async (uaPublic: Uint8Array, salt: Uint8Array): Promise<[ArrayBuffer, ArrayBuffer]> => {
   const [[asPrivateKey, asPublic], uaPublicKey] = await Promise.all([
     crypto.subtle.generateKey(
       {

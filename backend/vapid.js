@@ -59,6 +59,9 @@ export const initVapid = async () => {
 const generateJwt = async (endpoint: URL): Promise<string> => {
   const now = Date.now() / 1e3 | 0
 
+  // `endpoint` is coerced into a URL in subscriptionInfoWrapper
+  // The audience is the origin, see RFC 8292 (VAPID) section 2:
+  // <https://datatracker.ietf.org/doc/html/rfc8292#section-2>
   const audience = endpoint.origin
 
   const header = Buffer.from(JSON.stringify(

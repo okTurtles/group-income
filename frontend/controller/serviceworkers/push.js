@@ -27,11 +27,6 @@ export default (sbp('sbp/selectors/register', {
             applicationServerKey: data.data
           })
         }
-        const timeoutId = setTimeout(() => {
-          sbp('okTurtles.events/off', REQUEST_TYPE.PUSH_ACTION, handler)
-          reject(new Error('Timed out requesting VAPID key'))
-        }, 10e3)
-
         const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
         if (!pubsub) reject(new Error('Missing pubsub instance'))
 
@@ -41,6 +36,11 @@ export default (sbp('sbp/selectors/register', {
         }
 
         sbp('okTurtles.events/on', REQUEST_TYPE.PUSH_ACTION, handler)
+        const timeoutId = setTimeout(() => {
+          sbp('okTurtles.events/off', REQUEST_TYPE.PUSH_ACTION, handler)
+          reject(new Error('Timed out requesting VAPID key'))
+        }, 10e3)
+
         pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,
           { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }

@@ -110,6 +110,8 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
         return subcriptionId
       }
     },
+    // These encryption keys are used for encrypting push notification bodies
+    // and are unrelated to VAPID, which is used for provenance.
     'encryptionKeys': {
       get: (() => {
         let count = 0
@@ -123,14 +125,21 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
           // odds of a collision due to salt reuse to under 10**-18.
           if ((count | 0) === 0) {
             if (!salt) {
+              // `this.keys.auth` is a salt value that comes from the browser
               // $FlowFixMe[incompatible-call]
               salt = Buffer.from(this.keys.auth, 'base64url')
             }
             if (!uaPublic) {
+              // `this.keys.p256dh` is a public key that is browser-generated
               // $FlowFixMe[incompatible-call]
               uaPublic = Buffer.from(this.keys.p256dh, 'base64url')
             }
 
+            // When we send web push notications, they must be encrypted. The
+            // `rfc8291Ikm` function will derive encryption keys based on
+            // information orginating from the web push client (i.e., the
+            // browser, which is the `uaPublic` and `salt` parameters), and a
+            // server encryption key.
             resultPromise = rfc8291Ikm(uaPublic, salt)
             count = 1
           } else {
@@ -154,64 +163,6 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
   return subscriptionInfo
 }
 
-export const pushServerActionhandlers: any = {
-  [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
-    const socket = this
-    socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
-  },
-  async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
-    const socket = this
-    const { server } = socket
-    const subscription = payload
-    const subscriptionId = await getSubscriptionId(subscription)
-
-    if (!server.pushSubscriptions[subscriptionId]) {
-      server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
-      addSubscriptionToIndex(subscriptionId).then(() => {
-        return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
-      }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
-      postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
-    } else {
-      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
-        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
-          if (!server.subscribersByChannelID[channelID]) return
-          server.subscribersByChannelID[channelID].delete(server.pushSubscriptions[subscriptionId])
-        })
-      }
-    }
-    if (socket.pushSubscriptionId) {
-      if (socket.pushSubscriptionId === subscriptionId) return
-      const oldSubscriptionId = socket.pushSubscriptionId
-      server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
-      if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
-        server.pushSubscriptions[oldSubscriptionId].subscriptions.forEach((channelID) => {
-          if (!server.subscribersByChannelID[channelID]) {
-            server.subscribersByChannelID[channelID] = new Set()
-          }
-          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
-        })
-      }
-    }
-    socket.pushSubscriptionId = subscriptionId
-    server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
-      server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
-    })
-    server.pushSubscriptions[subscriptionId].sockets.add(socket)
-    socket.subscriptions?.forEach(channelID => {
-      server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
-    })
-    saveSubscription(server, subscriptionId)
-  },
-  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
-    const socket = this
-    const { server, pushSubscriptionId: subscriptionId } = socket
-
-    if (subscriptionId) {
-      removeSubscription(server, subscriptionId)
-    }
-  }
-}
-
 const removeSubscription = (server, subscriptionId) => {
   const subscription = server.pushSubscriptions[subscriptionId]
   delete server.pushSubscriptions[subscriptionId]
@@ -230,6 +181,20 @@ const deleteClient = (subscriptionId) => {
   removeSubscription(server, subscriptionId)
 }
 
+// Web push subscriptions (that contain a body) are mandatorily encrypted. The
+// encryption method and keys used are described by RFC 8188 and RFC 8291.
+// The encryption keys used are derived from a EC key pair (browser-generated),
+// a salt (browser-generated) and a second EC key pair (server-generated).
+// The browser generated parameters are sent over to us via the WebSocket.
+// Although they should be protected, their compromise doesn't mean that
+// confidentiality of past or future messages is affected, since only the EC
+// public component is sent over the network.
+// The encryption keys used correspond to a specific client. Although they are
+// supposed to identify a particular client, there is no way to make sure that
+// there isn't a MitM. However, we don't really send information as push
+// push notifications that isn't already public or could be derived from other
+// public sources. The main concern if the encryption is compromised would be
+// the ability to infer which channels a client is subscribed to.
 const encryptPayload = async (subcription: Object, data: string) => {
   const readableStream = new Response(data).body
   const [asPublic, IKM] = await subcription.encryptionKeys
@@ -287,6 +252,67 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
     }
     if (req.status === 413) {
       throw new Error('Payload too large')
+    }
+  }
+}
+
+export const pushServerActionhandlers: any = {
+  [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY] () {
+    const socket = this
+    socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
+  },
+  async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
+    const socket = this
+    const { server } = socket
+    const subscription = payload
+    const subscriptionId = await getSubscriptionId(subscription)
+
+    if (!server.pushSubscriptions[subscriptionId]) {
+      server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+      addSubscriptionToIndex(subscriptionId).then(() => {
+        return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
+      }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
+      // Send an initial push notification to verify that the endpoint works
+      // This is mostly for testing to be able to auto-remove invalid or expired
+      // endpoints.
+      postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
+    } else {
+      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) return
+          server.subscribersByChannelID[channelID].delete(server.pushSubscriptions[subscriptionId])
+        })
+      }
+    }
+    if (socket.pushSubscriptionId) {
+      if (socket.pushSubscriptionId === subscriptionId) return
+      const oldSubscriptionId = socket.pushSubscriptionId
+      server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
+      if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[oldSubscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) {
+            server.subscribersByChannelID[channelID] = new Set()
+          }
+          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
+        })
+      }
+    }
+    socket.pushSubscriptionId = subscriptionId
+    server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+      server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
+    })
+    server.pushSubscriptions[subscriptionId].sockets.add(socket)
+    socket.subscriptions?.forEach(channelID => {
+      server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
+    })
+    saveSubscription(server, subscriptionId)
+  },
+  [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
+    const socket = this
+    const { server, pushSubscriptionId: subscriptionId } = socket
+
+    if (subscriptionId) {
+      removeSubscription(server, subscriptionId)
     }
   }
 }
