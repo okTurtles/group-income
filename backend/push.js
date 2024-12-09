@@ -268,15 +268,22 @@ export const pushServerActionhandlers: any = {
     const subscriptionId = await getSubscriptionId(subscription)
 
     if (!server.pushSubscriptions[subscriptionId]) {
+      // If this is a new subscription, we call `subscriptionInfoWrapper` and
+      // store it in memory.
       server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
       addSubscriptionToIndex(subscriptionId).then(() => {
         return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
       }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
       // Send an initial push notification to verify that the endpoint works
       // This is mostly for testing to be able to auto-remove invalid or expired
-      // endpoints.
+      // endpoints. This doesn't need more error handling than any other failed
+      // call to `postEvent`.
       postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
     } else {
+      // Otherwise, if this is an _existing_ push subscription, we don't need
+      // to all `subscriptionInfoWrapper` but we need to stop sending messages
+      // over the push subscription (since we now have a WS to use, the one
+      // over which the message came).
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
           if (!server.subscribersByChannelID[channelID]) return
@@ -284,6 +291,9 @@ export const pushServerActionhandlers: any = {
         })
       }
     }
+    // If the WS has an associated push subscription that's different from the
+    // one we've received, we need to 'switch' the WS to be associated  with the
+    // new push subscription instead.
     if (socket.pushSubscriptionId) {
       if (socket.pushSubscriptionId === subscriptionId) return
       const oldSubscriptionId = socket.pushSubscriptionId
@@ -297,6 +307,10 @@ export const pushServerActionhandlers: any = {
         })
       }
     }
+    // Now, we're almost done setting things up. We'll link together the push
+    // subscription and the WS and add all existing channel subscriptions to the
+    // web push subscription (so that we can easily switch over if / when the
+    // WS is closed)
     socket.pushSubscriptionId = subscriptionId
     server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
       server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
