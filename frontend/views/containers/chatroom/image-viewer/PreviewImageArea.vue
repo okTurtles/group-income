@@ -15,7 +15,7 @@
     @load='onImgLoad'
   )
 
-  .c-zoom-slider-container(
+  .c-cta-container(
     v-if='ephemeral.isLoaded'
     @pointerdown.stop=''
     @pointermove.stop=''
@@ -33,6 +33,17 @@
       :unit='config.sliderUnit'
       @input='onSliderUpdate'
     )
+
+    .c-btns-container
+      button.is-icon-small.c-cta-btn(
+        :aria-label='L("Download")'
+      )
+        i.icon-download
+
+      button.is-icon-small.c-cta-btn(
+        :aria-label='L("Delete")'
+      )
+        i.icon-trash-alt
 
   .c-loader-animation(v-if='!ephemeral.isLoaded')
 </template>
@@ -469,12 +480,16 @@ img.c-preview-image {
   }
 }
 
-.c-zoom-slider-container {
+.c-cta-container {
   position: absolute;
   left: 1rem;
   bottom: 1rem;
   z-index: 5;
   padding: 0.25rem 0.75rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 0.75rem;
 
   &::after {
     content: "";
@@ -492,6 +507,22 @@ img.c-preview-image {
     @include if-forced-color-mode {
       border: 1px solid buttonborder;
       opacity: 1;
+    }
+  }
+}
+
+.c-btns-container {
+  display: flex;
+  align-items: center;
+  transform: translateY(0.25rem);
+  z-index: 1;
+
+  button.c-cta-btn {
+    color: $general_0;
+
+    &:hover,
+    &:focus {
+      color: var(--image-viewer-text-color);
     }
   }
 }
