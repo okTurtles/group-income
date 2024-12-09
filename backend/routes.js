@@ -9,7 +9,7 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
@@ -116,7 +116,19 @@ route.POST('/event', {
           }
         }
       }
+      const saltUpdateToken = request.headers['shelter-salt-update-token']
+      let updateSalts
+      if (saltUpdateToken) {
+        // ..
+        const name = request.headers['shelter-name']
+        const namedContractID = name && await sbp('backend/db/lookupName', name)
+        if (namedContractID !== deserializedHEAD.contractID) {
+          throw new Error('Mismatched contract ID and name')
+        }
+        updateSalts = await redeemSaltUpdateToken(name, saltUpdateToken)
+      }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
+      await updateSalts?.()
       if (deserializedHEAD.isFirstMessage) {
         // Store attribution information
         if (credentials?.billableContractID) {
@@ -821,7 +833,7 @@ route.GET('/zkpp/{name}/contract_hash', {
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/updatePasswordHash/{name}', {
+route.POST('/zkpp/{name}/updatePasswordHash', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -841,7 +853,7 @@ route.POST('/zkpp/updatePasswordHash/{name}', {
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message)
+    console.error(e, 'Error at POST /zkpp/{name}/updatePasswordHash: ' + e.message)
   }
 
   return Boom.internal('internal error')
