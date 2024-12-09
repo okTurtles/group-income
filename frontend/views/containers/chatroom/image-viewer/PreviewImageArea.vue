@@ -41,6 +41,7 @@
         i.icon-download
 
       button.is-icon-small.c-cta-btn(
+        v-if='canDelete'
         :aria-label='L("Delete")'
       )
         i.icon-trash-alt
@@ -71,7 +72,11 @@ export default {
       type: String,
       required: true
     },
-    name: String
+    name: String,
+    canDelete: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {

@@ -7,6 +7,7 @@
       :key='currentImage.id'
       :img-src='currentImage.imgUrl'
       :name='currentImage.name'
+      :can-delete='canDelete'
     )
 
     header.c-modal-header
@@ -68,6 +69,10 @@ export default {
       type: Number,
       required: false,
       default: 0
+    },
+    canDelete: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

@@ -245,7 +245,8 @@ export default {
         null,
         {
           images: allImageAttachments,
-          initialIndex: initialIndex === -1 ? 0 : initialIndex
+          initialIndex: initialIndex === -1 ? 0 : initialIndex,
+          canDelete: this.isMsgSender || this.isGroupCreator
         }
       )
     }
