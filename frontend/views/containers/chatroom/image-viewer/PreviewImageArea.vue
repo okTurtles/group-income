@@ -15,7 +15,7 @@
     @load='onImgLoad'
   )
 
-  .c-zoom-slider-container(
+  .c-cta-container(
     v-if='ephemeral.isLoaded'
     @pointerdown.stop=''
     @pointermove.stop=''
@@ -33,6 +33,23 @@
       :unit='config.sliderUnit'
       @input='onSliderUpdate'
     )
+
+    .c-btns-container
+      button.is-icon-small.c-cta-btn(
+        :aria-label='L("Download")'
+        @click.stop='$emit("download")'
+      )
+        i.icon-download
+
+      button.is-icon-small.c-cta-btn(
+        v-if='canDelete'
+        :aria-label='L("Delete")'
+        :disabled='deleting'
+        :class='{ "is-loader": deleting }'
+        :data-loading='deleting'
+        @click.stop='$emit("delete-attachment")'
+      )
+        i.icon-trash-alt(v-if='!deleting')
 
   .c-loader-animation(v-if='!ephemeral.isLoaded')
 </template>
@@ -60,7 +77,15 @@ export default {
       type: String,
       required: true
     },
-    name: String
+    name: String,
+    canDelete: {
+      type: Boolean,
+      default: false
+    },
+    deleting: {
+      type: Boolean,
+      default: true
+    }
   },
   data () {
     return {
@@ -469,12 +494,16 @@ img.c-preview-image {
   }
 }
 
-.c-zoom-slider-container {
+.c-cta-container {
   position: absolute;
   left: 1rem;
   bottom: 1rem;
   z-index: 5;
   padding: 0.25rem 0.75rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 0.75rem;
 
   &::after {
     content: "";
@@ -492,6 +521,39 @@ img.c-preview-image {
     @include if-forced-color-mode {
       border: 1px solid buttonborder;
       opacity: 1;
+    }
+  }
+}
+
+.c-btns-container {
+  display: flex;
+  align-items: center;
+  transform: translateY(0.25rem);
+  column-gap: 0.5rem;
+  z-index: 1;
+
+  button.c-cta-btn {
+    color: var(--image-viewer-cta-color);
+    background-color: var(--image-viewer-slider-bg-color);
+    border-radius: 0.25rem;
+    border: 1px solid var(--image-viewer-cta-color);
+
+    @include phone {
+      font-size: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    &:hover,
+    &:focus {
+      color: var(--image-viewer-cta-color_active);
+      border-color: var(--image-viewer-cta-color_active);
+    }
+
+    &.is-loader::after {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: var(--image-viewer-cta-color);
     }
   }
 }

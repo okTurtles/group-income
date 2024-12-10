@@ -52,7 +52,7 @@
           )
             button.is-icon-small(
               :aria-label='L("Delete")'
-              @click='deleteAttachment(entryIndex)'
+              @click='deleteAttachment({ index: entryIndex })'
             )
               i.icon-trash-alt
 
@@ -95,9 +95,8 @@ import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { L } from '@common/common.js'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -152,6 +151,13 @@ export default {
           return this.getStretchedDimension(attachment.dimension)
         })
       }
+
+      sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
+    }
+  },
+  beforeDestroy () {
+    if (this.shouldPreviewImages) {
+      sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   methods: {
@@ -169,10 +175,16 @@ export default {
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment (index) {
-      const attachment = this.attachmentList[index]
-      if (attachment.downloadData) {
-        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+    deleteAttachment ({ index, url }) {
+      if (url) {
+        index = this.objectURLList.indexOf(url)
+      }
+
+      if (index >= 0) {
+        const attachment = this.attachmentList[index]
+        if (attachment.downloadData) {
+          this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+        }
       }
     },
     async getAttachmentObjectURL (attachment) {
@@ -229,12 +241,15 @@ export default {
 
       const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
         .map((entry, index) => {
+          const imgUrl = entry.url || this.objectURLList[index] || ''
           return {
             name: entry.name,
             ownerID: this.ownerID,
-            imgUrl: entry.url || this.objectURLList[index] || '',
             createdAt: this.createdAt || new Date(),
-            id: randomHexString(12)
+            size: entry.size,
+            id: imgUrl,
+            imgUrl,
+            manifestCid: entry.downloadData?.manifestCid
           }
         })
       const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
@@ -244,7 +259,8 @@ export default {
         null,
         {
           images: allImageAttachments,
-          initialIndex: initialIndex === -1 ? 0 : initialIndex
+          initialIndex: initialIndex === -1 ? 0 : initialIndex,
+          canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
         }
       )
     }

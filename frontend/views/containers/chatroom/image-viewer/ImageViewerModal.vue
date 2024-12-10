@@ -7,6 +7,10 @@
       :key='currentImage.id'
       :img-src='currentImage.imgUrl'
       :name='currentImage.name'
+      :can-delete='canDelete'
+      :deleting='deletingCurrentImage'
+      @download='downloadImage'
+      @delete-attachment='deleteAttachment'
     )
 
     header.c-modal-header
@@ -18,7 +22,9 @@
 
       .c-img-data
         .c-name.has-ellipsis {{ displayName }}
-        .c-filename.has-ellipsis {{ currentImage.name }}
+        .c-filename-and-size
+          .c-filename.has-ellipsis {{ currentImage.name }}
+          .c-file-size {{ displayFilesize(currentImage.size) }}
 
       button.is-icon-small.c-close-btn(
         type='button'
@@ -39,15 +45,21 @@
       @click='selectNextImage'
     )
       i.icon-chevron-right
+
+  a.c-invisible-link(
+    ref='downloadHelper'
+    @click.stop=''
+  )
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL, DELETE_ATTACHMENT, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
+import { formatBytesDecimal } from '@view-utils/filters.js'
 
 export default {
   // NOTE: gave this component a generic name in case this is used outside the chatroom area. (eg. instead of 'ChatImageViewer' etc.)
@@ -63,12 +75,18 @@ export default {
       type: Number,
       required: false,
       default: 0
+    },
+    canDelete: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
       touchMatchMedia: null,
       ephemeral: {
+        imagesToShow: [],
+        deletingImages: [],
         currentIndex: 0,
         isTouch: false
       }
@@ -90,18 +108,21 @@ export default {
         this.usernameFromID(contractID)
     },
     hasMultipleImages () {
-      return Array.isArray(this.images) && this.images.length > 1
+      return Array.isArray(this.ephemeral.imagesToShow) && this.ephemeral.imagesToShow.length > 1
     },
     showPrevButton () {
-      const len = this.images.length
+      const len = this.ephemeral.imagesToShow.length
       return len > 1 && this.ephemeral.currentIndex > 0
     },
     showNextButton () {
-      const len = this.images.length
+      const len = this.ephemeral.imagesToShow.length
       return len > 1 && this.ephemeral.currentIndex < len - 1
     },
     currentImage () {
-      return this.images[this.ephemeral.currentIndex]
+      return this.ephemeral.imagesToShow[this.ephemeral.currentIndex]
+    },
+    deletingCurrentImage () {
+      return this.ephemeral.deletingImages.includes(this.currentImage.manifestCid)
     }
   },
   created () {
@@ -109,6 +130,7 @@ export default {
       this.$nextTick(() => this.close())
     } else {
       this.ephemeral.currentIndex = this.initialIndex
+      this.ephemeral.imagesToShow = this.images
     }
 
     this.touchMatchMedia = window.matchMedia('(hover: none) and (pointer: coarse)')
@@ -119,17 +141,22 @@ export default {
   },
   mounted () {
     document.addEventListener('keydown', this.keydownHandler)
+    sbp('okTurtles.events/on', DELETE_ATTACHMENT_FEEDBACK, this.onDeleteAttachmentFeedback)
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.keydownHandler)
     this.touchMatchMedia.onchange = null
+    sbp('okTurtles.events/off', DELETE_ATTACHMENT_FEEDBACK, this.onDeleteAttachmentFeedback)
   },
   methods: {
+    displayFilesize (size) {
+      return `(${formatBytesDecimal(size)})`
+    },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
     },
     selectNextImage () {
-      if (this.ephemeral.currentIndex < this.images.length - 1) {
+      if (this.ephemeral.currentIndex < this.ephemeral.imagesToShow.length - 1) {
         this.ephemeral.currentIndex += 1
       }
     },
@@ -147,6 +174,34 @@ export default {
           break
         case 'ArrowRight':
           this.selectNextImage()
+      }
+    },
+    downloadImage () {
+      const aTag = this.$refs.downloadHelper
+
+      aTag.setAttribute('href', this.currentImage.imgUrl)
+      aTag.setAttribute('download', this.currentImage.name)
+      aTag.click()
+    },
+    deleteAttachment () {
+      if (this.deletingCurrentImage) {
+        return
+      }
+
+      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
+      this.ephemeral.deletingImages.push(this.currentImage.manifestCid)
+    },
+    onDeleteAttachmentFeedback ({ action, manifestCid }) {
+      this.ephemeral.deletingImages = this.ephemeral.deletingImages.filter(cid => cid !== manifestCid)
+
+      if (action === 'complete') {
+        this.ephemeral.imagesToShow = this.ephemeral.imagesToShow.filter(image => image.manifestCid !== manifestCid)
+
+        if (this.ephemeral.imagesToShow.length === 0) {
+          this.close()
+        } else if (this.ephemeral.currentIndex >= this.ephemeral.imagesToShow.length) {
+          this.ephemeral.currentIndex = this.ephemeral.imagesToShow.length - 1
+        }
       }
     }
   }
@@ -173,6 +228,8 @@ $cta-zindex: 3;
   --image-viewer-slider-bg-color: #2e3032;
   --image-viewer-btn-color_active: #717879;
   --image-viewer-btn-text-color_active: #1e2021;
+  --image-viewer-cta-color: #aeaeae;
+  --image-viewer-cta-color_active: #ededed;
 
   .is-dark-theme & {
     --image-viewer-bg-color: #717879;
@@ -181,6 +238,8 @@ $cta-zindex: 3;
     --image-viewer-slider-bg-color: #1e2021;
     --image-viewer-btn-color_active: #2e3032;
     --image-viewer-btn-text-color_active: #e8e8e8;
+    --image-viewer-cta-color: #aeaeae;
+    --image-viewer-cta-color_active: #ededed;
   }
 }
 
@@ -250,12 +309,25 @@ $cta-zindex: 3;
     font-weight: 700;
   }
 
-  .c-filename {
+  .c-filename-and-size {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    column-gap: 0.5rem;
+  }
+
+  .c-file-size {
+    flex-shrink: 0;
+  }
+
+  .c-filename,
+  .c-file-size {
     font-size: $size_5;
   }
 
   .c-name,
-  .c-filename {
+  .c-filename,
+  .c-file-size {
     user-select: none;
     text-shadow: 1px 1px 2px #1e2021;
   }
@@ -318,5 +390,13 @@ $cta-zindex: 3;
       right: 0.75rem;
     }
   }
+}
+
+.c-invisible-link {
+  position: relative;
+  top: -10rem;
+  left: -10rem;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
