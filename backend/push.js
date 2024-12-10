@@ -281,9 +281,13 @@ export const pushServerActionhandlers: any = {
       postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
     } else {
       // Otherwise, if this is an _existing_ push subscription, we don't need
-      // to all `subscriptionInfoWrapper` but we need to stop sending messages
+      // to call `subscriptionInfoWrapper` but we need to stop sending messages
       // over the push subscription (since we now have a WS to use, the one
       // over which the message came).
+      // We expect `server.pushSubscriptions[subscriptionId].sockets.size` to
+      // be `0` when the WS connection has been closed and has since reconnected
+      // If it's not 0, we've already run this code at least once and we don't
+      // need to run it again.
       if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
         server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
           if (!server.subscribersByChannelID[channelID]) return
@@ -296,6 +300,15 @@ export const pushServerActionhandlers: any = {
     // new push subscription instead.
     if (socket.pushSubscriptionId) {
       if (socket.pushSubscriptionId === subscriptionId) return
+      // Since the subscription has been updated, remove the old one on the
+      // assumption that it's no longer valid
+      removeSubscription(server, subscriptionId)
+      /*
+      // The code below is an alternative to removing the subscription, which is
+      // safer but can result in accumulating old subscriptions forever. What it
+      // does is treat it as a closed WS, meaning that the current WS will be
+      // associated with the subscription info we've just received, but we'll
+      // start sending messages to the old subscription as if it had been closed.
       const oldSubscriptionId = socket.pushSubscriptionId
       server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
       if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
@@ -306,11 +319,12 @@ export const pushServerActionhandlers: any = {
           server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
         })
       }
+      */
     }
     // Now, we're almost done setting things up. We'll link together the push
     // subscription and the WS and add all existing channel subscriptions to the
     // web push subscription (so that we can easily switch over if / when the
-    // WS is closed)
+    // WS is closed, see the `close` () function in socketHandlers in server.js)
     socket.pushSubscriptionId = subscriptionId
     server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
       server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
