@@ -702,6 +702,7 @@ export default ({
 
       const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
       const sendDeleteAttachmentFeedback = (action) => {
+        // Delete attachment action can lead to 'success', 'error' or can be cancelled by user.
         sbp('okTurtles.events/emit', DELETE_ATTACHMENT_FEEDBACK, { action, manifestCid })
       }
 

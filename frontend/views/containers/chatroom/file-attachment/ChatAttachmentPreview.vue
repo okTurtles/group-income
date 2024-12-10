@@ -261,7 +261,7 @@ export default {
         {
           images: allImageAttachments,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
-          canDelete: this.isMsgSender || this.isGroupCreator
+          canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
         }
       )
     }
