@@ -8,6 +8,8 @@
       :img-src='currentImage.imgUrl'
       :name='currentImage.name'
       :can-delete='canDelete'
+      @download='downloadImage'
+      @delete-attachment='deleteAttachment'
     )
 
     header.c-modal-header
@@ -43,14 +45,17 @@
     )
       i.icon-chevron-right
 
-  a.c-invisible-link(ref='downloadHelper')
+  a.c-invisible-link(
+    ref='downloadHelper'
+    @click.stop=''
+  )
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
 import { formatBytesDecimal } from '@view-utils/filters.js'
@@ -161,6 +166,16 @@ export default {
         case 'ArrowRight':
           this.selectNextImage()
       }
+    },
+    downloadImage () {
+      const aTag = this.$refs.downloadHelper
+
+      aTag.setAttribute('href', this.currentImage.imgUrl)
+      aTag.setAttribute('download', this.currentImage.name)
+      aTag.click()
+    },
+    deleteAttachment () {
+      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
     }
   }
 }

@@ -37,12 +37,14 @@
     .c-btns-container
       button.is-icon-small.c-cta-btn(
         :aria-label='L("Download")'
+        @click.stop='$emit("download")'
       )
         i.icon-download
 
       button.is-icon-small.c-cta-btn(
         v-if='canDelete'
         :aria-label='L("Delete")'
+        @click.stop='$emit("delete-attachment")'
       )
         i.icon-trash-alt
 

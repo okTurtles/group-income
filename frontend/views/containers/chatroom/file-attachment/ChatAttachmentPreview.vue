@@ -52,7 +52,7 @@
           )
             button.is-icon-small(
               :aria-label='L("Delete")'
-              @click='deleteAttachment(entryIndex)'
+              @click='deleteAttachment({ index: entryIndex })'
             )
               i.icon-trash-alt
 
@@ -95,7 +95,7 @@ import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { L } from '@common/common.js'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
@@ -152,6 +152,13 @@ export default {
           return this.getStretchedDimension(attachment.dimension)
         })
       }
+
+      sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
+    }
+  },
+  beforeDestroy () {
+    if (this.shouldPreviewImages) {
+      sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   methods: {
@@ -169,10 +176,16 @@ export default {
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment (index) {
-      const attachment = this.attachmentList[index]
-      if (attachment.downloadData) {
-        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+    deleteAttachment ({ index, url }) {
+      if (url) {
+        index = this.objectURLList.indexOf(url)
+      }
+
+      if (index >= 0) {
+        const attachment = this.attachmentList[index]
+        if (attachment.downloadData) {
+          this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+        }
       }
     },
     async getAttachmentObjectURL (attachment) {
