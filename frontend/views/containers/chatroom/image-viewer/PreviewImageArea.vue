@@ -44,9 +44,12 @@
       button.is-icon-small.c-cta-btn(
         v-if='canDelete'
         :aria-label='L("Delete")'
+        :disabled='deleting'
+        :class='{ "is-loader": deleting }'
+        :data-loading='deleting'
         @click.stop='$emit("delete-attachment")'
       )
-        i.icon-trash-alt
+        i.icon-trash-alt(v-if='!deleting')
 
   .c-loader-animation(v-if='!ephemeral.isLoaded')
 </template>
@@ -78,6 +81,10 @@ export default {
     canDelete: {
       type: Boolean,
       default: false
+    },
+    deleting: {
+      type: Boolean,
+      default: true
     }
   },
   data () {
@@ -541,6 +548,12 @@ img.c-preview-image {
     &:focus {
       color: var(--image-viewer-cta-color_active);
       border-color: var(--image-viewer-cta-color_active);
+    }
+
+    &.is-loader::after {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: var(--image-viewer-cta-color);
     }
   }
 }

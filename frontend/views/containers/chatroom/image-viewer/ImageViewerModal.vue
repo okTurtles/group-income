@@ -8,6 +8,7 @@
       :img-src='currentImage.imgUrl'
       :name='currentImage.name'
       :can-delete='canDelete'
+      :deleting='deletingCurrentImage'
       @download='downloadImage'
       @delete-attachment='deleteAttachment'
     )
@@ -85,6 +86,7 @@ export default {
       touchMatchMedia: null,
       ephemeral: {
         imagesToShow: [],
+        deletingImages: [],
         currentIndex: 0,
         isTouch: false
       }
@@ -118,6 +120,9 @@ export default {
     },
     currentImage () {
       return this.ephemeral.imagesToShow[this.ephemeral.currentIndex]
+    },
+    deletingCurrentImage () {
+      return this.ephemeral.deletingImages.includes(this.currentImage.manifestCid)
     }
   },
   created () {
@@ -179,10 +184,16 @@ export default {
       aTag.click()
     },
     deleteAttachment () {
+      if (this.deletingCurrentImage) {
+        return
+      }
+
       sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
+      this.ephemeral.deletingImages.push(this.currentImage.manifestCid)
     },
     deleteAttachmentComplete (manifestCid) {
       this.ephemeral.imagesToShow = this.ephemeral.imagesToShow.filter(image => image.manifestCid !== manifestCid)
+      this.ephemeral.deletingImages = this.ephemeral.deletingImages.filter(cid => cid !== manifestCid)
 
       if (this.ephemeral.imagesToShow.length === 0) {
         this.close()
