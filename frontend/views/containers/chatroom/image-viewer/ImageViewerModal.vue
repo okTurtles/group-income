@@ -55,7 +55,7 @@
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
-import { CLOSE_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
+import { CLOSE_MODAL, DELETE_ATTACHMENT, DELETE_ATTACHMENT_COMPLETE } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
 import { formatBytesDecimal } from '@view-utils/filters.js'
@@ -84,6 +84,7 @@ export default {
     return {
       touchMatchMedia: null,
       ephemeral: {
+        imagesToShow: [],
         currentIndex: 0,
         isTouch: false
       }
@@ -105,18 +106,18 @@ export default {
         this.usernameFromID(contractID)
     },
     hasMultipleImages () {
-      return Array.isArray(this.images) && this.images.length > 1
+      return Array.isArray(this.ephemeral.imagesToShow) && this.ephemeral.imagesToShow.length > 1
     },
     showPrevButton () {
-      const len = this.images.length
+      const len = this.ephemeral.imagesToShow.length
       return len > 1 && this.ephemeral.currentIndex > 0
     },
     showNextButton () {
-      const len = this.images.length
+      const len = this.ephemeral.imagesToShow.length
       return len > 1 && this.ephemeral.currentIndex < len - 1
     },
     currentImage () {
-      return this.images[this.ephemeral.currentIndex]
+      return this.ephemeral.imagesToShow[this.ephemeral.currentIndex]
     }
   },
   created () {
@@ -124,6 +125,7 @@ export default {
       this.$nextTick(() => this.close())
     } else {
       this.ephemeral.currentIndex = this.initialIndex
+      this.ephemeral.imagesToShow = this.images
     }
 
     this.touchMatchMedia = window.matchMedia('(hover: none) and (pointer: coarse)')
@@ -134,10 +136,12 @@ export default {
   },
   mounted () {
     document.addEventListener('keydown', this.keydownHandler)
+    sbp('okTurtles.events/on', DELETE_ATTACHMENT_COMPLETE, this.deleteAttachmentComplete)
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.keydownHandler)
     this.touchMatchMedia.onchange = null
+    sbp('okTurtles.events/off', DELETE_ATTACHMENT_COMPLETE, this.deleteAttachmentComplete)
   },
   methods: {
     displayFilesize (size) {
@@ -147,7 +151,7 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'ImageViewerModal')
     },
     selectNextImage () {
-      if (this.ephemeral.currentIndex < this.images.length - 1) {
+      if (this.ephemeral.currentIndex < this.ephemeral.imagesToShow.length - 1) {
         this.ephemeral.currentIndex += 1
       }
     },
@@ -176,6 +180,15 @@ export default {
     },
     deleteAttachment () {
       sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
+    },
+    deleteAttachmentComplete (manifestCid) {
+      this.ephemeral.imagesToShow = this.ephemeral.imagesToShow.filter(image => image.manifestCid !== manifestCid)
+
+      if (this.ephemeral.imagesToShow.length === 0) {
+        this.close()
+      } else if (this.ephemeral.currentIndex >= this.ephemeral.imagesToShow.length) {
+        this.ephemeral.currentIndex = this.ephemeral.imagesToShow.length - 1
+      }
     }
   }
 }

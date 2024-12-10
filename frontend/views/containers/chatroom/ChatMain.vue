@@ -138,7 +138,7 @@ import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS } from '@utils/events.js'
+import { CHATROOM_EVENTS, DELETE_ATTACHMENT_COMPLETE } from '@utils/events.js'
 import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
@@ -704,9 +704,13 @@ export default ({
 
       if (primaryButtonSelected) {
         const data = { hash, manifestCid, messageSender: from }
-        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
-          console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
-        })
+        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data })
+          .then(() => {
+            sbp('okTurtles.events/emit', DELETE_ATTACHMENT_COMPLETE, manifestCid)
+          })
+          .catch((e) => {
+            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+          })
       }
     },
     changeDay (index) {

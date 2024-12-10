@@ -97,7 +97,6 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { L } from '@common/common.js'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -240,15 +239,18 @@ export default {
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
+      console.log('!@# attachment list: ', this.attachmentList)
       const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
         .map((entry, index) => {
+          const imgUrl = entry.url || this.objectURLList[index] || ''
           return {
             name: entry.name,
             ownerID: this.ownerID,
-            imgUrl: entry.url || this.objectURLList[index] || '',
             createdAt: this.createdAt || new Date(),
-            id: randomHexString(12),
-            size: entry.size
+            size: entry.size,
+            id: imgUrl,
+            imgUrl,
+            manifestCid: entry.downloadData?.manifestCid
           }
         })
       const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
