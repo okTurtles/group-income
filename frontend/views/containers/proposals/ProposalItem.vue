@@ -24,7 +24,7 @@ li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
             .button.is-icon-smaller.is-primary
               i.icon-question
 
-        p(data-test='title' v-safe-html='subtitle')
+        p.c-content-title(data-test='title' v-safe-html='subtitle')
 
         p.has-text-1(
           :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
@@ -379,6 +379,10 @@ export default ({
 
   &-content {
     flex-grow: 1;
+  }
+
+  .c-content-title {
+    word-break: break-word;
   }
 }
 
