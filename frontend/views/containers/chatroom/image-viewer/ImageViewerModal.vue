@@ -56,7 +56,7 @@
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import trapFocus from '@utils/trapFocus.js'
-import { CLOSE_MODAL, DELETE_ATTACHMENT, DELETE_ATTACHMENT_COMPLETE } from '@utils/events.js'
+import { CLOSE_MODAL, DELETE_ATTACHMENT, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'
 import { formatBytesDecimal } from '@view-utils/filters.js'
@@ -141,12 +141,12 @@ export default {
   },
   mounted () {
     document.addEventListener('keydown', this.keydownHandler)
-    sbp('okTurtles.events/on', DELETE_ATTACHMENT_COMPLETE, this.deleteAttachmentComplete)
+    sbp('okTurtles.events/on', DELETE_ATTACHMENT_FEEDBACK, this.onDeleteAttachmentFeedback)
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.keydownHandler)
     this.touchMatchMedia.onchange = null
-    sbp('okTurtles.events/off', DELETE_ATTACHMENT_COMPLETE, this.deleteAttachmentComplete)
+    sbp('okTurtles.events/off', DELETE_ATTACHMENT_FEEDBACK, this.onDeleteAttachmentFeedback)
   },
   methods: {
     displayFilesize (size) {
@@ -191,14 +191,17 @@ export default {
       sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
       this.ephemeral.deletingImages.push(this.currentImage.manifestCid)
     },
-    deleteAttachmentComplete (manifestCid) {
-      this.ephemeral.imagesToShow = this.ephemeral.imagesToShow.filter(image => image.manifestCid !== manifestCid)
+    onDeleteAttachmentFeedback ({ action, manifestCid }) {
       this.ephemeral.deletingImages = this.ephemeral.deletingImages.filter(cid => cid !== manifestCid)
 
-      if (this.ephemeral.imagesToShow.length === 0) {
-        this.close()
-      } else if (this.ephemeral.currentIndex >= this.ephemeral.imagesToShow.length) {
-        this.ephemeral.currentIndex = this.ephemeral.imagesToShow.length - 1
+      if (action === 'complete') {
+        this.ephemeral.imagesToShow = this.ephemeral.imagesToShow.filter(image => image.manifestCid !== manifestCid)
+
+        if (this.ephemeral.imagesToShow.length === 0) {
+          this.close()
+        } else if (this.ephemeral.currentIndex >= this.ephemeral.imagesToShow.length) {
+          this.ephemeral.currentIndex = this.ephemeral.imagesToShow.length - 1
+        }
       }
     }
   }

@@ -26,7 +26,7 @@ export const JOINED_CHATROOM = 'joined-chatroom'
 export const LEFT_CHATROOM = 'left-chatroom'
 export const DELETED_CHATROOM = 'deleted-chatroom'
 export const DELETE_ATTACHMENT = 'delete-attachment'
-export const DELETE_ATTACHMENT_COMPLETE = 'delete-attachment-complete'
+export const DELETE_ATTACHMENT_FEEDBACK = 'delete-attachment-complete'
 
 export const REPLACED_STATE = 'replaced-state'
 
