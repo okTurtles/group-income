@@ -51,5 +51,6 @@ export default ({
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+  row-gap: 1rem; // There should be a space between the title and the cta when they become two rows.
 }
 </style>
