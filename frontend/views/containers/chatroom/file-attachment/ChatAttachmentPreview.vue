@@ -239,7 +239,6 @@ export default {
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
-      console.log('!@# attachment list: ', this.attachmentList)
       const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
         .map((entry, index) => {
           const imgUrl = entry.url || this.objectURLList[index] || ''
