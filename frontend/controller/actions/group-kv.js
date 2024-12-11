@@ -3,10 +3,15 @@ import sbp from '@sbp/sbp'
 import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.js'
 import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
 
-sbp('okTurtles.events/on', ONLINE, () => {
-  sbp('gi.actions/group/kv/load').catch(e => {
-    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
-  })
+sbp('okTurtles.events/on', ONLINE, async () => {
+  try {
+    const identityContractID = (await sbp('chelonia/rootState')).loggedIn?.identityContractID
+    if (identityContractID) {
+      await sbp('gi.actions/group/kv/load')
+    }
+  } catch (e) {
+    console.error("Error from 'gi.actions/group/kv/load' after reestablished connection:", e)
+  }
 })
 
 export default (sbp('sbp/selectors/register', {

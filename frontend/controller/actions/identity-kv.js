@@ -6,10 +6,15 @@ import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
-sbp('okTurtles.events/on', ONLINE, () => {
-  sbp('gi.actions/identity/kv/load').catch(e => {
+sbp('okTurtles.events/on', ONLINE, async () => {
+  try {
+    const identityContractID = (await sbp('chelonia/rootState')).loggedIn?.identityContractID
+    if (identityContractID) {
+      await sbp('gi.actions/identity/kv/load')
+    }
+  } catch (e) {
     console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
-  })
+  }
 })
 
 export default (sbp('sbp/selectors/register', {
@@ -25,7 +30,7 @@ export default (sbp('sbp/selectors/register', {
     // Using 'chelonia/rootState' here as 'state/vuex/state' is not available
     // in the SW, and because, even without a SW, 'loggedIn' is not yet there
     // in Vuex state when logging in
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = (await sbp('chelonia/rootState')).loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch chatroom unreadMessages without an active session')
     }
