@@ -144,7 +144,7 @@ export default ({
       scope: 'group'
     }
   },
-  NEW_PROPOSAL (data: { groupID: string, creatorID: string, subtype: NewProposalType }) {
+  NEW_PROPOSAL (data: { groupID: string, creatorID: string, proposalHash: string, subtype: NewProposalType }) {
     const args = {
       name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
       ...LTags('strong')
@@ -173,9 +173,12 @@ export default ({
       creatorID: data.creatorID,
       icon: iconMap[data.subtype],
       level: 'info',
-      linkTo: '/dashboard#proposals',
       subtype: data.subtype,
-      scope: 'group'
+      scope: 'group',
+      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: { proposalHash: data.proposalHash }
+      }]
     }
   },
   PROPOSAL_EXPIRING (data: { proposalId: string, proposal: Object }) {
@@ -200,11 +203,14 @@ export default ({
       level: 'info',
       icon: 'exclamation-triangle',
       scope: 'group',
-      linkTo: '/dashboard#proposals',
-      data: { proposalId: data.proposalId }
+      data: { proposalId: data.proposalId },
+      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: { proposalHash: data.proposalId }
+      }]
     }
   },
-  PROPOSAL_CLOSED (data: { proposal: Object }) {
+  PROPOSAL_CLOSED (data: { proposal: Object, proposalHash: string }) {
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
 
     const statusMap = {
@@ -244,8 +250,11 @@ export default ({
       body: bodyTemplateMap[type],
       icon: statusMap[status].icon,
       level: statusMap[status].level,
-      linkTo: '/dashboard#proposals',
-      scope: 'group'
+      scope: 'group',
+      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: { proposalHash: data.proposalHash }
+      }]
     }
   },
   PAYMENT_RECEIVED (data: { creatorID: string, amount: string, paymentHash: string }) {

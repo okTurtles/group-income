@@ -88,7 +88,7 @@ module.exports = (grunt) => {
   ;(function defineApiEnvars () {
     const API_PORT = Number.parseInt(grunt.option('port') ?? process.env.API_PORT ?? '8000', 10)
 
-    if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
+    if (Number.isNaN(API_PORT) || API_PORT < 1024 || API_PORT > 65535) {
       throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
     }
     process.env.API_PORT = String(API_PORT)
