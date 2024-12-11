@@ -25,7 +25,7 @@ This action accomplishes two things at once:
 
 ##### Data Representation
 
-`GIMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work.
+`GIMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work, except much simpler (no [DHT](https://en.wikipedia.org/wiki/Distributed_hash_table) is used).
 
 ##### Actions
 

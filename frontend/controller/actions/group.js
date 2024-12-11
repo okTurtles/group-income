@@ -32,6 +32,7 @@ import {
   JOINED_CHATROOM,
   LEFT_GROUP,
   LOGOUT,
+  OPEN_MODAL,
   REPLACE_MODAL
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
@@ -918,6 +919,15 @@ export default (sbp('sbp/selectors/register', {
     if (primaryButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
+    }
+  },
+  'gi.actions/group/checkAndSeeProposal': function ({ data }: GIActionParams) {
+    const openProposalIds = Object.keys(sbp('state/vuex/getters').currentGroupState.proposals || {})
+
+    if (openProposalIds.includes(data.proposalHash)) {
+      sbp('controller/router').push({ path: '/dashboard#proposals' })
+    } else {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: data.proposalHash })
     }
   },
   'gi.actions/group/fixAnyoneCanJoinLink': function ({ contractID }) {

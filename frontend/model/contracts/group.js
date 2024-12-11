@@ -682,7 +682,7 @@ sbp('chelonia/defineContract', {
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
       },
-      sideEffect ({ contractID, meta, data, height, innerSigningContractID }, { getters }) {
+      sideEffect ({ contractID, meta, hash, data, height, innerSigningContractID }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
         const typeToSubTypeMap = {
           [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
@@ -702,6 +702,7 @@ sbp('chelonia/defineContract', {
             createdDate: meta.createdDate,
             groupID: contractID,
             creatorID: innerSigningContractID,
+            proposalHash: hash,
             subtype: typeToSubTypeMap[data.proposalType]
           })
         }
@@ -1545,14 +1546,10 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/delete', archPaymentsByPeriodKey)
       await sbp('gi.db/archive/delete', archSentOrReceivedPaymentsKey)
     },
-    'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposal) {
+    'gi.contracts/group/makeNotificationWhenProposalClosed': function (state, contractID, meta, height, proposalHash, proposal) {
       const { loggedIn } = sbp('state/vuex/state')
       if (isActionNewerThanUserJoinedDate(height, state.profiles[loggedIn.identityContractID])) {
-        sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
-          createdDate: meta.createdDate,
-          groupID: contractID,
-          proposal
-        })
+        sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', { createdDate: meta.createdDate, groupID: contractID, proposalHash, proposal })
       }
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data, height, innerSigningContractID) {
