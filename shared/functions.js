@@ -1,6 +1,5 @@
 'use strict'
 
-import nacl from 'tweetnacl'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { blake2b256stream } from '~/shared/blake2bstream.js'
 import { base58btc } from '~/shared/multiformats/bases/base58.js'
@@ -52,21 +51,3 @@ export const bufToB64 = (buf: Buffer): string => Buffer.from(buf).toString('base
 export const strToBuf = (str: string): Buffer => Buffer.from(str, 'utf8')
 export const strToB64 = (str: string): string => strToBuf(str).toString('base64')
 export const bytesToB64 = (ary: Uint8Array): string => Buffer.from(ary).toString('base64')
-
-export function sign (
-  { publicKey, secretKey }: {publicKey: string, secretKey: string},
-  msg: string = 'hello!',
-  futz: string = ''
-): string {
-  return strToB64(JSON.stringify({
-    msg: msg + futz,
-    key: publicKey,
-    sig: bytesToB64(nacl.sign.detached(strToBuf(msg), b64ToBuf(secretKey)))
-  }))
-}
-
-export function verify (
-  msg: string, key: string, sig: string
-): any {
-  return nacl.sign.detached.verify(strToBuf(msg), b64ToBuf(sig), b64ToBuf(key))
-}

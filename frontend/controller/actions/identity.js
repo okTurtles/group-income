@@ -11,10 +11,11 @@ import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob, compressImage } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -244,6 +245,10 @@ export default (sbp('sbp/selectors/register', {
       console.debug('[gi.actions/identity/login] Scheduled call starting', identityContractID)
       transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
 
+      // If running in a SW, start log capture here
+      if (typeof WorkerGlobalScope === 'function') {
+        await sbp('swLogs/startCapture', identityContractID)
+      }
       await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
@@ -403,15 +408,18 @@ export default (sbp('sbp/selectors/register', {
     }
     // Clear the file cache when logging out to preserve privacy
     sbp('gi.db/filesCache/clear').catch((e) => { console.error('Error clearing file cache', e) })
+    // If running inside a SW, clear logs
+    if (typeof WorkerGlobalScope === 'function') {
+      // clear stored logs to prevent someone else accessing sensitve data
+      sbp('swLogs/pauseCapture', { wipeOut: true }).catch((e) => { console.error('Error clearing file cache', e) })
+    }
     sbp('okTurtles.events/emit', LOGOUT)
     return cheloniaState
   },
   'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
     const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
     const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
-
-    const rootState = sbp('state/vuex/state')
-    const foreignContractState = rootState[foreignContractID]
+    const foreignContractState = sbp('chelonia/contract/state', foreignContractID)
 
     const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
 
@@ -423,7 +431,7 @@ export default (sbp('sbp/selectors/register', {
       contractID,
       contractName: 'gi.contracts/identity',
       data: [encryptedOutgoingData(contractID, CEKid, {
-        foreignKey: `sp:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
+        foreignKey: `shelter:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
         id: keyId,
         data: foreignContractState._vm.authorizedKeys[keyId].data,
         // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
@@ -438,7 +446,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
-    const rootState = sbp('state/vuex/state')
+    const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
     await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
@@ -491,15 +499,12 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
   ...encryptedAction('gi.actions/identity/createDirectMessage', L('Failed to create a new direct message channel.'), async function (sendMessage, params) {
-    const rootState = sbp('state/vuex/state')
-    // TODO: Can't use rootGetters
     const rootGetters = sbp('state/vuex/getters')
     const partnerIDs = params.data.memberIDs
       .filter(memberID => memberID !== rootGetters.ourIdentityContractId)
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
-    // NOTE: 'rootState.currentGroupId' could be changed while waiting for the sbp functions to be proceeded
-    //       So should save it as a constant variable 'currentGroupId', and use it which can't be changed
-    const currentGroupId = rootState.currentGroupId
+    const currentGroupId = params.data.currentGroupId
+    const identityContractID = rootGetters.ourIdentityContractId
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
@@ -514,11 +519,11 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
-    }, rootState.loggedIn.identityContractID)
+    }, identityContractID)
 
     // Share the keys to the newly created chatroom with ourselves
     await sbp('gi.actions/out/shareVolatileKeys', {
-      contractID: rootState.loggedIn.identityContractID,
+      contractID: identityContractID,
       contractName: 'gi.contracts/identity',
       subjectContractID: message.contractID(),
       keyIds: '*'
@@ -527,16 +532,18 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/chatroom/join', {
       ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
-      data: {}
+      data: { memberID: [identityContractID, ...partnerIDs] }
     })
 
-    for (const partnerID of partnerIDs) {
-      await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: message.contractID(),
-        data: { memberID: partnerID }
-      })
+    const switchChannelAfterJoined = (contractID: string) => {
+      if (contractID === message.contractID()) {
+        if (sbp('chelonia/contract/state', message.contractID())?.members?.[identityContractID]) {
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
+          sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
+        }
+      }
     }
+    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
 
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
@@ -576,6 +583,8 @@ export default (sbp('sbp/selectors/register', {
         hooks
       })
     }
+
+    return message.contractID()
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),

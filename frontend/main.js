@@ -3,6 +3,7 @@
 // import SBP stuff before anything else so that domains register themselves before called
 import { L, LError } from '@common/common.js'
 import '@model/captureLogs.js'
+import { setupNativeNotificationsListeners } from '@model/notifications/nativeNotification.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
@@ -11,12 +12,10 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import '~/shared/domains/chelonia/localSelectors.js'
 import { KV_KEYS } from './utils/constants.js'
 // import '~/shared/domains/chelonia/persistent-actions.js' // Commented out as persistentActions are not being used
-import './controller/actions/index.js'
 import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/namespace.js'
@@ -24,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -39,7 +38,6 @@ import './views/utils/vFocus.js'
 import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
-import setupChelonia from './setupChelonia.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import './utils/touchInteractions.js'
 import { showNavMixin } from './views/utils/misc.js'
@@ -96,20 +94,29 @@ async function startApp () {
   // Set up event listeners to keep local (Vuex) and Chelonia states in sync
   sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
 
-  // TODO: [SW] The following will be needed to keep namespace registrations
-  // in sync between the SW and each tab. It is not needed now because everything
-  // is running in the same context
-  /* sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+  // [SW] The following is be needed to keep namespace registrations in sync
+  // between the SW and each tab. It is not needed if everything is running in
+  // the same context
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
     const cache = sbp('state/vuex/state').namespaceLookups
+    const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
     Vue.set(cache, name, value)
-  }) */
+    Vue.set(reverseCache, value, name)
+  })
+
+  sbp('okTurtles.events/on', SERIOUS_ERROR, (error) => {
+    sbp('gi.ui/seriousErrorBanner', error)
+    if (process.env.CI) {
+      Promise.reject(error)
+    }
+  })
 
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
   //       ban system. Only enable it if you know what you're doing and don't mind the risk.
   // IMPORTANT: setting 'window.sbp' must come *after* 'chelonia/configure' so that the Cypress
   //            tests don't attempt to use the contracts before they're ready!
-  if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
+  if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true' || debugParam) {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
@@ -145,7 +152,7 @@ async function startApp () {
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
-        }, 8e3)
+        }, 16e3)
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
@@ -153,6 +160,13 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
+  // Call `setNotificationEnabled` after the service worker setup, because it
+  // calls `service-worker/setup-push-subscription`.
+  if (typeof Notification === 'function') {
+    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
+  }
+
+  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
   /* eslint-disable no-new */
   new Vue({
@@ -298,14 +312,16 @@ async function startApp () {
       // happened (an example where things can happen this quickly is in the
       // tests).
       let oldIdentityContractID = null
-      setupChelonia().then(() => sbp('gi.db/settings/load', SETTING_CURRENT_USER)).then(async (identityContractID) => {
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
         await sbp('gi.app/identity/login', { identityContractID })
         await sbp('chelonia/contract/wait', identityContractID)
       }).catch(async e => {
         this.removeLoadingAnimation()
-        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID) // https://github.com/okTurtles/group-income/issues/2194
+        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
+          console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
+        }) // https://github.com/okTurtles/group-income/issues/2194
         console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
         await sbp('gi.app/identity/logout')
         await sbp('gi.ui/prompt', {
@@ -314,8 +330,33 @@ async function startApp () {
           primaryButton: L('Close')
         })
       }).finally(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
+        // Wait for SW to be ready
+        console.debug('[app] Waiting for SW to be ready')
+        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
+        Promise.race([
+          sw.ready,
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
+        ]).then(() => {
+          const onready = () => {
+            this.ephemeral.ready = true
+            this.removeLoadingAnimation()
+            setupNativeNotificationsListeners()
+          }
+          if (!sw.controller) {
+            const listener = (ev: Event) => {
+              sw.removeEventListener('controllerchange', listener, false)
+              onready()
+            }
+            sw.addEventListener('controllerchange', listener, false)
+          } else {
+            onready()
+          }
+        }).catch(e => {
+          console.error('[app] Service worker failed to become ready:', e)
+          // Fallback behavior
+          this.removeLoadingAnimation()
+          alert(L('Error while setting up service worker'))
+        })
       })
     },
     computed: {

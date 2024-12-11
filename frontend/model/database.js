@@ -3,102 +3,112 @@
 import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '../../shared/domains/chelonia/crypto.js'
 
-const _instances = []
+const _instances: (() => Promise<*>)[] = []
 // Localforage-like API for IndexedDB
 const localforage = {
   async ready () {
-    await Promise.all(_instances).then(() => {})
+    await Promise.all(_instances.map((lazyInitDb) => lazyInitDb()))
   },
   createInstance ({ name, storeName }: { name: string, storeName: string }) {
     // Open the IndexedDB database
-    const db = new Promise((resolve, reject) => {
-      if (name.includes('-') || storeName.includes('-')) {
-        reject(new Error('Unsupported characters in name: -'))
-        return
-      }
-      const request = self.indexedDB.open(name + '--' + storeName)
+    // We lazy load the IndexedDB, because before we were loading it when this
+    // file was imported, but on iOS IndexedDB is not available in the service
+    // worker when the PWA is in the background.
+    // <https://bugs.webkit.org/show_bug.cgi?id=283793>
+    // So for that reason, and potentially other situations where IndexedDB
+    // might not be available, we lazy load it like this upon creation.
+    const lazyInitDb = (() => {
+      let promise
+      return () => {
+        if (!promise) {
+          promise = new Promise((resolve, reject) => {
+            if (name.includes('-') || storeName.includes('-')) {
+              reject(new Error('Unsupported characters in name: -'))
+              return
+            }
+            const request = self.indexedDB.open(name + '--' + storeName)
 
-      // Create the object store if it doesn't exist
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result
-        db.createObjectStore(storeName)
-      }
+            // Create the object store if it doesn't exist
+            request.onupgradeneeded = (event) => {
+              const db = event.target.result
+              db.createObjectStore(storeName)
+            }
 
-      request.onsuccess = (event) => {
-        const db = event.target.result
-        resolve(db)
-      }
+            request.onsuccess = (event) => {
+              const db = event.target.result
+              resolve(db)
+            }
 
-      request.onerror = (error) => {
-        reject(error)
-      }
+            request.onerror = (error) => {
+              reject(error)
+            }
 
-      request.onblocked = (event) => {
-        reject(new Error('DB is blocked'))
+            request.onblocked = (event) => {
+              reject(new Error('DB is blocked'))
+            }
+          })
+        }
+        return promise
       }
-    })
+    })()
 
-    _instances.push(db)
+    _instances.push(lazyInitDb)
 
     return {
-      clear () {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.clear()
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e)
-            }
-          })
+      async clear () {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.clear()
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
         })
       },
-      getItem (key: string) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readonly')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.get(key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = (event) => {
-              resolve(event.target.result)
-            }
-            request.onerror = (e) => {
-              reject(e)
-            }
-          })
+      async getItem (key: string) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readonly')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.get(key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            resolve(event.target.result)
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
         })
       },
-      removeItem (key: string) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.delete(key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e.target.error)
-            }
-          })
+      async removeItem (key: string) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.delete(key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e.target.error)
+          }
         })
       },
-      setItem (key: string, value: any) {
-        return db.then(db => {
-          const transaction = db.transaction([storeName], 'readwrite')
-          const objectStore = transaction.objectStore(storeName)
-          const request = objectStore.put(value, key)
-          return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-              resolve()
-            }
-            request.onerror = (e) => {
-              reject(e.target.error)
-            }
-          })
+      async setItem (key: string, value: any) {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readwrite')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.put(value, key)
+        return new Promise((resolve, reject) => {
+          request.onsuccess = () => {
+            resolve()
+          }
+          request.onerror = (e) => {
+            reject(e.target.error)
+          }
         })
       }
     }
@@ -204,7 +214,12 @@ sbp('sbp/selectors/register', {
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`)
+    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
+      // Delete the unencypted setting key, if it exists
+      sbp('gi.db/settings/delete', user).catch(e => {
+        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for user', user, e)
+      })
+    })
   },
   'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
     return appSettings.getItem('e' + user).then(async (encryptedValue) => {
@@ -351,7 +366,7 @@ sbp('sbp/selectors/register', {
         await filesCache.setItem('keys', keys)
       }
     }).catch(e => {
-      console.error('[gi.db/filesCache/load] Error updating keys')
+      console.error('[gi.db/filesCache/delete] Error updating keys')
     })
   },
   'gi.db/filesCache/clear': async function (): Promise<void> {
@@ -360,7 +375,7 @@ sbp('sbp/selectors/register', {
 })
 
 // ======================================
-// Archve for proposals and anything else
+// Archive for proposals and anything else
 // ======================================
 
 const archive = localforage.createInstance({
@@ -380,5 +395,29 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/archive/clear': function (): Promise<any> {
     return archive.clear()
+  }
+})
+
+// ======================================
+// Application logs, used for the SW logs
+// ======================================
+
+const logs = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Logs'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/logs/save': function (key: string, value: any): Promise<*> {
+    return logs.setItem(key, value)
+  },
+  'gi.db/logs/load': function (key: string): Promise<any> {
+    return logs.getItem(key)
+  },
+  'gi.db/logs/delete': function (key: string): Promise<Object> {
+    return logs.removeItem(key)
+  },
+  'gi.db/logs/clear': function (): Promise<any> {
+    return logs.clear()
   }
 })

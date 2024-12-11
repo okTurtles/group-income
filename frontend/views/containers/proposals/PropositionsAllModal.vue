@@ -22,7 +22,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           option(value='Oldest') {{ L('Oldest first') }}
 
     .card.c-card
-      ul(data-test='proposalsWidget')
+      ul(data-test='proposalsWidget' ref='pList')
         proposal-item(
           v-for='[hash, obj] of proposals'
           :key='hash'
@@ -55,10 +55,23 @@ export default ({
   async mounted () {
     const key = `proposals/${this.ourIdentityContractId}/${this.currentGroupId}`
     this.ephemeral.proposals = await sbp('gi.db/archive/load', key) || []
+
+    this.checkTargetAndScroll()
   },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
+    },
+    checkTargetAndScroll () {
+      const targetId = this.$route.query?.targetProposal || ''
+
+      if (targetId && this.ephemeral.proposals.some(entry => entry[0] === targetId)) {
+        this.$nextTick(() => {
+          const targetEl = this.$refs.pList.querySelector(`[data-proposal-hash="${targetId}"]`)
+
+          targetEl && targetEl.scrollIntoView({ block: 'center' })
+        })
+      }
     }
   },
   computed: {
