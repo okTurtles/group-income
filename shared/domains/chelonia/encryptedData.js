@@ -277,7 +277,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
   })
 }
 
-export const encryptedIncomingDataWithRawKey = <T>(key: Key, data: T, additionalData?: string): EncryptedData<T> => {
+export const encryptedIncomingDataWithRawKey = <T>(key: Key, data: any, additionalData?: string): EncryptedData<T> => {
   if (data === undefined || !key) throw new TypeError('Invalid invocation')
 
   let decryptedValue

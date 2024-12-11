@@ -4,9 +4,9 @@ import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from 
 
 /* Wrapper class for secrets, which identifies them as such and prevents them
 from being logged */
-export class Secret<T> {
-  _content: T
 
+const wm = new WeakMap()
+export class Secret<T> {
   // $FlowFixMe[unsupported-syntax]
   static [serdesDeserializeSymbol] (secret) {
     return new this(secret)
@@ -14,7 +14,7 @@ export class Secret<T> {
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesSerializeSymbol] (secret: Secret) {
-    return secret._content
+    return wm.get(secret)
   }
 
   // $FlowFixMe[unsupported-syntax]
@@ -23,10 +23,10 @@ export class Secret<T> {
   }
 
   constructor (value: T) {
-    this._content = value
+    wm.set(this, value)
   }
 
   valueOf (): T {
-    return this._content
+    return wm.get(this)
   }
 }
