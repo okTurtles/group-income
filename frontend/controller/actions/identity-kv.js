@@ -9,7 +9,7 @@ const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 sbp('okTurtles.events/on', ONLINE, async () => {
   try {
     const identityContractID = (await sbp('chelonia/rootState')).loggedIn?.identityContractID
-    if (identityContractID) {
+    if (identityContractID) { // check if the user is logged in before loading the data
       await sbp('gi.actions/identity/kv/load')
     }
   } catch (e) {}

@@ -6,7 +6,7 @@ import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
 sbp('okTurtles.events/on', ONLINE, async () => {
   try {
     const identityContractID = (await sbp('chelonia/rootState')).loggedIn?.identityContractID
-    if (identityContractID) {
+    if (identityContractID) { // check if the user is logged in before loading the data
       await sbp('gi.actions/group/kv/load')
     }
   } catch (e) {}
