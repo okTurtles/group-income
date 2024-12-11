@@ -9,9 +9,7 @@ sbp('okTurtles.events/on', ONLINE, async () => {
     if (identityContractID) {
       await sbp('gi.actions/group/kv/load')
     }
-  } catch (e) {
-    console.error("Error from 'gi.actions/group/kv/load' after reestablished connection:", e)
-  }
+  } catch (e) {}
 })
 
 export default (sbp('sbp/selectors/register', {
