@@ -14,12 +14,13 @@ import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
+import { handleFetchResult } from '../utils/misc.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -232,7 +233,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return userID
   },
-  'gi.actions/identity/login': function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
+  'gi.actions/identity/login': function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys, oldKeysAnchorCid }) {
     // This wrapper ensures that there is at most one login flow action executed
     // at any given time. Because of the async work done when logging in and out,
     // it could happen that, e.g., `gi.actions/identity/login` is called before
@@ -247,6 +248,19 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
+
+      if (oldKeysAnchorCid) {
+        const r = await fetch(`/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
+        const keys = JSON.parse(r._signedData[0])
+        const iek = keys.find((k) => {
+          return k.name === 'iek'
+        })
+        if (iek.meta?.private?.oldKeys) {
+          const xxx = encryptedIncomingDataWithRawKey(transientSecretKeys[0].key, JSON.parse(iek.meta.private.oldKeys), 'OLD_KEYS')
+          const yyy = JSON.parse(xxx.valueOf()).map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
+          await sbp('chelonia/storeSecretKeys', new Secret(yyy))
+        }
+      }
 
       try {
         if (!state) {
@@ -688,13 +702,12 @@ export default (sbp('sbp/selectors/register', {
     oldIEK,
     newIPK: IPK,
     newIEK: IEK,
-    newSAK: SAK,
     updateToken
   }) => {
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
-    const PEK = keygen(CURVE25519XSALSA20POLY1305)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const oldIPKid = keyId(oldIPK)
@@ -703,7 +716,6 @@ export default (sbp('sbp/selectors/register', {
     const IEKid = keyId(IEK)
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
-    const PEKid = keyId(PEK)
     const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
@@ -711,21 +723,26 @@ export default (sbp('sbp/selectors/register', {
     const IEKp = serializeKey(IEK, false)
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
-    const PEKp = serializeKey(PEK, false)
     const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
-    const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
 
     const state = sbp('chelonia/contract/state', identityContractID)
 
     // Before rotating keys the contract, put all keys into transient store
     await sbp('chelonia/storeSecretKeys',
-      new Secret([oldIPK, oldIEK, IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true })))
+      new Secret([oldIPK, oldIEK, IPK, IEK, CEK, CSK, SAK].map(key => ({ key, transient: true })))
     )
+
+    const oldKeys = []
+    ;[oldIEK].forEach((key) => {
+      const serialized = serializeKey(key, true)
+      oldKeys.push(serialized)
+    })
+    const oldKeysData = encryptedOutgoingDataWithRawKey(IEK, JSON.stringify(oldKeys)).toString('OLD_KEYS')
 
     await sbp('chelonia/out/keyUpdate', {
       contractID: identityContractID,
@@ -748,7 +765,8 @@ export default (sbp('sbp/selectors/register', {
           oldKeyId: oldIEKid,
           meta: {
             private: {
-              transient: true
+              transient: true,
+              oldKeys: oldKeysData
             }
           },
           data: IEKp
@@ -776,17 +794,6 @@ export default (sbp('sbp/selectors/register', {
           data: CEKp
         },
         {
-          id: PEKid,
-          name: 'pek',
-          oldKeyId: findKeyIdByName(state, 'pek'),
-          meta: {
-            private: {
-              content: PEKs
-            }
-          },
-          data: PEKp
-        },
-        {
           id: SAKid,
           name: '#sak',
           oldKeyId: findKeyIdByName(state, '#sak'),
@@ -810,9 +817,12 @@ export default (sbp('sbp/selectors/register', {
       } */
     })
 
+    /* const x = await sbp('gi.actions/identity/kv/setOldKeys', [oldIEK])
+    console.error('@@@@x', x) */
+
     // After the contract has been updated, store persistent keys
     await sbp('chelonia/storeSecretKeys',
-      new Secret([CEK, CSK, PEK, SAK].map(key => ({ key })))
+      new Secret([CEK, CSK, SAK].map(key => ({ key })))
     )
     // And remove transient keys, which require a user password
     sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])

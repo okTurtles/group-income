@@ -76,7 +76,9 @@ describe('ZKPP Salt functions', () => {
     const saltBuf = Buffer.from(salt, 'base64url')
     const nonce = saltBuf.slice(0, nacl.secretbox.nonceLength)
     const encryptionKey = nacl.hash(Buffer.concat([Buffer.from('CS'), c])).slice(0, nacl.secretbox.keyLength)
-    const retrievedContractSalt = Buffer.from(nacl.secretbox.open(saltBuf.slice(nacl.secretbox.nonceLength), nonce, encryptionKey)).toString()
+    const [retrievedContractSalt] = JSON.parse(
+      Buffer.from(nacl.secretbox.open(saltBuf.slice(nacl.secretbox.nonceLength), nonce, encryptionKey)).toString()
+    )
     should(retrievedContractSalt).equal(contractSalt, 'mismatched contractSalt')
   })
 

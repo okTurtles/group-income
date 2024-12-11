@@ -128,7 +128,7 @@ route.POST('/event', {
         updateSalts = await redeemSaltUpdateToken(name, saltUpdateToken)
       }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
-      await updateSalts?.()
+      await updateSalts?.(deserializedHEAD.hash)
       if (deserializedHEAD.isFirstMessage) {
         // Store attribution information
         if (credentials?.billableContractID) {

@@ -100,17 +100,23 @@ const getZkppSaltRecord = async (contractID: string) => {
     try {
       const recordObj = JSON.parse(recordString)
 
-      if (!Array.isArray(recordObj) || recordObj.length !== 3 || !recordObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
+      if (
+        !Array.isArray(recordObj) ||
+        (recordObj.length !== 3 && recordObj.length !== 4) ||
+        recordObj.slice(0, 3).some((r) => !r || typeof r !== 'string') ||
+        (recordObj[3] !== null && typeof recordObj[3] !== 'string')
+      ) {
         console.error('Error validating encrypted JSON object ' + recordId)
         return null
       }
 
-      const [hashedPassword, authSalt, contractSalt] = recordObj
+      const [hashedPassword, authSalt, contractSalt, cid] = recordObj
 
       return {
         hashedPassword,
         authSalt,
-        contractSalt
+        contractSalt,
+        cid
       }
     } catch {
       console.error('Error parsing encrypted JSON object ' + recordId)
@@ -120,11 +126,11 @@ const getZkppSaltRecord = async (contractID: string) => {
   return null
 }
 
-const setZkppSaltRecord = async (contractID: string, hashedPassword: string, authSalt: string, contractSalt: string) => {
+const setZkppSaltRecord = async (contractID: string, hashedPassword: string, authSalt: string, contractSalt: string, cid: ?string) => {
   const recordId = `_private_rid_${contractID}`
   const encryptionKey = hashStringArray('REK', contractID, recordSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
-  const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt])
+  const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt, cid])
   const recordCiphertext = nacl.secretbox(Buffer.from(recordPlaintext), nonce, encryptionKey)
   const recordBuf = Buffer.concat([nonce, recordCiphertext])
   const record = base64ToBase64url(recordBuf.toString('base64'))
@@ -257,7 +263,7 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
     return false
   }
 
-  const { hashedPassword, contractSalt } = record
+  const { hashedPassword, contractSalt, cid } = record
 
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
@@ -266,7 +272,7 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
     throw new Error('getContractSalt: Bad challenge')
   }
 
-  return encryptContractSalt(c, contractSalt)
+  return encryptContractSalt(c, JSON.stringify([contractSalt, cid]))
 }
 
 export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean | string> => {
@@ -328,7 +334,7 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
   return false
 }
 
-export const redeemSaltUpdateToken = async (contract: string, token: string): Promise<() => Promise<void>> => {
+export const redeemSaltUpdateToken = async (contract: string, token: string): Promise<(cid: ?string) => Promise<void>> => {
   const recordId = await computeZkppSaltRecordId(contract)
   if (!recordId) {
     throw new Error('Record ID not found')
@@ -346,7 +352,7 @@ export const redeemSaltUpdateToken = async (contract: string, token: string): Pr
     throw new Error('ZKPP token expired')
   }
 
-  return () => {
-    return setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt)
+  return (cid: ?string) => {
+    return setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt, cid)
   }
 }

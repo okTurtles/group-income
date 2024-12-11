@@ -156,7 +156,7 @@ sbp('okTurtles.events/on', LOGOUT, (a) => {
 */
 
 export default (sbp('sbp/selectors/register', {
-  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>) => {
+  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>): Promise<[string, ?string]> => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -175,7 +175,8 @@ export default (sbp('sbp/selectors/register', {
       'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
     })).toString()}`).then(handleFetchResult('text'))
 
-    return decryptContractSalt(c, contractHash)
+    // [contractSalt, cid]
+    return JSON.parse(decryptContractSalt(c, contractHash))
   },
   'gi.app/identity/updateSaltRequest': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
     const r = randomNonce()
@@ -307,14 +308,16 @@ export default (sbp('sbp/selectors/register', {
 
       const password = wpassword?.valueOf()
       const transientSecretKeys = []
+      let oldKeysAnchorCid
 
       // If we're creating a new session, here we derive the IEK. This key (not
       // the password) will be passed to the service worker.
       if (password) {
         try {
-          const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
+          const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
           const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
           transientSecretKeys.push(IEK)
+          oldKeysAnchorCid = cid
         } catch (e) {
           console.error('caught error calling retrieveSalt:', e)
           throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
@@ -364,7 +367,7 @@ export default (sbp('sbp/selectors/register', {
             // and `state` will be sent back to replace the current Vuex state
             // after login. When using a service worker, all tabs will receive
             // a new Vuex state to replace their state with.
-            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
+            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))), oldKeysAnchorCid })
           } else {
             // If an existing session exists, we just emit the LOGIN event
             // to set the local Vuex state and signal we're ready.
@@ -459,7 +462,6 @@ export default (sbp('sbp/selectors/register', {
     const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)
     const newIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
     const newIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, newPassword, newContractSalt)
-    const newSAK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
 
     return sbp('gi.actions/identity/changePassword', {
       identityContractID,
@@ -468,7 +470,6 @@ export default (sbp('sbp/selectors/register', {
       oldIEK,
       newIPK,
       newIEK,
-      newSAK,
       updateToken
     })
   }

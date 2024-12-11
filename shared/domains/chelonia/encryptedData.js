@@ -277,6 +277,51 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
   })
 }
 
+export const encryptedIncomingDataWithRawKey = <T>(key: Key, data: T, additionalData?: string): EncryptedData<T> => {
+  if (data === undefined || !key) throw new TypeError('Invalid invocation')
+
+  let decryptedValue
+  const eKeyId = keyId(key)
+  const decryptedValueFn = (): any => {
+    if (decryptedValue) {
+      return decryptedValue
+    }
+    const state = {
+      _vm: {
+        authorizedKeys: {
+          [eKeyId]: {
+            purpose: ['enc'],
+            data: serializeKey(key, false),
+            _notBeforeHeight: 0,
+            _notAfterHeight: undefined
+          }
+        }
+      }
+    }
+    decryptedValue = decryptData.call(state, NaN, data, { [eKeyId]: key }, additionalData || '')
+
+    return decryptedValue
+  }
+
+  return wrapper({
+    get encryptionKeyId () {
+      return encryptedDataKeyId(data)
+    },
+    get serialize () {
+      return () => data
+    },
+    get toString () {
+      return () => JSON.stringify(this.serialize())
+    },
+    get valueOf () {
+      return decryptedValueFn
+    },
+    get toJSON () {
+      return this.serialize
+    }
+  })
+}
+
 export const encryptedDataKeyId = (data: any): string => {
   if (!isRawEncryptedData(data)) {
     throw new ChelErrorDecryptionError('Invalid message format')
