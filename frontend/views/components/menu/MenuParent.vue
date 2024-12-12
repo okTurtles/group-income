@@ -26,6 +26,7 @@ export default ({
   methods: {
     handleTrigger () {
       this.config.Menu.isActive = true
+      this.$emit(this.config.Menu.isActive ? 'menu-open' : 'menu-close')
     },
     handleSelect (itemId) {
       this.closeMenu()
@@ -33,6 +34,7 @@ export default ({
     },
     closeMenu () {
       this.config.Menu.isActive = false
+      this.$emit('menu-close')
     }
   }
 }: Object)

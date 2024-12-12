@@ -2,6 +2,7 @@
 component(
   :is='componentData.type'
   v-bind='componentData.props'
+  :class='{ "c-has-extra-bottom-margin": ephemeral.isMenuOpen }'
   data-test='proposalsSection'
 )
   template(#cta='')
@@ -12,11 +13,13 @@ component(
         @click='openModal("PropositionsAllModal")'
       ) Archived proposals
 
-      button-dropdown-menu(
+      button-dropdown-menu.c-proposals-menu(
         :buttonText='L("Create proposal")'
         :options='proposalOptions'
         @select='onDropdownItemSelect'
-        boundEdge='left'
+        @menu-open='onMenuOpen'
+        @menu-close='onMenuClose'
+        :boundEdge='ephemeral.isPhone ? "left" : "right"'
       )
 
   ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
@@ -59,16 +62,26 @@ export default ({
   mounted () {
     this.refreshArchivedProposals()
     sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
+
+    this.matchMediaPhone = window.matchMedia('screen and (max-width: 768px)')
+    this.ephemeral.isPhone = this.matchMediaPhone.matches
+    this.matchMediaPhone.onchange = (e) => {
+      this.ephemeral.isPhone = e.matches
+    }
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
+    this.matchMediaPhone.onchange = null
     this.clearTimeouts()
   },
   data () {
     return {
+      matchMediaPhone: null,
       ephemeral: {
         archivedProposals: [],
-        timeouts: []
+        timeouts: [],
+        isPhone: false,
+        isMenuOpen: false
       }
     }
   },
@@ -217,6 +230,19 @@ export default ({
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
+    },
+    onMenuOpen () {
+      this.ephemeral.isMenuOpen = true
+
+      this.$nextTick(() => {
+        const proposalsMenu = document.querySelector('.c-proposals-menu')
+        if (proposalsMenu) {
+          proposalsMenu.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      })
+    },
+    onMenuClose () {
+      this.ephemeral.isMenuOpen = false
     }
   },
   watch: {
@@ -255,5 +281,9 @@ export default ({
 
 .c-description p {
   margin-top: 1rem;
+}
+
+.c-has-extra-bottom-margin {
+  margin-bottom: 12rem;
 }
 </style>
