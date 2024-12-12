@@ -16,6 +16,7 @@ component(
         :buttonText='L("Create proposal")'
         :options='proposalOptions'
         @select='onDropdownItemSelect'
+        boundEdge='left'
       )
 
   ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
