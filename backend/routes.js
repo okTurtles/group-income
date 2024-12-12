@@ -119,7 +119,9 @@ route.POST('/event', {
       const saltUpdateToken = request.headers['shelter-salt-update-token']
       let updateSalts
       if (saltUpdateToken) {
-        // ..
+        // If we've got a salt update token (i.e., a password change), fetch
+        // the username associated to the contract to see if they match, and
+        // then validate the token
         const name = request.headers['shelter-name']
         const namedContractID = name && await sbp('backend/db/lookupName', name)
         if (namedContractID !== deserializedHEAD.contractID) {
@@ -128,6 +130,9 @@ route.POST('/event', {
         updateSalts = await redeemSaltUpdateToken(name, saltUpdateToken)
       }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
+      // If it's a salt update, do it now after handling the message. This way
+      // we make it less likely that someone will end up locked out from their
+      // identity contract.
       await updateSalts?.(deserializedHEAD.hash)
       if (deserializedHEAD.isFirstMessage) {
         // Store attribution information

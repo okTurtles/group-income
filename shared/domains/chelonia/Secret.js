@@ -23,10 +23,13 @@ export class Secret<T> {
   }
 
   constructor (value: T) {
+    // $FlowFixMe[escaped-generic]
     wm.set(this, value)
   }
 
   valueOf (): T {
+    // $FlowFixMe[escaped-generic]
+    // $FlowFixMe[incompatible-return]
     return wm.get(this)
   }
 }
