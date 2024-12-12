@@ -1537,10 +1537,10 @@ export default (sbp('sbp/selectors/register', {
       break
     }
   },
-  'chelonia/kv/get': async function (contractID: string, key: string, state: ?Object) {
+  'chelonia/kv/get': async function (contractID: string, key: string) {
     const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
       headers: new Headers([[
-        'authorization', buildShelterAuthorizationHeader.call(this, contractID, state)
+        'authorization', buildShelterAuthorizationHeader.call(this, contractID)
       ]]),
       signal: this.abortController.signal
     })

@@ -23,6 +23,73 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, ke
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
+/**
+ * Decrypts the old IEK list using the provided contract ID and IEK.
+ *
+ * @param contractID - The ID of the contract.
+ * @param IEK - The encryption key object.
+ * @param encryptedData - The encrypted data string, or null if not available.
+ * @returns The decrypted old IEK list, or an empty array if decryption fails.
+ */
+const decryptOldIekList = (contractID: string, IEK: Object, encryptedData: ?string) => {
+  // Return an empty array if no encrypted data is provided
+  if (!encryptedData) return []
+
+  try {
+    // Parse the encrypted data from JSON format
+    const parsedData = JSON.parse(encryptedData)
+
+    // Decrypt the incoming data using the IEK and contract ID
+    const decryptedData = encryptedIncomingDataWithRawKey(IEK, parsedData, `meta.private.oldKeys;${contractID}`)
+
+    // Parse the decrypted data back into a JavaScript object
+    const oldKeysList = JSON.parse(decryptedData.valueOf())
+
+    return oldKeysList // Return the decrypted old keys
+  } catch (error) {
+    // Log any errors that occur during decryption
+    console.error('[decryptOldIekList] Error during decryption', error)
+  }
+
+  // Don't return in case of error
+}
+
+/**
+ * Appends a new IEK to the existing list of old IEKs.
+ *
+ * @param contractID - The ID of the contract.
+ * @param IEK - The encryption key object.
+ * @param oldIEK - The old IEK to be appended.
+ * @param encryptedData - The encrypted data string, or null if not available.
+ * @returns The updated encrypted data containing the new IEK.
+ * @throws {Error} - Throws an error if decryption of old IEK list fails.
+ */
+const appendToIekList = (contractID: string, IEK: Object, oldIEK: Object, encryptedData: ?string) => {
+  // Decrypt the old IEK list
+  const oldKeys = decryptOldIekList(contractID, oldIEK, encryptedData)
+
+  // If decryption fails, throw an error to prevent data loss
+  if (!oldKeys) {
+    throw new Error('Error decrypting old IEK list')
+  }
+
+  // Create a Set to store unique keys
+  const keysSet = new Set(oldKeys)
+
+  // Serialize the old IEK and add it to the Set
+  const serializedOldIEK = serializeKey(oldIEK, true)
+  keysSet.add(serializedOldIEK)
+
+  // Encrypt the updated list of keys and return the new encrypted data
+  const updatedKeysData = encryptedOutgoingDataWithRawKey(
+    IEK,
+    // Convert Set back to Array for serialization
+    JSON.stringify(Array.from(keysSet))
+  ).toString(`meta.private.oldKeys;${contractID}`)
+
+  return updatedKeysData // Return the updated encrypted data
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     IPK,
@@ -255,15 +322,34 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
       if (oldKeysAnchorCid) {
-        const r = await fetch(`/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
-        const keys = JSON.parse(r._signedData[0])
-        const iek = keys.find((k) => {
-          return k.name === 'iek'
-        })
-        if (iek.meta?.private?.oldKeys) {
-          const xxx = encryptedIncomingDataWithRawKey(transientSecretKeys[0].key, JSON.parse(iek.meta.private.oldKeys), 'OLD_KEYS')
-          const yyy = JSON.parse(xxx.valueOf()).map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
-          await sbp('chelonia/storeSecretKeys', new Secret(yyy))
+        try {
+          // Fetch the old keys from the server
+          const result = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
+
+          // Parse the signed data in the OP_KEY_UPDATE payload to extract keys
+          const keys = JSON.parse(result._signedData[0])
+
+          // Find the key with the name 'iek'
+          const iekObj = keys.find((key) => key.name === 'iek')
+
+          // Check if old keys are present in the metadata
+          if (iekObj.meta?.private?.oldKeys) {
+            // Decrypt the old IEK list
+            const decryptedKeys = decryptOldIekList(identityContractID, transientSecretKeys[0].key, iekObj.meta.private.oldKeys)
+
+            // Check if decryption was successful
+            if (!decryptedKeys) {
+              console.error('[gi.actions/identity/login] Error decrypting old IEKs, logging in will probably fail due to missing keys')
+            } else {
+              // Map the decrypted keys to the required format
+              const secretKeys = decryptedKeys.map(key => ({ key: deserializeKey(key), transient: true }))
+
+              // Store the secret keys using the sbp function
+              await sbp('chelonia/storeSecretKeys', new Secret(secretKeys))
+            }
+          }
+        } catch (error) {
+          console.error('[gi.actions/identity/login] Error fetching or processing old keys:', error)
         }
       }
 
@@ -746,12 +832,10 @@ export default (sbp('sbp/selectors/register', {
       new Secret([oldIPK, oldIEK, IPK, IEK, CEK, CSK, SAK].map(key => ({ key, transient: true })))
     )
 
-    const oldKeys = []
-    ;[oldIEK].forEach((key) => {
-      const serialized = serializeKey(key, true)
-      oldKeys.push(serialized)
-    })
-    const oldKeysData = encryptedOutgoingDataWithRawKey(IEK, JSON.stringify(oldKeys)).toString('OLD_KEYS')
+    const oldKeysData = appendToIekList(
+      identityContractID, IEK, oldIEK,
+      state._vm.authorizedKeys[oldIEKid]?.meta?.private?.oldKeys
+    )
 
     await sbp('chelonia/out/keyUpdate', {
       contractID: identityContractID,
@@ -825,9 +909,6 @@ export default (sbp('sbp/selectors/register', {
         preSendCheck
       } */
     })
-
-    /* const x = await sbp('gi.actions/identity/kv/setOldKeys', [oldIEK])
-    console.error('@@@@x', x) */
 
     // After the contract has been updated, store persistent keys
     await sbp('chelonia/storeSecretKeys',
