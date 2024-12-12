@@ -56,7 +56,7 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
       i18n.is-success(
         tag='button'
         @click='changePassword'
-        :disabled='$v.form.$invalid'
+        :disabled='$v.form.$invalid || processing'
       ) Change password
 
   template(slot='errors') {{ form.response }}
@@ -65,9 +65,11 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
+import sbp from '@sbp/sbp'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import { L } from '@common/common.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
 
 export default ({
   name: 'PasswordModal',
@@ -78,25 +80,14 @@ export default ({
         current: null,
         newPassword: null,
         confirm: null
-      }
+      },
+      processing: false
     }
   },
   validations: {
     form: {
       current: {
-        required,
-        checkOldPassword: value => {
-          // TODO
-          console.log('Todo: check password')
-          if (value === '') return false
-
-          // simulate async call, fail for all logins with even length
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              resolve(typeof value === 'string' && value.length % 2 !== 0)
-            }, 350 + Math.random() * 300)
-          })
-        }
+        required
       },
       newPassword: {
         required,
@@ -119,13 +110,22 @@ export default ({
       this.$refs.modalTemplate.close()
     },
     changePassword () {
-      try {
-        // TODO check password
-        this.closeModal()
-      } catch (error) {
-        this.form.response = L('Invalid password')
-        console.error(error)
-      }
+      if (this.processing) return
+      this.processing = true
+      ;(async () => {
+        try {
+          await sbp('gi.app/identity/changePassword',
+            new Secret(this.form.current),
+            new Secret(this.form.newPassword)
+          )
+          this.closeModal()
+        } catch (error) {
+          this.form.response = L('Invalid password')
+          console.error('[PasswordModal.vue]', error)
+        }
+      })().finally(() => {
+        this.processing = false
+      })
     }
   }
 }: Object)

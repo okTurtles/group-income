@@ -57,7 +57,7 @@
             tag='button'
             type='button'
             data-test='passwordBtn'
-            @click.prevent='onUpdatePasswordClick'
+            @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
         banner-scoped(ref='formMsg' data-test='profileMsg')
@@ -95,7 +95,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { L, LTags } from '@common/common.js'
+import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'UserProfile',
@@ -153,14 +153,6 @@ export default ({
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
-    },
-    onUpdatePasswordClick () {
-      // TODO: use 'PasswordModal.vue' instead, once the password update is implemented in the app.
-      sbp('gi.ui/prompt', {
-        heading: L('Feature coming soon'),
-        question: L('Sorry, this feature has not been implemented yet.{br_}Please check back later.', { ...LTags() }),
-        primaryButton: L('OK')
-      })
     },
     async saveProfile () {
       this.$refs.formMsg.clean()

@@ -9,17 +9,86 @@ import {
 import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
-import { imageUpload, objectURLtoBlob, compressImage } from '@utils/image.js'
+import { compressImage, imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
+
+/**
+ * Decrypts the old IEK list using the provided contract ID and IEK.
+ *
+ * @param contractID - The ID of the contract.
+ * @param IEK - The encryption key object.
+ * @param encryptedData - The encrypted data string, or null if not available.
+ * @returns The decrypted old IEK list, or an empty array if decryption fails.
+ */
+const decryptOldIekList = (contractID: string, IEK: Object, encryptedData: ?string) => {
+  // Return an empty array if no encrypted data is provided
+  if (!encryptedData) return []
+
+  try {
+    // Parse the encrypted data from JSON format
+    const parsedData = JSON.parse(encryptedData)
+
+    // Decrypt the incoming data using the IEK and contract ID
+    const decryptedData = encryptedIncomingDataWithRawKey(IEK, parsedData, `meta.private.oldKeys;${contractID}`)
+
+    // Parse the decrypted data back into a JavaScript object
+    const oldKeysList = JSON.parse(decryptedData.valueOf())
+
+    return oldKeysList // Return the decrypted old keys
+  } catch (error) {
+    // Log any errors that occur during decryption
+    console.error('[decryptOldIekList] Error during decryption', error)
+  }
+
+  // Don't return in case of error
+}
+
+/**
+ * Appends a new IEK to the existing list of old IEKs.
+ *
+ * @param contractID - The ID of the contract.
+ * @param IEK - The encryption key object.
+ * @param oldIEK - The old IEK to be appended.
+ * @param encryptedData - The encrypted data string, or null if not available.
+ * @returns The updated encrypted data containing the new IEK.
+ * @throws {Error} - Throws an error if decryption of old IEK list fails.
+ */
+const appendToIekList = (contractID: string, IEK: Object, oldIEK: Object, encryptedData: ?string) => {
+  // Decrypt the old IEK list
+  const oldKeys = decryptOldIekList(contractID, oldIEK, encryptedData)
+
+  // If decryption fails, throw an error to prevent data loss
+  if (!oldKeys) {
+    throw new Error('Error decrypting old IEK list')
+  }
+
+  // Create a Set to store unique keys
+  const keysSet = new Set(oldKeys)
+
+  // Serialize the old IEK and add it to the Set
+  const serializedOldIEK = serializeKey(oldIEK, true)
+  keysSet.add(serializedOldIEK)
+
+  // Encrypt the updated list of keys and return the new encrypted data
+  const updatedKeysData = encryptedOutgoingDataWithRawKey(
+    IEK,
+    // Convert Set back to Array for serialization
+    JSON.stringify(Array.from(keysSet))
+  ).toString(`meta.private.oldKeys;${contractID}`)
+
+  return updatedKeysData // Return the updated encrypted data
+}
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -217,9 +286,9 @@ export default (sbp('sbp/selectors/register', {
         namespaceRegistration: username
       })
 
-      // After the contract has been created, store pesistent keys
+      // After the contract has been created, store persistent keys
       await sbp('chelonia/storeSecretKeys',
-        new Secret([CEK, CSK, PEK].map(key => ({ key })))
+        new Secret([CEK, CSK, PEK, SAK].map(key => ({ key })))
       )
       // And remove transient keys, which require a user password
       sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
@@ -232,7 +301,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return userID
   },
-  'gi.actions/identity/login': function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys }) {
+  'gi.actions/identity/login': function ({ identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys, oldKeysAnchorCid }) {
     // This wrapper ensures that there is at most one login flow action executed
     // at any given time. Because of the async work done when logging in and out,
     // it could happen that, e.g., `gi.actions/identity/login` is called before
@@ -251,6 +320,38 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
+
+      if (oldKeysAnchorCid) {
+        try {
+          // Fetch the old keys from the server
+          const result = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
+
+          // Parse the signed data in the OP_KEY_UPDATE payload to extract keys
+          const keys = JSON.parse(result._signedData[0])
+
+          // Find the key with the name 'iek'
+          const iekObj = keys.find((key) => key.name === 'iek')
+
+          // Check if old keys are present in the metadata
+          if (iekObj.meta?.private?.oldKeys) {
+            // Decrypt the old IEK list
+            const decryptedKeys = decryptOldIekList(identityContractID, transientSecretKeys[0].key, iekObj.meta.private.oldKeys)
+
+            // Check if decryption was successful
+            if (!decryptedKeys) {
+              console.error('[gi.actions/identity/login] Error decrypting old IEKs, logging in will probably fail due to missing keys')
+            } else {
+              // Map the decrypted keys to the required format
+              const secretKeys = decryptedKeys.map(key => ({ key: deserializeKey(key), transient: true }))
+
+              // Store the secret keys using the sbp function
+              await sbp('chelonia/storeSecretKeys', new Secret(secretKeys))
+            }
+          }
+        } catch (error) {
+          console.error('[gi.actions/identity/login] Error fetching or processing old keys:', error)
+        }
+      }
 
       try {
         if (!state) {
@@ -688,6 +789,133 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
+  },
+  'gi.actions/identity/changePassword': async ({
+    identityContractID,
+    username,
+    oldIPK,
+    oldIEK,
+    newIPK: IPK,
+    newIEK: IEK,
+    updateToken
+  }) => {
+    // Create the necessary keys to initialise the contract
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
+    const CEK = keygen(CURVE25519XSALSA20POLY1305)
+    const SAK = keygen(EDWARDS25519SHA512BATCH)
+
+    // Key IDs
+    const oldIPKid = keyId(oldIPK)
+    const oldIEKid = keyId(oldIEK)
+    const IPKid = keyId(IPK)
+    const IEKid = keyId(IEK)
+    const CSKid = keyId(CSK)
+    const CEKid = keyId(CEK)
+    const SAKid = keyId(SAK)
+
+    // Public keys to be stored in the contract
+    const IPKp = serializeKey(IPK, false)
+    const IEKp = serializeKey(IEK, false)
+    const CSKp = serializeKey(CSK, false)
+    const CEKp = serializeKey(CEK, false)
+    const SAKp = serializeKey(SAK, false)
+
+    // Secret keys to be stored encrypted in the contract
+    const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
+    const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
+    const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
+
+    const state = sbp('chelonia/contract/state', identityContractID)
+
+    // Before rotating keys the contract, put all keys into transient store
+    await sbp('chelonia/storeSecretKeys',
+      new Secret([oldIPK, oldIEK, IPK, IEK, CEK, CSK, SAK].map(key => ({ key, transient: true })))
+    )
+
+    const oldKeysData = appendToIekList(
+      identityContractID, IEK, oldIEK,
+      state._vm.authorizedKeys[oldIEKid]?.meta?.private?.oldKeys
+    )
+
+    await sbp('chelonia/out/keyUpdate', {
+      contractID: identityContractID,
+      contractName: 'gi.contracts/identity',
+      data: [
+        {
+          id: IPKid,
+          name: 'ipk',
+          oldKeyId: oldIPKid,
+          meta: {
+            private: {
+              transient: true
+            }
+          },
+          data: IPKp
+        },
+        {
+          id: IEKid,
+          name: 'iek',
+          oldKeyId: oldIEKid,
+          meta: {
+            private: {
+              transient: true,
+              oldKeys: oldKeysData
+            }
+          },
+          data: IEKp
+        },
+        {
+          id: CSKid,
+          name: 'csk',
+          oldKeyId: findKeyIdByName(state, 'csk'),
+          meta: {
+            private: {
+              content: CSKs
+            }
+          },
+          data: CSKp
+        },
+        {
+          id: CEKid,
+          name: 'cek',
+          oldKeyId: findKeyIdByName(state, 'cek'),
+          meta: {
+            private: {
+              content: CEKs
+            }
+          },
+          data: CEKp
+        },
+        {
+          id: SAKid,
+          name: '#sak',
+          oldKeyId: findKeyIdByName(state, '#sak'),
+          meta: {
+            private: {
+              content: SAKs
+            }
+          },
+          data: SAKp
+        }
+      ],
+      signingKeyId: oldIPKid,
+      publishOptions: {
+        headers: {
+          'shelter-name': username,
+          'shelter-salt-update-token': updateToken
+        }
+      }
+      /* hooks: {
+        preSendCheck
+      } */
+    })
+
+    // After the contract has been updated, store persistent keys
+    await sbp('chelonia/storeSecretKeys',
+      new Secret([CEK, CSK, SAK].map(key => ({ key })))
+    )
+    // And remove transient keys, which require a user password
+    sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),

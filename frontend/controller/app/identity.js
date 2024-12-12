@@ -7,7 +7,7 @@ import Vue from 'vue'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEa, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
@@ -168,7 +168,7 @@ sbp('okTurtles.events/on', LOGOUT, (a) => {
 */
 
 export default (sbp('sbp/selectors/register', {
-  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>) => {
+  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>): Promise<[string, ?string]> => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -187,7 +187,41 @@ export default (sbp('sbp/selectors/register', {
       'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
     })).toString()}`).then(handleFetchResult('text'))
 
-    return decryptContractSalt(c, contractHash)
+    // [contractSalt, cid]
+    return JSON.parse(decryptContractSalt(c, contractHash))
+  },
+  'gi.app/identity/updateSaltRequest': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
+    const r = randomNonce()
+    const b = hash(r)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+      .then(handleFetchResult('json'))
+
+    const { authSalt, s, sig } = authHash
+
+    const h = await hashPassword(oldPassword.valueOf(), authSalt)
+
+    const [c, hc] = computeCAndHc(r, s, h)
+
+    const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEa(newPassword.valueOf(), c)
+
+    const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body:
+        `${(new URLSearchParams({
+          'r': r,
+          's': s,
+          'sig': sig,
+          'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, ''),
+          'Ea': encryptedArgs
+        })).toString()}`
+    }).then(handleFetchResult('text'))
+
+    const [oldContractSalt, updateToken] = JSON.parse(decryptContractSalt(c, response))
+
+    return [contractSalt, oldContractSalt, updateToken]
   },
   'gi.app/identity/create': async function ({
     data: { username, email, password, picture },
@@ -286,14 +320,16 @@ export default (sbp('sbp/selectors/register', {
 
       const password = wpassword?.valueOf()
       const transientSecretKeys = []
+      let oldKeysAnchorCid
 
       // If we're creating a new session, here we derive the IEK. This key (not
       // the password) will be passed to the service worker.
       if (password) {
         try {
-          const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
+          const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
           const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
           transientSecretKeys.push(IEK)
+          oldKeysAnchorCid = cid
         } catch (e) {
           console.error('caught error calling retrieveSalt:', e)
           throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
@@ -343,7 +379,7 @@ export default (sbp('sbp/selectors/register', {
             // and `state` will be sent back to replace the current Vuex state
             // after login. When using a service worker, all tabs will receive
             // a new Vuex state to replace their state with.
-            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
+            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))), oldKeysAnchorCid })
           } else {
             try {
               await sbp('chelonia/contract/sync', identityContractID)
@@ -434,5 +470,32 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.app/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/logout', ...params])
+  },
+  'gi.app/identity/changePassword': async (woldPassword: Secret<string>, wnewPassword: Secret<string>) => {
+    const state = sbp('state/vuex/state')
+    if (!state.loggedIn) return
+    const getters = sbp('state/vuex/getters')
+
+    const { identityContractID } = state.loggedIn
+    const username = getters.usernameFromID(identityContractID)
+    const oldPassword = woldPassword.valueOf()
+    const newPassword = wnewPassword.valueOf()
+
+    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, woldPassword, wnewPassword)
+
+    const oldIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, oldPassword, oldContractSalt)
+    const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)
+    const newIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
+    const newIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, newPassword, newContractSalt)
+
+    return sbp('gi.actions/identity/changePassword', {
+      identityContractID,
+      username,
+      oldIPK,
+      oldIEK,
+      newIPK,
+      newIEK,
+      updateToken
+    })
   }
 }): string[])
