@@ -63,7 +63,7 @@ export default ({
     this.refreshArchivedProposals()
     sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
 
-    this.matchMediaPhone = window.matchMedia('screen and (max-width: 768px)')
+    this.matchMediaPhone = window.matchMedia('screen and (max-width: 515px)')
     this.ephemeral.isPhone = this.matchMediaPhone.matches
     this.matchMediaPhone.onchange = (e) => {
       this.ephemeral.isPhone = e.matches
