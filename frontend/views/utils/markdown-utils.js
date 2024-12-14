@@ -51,7 +51,7 @@ export function renderMarkdown (str: string): any {
 
   str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
   str = str.replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n')
-    .replace(/(>)(\s.+)\n<br>/gs, '$1$2\n\n') // Check for [2], [3] above once more to resolve edge-cases. (reference: https://github.com/okTurtles/group-income/issues/2356)
+    .replace(/(>)(\s.+)\n<br>/gs, '$1$2\n\n') // Check for [2], [3] above once more to resolve edge-cases (reference: https://github.com/okTurtles/group-income/issues/2356)
 
   // STEP 2. convert the markdown into html DOM string.
   let converted = marked.parse(str, { gfm: true })
