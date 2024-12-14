@@ -7,7 +7,7 @@ import Vue from 'vue'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEa, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
@@ -202,7 +202,7 @@ export default (sbp('sbp/selectors/register', {
 
     const [c, hc] = computeCAndHc(r, s, h)
 
-    const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEa(newPassword.valueOf(), c)
+    const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEc(newPassword.valueOf(), c)
 
     const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
       method: 'POST',
@@ -471,17 +471,17 @@ export default (sbp('sbp/selectors/register', {
   'gi.app/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/logout', ...params])
   },
-  'gi.app/identity/changePassword': async (woldPassword: Secret<string>, wnewPassword: Secret<string>) => {
+  'gi.app/identity/changePassword': async (wOldPassword: Secret<string>, wNewPassword: Secret<string>) => {
     const state = sbp('state/vuex/state')
     if (!state.loggedIn) return
     const getters = sbp('state/vuex/getters')
 
     const { identityContractID } = state.loggedIn
     const username = getters.usernameFromID(identityContractID)
-    const oldPassword = woldPassword.valueOf()
-    const newPassword = wnewPassword.valueOf()
+    const oldPassword = wOldPassword.valueOf()
+    const newPassword = wNewPassword.valueOf()
 
-    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, woldPassword, wnewPassword)
+    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, wOldPassword, wNewPassword)
 
     const oldIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, oldPassword, oldContractSalt)
     const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)

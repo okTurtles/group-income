@@ -1,5 +1,6 @@
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
+import { AUTHSALT, CONTRACTSALT, CS, SU } from './zkppConstants.js'
 
 // .toString('base64url') only works in Node.js
 export const base64ToBase64url = (s: string): string => s.replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
@@ -31,7 +32,7 @@ export const computeCAndHc = (r: string, s: string, h: string): [Uint8Array, Uin
 }
 
 export const encryptContractSalt = (c: Uint8Array, contractSalt: string): string => {
-  const encryptionKey = hashRawStringArray('CS', c).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(CS, c).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
 
   const encryptedContractSalt = nacl.secretbox(Buffer.from(contractSalt), nonce, encryptionKey)
@@ -40,7 +41,7 @@ export const encryptContractSalt = (c: Uint8Array, contractSalt: string): string
 }
 
 export const decryptContractSalt = (c: Uint8Array, encryptedContractSaltBox: string): string => {
-  const encryptionKey = hashRawStringArray('CS', c).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(CS, c).slice(0, nacl.secretbox.keyLength)
   const encryptedContractSaltBoxBuf = Buffer.from(base64urlToBase64(encryptedContractSaltBox), 'base64')
 
   const nonce = encryptedContractSaltBoxBuf.slice(0, nacl.secretbox.nonceLength)
@@ -52,7 +53,7 @@ export const decryptContractSalt = (c: Uint8Array, encryptedContractSaltBox: str
 export const encryptSaltUpdate = (secret: string, recordId: string, record: string): string => {
   // The nonce is also used to derive a single-use encryption key
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
-  const encryptionKey = hashRawStringArray('SU', secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(SU, secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
 
   const encryptedRecord = nacl.secretbox(Buffer.from(record), nonce, encryptionKey)
 
@@ -63,7 +64,7 @@ export const decryptSaltUpdate = (secret: string, recordId: string, encryptedRec
   // The nonce is also used to derive a single-use encryption key
   const encryptedRecordBoxBuf = Buffer.from(base64urlToBase64(encryptedRecordBox), 'base64')
   const nonce = encryptedRecordBoxBuf.slice(0, nacl.secretbox.nonceLength)
-  const encryptionKey = hashRawStringArray('SU', secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(SU, secret, nonce, recordId).slice(0, nacl.secretbox.keyLength)
 
   const encryptedRecord = encryptedRecordBoxBuf.slice(nacl.secretbox.nonceLength)
 
@@ -92,8 +93,8 @@ export const saltAgreement = (publicKey: string, secretKey: Uint8Array): false |
     return false
   }
 
-  const authSalt = Buffer.from(hashStringArray('AUTHSALT', dhKey)).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(hashStringArray('CONTRACTSALT', dhKey)).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(hashStringArray(AUTHSALT, dhKey)).slice(0, 18).toString('base64')
+  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, dhKey)).slice(0, 18).toString('base64')
 
   return [authSalt, contractSalt]
 }
@@ -136,19 +137,25 @@ export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uin
   return [contractSalt, base64ToBase64url(Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64'))]
 }
 
-export const buildUpdateSaltRequestEa = async (password: string, c: Uint8Array): Promise<[string, string]> => {
-  // Derive S_A and S_C as follows:
+// Build the `E_c` (encrypted arguments) to send to the server to negotiate a
+// password change. `password` corresponds to the raw user password, `c` is a
+// negotiated shared secret between the server and the client. The encrypted
+// payload contains the salted user password (using `authSalt`).
+// The return value includes the derived contract salt and the `E_c`.
+export const buildUpdateSaltRequestEc = async (password: string, c: Uint8Array): Promise<[string, string]> => {
+  // Derive S_A (authentication salt) and S_C (contract salt) as follows:
   //   -> S_T -< BASE64(SHA-512(SHA-512(T) + SHA-512(c))[0..18]) with T being
-  //     `AUTHSALT` or `CONTRACTSALT`
+  //     `AUTHSALT` (for S_A) or `CONTRACTSALT` (for S_C).
   // This way, we ensure both the server and the client contribute to the
-  //   salts' entropy.
+  //   salts' entropy. Having more sources of entropy contributes to higher
+  //   randomness in the result.
   // When sending the encrypted data, the encrypted information would be
   // `hashedPassword`, which needs to be verified server-side to verify
   // it matches p and would be used to derive S_A and S_C.
-  const authSalt = Buffer.from(hashStringArray('AUTHSALT', c)).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(hashStringArray('CONTRACTSALT', c)).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, 18).toString('base64')
+  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, 18).toString('base64')
 
-  const encryptionKey = hashRawStringArray('SU', c).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(SU, c).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
 
   const hashedPassword = await hashPassword(password, authSalt)

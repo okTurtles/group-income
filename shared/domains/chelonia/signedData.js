@@ -8,13 +8,28 @@ import { ChelErrorSignatureError, ChelErrorSignatureKeyNotFound, ChelErrorSignat
 const rootStateFn = () => sbp('chelonia/rootState')
 
 export interface SignedData<T> {
+  // The ID of the signing key used
   signingKeyId: string,
+  // The unsigned data. For outgoing data, this is the original data given
+  // as input. For incoming data, signature verification will be attempted.
   valueOf: () => T,
+  // The serialized _signed_ data. For outgoing data, signing will be
+  // attempted. For incoming data, this is the original data given as input.
+  // The `additionalData` parameter is only used for outgoing data, and binds
+  // the signed payload to additional information.
   serialize: (additionalData: ?string) => { _signedData: [string, string, string] },
+  // Data needed to recreate signed data.
+  // [contractID, data, height, additionalData]
   context?: [string, Object, number, string],
+  // A string version of the serialized signed data (i.e., `JSON.stringify()`)
   toString: (additionalData: ?string) => string,
+  // For outgoing data, recreate SignedData using different data and the same
+  // parameters
   recreate?: (data: T) => SignedData<T>,
+  // For incoming data, this is an alias of `serialize`. Undefined for outgoing
+  // data.
   toJSON?: () => [string, string],
+  // `get` and `set` can set additional (unsigned) fields within `SignedData`
   get: (k: string) => any,
   set?: (k: string, v: any) => void
 }

@@ -8,10 +8,20 @@ import { isRawSignedData, signedIncomingData } from './signedData.js'
 const rootStateFn = () => sbp('chelonia/rootState')
 
 export interface EncryptedData<T> {
+  // The ID of the encryption key used
   encryptionKeyId: string,
+  // The unencrypted data. For outgoing data, this is the original data given
+  // as input. For incoming data, decryption will be attempted.
   valueOf: () => T,
+  // The serialized _encrypted_ data. For outgoing data, encryption will be
+  // attempted. For incoming data, this is the original data given as input.
+  // The `additionalData` parameter is only used for outgoing data, and binds
+  // the encrypted payload to additional information.
   serialize: (additionalData: ?string) => [string, string],
+  // A string version of the serialized encrypted data (i.e., `JSON.stringify()`)
   toString: (additionalData: ?string) => string,
+  // For incoming data, this is an alias of `serialize`. Undefined for outgoing
+  // data.
   toJSON?: () => [string, string]
 }
 
