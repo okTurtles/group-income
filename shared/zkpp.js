@@ -1,6 +1,6 @@
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
-import { AUTHSALT, CONTRACTSALT, CS, SU } from './zkppConstants.js'
+import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from './zkppConstants.js'
 
 // .toString('base64url') only works in Node.js
 export const base64ToBase64url = (s: string): string => s.replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
@@ -93,8 +93,8 @@ export const saltAgreement = (publicKey: string, secretKey: Uint8Array): false |
     return false
   }
 
-  const authSalt = Buffer.from(hashStringArray(AUTHSALT, dhKey)).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, dhKey)).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(hashStringArray(AUTHSALT, dhKey)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, dhKey)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
 
   return [authSalt, contractSalt]
 }
@@ -152,8 +152,8 @@ export const buildUpdateSaltRequestEc = async (password: string, c: Uint8Array):
   // When sending the encrypted data, the encrypted information would be
   // `hashedPassword`, which needs to be verified server-side to verify
   // it matches p and would be used to derive S_A and S_C.
-  const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
 
   const encryptionKey = hashRawStringArray(SU, c).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)

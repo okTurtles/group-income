@@ -2,7 +2,7 @@ import sbp from '@sbp/sbp'
 import { randomBytes, timingSafeEqual } from 'crypto'
 import nacl from 'tweetnacl'
 import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, decryptSaltUpdate, encryptContractSalt, encryptSaltUpdate, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
-import { AUTHSALT, CONTRACTSALT, SU } from '~/shared/zkppConstants.js'
+import { AUTHSALT, CONTRACTSALT, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
 
 // used to encrypt salts in database
 let recordSecret: string
@@ -318,8 +318,8 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
       return false
     }
 
-    const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, 18).toString('base64')
-    const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, 18).toString('base64')
+    const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+    const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
 
     const token = encryptSaltUpdate(
       hashUpdateSecret,

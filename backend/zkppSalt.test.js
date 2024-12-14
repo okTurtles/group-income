@@ -5,14 +5,14 @@ import should from 'should'
 import initDB from './database.js'
 import 'should-sinon'
 
-import { AUTHSALT, CONTRACTSALT, CS, SU } from '~/shared/zkppConstants.js'
+import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 
 const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const dhKey = nacl.hash(nacl.box.before(Buffer.from(p, 'base64url'), secretKey))
-  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(AUTHSALT)), dhKey]))).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(CONTRACTSALT)), dhKey]))).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(AUTHSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(CONTRACTSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
   const encryptionKey = nacl.hash(Buffer.from(authSalt + contractSalt)).slice(0, nacl.secretbox.keyLength)
   const encryptedHashedPassword = Buffer.concat([nonce, nacl.secretbox(Buffer.from(hash), nonce, encryptionKey)]).toString('base64url')
 
