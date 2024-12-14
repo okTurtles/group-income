@@ -152,6 +152,26 @@ const appendToIekList = (contractID: string, IEK: Object, oldIEK: Object, encryp
   return updatedKeysData // Return the updated encrypted data
 }
 
+// Event handler to detect password updates
+sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
+  const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+  // If the message isn't for our identity contract or it's not `OP_KEY_UPDATE`
+  // (possibly within `OP_ATOMIC`), we return early
+  if (contractID !== identityContractID || ![GIMessage.OP_ATOMIC, GIMessage.OP_KEY_UPDATE].includes(message.opType())) return
+
+  // If this could have changed our CSK, let's try to get the key ID and see if
+  // we have the corresponding secret key
+  const hasNewCsk = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk', true)
+  // If we do, we can still use the contract as normal
+  if (hasNewCsk) return
+
+  // Otherwise, force a logout
+  console.warn('Likely password change for identity contract. Logging us out.', identityContractID)
+  sbp('gi.actions/identity/logout').catch(e => {
+    console.error('Error while automatically logging out', e)
+  })
+})
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     IPK,
