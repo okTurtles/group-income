@@ -45,7 +45,6 @@ export function renderMarkdown (str: string): any {
         .replace(/(>|\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // [2] this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
         .replace(/(>)(\s.+)\n<br>/gs, '$1$2\n\n') // [3] this is a custom-logic added so that the end of blockquotes are correctly detected by markedjs. ('s' flag is needed to account for multi-line strings)
 
-      console.log('!@# entryText after all transformations: ', entryText)
       entry.text = entryText
     }
   })
