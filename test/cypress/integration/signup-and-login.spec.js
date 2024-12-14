@@ -113,4 +113,33 @@ describe('Signup, Profile and Login', () => {
 
     cy.closeModal()
   })
+
+  it('change user password', () => {
+    cy.giLogin(username)
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('passwordBtn').click()
+    const oldPassword = '123456789'
+    const newPassword = 'abcdefghi'
+    cy.getByDT('PasswordModal').within(() => {
+      cy.getByDT('current').type('{selectall}{del}' + oldPassword)
+      cy.getByDT('newPassword').type('{selectall}{del}' + newPassword)
+      cy.getByDT('confirm').type('{selectall}{del}' + newPassword)
+      cy.getByDT('submit').click()
+    })
+    cy.getByDT('PasswordModal').should('not.exist')
+    cy.giLogout({ bypassUI: true })
+
+    // Login using old password
+    cy.getByDT('loginBtn').click()
+    cy.getByDT('loginName').type('{selectall}{del}' + username)
+    cy.getByDT('password').type('{selectall}{del}' + oldPassword)
+
+    cy.getByDT('loginSubmit').click()
+    cy.getByDT('loginError').should('contain', 'Incorrect username or password')
+    cy.closeModal()
+
+    // Now, log in with the correct changed password
+    cy.giLogin(username, { password: newPassword })
+    cy.giLogout({ bypassUI: true })
+  })
 })

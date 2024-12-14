@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate' :a11yTitle='L("Change Password")')
+modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate' data-test='PasswordModal' :a11yTitle='L("Change Password")')
   template(slot='title') Change password
 
   form(
@@ -50,11 +50,13 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
     .buttons
       i18n.is-outlined(
         tag='button'
+        data-test='cancel'
         @click='closeModal'
       ) Cancel
 
       i18n.is-success(
         tag='button'
+        data-test='submit'
         @click='changePassword'
         :disabled='$v.form.$invalid || processing'
       ) Change password
