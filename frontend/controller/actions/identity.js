@@ -15,6 +15,7 @@ import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/event
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
@@ -31,7 +32,7 @@ import { encryptedAction, groupContractsByType, syncContractsInOrder } from './u
  * @param encryptedData - The encrypted data string, or null if not available.
  * @returns The decrypted old IEK list, or an empty array if decryption fails.
  */
-const decryptOldIekList = (contractID: string, IEK: Object, encryptedData: ?string) => {
+const decryptOldIekList = (contractID: string, IEK: Key, encryptedData: ?string) => {
   // Return an empty array if no encrypted data is provided
   if (!encryptedData) return []
 
@@ -52,6 +53,67 @@ const decryptOldIekList = (contractID: string, IEK: Object, encryptedData: ?stri
   }
 
   // Don't return in case of error
+}
+
+/**
+ * Decrypts the old IEK list using the provided contract ID and IEK.
+ *
+ * @param identityContractID - The identity contract ID
+ * @param oldKeysAnchorCid - The CID corresponding to the password change message
+ * @param IEK - The encryption key object.
+ * @returns The decrypted old IEK list, or an empty array if decryption fails.
+ */
+const processOldIekList = async (identityContractID: string, oldKeysAnchorCid: string, IEK: Key) => {
+  try {
+    // Fetch the old keys from the server
+    const result = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
+
+    // Parse the signed data in the OP_KEY_UPDATE payload to extract keys
+    const oldKeys = (() => {
+      const data = rawSignedIncomingData(result)
+      const head = JSON.parse(data.get('head'))
+      if (head.contractID !== identityContractID) {
+        throw new Error('Unexpected contract ID.')
+      }
+      if (![GIMessage.OP_ATOMIC, GIMessage.OP_KEY_UPDATE].includes(head.op)) {
+        throw new Error('Unsupported opcode: ' + head.op)
+      }
+
+      // Normalize the payload as if it were `OP_ATOMIC`
+      const payload = (head.op === GIMessage.OP_KEY_UPDATE)
+        ? [[GIMessage.OP_KEY_UPDATE, data.valueOf()]]
+        : data.valueOf()
+
+      // Find the key with the name 'iek', and the `meta.private.oldKeys` field
+      // within it
+      return payload
+        .filter(([op]) => op === GIMessage.OP_KEY_UPDATE)
+        .flatMap(([, keys]) => keys)
+        .find((key) => key.name === 'iek' && key.meta?.private?.oldKeys)
+        ?.meta.private.oldKeys
+    })()
+
+    // Check if old keys are present in the metadata
+    if (!oldKeys) {
+      console.error('[processOldIekList] Error finding old IEKs, logging in will probably fail due to missing keys')
+    }
+
+    // Decrypt the old IEK list
+    const decryptedKeys = decryptOldIekList(identityContractID, IEK, oldKeys)
+
+    // Check if decryption was successful
+    if (!decryptedKeys) {
+      console.error('[processOldIekList] Error decrypting old IEKs, logging in will probably fail due to missing keys')
+    } else {
+      // Map the decrypted keys to the required format
+      const secretKeys = decryptedKeys.map(key => ({ key: deserializeKey(key), transient: true }))
+
+      // Store the secret keys using the sbp function
+      await sbp('chelonia/storeSecretKeys', new Secret(secretKeys))
+    }
+  } catch (error) {
+    console.error('[processOldIekList] Error fetching or processing old keys:', error)
+  }
 }
 
 /**
@@ -322,35 +384,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
       if (oldKeysAnchorCid) {
-        try {
-          // Fetch the old keys from the server
-          const result = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file/${oldKeysAnchorCid}`).then(handleFetchResult('json'))
-
-          // Parse the signed data in the OP_KEY_UPDATE payload to extract keys
-          const keys = JSON.parse(result._signedData[0])
-
-          // Find the key with the name 'iek'
-          const iekObj = keys.find((key) => key.name === 'iek')
-
-          // Check if old keys are present in the metadata
-          if (iekObj.meta?.private?.oldKeys) {
-            // Decrypt the old IEK list
-            const decryptedKeys = decryptOldIekList(identityContractID, transientSecretKeys[0].key, iekObj.meta.private.oldKeys)
-
-            // Check if decryption was successful
-            if (!decryptedKeys) {
-              console.error('[gi.actions/identity/login] Error decrypting old IEKs, logging in will probably fail due to missing keys')
-            } else {
-              // Map the decrypted keys to the required format
-              const secretKeys = decryptedKeys.map(key => ({ key: deserializeKey(key), transient: true }))
-
-              // Store the secret keys using the sbp function
-              await sbp('chelonia/storeSecretKeys', new Secret(secretKeys))
-            }
-          }
-        } catch (error) {
-          console.error('[gi.actions/identity/login] Error fetching or processing old keys:', error)
-        }
+        await processOldIekList(identityContractID, oldKeysAnchorCid, transientSecretKeys[0].key)
       }
 
       try {
