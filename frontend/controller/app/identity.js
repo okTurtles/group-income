@@ -254,9 +254,8 @@ export default (sbp('sbp/selectors/register', {
     // next create the identity contract itself
     try {
       const userID = await sbp('gi.actions/identity/create', {
-        // TODO: Wrap IPK and IEK in "Secret"
-        IPK: serializeKey(IPK, true),
-        IEK: serializeKey(IEK, true),
+        IPK: new Secret(serializeKey(IPK, true)),
+        IEK: new Secret(serializeKey(IEK, true)),
         publishOptions,
         username,
         email,
@@ -379,7 +378,14 @@ export default (sbp('sbp/selectors/register', {
             // and `state` will be sent back to replace the current Vuex state
             // after login. When using a service worker, all tabs will receive
             // a new Vuex state to replace their state with.
-            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))), oldKeysAnchorCid })
+            await sbp('gi.actions/identity/login', {
+              identityContractID,
+              encryptionParams,
+              cheloniaState,
+              state,
+              transientSecretKeys: new Secret(transientSecretKeys.map(k => serializeKey(k, true))),
+              oldKeysAnchorCid
+            })
           } else {
             try {
               await sbp('chelonia/contract/sync', identityContractID)
@@ -491,11 +497,11 @@ export default (sbp('sbp/selectors/register', {
     return sbp('gi.actions/identity/changePassword', {
       identityContractID,
       username,
-      oldIPK,
-      oldIEK,
-      newIPK,
-      newIEK,
-      updateToken
+      oldIPK: new Secret(oldIPK),
+      oldIEK: new Secret(oldIEK),
+      newIPK: new Secret(newIPK),
+      newIEK: new Secret(newIEK),
+      updateToken: new Secret(updateToken)
     })
   }
 }): string[])

@@ -174,8 +174,8 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
-    IPK,
-    IEK,
+    IPK: wIPK,
+    IEK: wIEK,
     publishOptions,
     username,
     email,
@@ -187,8 +187,12 @@ export default (sbp('sbp/selectors/register', {
   }) {
     let finalPicture = `${self.location.origin}/assets/images/user-avatar-default.png`
 
-    IPK = typeof IPK === 'string' ? deserializeKey(IPK) : IPK
-    IEK = typeof IEK === 'string' ? deserializeKey(IEK) : IEK
+    // Unwrap secrets
+    wIPK = wIPK.valueOf()
+    wIEK = wIEK.valueOf()
+
+    const IPK = typeof wIPK === 'string' ? deserializeKey(wIPK) : wIPK
+    const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
 
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
@@ -394,7 +398,7 @@ export default (sbp('sbp/selectors/register', {
     // a queue.
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', async () => {
       console.debug('[gi.actions/identity/login] Scheduled call starting', identityContractID)
-      transientSecretKeys = transientSecretKeys.map(k => ({ key: deserializeKey(k.valueOf()), transient: true }))
+      transientSecretKeys = transientSecretKeys.valueOf().map(k => ({ key: deserializeKey(k), transient: true }))
 
       // If running in a SW, start log capture here
       if (typeof WorkerGlobalScope === 'function') {
@@ -851,8 +855,15 @@ export default (sbp('sbp/selectors/register', {
     oldIEK,
     newIPK: IPK,
     newIEK: IEK,
-    updateToken
+    updateToken,
+    hooks
   }) => {
+    oldIPK = oldIPK.valueOf()
+    oldIEK = oldIEK.valueOf()
+    IPK = IPK.valueOf()
+    IEK = IEK.valueOf()
+    updateToken = updateToken.valueOf()
+
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -958,10 +969,8 @@ export default (sbp('sbp/selectors/register', {
           'shelter-name': username,
           'shelter-salt-update-token': updateToken
         }
-      }
-      /* hooks: {
-        preSendCheck
-      } */
+      },
+      hooks
     })
 
     // After the contract has been updated, store persistent keys
