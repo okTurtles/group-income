@@ -1,6 +1,7 @@
 'use strict'
 
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { makeNotification } from '@model/notifications/nativeNotification.js'
 import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -157,11 +158,11 @@ sbp('sbp/selectors/register', {
   })()
 })
 
-const x = new URL(self.location)
+const ourLocation = new URL(self.location)
 
 sbp('sbp/selectors/register', {
   'controller/router': () => {
-    return { options: { base: x.searchParams.get('routerBase') } }
+    return { options: { base: ourLocation.searchParams.get('routerBase') } }
   }
 })
 
@@ -281,6 +282,7 @@ self.addEventListener('notificationclick', event => {
       if (event.notification.data?.path) {
         client.postMessage({
           type: 'navigate',
+          groupID: event.notification.data.groupID,
           path: event.notification.data.path
         })
       }
@@ -325,4 +327,16 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
   sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+})
+
+sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
+  makeNotification({
+    // icon: undefined, // TODO
+    title: 'TBD', // TODO
+    body: notification.body,
+    groupID: notification.groupID,
+    path: notification.linkTo
+  }).catch(e => {
+    console.error('Error displaying native notification', e)
+  })
 })

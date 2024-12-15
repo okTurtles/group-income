@@ -76,6 +76,9 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'navigate': {
+              if (data.groupID) {
+                sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: data.groupID })
+              }
               sbp('controller/router').push({ path: data.path }).catch(console.warn)
               break
             }

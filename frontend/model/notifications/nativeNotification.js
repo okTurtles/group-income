@@ -82,8 +82,8 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 }
 
-export function makeNotification ({ title, body, icon, path }: {
-  title: string, body: string, icon?: string, path?: string
+export function makeNotification ({ title, body, icon, path, groupID }: {
+  title: string, body: string, icon?: string, path?: string, groupID?: string
 }): void | Promise<void> {
   if (typeof Notification !== 'function') return
   // If not running on a SW
@@ -108,11 +108,11 @@ export function makeNotification ({ title, body, icon, path }: {
   } else {
   // If running in a SW
     return self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      // If the no window is focused, display a native notification
+      // If no window is focused, display a native notification
       if (clientList.some(client => client.focused)) {
         return
       }
-      return self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+      return self.registration.showNotification(title, { body, icon, data: { groupID, path } }).catch(console.warn)
     })
   }
 }
