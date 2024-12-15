@@ -14,7 +14,6 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
       :value='form'
       :$v='$v'
       @enter='changePassword'
-      @input='(password) => { newPassword = password }'
       :hasIconRight='true'
       :showPlaceholder='false'
       :showPassword='false'
@@ -27,7 +26,6 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
       :value='form'
       :$v='$v'
       @enter='changePassword'
-      @input='(password) => { newPassword = password }'
       :hasIconRight='true'
       :showPlaceholder='false'
       :showPassword='false'
@@ -40,33 +38,35 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
       :value='form'
       :$v='$v'
       @enter='changePassword'
-      @input='(password) => { newPassword = password }'
       :hasIconRight='true'
       :showPlaceholder='false'
       :showPassword='false'
       size='is-large'
     )
 
+    banner-scoped(ref='formMsg')
+
     .buttons
       i18n.is-outlined(
         tag='button'
+        type='button'
         data-test='cancel'
         @click='closeModal'
       ) Cancel
 
-      i18n.is-success(
-        tag='button'
-        data-test='submit'
+      button-submit(
         @click='changePassword'
+        data-test='submit'
         :disabled='$v.form.$invalid || processing'
-      ) Change password
-
-  template(slot='errors') {{ form.response }}
+      ) {{ L('Change password') }}
 </template>
 <script>
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
+import { IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
@@ -89,20 +89,22 @@ export default ({
   validations: {
     form: {
       current: {
-        required
+        [L('Your current password is required.')]: required
       },
       newPassword: {
-        required,
+        [L('A password is required.')]: required,
         nonWhitespace: value => /^\S+$/.test(value),
-        minLength: minLength(7)
+        [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
       },
       confirm: {
-        required,
-        sameAsPassword: sameAs('newPassword')
+        [L('Please confirm your password.')]: required,
+        [L('Passwords do not match.')]: sameAs('newPassword')
       }
     }
   },
   components: {
+    BannerScoped,
+    ButtonSubmit,
     ModalTemplate,
     PasswordForm
   },
@@ -122,8 +124,8 @@ export default ({
           )
           this.closeModal()
         } catch (error) {
-          this.form.response = L('Invalid password')
           console.error('[PasswordModal.vue]', error)
+          this.$refs.formMsg.danger(L('Invalid password'))
         }
       })().finally(() => {
         this.processing = false

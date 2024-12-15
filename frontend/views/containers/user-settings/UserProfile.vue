@@ -73,6 +73,7 @@
         i18n.is-title-3(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
+          | {{ ' ' }}
           i18n.is-danger This action cannot be undone.
 
         .buttons
