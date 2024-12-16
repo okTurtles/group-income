@@ -73,7 +73,7 @@ tooltip(
         i18n.button.is-outlined.is-small(
           v-if='groupShouldPropose || isGroupCreator'
           tag='button'
-          @click='openModal("RemoveMember", { memberID: contractID })'
+          @click.stop='onRemoveMemberClick'
           data-test='buttonRemoveMember'
         ) Remove member
 
@@ -91,7 +91,7 @@ import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import DMMixin from '@containers/chatroom/DMMixin.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
@@ -159,11 +159,21 @@ export default ({
   },
   methods: {
     openModal (modal, props) {
-      if (this.deactivated) {
-        return
-      }
+      if (this.deactivated) { return }
       this.toggleTooltip()
+
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    onRemoveMemberClick () {
+      if (this.deactivated) { return }
+      this.toggleTooltip()
+
+      sbp(
+        'okTurtles.events/emit',
+        this.$route.query?.modal === 'GroupMembersAllModal' ? REPLACE_MODAL : OPEN_MODAL,
+        'RemoveMember',
+        { memberID: this.contractID }
+      )
     },
     toggleTooltip () {
       this.$refs.tooltip.toggle()
