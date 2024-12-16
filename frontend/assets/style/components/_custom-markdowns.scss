@@ -115,6 +115,7 @@
     position: relative;
     padding-left: 1rem;
     white-space: pre-line;
+    margin: 0.25rem 0;
 
     &::before {
       content: "";
@@ -126,6 +127,11 @@
       bottom: 0;
       border-radius: 8px;
       background-color: $general_0;
+    }
+
+    p:has(+ p, + pre),
+    pre:has(+ p, + pre) {
+      margin-bottom: 1rem;
     }
   }
 
