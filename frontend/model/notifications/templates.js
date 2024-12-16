@@ -145,7 +145,7 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, proposalHash: string, subtype: NewProposalType }) {
-    const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
+    const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator.
     const args = {
       name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
       ...LTags('strong')
