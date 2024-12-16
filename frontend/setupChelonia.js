@@ -61,9 +61,6 @@ const setupChelonia = async (): Promise<*> => {
     }
   })
 
-  // this is to ensure compatibility between frontend and test/backend.test.js
-  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
-
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: GIMessage) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
