@@ -372,8 +372,8 @@ export default (sbp('sbp/selectors/register', {
               return
             }
 
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-            sbp('okTurtles.events/off', LOGOUT, logoutHandler)
+            removeEventHandler()
+            removeLogoutHandler()
             // The event handler recursively calls this same selector
             // A different path should be taken, since te event handler
             // should be called after the key request has been answered
@@ -383,13 +383,13 @@ export default (sbp('sbp/selectors/register', {
             })
           }
           const logoutHandler = () => {
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+            removeEventHandler()
           }
 
           // The event handler is configured before sending the request
           // to avoid race conditions
-          sbp('okTurtles.events/once', LOGOUT, logoutHandler)
-          sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          const removeLogoutHandler = sbp('okTurtles.events/once', LOGOUT, logoutHandler)
+          const removeEventHandler = sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
         }
 
         // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
@@ -467,7 +467,7 @@ export default (sbp('sbp/selectors/register', {
                   contractID: params.contractID,
                   contractName: 'gi.contracts/group',
                   data: [encryptedOutgoingData(params.contractID, CEKid, {
-                    foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                    foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
                     id: userCSKid,
                     data: userCSKdata,
                     permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
@@ -505,7 +505,8 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, contractID: params.contractID })
+          await sbp('chelonia/contract/wait', params.contractID)
+          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: params.contractID })
           // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
           // This means that we've been removed from the group
         } else if (!hasSecretKeys && !pendingKeyShares) {
@@ -535,7 +536,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
-    const identityContractID = sbp('chelonia/rootState').loggedIn.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
     // This action (`joinWithInviteSecret`) can get invoked while there are
     // events being processed in the group or identity contracts. This can cause
@@ -612,14 +613,14 @@ export default (sbp('sbp/selectors/register', {
     const cskId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
     const csk = {
       id: cskId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
       data: contractState._vm.authorizedKeys[cskId].data
     }
 
     const cekId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
     const cek = {
       id: cekId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
       data: contractState._vm.authorizedKeys[cekId].data
     }
 
@@ -713,25 +714,36 @@ export default (sbp('sbp/selectors/register', {
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/addChatRoom', {
-      ...omit(params, ['options', 'hooks']),
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
+    // Retain needed for the sync placed later to be guaranteed to work
+    await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
+    try {
+      const message = await sbp('gi.actions/group/addChatRoom', {
+        ...omit(params, ['options', 'hooks']),
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
 
-    const chatRoomID = message.contractID()
+      const chatRoomID = message.contractID()
 
-    await sbp('gi.actions/group/joinChatRoom', {
-      ...omit(params, ['options', 'data', 'hooks']),
-      data: { chatRoomID },
-      hooks: {
-        postpublish: params.hooks?.postpublish
-      }
-    })
+      // Sync needed here to avoid "Cannot join a chatroom which isn't part of
+      // the group" error
+      await sbp('chelonia/contract/sync', params.contractID)
+      await sbp('gi.actions/group/joinChatRoom', {
+        ...omit(params, ['options', 'data', 'hooks']),
+        data: { chatRoomID },
+        hooks: {
+          postpublish: params.hooks?.postpublish
+        }
+      })
 
-    return chatRoomID
+      return chatRoomID
+    } finally {
+      sbp('chelonia/contract/release', params.contractID, { ephemeral: true }).catch(e =>
+        console.error('[gi.actions/group/addAndJoinChatRoom] Error releasing group chatroom', e)
+      )
+    }
   },
   ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
     await sbp('gi.actions/chatroom/rename', {
@@ -874,8 +886,8 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyProposalStateInGeneralChatRoom': function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
-    const { generalChatRoomId } = sbp('chelonia/rootState')[groupID]
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
+    const { generalChatRoomId } = await sbp('chelonia/contract/state', groupID)
     return sbp('gi.actions/chatroom/addMessage', {
       contractID: generalChatRoomId,
       data: { type: MESSAGE_TYPES.INTERACTIVE, proposal }
@@ -996,7 +1008,7 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
-    const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
+    const memberID = params.data.memberID || sbp('state/vuex/state').loggedIn.identityContractID
     const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
 
     // For more efficient and correct processing, augment the leaveChatRoom
