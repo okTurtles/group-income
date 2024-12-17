@@ -44,8 +44,12 @@ export default ({
     }
 
     return {
+      title: L('Internal error'),
       body: who
         ? L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", Lparams)
+        : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
+      plaintextBody: who
+        ? L("{errName} during {activity} for '{action}' from {who} to '{contract}': '{errMsg}'", Lparams)
         : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
       icon: 'exclamation-triangle',
       level: 'danger',
@@ -55,7 +59,9 @@ export default ({
   },
   GENERAL (data: { contractID: string, message: string }) {
     return {
+      title: L('Group Income'),
       body: data.message,
+      plaintextBody: data.message,
       icon: 'cog',
       level: 'info',
       linkTo: '',
@@ -64,7 +70,9 @@ export default ({
   },
   WARNING (data: { contractID: string, message: string }) {
     return {
+      title: L('Warning'),
       body: data.message,
+      plaintextBody: data.message,
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: '',
@@ -73,7 +81,9 @@ export default ({
   },
   ERROR (data: { contractID: string, message: string }) {
     return {
+      title: L('Error'),
       body: data.message,
+      plaintextBody: data.message,
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(data.message)}`,
@@ -82,8 +92,13 @@ export default ({
   },
   CONTRIBUTION_REMINDER (data: { date: string }) {
     return {
+      title: L('Contribution reminder'),
       body: L('Do not forget to send your pledge by {strong_}{date}{_strong}.', {
+        date: data.date,
         ...LTags('strong')
+      }),
+      plaintextBody: L('Do not forget to send your pledge by {strong_}{date}{_strong}.', {
+        date: data.date
       }),
       icon: 'coins',
       level: 'info',
@@ -93,7 +108,11 @@ export default ({
   },
   INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
+      title: L('Update income details'),
       body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
+        months: Math.floor(data.months) // Avoid displaying decimals
+      }),
+      plaintextBody: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
         months: Math.floor(data.months) // Avoid displaying decimals
       }),
       icon: 'coins',
@@ -107,9 +126,13 @@ export default ({
     const rootState = sbp('state/vuex/state')
     return {
       avatarUserID: data.memberID,
+      title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
       body: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
+      }),
+      plaintextBody: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
       }),
       icon: 'user-plus',
       level: 'info',
@@ -118,11 +141,16 @@ export default ({
     }
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
       avatarUserID: data.memberID,
       body: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
+      }),
+      plaintextBody: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -131,12 +159,17 @@ export default ({
     }
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
       avatarUserID: data.memberID,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
       body: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
+      }),
+      plaintextBody: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
       }),
       icon: 'user-minus',
       level: 'danger',
@@ -145,10 +178,14 @@ export default ({
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, proposalHash: string, subtype: NewProposalType }) {
+    const rootState = sbp('state/vuex/state')
     const isCreator = data.creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator.
     const args = {
       name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
       ...LTags('strong')
+    }
+    const plaintextArgs = {
+      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`
     }
 
     const bodyTemplateMap = {
@@ -172,6 +209,27 @@ export default ({
         : L('{strong_}{name}{_strong} created a proposal. Vote now!', args)
     }
 
+    const plaintextBodyTemplateMap = {
+      ADD_MEMBER: isCreator
+        ? L('You proposed to add a member to the group.')
+        : L('{strong_}{name}{_strong} proposed to add a member to the group. Vote now!', plaintextArgs),
+      CHANGE_MINCOME: isCreator
+        ? L('You proposed to change the group mincome.')
+        : L('{strong_}{name}{_strong} proposed to change the group mincome. Vote now!', plaintextArgs),
+      CHANGE_DISTRIBUTION_DATE: isCreator
+        ? L('You proposed to change the group distribution date.')
+        : L('{strong_}{name}{_strong} proposed to change the group distribution date. Vote now!', plaintextArgs),
+      CHANGE_VOTING_RULE: isCreator
+        ? L('You proposed to change the group voting system.')
+        : L('{strong_}{name}{_strong} proposed to change the group voting system. Vote now!', plaintextArgs),
+      REMOVE_MEMBER: isCreator
+        ? L('You proposed to remove a member from the group.')
+        : L('{strong_}{name}{_strong} proposed to remove a member from the group. Vote now!', plaintextArgs),
+      GENERIC: isCreator
+        ? L('You created a proposal.')
+        : L('{strong_}{name}{_strong} created a proposal. Vote now!', plaintextArgs)
+    }
+
     const iconMap = {
       ADD_MEMBER: 'user-plus',
       CHANGE_MINCOME: 'dollar-sign',
@@ -182,20 +240,23 @@ export default ({
     }
 
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('New proposal'),
       avatarUserID: data.creatorID,
       body: bodyTemplateMap[data.subtype],
+      plaintextBody: plaintextBodyTemplateMap[data.subtype],
       creatorID: data.creatorID,
       icon: iconMap[data.subtype],
       level: 'info',
       subtype: data.subtype,
       scope: 'group',
       sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID: data.groupID,
         data: { proposalHash: data.proposalHash }
       }]
     }
   },
-  PROPOSAL_EXPIRING (data: { proposalId: string, proposal: Object }) {
+  PROPOSAL_EXPIRING (data: { groupID: string, proposalId: string, proposal: Object }) {
+    const rootState = sbp('state/vuex/state')
     const { proposalData, proposalType } = data.proposal.data
     const typeToTitleMap = {
       [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
@@ -209,9 +270,13 @@ export default ({
     }
 
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Proposal expiring'),
       avatarUserID: '',
       body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!', {
         ...LTags('i'),
+        proposalTitle: typeToTitleMap[proposalType]
+      }),
+      plaintextBody: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. Please vote!', {
         proposalTitle: typeToTitleMap[proposalType]
       }),
       level: 'info',
@@ -219,12 +284,13 @@ export default ({
       scope: 'group',
       data: { proposalId: data.proposalId },
       sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID: data.groupID,
         data: { proposalHash: data.proposalId }
       }]
     }
   },
-  PROPOSAL_CLOSED (data: { proposal: Object, proposalHash: string }) {
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object, proposalHash: string }) {
+    const rootState = sbp('state/vuex/state')
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
     const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
 
@@ -241,10 +307,18 @@ export default ({
       name: !isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
     }
 
+    const plaintextArgs = {
+      ...options,
+      ...LTags('strong'),
+      closedWith: statusMap[status].closedWith,
+      name: !isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
+    }
+
     if (options.memberID) {
       // NOTE: replace member with their mention when their contractID is provided
       //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
       args['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
+      plaintextArgs['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
     }
 
     const bodyTemplateMap = {
@@ -265,25 +339,51 @@ export default ({
         : L("{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}.", args)
     }
 
+    const plaintextBodyTemplateMap = {
+      [PROPOSAL_INVITE_MEMBER]: isCreator
+        ? L('Your proposal to add {member} to the group was {strong_}{closedWith}{_strong}.', plaintextArgs)
+        : L("{strong_}{name}'s{_strong} proposal to add {member} to the group was {strong_}{closedWith}{_strong}.", plaintextArgs),
+      [PROPOSAL_REMOVE_MEMBER]: isCreator
+        ? L('Your proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.', plaintextArgs)
+        : L("{strong_}{name}'s{_strong} proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.", plaintextArgs),
+      [PROPOSAL_GROUP_SETTING_CHANGE]: isCreator
+        ? L('Your proposal to change group\'s {setting} to {value} was {strong_}{closedWith}{_strong}.', plaintextArgs)
+        : L("{strong_}{name}'s{_strong} proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.", plaintextArgs),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]: isCreator
+        ? L('Your proposal to change group\'s {setting} was {strong_}{closedWith}{_strong}.', plaintextArgs)
+        : L("{strong_}{name}'s{_strong} proposal to change group's {setting} was {strong_}{closedWith}{_strong}.", plaintextArgs),
+      [PROPOSAL_GENERIC]: isCreator
+        ? L('Your proposal "{title}" was {strong_}{closedWith}{_strong}.', plaintextArgs)
+        : L("{strong_}{name}'s{_strong} proposal \"{title}\" was {strong_}{closedWith}{_strong}.", plaintextArgs)
+    }
+
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Proposal closed'),
       avatarUserID: creatorID,
       body: bodyTemplateMap[type],
+      plaintextBody: plaintextBodyTemplateMap[type],
       icon: statusMap[status].icon,
       level: statusMap[status].level,
       scope: 'group',
       sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID: data.groupID,
         data: { proposalHash: data.proposalHash }
       }]
     }
   },
-  PAYMENT_RECEIVED (data: { creatorID: string, amount: string, paymentHash: string }) {
+  PAYMENT_RECEIVED (data: { groupID: string, creatorID: string, amount: string, paymentHash: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Payment received'),
       avatarUserID: data.creatorID,
       body: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
         amount: data.amount,
         ...LTags('strong')
+      }),
+      plaintextBody: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
+        amount: data.amount
       }),
       creatorID: data.creatorID,
       icon: '',
@@ -292,12 +392,17 @@ export default ({
       scope: 'group'
     }
   },
-  PAYMENT_THANKYOU_SENT (data: { creatorID: string, fromMemberID: string, toMemberID: string }) {
+  PAYMENT_THANKYOU_SENT (data: { groupID: string, creatorID: string, fromMemberID: string, toMemberID: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Thank you note received'),
       avatarUserID: data.fromMemberID,
       body: L('{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`,
         ...LTags('strong')
+      }),
+      plaintextBody: L('{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.', {
+        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`
       }),
       creatorID: data.fromMemberID,
       icon: '',
@@ -306,17 +411,20 @@ export default ({
       scope: 'group'
     }
   },
-  MINCOME_CHANGED (data: { creatorID: string, to: number, memberType: string, increased: boolean }) {
+  MINCOME_CHANGED (data: { groupID: string, creatorID: string, to: number, memberType: string, increased: boolean }) {
+    const rootState = sbp('state/vuex/state')
     const { withGroupCurrency } = sbp('state/vuex/getters')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Mincome changes'),
       avatarUserID: data.creatorID,
       body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
+      plaintextBody: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
       creatorID: data.creatorID,
       icon: 'dollar-sign',
       level: 'info',
       scope: 'group',
       sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {
-        contractID: sbp('state/vuex/state').currentGroupId,
+        contractID: data.groupID,
         data: {
           amount: data.to,
           memberType: data.memberType,
@@ -325,7 +433,8 @@ export default ({
       }]
     }
   },
-  NEW_DISTRIBUTION_PERIOD (data: { period: string, creatorID: string, memberType: string }) {
+  NEW_DISTRIBUTION_PERIOD (data: { groupID: string, period: string, creatorID: string, memberType: string }) {
+    const rootState = sbp('state/vuex/state')
     const { period, creatorID, memberType } = data
     const periodDisplay = humanDate(period, { month: 'short', day: 'numeric', year: 'numeric' })
     const bodyTemplate = {
@@ -335,8 +444,10 @@ export default ({
     }
 
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('New distribution period'),
       avatarUserID: creatorID,
       body: bodyTemplate[memberType],
+      plaintextBody: bodyTemplate[memberType],
       level: 'info',
       icon: 'coins',
       linkTo: memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
@@ -344,9 +455,12 @@ export default ({
       data: { period } // is used to check if a notification has already been sent for a particular dist-period
     }
   },
-  NEAR_DISTRIBUTION_END (data: { period: string }) {
+  NEAR_DISTRIBUTION_END (data: { groupID: string, period: string }) {
+    const rootState = sbp('state/vuex/state')
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Distribution period ends soon'),
       body: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
+      plaintextBody: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
       level: 'info',
       icon: 'coins',
       linkTo: '/payments',
@@ -356,10 +470,12 @@ export default ({
   },
   NONMONETARY_CONTRIBUTION_UPDATE (
     data: {
+      groupID: string,
       creatorID: string,
       updateData: { prev: any[], after: any[] }
     }
   ) {
+    const rootState = sbp('state/vuex/state')
     const { prev, after } = data.updateData
     const added = after.filter(v => !prev.includes(v))
     const removed = prev.filter(v => !after.includes(v))
@@ -393,8 +509,19 @@ export default ({
         ...LTags('strong')
       })
     }
+    const plaintextBodyContentMap = {
+      added: () => L('{name} added non-monetary contribution: {strong_}{added}{_strong}', { name, added: contributionsFormatted(added) }),
+      removed: () => L('{name} removed non-monetary contribution: {strong_}{removed}{_strong}', { name, removed: contributionsFormatted(removed) }),
+      updated: () => L('{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}', {
+        name,
+        added: contributionsFormatted(added),
+        removed: contributionsFormatted(removed)
+      })
+    }
     return {
+      title: rootState[data.groupID]?.settings?.groupName || L('Non-monetary contribution updated'),
       body: bodyContentMap[updateType](),
+      plaintextBody: plaintextBodyContentMap[updateType](),
       scope: 'group',
       avatarUserID: data.creatorID,
       level: 'info',

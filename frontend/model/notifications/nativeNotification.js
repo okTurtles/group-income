@@ -82,9 +82,10 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 }
 
-export function makeNotification ({ title, body, icon, path, groupID }: {
+// eslint-disable-next-line require-await
+export async function makeNotification ({ title, body, icon, path, groupID }: {
   title: string, body: string, icon?: string, path?: string, groupID?: string
-}): void | Promise<void> {
+}): Promise<void> {
   if (typeof Notification !== 'function') return
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {

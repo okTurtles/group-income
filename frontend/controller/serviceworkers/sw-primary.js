@@ -332,8 +332,8 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
 sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   makeNotification({
     // icon: undefined, // TODO
-    title: 'TBD', // TODO
-    body: notification.body,
+    title: notification.title,
+    body: notification.plaintextBody,
     groupID: notification.groupID,
     path: notification.linkTo
   }).catch(e => {
