@@ -985,6 +985,7 @@ export default ({
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (isScrollable) {
+                // Auto-scroll to the bottom when a new message is added
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
