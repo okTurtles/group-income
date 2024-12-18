@@ -51,6 +51,34 @@ sbp('sbp/selectors/register', {
       await swRegistration.update()
       setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
 
+      // Send a 'ready' message to the SW and wait back for a response
+      // This way we ensure that Chelonia has been set up
+      await new Promise((resolve, reject) => {
+        const messageChannel = new MessageChannel()
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'ready') {
+            resolve()
+          } else {
+            reject(event.data.error)
+          }
+          messageChannel.port1.close()
+        }
+        messageChannel.port1.onmessageerror = () => {
+          reject(new Error('Message error'))
+          messageChannel.port1.close()
+        }
+
+        navigator.serviceWorker.ready.then((worker) => {
+          worker.active.postMessage({
+            type: 'ready',
+            port: messageChannel.port2
+          }, [messageChannel.port2])
+        }).catch((e) => {
+          reject(e)
+          messageChannel.port1.close()
+        })
+      })
+
       // Keep the service worker alive while the window is open
       // The default idle timeout on Chrome and Firefox is 30 seconds. We send
       // a ping message every 5 seconds to ensure that the worker remains
@@ -92,6 +120,7 @@ sbp('sbp/selectors/register', {
       })
     } catch (e) {
       console.error('error setting up service worker:', e)
+      throw e
     }
   },
   // We call this when the notification permission changes, to create a push
