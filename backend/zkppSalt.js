@@ -1,7 +1,8 @@
 import sbp from '@sbp/sbp'
 import { randomBytes, timingSafeEqual } from 'crypto'
 import nacl from 'tweetnacl'
-import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, encryptContractSalt, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
+import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, decryptSaltUpdate, encryptContractSalt, encryptSaltUpdate, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
+import { AUTHSALT, CONTRACTSALT, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
 
 // used to encrypt salts in database
 let recordSecret: string
@@ -9,6 +10,8 @@ let recordSecret: string
 let challengeSecret: string
 // corresponds to a component of s in Step 3 of "Salt registration"
 let registrationSecret: string
+// used to encrypt a stateless token for atomic hash updates
+let hashUpdateSecret: string
 
 // Input keying material used to derive various secret keys used in this
 // protocol: recordSecret, challengeSecret and registrationSecret.
@@ -60,9 +63,22 @@ export const initZkpp = async () => {
   recordSecret = Buffer.from(hashStringArray('private/recordSecret', IKM)).toString('base64')
   challengeSecret = Buffer.from(hashStringArray('private/challengeSecret', IKM)).toString('base64')
   registrationSecret = Buffer.from(hashStringArray('private/registrationSecret', IKM)).toString('base64')
+  hashUpdateSecret = Buffer.from(hashStringArray('private/hashUpdateSecret', IKM)).toString('base64')
 }
 
 const maxAge = 30
+
+const computeZkppSaltRecordId = async (contractID: string) => {
+  const recordId = `_private_rid_${contractID}`
+  const record = await sbp('chelonia/db/get', recordId)
+
+  if (!record) {
+    return null
+  }
+
+  const recordBuf = Buffer.concat([Buffer.from(contractID), Buffer.from(record)])
+  return hash(recordBuf)
+}
 
 const getZkppSaltRecord = async (contractID: string) => {
   const recordId = `_private_rid_${contractID}`
@@ -85,17 +101,23 @@ const getZkppSaltRecord = async (contractID: string) => {
     try {
       const recordObj = JSON.parse(recordString)
 
-      if (!Array.isArray(recordObj) || recordObj.length !== 3 || !recordObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
+      if (
+        !Array.isArray(recordObj) ||
+        (recordObj.length !== 3 && recordObj.length !== 4) ||
+        recordObj.slice(0, 3).some((r) => !r || typeof r !== 'string') ||
+        (recordObj[3] !== null && typeof recordObj[3] !== 'string')
+      ) {
         console.error('Error validating encrypted JSON object ' + recordId)
         return null
       }
 
-      const [hashedPassword, authSalt, contractSalt] = recordObj
+      const [hashedPassword, authSalt, contractSalt, cid] = recordObj
 
       return {
         hashedPassword,
         authSalt,
-        contractSalt
+        contractSalt,
+        cid
       }
     } catch {
       console.error('Error parsing encrypted JSON object ' + recordId)
@@ -105,11 +127,11 @@ const getZkppSaltRecord = async (contractID: string) => {
   return null
 }
 
-const setZkppSaltRecord = async (contractID: string, hashedPassword: string, authSalt: string, contractSalt: string) => {
+const setZkppSaltRecord = async (contractID: string, hashedPassword: string, authSalt: string, contractSalt: string, cid: ?string) => {
   const recordId = `_private_rid_${contractID}`
   const encryptionKey = hashStringArray('REK', contractID, recordSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
-  const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt])
+  const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt, cid])
   const recordCiphertext = nacl.secretbox(Buffer.from(recordPlaintext), nonce, encryptionKey)
   const recordBuf = Buffer.concat([nonce, recordCiphertext])
   const record = base64ToBase64url(recordBuf.toString('base64'))
@@ -242,7 +264,7 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
     return false
   }
 
-  const { hashedPassword, contractSalt } = record
+  const { hashedPassword, contractSalt, cid } = record
 
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
@@ -251,10 +273,10 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
     throw new Error('getContractSalt: Bad challenge')
   }
 
-  return encryptContractSalt(c, contractSalt)
+  return encryptContractSalt(c, JSON.stringify([contractSalt, cid]))
 }
 
-export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
+export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean | string> => {
   if (!verifyChallenge(contract, r, s, sig)) {
     console.warn('update: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
     throw new Error('update: Bad challenge')
@@ -266,7 +288,7 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
     console.error('update: Error obtaining ZKPP salt record for contract ID ' + contract)
     return false
   }
-  const { hashedPassword } = record
+  const { hashedPassword, contractSalt: oldContractSalt } = record
 
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
@@ -275,7 +297,7 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
     throw new Error('update: Bad challenge')
   }
 
-  const encryptionKey = hashRawStringArray('SU', c).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashRawStringArray(SU, c).slice(0, nacl.secretbox.keyLength)
   const encryptedArgsBuf = Buffer.from(base64urlToBase64(encryptedArgs), 'base64')
   const nonce = encryptedArgsBuf.slice(0, nacl.secretbox.nonceLength)
   const encryptedArgsCiphertext = encryptedArgsBuf.slice(nacl.secretbox.nonceLength)
@@ -288,21 +310,50 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
   }
 
   try {
-    const argsObj = JSON.parse(Buffer.from(args).toString())
+    const hashedPassword = Buffer.from(args).toString()
 
-    if (!Array.isArray(argsObj) || argsObj.length !== 3 || !argsObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
-      console.error(`update: Error validating the encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+    const recordId = await computeZkppSaltRecordId(contract)
+    if (!recordId) {
+      console.error(`update: Error obtaining record ID for contract ID ${contract}`)
       return false
     }
 
-    const [hashedPassword, authSalt, contractSalt] = argsObj
+    const authSalt = Buffer.from(hashStringArray(AUTHSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+    const contractSalt = Buffer.from(hashStringArray(CONTRACTSALT, c)).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
 
-    await setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt)
+    const token = encryptSaltUpdate(
+      hashUpdateSecret,
+      recordId,
+      JSON.stringify([Date.now(), hashedPassword, authSalt, contractSalt])
+    )
 
-    return true
+    return encryptContractSalt(c, JSON.stringify([oldContractSalt, token]))
   } catch {
     console.error(`update: Error parsing encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
   }
 
   return false
+}
+
+export const redeemSaltUpdateToken = async (contract: string, token: string): Promise<(cid: ?string) => Promise<void>> => {
+  const recordId = await computeZkppSaltRecordId(contract)
+  if (!recordId) {
+    throw new Error('Record ID not found')
+  }
+
+  const decryptedToken = decryptSaltUpdate(
+    hashUpdateSecret,
+    recordId,
+    token
+  )
+
+  const [timestamp, hashedPassword, authSalt, contractSalt] = JSON.parse(decryptedToken)
+
+  if (timestamp < (Date.now() - 180e3)) {
+    throw new Error('ZKPP token expired')
+  }
+
+  return (cid: ?string) => {
+    return setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt, cid)
+  }
 }

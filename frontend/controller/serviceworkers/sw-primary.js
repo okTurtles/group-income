@@ -169,6 +169,7 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
+sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
 const setupPromise = setupChelonia()
 
