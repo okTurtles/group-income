@@ -152,7 +152,7 @@ async function startApp () {
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
-        }, 16e3)
+        }, 8e3)
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
