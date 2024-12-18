@@ -143,6 +143,7 @@ import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { compressImage } from '@utils/image.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -455,6 +456,7 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
+          attachments = await this.checkAndCompressImages(attachments)
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
             billableContractID: contractID
@@ -508,6 +510,26 @@ export default ({
           }
         })
       }
+    },
+    checkAndCompressImages (attachments) {
+      return Promise.all(
+        attachments.map(async attachment => {
+          if (attachment.needsImageCompression) {
+            const compressedImageBlob = await compressImage(attachment.url)
+            const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
+            const extension = compressedImageBlob.type.split('/')[1]
+
+            return {
+              ...attachment,
+              mimeType: compressedImageBlob.type,
+              name: `${fileNameWithoutExtension}.${extension}`,
+              size: compressedImageBlob.size,
+              url: URL.createObjectURL(compressedImageBlob),
+              compressedBlob: compressedImageBlob
+            }
+          } else { return attachment }
+        })
+      )
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.messages.length) {
