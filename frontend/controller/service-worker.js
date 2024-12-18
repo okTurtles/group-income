@@ -211,11 +211,17 @@ sbp('sbp/selectors/register', {
 })
 
 // Events that need to be relayed to the SW
-;[LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, SET_APP_LOGS_FILTER].forEach((event) =>
+;[LOGIN_COMPLETE, SET_APP_LOGS_FILTER].forEach((event) =>
   sbp('okTurtles.events/on', event, (...data) => {
     navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
   })
 )
+
+sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (obj: Object) => {
+  // Don't send messages from the SW back to the SW to prevent infinite loops
+  if (obj.from === 'sw') return
+  navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_UNREAD_POSITION, data: [obj] })
+})
 
 const swRpc = (() => {
   if (!navigator.serviceWorker) {
