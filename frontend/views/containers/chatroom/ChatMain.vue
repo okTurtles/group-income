@@ -138,11 +138,12 @@ import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
+import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { compressImage } from '@utils/image.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -455,6 +456,7 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
+          attachments = await this.checkAndCompressImages(attachments)
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
             billableContractID: contractID
@@ -508,6 +510,26 @@ export default ({
           }
         })
       }
+    },
+    checkAndCompressImages (attachments) {
+      return Promise.all(
+        attachments.map(async attachment => {
+          if (attachment.needsImageCompression) {
+            const compressedImageBlob = await compressImage(attachment.url)
+            const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
+            const extension = compressedImageBlob.type.split('/')[1]
+
+            return {
+              ...attachment,
+              mimeType: compressedImageBlob.type,
+              name: `${fileNameWithoutExtension}.${extension}`,
+              size: compressedImageBlob.size,
+              url: URL.createObjectURL(compressedImageBlob),
+              compressedBlob: compressedImageBlob
+            }
+          } else { return attachment }
+        })
+      )
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.messages.length) {
@@ -685,12 +707,21 @@ export default ({
       }
 
       const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      const sendDeleteAttachmentFeedback = (action) => {
+        // Delete attachment action can lead to 'success', 'error' or can be cancelled by user.
+        sbp('okTurtles.events/emit', DELETE_ATTACHMENT_FEEDBACK, { action, manifestCid })
+      }
 
       if (primaryButtonSelected) {
         const data = { hash, manifestCid, messageSender: from }
-        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
-          console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
-        })
+        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data })
+          .then(() => sendDeleteAttachmentFeedback('complete'))
+          .catch((e) => {
+            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+            sendDeleteAttachmentFeedback('error')
+          })
+      } else {
+        sendDeleteAttachmentFeedback('cancel')
       }
     },
     changeDay (index) {

@@ -9,7 +9,7 @@ import {
 import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
-import { imageUpload, objectURLtoBlob, compressImage } from '@utils/image.js'
+import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -596,28 +596,17 @@ export default (sbp('sbp/selectors/register', {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
-        const { url, needsImageCompression } = attachment
+        const { url, compressedBlob } = attachment
         // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-        const attachmentBlob = needsImageCompression
-          ? await compressImage(url)
-          : await objectURLtoBlob(url)
+        const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
 
-        if (needsImageCompression) {
-          // Update the attachment details to reflect the compressed image.
-          const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
-          const extension = attachmentBlob.type.split('/')[1]
-
-          attachment.mimeType = attachmentBlob.type
-          attachment.name = `${fileNameWithoutExtension}.${extension}`
-          attachment.size = attachmentBlob.size
-        }
         const response = await sbp('chelonia/fileUpload', attachmentBlob, {
           type: attachment.mimeType,
           cipher: 'aes256gcm'
         }, { billableContractID })
         const { delete: token, download: downloadData } = response
         return {
-          attributes: omit(attachment, ['url', 'needsImageCompression']),
+          attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
           downloadData,
           deleteData: { token }
         }
