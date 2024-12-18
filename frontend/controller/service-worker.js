@@ -120,6 +120,7 @@ sbp('sbp/selectors/register', {
       })
     } catch (e) {
       console.error('error setting up service worker:', e)
+      throw e
     }
   },
   // We call this when the notification permission changes, to create a push

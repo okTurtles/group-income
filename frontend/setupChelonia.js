@@ -295,9 +295,12 @@ const setupChelonia = async (): Promise<*> => {
     if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
     // it is important we first login before syncing any contracts here since that will load the
     // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
-    await sbp('chelonia/contract/sync', identityContractID)
-    const contractIDs = groupContractsByType(cheloniaState.contracts)
-    await syncContractsInOrder(contractIDs)
+    await sbp('chelonia/contract/sync', identityContractID).then(async () => {
+      const contractIDs = groupContractsByType(cheloniaState.contracts)
+      await syncContractsInOrder(contractIDs)
+    }).catch(e => {
+      console.error('[setupChelonia] Error syncing identity contract and groups', e)
+    })
   })
 }
 
