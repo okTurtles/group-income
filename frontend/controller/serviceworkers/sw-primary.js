@@ -244,6 +244,26 @@ self.addEventListener('message', function (event) {
       case 'event':
         sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
+      case 'ready': {
+        // The 'ready' message is sent by a client (i.e., a tab or window) to
+        // ensure that Chelonia has been setup
+        const port = event.data.port
+        Promise.race([
+          setupChelonia(),
+          new Promise((resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('Timed out setting up Chelonia'))
+            }, 30e3)
+          })
+        ]).then(() => {
+          port.postMessage({ type: 'ready' })
+        }, (e) => {
+          port.postMessage({ type: 'error', error: e })
+        }).finally(() => {
+          port.close()
+        })
+        break
+      }
       default:
         console.error('[sw] unknown message type:', event.data)
         break

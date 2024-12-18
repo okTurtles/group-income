@@ -310,6 +310,7 @@ export default ((() => {
   return () => {
     if (!promise) {
       promise = setupChelonia().catch((e) => {
+        console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
         throw e // Re-throw the error
       })
