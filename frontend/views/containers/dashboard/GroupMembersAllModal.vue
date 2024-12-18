@@ -180,7 +180,6 @@ export default ({
       this.$refs.modal.close()
     },
     removeMember (memberID) {
-      console.log('!@# is it here??')
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'RemoveMember', { memberID })
     },
     addToChannel () {
