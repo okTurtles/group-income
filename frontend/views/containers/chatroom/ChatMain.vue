@@ -993,8 +993,8 @@ export default ({
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
-              if (!fromOurselves && isScrollable) {
+              if (isScrollable) {
+                // Auto-scroll to the bottom when a new message is added
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
