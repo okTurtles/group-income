@@ -82,9 +82,11 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 }
 
-export function makeNotification ({ title, body, icon, path }: {
-  title: string, body: string, icon?: string, path?: string
-}): void | Promise<void> {
+// eslint-disable-next-line require-await
+export async function makeNotification ({ title, body, icon, path, groupID, sbpInvocation }: {
+  title: string, body: string, icon?: string, path?: string, groupID?: string,
+  sbpInvocation?: any[]
+}): Promise<void> {
   if (typeof Notification !== 'function') return
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {
@@ -102,17 +104,17 @@ export function makeNotification ({ title, body, icon, path }: {
     } catch (e) {
       return navigator.serviceWorker?.ready.then(registration => {
         // $FlowFixMe
-        return registration.showNotification(title, { body, icon, data: { path } })
+        return registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } })
       }).catch(console.warn)
     }
   } else {
   // If running in a SW
     return self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      // If the no window is focused, display a native notification
+      // If no window is focused, display a native notification
       if (clientList.some(client => client.focused)) {
         return
       }
-      return self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+      return self.registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } }).catch(console.warn)
     })
   }
 }
