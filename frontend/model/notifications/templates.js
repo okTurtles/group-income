@@ -26,11 +26,14 @@ export default ({
       action = value.action
     }
     const state = sbp('state/vuex/state')
-    let who
+    let who, plaintextWho
 
     if (message.innerSigningKeyId()) {
       const innerSigningContractID = findContractIDByForeignKeyId(state[message.contractID()], message.innerSigningKeyId())
-      who = innerSigningContractID && `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${innerSigningContractID}`
+      if (innerSigningContractID) {
+        who = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${innerSigningContractID}`
+        plaintextWho = sbp('state/vuex/getters').userDisplayNameFromID(innerSigningContractID)
+      }
     }
 
     const Lparams = {
@@ -43,14 +46,23 @@ export default ({
       errMsg: error.message ?? '?'
     }
 
+    const LplaintextParams = {
+      errName: error.name,
+      activity,
+      action: action ?? opType,
+      contract: state.contracts[contractID]?.type ?? contractID,
+      who: plaintextWho,
+      errMsg: error.message ?? '?'
+    }
+
     return {
       title: L('Internal error'),
       body: who
         ? L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", Lparams)
         : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
       plaintextBody: who
-        ? L("{errName} during {activity} for '{action}' from {who} to '{contract}': '{errMsg}'", Lparams)
-        : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", Lparams),
+        ? L("{errName} during {activity} for '{action}' from {who} to '{contract}': '{errMsg}'", LplaintextParams)
+        : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", LplaintextParams),
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`,
@@ -132,12 +144,13 @@ export default ({
         ...LTags('strong')
       }),
       plaintextBody: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
-        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
+        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
       }),
       icon: 'user-plus',
       level: 'info',
       linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
-      scope: 'group'
+      scope: 'group',
+      groupID: data.groupID
     }
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
@@ -150,12 +163,13 @@ export default ({
         ...LTags('strong')
       }),
       plaintextBody: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
-        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
+        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
       }),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
-      scope: 'group'
+      scope: 'group',
+      groupID: data.groupID
     }
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
@@ -169,12 +183,13 @@ export default ({
         ...LTags('strong')
       }),
       plaintextBody: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
-        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`
+        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
       }),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
-      scope: 'group'
+      scope: 'group',
+      groupID: data.groupID
     }
   },
   NEW_PROPOSAL (data: { groupID: string, creatorID: string, proposalHash: string, subtype: NewProposalType }) {
@@ -185,7 +200,7 @@ export default ({
       ...LTags('strong')
     }
     const plaintextArgs = {
-      name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`
+      name: sbp('state/vuex/getters').userDisplayNameFromID(data.creatorID)
     }
 
     const bodyTemplateMap = {
@@ -309,16 +324,15 @@ export default ({
 
     const plaintextArgs = {
       ...options,
-      ...LTags('strong'),
       closedWith: statusMap[status].closedWith,
-      name: !isCreator ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` : ''
+      name: !isCreator ? sbp('state/vuex/getters').userDisplayNameFromID(creatorID) : ''
     }
 
     if (options.memberID) {
       // NOTE: replace member with their mention when their contractID is provided
       //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
       args['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
-      plaintextArgs['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
+      plaintextArgs['member'] = sbp('state/vuex/getters').userDisplayNameFromID(options.memberID)
     }
 
     const bodyTemplateMap = {
@@ -382,14 +396,15 @@ export default ({
         ...LTags('strong')
       }),
       plaintextBody: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
-        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
+        name: sbp('state/vuex/getters').userDisplayNameFromID(data.creatorID),
         amount: data.amount
       }),
       creatorID: data.creatorID,
       icon: '',
       level: 'info',
       linkTo: `/payments?modal=PaymentDetail&id=${data.paymentHash}`,
-      scope: 'group'
+      scope: 'group',
+      groupID: data.groupID
     }
   },
   PAYMENT_THANKYOU_SENT (data: { groupID: string, creatorID: string, fromMemberID: string, toMemberID: string }) {
@@ -402,13 +417,14 @@ export default ({
         ...LTags('strong')
       }),
       plaintextBody: L('{strong_}{name}{_strong} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.fromMemberID}`
+        name: sbp('state/vuex/getters').userDisplayNameFromID(data.fromMemberID)
       }),
       creatorID: data.fromMemberID,
       icon: '',
       level: 'info',
       linkTo: `/payments?modal=ThankYouNoteModal&from=${data.fromMemberID}&to=${data.toMemberID}`,
-      scope: 'group'
+      scope: 'group',
+      groupID: data.groupID
     }
   },
   MINCOME_CHANGED (data: { groupID: string, creatorID: string, to: number, memberType: string, increased: boolean }) {
@@ -452,7 +468,8 @@ export default ({
       icon: 'coins',
       linkTo: memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
       scope: 'group',
-      data: { period } // is used to check if a notification has already been sent for a particular dist-period
+      data: { period }, // is used to check if a notification has already been sent for a particular dist-period
+      groupID: data.groupID
     }
   },
   NEAR_DISTRIBUTION_END (data: { groupID: string, period: string }) {
@@ -465,7 +482,8 @@ export default ({
       icon: 'coins',
       linkTo: '/payments',
       scope: 'group',
-      data
+      data,
+      groupID: data.groupID
     }
   },
   NONMONETARY_CONTRIBUTION_UPDATE (
@@ -492,6 +510,7 @@ export default ({
     }
 
     const name = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`
+    const plaintextName = sbp('state/vuex/getters').userDisplayNameFromID(data.creatorID)
     const contributionsFormatted = (entries) => {
       const first = entries[0]
       const len = entries.length
@@ -513,7 +532,7 @@ export default ({
       added: () => L('{name} added non-monetary contribution: {strong_}{added}{_strong}', { name, added: contributionsFormatted(added) }),
       removed: () => L('{name} removed non-monetary contribution: {strong_}{removed}{_strong}', { name, removed: contributionsFormatted(removed) }),
       updated: () => L('{name} updated non-monetary contribution: added {strong_}{added}{_strong} and removed {strong_}{removed}{_strong}', {
-        name,
+        name: plaintextName,
         added: contributionsFormatted(added),
         removed: contributionsFormatted(removed)
       })
@@ -526,7 +545,8 @@ export default ({
       avatarUserID: data.creatorID,
       level: 'info',
       icon: 'chart-pie',
-      linkTo: '/contributions'
+      linkTo: '/contributions',
+      groupID: data.groupID
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
