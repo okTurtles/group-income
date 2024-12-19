@@ -316,11 +316,35 @@ self.addEventListener('notificationclick', event => {
 
         return 0
       })
+      // If there are no open windows, open a new window when the notification
+      // is clicked
       if (!clientList.length) {
-        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`)
+        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`).then((client) => {
+          if (event.notification.data?.sbpInvocation) {
+            const { data } = serializer(event.notification.data.sbpInvocation)
+            client.postMessage({
+              type: 'sbp',
+              data
+            })
+          } else if (event.notification.data?.groupID) {
+            client.postMessage({
+              type: 'sbp',
+              data: ['state/vuex/commit', 'setCurrentGroupId', { contractID: event.notification.data.groupID }]
+            })
+          }
+
+          return client
+        })
       }
+      // Otherwise, pick the first client
       const client = clientList[0]
-      if (event.notification.data?.path) {
+      if (event.notification.data?.sbpInvocation) {
+        const { data } = serializer(event.notification.data.sbpInvocation)
+        client.postMessage({
+          type: 'sbp',
+          data
+        })
+      } else if (event.notification.data?.path) {
         client.postMessage({
           type: 'navigate',
           groupID: event.notification.data.groupID,
@@ -376,7 +400,8 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
     title: notification.title,
     body: notification.plaintextBody,
     groupID: notification.groupID,
-    path: notification.linkTo
+    path: notification.linkTo,
+    sbpInvocation: notification.sbpInvocation
   }).catch(e => {
     console.error('Error displaying native notification', e)
   })

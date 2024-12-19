@@ -83,8 +83,9 @@ export async function requestNotificationPermission (): Promise<null | string> {
 }
 
 // eslint-disable-next-line require-await
-export async function makeNotification ({ title, body, icon, path, groupID }: {
-  title: string, body: string, icon?: string, path?: string, groupID?: string
+export async function makeNotification ({ title, body, icon, path, groupID, sbpInvocation }: {
+  title: string, body: string, icon?: string, path?: string, groupID?: string,
+  sbpInvocation?: any[]
 }): Promise<void> {
   if (typeof Notification !== 'function') return
   // If not running on a SW
@@ -103,7 +104,7 @@ export async function makeNotification ({ title, body, icon, path, groupID }: {
     } catch (e) {
       return navigator.serviceWorker?.ready.then(registration => {
         // $FlowFixMe
-        return registration.showNotification(title, { body, icon, data: { path } })
+        return registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } })
       }).catch(console.warn)
     }
   } else {
@@ -113,7 +114,7 @@ export async function makeNotification ({ title, body, icon, path, groupID }: {
       if (clientList.some(client => client.focused)) {
         return
       }
-      return self.registration.showNotification(title, { body, icon, data: { groupID, path } }).catch(console.warn)
+      return self.registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } }).catch(console.warn)
     })
   }
 }

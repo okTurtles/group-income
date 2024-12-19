@@ -110,6 +110,10 @@ sbp('sbp/selectors/register', {
               sbp('controller/router').push({ path: data.path }).catch(console.warn)
               break
             }
+            case 'sbp': {
+              sbp(...deserializer(event.data.data))
+              break
+            }
             case CAPTURED_LOGS: {
               // Emit silently to avoid flooding logs with event emitted entries
               silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
