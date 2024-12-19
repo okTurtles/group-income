@@ -5,13 +5,14 @@ import should from 'should'
 import initDB from './database.js'
 import 'should-sinon'
 
+import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 
 const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const dhKey = nacl.hash(nacl.box.before(Buffer.from(p, 'base64url'), secretKey))
-  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('AUTHSALT')), dhKey]))).slice(0, 18).toString('base64')
-  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('CONTRACTSALT')), dhKey]))).slice(0, 18).toString('base64')
+  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(AUTHSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(CONTRACTSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
   const encryptionKey = nacl.hash(Buffer.from(authSalt + contractSalt)).slice(0, nacl.secretbox.keyLength)
   const encryptedHashedPassword = Buffer.concat([nonce, nacl.secretbox(Buffer.from(hash), nonce, encryptionKey)]).toString('base64url')
 
@@ -75,8 +76,10 @@ describe('ZKPP Salt functions', () => {
 
     const saltBuf = Buffer.from(salt, 'base64url')
     const nonce = saltBuf.slice(0, nacl.secretbox.nonceLength)
-    const encryptionKey = nacl.hash(Buffer.concat([Buffer.from('CS'), c])).slice(0, nacl.secretbox.keyLength)
-    const retrievedContractSalt = Buffer.from(nacl.secretbox.open(saltBuf.slice(nacl.secretbox.nonceLength), nonce, encryptionKey)).toString()
+    const encryptionKey = nacl.hash(Buffer.concat([Buffer.from(CS), c])).slice(0, nacl.secretbox.keyLength)
+    const [retrievedContractSalt] = JSON.parse(
+      Buffer.from(nacl.secretbox.open(saltBuf.slice(nacl.secretbox.nonceLength), nonce, encryptionKey)).toString()
+    )
     should(retrievedContractSalt).equal(contractSalt, 'mismatched contractSalt')
   })
 
@@ -103,7 +106,7 @@ describe('ZKPP Salt functions', () => {
     const c = nacl.hash(Buffer.concat([nacl.hash(Buffer.from(hash)), nacl.hash(ħ)]))
     const hc = nacl.hash(c)
 
-    const encryptionKey = nacl.hash(Buffer.concat([Buffer.from('SU'), c])).slice(0, nacl.secretbox.keyLength)
+    const encryptionKey = nacl.hash(Buffer.concat([Buffer.from(SU), c])).slice(0, nacl.secretbox.keyLength)
     const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
 
     const encryptedArgsCiphertext = nacl.secretbox(Buffer.from(JSON.stringify(['a', 'b', 'c'])), nonce, encryptionKey)
@@ -111,6 +114,6 @@ describe('ZKPP Salt functions', () => {
     const encryptedArgs = Buffer.concat([nonce, encryptedArgsCiphertext]).toString('base64url')
 
     const updateRes = await updateContractSalt(contract, r, challenge.s, challenge.sig, Buffer.from(hc).toString('base64url'), encryptedArgs)
-    should(updateRes).equal(true, 'updateContractSalt should be successful')
+    should(!!updateRes).equal(true, 'updateContractSalt should be successful')
   })
 })

@@ -30,7 +30,7 @@ export default (sbp('sbp/selectors/register', {
         const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
         if (!pubsub) reject(new Error('Missing pubsub instance'))
 
-        const readyState = pubsub.socket.readyState
+        const readyState = pubsub.socket?.readyState
         if (readyState !== WebSocket.OPEN) {
           reject(new Error('WebSocket connection is not open'))
         }
@@ -71,7 +71,7 @@ export default (sbp('sbp/selectors/register', {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 
-      const readyState = pubsub.socket.readyState
+      const readyState = pubsub.socket?.readyState
       if (readyState !== WebSocket.OPEN) {
         throw new Error('WebSocket connection is not open')
       }

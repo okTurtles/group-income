@@ -88,7 +88,7 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
   LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP,
   JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND,
-  NAMESPACE_REGISTRATION, NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN,
+  NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
   NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
   PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
@@ -107,6 +107,26 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
         })
       })
   })
+})
+
+// This event (`NEW_CHATROOM_UNREAD_POSITION`) requires special handling because
+// it can be sent from the SW to clients or from clients to the SW. Handling it
+// the normal way (in the forwarding logic above) would result in event loops.
+sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
+  // Set a 'from' parameter to signal it comes from the SW
+  const argsCopy = { ...args, from: 'sw' }
+  const { data } = serializer([argsCopy])
+  const message = {
+    type: 'event',
+    subtype: NEW_CHATROOM_UNREAD_POSITION,
+    data
+  }
+  self.clients.matchAll()
+    .then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage(message)
+      })
+    })
 })
 
 // Logs are treated especially to avoid spamming logs with event emitted
@@ -170,6 +190,7 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
+sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
 const setupPromise = setupChelonia()
 
@@ -245,6 +266,26 @@ self.addEventListener('message', function (event) {
       case 'event':
         sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
+      case 'ready': {
+        // The 'ready' message is sent by a client (i.e., a tab or window) to
+        // ensure that Chelonia has been setup
+        const port = event.data.port
+        Promise.race([
+          setupChelonia(),
+          new Promise((resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('Timed out setting up Chelonia'))
+            }, 30e3)
+          })
+        ]).then(() => {
+          port.postMessage({ type: 'ready' })
+        }, (e) => {
+          port.postMessage({ type: 'error', error: e })
+        }).finally(() => {
+          port.close()
+        })
+        break
+      }
       default:
         console.error('[sw] unknown message type:', event.data)
         break
