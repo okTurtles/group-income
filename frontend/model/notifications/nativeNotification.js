@@ -88,6 +88,17 @@ export async function makeNotification ({ title, body, icon, path, groupID, sbpI
   sbpInvocation?: any[]
 }): Promise<void> {
   if (typeof Notification !== 'function') return
+  if (typeof icon === 'object' && icon.manifestCid) {
+    // We only use cached files to render notifications as quickly as possible
+    const cachedArrayBuffer = await sbp('gi.db/filesCache/load', icon.manifestCid).catch((e) => {
+      console.error('[Avatar.vue] Error loading file from cache', e)
+    })
+    if (cachedArrayBuffer) {
+      // We use `data:` URLs because the SW is unable to create `blob:` URLs
+      icon = 'data:;base64,' + encodeURIComponent(Buffer.from(cachedArrayBuffer).toString('base64'))
+    }
+  }
+
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {
     try {

@@ -395,8 +395,10 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
 })
 
 sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
+  const rootGetters = sbp('state/vuex/getters')
+  const icon = notification.avatarUserID && rootGetters.ourContactProfilesById[notification.avatarUserID]?.picture
   makeNotification({
-    // icon: undefined, // TODO
+    icon: icon || undefined,
     title: notification.title,
     body: notification.plaintextBody,
     groupID: notification.groupID,
