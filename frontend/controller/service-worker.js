@@ -110,6 +110,9 @@ sbp('sbp/selectors/register', {
               sbp('controller/router').push({ path: data.path }).catch(console.warn)
               break
             }
+            // `sbp` invocations from the SW to the app. Used by the
+            // `notificationclick` handler for notifications that have an
+            // `sbpInvocation` instead of a `linkTo` property.
             case 'sbp': {
               sbp(...deserializer(event.data.data))
               break
