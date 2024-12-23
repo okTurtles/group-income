@@ -159,7 +159,7 @@ export function splitStringByMarkdownCode (
   // This function takes a markdown string and split it by texts written as either inline/block code.
   // (e.g. `asdf`, ```const var = 123```)
 
-  const regExCodeMultiple = /(^[\s]*```\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
+  const regExCodeMultiple = /(```\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
   const regExCodeInline = /(`.+`)/g
   const splitByMulitpleCode = str.split(regExCodeMultiple)
   const finalArr = []
@@ -168,7 +168,7 @@ export function splitStringByMarkdownCode (
     if (regExCodeMultiple.test(segment)) {
       finalArr.push({ type: 'code', text: segment })
     } else {
-      const splitByInlineCode = segment.split(regExCodeInline)
+      const splitByInlineCode = segment.split(regExCodeInline) // Check for inline codes and mark them as type: 'code'
         .map(piece => {
           return regExCodeInline.test(piece)
             ? { type: 'code', text: piece }
