@@ -168,7 +168,7 @@ export function splitStringByMarkdownCode (
     if (regExCodeMultiple.test(segment)) {
       finalArr.push({ type: 'code', text: segment })
     } else {
-      const splitByInlineCode = segment.split(regExCodeInline)
+      const splitByInlineCode = segment.split(regExCodeInline) // Check for inline codes and mark them as type: 'code'
         .map(piece => {
           return regExCodeInline.test(piece)
             ? { type: 'code', text: piece }
