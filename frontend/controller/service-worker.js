@@ -104,7 +104,17 @@ sbp('sbp/selectors/register', {
               break
             }
             case 'navigate': {
+              if (data.groupID) {
+                sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: data.groupID })
+              }
               sbp('controller/router').push({ path: data.path }).catch(console.warn)
+              break
+            }
+            // `sbp` invocations from the SW to the app. Used by the
+            // `notificationclick` handler for notifications that have an
+            // `sbpInvocation` instead of a `linkTo` property.
+            case 'sbp': {
+              sbp(...deserializer(event.data.data))
               break
             }
             case CAPTURED_LOGS: {

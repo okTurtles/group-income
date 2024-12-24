@@ -1,6 +1,7 @@
 'use strict'
 
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { makeNotification } from '@model/notifications/nativeNotification.js'
 import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -177,11 +178,11 @@ sbp('sbp/selectors/register', {
   })()
 })
 
-const x = new URL(self.location)
+const ourLocation = new URL(self.location)
 
 sbp('sbp/selectors/register', {
   'controller/router': () => {
-    return { options: { base: x.searchParams.get('routerBase') } }
+    return { options: { base: ourLocation.searchParams.get('routerBase') } }
   }
 })
 
@@ -315,13 +316,38 @@ self.addEventListener('notificationclick', event => {
 
         return 0
       })
+      // If there are no open windows, open a new window when the notification
+      // is clicked
       if (!clientList.length) {
-        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`)
+        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`).then((client) => {
+          if (event.notification.data?.sbpInvocation) {
+            const { data } = serializer(event.notification.data.sbpInvocation)
+            client.postMessage({
+              type: 'sbp',
+              data
+            })
+          } else if (event.notification.data?.groupID) {
+            client.postMessage({
+              type: 'sbp',
+              data: ['state/vuex/commit', 'setCurrentGroupId', { contractID: event.notification.data.groupID }]
+            })
+          }
+
+          return client
+        })
       }
+      // Otherwise, pick the first client
       const client = clientList[0]
-      if (event.notification.data?.path) {
+      if (event.notification.data?.sbpInvocation) {
+        const { data } = serializer(event.notification.data.sbpInvocation)
+        client.postMessage({
+          type: 'sbp',
+          data
+        })
+      } else if (event.notification.data?.path) {
         client.postMessage({
           type: 'navigate',
+          groupID: event.notification.data.groupID,
           path: event.notification.data.path
         })
       }
@@ -366,4 +392,19 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
   sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+})
+
+sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
+  const rootGetters = sbp('state/vuex/getters')
+  const icon = notification.avatarUserID && rootGetters.ourContactProfilesById[notification.avatarUserID]?.picture
+  makeNotification({
+    icon: icon || undefined,
+    title: notification.title,
+    body: notification.plaintextBody,
+    groupID: notification.groupID,
+    path: notification.linkTo,
+    sbpInvocation: notification.sbpInvocation
+  }).catch(e => {
+    console.error('Error displaying native notification', e)
+  })
 })
