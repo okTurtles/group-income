@@ -1,28 +1,38 @@
 <template lang='pug'>
 span.c-twrapper(
-  :class='{ "has-target-within": triggerElementSelector }'
+  :class='{ "has-target-within": triggerElementSelector, "anchored-to-element": anchorToElement }'
   v-bind='rootElAttrs'
 )
   slot
 
-  transition(name='fade')
-    .c-background(
-      v-if='(isActive || isVisible) && manual'
-      @click='toggle'
-      v-append-to-page=''
-      data-test='closeProfileCard'
+  template(v-if='revealTooltip')
+    .c-anchored-tooltip(
+      v-if='anchorToElement'
+      :class='tooltipClasses'
     )
+      // Default tooltip is text
+      template(v-if='text') {{text}}
+      // But any content can fit in
+      slot(v-else='' name='tooltip')
 
-  .c-tooltip(
-    :style='styles'
-    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme,  "in-reduced-motion": isReducedMotionMode }'
-    v-if='isActive || isVisible'
-    v-append-to-page='{ manual }'
-  )
-    // Default tooltip is text
-    template(v-if='text') {{text}}
-    // But any content can fit in
-    slot(v-else='' name='tooltip')
+    template(v-else)
+      transition(name='fade')
+        .c-background(
+          v-if='manual'
+          @click='toggle'
+          v-append-to-body=''
+          data-test='closeProfileCard'
+        )
+
+      .c-tooltip(
+        :style='styles'
+        :class='tooltipClasses'
+        v-append-to-body='{ manual }'
+      )
+        // Default tooltip is text
+        template(v-if='text') {{text}}
+        // But any content can fit in
+        slot(v-else='' name='tooltip')
 </template>
 
 <script>
@@ -69,6 +79,13 @@ export default ({
       type: String,
       required: false,
       default: ''
+    },
+    anchorToElement: {
+      // An option to opt out of the v-append-to-body vue-directive. Instead of appending the tooltip to document.body,
+      // It will be anchored to the trigger DOM element so it won't detached from the original position while scrolling the page etc..
+      // (reference: https://github.com/okTurtles/group-income/issues/2450)
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -83,7 +100,8 @@ export default ({
   }),
   computed: {
     ...mapGetters([
-      'isReducedMotionMode'
+      'isReducedMotionMode',
+      'isDarkTheme'
     ]),
     rootElAttrs () {
       return {
@@ -91,6 +109,18 @@ export default ({
           ? (this.manual ? '-1' : '0')
           : null,
         'aria-label': !this.triggerElementSelector ? this.text : undefined
+      }
+    },
+    revealTooltip () {
+      return this.isActive || this.isVisible
+    },
+    tooltipClasses () {
+      return {
+        'has-text-center': this.isTextCenter,
+        'is-active': this.isActive,
+        'is-dark-theme': this.isDarkTheme,
+        'in-reduced-motion': this.isReducedMotionMode,
+        manual: this.manual
       }
     }
   },
@@ -114,12 +144,8 @@ export default ({
     },
     adjustPosition () {
       this.trigger = (this.triggerDOM || this.$el).getBoundingClientRect()
-      const pageEl = document.querySelector('#app .l-page')
 
-      const { scrollLeft = 0, scrollTop = 0 } = pageEl
-      const scrollX = window.scrollX + scrollLeft
-      const scrollY = window.scrollY + scrollTop
-
+      const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const windowHeight = window.innerHeight
       const spacing = 16
@@ -174,10 +200,9 @@ export default ({
     // The tooltip instead of being rendered on the original DOM position
     // it's appended to the 'div.l-page' page element, away from every other elements
     // so no element CSS can influence tooltip styles (position, size)
-    appendToPage: {
+    appendToBody: {
       inserted (el, bindings, vnode) {
-        const pageEl = document.querySelector('#app .l-page')
-        pageEl.appendChild(el)
+        document.body.appendChild(el)
 
         const $this = vnode.context // Vue component instance
         if (!$this.tooltip) {
@@ -253,11 +278,21 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-twrapper:not(.has-target-within) {
-  cursor: pointer;
+.c-twrapper {
+  &.anchored-to-element {
+    position: relative;
+    display: inline-block;
+    width: max-content;
+    height: auto;
+  }
+
+  &:not(.has-target-within) {
+    cursor: pointer;
+  }
 }
 
-.c-tooltip {
+.c-tooltip,
+.c-anchored-tooltip {
   position: absolute;
   top: 0;
   left: 0;
