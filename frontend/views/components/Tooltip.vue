@@ -9,6 +9,7 @@ span.c-twrapper(
     .c-anchored-tooltip(
       v-if='anchorToElement'
       :class='tooltipClasses'
+      :style='{ "opacity": opacity }'
     )
       // Default tooltip is text
       template(v-if='text') {{text}}
@@ -191,7 +192,7 @@ export default ({
       this.styles = {
         transform: `translate(${x}px, ${y}px)`,
         pointerEvents: this.manual ? 'initial' : 'none',
-        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)',
+        backgroundColor: this.manual ? 'transparent' : undefined,
         opacity: this.opacity
       }
     }
@@ -314,12 +315,8 @@ export default ({
     max-width: unset;
   }
 
-  &.is-dark-theme {
+  &.is-dark-theme .card {
     background-color: $general_1;
-
-    .card {
-      background-color: $general_1;
-    }
   }
 
   &.in-reduced-motion {

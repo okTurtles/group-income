@@ -5,6 +5,7 @@ component(
   :opacity='members.length === 0 ? 0 : 0.95'
   triggerElementSelector='.t-trigger'
   direction='bottom'
+  :anchorToElement='true'
 )
   // The reason for using <component /> tag here instead of <tooltip /> and specifying 'key' attr is,
   // to fix the bug where the link between the tooltip content(template(slot='tooltip') below) and the trigger target element(.t-trigger)
@@ -34,10 +35,6 @@ export default ({
 </script>
 
 <style lang="scss" scoped>
-.has-zero-members ::v-deep .c-tooltip {
-  display: none !important;
-}
-
 .c-member-name {
   // Turn the parent element into flex-box to render ellipsis style properly.
   position: relative;
