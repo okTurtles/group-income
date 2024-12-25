@@ -9,7 +9,7 @@ span.c-twrapper(
     .c-background(
       v-if='(isActive || isVisible) && manual'
       @click='toggle'
-      v-append-to-body=''
+      v-append-to-page=''
       data-test='closeProfileCard'
     )
 
@@ -17,7 +17,7 @@ span.c-twrapper(
     :style='styles'
     :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme,  "in-reduced-motion": isReducedMotionMode }'
     v-if='isActive || isVisible'
-    v-append-to-body='{ manual }'
+    v-append-to-page='{ manual }'
   )
     // Default tooltip is text
     template(v-if='text') {{text}}
@@ -38,6 +38,8 @@ export default ({
     // Force to show tooltip manually
     isVisible: Boolean,
     manual: {
+      // The option to opt out of the default behaviour of displaying tooltip when the trigger element is focused/hovered
+      // and then using $ref.[name].toggle() from the parent component instead. (reference: ProfileCard.vue)
       type: Boolean,
       default: false
     },
@@ -99,12 +101,9 @@ export default ({
     hide () {
       if (!this.manual) this.isActive = false
     },
-    // Used by parent (ProfileCard.vue)
     toggle () {
-      if (this.deactivated) {
-        return
-      }
-      if (!this.manual) { return false }
+      // Manually toggle on/off the tooltip (reference: ProfileCard.vue)
+      if (this.deactivated || !this.manual) { return }
       this.isActive = !this.isActive
     },
     handleKeyUp (e) {
@@ -115,7 +114,12 @@ export default ({
     },
     adjustPosition () {
       this.trigger = (this.triggerDOM || this.$el).getBoundingClientRect()
-      const { scrollX, scrollY } = window
+      const pageEl = document.querySelector('#app .l-page')
+
+      const { scrollLeft = 0, scrollTop = 0 } = pageEl
+      const scrollX = window.scrollX + scrollLeft
+      const scrollY = window.scrollY + scrollTop
+
       const { width, height, left, top } = this.trigger
       const windowHeight = window.innerHeight
       const spacing = 16
@@ -168,11 +172,12 @@ export default ({
   },
   directives: {
     // The tooltip instead of being rendered on the original DOM position
-    // it's appended to the DOM, away from every other elements
+    // it's appended to the 'div.l-page' page element, away from every other elements
     // so no element CSS can influence tooltip styles (position, size)
-    appendToBody: {
+    appendToPage: {
       inserted (el, bindings, vnode) {
-        document.body.appendChild(el)
+        const pageEl = document.querySelector('#app .l-page')
+        pageEl.appendChild(el)
 
         const $this = vnode.context // Vue component instance
         if (!$this.tooltip) {
