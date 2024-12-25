@@ -78,6 +78,13 @@ const setupRootState = () => {
   if (!rootState.notifications) rootState.notifications = Object.create(null)
   if (!rootState.notifications.items) rootState.notifications.items = []
   if (!rootState.notifications.status) rootState.notifications.status = Object.create(null)
+
+  if (!rootState.periodicNotificationAlreadyFiredMap) {
+    rootState.periodicNotificationAlreadyFiredMap = {
+      alreadyFired: Object.create(null), // { notificationKey: boolean },
+      lastRun: Object.create(null) // { notificationKey: number },
+    }
+  }
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
@@ -150,24 +157,25 @@ sbp('sbp/selectors/register', {
   'state/vuex/getters': (() => {
     // Singleton lazily generated getters
     let obj
+
     return () => {
       if (!obj) {
         obj = Object.create(null)
         Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
-            get: () => {
+            get: function () {
               const state = sbp('chelonia/rootState')
-              return fn(state, obj)
+              return fn(state, this)
             }
           }]
         })))
         Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
-            get: () => {
+            get: function () {
               const state = sbp('chelonia/rootState')
               // `state.chatroom` represents the `chatroom` module. For the SW,
               // this is defined in `sw-primary.js`.
-              return fn(state.chatroom || {}, obj, state)
+              return fn(state.chatroom || {}, this, state)
             }
           }]
         })))
