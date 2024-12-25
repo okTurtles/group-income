@@ -9,7 +9,8 @@ span.c-twrapper(
     .c-anchored-tooltip(
       v-if='anchorToElement'
       :class='tooltipClasses'
-      :style='{ "opacity": opacity }'
+      :style='styles'
+      v-anchor-to-trigger=''
     )
       // Default tooltip is text
       template(v-if='text') {{text}}
@@ -150,13 +151,33 @@ export default ({
       const { width, height, left, top } = this.trigger
       const windowHeight = window.innerHeight
       const spacing = 16
-      let x, y
+      let transform
+      let absPosition // For css top/left/bottom/right properties to use along with 'position: absolute'
 
       if (this.manual && window.innerWidth < TABLET) {
-        y = windowHeight - this.tooltipHeight // Position at the bottom of the screen on mobile
-        x = -8 // Remove tooltip padding
+        // On mobile, position tooltip at the bottom of the screen with the side-padding removed.
+        transform = `translate(-8px, ${windowHeight - this.tooltipHeight}px)`
+      } else if (this.anchorToElement) {
+        let x, y // for css transform: translate(...)
+
+        switch (this.direction) {
+          case 'right':
+            x = '100%'
+            y = '-50%'
+            absPosition = { top: '50%', right: `-${spacing}px` }
+            break
+          default: // defaults to 'bottom'
+            x = '-50%'
+            y = '100%'
+            absPosition = { left: '50%', bottom: `-${spacing}px` }
+        }
+
+        transform = `translate(${x}, ${y})`
       } else {
-        y = scrollY + top + height / 2 - this.tooltipHeight / 2
+        let x
+        let y = scrollY + top + height / 2 - this.tooltipHeight / 2 // y position defaults to the trigger's center.
+
+        // If y position is off-screen, move it to the edges with some spacing.
         if (y < 0) y = spacing
         if (y + this.tooltipHeight > windowHeight) y = windowHeight - spacing - this.tooltipHeight
 
@@ -187,10 +208,13 @@ export default ({
             x = scrollX + left + width / 2 - this.tooltipWidth / 2
             y = scrollY + top + height + spacing
         }
+
+        transform = `translate(${x}px, ${y}px)`
       }
 
       this.styles = {
-        transform: `translate(${x}px, ${y}px)`,
+        transform,
+        ...(absPosition || {}),
         pointerEvents: this.manual ? 'initial' : 'none',
         backgroundColor: this.manual ? 'transparent' : undefined,
         opacity: this.opacity
@@ -251,6 +275,16 @@ export default ({
         }
         window.removeEventListener('resize', $this.adjustPosition)
       }
+    },
+    anchorToTrigger: {
+      inserted (el, bindings, vnode) {
+        const $this = vnode.context
+        if ($this.triggerDOM) {
+          console.log('!@# here - aaa')
+          $this.triggerDOM.appendChild(el)
+          $this.adjustPosition()
+        }
+      }
     }
   },
   mounted () {
@@ -282,9 +316,6 @@ export default ({
 .c-twrapper {
   &.anchored-to-element {
     position: relative;
-    display: inline-block;
-    width: max-content;
-    height: auto;
   }
 
   &:not(.has-target-within) {
