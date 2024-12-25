@@ -279,11 +279,12 @@ export default ({
     anchorToTrigger: {
       inserted (el, bindings, vnode) {
         const $this = vnode.context
-        if ($this.triggerDOM) {
-          console.log('!@# here - aaa')
+        if ($this.triggerElementSelector) {
+          // Append the tooltip to a particular element (which is specified by a selector)
           $this.triggerDOM.appendChild(el)
-          $this.adjustPosition()
         }
+
+        $this.adjustPosition()
       }
     }
   },
