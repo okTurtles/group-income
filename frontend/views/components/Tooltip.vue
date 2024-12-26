@@ -166,6 +166,31 @@ export default ({
             y = '-50%'
             absPosition = { top: '50%', right: `-${spacing}px` }
             break
+          case 'left':
+            x = '-100%'
+            y = '-50%'
+            absPosition = { top: '50%', left: `-${spacing}px` }
+            break
+          case 'bottom-left':
+            x = 0
+            y = '100%'
+            absPosition = { bottom: `-${spacing}px` }
+            break
+          case 'bottom-right':
+            x = 0
+            y = '100%'
+            absPosition = { bottom: `-${spacing}px`, right: 0 }
+            break
+          case 'top':
+            x = '-50%'
+            y = '-100%'
+            absPosition = { top: `-${spacing}px`, left: '50%' }
+            break
+          case 'top-left':
+            x = 0
+            y = '-100%'
+            absPosition = { top: `-${spacing}px`, left: 0 }
+            break
           default: // defaults to 'bottom'
             x = '-50%'
             y = '100%'

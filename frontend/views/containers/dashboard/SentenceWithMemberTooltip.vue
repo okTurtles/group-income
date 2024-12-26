@@ -4,7 +4,7 @@ component(
   :key='members.length'
   :opacity='members.length === 0 ? 0 : 0.95'
   triggerElementSelector='.t-trigger'
-  direction='bottom'
+  direction='bottom-left'
   :anchorToElement='true'
 )
   // The reason for using <component /> tag here instead of <tooltip /> and specifying 'key' attr is,
@@ -41,5 +41,6 @@ export default ({
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  font-weight: normal;
 }
 </style>
