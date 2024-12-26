@@ -88,10 +88,17 @@ export default ({
     },
     generateTextObjectsFromText (text) {
       const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
+      const wrapEmojis = str => {
+        // We should be able to style the emojis in message-text (reference issue: https://github.com/okTurtles/group-income/issues/2464)
+        return str.replace(/(\p{Emoji})/gu, '<span class="chat-emoji">$1</span>')
+      }
 
       if (!text) { return [] }
       if (!containsMentionChar(text)) {
-        return [{ type: TextObjectType.Text, text }]
+        return [{
+          type: TextObjectType.Text,
+          text: wrapEmojis(text)
+        }]
       }
       const allMention = makeMentionFromUserID('').all
       const regExpPossibleMentions = new RegExp(`(?<=\\s|^)(${allMention}|${this.possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
@@ -105,7 +112,8 @@ export default ({
         .split(regExpPossibleMentions)
         .map(t => {
           const genDefaultTextObj = (text) => ({
-            type: TextObjectType.Text, text
+            type: TextObjectType.Text,
+            text: wrapEmojis(text)
           })
           const genChannelMentionObj = (text) => {
             const chatRoomID = getIdFromChannelMention(text)
@@ -183,25 +191,27 @@ export default ({
   background-color: $warning_1;
 }
 
-.c-message-text.is-replying {
-  border-left: 2px;
-  border-color: #dbdbdb; // var(--text_1);
-  border-style: none none none solid;
-  font-size: 0.75rem;
-  color: var(--text_1);
-  font-style: italic;
-  padding-left: 0.25rem;
-  white-space: pre-line;
+.c-message-text {
+  &.is-replying {
+    border-left: 2px;
+    border-color: #dbdbdb; // var(--text_1);
+    border-style: none none none solid;
+    font-size: 0.75rem;
+    color: var(--text_1);
+    font-style: italic;
+    padding-left: 0.25rem;
+    white-space: pre-line;
 
-  &:hover {
-    cursor: pointer;
-    color: var(--text_2);
-    border-color: var(--text_1); // var(--text_2);
-  }
+    &:hover {
+      cursor: pointer;
+      color: var(--text_2);
+      border-color: var(--text_1); // var(--text_2);
+    }
 
-  .c-member-mention,
-  .c-channel-mention {
-    background-color: transparent;
+    .c-member-mention,
+    .c-channel-mention {
+      background-color: transparent;
+    }
   }
 }
 
