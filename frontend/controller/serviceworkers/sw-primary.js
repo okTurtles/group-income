@@ -156,32 +156,42 @@ sbp('sbp/selectors/register', {
   'state/vuex/state': () => sbp('chelonia/rootState'),
   'state/vuex/getters': (() => {
     // Singleton lazily generated getters
-    let obj
+    let computedGetters
 
     return () => {
-      if (!obj) {
-        obj = Object.create(null)
-        Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
+      if (!computedGetters) {
+        computedGetters = Object.create(null)
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
+              // `fn` takes the state as the first parameter and the getters as
+              // a second parameter. We use `this` instead of `computedGetters`
+              // so that we can locally override the `computedGetters` object
+              // (e.g., using inheritance or a `Proxy`) to redefine certain
+              // getters. This is convenient, but it's incompatible with the
+              // way Vuex getters work, which do _not_ use `this`.
+              // This incompatibility is fine, since one has to go out of their
+              // way to make `this` and `computedGetters` different.
               return fn(state, this)
             }
           }]
         })))
-        Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
               // `state.chatroom` represents the `chatroom` module. For the SW,
               // this is defined in `sw-primary.js`.
+              // The same idea applies here for the use of `this` instead of
+              // `computedGetters` as above.
               return fn(state.chatroom || {}, this, state)
             }
           }]
         })))
       }
 
-      return obj
+      return computedGetters
     }
   })()
 })

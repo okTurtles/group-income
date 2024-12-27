@@ -100,6 +100,7 @@ async function runNotificationListRecursive () {
         delete ephemeralNotificationState.clearTimeout
         runNotificationListRecursive()
       },
+      // TODO: Increase this back up to `1 * MINS_MILLIS`
       0.1 * MINS_MILLIS
     )
     return () => clearTimeout(timeoutId)
