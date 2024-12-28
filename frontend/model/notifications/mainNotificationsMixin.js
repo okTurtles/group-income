@@ -73,29 +73,57 @@ const periodicNotificationEntries = [
     type: PERIODIC_NOTIFICATION_TYPE.MIN1,
     notificationData: {
       stateKey: 'nearDistributionEnd',
-      emitCondition ({ rootGetters }) {
-        const currentPeriod = rootGetters.groupSettings?.distributionDate
-        if (!currentPeriod) { return false }
+      emitCondition ({ rootState, rootGetters }) {
+        const identityContractID = rootState.loggedIn?.identityContractID
+        if (!identityContractID) return
 
-        const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
-        const now = dateToPeriodStamp(new Date())
-        const comparison = comparePeriodStamps(nextPeriod, now)
+        const groupIds = Object.keys(rootState[identityContractID].groups).filter((gId) => !rootState[identityContractID].groups[gId].hasLeft && rootState[gId])
 
-        return rootGetters.ourGroupProfile?.incomeDetailsType === 'pledgeAmount' &&
-          (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
-          (rootGetters.ourPayments && rootGetters.ourPayments.todo.length > 0) &&
-          !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
+        this.nearDistributionEnd = groupIds.map((gId) => {
+          /// TODO REVERT TO USE getter
+          const currentPeriod = rootGetters.groupSettingsForGroup(rootState[gId]).distributionDate
+          if (!currentPeriod) { return false }
+
+          const nextPeriod = rootGetters.periodAfterPeriodForGroup(rootState[gId], currentPeriod)
+          const now = dateToPeriodStamp(new Date())
+          const comparison = comparePeriodStamps(nextPeriod, now)
+
+          return rootGetters.ourGroupProfileForGroup(rootState[gId]).incomeDetailsType === 'pledgeAmount' &&
+            (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
+            (rootGetters.ourPaymentsForGroup(rootState[gId])?.todo.length > 0) &&
+            !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod, gId)
+            ? [gId, currentPeriod]
+            : null
+        }).filter(Boolean)
+
+        return (this.nearDistributionEnd.length > 0)
       },
       emit ({ rootState, rootGetters }) {
-        sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
-          groupID: rootState.currentGroupId,
-          period: rootGetters.groupSettings.distributionDate
+        this.nearDistributionEnd.forEach(([groupID, period]) => {
+          sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
+            groupID,
+            period
+          })
         })
       },
-      shouldClearStateKey ({ rootGetters }) {
-        const currentPeriod = rootGetters.groupSettings.distributionDate
-        return rootGetters.currentNotifications.filter(item => item.type === 'NEAR_DISTRIBUTION_END')
-          .every(item => item.data.period !== currentPeriod)
+      shouldClearStateKey ({ rootState, rootGetters }) {
+        const identityContractID = rootState.loggedIn?.identityContractID
+        if (!identityContractID) return
+
+        const groupIds = Object.keys(rootState[identityContractID].groups).filter((gId) => !rootState[identityContractID].groups[gId].hasLeft && rootState[gId])
+
+        const groupedNotifications = rootGetters.notifications.filter(item => item.type === 'NEAR_DISTRIBUTION_END').reduce((acc, item) => {
+          if (!item.groupID) return acc
+          if (!acc[item.groupID]) acc[item.groupID] = []
+          acc[item.groupID].push(item.data.period)
+
+          return acc
+        }, Object.create(null))
+
+        return groupIds.every((groupId) => {
+          const currentPeriod = rootGetters.groupSettingsForGroup(groupId).distributionDate
+          return !!groupedNotifications[groupId]?.every(period => period !== currentPeriod)
+        })
       }
     }
   },

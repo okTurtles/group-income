@@ -12,7 +12,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
   MIN30: '30MIN'
 }
 
-const ephemeralNotificationState = { notifications: [], partition: Object.create(null) }
+const ephemeralNotificationState: { notifications: Array, partition: Object, clearTimeout?: Function } = { notifications: [], partition: Object.create(null) }
 
 const delayToObjectMap = {
   [PERIODIC_NOTIFICATION_TYPE.MIN1]: 1 * MINS_MILLIS,
@@ -60,6 +60,10 @@ async function runNotificationListRecursive () {
   const firedMap = rootState.periodicNotificationAlreadyFiredMap.alreadyFired
   const lastRunMap = rootState.periodicNotificationAlreadyFiredMap.lastRun
   const callWithStates = (func, stateKey) => func.call(ephemeralNotificationState.partition[stateKey], { rootState, rootGetters })
+
+  if (!firedMap) {
+    console.error('@@@@@@ [!firedMap]', rootState)
+  }
 
   // Exit if a timeout is already set
   if (ephemeralNotificationState.clearTimeout) return
@@ -127,10 +131,10 @@ sbp('sbp/selectors/register', {
   'gi.periodicNotifications/clearStatesAndStopTimers': function () {
     const rootState = sbp('state/vuex/state')
 
-    rootState.periodicNotificationAlreadyFiredMap = Object.create(null, {
-      alreadyFired: { value: Object.create(null) },
-      lastRun: { value: Object.create(null) }
-    })
+    rootState.periodicNotificationAlreadyFiredMap = {
+      alreadyFired: Object.create(null), // { notificationKey: boolean },
+      lastRun: Object.create(null) // { notificationKey: number },
+    }
     clearTimeoutObject()
   },
   'gi.periodicNotifications/importNotifications': function (entries) {

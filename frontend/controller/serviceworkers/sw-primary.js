@@ -8,9 +8,9 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
-import './sw-namespace.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
+import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
@@ -28,6 +28,7 @@ import {
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, SERIOUS_ERROR, SWITCH_GROUP
 } from '../../utils/events.js'
 import './push.js'
+import './sw-namespace.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -186,6 +187,18 @@ sbp('sbp/selectors/register', {
               // The same idea applies here for the use of `this` instead of
               // `computedGetters` as above.
               return fn(state.chatroom || {}, this, state)
+            }
+          }]
+        })))
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, Function]) => {
+          return [getter, {
+            get: function () {
+              const state = sbp('chelonia/rootState')
+              // `state.chatroom` represents the `chatroom` module. For the SW,
+              // this is defined in `sw-primary.js`.
+              // The same idea applies here for the use of `this` instead of
+              // `computedGetters` as above.
+              return fn(state.notifications || {}, this, state)
             }
           }]
         })))
