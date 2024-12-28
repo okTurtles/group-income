@@ -1,7 +1,9 @@
 'use strict'
 
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
+import '@model/notifications/periodicNotifications.js'
 import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -438,4 +440,17 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   }).catch(e => {
     console.error('Error displaying native notification', e)
   })
+})
+
+sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
+
+sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+sbp('gi.periodicNotifications/init')
+
+sbp('okTurtles.events/on', CHELONIA_RESET, () => {
+  sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+})
+
+sbp('okTurtles.events/on', LOGIN, () => {
+  sbp('gi.periodicNotifications/init')
 })

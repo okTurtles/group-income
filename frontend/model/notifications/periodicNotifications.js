@@ -61,10 +61,6 @@ async function runNotificationListRecursive () {
   const lastRunMap = rootState.periodicNotificationAlreadyFiredMap.lastRun
   const callWithStates = (func, stateKey) => func.call(ephemeralNotificationState.partition[stateKey], { rootState, rootGetters })
 
-  if (!firedMap) {
-    console.error('@@@@@@ [!firedMap]', rootState)
-  }
-
   // Exit if a timeout is already set
   if (ephemeralNotificationState.clearTimeout) return
   // Prevent accidentally calling `runNotificationListRecursive` while it's
@@ -73,7 +69,6 @@ async function runNotificationListRecursive () {
 
   // Check if enough time has passed since the last run
   for (const entry of ephemeralNotificationState.notifications) {
-    // TODO: lastRunMap can be undefined, presumably after vuex/reset
     const stateKey = entry.stateKey
     const lastRun = lastRunMap[stateKey] || 0
     // Use the delay from the notification entry
@@ -104,8 +99,7 @@ async function runNotificationListRecursive () {
         delete ephemeralNotificationState.clearTimeout
         runNotificationListRecursive()
       },
-      // TODO: Increase this back up to `1 * MINS_MILLIS`
-      0.1 * MINS_MILLIS
+      0.25 * MINS_MILLIS
     )
     return () => clearTimeout(timeoutId)
   })()
