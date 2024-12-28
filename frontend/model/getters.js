@@ -89,6 +89,14 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
   },
+  ourGroups (state, getters) {
+    const identityContractID = getters.ourIdentityContractId
+    if (!identityContractID) return []
+
+    return Object.keys(state[identityContractID]?.groups || {}).filter(
+      (gId) => !state[identityContractID].groups[gId].hasLeft && state[gId]
+    )
+  },
   currentGroupLastLoggedIn (state) {
     return state.lastLoggedIn[state.currentGroupId] || {}
   },
