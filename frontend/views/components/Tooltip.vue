@@ -1,28 +1,40 @@
 <template lang='pug'>
 span.c-twrapper(
-  :class='{ "has-target-within": triggerElementSelector }'
+  :class='{ "has-target-within": triggerElementSelector, "anchored-to-element": anchorToElement }'
   v-bind='rootElAttrs'
 )
   slot
 
-  transition(name='fade')
-    .c-background(
-      v-if='(isActive || isVisible) && manual'
-      @click='toggle'
-      v-append-to-body=''
-      data-test='closeProfileCard'
+  template(v-if='revealTooltip')
+    .c-anchored-tooltip(
+      v-if='anchorToElement'
+      :class='tooltipClasses'
+      :style='styles'
+      v-anchor-to-trigger=''
     )
+      // Default tooltip is text
+      template(v-if='text') {{text}}
+      // But any content can fit in
+      slot(v-else='' name='tooltip')
 
-  .c-tooltip(
-    :style='styles'
-    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme,  "in-reduced-motion": isReducedMotionMode }'
-    v-if='isActive || isVisible'
-    v-append-to-body='{ manual }'
-  )
-    // Default tooltip is text
-    template(v-if='text') {{text}}
-    // But any content can fit in
-    slot(v-else='' name='tooltip')
+    template(v-else)
+      transition(name='fade')
+        .c-background(
+          v-if='manual'
+          @click='toggle'
+          v-append-to-body=''
+          data-test='closeProfileCard'
+        )
+
+      .c-tooltip(
+        :style='styles'
+        :class='tooltipClasses'
+        v-append-to-body='{ manual }'
+      )
+        // Default tooltip is text
+        template(v-if='text') {{text}}
+        // But any content can fit in
+        slot(v-else='' name='tooltip')
 </template>
 
 <script>
@@ -38,6 +50,8 @@ export default ({
     // Force to show tooltip manually
     isVisible: Boolean,
     manual: {
+      // The option to opt out of the default behaviour of displaying tooltip when the trigger element is focused/hovered
+      // and then using $ref.[name].toggle() from the parent component instead. (reference: ProfileCard.vue)
       type: Boolean,
       default: false
     },
@@ -67,6 +81,13 @@ export default ({
       type: String,
       required: false,
       default: ''
+    },
+    anchorToElement: {
+      // An option to opt out of the v-append-to-body vue-directive. Instead of appending the tooltip to document.body,
+      // It will be anchored to the trigger DOM element so it won't detached from the original position while scrolling the page etc..
+      // (reference: https://github.com/okTurtles/group-income/issues/2450)
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -81,7 +102,8 @@ export default ({
   }),
   computed: {
     ...mapGetters([
-      'isReducedMotionMode'
+      'isReducedMotionMode',
+      'isDarkTheme'
     ]),
     rootElAttrs () {
       return {
@@ -89,6 +111,18 @@ export default ({
           ? (this.manual ? '-1' : '0')
           : null,
         'aria-label': !this.triggerElementSelector ? this.text : undefined
+      }
+    },
+    revealTooltip () {
+      return this.isActive || this.isVisible
+    },
+    tooltipClasses () {
+      return {
+        'has-text-center': this.isTextCenter,
+        'is-active': this.isActive,
+        'is-dark-theme': this.isDarkTheme,
+        'in-reduced-motion': this.isReducedMotionMode,
+        manual: this.manual
       }
     }
   },
@@ -99,12 +133,9 @@ export default ({
     hide () {
       if (!this.manual) this.isActive = false
     },
-    // Used by parent (ProfileCard.vue)
     toggle () {
-      if (this.deactivated) {
-        return
-      }
-      if (!this.manual) { return false }
+      // Manually toggle on/off the tooltip (reference: ProfileCard.vue)
+      if (this.deactivated || !this.manual) { return }
       this.isActive = !this.isActive
     },
     handleKeyUp (e) {
@@ -115,17 +146,63 @@ export default ({
     },
     adjustPosition () {
       this.trigger = (this.triggerDOM || this.$el).getBoundingClientRect()
+
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const windowHeight = window.innerHeight
       const spacing = 16
-      let x, y
+      let transform
+      let absPosition // For css top/left/bottom/right properties to use along with 'position: absolute'
 
       if (this.manual && window.innerWidth < TABLET) {
-        y = windowHeight - this.tooltipHeight // Position at the bottom of the screen on mobile
-        x = -8 // Remove tooltip padding
+        // On mobile, position tooltip at the bottom of the screen with the side-padding removed.
+        transform = `translate(-8px, ${windowHeight - this.tooltipHeight}px)`
+      } else if (this.anchorToElement) {
+        let x, y // for css transform: translate(...)
+
+        switch (this.direction) {
+          case 'right':
+            x = '100%'
+            y = '-50%'
+            absPosition = { top: '50%', right: `-${spacing}px` }
+            break
+          case 'left':
+            x = '-100%'
+            y = '-50%'
+            absPosition = { top: '50%', left: `-${spacing}px` }
+            break
+          case 'bottom-left':
+            x = 0
+            y = '100%'
+            absPosition = { bottom: `-${spacing}px` }
+            break
+          case 'bottom-right':
+            x = 0
+            y = '100%'
+            absPosition = { bottom: `-${spacing}px`, right: 0 }
+            break
+          case 'top':
+            x = '-50%'
+            y = '-100%'
+            absPosition = { top: `-${spacing}px`, left: '50%' }
+            break
+          case 'top-left':
+            x = 0
+            y = '-100%'
+            absPosition = { top: `-${spacing}px`, left: 0 }
+            break
+          default: // defaults to 'bottom'
+            x = '-50%'
+            y = '100%'
+            absPosition = { left: '50%', bottom: `-${spacing}px` }
+        }
+
+        transform = `translate(${x}, ${y})`
       } else {
-        y = scrollY + top + height / 2 - this.tooltipHeight / 2
+        let x
+        let y = scrollY + top + height / 2 - this.tooltipHeight / 2 // y position defaults to the trigger's center.
+
+        // If y position is off-screen, move it to the edges with some spacing.
         if (y < 0) y = spacing
         if (y + this.tooltipHeight > windowHeight) y = windowHeight - spacing - this.tooltipHeight
 
@@ -156,19 +233,22 @@ export default ({
             x = scrollX + left + width / 2 - this.tooltipWidth / 2
             y = scrollY + top + height + spacing
         }
+
+        transform = `translate(${x}px, ${y}px)`
       }
 
       this.styles = {
-        transform: `translate(${x}px, ${y}px)`,
+        transform,
+        ...(absPosition || {}),
         pointerEvents: this.manual ? 'initial' : 'none',
-        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)',
+        backgroundColor: this.manual ? 'transparent' : undefined,
         opacity: this.opacity
       }
     }
   },
   directives: {
     // The tooltip instead of being rendered on the original DOM position
-    // it's appended to the DOM, away from every other elements
+    // it's appended to the 'div.l-page' page element, away from every other elements
     // so no element CSS can influence tooltip styles (position, size)
     appendToBody: {
       inserted (el, bindings, vnode) {
@@ -220,6 +300,17 @@ export default ({
         }
         window.removeEventListener('resize', $this.adjustPosition)
       }
+    },
+    anchorToTrigger: {
+      inserted (el, bindings, vnode) {
+        const $this = vnode.context
+        if ($this.triggerElementSelector) {
+          // Append the tooltip to a particular element (which is specified by a selector)
+          $this.triggerDOM.appendChild(el)
+        }
+
+        $this.adjustPosition()
+      }
     }
   },
   mounted () {
@@ -248,11 +339,18 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-twrapper:not(.has-target-within) {
-  cursor: pointer;
+.c-twrapper {
+  &.anchored-to-element {
+    position: relative;
+  }
+
+  &:not(.has-target-within) {
+    cursor: pointer;
+  }
 }
 
-.c-tooltip {
+.c-tooltip,
+.c-anchored-tooltip {
   position: absolute;
   top: 0;
   left: 0;
@@ -274,12 +372,8 @@ export default ({
     max-width: unset;
   }
 
-  &.is-dark-theme {
+  &.is-dark-theme .card {
     background-color: $general_1;
-
-    .card {
-      background-color: $general_1;
-    }
   }
 
   &.in-reduced-motion {
