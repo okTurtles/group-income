@@ -221,7 +221,9 @@ export default ({
       this.$emit('add-emoticon', emoticon.native || emoticon)
     },
     openMenu () {
-      this.$refs.messageAction.$refs.menu.handleTrigger()
+      if (this.$refs.messageAction?.$refs?.menu) {
+        this.$refs.messageAction.$refs.menu.handleTrigger()
+      }
     },
     longPressHandler (e) {
       const wrappingLinkTag = e.target.closest('a.link[href]')
@@ -230,7 +232,7 @@ export default ({
         const url = wrappingLinkTag.getAttribute('href')
         sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, url)
         e?.preventDefault()
-      } else {
+      } else if (!this.isEditing) {
         this.openMenu()
       }
     }
