@@ -442,22 +442,21 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   })
 })
 
-/* function getPendingQueuedInvocationsCount (): number {
+function getPendingQueuedInvocationsCount (): number {
   return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
     .flatMap(([, list]) => list).length
-} */
+}
 
 function initOrResetPeriodicNotifications () {
   const x = () => {
     sbp('gi.periodicNotifications/clearStatesAndStopTimers')
     sbp('gi.periodicNotifications/init')
   }
-  /*
+
   if (getPendingQueuedInvocationsCount() > 0) {
-    setTimeout(x, 1000)
+    setTimeout(initOrResetPeriodicNotifications, 1000)
     return
   }
-  */
 
   x()
 }
