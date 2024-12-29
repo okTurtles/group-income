@@ -442,15 +442,31 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   })
 })
 
+/* function getPendingQueuedInvocationsCount (): number {
+  return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+    .flatMap(([, list]) => list).length
+} */
+
+function initOrResetPeriodicNotifications () {
+  const x = () => {
+    sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+    sbp('gi.periodicNotifications/init')
+  }
+  /*
+  if (getPendingQueuedInvocationsCount() > 0) {
+    setTimeout(x, 1000)
+    return
+  }
+  */
+
+  x()
+}
+
 sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
 
 sbp('gi.periodicNotifications/clearStatesAndStopTimers')
-sbp('gi.periodicNotifications/init')
+setupPromise.finally(() => initOrResetPeriodicNotifications())
 
 sbp('okTurtles.events/on', CHELONIA_RESET, () => {
-  sbp('gi.periodicNotifications/clearStatesAndStopTimers')
-})
-
-sbp('okTurtles.events/on', LOGIN, () => {
-  sbp('gi.periodicNotifications/init')
+  initOrResetPeriodicNotifications()
 })

@@ -149,7 +149,7 @@ export default {
 }
 
 .c-body {
-  height: 18rem;
+  height: 30rem;
   overflow: auto;
   overscroll-behavior-y: contain;
 }
