@@ -141,6 +141,8 @@ self.addEventListener('push', function (event) {
         return makeNotification({ title: L('Group activity'), body: L('New group activity. An iOS bug prevents us from saying what it is.') })
       }
     }))
+  } else if (data.type === 'recurring') {
+    sbp('gi.periodicNotifications/init')
   }
 }, false)
 
