@@ -18,6 +18,7 @@ component.c-wrapper(
   tooltip.c-feedback(
     v-if='ephemeral.isTooltipActive'
     :isVisible='true'
+    :anchorToElement='true'
     direction='top'
     :text='L("Copied to clipboard!")'
   )
@@ -100,7 +101,7 @@ export default ({
 }
 
 .c-feedback {
-  position: absolute;
+  position: absolute !important;
   left: 50%;
   transform: translateX(-50%);
 }
