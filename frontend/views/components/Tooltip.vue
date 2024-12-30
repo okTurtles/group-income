@@ -388,6 +388,10 @@ export default ({
   }
 }
 
+.c-anchored-tooltip {
+  width: max-content;
+}
+
 .c-background {
   position: absolute;
   z-index: $zindex-tooltip - 1;
