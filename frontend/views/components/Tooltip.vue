@@ -162,9 +162,9 @@ export default ({
 
         switch (this.direction) {
           case 'right':
-            x = '100%'
+            x = `${spacing}px`
             y = '-50%'
-            absPosition = { top: '50%', right: `-${spacing}px` }
+            absPosition = { top: '50%', left: `100%` }
             break
           case 'left':
             x = '-100%'
@@ -324,6 +324,7 @@ export default ({
 
     if (this.triggerElementSelector) {
       this.triggerDOM.style.cursor = 'pointer'
+      this.triggerDOM.style.position = 'relative'
     }
   },
   beforeDestory () {
