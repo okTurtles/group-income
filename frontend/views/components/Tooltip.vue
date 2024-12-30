@@ -164,7 +164,7 @@ export default ({
           case 'right':
             x = `${spacing}px`
             y = '-50%'
-            absPosition = { top: '50%', left: `100%` }
+            absPosition = { top: '50%', left: '100%' }
             break
           case 'left':
             x = '-100%'
@@ -177,9 +177,9 @@ export default ({
             absPosition = { bottom: `-${spacing}px` }
             break
           case 'bottom-right':
-            x = 0
+            x = '-100%'
             y = '100%'
-            absPosition = { bottom: `-${spacing}px`, right: 0 }
+            absPosition = { bottom: `-${spacing}px`, left: '100%' }
             break
           case 'top':
             x = '-50%'
