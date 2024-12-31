@@ -88,11 +88,12 @@ sbp('sbp/selectors/register', {
             return
           }
 
-          navigator.serviceWorker.ready.then((registration) =>
+          return navigator.serviceWorker.ready.then((registration) =>
             registration.periodicSync.register('periodic-notifications', {
               // An interval of 12 hours
               minInterval: 12 * 60 * 60 * 1000
-            }))
+            })
+          )
         }).catch((e) => {
           console.error('[service-workers/setup] Error setting up periodic background sync events', e)
         })
