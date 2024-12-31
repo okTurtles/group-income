@@ -223,6 +223,16 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
+sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
+
+// Set up periodic notifications on the `CHELONIA_RESET` event. We do this here,
+// before calling `setupRootState`, so that the `CHELONIA_RESET` it will trigger
+// will set up periodic notifications.
+sbp('okTurtles.events/on', CHELONIA_RESET, () => {
+  sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+  sbp('gi.periodicNotifications/init')
+})
+
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
 const setupPromise = setupChelonia()
@@ -440,32 +450,4 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   }).catch(e => {
     console.error('Error displaying native notification', e)
   })
-})
-
-function getPendingQueuedInvocationsCount (): number {
-  return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
-    .flatMap(([, list]) => list).length
-}
-
-function initOrResetPeriodicNotifications () {
-  const x = () => {
-    sbp('gi.periodicNotifications/clearStatesAndStopTimers')
-    sbp('gi.periodicNotifications/init')
-  }
-
-  if (getPendingQueuedInvocationsCount() > 0) {
-    setTimeout(initOrResetPeriodicNotifications, 1000)
-    return
-  }
-
-  x()
-}
-
-sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
-
-sbp('gi.periodicNotifications/clearStatesAndStopTimers')
-setupPromise.finally(() => initOrResetPeriodicNotifications())
-
-sbp('okTurtles.events/on', CHELONIA_RESET, () => {
-  initOrResetPeriodicNotifications()
 })

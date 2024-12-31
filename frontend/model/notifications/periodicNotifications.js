@@ -65,15 +65,26 @@ async function runNotificationListRecursive () {
   if (ephemeralNotificationState.clearTimeout) return
   // Prevent accidentally calling `runNotificationListRecursive` while it's
   // still running
-  const noop = () => {}
+  // We set `clearTimeout` to a local value to stop processing notifications
+  // when clearing stop notifications, to avoid calling
+  // `runNotificationListRecursive` while it's running and to be able to compare
+  // it to the local value later to replace `clearTimeout` later on in this
+  // function
+  let aborted: boolean = false
+  const noop = () => { aborted = true }
   ephemeralNotificationState.clearTimeout = noop
 
-  /* await Promise.all(
-    Object.keys(sbp('okTurtles.eventQueue/queuedInvocations')).map(queue => sbp('okTurtles.eventQueue/queueEvent', noop))
-  ) */
+  // If there are any queued invocations, wait until they're done
+  await Promise.all(
+    Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+      .map(([queue, invocations]) => {
+        return !!invocations.length && sbp('okTurtles.eventQueue/queueEvent', queue, () => {}).catch(() => {})
+      })
+  )
 
   // Check if enough time has passed since the last run
   for (const entry of ephemeralNotificationState.notifications) {
+    if (aborted) break
     const stateKey = entry.stateKey
     const lastRun = lastRunMap[stateKey] || 0
     // Use the delay from the notification entry
