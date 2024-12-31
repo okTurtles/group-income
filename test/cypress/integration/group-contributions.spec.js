@@ -371,7 +371,8 @@ describe('Contributions', () => {
 
   it('user1 edits the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('inputNonMonetaryContribution').type('{selectall}{del}French classes{enter}')
+    cy.getByDT('inputNonMonetaryContribution').clear()
+    cy.getByDT('inputNonMonetaryContribution').type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')

@@ -82,6 +82,7 @@
             tag='button'
             type='submit'
             data-test='deleteAccount'
+            @click='handleDeleteAccount'
           ) Delete account
 </template>
 
@@ -96,7 +97,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { L } from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'UserProfile',
@@ -176,6 +177,13 @@ export default ({
           this.$refs.formMsg.danger(e.message)
         }
       }
+    },
+    handleDeleteAccount () {
+      sbp('gi.ui/prompt', {
+        heading: L('Coming soon!'),
+        question: L('Sorry, this feature has not been implemented yet.{br_}Please check back later.', LTags()),
+        primaryButton: L('Close')
+      })
     }
   }
 }: Object)
