@@ -79,6 +79,25 @@ sbp('sbp/selectors/register', {
         })
       })
 
+      if (typeof PeriodicSyncManager === 'function') {
+        navigator.permissions.query({
+          name: 'periodic-background-sync'
+        }).then((status) => {
+          if (status.state !== 'granted') {
+            console.error('[service-workers/setup] Periodic sync event permission denied')
+            return
+          }
+
+          navigator.serviceWorker.ready.then((registration) =>
+            registration.periodicSync.register('periodic-notifications', {
+              // An interval of 12 hours
+              minInterval: 12 * 60 * 60 * 1000
+            }))
+        }).catch((e) => {
+          console.error('[service-workers/setup] Error setting up periodic background sync events', e)
+        })
+      }
+
       // Keep the service worker alive while the window is open
       // The default idle timeout on Chrome and Firefox is 30 seconds. We send
       // a ping message every 5 seconds to ensure that the worker remains

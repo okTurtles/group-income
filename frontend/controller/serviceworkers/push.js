@@ -142,7 +142,9 @@ self.addEventListener('push', function (event) {
       }
     }))
   } else if (data.type === 'recurring') {
-    sbp('gi.periodicNotifications/init')
+    event.waitUntil(
+      sbp('gi.periodicNotifications/init')
+    )
   }
 }, false)
 
@@ -160,3 +162,11 @@ self.addEventListener('pushsubscriptionchange', function (event) {
     }
   })())
 }, false)
+
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'periodic-notifications') {
+    event.waitUntil(
+      sbp('gi.periodicNotifications/init')
+    )
+  }
+})

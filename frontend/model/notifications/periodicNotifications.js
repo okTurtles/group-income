@@ -136,7 +136,7 @@ function clearTimeoutObject () {
 
 sbp('sbp/selectors/register', {
   'gi.periodicNotifications/init': function () {
-    runNotificationListRecursive().catch((e) => {
+    return runNotificationListRecursive().catch((e) => {
       console.error('[gi.periodicNotifications/init] Error', e)
     })
   },
