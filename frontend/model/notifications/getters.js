@@ -1,7 +1,7 @@
 import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
 import { age, isNew, isOlder } from './utils.js'
 
-const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => any } = {
+const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   notifications (state, getters, rootState) {
     return state.items.map(item => {
       const notification = { ...item, ...state.status[item.hash] }

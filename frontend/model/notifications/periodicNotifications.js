@@ -12,7 +12,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
   MIN30: '30MIN'
 }
 
-const ephemeralNotificationState: { notifications: Array, partition: Object, clearTimeout?: Function } = { notifications: [], partition: Object.create(null) }
+const ephemeralNotificationState: { notifications: any[], partition: Object, clearTimeout?: Function } = { notifications: [], partition: Object.create(null) }
 
 const delayToObjectMap = {
   [PERIODIC_NOTIFICATION_TYPE.MIN1]: 1 * MINS_MILLIS,
@@ -76,7 +76,7 @@ async function runNotificationListRecursive () {
 
   // If there are any queued invocations, wait until they're done
   await Promise.all(
-    Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
+    ((Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')): any): [string, (Function | string[])[]])
       .map(([queue, invocations]) => {
         return !!invocations.length && sbp('okTurtles.eventQueue/queueEvent', queue, () => {}).catch(() => {})
       })
@@ -128,7 +128,7 @@ function clearTimeoutObject () {
     ephemeralNotificationState.clearTimeout()
     delete ephemeralNotificationState.clearTimeout
   }
-  ephemeralNotificationState.state = Object.create(null)
+
   ephemeralNotificationState.notifications.forEach(({ stateKey }) => {
     ephemeralNotificationState.partition[stateKey] = Object.create(null)
   })

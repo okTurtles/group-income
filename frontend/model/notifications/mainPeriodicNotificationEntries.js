@@ -13,7 +13,15 @@ const myNotificationHas = (checkFunc, groupId = '') => {
   return myNotifications.some(item => checkFunc(item))
 }
 
-const periodicNotificationEntries = [
+const periodicNotificationEntries: {
+  type: string;
+  notificationData: {
+    stateKey: string;
+    emitCondition: (arg: { rootState: Object, rootGetters: Object }) => boolean;
+    emit: (arg: { rootState: Object, rootGetters: Object }) => void | Promise<void>;
+    shouldClearStateKey: (arg: { rootState: Object, rootGetters: Object }) => boolean;
+  }
+}[] = [
   {
     type: PERIODIC_NOTIFICATION_TYPE.MIN1,
     notificationData: {
