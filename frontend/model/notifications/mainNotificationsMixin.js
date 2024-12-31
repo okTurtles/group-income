@@ -106,16 +106,7 @@ const periodicNotificationEntries = [
 
 const notificationMixin = {
   methods: {
-    getPendingQueuedInvocationsCount (): number {
-      return Object.entries(sbp('okTurtles.eventQueue/queuedInvocations'))
-        .flatMap(([, list]) => list).length
-    },
     initOrResetPeriodicNotifications () {
-      if (this.getPendingQueuedInvocationsCount() > 0) {
-        setTimeout(() => this.initOrResetPeriodicNotifications(), 1000)
-        return
-      }
-
       // make sure clear the states and timers for either previous user or previous group of the user, and re-init them.
       sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       sbp('gi.periodicNotifications/init')
