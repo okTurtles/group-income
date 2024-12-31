@@ -1,3 +1,4 @@
+import { L } from '@common/common.js'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
 import sbp from '@sbp/sbp'
@@ -135,10 +136,15 @@ self.addEventListener('push', function (event) {
     }).catch((e) => {
       console.error('Error processing push event', e)
       if (data.contractType === 'gi.contracts/chatroom') {
-        // TODO: Text for this notification
-        return makeNotification({ title: '@@@err', body: e.message })
+        return makeNotification({ title: L('Chatroom activity'), body: L('New chatroom message. An iOS bug prevents us from saying what it is.') })
+      } else if (data.contractType === 'gi.contracts/group') {
+        return makeNotification({ title: L('Group activity'), body: L('New group activity. An iOS bug prevents us from saying what it is.') })
       }
     }))
+  } else if (data.type === 'recurring') {
+    event.waitUntil(
+      sbp('gi.periodicNotifications/init')
+    )
   }
 }, false)
 
@@ -156,3 +162,11 @@ self.addEventListener('pushsubscriptionchange', function (event) {
     }
   })())
 }, false)
+
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'periodic-notifications') {
+    event.waitUntil(
+      sbp('gi.periodicNotifications/init')
+    )
+  }
+})

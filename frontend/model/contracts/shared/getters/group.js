@@ -10,12 +10,57 @@ import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '../functions.
 import { PAYMENT_COMPLETED } from '../payments/index.js'
 import { addTimeToDate, dateFromPeriodStamp, dateIsWithinPeriod, dateToPeriodStamp, periodStampsForDate } from '../time.js'
 
+/*
+`-ForGroup` pattern:
+
+Some getters (see, e.g., `groupSettings` and `groupSettingsForGroup`) are
+implemented in pairs, with a variant having the `ForGroup` suffix. This is
+because the non-suffixed version is supposed to work for the current group
+(meaning the result of `currentGroupState`), while the suffixed version takes
+a group state as a parameter. To avoid redundancy, the non-suffixed version is
+implemented using the suffixed version (i.e., calling it with
+`getters.currentGroupState` as a parameter).
+
+Why do we need this?
+
+The primary motivation for this pattern is to reduce redundancy and improve the
+flexibility of getters, as well as being to re-use complex logic in getters
+from most places. Currently, we use getters from three locations: in the 'app'
+(e.g., a browser window), in a service worker and in contracts.
+
+The 'app' has a current group, so the non-prefixed version
+(e.g., `groupSettings`) is generally sufficient. Contracts have an implicit
+current group, which is the current contract. In these cases, getters work by
+injecting a `currentGroupState` getter that resolves to the current contract
+state. However, the service worker doesn't have an implicit or explicit current
+group, and 'injecting' a `currentGroupState` can't be done in a way that is
+understandable and also is compatible with how Vuex getters work (*), should we
+decide to move some of the SW code into the app.
+
+Since we want the SW to be able to do things for all groups without having a
+global 'current group', and we also don't want to be essentially re-defining
+getters when they're needed, the prefixed version (e.g., `groupSettingsForGroup`)
+can be used to bridge the gap and use existing definitions. This approach is
+potentially also useful in the 'app', if we want to access information about a
+group which isn't the current one (an example of this could be if we wanted to
+say "User 'alice' and you also have group 'foo' in common").
+
+(*) One potential alternative solution is using a prototype-inheritance or a
+Proxy object on the getters object to override `currentGroupState`. This can be
+made to work in the SW using `this` magic, but is incompatible with the way
+Vuex works. Also, this approach is potentially confusing and hard to read.
+
+*/
+
 export default ({
   currentGroupOwnerID (state, getters) {
     return getters.currentGroupState.groupOwnerID
   },
+  groupSettingsForGroup (state, getters) {
+    return (state) => state.settings || {}
+  },
   groupSettings (state, getters) {
-    return getters.currentGroupState.settings || {}
+    return getters.groupSettingsForGroup(getters.currentGroupState)
   },
   profileActive (state, getters) {
     return member => {
@@ -29,16 +74,21 @@ export default ({
       return profiles?.[member]?.status === PROFILE_STATUS.PENDING
     }
   },
-  groupProfile (state, getters) {
-    return member => {
-      const profiles = getters.currentGroupState.profiles
+  groupProfileForGroup (state, getters) {
+    return (state, member) => {
+      const profiles = state.profiles
       return profiles && profiles[member] && {
         ...profiles[member],
         get lastLoggedIn () {
+          // Yes, technically `currentGroupLastLoggedIn` is for the current
+          // group, but we don't necessarily know the correct group ID here.
           return getters.currentGroupLastLoggedIn[member] || this.joinedDate
         }
       }
     }
+  },
+  groupProfile (state, getters) {
+    return member => getters.groupProfileForGroup(getters.currentGroupState, member)
   },
   groupProfiles (state, getters) {
     const profiles = {}
@@ -60,21 +110,26 @@ export default ({
     return getters.groupSettings.mincomeCurrency
   },
   // Oldest period key first.
+  groupSortedPeriodKeysForGroup (state, getters) {
+    return state => {
+      const { distributionDate, distributionPeriodLength } = getters.groupSettingsForGroup(state)
+      if (!distributionDate) return []
+      // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
+      // A comparator function isn't required for now since our keys are ISO strings.
+      const keys = Object.keys(getters.groupPeriodPayments).sort()
+      // Append the waiting period stamp if necessary.
+      if (!keys.length && MAX_SAVED_PERIODS > 0) {
+        keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)))
+      }
+      // Append the distribution date if necessary.
+      if (keys[keys.length - 1] !== distributionDate) {
+        keys.push(distributionDate)
+      }
+      return keys
+    }
+  },
   groupSortedPeriodKeys (state, getters) {
-    const { distributionDate, distributionPeriodLength } = getters.groupSettings
-    if (!distributionDate) return []
-    // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
-    // A comparator function isn't required for now since our keys are ISO strings.
-    const keys = Object.keys(getters.groupPeriodPayments).sort()
-    // Append the waiting period stamp if necessary.
-    if (!keys.length && MAX_SAVED_PERIODS > 0) {
-      keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)))
-    }
-    // Append the distribution date if necessary.
-    if (keys[keys.length - 1] !== distributionDate) {
-      keys.push(distributionDate)
-    }
-    return keys
+    return getters.groupSortedPeriodKeysForGroup(getters.currentGroupState)
   },
   // paymentTotalfromMembertoMemberID (state, getters) {
   // // this code was removed in https://github.com/okTurtles/group-income/pull/1691
@@ -92,21 +147,27 @@ export default ({
       }).current
     }
   },
-  periodBeforePeriod (state, getters) {
-    return (periodStamp: string, periods?: string[]): string | void => {
+  periodBeforePeriodForGroup (state, getters) {
+    return (groupState: Object, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
-        periodLength: getters.groupSettings.distributionPeriodLength
+        knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
+        periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
       }).previous
     }
   },
-  periodAfterPeriod (state, getters) {
-    return (periodStamp: string, periods?: string[]): string | void => {
+  periodBeforePeriod (state, getters) {
+    return (periodStamp: string, periods?: string[]) => getters.periodBeforePeriodForGroup(getters.currentGroupState, periodStamp, periods)
+  },
+  periodAfterPeriodForGroup (state, getters) {
+    return (groupState: Object, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
-        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
-        periodLength: getters.groupSettings.distributionPeriodLength
+        knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
+        periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
       }).next
     }
+  },
+  periodAfterPeriod (state, getters) {
+    return (periodStamp: string, periods?: string[]) => getters.periodAfterPeriodForGroup(getters.currentGroupState, periodStamp, periods)
   },
   dueDateForPeriod (state, getters) {
     return (periodStamp: string, periods?: string[]) => {

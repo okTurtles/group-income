@@ -82,10 +82,13 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
-  periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
-  preferences: {}
+  preferences: {},
+  periodicNotificationAlreadyFiredMap: {
+    alreadyFired: Object.create(null), // { notificationKey: boolean },
+    lastRun: Object.create(null) // { notificationKey: number },
+  }
 }
 
 if (window.matchMedia) {

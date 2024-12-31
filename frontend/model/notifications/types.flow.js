@@ -10,9 +10,13 @@ export type NewProposalType =
 
 export type Notification = {
   +hash: string;
+  // Native notification title
+  +title: string;
   // Indicates which user avatar icon to display alongside the notification.
   +avatarUserID: string;
   +body: string;
+  // Body without markup to use in native notifications
+  +plaintextBody: string;
   // If present, indicates in which group's notification list to display the notification.
   +groupID?: string;
   +icon: string;

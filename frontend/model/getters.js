@@ -75,8 +75,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourPendingAccept (state, getters) {
     return getters.pendingAccept(getters.ourIdentityContractId)
   },
+  ourGroupProfileForGroup (state, getters) {
+    return (state) => getters.groupProfileForGroup(state, getters.ourIdentityContractId)
+  },
   ourGroupProfile (state, getters) {
-    return getters.groupProfile(getters.ourIdentityContractId)
+    return getters.ourGroupProfileForGroup(getters.currentGroupState)
   },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
@@ -85,6 +88,14 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
+  },
+  ourGroups (state, getters) {
+    const identityContractID = getters.ourIdentityContractId
+    if (!identityContractID) return []
+
+    return Object.keys(state[identityContractID]?.groups || {}).filter(
+      (gId) => !state[identityContractID].groups[gId].hasLeft && state[gId]
+    )
   },
   currentGroupLastLoggedIn (state) {
     return state.lastLoggedIn[state.currentGroupId] || {}
@@ -209,8 +220,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       })
     }
   },
-  ourPaymentsSentInPeriod (state, getters) {
-    return (period) => {
+  ourPaymentsSentInPeriodForGroup (state, getters) {
+    return (state, period) => {
       const periodPayments = getters.groupPeriodPayments
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
@@ -218,7 +229,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
         const ourIdentityContractId = getters.ourIdentityContractId
-        const allPayments = getters.currentGroupState.payments
+        const allPayments = state.payments
         for (const toMemberID in paymentsFrom[ourIdentityContractId]) {
           for (const paymentHash of paymentsFrom[ourIdentityContractId][toMemberID]) {
             const { data, meta, height } = allPayments[paymentHash]
@@ -230,8 +241,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
-  ourPaymentsReceivedInPeriod (state, getters) {
-    return (period) => {
+  ourPaymentsSentInPeriod (state, getters) {
+    return (period) => getters.ourPaymentsSentInPeriodForGroup(getters.currentGroupState, period)
+  },
+  ourPaymentsReceivedInPeriodForGroup (state, getters) {
+    return (state, period) => {
       const periodPayments = getters.groupPeriodPayments
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
@@ -239,7 +253,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
         const ourIdentityContractId = getters.ourIdentityContractId
-        const allPayments = getters.currentGroupState.payments
+        const allPayments = state.payments
         for (const fromMemberID in paymentsFrom) {
           for (const toMemberID in paymentsFrom[fromMemberID]) {
             if (toMemberID === ourIdentityContractId) {
@@ -255,27 +269,35 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
+  ourPaymentsReceivedInPeriod (state, getters) {
+    return (period) => getters.ourPaymentsReceivedInPeriodForGroup(getters.currentGroupState, period)
+  },
+  ourPaymentsForGroup (state, getters) {
+    return (state) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
+      const ourIdentityContractId = getters.ourIdentityContractId
+      const cPeriod = getters.currentPaymentPeriod
+      const pPeriod = getters.periodBeforePeriodForGroup(state, cPeriod)
+      const currentSent = getters.ourPaymentsSentInPeriodForGroup(state, cPeriod)
+      const previousSent = getters.ourPaymentsSentInPeriodForGroup(state, pPeriod)
+      const currentReceived = getters.ourPaymentsReceivedInPeriodForGroup(state, cPeriod)
+      const previousReceived = getters.ourPaymentsReceivedInPeriodForGroup(state, pPeriod)
+
+      // TODO: take into account pending payments that have been sent but not yet completed
+      const todo = () => {
+        return getters.groupIncomeAdjustedDistribution.filter(p => p.fromMemberID === ourIdentityContractId)
+      }
+
+      return {
+        sent: [...currentSent, ...previousSent],
+        received: [...currentReceived, ...previousReceived],
+        todo: todo()
+      }
+    }
+  },
   ourPayments (state, getters) {
-    const periodPayments = getters.groupPeriodPayments
-    if (Object.keys(periodPayments).length === 0) return
-    const ourIdentityContractId = getters.ourIdentityContractId
-    const cPeriod = getters.currentPaymentPeriod
-    const pPeriod = getters.periodBeforePeriod(cPeriod)
-    const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
-    const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
-    const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
-    const previousReceived = getters.ourPaymentsReceivedInPeriod(pPeriod)
-
-    // TODO: take into account pending payments that have been sent but not yet completed
-    const todo = () => {
-      return getters.groupIncomeAdjustedDistribution.filter(p => p.fromMemberID === ourIdentityContractId)
-    }
-
-    return {
-      sent: [...currentSent, ...previousSent],
-      received: [...currentReceived, ...previousReceived],
-      todo: todo()
-    }
+    return getters.ourPaymentsForGroup(getters.currentGroupState)
   },
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
