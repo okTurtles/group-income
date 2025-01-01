@@ -1,5 +1,8 @@
 <template lang='pug'>
-message-base(v-bind='$props' @wrapperAction='action')
+message-base(v-bind='$props'
+  @wrapperAction='action'
+  @reply='$emit("reply")'
+)
   template(#image='')
     .c-icon(:class='{"is-warning": isYellowHorn}')
       svg-yellow-horn(v-if='isYellowHorn')
