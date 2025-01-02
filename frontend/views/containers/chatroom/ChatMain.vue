@@ -128,7 +128,7 @@ import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
-import MessageInteractive from './MessageInteractive.vue'
+import MessageInteractive, { interactiveMessage } from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import MessagePoll from './MessagePoll.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
@@ -304,7 +304,8 @@ export default ({
       'isGroupDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
-      'isReducedMotionMode'
+      'isReducedMotionMode',
+      'globalProfile'
     ]),
     currentUserAttr () {
       return {
@@ -616,9 +617,24 @@ export default ({
       this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {
-      const { text, hash } = message
-      this.ephemeral.replyingMessage = { text, hash }
-      this.ephemeral.replyingTo = this.who(message)
+      const { text, hash, type } = message
+
+      if (type === MESSAGE_TYPES.INTERACTIVE) {
+        const proposal = message.proposal
+        const getDisplayName = (memberID) => {
+          const profile = this.globalProfile(memberID)
+          return profile?.displayName || profile?.username || memberID
+        }
+
+        this.ephemeral.replyingMessage = {
+          text: interactiveMessage(proposal, { from: getDisplayName(proposal.creatorID) }),
+          hash
+        }
+        this.ephemeral.replyingTo = L('Proposal notification')
+      } else {
+        this.ephemeral.replyingMessage = { text, hash }
+        this.ephemeral.replyingTo = this.who(message)
+      }
     },
     editMessage (message, newMessage) {
       message.text = newMessage

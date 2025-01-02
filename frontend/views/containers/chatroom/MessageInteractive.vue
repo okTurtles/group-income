@@ -44,7 +44,7 @@ import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
-const interactiveMessage = (proposal, baseOptions = {}) => {
+export const interactiveMessage = (proposal, baseOptions = {}) => {
   const { status, creatorID, proposalType, proposalData } = proposal
   const { options: proposalDetails } = getProposalDetails({
     status,
