@@ -137,7 +137,7 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
@@ -621,13 +621,13 @@ export default ({
 
       if (type === MESSAGE_TYPES.INTERACTIVE) {
         const proposal = message.proposal
-        const getDisplayName = (memberID) => {
+        const getNameFromMemberID = (memberID) => {
           const profile = this.globalProfile(memberID)
-          return profile?.displayName || profile?.username || memberID
+          return profile ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${memberID}` : L('Unknown user')
         }
 
         this.ephemeral.replyingMessage = {
-          text: interactiveMessage(proposal, { from: getDisplayName(proposal.creatorID) }),
+          text: interactiveMessage(proposal, { from: getNameFromMemberID(proposal.creatorID) }),
           hash
         }
         this.ephemeral.replyingTo = L('Proposal notification')

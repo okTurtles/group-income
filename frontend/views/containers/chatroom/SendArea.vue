@@ -51,7 +51,7 @@
 
     .c-reply-wrapper
       .c-reply(v-if='replyingMessage')
-        i18n(:args='{ replyingTo, text: replyingMessage.text }') Replying to {replyingTo}: "{text}"
+        i18n(:args='{ replyingTo, text: swapMentionIDForDisplayname(replyingMessage.text) }') Replying to {replyingTo}: "{text}"
         button.c-clear.is-icon-small(
           :aria-label='L("Stop replying")'
           @click='stopReplying'
@@ -272,7 +272,7 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { makeMentionFromUsername, makeChannelMention } from '@model/chatroom/utils.js'
+import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
@@ -922,7 +922,8 @@ export default ({
       }).catch(e => {
         console.error('Error emitting user stopped typing event', e)
       })
-    }
+    },
+    swapMentionIDForDisplayname
   }
 }: Object)
 </script>
