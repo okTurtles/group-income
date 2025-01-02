@@ -128,7 +128,7 @@ import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
-import MessageInteractive from './MessageInteractive.vue'
+import MessageInteractive, { interactiveMessage } from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import MessagePoll from './MessagePoll.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
@@ -137,7 +137,7 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR } from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
@@ -304,7 +304,8 @@ export default ({
       'isGroupDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
-      'isReducedMotionMode'
+      'isReducedMotionMode',
+      'globalProfile'
     ]),
     currentUserAttr () {
       return {
@@ -616,9 +617,24 @@ export default ({
       this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
     replyMessage (message) {
-      const { text, hash } = message
-      this.ephemeral.replyingMessage = { text, hash }
-      this.ephemeral.replyingTo = this.who(message)
+      const { text, hash, type } = message
+
+      if (type === MESSAGE_TYPES.INTERACTIVE) {
+        const proposal = message.proposal
+        const getNameFromMemberID = (memberID) => {
+          const profile = this.globalProfile(memberID)
+          return profile ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${memberID}` : L('Unknown user')
+        }
+
+        this.ephemeral.replyingMessage = {
+          text: interactiveMessage(proposal, { from: getNameFromMemberID(proposal.creatorID) }),
+          hash
+        }
+        this.ephemeral.replyingTo = L('Proposal notification')
+      } else {
+        this.ephemeral.replyingMessage = { text, hash }
+        this.ephemeral.replyingTo = this.who(message)
+      }
     },
     editMessage (message, newMessage) {
       message.text = newMessage

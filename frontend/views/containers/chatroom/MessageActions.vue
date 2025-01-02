@@ -23,7 +23,7 @@ menu-parent.c-message-menu(ref='menu')
         i.icon-pencil-alt
 
     tooltip(
-      v-if='isText'
+      v-if='isReplyable'
       direction='top'
       :text='L("Reply")'
     )
@@ -107,6 +107,9 @@ export default ({
     isPoll () {
       return this.type === MESSAGE_TYPES.POLL
     },
+    isReplyable () {
+      return [MESSAGE_TYPES.TEXT, MESSAGE_TYPES.INTERACTIVE].includes(this.type)
+    },
     isPinnable () {
       return this.isText || this.isPoll
     },
@@ -130,9 +133,9 @@ export default ({
         conditionToShow: !this.isDesktopScreen && this.isEditable
       }, {
         name: L('Reply'),
-        action: 'Reply',
+        action: 'reply',
         icon: 'reply',
-        conditionToShow: !this.isDesktopScreen && this.isText
+        conditionToShow: !this.isDesktopScreen && this.isReplyable
       }, {
         name: L('Retry'),
         action: 'retry',

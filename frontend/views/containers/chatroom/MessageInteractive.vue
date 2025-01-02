@@ -1,5 +1,8 @@
 <template lang='pug'>
-message-base(v-bind='$props' @wrapperAction='action')
+message-base(v-bind='$props'
+  @wrapperAction='action'
+  @reply='$emit("reply")'
+)
   template(#image='')
     .c-icon(:class='{"is-warning": isYellowHorn}')
       svg-yellow-horn(v-if='isYellowHorn')
@@ -41,7 +44,7 @@ import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
-const interactiveMessage = (proposal, baseOptions = {}) => {
+export const interactiveMessage = (proposal, baseOptions = {}) => {
   const { status, creatorID, proposalType, proposalData } = proposal
   const { options: proposalDetails } = getProposalDetails({
     status,
