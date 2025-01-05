@@ -4,7 +4,7 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { createCID } from '~/shared/functions.js'
+import { createCID, multicodes } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
@@ -73,8 +73,7 @@ const route = new Proxy({}, {
 
 // RESTful API routes
 
-// TODO: Update this regex once `chel` uses prefixed manifests
-const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+const manifestRegex = /^zL7mM9d4Xb4T[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
 
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
@@ -335,9 +334,9 @@ if (process.env.NODE_ENV === 'development') {
       const { hash, data } = request.payload
       if (!hash) return Boom.badRequest('missing hash')
       if (!data) return Boom.badRequest('missing data')
-      const ourHash = createCID(data)
-      if (ourHash !== hash) {
-        console.error(`hash(${hash}) != ourHash(${ourHash})`)
+      const ourHashes = Object.values(multicodes).map((multicode) => createCID(data, ((multicode: any): number)))
+      if (ourHashes.includes(hash)) {
+        console.error(`hash(${hash}) != ourHash(${ourHashes.join(',')})`)
         return Boom.badRequest('bad hash!')
       }
       await sbp('chelonia/db/set', hash, data)
@@ -407,7 +406,7 @@ route.POST('/file', {
       if (!request.payload[i] || !(request.payload[i].payload instanceof Uint8Array)) {
         throw Boom.badRequest('chunk missing in submitted data')
       }
-      const ourHash = createCID(request.payload[i].payload)
+      const ourHash = createCID(request.payload[i].payload, multicodes.SHELTER_FILE_CHUNK)
       if (request.payload[i].payload.byteLength !== chunk[0]) {
         throw Boom.badRequest('bad chunk size')
       }
@@ -421,7 +420,7 @@ route.POST('/file', {
     // Finally, verify the size is correct
     if (ourSize !== manifest.size) return Boom.badRequest('Mismatched total size')
 
-    const manifestHash = createCID(manifestMeta.payload)
+    const manifestHash = createCID(manifestMeta.payload, multicodes.SHELTER_FILE_MANIFEST)
 
     // Check that we're not overwriting data. At best this is a useless operation
     // since there is no need to write things that exist. However, overwriting
@@ -619,7 +618,7 @@ route.POST('/kv/{contractID}/{key}', {
       // pass through
     } else {
       // "Quote" string (to match ETag format)
-      const cid = JSON.stringify(createCID(existing))
+      const cid = JSON.stringify(createCID(existing, multicodes.RAW))
       if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
         return Boom.preconditionFailed()
       }
@@ -678,7 +677,7 @@ route.GET('/kv/{contractID}/{key}', {
     return Boom.notFound()
   }
 
-  return h.response(result).etag(createCID(result))
+  return h.response(result).etag(createCID(result, multicodes.RAW))
 })
 
 // SPA routes

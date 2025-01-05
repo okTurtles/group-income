@@ -4,7 +4,7 @@ import { aes256gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
-import { blake32Hash, createCID, createCIDfromStream } from '~/shared/functions.js'
+import { blake32Hash, createCID, createCIDfromStream, multicodes } from '~/shared/functions.js'
 import { coerce } from '~/shared/multiformats/bytes.js'
 import type { Secret } from './Secret.js'
 import { buildShelterAuthorizationHeader } from './utils.js'
@@ -100,7 +100,7 @@ const computeChunkDescriptors = (inStream: ReadableStream) => {
       }
     }))
   })
-  const cidPromise = createCIDfromStream(cidStream)
+  const cidPromise = createCIDfromStream(cidStream, multicodes.SHELTER_FILE_CHUNK)
   return Promise.all([lengthPromise, cidPromise])
 }
 
@@ -130,7 +130,7 @@ const fileStream = (chelonia: Object, manifest: Object) => {
       if (chunkBinary.byteLength !== chunk[0]) throw new Error('mismatched chunk size')
       readSize += chunkBinary.byteLength
       if (readSize > manifest.size) throw new Error('read size exceeds declared size')
-      if (createCID(coerce(chunkBinary)) !== chunk[1]) throw new Error('mismatched chunk hash')
+      if (createCID(coerce(chunkBinary), multicodes.SHELTER_FILE_CHUNK) !== chunk[1]) throw new Error('mismatched chunk hash')
       yield chunkBinary
     }
     // Now that we're done, we check to see if we read the correct size
@@ -349,7 +349,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to retrieve manifest')
     }
     const manifestBinary = await manifestResponse.arrayBuffer()
-    if (createCID(coerce(manifestBinary)) !== manifestCid) throw new Error('mismatched manifest hash')
+    if (createCID(coerce(manifestBinary), multicodes.SHELTER_FILE_MANIFEST) !== manifestCid) throw new Error('mismatched manifest hash')
     const manifest = JSON.parse(Buffer.from(manifestBinary).toString())
     if (typeof manifest !== 'object') throw new Error('manifest format is invalid')
     if (manifest.version !== '1.0.0') throw new Error('unsupported manifest version')

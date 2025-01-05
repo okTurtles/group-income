@@ -173,7 +173,10 @@ export default async () => {
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
-    const HASH_LENGTH = 52
+    const HASH_LENGTH = 56
+    const CONTRACT_MANIFEST_REGEX = /^zL7mM9d4Xb4T[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+    const CONTRACT_SOURCE_REGEX = /^zLAeVmpcc88g[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+
     const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
     const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
@@ -184,7 +187,10 @@ export default async () => {
     // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
-      .filter(k => k.length === HASH_LENGTH)
+      .filter(k =>
+        k.length === HASH_LENGTH &&
+        (CONTRACT_MANIFEST_REGEX.test(k) || CONTRACT_SOURCE_REGEX.test(k))
+      )
     const numKeys = keys.length
     let numVisitedKeys = 0
     let numNewKeys = 0
@@ -196,7 +202,10 @@ export default async () => {
       if (!persistence || !await sbp('chelonia/db/get', key)) {
         const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
-        if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
+        if (
+          (CONTRACT_MANIFEST_REGEX.test(key) && value.startsWith(CONTRACT_MANIFEST_MAGIC)) ||
+          (CONTRACT_SOURCE_REGEX.test(key) && value.startsWith(CONTRACT_SOURCE_MAGIC))
+        ) {
           await sbp('chelonia/db/set', key, value)
           numNewKeys++
         }

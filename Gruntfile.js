@@ -259,11 +259,13 @@ module.exports = (grunt) => {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle', 'watch', 'incremental'
     ]),
-    // format: 'esm',
     format: 'iife',
-    // banner: {
+    banner: {
+      // This banner makes contracts easy to detect and harmless in the event
+      // of accidental execution
+      js: 'for(;;)"use shelter";'
     //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
+    },
     splitting: false,
     outdir: distContracts,
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],

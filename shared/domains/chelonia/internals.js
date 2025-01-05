@@ -3,7 +3,7 @@
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
-import { createCID } from '~/shared/functions.js'
+import { createCID, multicodes } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { Secret } from './Secret.js'
@@ -248,7 +248,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     const manifestSource = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('text'))
-    const manifestHashOurs = createCID(manifestSource)
+    const manifestHashOurs = createCID(manifestSource, multicodes.SHELTER_CONTRACT_MANIFEST)
     if (manifestHashOurs !== manifestHash) {
       throw new Error(`expected manifest hash ${manifestHash}. Got: ${manifestHashOurs}`)
     }
@@ -261,7 +261,7 @@ export default (sbp('sbp/selectors/register', {
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
       .then(handleFetchResult('text'))
-    const sourceHash = createCID(source)
+    const sourceHash = createCID(source, multicodes.SHELTER_CONTRACT_TEXT)
     if (sourceHash !== contractInfo.hash) {
       throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
     }
@@ -283,6 +283,11 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
     }
+    // We add `for(;;)"use shelter";` as a banner to the source to make type
+    // detection easier and to prevent accidental execution
+    const activeSource = /^("use strict";(\r\n|\r|\n))?for\(;;\)"use shelter";/.test(source.slice(0, 36))
+      ? source.replace('for(;;)"use shelter";', '')
+      : source
     // const saferEval: Function = new FERAL_FUNCTION(`
     // eslint-disable-next-line no-new-func
     const saferEval: Function = new Function(`
@@ -299,7 +304,7 @@ export default (sbp('sbp/selectors/register', {
         })) {
           (function () {
             'use strict'
-            ${source}
+            ${activeSource}
           })()
         }
       }
