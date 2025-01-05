@@ -4,6 +4,7 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { CONTRACT_DATA_REGEX, CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX, FILE_CHUNK_REGEX, FILE_MANIFEST_REGEX } from '~/shared/domains/chelonia/utils.js'
 import { createCID, multicodes } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
@@ -73,8 +74,6 @@ const route = new Proxy({}, {
 
 // RESTful API routes
 
-const manifestRegex = /^zL7mM9d4Xb4T[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
-
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
@@ -91,7 +90,7 @@ route.POST('/event', {
   try {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
-      if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
+      if (!CONTRACT_MANIFEST_REGEX.test(deserializedHEAD.head.manifest)) {
         return Boom.badData('Invalid manifest')
       }
       const credentials = request.auth.credentials
@@ -286,7 +285,7 @@ route.GET('/latestHEADinfo/{contractID}', {
 })
 
 route.GET('/time', {}, function (request, h) {
-  return new Date().toISOString()
+  return h.response(new Date().toISOString()).type('text/plain')
 })
 
 // TODO: if the browser deletes our cache then not everyone
@@ -474,7 +473,30 @@ route.GET('/file/{hash}', {
   if (!blobOrString) {
     return Boom.notFound()
   }
-  return h.response(blobOrString).etag(hash)
+  let type = 'application/octet-stream'
+
+  if (CONTRACT_DATA_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contractdata+json'
+  } else if (CONTRACT_MANIFEST_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contractmanifest+json'
+  } else if (CONTRACT_SOURCE_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contracttext'
+  } else if (FILE_MANIFEST_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.filemanifest+json'
+  } else if (FILE_CHUNK_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.filechunk+octet-stream'
+  } else if (hash.startsWith('name=')) {
+    type = 'text/plain'
+  }
+
+  return h
+    .response(blobOrString)
+    .etag(hash)
+    // CSP to disable everything -- this only affects direct navigation to the
+    // `/file` URL.
+    .header('content-security-policy', "default-src 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests; sandbox")
+    .header('x-content-type-options', 'nosniff')
+    .type(type)
 })
 
 route.POST('/deleteFile/{hash}', {

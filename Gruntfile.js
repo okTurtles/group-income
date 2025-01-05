@@ -259,6 +259,7 @@ module.exports = (grunt) => {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle', 'watch', 'incremental'
     ]),
+    // Format must be 'iife' because we don't want 'import' in the output
     format: 'iife',
     banner: {
       // This banner makes contracts easy to detect and harmless in the event

@@ -282,7 +282,7 @@ export default (sbp('sbp/selectors/register', {
     transferParts.push({
       headers: new Headers([
         ['content-disposition', 'form-data; name="manifest"; filename="manifest.json"'],
-        ['content-type', 'application/vnd.shelter.manifest']
+        ['content-type', 'application/vnd.shelter.filemanifest']
       ]),
       body: new ReadableStream({
         async start (controller) {

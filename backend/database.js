@@ -8,6 +8,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
+import { CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX } from '~/shared/domains/chelonia/utils.js'
 import LRU from 'lru-cache'
 import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
@@ -174,8 +175,6 @@ export default async () => {
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
     const HASH_LENGTH = 56
-    const CONTRACT_MANIFEST_REGEX = /^zL7mM9d4Xb4T[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
-    const CONTRACT_SOURCE_REGEX = /^zLAeVmpcc88g[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
 
     const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
     const CONTRACT_SOURCE_MAGIC = '"use strict";'
