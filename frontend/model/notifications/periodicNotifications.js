@@ -14,7 +14,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
 
 const ephemeralNotificationState: { notifications: any[], partition: Object, clearTimeout?: Function } = { notifications: [], partition: Object.create(null) }
 
-const delayToObjectMap = {
+const typeToDelayMap = {
   [PERIODIC_NOTIFICATION_TYPE.MIN1]: 1 * MINS_MILLIS,
   [PERIODIC_NOTIFICATION_TYPE.MIN5]: 5 * MINS_MILLIS,
   [PERIODIC_NOTIFICATION_TYPE.MIN15]: 15 * MINS_MILLIS,
@@ -75,6 +75,11 @@ async function runNotificationListRecursive () {
   ephemeralNotificationState.clearTimeout = noop
 
   // If there are any queued invocations, wait until they're done
+  // This is needed because some of the notifications might need contract state
+  // to be ready. By waiting on all queues, we ensure that we have the latest
+  // state after setting up Chelonia. When periodic notifications were used
+  // only in the browser window (instead of also in the SW), a timeout was used
+  // for a similar effect.
   await Promise.all(
     ((Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')): any): [string, (Function | string[])[]])
       .map(([queue, invocations]) => {
@@ -154,7 +159,7 @@ sbp('sbp/selectors/register', {
     for (const { type, notificationData } of entries) {
       if (!type || !notificationData) throw new Error('A required field in a periodic notification entry is missing.')
 
-      const delay = delayToObjectMap[type]
+      const delay = typeToDelayMap[type]
       if (!delay) {
         throw new RangeError('Invalid delay')
       }
