@@ -79,7 +79,6 @@ describe('avatar file serving', function () {
         }
       }
     })
-    console.error('@@@@@ 82')
     const owner = await createIdentity('avatar-caching-test')
     const fd = new FormData()
     fd.append(
@@ -98,7 +97,6 @@ describe('avatar file serving', function () {
         { type: 'application/vnd.shelter.manifest' }
       )
     )
-    console.error('@@@@@ 100')
     retPath = await fetch(`${apiURL}/file`, {
       method: 'POST',
       headers: {

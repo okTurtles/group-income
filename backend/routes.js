@@ -187,7 +187,13 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   const { contractID, since, limit } = request.params
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    if (contractID.startsWith('_private') || since.startsWith('_private')) {
+    if (
+      !contractID ||
+      !CONTRACT_DATA_REGEX.test(contractID) ||
+      contractID.startsWith('_private') ||
+      !/^[0-9]+$/.test(since) ||
+      (limit && !/^[0-9]+$/.test(limit))
+    ) {
       return Boom.notFound()
     }
 
@@ -271,7 +277,12 @@ route.GET('/latestHEADinfo/{contractID}', {
 }, async function (request, h) {
   const { contractID } = request.params
   try {
-    if (contractID.startsWith('_private')) return Boom.notFound()
+    if (
+      !contractID ||
+      !CONTRACT_DATA_REGEX.test(contractID) ||
+      contractID.startsWith('_private')
+    ) return Boom.notFound()
+
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
@@ -465,7 +476,7 @@ route.GET('/file/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
 
-  if (hash.startsWith('_private')) {
+  if (!hash || hash.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -509,7 +520,10 @@ route.POST('/deleteFile/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+  if (!hash || !FILE_MANIFEST_REGEX.test(hash) || hash.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
   const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
   if (!owner) {
     return Boom.notFound()
@@ -605,7 +619,7 @@ route.POST('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -686,7 +700,7 @@ route.GET('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
