@@ -38,6 +38,8 @@ const syncServerTime = async function () {
   wallBase =
     serverTime +
     (requestTimeElapsed - startTime) / 2 +
+    // Also take into account the time elapsed between `requestTimeElapsed`
+    // and this line (which should be very little)
     (newMonotonicBase - requestTimeElapsed)
   monotonicBase = newMonotonicBase
 }
