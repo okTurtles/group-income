@@ -62,6 +62,10 @@ const staticServeConfig = {
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
 }
 
+// We define a `Proxy` for route so that we can use `route.VERB` syntax for
+// defining routes instead of calling `server.route` with an object, and to
+// dynamically get the HAPI server object from the `SERVER_INSTANCE`, which is
+// defined in `server.js`.
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
