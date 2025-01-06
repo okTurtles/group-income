@@ -265,7 +265,8 @@ route.POST('/name', {
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
-    return await sbp('backend/db/lookupName', name)
+    const lookupResult = await sbp('backend/db/lookupName', name)
+    return h.response(lookupResult).type('text/plain')
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
@@ -619,7 +620,8 @@ route.POST('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.startsWith('_private')) {
+  // The key is mandatory and we don't allow NUL in it as it's used for indexing
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -700,7 +702,7 @@ route.GET('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.startsWith('_private')) {
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
