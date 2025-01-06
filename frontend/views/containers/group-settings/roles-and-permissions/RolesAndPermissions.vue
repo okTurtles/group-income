@@ -16,7 +16,11 @@ page-section.c-section(
         th.c-action(:aria-label='L("action")')
 
     tbody
-      permission-table-row
+      permission-table-row(
+        v-for='entry in ephemeral.fakeRolesData'
+        :key='entry.id'
+        :data='entry'
+      )
 
   .c-buttons-container
     button.is-small.is-outlined(
@@ -31,6 +35,28 @@ import { mapGetters } from 'vuex'
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
+
+const fakeRolesData = [
+  {
+    id: 'fake-1',
+    username: 'Fake user 1',
+    role: GROUP_ROLES.ADMIN,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.ADMIN]
+  },
+  {
+    id: 'fake-2',
+    username: 'Fake user 2',
+    role: GROUP_ROLES.MODERATOR,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR]
+  },
+  {
+    id: 'fake-3',
+    username: 'Fake user 3',
+    role: GROUP_ROLES.MODERATOR_DELEGATABLE,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATABLE]
+  }
+]
 
 export default ({
   name: 'RolesAndPermissions',
@@ -38,6 +64,13 @@ export default ({
     PageSection,
     BannerScoped,
     PermissionTableRow
+  },
+  data () {
+    return {
+      ephemeral: {
+        fakeRolesData
+      }
+    }
   },
   computed: {
     ...mapGetters([

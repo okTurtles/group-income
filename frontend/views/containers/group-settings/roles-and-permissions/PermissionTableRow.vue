@@ -5,14 +5,17 @@
         // TODO: Use 'AvatarUser.vue' instead and also wrap these with 'ProfileCard.vue'
         //       when implementing it with real data.
         avatar.c-avatar(src='/assets/images/user-avatar-default.png' size='xs')
-        strong.c-name Username
+        strong.c-name {{ data.username }}
 
     td.c-role
-      i18n.pill.is-primary Admin
+      span.pill.is-primary {{ getRoleDisplayName(data.role ) }}
 
     td.c-permissions
-      span.c-permission-item(v-for='permission in dummyPermissions'
-        :key='permission.id') {{ permission.name }}
+      .c-permissions-wrapper
+        span.c-permission-item(
+          v-for='permission in data.permissions'
+          :key='permission'
+        ) {{ getPermissionDisplayName(permission) }}
 
     td.c-action
       .c-action-wrapper
@@ -22,6 +25,10 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import {
+  getRoleDisplayName,
+  getPermissionDisplayName
+} from './permissions-utils.js'
 
 export default {
   name: 'PermissionTableRow',
@@ -29,22 +36,13 @@ export default {
     Avatar
   },
   props: {
-    role: {
+    data: {
       type: Object
     }
   },
-  data () {
-    return {
-      dummyPermissions: [
-        { id: 'view-permissions', name: 'View Permissions' },
-        { id: 'add-permissions', name: 'Add Permissions' },
-        { id: 'edit-permissions', name: 'Edit Permissions' },
-        { id: 'remove-permissions', name: 'Remove Permissions' },
-        { id: 'delegate-permissions', name: 'Delegate Permissions' }
-      ]
-    }
-  },
   methods: {
+    getRoleDisplayName,
+    getPermissionDisplayName,
     handleMenuClick () {
       console.log('TODO: Add menus')
     }
@@ -69,6 +67,12 @@ td.c-role {
 .c-action-wrapper {
   display: flex;
   justify-content: flex-end;
-  padding-left: 0.5rem;
+}
+
+.c-permissions-wrapper {
+  display: flex;
+  padding: 0.75rem 0.5rem 0.75rem 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 </style>
