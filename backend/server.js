@@ -5,7 +5,7 @@ import sbp from '@sbp/sbp'
 import chalk from 'chalk'
 import '~/shared/domains/chelonia/chelonia.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
-import initDB from './database.js'
+import { appendToIndexFactory, initDB } from './database.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
 import {
@@ -132,16 +132,10 @@ sbp('sbp/selectors/register', {
       // We want to ensure that the index is updated atomically (i.e., if there
       // are multiple new contracts, all of them should be added), so a queue
       // is needed for the load & store operation.
-      await sbp('okTurtles.eventQueue/queueEvent', 'update-contract-indices', async () => {
-        const currentIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
-        // Add the current contract ID to the contract index. Entries in the
-        // index are separated by \x00 (NUL). The index itself is used to know
-        // which entries to load.
-        const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${contractID}`
-        await sbp('chelonia/db/set', '_private_cheloniaState_index', updatedIndex)
-      })
+      await sbp('backend/server/appendToContractIndex', contractID)
     }
   },
+  'backend/server/appendToContractIndex': appendToIndexFactory('_private_cheloniaState_index'),
   'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createKvMessage(contractID, key, entry)
@@ -175,18 +169,9 @@ sbp('sbp/selectors/register', {
     // Store the resource in the resource index key
     // This is done in a queue to handle several simultaneous requests
     // reading and writing to the same key
-    await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-      const existingResources = await sbp('chelonia/db/get', resourcesKey)
-      await sbp('chelonia/db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + resourceID)
-    })
+    await appendToIndexFactory(resourcesKey)(resourceID)
   },
-  'backend/server/registerBillableEntity': async function (resourceID: string) {
-    // Use a queue to ensure atomic updates
-    await sbp('okTurtles.eventQueue/queueEvent', '_private_billable_entities', async () => {
-      const existingBillableEntities = await sbp('chelonia/db/get', '_private_billable_entities')
-      await sbp('chelonia/db/set', '_private_billable_entities', (existingBillableEntities ? existingBillableEntities + '\x00' : '') + resourceID)
-    })
-  },
+  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': async function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
     if (!Number.isSafeInteger(size)) {

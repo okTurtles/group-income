@@ -40,7 +40,7 @@ if (!fs.existsSync(dataFolder)) {
 }
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
-sbp('sbp/selectors/register', {
+export default ((sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
@@ -113,13 +113,13 @@ sbp('sbp/selectors/register', {
     const value = await sbp('chelonia/db/get', namespaceKey(name))
     return value || Boom.notFound()
   }
-})
+}): any): string[])
 
 function namespaceKey (name: string): string {
   return 'name=' + name
 }
 
-export default async () => {
+export const initDB = async () => {
   // If persistence must be enabled:
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
@@ -213,4 +213,102 @@ export default async () => {
     numNewKeys && console.info(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
   await Promise.all([initVapid(), initZkpp()])
+}
+
+// Index management
+
+/**
+ * Creates a factory function that appends a value to a string index in a
+ * database.
+ * The index is identified by the provided key. The value is appended only if it
+ * does not already exist in the index.
+ *
+ * @param key - The key that identifies the index in the database.
+ * @returns A function that takes a value to append to the index.
+ */
+export const appendToIndexFactory = (key: string): (value: string) => Promise<void> => {
+  return (value: string) => {
+    // We want to ensure that the index is updated atomically (i.e., if there
+    // are multiple additions, all of them should be handled), so a queue
+    // is needed for the load & store operation.
+    return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
+      // Retrieve the current index from the database using the provided key
+      const currentIndex = await sbp('chelonia/db/get', key)
+
+      // If the current index exists, check if the value is already present
+      if (currentIndex) {
+        // Check for existing value to avoid duplicates
+        if (
+          // Check if the value is at the end
+          currentIndex.endsWith('\x00' + value) ||
+          // Check if the value is at the start
+          currentIndex.startsWith(value + '\x00') ||
+          // Check if the current index is exactly the value
+          currentIndex === value
+        ) {
+          // Exit if the value already exists
+          return
+        }
+
+        // Append the new value to the current index, separated by NUL
+        await sbp('chelonia/db/set', key, `${currentIndex}\x00${value}`)
+        return
+      }
+
+      // If the current index does not exist, set it to the new value
+      await sbp('chelonia/db/set', key, value)
+    })
+  }
+}
+
+/**
+ * Creates a factory function that removes a value from a string index in a
+ * database.
+ * The index is identified by the provided key. The function handles various
+ * cases to ensure the value is correctly removed from the index.
+ *
+ * @param key - The key that identifies the index in the database.
+ * @returns A function that takes a value to remove from the index.
+ */
+export const removeFromIndexFactory = (key: string): (value: string) => Promise<void> => {
+  return (value: string) => {
+    return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
+      // Retrieve the existing entries from the database using the provided key
+      const existingEntries = await sbp('chelonia/db/get', key)
+      // Exit if there are no existing entries
+      if (!existingEntries) return
+
+      // Handle the case where the value is at the end of the entries
+      if (existingEntries.endsWith('\x00' + value)) {
+        await sbp('chelonia/db/set', key, existingEntries.slice(0, -value.length - 1))
+        return
+      }
+
+      // Handle the case where the value is at the start of the entries
+      if (existingEntries.startsWith(value + '\x00')) {
+        await sbp('chelonia/db/set', key, existingEntries.slice(value.length + 1))
+        return
+      }
+
+      // Handle the case where the existing entries are exactly the value
+      if (existingEntries === value) {
+        await sbp('chelonia/db/delete', key)
+        return
+      }
+
+      // Find the index of the value in the existing entries
+      const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
+      if (entryIndex === -1) return
+
+      // Create an updated index by removing the value
+      const updatedIndex = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
+
+      // Update the index in the database or delete it if empty
+      if (updatedIndex) {
+        await sbp('chelonia/db/set', key, updatedIndex)
+      } else {
+        await sbp('chelonia/db/delete', key)
+      }
+    })
+  }
 }

@@ -8,7 +8,7 @@ import { createCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
-import './database.js'
+import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
@@ -555,19 +555,7 @@ route.POST('/deleteFile/{hash}', {
   await sbp('chelonia/db/delete', `_private_size_${hash}`)
   await sbp('chelonia/db/delete', `_private_deletionToken_${hash}`)
   const resourcesKey = `_private_resources_${owner}`
-  // Use a queue for atomicity
-  await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-    const existingResources = await sbp('chelonia/db/get', resourcesKey)
-    if (!existingResources) return
-    if (existingResources.endsWith(hash)) {
-      await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
-      return
-    }
-    const hashIndex = existingResources.indexOf(hash + '\x00')
-    if (hashIndex === -1) return
-    await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
-  })
-
+  await removeFromIndexFactory(resourcesKey)(hash)
   return h.response()
 })
 
@@ -651,6 +639,7 @@ route.POST('/kv/{contractID}/{key}', {
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+  await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
   await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
   return h.response().code(204)

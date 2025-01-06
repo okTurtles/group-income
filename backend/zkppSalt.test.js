@@ -2,7 +2,7 @@
 
 import nacl from 'tweetnacl'
 import should from 'should'
-import initDB from './database.js'
+import { initDB } from './database.js'
 import 'should-sinon'
 
 import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
