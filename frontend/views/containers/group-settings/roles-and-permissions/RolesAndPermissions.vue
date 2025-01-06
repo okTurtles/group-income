@@ -10,26 +10,34 @@ page-section.c-section(
   table.table.table-in-card.c-table
     thead
       tr
-        i18n.th-name(tag='th') User
+        i18n.th-user(tag='th') User
         i18n.th-role(tag='th') Role
         i18n.th-permissions(tag='th') Permissions
         th.c-action(:aria-label='L("action")')
 
     tbody
-      tr
-        td.c-name username
+      permission-table-row
+
+  .c-buttons-container
+    button.is-small.is-outlined(
+      type='button'
+      @click='handleAddPermissionsClick'
+    )
+      i18n Add Permissions
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import PermissionTableRow from './PermissionTableRow.vue'
 
 export default ({
   name: 'RolesAndPermissions',
   components: {
     PageSection,
-    BannerScoped
+    BannerScoped,
+    PermissionTableRow
   },
   computed: {
     ...mapGetters([
@@ -38,6 +46,11 @@ export default ({
     ]),
     isGroupCreator () {
       return this.ourIdentityContractId === this.currentGroupOwnerID
+    }
+  },
+  methods: {
+    handleAddPermissionsClick () {
+      console.log('TODO: add permissions')
     }
   }
 }: Object)
@@ -58,5 +71,11 @@ export default ({
   table-layout: fixed;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.c-buttons-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
 }
 </style>
