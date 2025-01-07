@@ -9,7 +9,7 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltUpdateToken } from './zkppSalt.js'
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
@@ -119,15 +119,9 @@ route.POST('/event', {
       const saltUpdateToken = request.headers['shelter-salt-update-token']
       let updateSalts
       if (saltUpdateToken) {
-        // If we've got a salt update token (i.e., a password change), fetch
-        // the username associated to the contract to see if they match, and
-        // then validate the token
-        const name = request.headers['shelter-name']
-        const namedContractID = name && await sbp('backend/db/lookupName', name)
-        if (namedContractID !== deserializedHEAD.contractID) {
-          throw new Error('Mismatched contract ID and name')
-        }
-        updateSalts = await redeemSaltUpdateToken(name, saltUpdateToken)
+        // If we've got a salt update token (i.e., a password change),
+        // validate the token
+        updateSalts = await redeemSaltUpdateToken(deserializedHEAD.contractID, saltUpdateToken)
       }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
       // If it's a salt update, do it now after handling the message. This way
@@ -154,7 +148,12 @@ route.POST('/event', {
             if (Boom.isBoom(r)) {
               return r
             }
+            const saltRegistrationToken = request.headers['shelter-salt-registration-token']
             console.info(`new user: ${name}=${deserializedHEAD.contractID} (${ip})`)
+            if (saltRegistrationToken) {
+              // If we've got a salt registration token, redeem it
+              await redeemSaltRegistrationToken(name, deserializedHEAD.contractID, saltRegistrationToken)
+            }
           }
         }
       }
@@ -727,10 +726,6 @@ route.GET('/', {}, function (req, h) {
 })
 
 route.POST('/zkpp/register/{name}', {
-  auth: {
-    strategy: 'chel-shelter',
-    mode: 'optional'
-  },
   validate: {
     payload: Joi.alternatives([
       {
@@ -756,23 +751,6 @@ route.POST('/zkpp/register/{name}', {
     ])
   }
 }, async function (req, h) {
-  if (!req.payload['b']) {
-    const credentials = req.auth.credentials
-    if (!credentials?.billableContractID) {
-      return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
-    }
-    if (req.params['name'].startsWith('_private')) return Boom.notFound()
-    const contractID = await sbp('backend/db/lookupName', req.params['name'])
-    if (contractID !== credentials.billableContractID) {
-      // This ensures that only the owner of the contract can set a salt for it,
-      // closing a small window of opportunity(*) during which an attacker could
-      // potentially lock out a new user from their account by registering a
-      // different salt.
-      // (*) This is right between the moment an OP_CONTRACT is sent and the
-      // time this endpoint is called, which should follow almost immediately after.
-      return Boom.forbidden('Only the owner of this resource may set a password hash')
-    }
-  }
   try {
     if (req.payload['b']) {
       const result = await registrationKey(req.params['name'], req.payload['b'])
