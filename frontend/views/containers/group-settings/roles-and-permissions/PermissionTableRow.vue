@@ -19,12 +19,12 @@
 
     td.c-action
       .c-action-wrapper
-        button.is-icon-small(type='button' @click='handleMenuClick')
-          i.icon-ellipsis-v
+        permission-action-menu(role='admin')
 </template>
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import PermissionActionMenu from './PermissionActionMenu.vue'
 import {
   getRoleDisplayName,
   getPermissionDisplayName
@@ -33,7 +33,8 @@ import {
 export default {
   name: 'PermissionTableRow',
   components: {
-    Avatar
+    Avatar,
+    PermissionActionMenu
   },
   props: {
     data: {
@@ -42,10 +43,7 @@ export default {
   },
   methods: {
     getRoleDisplayName,
-    getPermissionDisplayName,
-    handleMenuClick () {
-      console.log('TODO: Add menus')
-    }
+    getPermissionDisplayName
   }
 }
 </script>

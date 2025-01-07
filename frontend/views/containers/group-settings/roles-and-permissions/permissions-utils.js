@@ -4,7 +4,7 @@ import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constant
 export const GROUP_ROLES_DISPLAY_NAME: { [string]: string } = {
   [GROUP_ROLES.ADMIN]: L('Admin'),
   [GROUP_ROLES.MODERATOR]: L('Moderator'),
-  [GROUP_ROLES.MODERATOR_DELEGATABLE]: L('Moderator - delegator'),
+  [GROUP_ROLES.MODERATOR_DELEGATOR]: L('Moderator - delegator'),
   [GROUP_ROLES.CUSTOM]: L('Custom')
 }
 

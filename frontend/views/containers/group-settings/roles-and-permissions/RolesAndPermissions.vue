@@ -5,7 +5,7 @@ page-section.c-section(
 )
   i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions
 
-  banner-scoped(ref='feedbackMsg' allowA='true')
+  banner-scoped(ref='feedbackMsg' :allowA='true')
 
   table.table.table-in-card.c-table
     thead
@@ -53,8 +53,8 @@ const fakeRolesData = [
   {
     id: 'fake-3',
     username: 'Fake user 3',
-    role: GROUP_ROLES.MODERATOR_DELEGATABLE,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATABLE]
+    role: GROUP_ROLES.MODERATOR_DELEGATOR,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR]
   }
 ]
 
