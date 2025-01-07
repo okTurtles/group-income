@@ -36,23 +36,22 @@ export default ({
       }
     }
 
-    const Lparams = {
-      ...LTags('b'),
+    const LcommonParams = {
       errName: error.name,
       activity,
       action: action ?? opType,
-      contract: state.contracts[contractID]?.type ?? contractID,
-      who,
-      errMsg: error.message ?? '?'
+      contract: state.contracts[contractID]?.type ?? contractID
+    }
+
+    const Lparams = {
+      ...LcommonParams,
+      ...LTags('b'),
+      who
     }
 
     const LplaintextParams = {
-      errName: error.name,
-      activity,
-      action: action ?? opType,
-      contract: state.contracts[contractID]?.type ?? contractID,
-      who: plaintextWho,
-      errMsg: error.message ?? '?'
+      ...LcommonParams,
+      who: plaintextWho
     }
 
     return {

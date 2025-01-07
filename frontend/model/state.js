@@ -138,6 +138,14 @@ sbp('sbp/selectors/register', {
       // $FlowFixMe[incompatible-call]
       Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
     }
+    if (state.periodicNotificationAlreadyFiredMap) {
+      if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
+        state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
+      }
+      if (!state.periodicNotificationAlreadyFiredMap.lastRun) {
+        state.periodicNotificationAlreadyFiredMap.lastRun = Object.create(null)
+      }
+    }
     contractUpdate(state, (state: Object, contractIDHints: ?string[]) => {
       // Upgrade from version 1.0.7 to a newer version
       // The new group contract introduces a breaking change: the

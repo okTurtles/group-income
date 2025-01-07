@@ -5,6 +5,13 @@ import sbp from '@sbp/sbp'
 import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.js'
 import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 
+// This file is used in both the SW and window contexts.
+// We do not import Vue for two reasons:
+//   (1) it's bulk that's not needed in the SW, and
+//   (2) there is no place in the app to re-render in response to state updates
+//       in `alreadyFired` and `lastRun`
+
+let shortestDelay: number
 export const PERIODIC_NOTIFICATION_TYPE = {
   MIN1: '1MIN',
   MIN5: '5MIN',
@@ -12,7 +19,11 @@ export const PERIODIC_NOTIFICATION_TYPE = {
   MIN30: '30MIN'
 }
 
-const ephemeralNotificationState: { notifications: any[], partition: Object, clearTimeout?: Function } = { notifications: [], partition: Object.create(null) }
+const ephemeralNotificationState: {
+  notifications: any[], partition: Object, clearTimeout?: Function
+} = {
+  notifications: [], partition: Object.create(null)
+}
 
 const typeToDelayMap = {
   [PERIODIC_NOTIFICATION_TYPE.MIN1]: 1 * MINS_MILLIS,
@@ -71,8 +82,8 @@ async function runNotificationListRecursive () {
   // it to the local value later to replace `clearTimeout` later on in this
   // function
   let aborted: boolean = false
-  const noop = () => { aborted = true }
-  ephemeralNotificationState.clearTimeout = noop
+  const abort = () => { aborted = true }
+  ephemeralNotificationState.clearTimeout = abort
 
   // If there are any queued invocations, wait until they're done
   // This is needed because some of the notifications might need contract state
@@ -115,14 +126,14 @@ async function runNotificationListRecursive () {
 
   // Set a timeout for the next run of the notification check
   // But only do so if `clearTimeout` hasn't been reset
-  if (ephemeralNotificationState.clearTimeout !== noop) return
+  if (ephemeralNotificationState.clearTimeout !== abort) return
   ephemeralNotificationState.clearTimeout = (() => {
     const timeoutId = setTimeout(
       () => {
         delete ephemeralNotificationState.clearTimeout
         runNotificationListRecursive()
       },
-      1 * MINS_MILLIS
+      shortestDelay
     )
     return () => clearTimeout(timeoutId)
   })()
@@ -163,6 +174,9 @@ sbp('sbp/selectors/register', {
       if (!delay) {
         throw new RangeError('Invalid delay')
       }
+      // Using inverted logic because `shortestDelay` could be undefined (on
+      // the first call to this function) and `undefined` is coerced to NaN.
+      if (!(shortestDelay <= delay)) shortestDelay = delay
 
       validateNotificationData(notificationData)
       if (keySet.has(notificationData.stateKey)) {
