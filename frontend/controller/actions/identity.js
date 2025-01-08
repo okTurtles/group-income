@@ -20,7 +20,7 @@ import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
@@ -194,6 +194,8 @@ export default (sbp('sbp/selectors/register', {
     const IPK = typeof wIPK === 'string' ? deserializeKey(wIPK) : wIPK
     const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
 
+    const deletionToken = generateSalt()
+
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -221,6 +223,7 @@ export default (sbp('sbp/selectors/register', {
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
+    const encryptedDeletionToken = encryptedOutgoingDataWithRawKey(IEK, deletionToken)
 
     // Before creating the contract, put all keys into transient store
     await sbp('chelonia/storeSecretKeys',
@@ -232,7 +235,13 @@ export default (sbp('sbp/selectors/register', {
     try {
       await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
-        publishOptions,
+        publishOptions: {
+          ...publishOptions,
+          headers: {
+            ...publishOptions?.headers,
+            'shelter-deletion-token': deletionToken
+          }
+        },
         signingKeyId: IPKid,
         actionSigningKeyId: CSKid,
         actionEncryptionKeyId: PEKid,
@@ -367,7 +376,12 @@ export default (sbp('sbp/selectors/register', {
           // finalPicture is set after OP_CONTRACT is sent, which is after
           // calling 'chelonia/out/registerContract' here. We use a getter for
           // `picture` so that the action sent has the correct value
-          attributes: { username, email, get picture () { return finalPicture } }
+          attributes: {
+            username,
+            email,
+            get picture () { return finalPicture },
+            encryptedDeletionToken
+          }
         },
         namespaceRegistration: username
       })

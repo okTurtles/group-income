@@ -157,6 +157,10 @@ route.POST('/event', {
             console.info(`new user: ${name}=${deserializedHEAD.contractID} (${ip})`)
           }
         }
+        const deletionToken = request.headers['shelter-deletion-token']
+        if (deletionToken) {
+          await sbp('chelonia/db/set', `_private_deletionToken_${deserializedHEAD.contractID}`, deletionToken)
+        }
       }
       // Store size information
       await sbp('backend/server/updateSize', deserializedHEAD.contractID, Buffer.byteLength(request.payload))
@@ -569,13 +573,14 @@ route.POST('/deleteContract/{hash}', {
   const { hash } = request.params
   const strategy = request.auth.strategy
   if (!hash || hash.startsWith('_private')) return Boom.notFound()
-  const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
-  if (!owner) {
-    return Boom.notFound()
-  }
 
   switch (strategy) {
     case 'chel-shelter': {
+      const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
+      if (!owner) {
+        return Boom.notFound()
+      }
+
       let ultimateOwner = owner
       let count = 0
       // Walk up the ownership tree

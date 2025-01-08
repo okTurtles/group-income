@@ -297,17 +297,18 @@ sbp('sbp/selectors/register', {
       const kvKeys = await sbp('chelonia/db/get', kvIndexKey)
       if (kvKeys) {
         await kvKeys.split('\x00').map((key) => {
-          return sbp('chelonia/db/delete', key)
+          return sbp('chelonia/db/delete', `_private_kv_${cid}_${key}`)
         })
       }
+      await sbp('chelonia/db/delete', kvIndexKey)
 
       await sbp('chelonia/db/delete', `_private_rid_${cid}`)
       await sbp('chelonia/db/delete', `_private_owner_${cid}`)
       await sbp('chelonia/db/delete', `_private_size_${cid}`)
       await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
-      await removeFromIndexFactory(kvIndexKey)(cid)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
+      await sbp('chelonia/db/delete', `_private_hidx=${cid}#0`)
       await sbp('chelonia/db/set', cid, '')
 
       await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
