@@ -5,7 +5,7 @@ import sbp from '@sbp/sbp'
 import chalk from 'chalk'
 import '~/shared/domains/chelonia/chelonia.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
-import { appendToIndexFactory, initDB } from './database.js'
+import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
 import {
@@ -20,6 +20,7 @@ import {
 import { addChannelToSubscription, deleteChannelFromSubscription, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+import { BackendErrorBadData, BackendErrorNotFound } from './errors.js'
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -198,6 +199,30 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/stop': function () {
     return hapi.stop()
+  },
+  async 'backend/deleteFile' (cid: string): Promise<void> {
+    const owner = await sbp('chelonia/db/get', `_private_owner_${cid}`)
+    const rawManifest = await sbp('chelonia/db/get', cid)
+    if (!rawManifest) throw new BackendErrorNotFound()
+    try {
+      const manifest = JSON.parse(rawManifest)
+      if (!manifest || typeof manifest !== 'object') throw new BackendErrorBadData('manifest format is invalid')
+      if (manifest.version !== '1.0.0') return BackendErrorBadData('unsupported manifest version')
+      if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return BackendErrorBadData('missing chunks')
+      // Delete all chunks
+      await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia/db/delete', cid)))
+    } catch (e) {
+      console.warn(e, `Error parsing manifest for ${cid}. It's probably not a file manifest.`)
+      throw new BackendErrorNotFound()
+    }
+    // The keys to be deleted are not read from or updated, so they can be deleted
+    // without using a queue
+    await sbp('chelonia/db/delete', cid)
+    await sbp('chelonia/db/delete', `_private_owner_${cid}`)
+    await sbp('chelonia/db/delete', `_private_size_${cid}`)
+    await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
+    const resourcesKey = `_private_resources_${owner}`
+    await removeFromIndexFactory(resourcesKey)(cid)
   }
 })
 

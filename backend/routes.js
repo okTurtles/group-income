@@ -535,28 +535,19 @@ route.POST('/deleteFile/{hash}', {
 
   // Authentication passed, now proceed to delete the file and its associated
   // keys
-  const rawManifest = await sbp('chelonia/db/get', hash)
-  if (!rawManifest) return Boom.notFound()
   try {
-    const manifest = JSON.parse(rawManifest)
-    if (!manifest || typeof manifest !== 'object') return Boom.badData('manifest format is invalid')
-    if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
-    if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
-    // Delete all chunks
-    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia/db/delete', cid)))
+    await sbp('backend/deleteFile', hash)
+    return h.response()
   } catch (e) {
-    console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
-    return Boom.notFound()
+    switch (e.name) {
+      case 'BackendErrorNotFound':
+        return Boom.notFound()
+      case 'BackendErrorBadData':
+        return Boom.badData(e.message)
+      default:
+        return Boom.internal(e.message)
+    }
   }
-  // The keys to be deleted are not read from or updated, so they can be deleted
-  // without using a queue
-  await sbp('chelonia/db/delete', hash)
-  await sbp('chelonia/db/delete', `_private_owner_${hash}`)
-  await sbp('chelonia/db/delete', `_private_size_${hash}`)
-  await sbp('chelonia/db/delete', `_private_deletionToken_${hash}`)
-  const resourcesKey = `_private_resources_${owner}`
-  await removeFromIndexFactory(resourcesKey)(hash)
-  return h.response()
 })
 
 route.POST('/kv/{contractID}/{key}', {
