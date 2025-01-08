@@ -1161,6 +1161,37 @@ export default (sbp('sbp/selectors/register', {
     })
     return msg
   },
+  'chelonia/out/deleteContract': async function (contractID: string | string[], credentials: { [contractID: string]: { token: ?string, billableContractID: ?string } } = {}) {
+    if (!contractID) {
+      throw new TypeError('A manifest CID must be provided')
+    }
+    if (!Array.isArray(contractID)) contractID = [contractID]
+    return await Promise.allSettled(contractID.map(async (cid) => {
+      const hasCredential = has(credentials, cid)
+      const hasToken = has(credentials[cid], 'token') && credentials[cid].token
+      const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
+      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
+        throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
+      }
+
+      const response = await fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
+        method: 'POST',
+        signal: this.abortController.signal,
+        headers: new Headers([
+          ['authorization',
+            hasToken
+              // $FlowFixMe[incompatible-type]
+              ? `bearer ${credentials[cid].token}`
+              // $FlowFixMe[incompatible-type]
+              // $FlowFixMe[incompatible-call]
+              : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]
+        ])
+      })
+      if (!response.ok) {
+        throw new Error(`Unable to delete contract ${cid}`)
+      }
+    }))
+  },
   // all of these functions will do both the creation of the GIMessage
   // and the sending of it via 'chelonia/private/out/publishEvent'
   'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise<GIMessage> {

@@ -8,7 +8,7 @@ import { createCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
-import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
+import { appendToIndexFactory } from './database.js'
 import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
@@ -472,7 +472,9 @@ route.GET('/file/{hash}', {
   }
 
   const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
-  if (!blobOrString) {
+  if (blobOrString === '') {
+    return Boom.resourceGone()
+  } else if (!blobOrString) {
     return Boom.notFound()
   }
   return h.response(blobOrString).etag(hash)
@@ -542,10 +544,88 @@ route.POST('/deleteFile/{hash}', {
     switch (e.name) {
       case 'BackendErrorNotFound':
         return Boom.notFound()
+      case 'BackendErrorGone':
+        return Boom.resourceGone()
       case 'BackendErrorBadData':
         return Boom.badData(e.message)
       default:
-        return Boom.internal(e.message)
+        console.error(e, 'Error during deletion')
+        return Boom.internal(e.message ?? 'internal error')
+    }
+  }
+})
+
+route.POST('/deleteContract/{hash}', {
+  auth: {
+    // Allow file deletion, and allow either the bearer of the deletion token or
+    // the file owner to delete it
+    strategies: ['chel-shelter', 'chel-bearer'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const { hash } = request.params
+  const strategy = request.auth.strategy
+  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+  const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
+  if (!owner) {
+    return Boom.notFound()
+  }
+
+  switch (strategy) {
+    case 'chel-shelter': {
+      let ultimateOwner = owner
+      let count = 0
+      // Walk up the ownership tree
+      do {
+        const owner = await sbp('chelonia/db/get', `_private_owner_${ultimateOwner}`)
+        if (owner) {
+          ultimateOwner = owner
+          count++
+        } else {
+          break
+        }
+      // Prevent an infinite loop
+      } while (count < 128)
+      // Check that the user making the request is the ultimate owner (i.e.,
+      // that they have permission to delete this file)
+      if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    case 'chel-bearer': {
+      const expectedToken = await sbp('chelonia/db/get', `_private_deletionToken_${hash}`)
+      if (!expectedToken) {
+        return Boom.notFound()
+      }
+      const token = request.auth.credentials.token
+      // Constant-time comparison
+      // Check that the token provided matches the deletion token for this contract
+      if (!ctEq(expectedToken, token)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    default:
+      return Boom.unauthorized('Missing or invalid auth strategy')
+  }
+
+  // Authentication passed, now proceed to delete the contract and its associated
+  // keys
+  try {
+    await sbp('backend/deleteContract', hash)
+    return h.response()
+  } catch (e) {
+    switch (e.name) {
+      case 'BackendErrorNotFound':
+        return Boom.notFound()
+      case 'BackendErrorGone':
+        return Boom.resourceGone()
+      case 'BackendErrorBadData':
+        return Boom.badData(e.message)
+      default:
+        console.error(e, 'Error during deletion')
+        return Boom.internal(e.message ?? 'internal error')
     }
   }
 })
