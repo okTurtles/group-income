@@ -339,7 +339,9 @@ export default (sbp('sbp/selectors/register', {
       postCleanupFn = newState
       newState = undefined
     }
-    sbp('chelonia/private/stopClockSync')
+    if (this.pubsub) {
+      sbp('chelonia/private/stopClockSync')
+    }
     // wait for any pending sync operations to finish before saving
     Object.keys(this.postSyncOperations).forEach(cID => {
       sbp('chelonia/private/enqueuePostSyncOps', cID)
@@ -373,7 +375,9 @@ export default (sbp('sbp/selectors/register', {
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CHELONIA_RESET)
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: removedContractIDs })
-    sbp('chelonia/private/startClockSync')
+    if (this.pubsub) {
+      sbp('chelonia/private/startClockSync')
+    }
     if (newState) {
       Object.entries(newState).forEach(([key, value]) => {
         this.config.reactiveSet(rootState, key, value)
@@ -556,6 +560,9 @@ export default (sbp('sbp/selectors/register', {
       // This is temporarily used in development mode to help the server improve
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
+    }
+    if (this.pubsub) {
+      sbp('chelonia/private/stopClockSync')
     }
     sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
