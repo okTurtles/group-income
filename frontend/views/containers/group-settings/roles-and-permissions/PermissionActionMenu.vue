@@ -1,5 +1,8 @@
 <template lang='pug'>
-menu-parent.c-permission-action-menu(@select='onMenuSelect')
+menu-parent.c-permission-action-menu(
+  v-if='menuOptions.length'
+  @select='onMenuSelect'
+)
   menu-trigger.is-icon-small.c-trigger-btn(:aria-label='L("Open permission action menu")')
     i.icon-ellipsis-v
 
@@ -36,12 +39,6 @@ export default {
   computed: {
     menuOptions () {
       const list = [
-        {
-          id: 'view',
-          label: L('View permissions'),
-          icon: 'eye',
-          enabledFor: [GROUP_ROLES.ADMIN, GROUP_ROLES.MODERATOR_DELEGATOR, GROUP_ROLES.MODERATOR]
-        },
         {
           id: 'edit',
           label: L('Edit permissions'),

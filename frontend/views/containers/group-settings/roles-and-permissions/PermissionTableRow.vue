@@ -8,14 +8,10 @@
         strong.c-name {{ data.username }}
 
     td.c-role
-      span.pill.is-primary {{ getRoleDisplayName(data.role ) }}
+      span.pill.c-role-pill(:class='getPillClass()') {{ getRoleDisplayName(data.role ) }}
 
     td.c-permissions
-      .c-permissions-wrapper
-        span.c-permission-item(
-          v-for='permission in data.permissions'
-          :key='permission'
-        ) {{ getPermissionDisplayName(permission) }}
+      view-permissions(:permissions='data.permissions')
 
     td.c-action
       .c-action-wrapper
@@ -25,6 +21,8 @@
 <script>
 import Avatar from '@components/Avatar.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
+import ViewPermissions from './ViewPermissions.vue'
+import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
   getPermissionDisplayName
@@ -34,6 +32,7 @@ export default {
   name: 'PermissionTableRow',
   components: {
     Avatar,
+    ViewPermissions,
     PermissionActionMenu
   },
   props: {
@@ -43,7 +42,17 @@ export default {
   },
   methods: {
     getRoleDisplayName,
-    getPermissionDisplayName
+    getPermissionDisplayName,
+    getPillClass () {
+      if (!this.data?.role) { return ''}
+  
+      return ({
+        [GROUP_ROLES.ADMIN]: 'is-success',
+        [GROUP_ROLES.MODERATOR_DELEGATOR]: 'is-primary',
+        [GROUP_ROLES.MODERATOR]: 'is-warning',
+        [GROUP_ROLES.CUSTOM]: 'is-general'
+      })[this.data.role]
+    }
   }
 }
 </script>
@@ -67,10 +76,8 @@ td.c-role {
   justify-content: flex-end;
 }
 
-.c-permissions-wrapper {
-  display: flex;
-  padding: 0.75rem 0.5rem 0.75rem 0;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.c-role-pill {
+  display: inline;
+  white-space: initial;
 }
 </style>

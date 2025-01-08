@@ -3,17 +3,17 @@ page-section.c-section(
   v-if='isGroupCreator'
   :title='L("Roles and Permissions")'
 )
-  i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions
+  i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions granted to your group members.
 
   banner-scoped(ref='feedbackMsg' :allowA='true')
 
-  table.table.table-in-card.c-table
+  table.table.table-in-card.c-permissions-table
     thead
       tr
         i18n.th-user(tag='th') User
         i18n.th-role(tag='th') Role
         i18n.th-permissions(tag='th') Permissions
-        th.c-action(:aria-label='L("action")')
+        th.th-action(:aria-label='L("action")')
 
     tbody
       permission-table-row(
@@ -47,14 +47,14 @@ const fakeRolesData = [
   {
     id: 'fake-2',
     username: 'Fake user 2',
-    role: GROUP_ROLES.MODERATOR,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR]
+    role: GROUP_ROLES.MODERATOR_DELEGATOR,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR]
   },
   {
     id: 'fake-3',
     username: 'Fake user 3',
-    role: GROUP_ROLES.MODERATOR_DELEGATOR,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR]
+    role: GROUP_ROLES.MODERATOR,
+    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR]
   }
 ]
 
@@ -110,5 +110,21 @@ export default ({
   display: flex;
   justify-content: flex-end;
   margin-top: 1.5rem;
+}
+
+.c-permissions-table {
+  margin-top: 2rem;
+
+  th.th-user {
+    min-width: 12.25rem;
+  }
+
+  th.th-role {
+    min-width: 7.25rem;
+  }
+
+  th.th-action {
+    width: 5.25rem;
+  }
 }
 </style>
