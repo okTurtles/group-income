@@ -275,6 +275,9 @@ route.GET('/latestHEADinfo/{contractID}', {
   try {
     if (contractID.startsWith('_private')) return Boom.notFound()
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (HEADinfo === '') {
+      return Boom.resourceGone()
+    }
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
       return Boom.notFound()

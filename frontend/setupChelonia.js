@@ -139,6 +139,12 @@ const setupChelonia = async (): Promise<*> => {
       }
     },
     hooks: {
+      syncContractError: (e, contractID) => {
+        // TODO
+        if (e?.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
+          console.error('@@@@[syncContractError] Contract ID ' + contractID + ' has been deleted')
+        }
+      },
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
           sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
@@ -254,6 +260,10 @@ const setupChelonia = async (): Promise<*> => {
         if (!data) return
 
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
+      },
+      [NOTIFICATION_TYPE.DELETION] (contractID) {
+        // TODO
+        console.error('@@@@[NOTIFICATION] Contract ID ' + contractID + ' has been deleted')
       }
     },
     handlers: {

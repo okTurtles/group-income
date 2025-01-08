@@ -153,6 +153,13 @@ sbp('sbp/selectors/register', {
     console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${deserializedHEAD.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
+  'backend/server/broadcastDeletion': async function (contractID: string) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.DELETION, contractID)
+    const subscribers = pubsub.enumerateSubscribers(contractID)
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting deletion of ${contractID}`))
+    await pubsub.broadcast(pubsubMessage, { to: subscribers })
+  },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
     if (deserializedHEAD.head.op === GIMessage.OP_CONTRACT) {
@@ -306,6 +313,9 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
       await removeFromIndexFactory('_private_billable_entities')(cid)
+      sbp('backend/server/broadcastDeletion', cid).catch(e => {
+        console.error(e, 'Error broadcasting contract deletion', cid)
+      })
     }).finally(() => {
       contractsPendingDeletion.delete(cid)
     })

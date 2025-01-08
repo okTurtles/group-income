@@ -42,12 +42,11 @@ if (!fs.existsSync(dataFolder)) {
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
-    const resource = await sbp('chelonia/db/get', contractID)
-    if (resource === '') {
-      throw Boom.resourceGone(`contractID ${contractID} has been deleted!`)
-    }
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (latestHEADinfo === '') {
+      throw Boom.resourceGone(`contractID ${contractID} has been deleted!`)
+    }
     if (!latestHEADinfo) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }

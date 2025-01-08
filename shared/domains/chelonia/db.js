@@ -102,7 +102,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
   },
   'chelonia/db/deleteLatestHEADinfo': (contractID: string): Promise<void> => {
-    return sbp('chelonia/db/delete', getLogHead(contractID))
+    return sbp('chelonia/db/set', getLogHead(contractID), '')
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
     try {

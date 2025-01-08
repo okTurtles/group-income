@@ -626,6 +626,8 @@ export default (sbp('sbp/selectors/register', {
                     console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, msg, e)
                   })
                 }]
+              case NOTIFICATION_TYPE.DELETION:
+                return [k, (msg) => v(msg.data)]
               default:
                 return [k, v]
             }
