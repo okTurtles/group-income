@@ -165,12 +165,20 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/saveOwner': async function (ownerID: string, resourceID: string) {
     // Store the owner for the current resource
-    await sbp('chelonia/db/set', `_private_owner_${resourceID}`, ownerID)
-    const resourcesKey = `_private_resources_${ownerID}`
-    // Store the resource in the resource index key
-    // This is done in a queue to handle several simultaneous requests
-    // reading and writing to the same key
-    await appendToIndexFactory(resourcesKey)(resourceID)
+    // Use a queue to check that the owner exists, preventing the creation of
+    // orphaned resources (e.g., because the owner was just deleted)
+    await sbp('chelonia/queueInvocation', ownerID, async () => {
+      const owner = await sbp('chelonia/db/get', ownerID)
+      if (!owner) {
+        throw new Error('Owner resource does not exist')
+      }
+      await sbp('chelonia/db/set', `_private_owner_${resourceID}`, ownerID)
+      const resourcesKey = `_private_resources_${ownerID}`
+      // Store the resource in the resource index key
+      // This is done in a queue to handle several simultaneous requests
+      // reading and writing to the same key
+      await appendToIndexFactory(resourcesKey)(resourceID)
+    })
   },
   'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': async function (resourceID: string, size: number) {
@@ -228,63 +236,79 @@ sbp('sbp/selectors/register', {
 
     await sbp('chelonia/db/set', cid, '')
   },
+  // eslint-disable-next-line require-await
   async 'backend/deleteContract' (cid: string): Promise<void> {
-    const owner = await sbp('chelonia/db/get', `_private_owner_${cid}`)
-    const rawManifest = await sbp('chelonia/db/get', cid)
-    if (rawManifest === '') throw new BackendErrorGone()
-    if (!rawManifest) throw new BackendErrorNotFound()
+    let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
+    if (!contractsPendingDeletion) {
+      contractsPendingDeletion = new Set()
+      sbp('okTurtles.data/set', 'contractsPendingDeletion', contractsPendingDeletion)
+    }
+    // Avoid deadlocks due to loops
+    if (contractsPendingDeletion.has(cid)) {
+      return
+    }
+    contractsPendingDeletion.add(cid)
 
-    const resourcesKey = `_private_resources_${cid}`
-    const resources = await sbp('chelonia/db/get', resourcesKey)
-    if (resources) {
-      await Promise.allSettled(resources.split('\x00').map(async (resourceCid) => {
+    return sbp('chelonia/queueInvocation', cid, async () => {
+      const owner = await sbp('chelonia/db/get', `_private_owner_${cid}`)
+      const rawManifest = await sbp('chelonia/db/get', cid)
+      if (rawManifest === '') throw new BackendErrorGone()
+      if (!rawManifest) throw new BackendErrorNotFound()
+
+      const resourcesKey = `_private_resources_${cid}`
+      const resources = await sbp('chelonia/db/get', resourcesKey)
+      if (resources) {
+        await Promise.allSettled(resources.split('\x00').map(async (resourceCid) => {
         // TODO: Temporary logic until we can figure out the resource type
         // directly from a CID
-        const resource = Buffer.from(await sbp('chelonia/db/get', resourceCid)).toString()
-        if (resource) {
-          if (resource.includes('previousHEAD') && resource.includes('contractID') && resource.includes('op') && resource.includes('height')) {
-            return sbp('backend/deleteContract', resourceCid)
-          } else {
-            return sbp('backend/deleteFile', resourceCid)
+          const resource = Buffer.from(await sbp('chelonia/db/get', resourceCid)).toString()
+          if (resource) {
+            if (resource.includes('previousHEAD') && resource.includes('contractID') && resource.includes('op') && resource.includes('height')) {
+              return sbp('backend/deleteContract', resourceCid)
+            } else {
+              return sbp('backend/deleteFile', resourceCid)
+            }
+          }
+        }))
+      }
+      await sbp('chelonia/db/delete', resourcesKey)
+
+      const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', cid)
+      if (latestHEADinfo) {
+        for (let i = latestHEADinfo.height; i > 0; i--) {
+          const eventKey = `_private_hidx=${cid}#${i}`
+          const event = await sbp('chelonia/db/get', eventKey)
+          if (event) {
+            await sbp('chelonia/db/delete', event)
+            await sbp('chelonia/db/delete', eventKey)
           }
         }
-      }))
-    }
-    await sbp('chelonia/db/delete', resourcesKey)
-
-    const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', cid)
-    if (latestHEADinfo) {
-      for (let i = latestHEADinfo.height; i > 0; i--) {
-        const eventKey = `_private_hidx=${cid}#${i}`
-        const event = await sbp('chelonia/db/get', eventKey)
-        if (event) {
-          await sbp('chelonia/db/delete', event)
-          await sbp('chelonia/db/delete', eventKey)
-        }
+        await sbp('chelonia/db/deleteLatestHEADinfo', cid)
       }
-      await sbp('chelonia/db/deleteLatestHEADinfo', cid)
-    }
 
-    const kvIndexKey = `_private_kvIdx_${cid}`
-    const kvKeys = await sbp('chelonia/db/get', kvIndexKey)
-    if (kvKeys) {
-      await kvKeys.split('\x00').map((key) => {
-        return sbp('chelonia/db/delete', key)
-      })
-    }
+      const kvIndexKey = `_private_kvIdx_${cid}`
+      const kvKeys = await sbp('chelonia/db/get', kvIndexKey)
+      if (kvKeys) {
+        await kvKeys.split('\x00').map((key) => {
+          return sbp('chelonia/db/delete', key)
+        })
+      }
 
-    await sbp('chelonia/db/delete', `_private_rid_${cid}`)
-    await sbp('chelonia/db/delete', `_private_owner_${cid}`)
-    await sbp('chelonia/db/delete', `_private_size_${cid}`)
-    await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
-    await removeFromIndexFactory(kvIndexKey)(cid)
-    await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
+      await sbp('chelonia/db/delete', `_private_rid_${cid}`)
+      await sbp('chelonia/db/delete', `_private_owner_${cid}`)
+      await sbp('chelonia/db/delete', `_private_size_${cid}`)
+      await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
+      await removeFromIndexFactory(kvIndexKey)(cid)
+      await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
-    await sbp('chelonia/db/set', cid, '')
+      await sbp('chelonia/db/set', cid, '')
 
-    await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
-    await removeFromIndexFactory('_private_cheloniaState_index')(cid)
-    await removeFromIndexFactory('_private_billable_entities')(cid)
+      await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
+      await removeFromIndexFactory('_private_cheloniaState_index')(cid)
+      await removeFromIndexFactory('_private_billable_entities')(cid)
+    }).finally(() => {
+      contractsPendingDeletion.delete(cid)
+    })
   }
 })
 
