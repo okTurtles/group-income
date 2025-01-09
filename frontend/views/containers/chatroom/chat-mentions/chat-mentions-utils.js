@@ -61,6 +61,7 @@ function createRecursiveDomObjects (element: any): DomObject {
 
   const isNodeTypeText = element?.nodeType === Node.TEXT_NODE
   const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat.
+  const isBodyElement = element?.nodeName === 'BODY'
 
   const nodeObj: DomObject = isNodeTypeText
     ? { tagName: null, attributes: {}, text: element.textContent }
@@ -87,9 +88,14 @@ function createRecursiveDomObjects (element: any): DomObject {
       nodeObj.children.push(createRecursiveDomObjects(child))
     }
 
-    nodeObj.children = nodeObj.children.filter(
-      child => child.tagName || (child.text || '').trim().length
-    )
+    nodeObj.children = nodeObj.children.filter(child => {
+      if (child.tagName) { return true }
+      else {
+        return isBodyElement
+          ? child.text !== '\n'
+          : (child.text || '').length
+      }
+    })
   }
 
   return nodeObj

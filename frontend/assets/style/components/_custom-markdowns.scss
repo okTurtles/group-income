@@ -138,10 +138,6 @@
   .link {
     border-bottom-color: currentColor;
     margin-left: 2px;
-
-    &:has(+ *) {
-      margin-right: 2px;
-    }
   }
 
   .c-edited {
