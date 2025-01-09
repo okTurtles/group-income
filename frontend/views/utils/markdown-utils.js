@@ -59,12 +59,6 @@ export function renderMarkdown (str: string): any {
   // STEP 3. Remove the unecessary starting/end line-breaks added in/outside of the converted html tags.
   converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')
     .replace(/\n<\/([a-z]+)>/g, '</$1>')
-
-  // STEP 4. White-spaces between the html tags should be preserved. the parseFromString() method DOMParser API will remove them which is what we don't want.
-  converted = converted.replace(/(<\/[a-z]+>)( +)(<[a-z])/g, (_, before, spaces, after) => {
-    const replaced = new Array(spaces.length).fill('&nbsp;').join('')
-    return `${before}${replaced}${after}`
-  })
   return converted
 }
 
