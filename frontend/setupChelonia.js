@@ -12,6 +12,29 @@ import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
+const handleDeletedContract = async (contractID: string) => {
+  const { cheloniaState } = sbp('chelonia/contract/fullState', contractID)
+  if (!cheloniaState) return
+
+  await sbp('chelonia/contract/remove', contractID)
+
+  switch (cheloniaState.type) {
+    /* case 'gi.contracts/chatroom': {
+      // TODO: Leave chatroom on our identity contract or our group, if we've
+      // joined.
+    }
+    case 'gi.contracts/group': {
+      // TODO: Leave group on our identity contract, if we've joined
+    } */
+    case 'gi.contracts/identity': {
+      const ourIdentityContractId = sbp('sbp/vuex/getters').ourIdentityContractId
+      if (contractID === ourIdentityContractId) {
+        await sbp('gi.actions/identity/logout')
+      }
+    }
+  }
+}
+
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
 // worker should call this function. On the other hand, if Chelonia is running
@@ -140,9 +163,11 @@ const setupChelonia = async (): Promise<*> => {
     },
     hooks: {
       syncContractError: (e, contractID) => {
-        // TODO
         if (e?.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
-          console.error('@@@@[syncContractError] Contract ID ' + contractID + ' has been deleted')
+          console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
+          handleDeletedContract(contractID).catch(e => {
+            console.error('Error handling contract deletion', e)
+          })
         }
       },
       handleEventError: (e: Error, message: GIMessage) => {
@@ -262,8 +287,10 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
-        // TODO
-        console.error('@@@@[NOTIFICATION] Contract ID ' + contractID + ' has been deleted')
+        console.error('[messageHandler] Contract ID ' + contractID + ' has been deleted')
+        handleDeletedContract(contractID).catch(e => {
+          console.error('Error handling contract deletion', e)
+        })
       }
     },
     handlers: {
