@@ -183,8 +183,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return profile?.displayName || profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
+  thisPeriodPaymentInfoForGroup (state, getters) {
+    return (state) => {
+      return getters.groupPeriodPaymentsForGroup(state)[getters.currentPaymentPeriodForGroup(state)]
+    }
+  },
   thisPeriodPaymentInfo (state, getters) {
-    return getters.groupPeriodPayments[getters.currentPaymentPeriod]
+    return getters.thisPeriodPaymentInfoForGroup(getters.currentGroupState)
   },
   latePayments (state, getters) {
     const periodPayments = getters.groupPeriodPayments
@@ -204,25 +209,27 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
-  groupIncomeAdjustedDistribution (state, getters) {
-    const paymentInfo = getters.thisPeriodPaymentInfo
-    if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
-      return paymentInfo.lastAdjustedDistribution
-    } else {
-      const period = getters.currentPaymentPeriod
-      return adjustedDistribution({
-        distribution: unadjustedDistribution({
-          haveNeeds: getters.haveNeedsForThisPeriod(period),
-          minimize: getters.groupSettings.minimizeDistribution
-        }),
-        payments: getters.paymentsForPeriod(period),
-        dueOn: getters.dueDateForPeriod(period)
-      })
+  groupIncomeAdjustedDistributionForGroup (state, getters) {
+    return (state) => {
+      const paymentInfo = getters.thisPeriodPaymentInfoForGroup(state)
+      if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
+        return paymentInfo.lastAdjustedDistribution
+      } else {
+        const period = getters.currentPaymentPeriodForGroup(state)
+        return adjustedDistribution({
+          distribution: unadjustedDistribution({
+            haveNeeds: getters.haveNeedsForThisPeriodForGroup(state, period),
+            minimize: getters.groupSettingsForGroup(state).minimizeDistribution
+          }),
+          payments: getters.paymentsForPeriodForGroup(state, period),
+          dueOn: getters.dueDateForPeriodForGroup(state, period)
+        })
+      }
     }
   },
   ourPaymentsSentInPeriodForGroup (state, getters) {
     return (state, period) => {
-      const periodPayments = getters.groupPeriodPayments
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
       const thisPeriodPayments = periodPayments[period]
@@ -246,7 +253,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   ourPaymentsReceivedInPeriodForGroup (state, getters) {
     return (state, period) => {
-      const periodPayments = getters.groupPeriodPayments
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
       const thisPeriodPayments = periodPayments[period]
@@ -274,10 +281,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   ourPaymentsForGroup (state, getters) {
     return (state) => {
-      const periodPayments = getters.groupPeriodPayments
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
       if (Object.keys(periodPayments).length === 0) return
       const ourIdentityContractId = getters.ourIdentityContractId
-      const cPeriod = getters.currentPaymentPeriod
+      const cPeriod = getters.currentPaymentPeriodForGroup(state)
       const pPeriod = getters.periodBeforePeriodForGroup(state, cPeriod)
       const currentSent = getters.ourPaymentsSentInPeriodForGroup(state, cPeriod)
       const previousSent = getters.ourPaymentsSentInPeriodForGroup(state, pPeriod)
@@ -286,7 +293,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
 
       // TODO: take into account pending payments that have been sent but not yet completed
       const todo = () => {
-        return getters.groupIncomeAdjustedDistribution.filter(p => p.fromMemberID === ourIdentityContractId)
+        return getters.groupIncomeAdjustedDistributionForGroup(state).filter(p => p.fromMemberID === ourIdentityContractId)
       }
 
       return {

@@ -314,8 +314,11 @@ const store: any = new Vuex.Store({
   getters: {
     ...getters,
     // this getter gets recomputed automatically according to the setInterval on reactiveDate
+    currentPaymentPeriodForGroup (state, getters) {
+      return (state) => getters.periodStampGivenDateForGroup(state, reactiveDate.date)
+    },
     currentPaymentPeriod (state, getters) {
-      return getters.periodStampGivenDate(reactiveDate.date)
+      return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
     }
   },
   modules: {

@@ -23,7 +23,7 @@ const periodicNotificationEntries: {
   }
 }[] = [
   {
-    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    type: PERIODIC_NOTIFICATION_TYPE.MIN15,
     notificationData: {
       stateKey: 'nearDistributionEnd',
       emitCondition ({ rootState, rootGetters }) {
@@ -76,7 +76,7 @@ const periodicNotificationEntries: {
     }
   },
   {
-    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    type: PERIODIC_NOTIFICATION_TYPE.MIN5,
     notificationData: {
       stateKey: 'nextDistributionPeriod',
       emitCondition ({ rootState, rootGetters }) {

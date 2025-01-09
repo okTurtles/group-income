@@ -90,15 +90,20 @@ export default ({
   groupProfile (state, getters) {
     return member => getters.groupProfileForGroup(getters.currentGroupState, member)
   },
-  groupProfiles (state, getters) {
-    const profiles = {}
-    for (const member in (getters.currentGroupState.profiles || {})) {
-      const profile = getters.groupProfile(member)
-      if (profile.status === PROFILE_STATUS.ACTIVE) {
-        profiles[member] = profile
+  groupProfilesForGroup (state, getters) {
+    return (state) => {
+      const profiles = {}
+      for (const member in (getters.currentGroupState.profiles || {})) {
+        const profile = getters.groupProfileForGroup(state, member)
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[member] = profile
+        }
       }
+      return profiles
     }
-    return profiles
+  },
+  groupProfiles (state, getters) {
+    return getters.groupProfilesForGroup(getters.currentGroupState)
   },
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
@@ -139,12 +144,17 @@ export default ({
   // The following three getters return either a known period stamp for the given date,
   // or a predicted one according to the period length.
   // They may also return 'undefined', in which case the caller should check archived data.
+  periodStampGivenDateForGroup (state, getters) {
+    return (state, date: string | Date, periods?: string[]): string | void => {
+      return periodStampsForDate(date, {
+        knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(state),
+        periodLength: getters.groupSettingsForGroup(state).distributionPeriodLength
+      }).current
+    }
+  },
   periodStampGivenDate (state, getters) {
     return (date: string | Date, periods?: string[]): string | void => {
-      return periodStampsForDate(date, {
-        knownSortedStamps: periods || getters.groupSortedPeriodKeys,
-        periodLength: getters.groupSettings.distributionPeriodLength
-      }).current
+      return getters.periodStampGivenDateForGroup(getters.currentGroupState, date, periods)
     }
   },
   periodBeforePeriodForGroup (state, getters) {
@@ -169,20 +179,30 @@ export default ({
   periodAfterPeriod (state, getters) {
     return (periodStamp: string, periods?: string[]) => getters.periodAfterPeriodForGroup(getters.currentGroupState, periodStamp, periods)
   },
-  dueDateForPeriod (state, getters) {
-    return (periodStamp: string, periods?: string[]) => {
+  dueDateForPeriodForGroup (state, getters) {
+    return (state, periodStamp: string, periods?: string[]) => {
       // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
       //       1 mili-second doesn't make any difference to the users
       //       so periodAfterPeriod is used to make it simple
-      return getters.periodAfterPeriod(periodStamp, periods)
+      return getters.periodAfterPeriodForGroup(state, periodStamp, periods)
+    }
+  },
+  dueDateForPeriod (state, getters) {
+    return (periodStamp: string, periods?: string[]) => {
+      return getters.dueDateForPeriodForGroup(getters.currentGroupState, periodStamp, periods)
+    }
+  },
+  paymentHashesForPeriodForGroup (state, getters) {
+    return (state, periodStamp) => {
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)[periodStamp]
+      if (periodPayments) {
+        return paymentHashesFromPaymentPeriod(periodPayments)
+      }
     }
   },
   paymentHashesForPeriod (state, getters) {
     return (periodStamp) => {
-      const periodPayments = getters.groupPeriodPayments[periodStamp]
-      if (periodPayments) {
-        return paymentHashesFromPaymentPeriod(periodPayments)
-      }
+      return getters.paymentHashesForPeriodForGroup(getters.currentGroupState, periodStamp)
     }
   },
   groupMembersByContractID (state, getters) {
@@ -230,9 +250,14 @@ export default ({
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },
-  groupPeriodPayments (state, getters): Object {
+  groupPeriodPaymentsForGroup (state, getters): Object {
     // note: a lot of code expects this to return an object, so keep the || {} below
-    return getters.currentGroupState.paymentsByPeriod || {}
+    return (state) => {
+      return state.paymentsByPeriod || {}
+    }
+  },
+  groupPeriodPayments (state, getters): Object {
+    return getters.groupPeriodPaymentsForGroup(getters.currentGroupState)
   },
   groupThankYousFrom (state, getters): Object {
     return getters.currentGroupState.thankYousFrom || {}
@@ -259,11 +284,11 @@ export default ({
   // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
   // getters.groupProfiles - and that is always based on the most recent values. we still
   // pass in the current period because it's used to set the "when" property
-  haveNeedsForThisPeriod (state, getters) {
-    return (currentPeriod: string) => {
+  haveNeedsForThisPeriodForGroup (state, getters) {
+    return (state, currentPeriod: string) => {
       // NOTE: if we ever switch back to the "real-time" adjusted distribution algorithm,
       //       make sure that this function also handles userExitsGroupEvent
-      const groupProfiles = getters.groupProfiles // TODO: these should use the haveNeeds for the specific period's distribution period
+      const groupProfiles = getters.groupProfilesForGroup(state) // TODO: these should use the haveNeeds for the specific period's distribution period
       const haveNeeds = []
       for (const memberID in groupProfiles) {
         const { incomeDetailsType, joinedDate } = groupProfiles[memberID]
@@ -275,7 +300,7 @@ export default ({
           if (dateIsWithinPeriod({
             date: joinedDate,
             periodStart: currentPeriod,
-            periodLength: getters.groupSettings.distributionPeriodLength
+            periodLength: getters.groupSettingsForGroup(state).distributionPeriodLength
           })) {
             when = joinedDate
           }
@@ -285,12 +310,17 @@ export default ({
       return haveNeeds
     }
   },
-  paymentsForPeriod (state, getters) {
-    return (periodStamp) => {
-      const hashes = getters.paymentHashesForPeriod(periodStamp)
+  haveNeedsForThisPeriod (state, getters) {
+    return (currentPeriod: string) => {
+      return getters.haveNeedsForThisPeriodForGroup(getters.currentGroupState, currentPeriod)
+    }
+  },
+  paymentsForPeriodForGroup (state, getters) {
+    return (state, periodStamp) => {
+      const hashes = getters.paymentHashesForPeriodForGroup(state, periodStamp)
       const events = []
       if (hashes && hashes.length > 0) {
-        const payments = getters.currentGroupState.payments
+        const payments = state.payments
         for (const paymentHash of hashes) {
           const payment = payments[paymentHash]
           if (payment.data.status === PAYMENT_COMPLETED) {
@@ -299,6 +329,11 @@ export default ({
         }
       }
       return events
+    }
+  },
+  paymentsForPeriod (state, getters) {
+    return (periodStamp) => {
+      return getters.paymentsForPeriodForGroup(getters.currentGroupState, periodStamp)
     }
   }
   // distributionEventsForMonth (state, getters) {
