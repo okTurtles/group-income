@@ -621,8 +621,8 @@ route.POST('/deleteContract/{hash}', {
   // Authentication passed, now proceed to delete the contract and its associated
   // keys
   try {
-    await sbp('backend/deleteContract', hash)
-    return h.response()
+    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    return h.response({ id }).code(202)
   } catch (e) {
     switch (e.name) {
       case 'BackendErrorNotFound':

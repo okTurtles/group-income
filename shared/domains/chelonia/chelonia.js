@@ -627,7 +627,7 @@ export default (sbp('sbp/selectors/register', {
                   })
                 }]
               case NOTIFICATION_TYPE.DELETION:
-                return [k, (msg) => v(msg.data)]
+                return [k, (msg) => (v: Function)(msg.data)]
               default:
                 return [k, v]
             }

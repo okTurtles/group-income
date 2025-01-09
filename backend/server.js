@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import chalk from 'chalk'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
+import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
 import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
@@ -271,9 +272,9 @@ sbp('sbp/selectors/register', {
           const resource = Buffer.from(await sbp('chelonia/db/get', resourceCid)).toString()
           if (resource) {
             if (resource.includes('previousHEAD') && resource.includes('contractID') && resource.includes('op') && resource.includes('height')) {
-              return sbp('backend/deleteContract', resourceCid)
+              return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
             } else {
-              return sbp('backend/deleteFile', resourceCid)
+              return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
             }
           }
         }))
@@ -428,6 +429,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 ;(async function () {
   await initDB()
   await sbp('chelonia/configure', SERVER)
+  sbp('chelonia.persistentActions/configure', {
+    databaseKey: '_private_persistent_actions'
+  })
   // Load the saved Chelonia state
   // First, get the contract index
   const savedStateIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
@@ -469,6 +473,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       })
     }))
   }
+  sbp('chelonia.persistentActions/load').catch(e => {
+    console.error(e, 'Error loading persistent actions')
+  })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: require('./auth.js') },
