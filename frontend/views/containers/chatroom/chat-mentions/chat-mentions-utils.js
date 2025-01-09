@@ -92,7 +92,7 @@ function createRecursiveDomObjects (element: any): DomObject {
       if (child.tagName) return true
       else {
         return isBodyElement
-          ? child.text !== '\n'
+          ? child.text !== '\n' // DOMParser.parseFromString() adds a '\n' at the end of the body content which needs to be removed.
           : (child.text || '').length
       }
     })
