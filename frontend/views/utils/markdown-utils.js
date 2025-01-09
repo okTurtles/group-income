@@ -62,7 +62,7 @@ export function renderMarkdown (str: string): any {
 
   // STEP 4. White-spaces between the html tags should be preserved. the parseFromString() method DOMParser API will remove them which is what we don't want.
   converted = converted.replace(/(<\/[a-z]+>)( +)(<[a-z])/g, (_, before, spaces, after) => {
-    const replaced  = new Array(spaces.length).fill('&nbsp;').join('')
+    const replaced = new Array(spaces.length).fill('&nbsp;').join('')
     return `${before}${replaced}${after}`
   })
   return converted

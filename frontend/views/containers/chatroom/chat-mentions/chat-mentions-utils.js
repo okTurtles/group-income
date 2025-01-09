@@ -89,7 +89,7 @@ function createRecursiveDomObjects (element: any): DomObject {
     }
 
     nodeObj.children = nodeObj.children.filter(child => {
-      if (child.tagName) { return true }
+      if (child.tagName) return true
       else {
         return isBodyElement
           ? child.text !== '\n'
