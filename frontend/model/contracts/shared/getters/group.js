@@ -21,6 +21,15 @@ a group state as a parameter. To avoid redundancy, the non-suffixed version is
 implemented using the suffixed version (i.e., calling it with
 `getters.currentGroupState` as a parameter).
 
+Why state and not contract ID?
+
+We don't use an `Id` version, e.g., `-ForGroupId`, because the ID isn't
+necessarily known. Contracts rely on a different patter, a getter to get the
+current state (e.g., `currentGroupState`) and using a `ForGroupId` pattern would
+break this and require significant refactoring. By using the state, getters are
+easily interoperable in all execution environments we support (i.e., browser
+windows, SW and contracts)
+
 Why do we need this?
 
 The primary motivation for this pattern is to reduce redundancy and improve the
