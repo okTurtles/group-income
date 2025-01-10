@@ -93,7 +93,7 @@ export default ({
   groupProfilesForGroup (state, getters) {
     return (state) => {
       const profiles = {}
-      for (const member in (getters.currentGroupState.profiles || {})) {
+      for (const member in (state.profiles || {})) {
         const profile = getters.groupProfileForGroup(state, member)
         if (profile.status === PROFILE_STATUS.ACTIVE) {
           profiles[member] = profile
@@ -108,8 +108,11 @@ export default ({
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
   },
+  groupMincomeAmountForGroup (state, getters) {
+    return state => getters.groupSettingsForGroup(state).mincomeAmount
+  },
   groupMincomeAmount (state, getters) {
-    return getters.groupSettings.mincomeAmount
+    return getters.groupMincomeAmountForGroup(getters.currentGroupState)
   },
   groupMincomeCurrency (state, getters) {
     return getters.groupSettings.mincomeCurrency
@@ -121,7 +124,7 @@ export default ({
       if (!distributionDate) return []
       // The .sort() call might be only necessary in older browser which don't maintain object key ordering.
       // A comparator function isn't required for now since our keys are ISO strings.
-      const keys = Object.keys(getters.groupPeriodPayments).sort()
+      const keys = Object.keys(getters.groupPeriodPaymentsForGroup(state)).sort()
       // Append the waiting period stamp if necessary.
       if (!keys.length && MAX_SAVED_PERIODS > 0) {
         keys.push(dateToPeriodStamp(addTimeToDate(distributionDate, -distributionPeriodLength)))
@@ -294,7 +297,7 @@ export default ({
         const { incomeDetailsType, joinedDate } = groupProfiles[memberID]
         if (incomeDetailsType) {
           const amount = groupProfiles[memberID][incomeDetailsType]
-          const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
+          const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmountForGroup(state) : amount
           // construct 'when' this way in case we ever use a pro-rated algorithm
           let when = dateFromPeriodStamp(currentPeriod).toISOString()
           if (dateIsWithinPeriod({

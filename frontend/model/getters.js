@@ -58,6 +58,14 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   // The 'currentGroupState' here is based off the value of `state.currentGroupId`,
   // a user preference that does not exist in the group contract state.
   currentGroupState (state) {
+    // The service worker should not be using this getter.
+    if (process.env.NODE_ENV === 'development' || process.env.CI) {
+      if (typeof Window !== 'function') {
+        const error = new Error('Tried to access currentGroupState from outside a browsing context')
+        Promise.reject(error)
+        throw error
+      }
+    }
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
   currentIdentityState (state) {
@@ -226,6 +234,9 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
         })
       }
     }
+  },
+  groupIncomeAdjustedDistribution (state, getters) {
+    return getters.groupIncomeAdjustedDistributionForGroup(getters.currentGroupState)
   },
   ourPaymentsSentInPeriodForGroup (state, getters) {
     return (state, period) => {
