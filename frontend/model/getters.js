@@ -60,7 +60,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   currentGroupState (state) {
     // The service worker should not be using this getter.
     if (process.env.NODE_ENV === 'development' || process.env.CI) {
-      if (typeof Window !== 'function') {
+      // $FlowFixMe[cannot-resolve-name]
+      if (typeof Window === 'undefined') {
         const error = new Error('Tried to access currentGroupState from outside a browsing context')
         Promise.reject(error)
         throw error
