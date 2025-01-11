@@ -13,25 +13,48 @@ import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.j
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 const handleDeletedContract = async (contractID: string) => {
-  const { cheloniaState } = sbp('chelonia/contract/fullState', contractID)
+  const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
 
   await sbp('chelonia/contract/remove', contractID)
 
+  const rootGetters = sbp('state/vuex/getters')
+
   switch (cheloniaState.type) {
-    /* case 'gi.contracts/chatroom': {
+    case 'gi.contracts/chatroom': {
       // TODO: Leave chatroom on our identity contract or our group, if we've
       // joined.
+      break
     }
     case 'gi.contracts/group': {
-      // TODO: Leave group on our identity contract, if we've joined
-    } */
+      const identityContractID = rootGetters.ourIdentityContractId
+      const currentIdentityState = rootGetters.currentIdentityState
+
+      if (!!currentIdentityState.groups[contractID] && !currentIdentityState.groups[contractID]?.hasLeft) {
+        await sbp('gi.actions/identity/leaveGroup', {
+          contractID: identityContractID,
+          data: {
+            groupContractID: contractID,
+            reference: contractState.profiles?.[identityContractID]?.reference
+          }
+        }).catch(e => {
+          console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
+        })
+      }
+
+      break
+    }
     case 'gi.contracts/identity': {
-      const ourIdentityContractId = sbp('sbp/vuex/getters').ourIdentityContractId
+      const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
+
       if (contractID === ourIdentityContractId) {
         await sbp('gi.actions/identity/logout')
       }
+
+      break
     }
+    default:
+      console.warn('[handleDeletedContract] Received contract deletion notification for contract ID of unknown type', contractID, cheloniaState.type)
   }
 }
 

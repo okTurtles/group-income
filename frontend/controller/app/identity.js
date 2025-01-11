@@ -503,5 +503,30 @@ export default (sbp('sbp/selectors/register', {
       newIEK: new Secret(newIEK),
       updateToken: new Secret(updateToken)
     })
+  },
+  'gi.app/identity/delete': async (username: string, contractID: string, wPassword: Secret<string>) => {
+    const password = wPassword?.valueOf()
+    const transientSecretKeys = []
+    let oldKeysAnchorCid
+
+    // If we're creating a new session, here we derive the IEK. This key (not
+    // the password) will be passed to the service worker.
+    if (password) {
+      try {
+        const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wPassword)
+        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+        transientSecretKeys.push(IEK)
+        oldKeysAnchorCid = cid
+      } catch (e) {
+        console.error('caught error calling retrieveSalt:', e)
+        throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
+      }
+    }
+
+    await sbp('gi.actions/identity/delete', {
+      contractID,
+      transientSecretKeys: new Secret(transientSecretKeys.map(k => serializeKey(k, true))),
+      oldKeysAnchorCid
+    })
   }
 }): string[])

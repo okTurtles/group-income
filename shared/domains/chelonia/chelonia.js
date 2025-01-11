@@ -1190,7 +1190,7 @@ export default (sbp('sbp/selectors/register', {
           ['authorization',
             hasToken
               // $FlowFixMe[incompatible-type]
-              ? `bearer ${credentials[cid].token}`
+              ? `bearer ${(credentials[cid].token: any).valueOf()}`
               // $FlowFixMe[incompatible-type]
               // $FlowFixMe[incompatible-call]
               : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]

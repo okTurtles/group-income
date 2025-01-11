@@ -14,7 +14,7 @@ import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -194,7 +194,7 @@ export default (sbp('sbp/selectors/register', {
     const IPK = typeof wIPK === 'string' ? deserializeKey(wIPK) : wIPK
     const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
 
-    const deletionToken = generateSalt()
+    const deletionToken = 'deletionToken' + generateSalt()
 
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
@@ -380,7 +380,7 @@ export default (sbp('sbp/selectors/register', {
             username,
             email,
             get picture () { return finalPicture },
-            encryptedDeletionToken
+            encryptedDeletionToken: encryptedDeletionToken.serialize('encryptedDeletionToken')
           }
         },
         namespaceRegistration: username
@@ -982,6 +982,35 @@ export default (sbp('sbp/selectors/register', {
     )
     // And remove transient keys, which require a user password
     sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])
+  },
+  'gi.actions/identity/delete': async ({
+    contractID,
+    transientSecretKeys,
+    oldKeysAnchorCid
+  }: {
+    contractID: string,
+    transientSecretKeys: Secret<string[]>,
+    oldKeysAnchorCid: string
+  }) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state?.attributes?.encryptedDeletionToken) {
+      throw new Error('Missing encrypted deletion token')
+    }
+
+    const transientSecretKeysEntries = transientSecretKeys.valueOf().map(
+      k => ([keyId(k), deserializeKey(k)])
+    )
+    const encryptedDeletionToken = state.attributes.encryptedDeletionToken
+
+    if (oldKeysAnchorCid) {
+      const IEK = transientSecretKeysEntries[0][1]
+      await processOldIekList(contractID, oldKeysAnchorCid, IEK)
+    }
+
+    const token = encryptedIncomingData(contractID, state, encryptedDeletionToken, NaN, Object.fromEntries(transientSecretKeysEntries), 'encryptedDeletionToken')
+    await sbp('chelonia/out/deleteContract', contractID, {
+      [contractID]: { token: new Secret(token.valueOf()) }
+    })
   },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
