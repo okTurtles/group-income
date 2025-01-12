@@ -91,7 +91,7 @@ sbp('sbp/selectors/register', {
           return navigator.serviceWorker.ready.then((registration) =>
             registration.periodicSync.register('periodic-notifications', {
               // An interval of 12 hours
-              minInterval: 12 * 60 * 60 * 1000
+              minInterval: 12 * HOURS_MILLIS
             })
           )
         }).catch((e) => {
