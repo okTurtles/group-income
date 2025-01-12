@@ -562,6 +562,11 @@ export default ({
       }
     },
     handlePaste (e) {
+      if (e.clipboardData.files.length > 0) {
+        this.fileAttachmentHandler(e.clipboardData.files, true)
+        return
+      }
+
       // fix for the edge-case related to 'paste' action when nothing has been typed
       // (reference: https://github.com/okTurtles/group-income/issues/2369)
       const currVal = this.$refs.textarea.value
