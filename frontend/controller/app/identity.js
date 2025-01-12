@@ -406,6 +406,16 @@ export default (sbp('sbp/selectors/register', {
             try {
               await sbp('chelonia/contract/sync', identityContractID)
             } catch (e) {
+              // Since we're throwing or returning, the `await` below will not
+              // be used. In either case, login won't complete after this point,
+              // so errors there aren't relevant anymore.
+              loginCompletePromise.catch((e) => {
+                // Using `warn` level because this error is not so relevant
+                // However, errors might be helpful for debugging purposes, so
+                // we still log it.
+                console.warn('[gi.app/identity/login] Error in login complete promise', e)
+              })
+
               // To make it easier to test things during development, if the
               // identity contract no longer exists, we automatically log out
               // If we're in production mode, we show a prompt instead as logging
