@@ -80,8 +80,11 @@ export function randomHexString (length: number): string {
 
 export function normalizeString (str: string): string {
   return str
-    // [1]. Normalize strings by replacing both apostrophes and single quotes with a standard character (reference issue: https://github.com/okTurtles/group-income/issues/2479)
-    .replace(/['’]/g, "'")
+    // [1]. Normalize strings by replacing intial and final punctuation marks,
+    // which typically are used in smart quote substitution, with a standad
+    // character
+    // (reference issue: https://github.com/okTurtles/group-income/issues/2479)
+    .replace(/[\p{Pf}\p{Pi}]/gu, "'")
     // [2]. Normalize the string based on 'Canonical equivalence'. eg) 'Amélie' !== 'Amélie' even when they are visually identical because their unicode sequences are different.
     //      (reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize#canonical_equivalence_normalization)
     .normalize('NFC')
